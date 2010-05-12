@@ -19,47 +19,97 @@ require 'fileutils'
 # timeout is native on JRuby so there's no timeout.rb
 # weakref is native on JRuby so there's no weakref.rb
 STDLIB_FILES = %w[
+  README
   Win32API.rb
   abbrev.rb
   benchmark.rb
   cgi
   cgi.rb
   csv.rb
+  date
+  date.rb
+  date2.rb
   debug.rb
   delegate.rb
   dl.rb
   drb
+  drb.rb
+  e2mmap.rb
   erb.rb
+  eregex.rb
   fileutils.rb
+  finalize.rb
+  find.rb
   forwardable.rb
+  ftools.rb
   generator.rb
+  getoptlong.rb
   getopts.rb
+  gserver.rb
+  importenv.rb
   ipaddr.rb
   irb
   irb.rb
+  jcode.rb
   logger.rb
+  mailread.rb
+  mathn.rb
   matrix.rb
   mkmf.rb
   monitor.rb
+  mutex_m.rb
   net
+  observer.rb
+  open-uri.rb
   open3.rb
+  optparse
   optparse.rb
+  ostruct.rb
   parsearg.rb
+  parsedate.rb
   pathname.rb
+  ping.rb
+  pp.rb
+  prettyprint.rb
+  profile.rb
+  profiler.rb
+  pstore.rb
+  racc
+  rational.rb
   rdoc
+  readbytes.rb
+  resolv-replace.rb
   resolv.rb
   rexml
+  rinda
+  rss
+  rss.rb
+  rubyunit.rb
+  runit
   scanf.rb
+  securerandom.rb
   set.rb
   shell
+  shell.rb
+  shellwords.rb
+  singleton.rb
+  soap
   sync.rb
+  test
   thread.rb
+  thwait.rb
+  time.rb
   tmpdir.rb
   tracer.rb
+  tsort.rb
+  un.rb
   uri
   uri.rb
   webrick
+  webrick.rb
+  wsdl
   xmlrpc
+  xsd
 ]
 
 EXT_FILES = {
