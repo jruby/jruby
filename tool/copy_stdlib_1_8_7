@@ -22,6 +22,7 @@ STDLIB_FILES = %w[
   Win32API.rb
   abbrev.rb
   benchmark.rb
+  cgi
   cgi.rb
   csv.rb
   debug.rb
@@ -34,8 +35,8 @@ STDLIB_FILES = %w[
   generator.rb
   getopts.rb
   ipaddr.rb
-  irb.rb
   irb
+  irb.rb
   logger.rb
   matrix.rb
   mkmf.rb
