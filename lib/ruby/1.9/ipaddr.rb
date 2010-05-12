@@ -7,7 +7,7 @@
 #
 # You can redistribute and/or modify it under the same terms as Ruby.
 #
-# $Id: ipaddr.rb 24411 2009-08-05 15:13:07Z knu $
+# $Id$
 #
 # Contact:
 #   - Akinori MUSHA <knu@iDaemons.org> (current maintainer)
@@ -18,7 +18,7 @@
 require 'socket'
 
 unless Socket.const_defined? "AF_INET6"
-  class Socket
+  class Socket < BasicSocket
     AF_INET6 = Object.new
   end
 
@@ -444,7 +444,7 @@ class IPAddr
   # automatically from a specified string, you can specify one
   # explicitly by the optional second argument.
   #
-  # Otherwise an IP addess is generated from a packed in_addr value
+  # Otherwise an IP address is generated from a packed in_addr value
   # and an address family.
   #
   # The IPAddr class defines many methods and operators, and some of
@@ -472,7 +472,7 @@ class IPAddr
     #Socket.getaddrinfo(left, nil, Socket::AF_INET6, Socket::SOCK_STREAM, nil,
     #		       Socket::AI_NUMERICHOST)
     begin
-      IPSocket.getaddress(prefix)		# test if address is vaild
+      IPSocket.getaddress(prefix)		# test if address is valid
     rescue
       raise ArgumentError, "invalid address"
     end

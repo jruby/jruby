@@ -3,7 +3,7 @@
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
 # License:: You can redistribute it and/or modify it under the same term as Ruby.
-# Revision:: $Id: ftp.rb 22784 2009-03-06 03:56:38Z nobu $
+# Revision:: $Id$
 #
 
 require 'uri/generic'
@@ -12,6 +12,11 @@ module URI
 
   #
   # FTP URI syntax is defined by RFC1738 section 3.2.
+  #
+  # This class will be redesigned because of difference of implementations;
+  # the structure of its path. draft-hoffman-ftp-uri-04 is a draft but it
+  # is a good summary about the de facto spec.
+  # http://tools.ietf.org/html/draft-hoffman-ftp-uri-04
   #
   class FTP < Generic
     DEFAULT_PORT = 21
@@ -113,12 +118,13 @@ module URI
     # +opaque+, +query+ and +fragment+, in that order.
     #
     def initialize(*arg)
+      arg[5] = arg[5].sub(/^\//,'').sub(/^%2F/,'/')
       super(*arg)
       @typecode = nil
       tmp = @path.index(TYPECODE_PREFIX)
       if tmp
         typecode = @path[tmp + TYPECODE_PREFIX.size..-1]
-        self.set_path(@path[0..tmp - 1])
+        @path = @path[0..tmp - 1]
 
         if arg[-1]
           self.typecode = typecode
@@ -179,6 +185,11 @@ module URI
     def path
       return @path.sub(/^\//,'').sub(/^%2F/,'/')
     end
+
+    def set_path(v)
+      super("/" + v.sub(/^\//, "%2F"))
+    end
+    protected :set_path
 
     def to_s
       save_path = nil

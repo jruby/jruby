@@ -1,7 +1,7 @@
 #
 #   sync.rb - 2 phase lock with counter
 #   	$Release Version: 1.0$
-#   	$Revision: 22784 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ishitsuka.com)
 #
 # --
@@ -42,7 +42,7 @@ unless defined? Thread
 end
 
 module Sync_m
-  RCS_ID='-$Header$-'
+  RCS_ID='-$Id$-'
 
   # lock mode
   UN = :UN

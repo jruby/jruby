@@ -133,7 +133,7 @@ the same class.
          begin
            ret = obj.call(*args)  # call the original service-method
            # could convert the return value
-         resuce
+         rescue
            # rescue exceptions
          end
        }
@@ -773,6 +773,6 @@ end # module XMLRPC
 
 =begin
 = History
-    $Id: server.rb 22784 2009-03-06 03:56:38Z nobu $
+    $Id$
 =end
 

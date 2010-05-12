@@ -1,7 +1,7 @@
 #
 #   version.rb - shell version definition file
 #   	$Release Version: 0.7$
-#   	$Revision: 22784 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --

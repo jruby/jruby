@@ -25,24 +25,17 @@ module REXML
     #
     # Nat Price gave me some good ideas for the API.
     class BaseParser
-      if String.method_defined? :encode
-        # Oniguruma / POSIX [understands unicode]
-        LETTER = '[[:alpha:]]'
-        DIGIT = '[[:digit:]]'
-      else
-        # Ruby < 1.9 [doesn't understand unicode]
-        LETTER = 'a-zA-Z'
-        DIGIT = '\d'
-      end
+      LETTER = '[:alpha:]'
+      DIGIT = '[:digit:]'
 
       COMBININGCHAR = '' # TODO
       EXTENDER = ''      # TODO
 
-      NCNAME_STR= "[#{LETTER}_:][-#{LETTER}#{DIGIT}._:#{COMBININGCHAR}#{EXTENDER}]*"
+      NCNAME_STR= "[#{LETTER}_:][-[:alnum:]._:#{COMBININGCHAR}#{EXTENDER}]*"
       NAME_STR= "(?:(#{NCNAME_STR}):)?(#{NCNAME_STR})"
       UNAME_STR= "(?:#{NCNAME_STR}:)?#{NCNAME_STR}"
 
-      NAMECHAR = '[\-\w\d\.:]'
+      NAMECHAR = '[\-\w\.:]'
       NAME = "([\\w:]#{NAMECHAR}*)"
       NMTOKEN = "(?:#{NAMECHAR})+"
       NMTOKENS = "#{NMTOKEN}(\\s+#{NMTOKEN})*"
@@ -66,7 +59,7 @@ module REXML
 
       VERSION = /\bversion\s*=\s*["'](.*?)['"]/um
       ENCODING = /\bencoding\s*=\s*["'](.*?)['"]/um
-      STANDALONE = /\bstandalone\s*=\s["'](.*?)['"]/um
+      STANDALONE = /\bstandalone\s*=\s*["'](.*?)['"]/um
 
       ENTITY_START = /^\s*<!ENTITY/
       IDENTITY = /^([!\*\w\-]+)(\s+#{NCNAME_STR})?(\s+["'](.*?)['"])?(\s+['"](.*?)["'])?/u

@@ -3,7 +3,7 @@
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
 # License:: You can redistribute it and/or modify it under the same term as Ruby.
-# Revision:: $Id: generic.rb 23598 2009-05-27 17:48:54Z akr $
+# Revision:: $Id$
 #
 
 require 'uri/common'
@@ -482,7 +482,9 @@ module URI
           "path conflicts with opaque"
       end
 
-      if @scheme
+      # If scheme is ftp, path may be relative.
+      # See RFC 1738 section 3.2.2, and RFC 2396.
+      if @scheme && @scheme != "ftp"
         if v && v != '' && parser.regexp[:ABS_PATH] !~ v
           raise InvalidComponentError,
             "bad component(expected absolute path component): #{v}"
@@ -992,6 +994,9 @@ module URI
       if path && path == ''
         set_path('/')
       end
+      if scheme && scheme != scheme.downcase
+        set_scheme(self.scheme.downcase)
+      end
       if host && host != host.downcase
         set_host(self.host.downcase)
       end
@@ -1066,6 +1071,7 @@ module URI
     end
 
     def eql?(oth)
+      self.class == oth.class &&
       parser == oth.parser &&
       self.component_ary.eql?(oth.component_ary)
     end

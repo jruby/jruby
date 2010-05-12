@@ -1,7 +1,7 @@
 #
 #   irb/ruby-lex.rb - ruby lexcal analyzer
 #   	$Release Version: 0.9.6$
-#   	$Revision: 24555 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -14,7 +14,7 @@ require "irb/slex"
 require "irb/ruby-token"
 
 class RubyLex
-  @RCS_ID='-$Id: ruby-lex.rb 24555 2009-08-16 12:32:35Z naruse $-'
+  @RCS_ID='-$Id$-'
 
   extend Exception2MessageMapper
   def_exception(:AlreadyDefinedToken, "Already defined token(%s)")
@@ -103,7 +103,6 @@ class RubyLex
       @rests.push nil unless buf_input
     end
     c = @rests.shift
-    return if c == nil
     if @here_header
       @here_readed.push c
     else
@@ -705,7 +704,7 @@ class RubyLex
 
     @OP.def_rule('@') do
       |op, io|
-      if peek(0) =~ /[\w_@]/
+      if peek(0) =~ /[\w@]/
 	ungetc
 	identify_identifier
       else
@@ -728,7 +727,7 @@ class RubyLex
       printf "MATCH: start %s: %s\n", op, io.inspect if RubyLex.debug?
       if peek(0) =~ /[0-9]/
 	t = identify_number
-      elsif peek(0) =~ /\w/
+      elsif peek(0) =~ /[^\x00-\/:-@\[-^`{-\x7F]/
 	t = identify_identifier
       end
       printf "MATCH: end %s: %s\n", op, io.inspect if RubyLex.debug?
@@ -771,7 +770,7 @@ class RubyLex
       end
     end
 
-    while (ch = getc) =~ /\w|_/
+    while (ch = getc) =~ /[^\x00-\/:-@\[-^`{-\x7F]/
       print ":", ch, ":" if RubyLex.debug?
       token.concat ch
     end

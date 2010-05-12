@@ -10,6 +10,15 @@ module Test
         obj.pretty_inspect.chomp
       end
 
+      def assert(test, msg = (nomsg = true; nil))
+        unless nomsg or msg.instance_of?(String) or msg.instance_of?(Proc) or
+            (bt = caller).first.rindex(MiniTest::MINI_DIR, 0)
+          bt.delete_if {|s| s.rindex(MiniTest::MINI_DIR, 0)}
+          raise ArgumentError, "assertion message must be String or Proc, but #{msg.class} was given.", bt
+        end
+        super
+      end
+
       def assert_raise(*args, &b)
         assert_raises(*args, &b)
       end
@@ -67,8 +76,16 @@ module Test
               exp_str = "%\#.#{Float::DIG+2}g" % exp
               act_str = "%\#.#{Float::DIG+2}g" % act
             elsif exp.is_a?(Time) && act.is_a?(Time)
-              exp_comment = " (nsec=#{exp.nsec})"
-              act_comment = " (nsec=#{act.nsec})"
+              if exp.subsec * 1000_000_000 == exp.nsec
+                exp_comment = " (#{exp.nsec}[ns])"
+              else
+                exp_comment = " (subsec=#{exp.subsec})"
+              end
+              if act.subsec * 1000_000_000 == act.nsec
+                act_comment = " (#{act.nsec}[ns])"
+              else
+                act_comment = " (subsec=#{act.subsec})"
+              end
             elsif exp.class != act.class
               # a subclass of Range, for example.
               exp_comment = " (#{exp.class})"

@@ -254,7 +254,7 @@
 # Rails, the web application framework, uses ERB to create views.
 #
 class ERB
-  Revision = '$Date:: 2009-03-06 12:56:38 +0900#$' 	#'
+  Revision = '$Date::                           $' 	#'
 
   # Returns revision information for the erb.rb module.
   def self.version

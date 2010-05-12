@@ -3,7 +3,7 @@
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
 # License:: You can redistribute it and/or modify it under the same term as Ruby.
-# Revision:: $Id: mailto.rb 23598 2009-05-27 17:48:54Z akr $
+# Revision:: $Id$
 #
 
 require 'uri/generic'

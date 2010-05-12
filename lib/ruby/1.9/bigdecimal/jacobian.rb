@@ -21,18 +21,20 @@
 # fx is f.values(x).
 #
 module Jacobian
+  module_function
+
   #--
   def isEqual(a,b,zero=0.0,e=1.0e-8)
     aa = a.abs
     bb = b.abs
     if aa == zero &&  bb == zero then
-          true
+      true
     else
-          if ((a-b)/(aa+bb)).abs < e then
-             true
-          else
-             false
-          end
+      if ((a-b)/(aa+bb)).abs < e then
+        true
+      else
+        false
+      end
     end
   end
   #++
@@ -52,17 +54,17 @@ module Jacobian
       s = f.zero
       deriv = []
       if(nRetry>100) then
-         raise "Singular Jacobian matrix. No change at x[" + i.to_s + "]"
+        raise "Singular Jacobian matrix. No change at x[" + i.to_s + "]"
       end
       dx = dx*f.two
       x[i] += dx
       fxNew = f.values(x)
       for j in 0...n do
         if !isEqual(fxNew[j],fx[j],f.zero,f.eps) then
-           ok += 1
-           deriv <<= (fxNew[j]-fx[j])/dx
+          ok += 1
+          deriv <<= (fxNew[j]-fx[j])/dx
         else
-           deriv <<= f.zero
+          deriv <<= f.zero
         end
       end
       x[i] = xSave
@@ -77,7 +79,7 @@ module Jacobian
     for i in 0...n do
       df = dfdxi(f,fx,x,i)
       for j in 0...n do
-         dfdx[j*n+i] = df[j]
+        dfdx[j*n+i] = df[j]
       end
     end
     dfdx

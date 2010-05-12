@@ -1,7 +1,7 @@
 #
 #   irb/context.rb - irb context
 #   	$Release Version: 0.9.6$
-#   	$Revision: 23985 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -35,6 +35,8 @@ module IRB
       @load_modules = IRB.conf[:LOAD_MODULES]
 
       @use_readline = IRB.conf[:USE_READLINE]
+      @verbose = IRB.conf[:VERBOSE]
+      @io = nil
 
       self.inspect_mode = IRB.conf[:INSPECT_MODE]
       self.math_mode = IRB.conf[:MATH_MODE] if IRB.conf[:MATH_MODE]
@@ -91,7 +93,6 @@ module IRB
 	@output_method = StdioOutputMethod.new
       end
 
-      @verbose = IRB.conf[:VERBOSE]
       @echo = IRB.conf[:ECHO]
       if @echo.nil?
 	@echo = true
@@ -149,6 +150,8 @@ module IRB
 	else
 	  false
 	end
+      else
+	@verbose
       end
     end
 
@@ -163,8 +166,6 @@ module IRB
       @last_value = value
       @workspace.evaluate self, "_ = IRB.CurrentContext.last_value"
     end
-
-    attr_reader :irb_name
 
     def prompt_mode=(mode)
       @prompt_mode = mode

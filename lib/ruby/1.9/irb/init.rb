@@ -1,7 +1,7 @@
 #
 #   irb/init.rb - irb initialize module
 #   	$Release Version: 0.9.6$
-#   	$Revision: 24229 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -135,6 +135,18 @@ module IRB
 	@CONF[:MATH_MODE] = true
       when "-d"
 	$DEBUG = true
+      when "-w"
+	$VERBOSE = true
+      when /^-W(.+)?/
+	opt = $1 || ARGV.shift
+	case opt
+	when "0"
+	  $VERBOSE = nil
+	when "1"
+	  $VERBOSE = false
+	else
+	  $VERBOSE = true
+	end
       when /^-r(.+)?/
 	opt = $1 || ARGV.shift
 	@CONF[:LOAD_MODULES].push opt if opt

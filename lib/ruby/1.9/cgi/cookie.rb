@@ -1,37 +1,38 @@
-  # Class representing an HTTP cookie.
-  #
-  # In addition to its specific fields and methods, a Cookie instance
-  # is a delegator to the array of its values.
-  #
-  # See RFC 2965.
-  #
-  # == Examples of use
-  #   cookie1 = CGI::Cookie::new("name", "value1", "value2", ...)
-  #   cookie1 = CGI::Cookie::new("name" => "name", "value" => "value")
-  #   cookie1 = CGI::Cookie::new('name'    => 'name',
-  #                              'value'   => ['value1', 'value2', ...],
-  #                              'path'    => 'path',   # optional
-  #                              'domain'  => 'domain', # optional
-  #                              'expires' => Time.now, # optional
-  #                              'secure'  => true      # optional
-  #                             )
-  #
-  #   cgi.out("cookie" => [cookie1, cookie2]) { "string" }
-  #
-  #   name    = cookie1.name
-  #   values  = cookie1.value
-  #   path    = cookie1.path
-  #   domain  = cookie1.domain
-  #   expires = cookie1.expires
-  #   secure  = cookie1.secure
-  #
-  #   cookie1.name    = 'name'
-  #   cookie1.value   = ['value1', 'value2', ...]
-  #   cookie1.path    = 'path'
-  #   cookie1.domain  = 'domain'
-  #   cookie1.expires = Time.now + 30
-  #   cookie1.secure  = true
+# Class representing an HTTP cookie.
+#
+# In addition to its specific fields and methods, a Cookie instance
+# is a delegator to the array of its values.
+#
+# See RFC 2965.
+#
+# == Examples of use
+#   cookie1 = CGI::Cookie::new("name", "value1", "value2", ...)
+#   cookie1 = CGI::Cookie::new("name" => "name", "value" => "value")
+#   cookie1 = CGI::Cookie::new('name'    => 'name',
+#                              'value'   => ['value1', 'value2', ...],
+#                              'path'    => 'path',   # optional
+#                              'domain'  => 'domain', # optional
+#                              'expires' => Time.now, # optional
+#                              'secure'  => true      # optional
+#                             )
+#
+#   cgi.out("cookie" => [cookie1, cookie2]) { "string" }
+#
+#   name    = cookie1.name
+#   values  = cookie1.value
+#   path    = cookie1.path
+#   domain  = cookie1.domain
+#   expires = cookie1.expires
+#   secure  = cookie1.secure
+#
+#   cookie1.name    = 'name'
+#   cookie1.value   = ['value1', 'value2', ...]
+#   cookie1.path    = 'path'
+#   cookie1.domain  = 'domain'
+#   cookie1.expires = Time.now + 30
+#   cookie1.secure  = true
 class CGI
+  @@accept_charset="UTF-8" unless defined?(@@accept_charset)
   class Cookie < Array
 
     # Create a new CGI::Cookie object.
@@ -53,13 +54,14 @@ class CGI
     #
     # These keywords correspond to attributes of the cookie object.
     def initialize(name = "", *value)
+      @domain = nil
+      @expires = nil
       if name.kind_of?(String)
         @name = name
-        @value = value
         %r|^(.*/)|.match(ENV["SCRIPT_NAME"])
         @path = ($1 or "")
         @secure = false
-        return super(@value)
+        return super(value)
       end
 
       options = name
@@ -68,7 +70,7 @@ class CGI
       end
 
       @name = options["name"]
-      @value = Array(options["value"])
+      value = Array(options["value"])
       # simple support for IE
       if options["path"]
         @path = options["path"]
@@ -80,11 +82,19 @@ class CGI
       @expires = options["expires"]
       @secure = options["secure"] == true ? true : false
 
-      super(@value)
+      super(value)
     end
 
-    attr_accessor("name", "value", "path", "domain", "expires")
+    attr_accessor("name", "path", "domain", "expires")
     attr_reader("secure")
+
+    def value
+      self
+    end
+
+    def value=(val)
+      replace(Array(val))
+    end
 
     # Set whether the Cookie is a secure cookie or not.
     #
@@ -96,7 +106,7 @@ class CGI
 
     # Convert the Cookie to its string representation.
     def to_s
-      val = @value.kind_of?(String) ? CGI::escape(@value) : @value.collect{|v| CGI::escape(v) }.join("&")
+      val = collect{|v| CGI::escape(v) }.join("&")
       buf = "#{@name}=#{val}"
       buf << "; domain=#{@domain}" if @domain
       buf << "; path=#{@path}"     if @path

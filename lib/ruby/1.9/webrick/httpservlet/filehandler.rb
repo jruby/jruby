@@ -87,7 +87,7 @@ module WEBrick
               content = io.read(last-first+1)
               body << "--" << boundary << CRLF
               body << "Content-Type: #{mtype}" << CRLF
-              body << "Content-Range: #{first}-#{last}/#{filesize}" << CRLF
+              body << "Content-Range: bytes #{first}-#{last}/#{filesize}" << CRLF
               body << CRLF
               body << content
               body << CRLF
@@ -107,7 +107,7 @@ module WEBrick
               content = io.read(last-first+1)
             end
             res['content-type'] = mtype
-            res['content-range'] = "#{first}-#{last}/#{filesize}"
+            res['content-range'] = "bytes #{first}-#{last}/#{filesize}"
             res['content-length'] = last - first + 1
             res.body = content
           else
@@ -412,7 +412,7 @@ module WEBrick
           else
             dname = name
           end
-          s =  " <A HREF=\"#{HTTPUtils::escape(name)}\">#{dname}</A>"
+          s =  " <A HREF=\"#{HTTPUtils::escape(name)}\">#{HTMLUtils::escape(dname)}</A>"
           s << " " * (30 - dname.bytesize)
           s << (time ? time.strftime("%Y/%m/%d %H:%M      ") : " " * 22)
           s << (size >= 0 ? size.to_s : "-") << "\n"
