@@ -161,7 +161,7 @@ if [ -z "$JAVA_MEM" ] ; then
 fi
 
 if [ -z "$JAVA_MEM_MIN" ] ; then
-  JAVA_MEM_MIN=-Xms256m
+  JAVA_MEM_MIN=-Xms2m
 fi
 
 if [ -z "$JAVA_STACK" ] ; then
