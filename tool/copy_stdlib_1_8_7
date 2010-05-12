@@ -19,12 +19,17 @@ require 'fileutils'
 # timeout is native on JRuby so there's no timeout.rb
 # weakref is native on JRuby so there's no weakref.rb
 STDLIB_FILES = %w[
+  English.rb
+  Env.rb
   README
   Win32API.rb
   abbrev.rb
+  base64.rb
   benchmark.rb
   cgi
+  cgi-lib.rb
   cgi.rb
+  complex.rb
   csv.rb
   date
   date.rb
