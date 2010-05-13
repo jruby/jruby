@@ -36,7 +36,6 @@ import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -235,11 +234,18 @@ public class RubyJRuby {
 
                     String urlString;
                     if ("jar".equals(url.getProtocol()) && url.getFile().startsWith("file:/")) {
-                        urlString = URLDecoder.decode(url.getFile());
+                        try {
+                            urlString = url.toURI().getSchemeSpecificPart();
+                        } catch (java.net.URISyntaxException urise) {
+                            if (runtime.getInstanceConfig().isDebug()) {
+                                runtime.getErr().println("URISyntaxException trying to parse " + url + ", stack trace follows:");
+                                urise.printStackTrace(runtime.getErr());
+                            }
+                            urlString = null;
+                        }
                     } else {
                         urlString = url.getFile();
                     }
-
                     urlStrings.add(runtime.newString(urlString));
                 }
                 return RubyArray.newArrayNoCopy(runtime,
