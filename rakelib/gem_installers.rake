@@ -9,7 +9,7 @@ task :install_gems do
 end
 
 task :install_dist_gems do
-  gem_install(COMPLETE_JAR_GEMS, "--ignore-dependencies") do
+  gem_install(COMPLETE_JAR_GEMS, "--ignore-dependencies --env-shebang") do
     sysproperty :key => "jruby.home", :value => DIST_STAGE_BIN_DIR
   end
 end
