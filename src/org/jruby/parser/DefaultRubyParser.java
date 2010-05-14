@@ -1435,715 +1435,715 @@ public class DefaultRubyParser implements RubyParser {
           yydebug.reduce(yyState, yyStates[yyV-1], yyN, yyRule[yyN], yyLen[yyN]);
         yyVal = yyDefault(yyV > yyTop ? null : yyVals[yyV]);
         switch (yyN) {
-case 1: yyVal = case1_line271(support, lexer, yyVal, yyVals, yyTop); // line 271
+case 1: yyVal = case1_line271(yyVal, yyVals, yyTop); // line 271
 break;
-case 2: yyVal = case2_line274(support, lexer, yyVal, yyVals, yyTop); // line 274
+case 2: yyVal = case2_line274(yyVal, yyVals, yyTop); // line 274
 break;
-case 3: yyVal = case3_line286(support, lexer, yyVal, yyVals, yyTop); // line 286
+case 3: yyVal = case3_line286(yyVal, yyVals, yyTop); // line 286
 break;
-case 4: yyVal = case4_line303(support, lexer, yyVal, yyVals, yyTop); // line 303
+case 4: yyVal = case4_line303(yyVal, yyVals, yyTop); // line 303
 break;
-case 6: yyVal = case6_line311(support, lexer, yyVal, yyVals, yyTop); // line 311
+case 6: yyVal = case6_line311(yyVal, yyVals, yyTop); // line 311
 break;
-case 7: yyVal = case7_line314(support, lexer, yyVal, yyVals, yyTop); // line 314
+case 7: yyVal = case7_line314(yyVal, yyVals, yyTop); // line 314
 break;
-case 8: yyVal = case8_line317(support, lexer, yyVal, yyVals, yyTop); // line 317
+case 8: yyVal = case8_line317(yyVal, yyVals, yyTop); // line 317
 break;
-case 9: yyVal = case9_line321(support, lexer, yyVal, yyVals, yyTop); // line 321
+case 9: yyVal = case9_line321(yyVal, yyVals, yyTop); // line 321
 break;
-case 10: yyVal = case10_line323(support, lexer, yyVal, yyVals, yyTop); // line 323
+case 10: yyVal = case10_line323(yyVal, yyVals, yyTop); // line 323
 break;
-case 11: yyVal = case11_line326(support, lexer, yyVal, yyVals, yyTop); // line 326
+case 11: yyVal = case11_line326(yyVal, yyVals, yyTop); // line 326
 break;
-case 12: yyVal = case12_line329(support, lexer, yyVal, yyVals, yyTop); // line 329
+case 12: yyVal = case12_line329(yyVal, yyVals, yyTop); // line 329
 break;
-case 13: yyVal = case13_line332(support, lexer, yyVal, yyVals, yyTop); // line 332
+case 13: yyVal = case13_line332(yyVal, yyVals, yyTop); // line 332
 break;
-case 14: yyVal = case14_line335(support, lexer, yyVal, yyVals, yyTop); // line 335
+case 14: yyVal = case14_line335(yyVal, yyVals, yyTop); // line 335
 break;
-case 15: yyVal = case15_line338(support, lexer, yyVal, yyVals, yyTop); // line 338
+case 15: yyVal = case15_line338(yyVal, yyVals, yyTop); // line 338
 break;
-case 16: yyVal = case16_line341(support, lexer, yyVal, yyVals, yyTop); // line 341
+case 16: yyVal = case16_line341(yyVal, yyVals, yyTop); // line 341
 break;
-case 17: yyVal = case17_line344(support, lexer, yyVal, yyVals, yyTop); // line 344
+case 17: yyVal = case17_line344(yyVal, yyVals, yyTop); // line 344
 break;
-case 18: yyVal = case18_line351(support, lexer, yyVal, yyVals, yyTop); // line 351
+case 18: yyVal = case18_line351(yyVal, yyVals, yyTop); // line 351
 break;
-case 19: yyVal = case19_line358(support, lexer, yyVal, yyVals, yyTop); // line 358
+case 19: yyVal = case19_line358(yyVal, yyVals, yyTop); // line 358
 break;
-case 20: yyVal = case20_line362(support, lexer, yyVal, yyVals, yyTop); // line 362
+case 20: yyVal = case20_line362(yyVal, yyVals, yyTop); // line 362
 break;
-case 21: yyVal = case21_line367(support, lexer, yyVal, yyVals, yyTop); // line 367
+case 21: yyVal = case21_line367(yyVal, yyVals, yyTop); // line 367
 break;
-case 22: yyVal = case22_line372(support, lexer, yyVal, yyVals, yyTop); // line 372
+case 22: yyVal = case22_line372(yyVal, yyVals, yyTop); // line 372
 break;
-case 23: yyVal = case23_line378(support, lexer, yyVal, yyVals, yyTop); // line 378
+case 23: yyVal = case23_line378(yyVal, yyVals, yyTop); // line 378
 break;
-case 24: yyVal = case24_line381(support, lexer, yyVal, yyVals, yyTop); // line 381
+case 24: yyVal = case24_line381(yyVal, yyVals, yyTop); // line 381
 break;
-case 25: yyVal = case25_line390(support, lexer, yyVal, yyVals, yyTop); // line 390
+case 25: yyVal = case25_line390(yyVal, yyVals, yyTop); // line 390
 break;
-case 26: yyVal = case26_line406(support, lexer, yyVal, yyVals, yyTop); // line 406
+case 26: yyVal = case26_line406(yyVal, yyVals, yyTop); // line 406
 break;
-case 27: yyVal = case27_line412(support, lexer, yyVal, yyVals, yyTop); // line 412
+case 27: yyVal = case27_line412(yyVal, yyVals, yyTop); // line 412
 break;
-case 28: yyVal = case28_line417(support, lexer, yyVal, yyVals, yyTop); // line 417
+case 28: yyVal = case28_line417(yyVal, yyVals, yyTop); // line 417
 break;
-case 29: yyVal = case29_line422(support, lexer, yyVal, yyVals, yyTop); // line 422
+case 29: yyVal = case29_line422(yyVal, yyVals, yyTop); // line 422
 break;
-case 30: yyVal = case30_line427(support, lexer, yyVal, yyVals, yyTop); // line 427
+case 30: yyVal = case30_line427(yyVal, yyVals, yyTop); // line 427
 break;
-case 31: yyVal = case31_line430(support, lexer, yyVal, yyVals, yyTop); // line 430
+case 31: yyVal = case31_line430(yyVal, yyVals, yyTop); // line 430
 break;
-case 32: yyVal = case32_line433(support, lexer, yyVal, yyVals, yyTop); // line 433
+case 32: yyVal = case32_line433(yyVal, yyVals, yyTop); // line 433
 break;
-case 33: yyVal = case33_line441(support, lexer, yyVal, yyVals, yyTop); // line 441
+case 33: yyVal = case33_line441(yyVal, yyVals, yyTop); // line 441
 break;
-case 36: yyVal = case36_line450(support, lexer, yyVal, yyVals, yyTop); // line 450
+case 36: yyVal = case36_line450(yyVal, yyVals, yyTop); // line 450
 break;
-case 37: yyVal = case37_line453(support, lexer, yyVal, yyVals, yyTop); // line 453
+case 37: yyVal = case37_line453(yyVal, yyVals, yyTop); // line 453
 break;
-case 38: yyVal = case38_line456(support, lexer, yyVal, yyVals, yyTop); // line 456
+case 38: yyVal = case38_line456(yyVal, yyVals, yyTop); // line 456
 break;
-case 39: yyVal = case39_line459(support, lexer, yyVal, yyVals, yyTop); // line 459
+case 39: yyVal = case39_line459(yyVal, yyVals, yyTop); // line 459
 break;
-case 41: yyVal = case41_line464(support, lexer, yyVal, yyVals, yyTop); // line 464
+case 41: yyVal = case41_line464(yyVal, yyVals, yyTop); // line 464
 break;
-case 44: yyVal = case44_line471(support, lexer, yyVal, yyVals, yyTop); // line 471
+case 44: yyVal = case44_line471(yyVal, yyVals, yyTop); // line 471
 break;
-case 45: yyVal = case45_line474(support, lexer, yyVal, yyVals, yyTop); // line 474
+case 45: yyVal = case45_line474(yyVal, yyVals, yyTop); // line 474
 break;
-case 46: yyVal = case46_line477(support, lexer, yyVal, yyVals, yyTop); // line 477
+case 46: yyVal = case46_line477(yyVal, yyVals, yyTop); // line 477
 break;
-case 48: yyVal = case48_line483(support, lexer, yyVal, yyVals, yyTop); // line 483
+case 48: yyVal = case48_line483(yyVal, yyVals, yyTop); // line 483
 break;
-case 49: yyVal = case49_line486(support, lexer, yyVal, yyVals, yyTop); // line 486
+case 49: yyVal = case49_line486(yyVal, yyVals, yyTop); // line 486
 break;
-case 50: yyVal = case50_line491(support, lexer, yyVal, yyVals, yyTop); // line 491
+case 50: yyVal = case50_line491(yyVal, yyVals, yyTop); // line 491
 break;
-case 51: yyVal = case51_line493(support, lexer, yyVal, yyVals, yyTop); // line 493
+case 51: yyVal = case51_line493(yyVal, yyVals, yyTop); // line 493
 break;
-case 52: yyVal = case52_line499(support, lexer, yyVal, yyVals, yyTop); // line 499
+case 52: yyVal = case52_line499(yyVal, yyVals, yyTop); // line 499
 break;
-case 53: yyVal = case53_line502(support, lexer, yyVal, yyVals, yyTop); // line 502
+case 53: yyVal = case53_line502(yyVal, yyVals, yyTop); // line 502
 break;
-case 54: yyVal = case54_line505(support, lexer, yyVal, yyVals, yyTop); // line 505
+case 54: yyVal = case54_line505(yyVal, yyVals, yyTop); // line 505
 break;
-case 55: yyVal = case55_line508(support, lexer, yyVal, yyVals, yyTop); // line 508
+case 55: yyVal = case55_line508(yyVal, yyVals, yyTop); // line 508
 break;
-case 56: yyVal = case56_line511(support, lexer, yyVal, yyVals, yyTop); // line 511
+case 56: yyVal = case56_line511(yyVal, yyVals, yyTop); // line 511
 break;
-case 57: yyVal = case57_line514(support, lexer, yyVal, yyVals, yyTop); // line 514
+case 57: yyVal = case57_line514(yyVal, yyVals, yyTop); // line 514
 break;
-case 58: yyVal = case58_line517(support, lexer, yyVal, yyVals, yyTop); // line 517
+case 58: yyVal = case58_line517(yyVal, yyVals, yyTop); // line 517
 break;
-case 59: yyVal = case59_line520(support, lexer, yyVal, yyVals, yyTop); // line 520
+case 59: yyVal = case59_line520(yyVal, yyVals, yyTop); // line 520
 break;
-case 61: yyVal = case61_line526(support, lexer, yyVal, yyVals, yyTop); // line 526
+case 61: yyVal = case61_line526(yyVal, yyVals, yyTop); // line 526
 break;
-case 63: yyVal = case63_line532(support, lexer, yyVal, yyVals, yyTop); // line 532
+case 63: yyVal = case63_line532(yyVal, yyVals, yyTop); // line 532
 break;
-case 64: yyVal = case64_line537(support, lexer, yyVal, yyVals, yyTop); // line 537
+case 64: yyVal = case64_line537(yyVal, yyVals, yyTop); // line 537
 break;
-case 65: yyVal = case65_line540(support, lexer, yyVal, yyVals, yyTop); // line 540
+case 65: yyVal = case65_line540(yyVal, yyVals, yyTop); // line 540
 break;
-case 66: yyVal = case66_line544(support, lexer, yyVal, yyVals, yyTop); // line 544
+case 66: yyVal = case66_line544(yyVal, yyVals, yyTop); // line 544
 break;
-case 67: yyVal = case67_line547(support, lexer, yyVal, yyVals, yyTop); // line 547
+case 67: yyVal = case67_line547(yyVal, yyVals, yyTop); // line 547
 break;
-case 68: yyVal = case68_line550(support, lexer, yyVal, yyVals, yyTop); // line 550
+case 68: yyVal = case68_line550(yyVal, yyVals, yyTop); // line 550
 break;
-case 69: yyVal = case69_line553(support, lexer, yyVal, yyVals, yyTop); // line 553
+case 69: yyVal = case69_line553(yyVal, yyVals, yyTop); // line 553
 break;
-case 71: yyVal = case71_line558(support, lexer, yyVal, yyVals, yyTop); // line 558
+case 71: yyVal = case71_line558(yyVal, yyVals, yyTop); // line 558
 break;
-case 72: yyVal = case72_line563(support, lexer, yyVal, yyVals, yyTop); // line 563
+case 72: yyVal = case72_line563(yyVal, yyVals, yyTop); // line 563
 break;
-case 73: yyVal = case73_line566(support, lexer, yyVal, yyVals, yyTop); // line 566
+case 73: yyVal = case73_line566(yyVal, yyVals, yyTop); // line 566
 break;
-case 74: yyVal = case74_line570(support, lexer, yyVal, yyVals, yyTop); // line 570
+case 74: yyVal = case74_line570(yyVal, yyVals, yyTop); // line 570
 break;
-case 75: yyVal = case75_line573(support, lexer, yyVal, yyVals, yyTop); // line 573
+case 75: yyVal = case75_line573(yyVal, yyVals, yyTop); // line 573
 break;
-case 76: yyVal = case76_line576(support, lexer, yyVal, yyVals, yyTop); // line 576
+case 76: yyVal = case76_line576(yyVal, yyVals, yyTop); // line 576
 break;
-case 77: yyVal = case77_line579(support, lexer, yyVal, yyVals, yyTop); // line 579
+case 77: yyVal = case77_line579(yyVal, yyVals, yyTop); // line 579
 break;
-case 78: yyVal = case78_line582(support, lexer, yyVal, yyVals, yyTop); // line 582
+case 78: yyVal = case78_line582(yyVal, yyVals, yyTop); // line 582
 break;
-case 79: yyVal = case79_line585(support, lexer, yyVal, yyVals, yyTop); // line 585
+case 79: yyVal = case79_line585(yyVal, yyVals, yyTop); // line 585
 break;
-case 80: yyVal = case80_line594(support, lexer, yyVal, yyVals, yyTop); // line 594
+case 80: yyVal = case80_line594(yyVal, yyVals, yyTop); // line 594
 break;
-case 81: yyVal = case81_line603(support, lexer, yyVal, yyVals, yyTop); // line 603
+case 81: yyVal = case81_line603(yyVal, yyVals, yyTop); // line 603
 break;
-case 82: yyVal = case82_line608(support, lexer, yyVal, yyVals, yyTop); // line 608
+case 82: yyVal = case82_line608(yyVal, yyVals, yyTop); // line 608
 break;
-case 83: yyVal = case83_line611(support, lexer, yyVal, yyVals, yyTop); // line 611
+case 83: yyVal = case83_line611(yyVal, yyVals, yyTop); // line 611
 break;
-case 84: yyVal = case84_line614(support, lexer, yyVal, yyVals, yyTop); // line 614
+case 84: yyVal = case84_line614(yyVal, yyVals, yyTop); // line 614
 break;
-case 85: yyVal = case85_line617(support, lexer, yyVal, yyVals, yyTop); // line 617
+case 85: yyVal = case85_line617(yyVal, yyVals, yyTop); // line 617
 break;
-case 86: yyVal = case86_line620(support, lexer, yyVal, yyVals, yyTop); // line 620
+case 86: yyVal = case86_line620(yyVal, yyVals, yyTop); // line 620
 break;
-case 87: yyVal = case87_line623(support, lexer, yyVal, yyVals, yyTop); // line 623
+case 87: yyVal = case87_line623(yyVal, yyVals, yyTop); // line 623
 break;
-case 88: yyVal = case88_line632(support, lexer, yyVal, yyVals, yyTop); // line 632
+case 88: yyVal = case88_line632(yyVal, yyVals, yyTop); // line 632
 break;
-case 89: yyVal = case89_line641(support, lexer, yyVal, yyVals, yyTop); // line 641
+case 89: yyVal = case89_line641(yyVal, yyVals, yyTop); // line 641
 break;
-case 90: yyVal = case90_line645(support, lexer, yyVal, yyVals, yyTop); // line 645
+case 90: yyVal = case90_line645(yyVal, yyVals, yyTop); // line 645
 break;
-case 92: yyVal = case92_line650(support, lexer, yyVal, yyVals, yyTop); // line 650
+case 92: yyVal = case92_line650(yyVal, yyVals, yyTop); // line 650
 break;
-case 93: yyVal = case93_line653(support, lexer, yyVal, yyVals, yyTop); // line 653
+case 93: yyVal = case93_line653(yyVal, yyVals, yyTop); // line 653
 break;
-case 94: yyVal = case94_line656(support, lexer, yyVal, yyVals, yyTop); // line 656
+case 94: yyVal = case94_line656(yyVal, yyVals, yyTop); // line 656
 break;
-case 98: yyVal = case98_line662(support, lexer, yyVal, yyVals, yyTop); // line 662
+case 98: yyVal = case98_line662(yyVal, yyVals, yyTop); // line 662
 break;
-case 99: yyVal = case99_line667(support, lexer, yyVal, yyVals, yyTop); // line 667
+case 99: yyVal = case99_line667(yyVal, yyVals, yyTop); // line 667
 break;
-case 100: yyVal = case100_line673(support, lexer, yyVal, yyVals, yyTop); // line 673
+case 100: yyVal = case100_line673(yyVal, yyVals, yyTop); // line 673
 break;
-case 101: yyVal = case101_line676(support, lexer, yyVal, yyVals, yyTop); // line 676
+case 101: yyVal = case101_line676(yyVal, yyVals, yyTop); // line 676
 break;
-case 102: yyVal = case102_line681(support, lexer, yyVal, yyVals, yyTop); // line 681
+case 102: yyVal = case102_line681(yyVal, yyVals, yyTop); // line 681
 break;
-case 103: yyVal = case103_line684(support, lexer, yyVal, yyVals, yyTop); // line 684
+case 103: yyVal = case103_line684(yyVal, yyVals, yyTop); // line 684
 break;
-case 104: yyVal = case104_line688(support, lexer, yyVal, yyVals, yyTop); // line 688
+case 104: yyVal = case104_line688(yyVal, yyVals, yyTop); // line 688
 break;
-case 105: yyVal = case105_line691(support, lexer, yyVal, yyVals, yyTop); // line 691
+case 105: yyVal = case105_line691(yyVal, yyVals, yyTop); // line 691
 break;
-case 106: yyVal = case106_line693(support, lexer, yyVal, yyVals, yyTop); // line 693
+case 106: yyVal = case106_line693(yyVal, yyVals, yyTop); // line 693
 break;
-case 174: yyVal = case174_line712(support, lexer, yyVal, yyVals, yyTop); // line 712
+case 174: yyVal = case174_line712(yyVal, yyVals, yyTop); // line 712
 break;
-case 175: yyVal = case175_line717(support, lexer, yyVal, yyVals, yyTop); // line 717
+case 175: yyVal = case175_line717(yyVal, yyVals, yyTop); // line 717
 break;
-case 176: yyVal = case176_line722(support, lexer, yyVal, yyVals, yyTop); // line 722
+case 176: yyVal = case176_line722(yyVal, yyVals, yyTop); // line 722
 break;
-case 177: yyVal = case177_line738(support, lexer, yyVal, yyVals, yyTop); // line 738
+case 177: yyVal = case177_line738(yyVal, yyVals, yyTop); // line 738
 break;
-case 178: yyVal = case178_line743(support, lexer, yyVal, yyVals, yyTop); // line 743
+case 178: yyVal = case178_line743(yyVal, yyVals, yyTop); // line 743
 break;
-case 179: yyVal = case179_line748(support, lexer, yyVal, yyVals, yyTop); // line 748
+case 179: yyVal = case179_line748(yyVal, yyVals, yyTop); // line 748
 break;
-case 180: yyVal = case180_line753(support, lexer, yyVal, yyVals, yyTop); // line 753
+case 180: yyVal = case180_line753(yyVal, yyVals, yyTop); // line 753
 break;
-case 181: yyVal = case181_line758(support, lexer, yyVal, yyVals, yyTop); // line 758
+case 181: yyVal = case181_line758(yyVal, yyVals, yyTop); // line 758
 break;
-case 182: yyVal = case182_line761(support, lexer, yyVal, yyVals, yyTop); // line 761
+case 182: yyVal = case182_line761(yyVal, yyVals, yyTop); // line 761
 break;
-case 183: yyVal = case183_line764(support, lexer, yyVal, yyVals, yyTop); // line 764
+case 183: yyVal = case183_line764(yyVal, yyVals, yyTop); // line 764
 break;
-case 184: yyVal = case184_line767(support, lexer, yyVal, yyVals, yyTop); // line 767
+case 184: yyVal = case184_line767(yyVal, yyVals, yyTop); // line 767
 break;
-case 185: yyVal = case185_line774(support, lexer, yyVal, yyVals, yyTop); // line 774
+case 185: yyVal = case185_line774(yyVal, yyVals, yyTop); // line 774
 break;
-case 186: yyVal = case186_line780(support, lexer, yyVal, yyVals, yyTop); // line 780
+case 186: yyVal = case186_line780(yyVal, yyVals, yyTop); // line 780
 break;
-case 187: yyVal = case187_line783(support, lexer, yyVal, yyVals, yyTop); // line 783
+case 187: yyVal = case187_line783(yyVal, yyVals, yyTop); // line 783
 break;
-case 188: yyVal = case188_line786(support, lexer, yyVal, yyVals, yyTop); // line 786
+case 188: yyVal = case188_line786(yyVal, yyVals, yyTop); // line 786
 break;
-case 189: yyVal = case189_line789(support, lexer, yyVal, yyVals, yyTop); // line 789
+case 189: yyVal = case189_line789(yyVal, yyVals, yyTop); // line 789
 break;
-case 190: yyVal = case190_line792(support, lexer, yyVal, yyVals, yyTop); // line 792
+case 190: yyVal = case190_line792(yyVal, yyVals, yyTop); // line 792
 break;
-case 191: yyVal = case191_line795(support, lexer, yyVal, yyVals, yyTop); // line 795
+case 191: yyVal = case191_line795(yyVal, yyVals, yyTop); // line 795
 break;
-case 192: yyVal = case192_line798(support, lexer, yyVal, yyVals, yyTop); // line 798
+case 192: yyVal = case192_line798(yyVal, yyVals, yyTop); // line 798
 break;
-case 193: yyVal = case193_line801(support, lexer, yyVal, yyVals, yyTop); // line 801
+case 193: yyVal = case193_line801(yyVal, yyVals, yyTop); // line 801
 break;
-case 194: yyVal = case194_line804(support, lexer, yyVal, yyVals, yyTop); // line 804
+case 194: yyVal = case194_line804(yyVal, yyVals, yyTop); // line 804
 break;
-case 195: yyVal = case195_line811(support, lexer, yyVal, yyVals, yyTop); // line 811
+case 195: yyVal = case195_line811(yyVal, yyVals, yyTop); // line 811
 break;
-case 196: yyVal = case196_line814(support, lexer, yyVal, yyVals, yyTop); // line 814
+case 196: yyVal = case196_line814(yyVal, yyVals, yyTop); // line 814
 break;
-case 197: yyVal = case197_line817(support, lexer, yyVal, yyVals, yyTop); // line 817
+case 197: yyVal = case197_line817(yyVal, yyVals, yyTop); // line 817
 break;
-case 198: yyVal = case198_line820(support, lexer, yyVal, yyVals, yyTop); // line 820
+case 198: yyVal = case198_line820(yyVal, yyVals, yyTop); // line 820
 break;
-case 199: yyVal = case199_line823(support, lexer, yyVal, yyVals, yyTop); // line 823
+case 199: yyVal = case199_line823(yyVal, yyVals, yyTop); // line 823
 break;
-case 200: yyVal = case200_line826(support, lexer, yyVal, yyVals, yyTop); // line 826
+case 200: yyVal = case200_line826(yyVal, yyVals, yyTop); // line 826
 break;
-case 201: yyVal = case201_line829(support, lexer, yyVal, yyVals, yyTop); // line 829
+case 201: yyVal = case201_line829(yyVal, yyVals, yyTop); // line 829
 break;
-case 202: yyVal = case202_line832(support, lexer, yyVal, yyVals, yyTop); // line 832
+case 202: yyVal = case202_line832(yyVal, yyVals, yyTop); // line 832
 break;
-case 203: yyVal = case203_line835(support, lexer, yyVal, yyVals, yyTop); // line 835
+case 203: yyVal = case203_line835(yyVal, yyVals, yyTop); // line 835
 break;
-case 204: yyVal = case204_line838(support, lexer, yyVal, yyVals, yyTop); // line 838
+case 204: yyVal = case204_line838(yyVal, yyVals, yyTop); // line 838
 break;
-case 205: yyVal = case205_line841(support, lexer, yyVal, yyVals, yyTop); // line 841
+case 205: yyVal = case205_line841(yyVal, yyVals, yyTop); // line 841
 break;
-case 206: yyVal = case206_line844(support, lexer, yyVal, yyVals, yyTop); // line 844
+case 206: yyVal = case206_line844(yyVal, yyVals, yyTop); // line 844
 break;
-case 207: yyVal = case207_line847(support, lexer, yyVal, yyVals, yyTop); // line 847
+case 207: yyVal = case207_line847(yyVal, yyVals, yyTop); // line 847
 break;
-case 208: yyVal = case208_line850(support, lexer, yyVal, yyVals, yyTop); // line 850
+case 208: yyVal = case208_line850(yyVal, yyVals, yyTop); // line 850
 break;
-case 209: yyVal = case209_line853(support, lexer, yyVal, yyVals, yyTop); // line 853
+case 209: yyVal = case209_line853(yyVal, yyVals, yyTop); // line 853
 break;
-case 210: yyVal = case210_line856(support, lexer, yyVal, yyVals, yyTop); // line 856
+case 210: yyVal = case210_line856(yyVal, yyVals, yyTop); // line 856
 break;
-case 211: yyVal = case211_line859(support, lexer, yyVal, yyVals, yyTop); // line 859
+case 211: yyVal = case211_line859(yyVal, yyVals, yyTop); // line 859
 break;
-case 212: yyVal = case212_line862(support, lexer, yyVal, yyVals, yyTop); // line 862
+case 212: yyVal = case212_line862(yyVal, yyVals, yyTop); // line 862
 break;
-case 213: yyVal = case213_line865(support, lexer, yyVal, yyVals, yyTop); // line 865
+case 213: yyVal = case213_line865(yyVal, yyVals, yyTop); // line 865
 break;
-case 214: yyVal = case214_line868(support, lexer, yyVal, yyVals, yyTop); // line 868
+case 214: yyVal = case214_line868(yyVal, yyVals, yyTop); // line 868
 break;
-case 215: yyVal = case215_line871(support, lexer, yyVal, yyVals, yyTop); // line 871
+case 215: yyVal = case215_line871(yyVal, yyVals, yyTop); // line 871
 break;
-case 216: yyVal = case216_line874(support, lexer, yyVal, yyVals, yyTop); // line 874
+case 216: yyVal = case216_line874(yyVal, yyVals, yyTop); // line 874
 break;
-case 217: yyVal = case217_line877(support, lexer, yyVal, yyVals, yyTop); // line 877
+case 217: yyVal = case217_line877(yyVal, yyVals, yyTop); // line 877
 break;
-case 218: yyVal = case218_line881(support, lexer, yyVal, yyVals, yyTop); // line 881
+case 218: yyVal = case218_line881(yyVal, yyVals, yyTop); // line 881
 break;
-case 220: yyVal = case220_line887(support, lexer, yyVal, yyVals, yyTop); // line 887
+case 220: yyVal = case220_line887(yyVal, yyVals, yyTop); // line 887
 break;
-case 221: yyVal = case221_line890(support, lexer, yyVal, yyVals, yyTop); // line 890
+case 221: yyVal = case221_line890(yyVal, yyVals, yyTop); // line 890
 break;
-case 222: yyVal = case222_line893(support, lexer, yyVal, yyVals, yyTop); // line 893
+case 222: yyVal = case222_line893(yyVal, yyVals, yyTop); // line 893
 break;
-case 223: yyVal = case223_line896(support, lexer, yyVal, yyVals, yyTop); // line 896
+case 223: yyVal = case223_line896(yyVal, yyVals, yyTop); // line 896
 break;
-case 224: yyVal = case224_line900(support, lexer, yyVal, yyVals, yyTop); // line 900
+case 224: yyVal = case224_line900(yyVal, yyVals, yyTop); // line 900
 break;
-case 225: yyVal = case225_line904(support, lexer, yyVal, yyVals, yyTop); // line 904
+case 225: yyVal = case225_line904(yyVal, yyVals, yyTop); // line 904
 break;
-case 226: yyVal = case226_line907(support, lexer, yyVal, yyVals, yyTop); // line 907
+case 226: yyVal = case226_line907(yyVal, yyVals, yyTop); // line 907
 break;
-case 227: yyVal = case227_line911(support, lexer, yyVal, yyVals, yyTop); // line 911
+case 227: yyVal = case227_line911(yyVal, yyVals, yyTop); // line 911
 break;
-case 228: yyVal = case228_line914(support, lexer, yyVal, yyVals, yyTop); // line 914
+case 228: yyVal = case228_line914(yyVal, yyVals, yyTop); // line 914
 break;
-case 231: yyVal = case231_line921(support, lexer, yyVal, yyVals, yyTop); // line 921
+case 231: yyVal = case231_line921(yyVal, yyVals, yyTop); // line 921
 break;
-case 232: yyVal = case232_line924(support, lexer, yyVal, yyVals, yyTop); // line 924
+case 232: yyVal = case232_line924(yyVal, yyVals, yyTop); // line 924
 break;
-case 233: yyVal = case233_line927(support, lexer, yyVal, yyVals, yyTop); // line 927
+case 233: yyVal = case233_line927(yyVal, yyVals, yyTop); // line 927
 break;
-case 234: yyVal = case234_line931(support, lexer, yyVal, yyVals, yyTop); // line 931
+case 234: yyVal = case234_line931(yyVal, yyVals, yyTop); // line 931
 break;
-case 235: yyVal = case235_line936(support, lexer, yyVal, yyVals, yyTop); // line 936
+case 235: yyVal = case235_line936(yyVal, yyVals, yyTop); // line 936
 break;
-case 236: yyVal = case236_line941(support, lexer, yyVal, yyVals, yyTop); // line 941
+case 236: yyVal = case236_line941(yyVal, yyVals, yyTop); // line 941
 break;
-case 237: yyVal = case237_line945(support, lexer, yyVal, yyVals, yyTop); // line 945
+case 237: yyVal = case237_line945(yyVal, yyVals, yyTop); // line 945
 break;
-case 238: yyVal = case238_line950(support, lexer, yyVal, yyVals, yyTop); // line 950
+case 238: yyVal = case238_line950(yyVal, yyVals, yyTop); // line 950
 break;
-case 239: yyVal = case239_line953(support, lexer, yyVal, yyVals, yyTop); // line 953
+case 239: yyVal = case239_line953(yyVal, yyVals, yyTop); // line 953
 break;
-case 240: yyVal = case240_line956(support, lexer, yyVal, yyVals, yyTop); // line 956
+case 240: yyVal = case240_line956(yyVal, yyVals, yyTop); // line 956
 break;
-case 241: yyVal = case241_line959(support, lexer, yyVal, yyVals, yyTop); // line 959
+case 241: yyVal = case241_line959(yyVal, yyVals, yyTop); // line 959
 break;
-case 242: yyVal = case242_line962(support, lexer, yyVal, yyVals, yyTop); // line 962
+case 242: yyVal = case242_line962(yyVal, yyVals, yyTop); // line 962
 break;
-case 243: yyVal = case243_line966(support, lexer, yyVal, yyVals, yyTop); // line 966
+case 243: yyVal = case243_line966(yyVal, yyVals, yyTop); // line 966
 break;
-case 244: yyVal = case244_line970(support, lexer, yyVal, yyVals, yyTop); // line 970
+case 244: yyVal = case244_line970(yyVal, yyVals, yyTop); // line 970
 break;
-case 245: yyVal = case245_line975(support, lexer, yyVal, yyVals, yyTop); // line 975
+case 245: yyVal = case245_line975(yyVal, yyVals, yyTop); // line 975
 break;
-case 246: yyVal = case246_line980(support, lexer, yyVal, yyVals, yyTop); // line 980
+case 246: yyVal = case246_line980(yyVal, yyVals, yyTop); // line 980
 break;
-case 247: yyVal = case247_line984(support, lexer, yyVal, yyVals, yyTop); // line 984
+case 247: yyVal = case247_line984(yyVal, yyVals, yyTop); // line 984
 break;
-case 248: yyVal = case248_line988(support, lexer, yyVal, yyVals, yyTop); // line 988
+case 248: yyVal = case248_line988(yyVal, yyVals, yyTop); // line 988
 break;
-case 249: yyVal = case249_line992(support, lexer, yyVal, yyVals, yyTop); // line 992
+case 249: yyVal = case249_line992(yyVal, yyVals, yyTop); // line 992
 break;
-case 250: yyVal = case250_line996(support, lexer, yyVal, yyVals, yyTop); // line 996
+case 250: yyVal = case250_line996(yyVal, yyVals, yyTop); // line 996
 break;
-case 251: yyVal = case251_line999(support, lexer, yyVal, yyVals, yyTop); // line 999
+case 251: yyVal = case251_line999(yyVal, yyVals, yyTop); // line 999
 break;
-case 252: yyVal = case252_line1002(support, lexer, yyVal, yyVals, yyTop); // line 1002
+case 252: yyVal = case252_line1002(yyVal, yyVals, yyTop); // line 1002
 break;
-case 253: yyVal = case253_line1004(support, lexer, yyVal, yyVals, yyTop); // line 1004
+case 253: yyVal = case253_line1004(yyVal, yyVals, yyTop); // line 1004
 break;
-case 255: yyVal = case255_line1010(support, lexer, yyVal, yyVals, yyTop); // line 1010
+case 255: yyVal = case255_line1010(yyVal, yyVals, yyTop); // line 1010
 break;
-case 256: yyVal = case256_line1012(support, lexer, yyVal, yyVals, yyTop); // line 1012
+case 256: yyVal = case256_line1012(yyVal, yyVals, yyTop); // line 1012
 break;
-case 257: yyVal = case257_line1016(support, lexer, yyVal, yyVals, yyTop); // line 1016
+case 257: yyVal = case257_line1016(yyVal, yyVals, yyTop); // line 1016
 break;
-case 258: yyVal = case258_line1018(support, lexer, yyVal, yyVals, yyTop); // line 1018
+case 258: yyVal = case258_line1018(yyVal, yyVals, yyTop); // line 1018
 break;
-case 259: yyVal = case259_line1023(support, lexer, yyVal, yyVals, yyTop); // line 1023
+case 259: yyVal = case259_line1023(yyVal, yyVals, yyTop); // line 1023
 break;
-case 260: yyVal = case260_line1028(support, lexer, yyVal, yyVals, yyTop); // line 1028
+case 260: yyVal = case260_line1028(yyVal, yyVals, yyTop); // line 1028
 break;
-case 262: yyVal = case262_line1033(support, lexer, yyVal, yyVals, yyTop); // line 1033
+case 262: yyVal = case262_line1033(yyVal, yyVals, yyTop); // line 1033
 break;
-case 263: yyVal = case263_line1037(support, lexer, yyVal, yyVals, yyTop); // line 1037
+case 263: yyVal = case263_line1037(yyVal, yyVals, yyTop); // line 1037
 break;
-case 264: yyVal = case264_line1041(support, lexer, yyVal, yyVals, yyTop); // line 1041
+case 264: yyVal = case264_line1041(yyVal, yyVals, yyTop); // line 1041
 break;
-case 265: yyVal = case265_line1044(support, lexer, yyVal, yyVals, yyTop); // line 1044
+case 265: yyVal = case265_line1044(yyVal, yyVals, yyTop); // line 1044
 break;
-case 266: yyVal = case266_line1047(support, lexer, yyVal, yyVals, yyTop); // line 1047
+case 266: yyVal = case266_line1047(yyVal, yyVals, yyTop); // line 1047
 break;
-case 275: yyVal = case275_line1059(support, lexer, yyVal, yyVals, yyTop); // line 1059
+case 275: yyVal = case275_line1059(yyVal, yyVals, yyTop); // line 1059
 break;
-case 276: yyVal = case276_line1062(support, lexer, yyVal, yyVals, yyTop); // line 1062
+case 276: yyVal = case276_line1062(yyVal, yyVals, yyTop); // line 1062
 break;
-case 277: yyVal = case277_line1065(support, lexer, yyVal, yyVals, yyTop); // line 1065
+case 277: yyVal = case277_line1065(yyVal, yyVals, yyTop); // line 1065
 break;
-case 278: yyVal = case278_line1067(support, lexer, yyVal, yyVals, yyTop); // line 1067
+case 278: yyVal = case278_line1067(yyVal, yyVals, yyTop); // line 1067
 break;
-case 279: yyVal = case279_line1071(support, lexer, yyVal, yyVals, yyTop); // line 1071
+case 279: yyVal = case279_line1071(yyVal, yyVals, yyTop); // line 1071
 break;
-case 280: yyVal = case280_line1080(support, lexer, yyVal, yyVals, yyTop); // line 1080
+case 280: yyVal = case280_line1080(yyVal, yyVals, yyTop); // line 1080
 break;
-case 281: yyVal = case281_line1083(support, lexer, yyVal, yyVals, yyTop); // line 1083
+case 281: yyVal = case281_line1083(yyVal, yyVals, yyTop); // line 1083
 break;
-case 282: yyVal = case282_line1086(support, lexer, yyVal, yyVals, yyTop); // line 1086
+case 282: yyVal = case282_line1086(yyVal, yyVals, yyTop); // line 1086
 break;
-case 283: yyVal = case283_line1093(support, lexer, yyVal, yyVals, yyTop); // line 1093
+case 283: yyVal = case283_line1093(yyVal, yyVals, yyTop); // line 1093
 break;
-case 284: yyVal = case284_line1102(support, lexer, yyVal, yyVals, yyTop); // line 1102
+case 284: yyVal = case284_line1102(yyVal, yyVals, yyTop); // line 1102
 break;
-case 285: yyVal = case285_line1105(support, lexer, yyVal, yyVals, yyTop); // line 1105
+case 285: yyVal = case285_line1105(yyVal, yyVals, yyTop); // line 1105
 break;
-case 286: yyVal = case286_line1108(support, lexer, yyVal, yyVals, yyTop); // line 1108
+case 286: yyVal = case286_line1108(yyVal, yyVals, yyTop); // line 1108
 break;
-case 287: yyVal = case287_line1111(support, lexer, yyVal, yyVals, yyTop); // line 1111
+case 287: yyVal = case287_line1111(yyVal, yyVals, yyTop); // line 1111
 break;
-case 288: yyVal = case288_line1114(support, lexer, yyVal, yyVals, yyTop); // line 1114
+case 288: yyVal = case288_line1114(yyVal, yyVals, yyTop); // line 1114
 break;
-case 289: yyVal = case289_line1117(support, lexer, yyVal, yyVals, yyTop); // line 1117
+case 289: yyVal = case289_line1117(yyVal, yyVals, yyTop); // line 1117
 break;
-case 290: yyVal = case290_line1120(support, lexer, yyVal, yyVals, yyTop); // line 1120
+case 290: yyVal = case290_line1120(yyVal, yyVals, yyTop); // line 1120
 break;
-case 292: yyVal = case292_line1124(support, lexer, yyVal, yyVals, yyTop); // line 1124
+case 292: yyVal = case292_line1124(yyVal, yyVals, yyTop); // line 1124
 break;
-case 293: yyVal = case293_line1132(support, lexer, yyVal, yyVals, yyTop); // line 1132
+case 293: yyVal = case293_line1132(yyVal, yyVals, yyTop); // line 1132
 break;
-case 294: yyVal = case294_line1135(support, lexer, yyVal, yyVals, yyTop); // line 1135
+case 294: yyVal = case294_line1135(yyVal, yyVals, yyTop); // line 1135
 break;
-case 295: yyVal = case295_line1138(support, lexer, yyVal, yyVals, yyTop); // line 1138
+case 295: yyVal = case295_line1138(yyVal, yyVals, yyTop); // line 1138
 break;
-case 296: yyVal = case296_line1140(support, lexer, yyVal, yyVals, yyTop); // line 1140
+case 296: yyVal = case296_line1140(yyVal, yyVals, yyTop); // line 1140
 break;
-case 297: yyVal = case297_line1142(support, lexer, yyVal, yyVals, yyTop); // line 1142
+case 297: yyVal = case297_line1142(yyVal, yyVals, yyTop); // line 1142
 break;
-case 298: yyVal = case298_line1146(support, lexer, yyVal, yyVals, yyTop); // line 1146
+case 298: yyVal = case298_line1146(yyVal, yyVals, yyTop); // line 1146
 break;
-case 299: yyVal = case299_line1148(support, lexer, yyVal, yyVals, yyTop); // line 1148
+case 299: yyVal = case299_line1148(yyVal, yyVals, yyTop); // line 1148
 break;
-case 300: yyVal = case300_line1150(support, lexer, yyVal, yyVals, yyTop); // line 1150
+case 300: yyVal = case300_line1150(yyVal, yyVals, yyTop); // line 1150
 break;
-case 301: yyVal = case301_line1154(support, lexer, yyVal, yyVals, yyTop); // line 1154
+case 301: yyVal = case301_line1154(yyVal, yyVals, yyTop); // line 1154
 break;
-case 302: yyVal = case302_line1157(support, lexer, yyVal, yyVals, yyTop); // line 1157
+case 302: yyVal = case302_line1157(yyVal, yyVals, yyTop); // line 1157
 break;
-case 303: yyVal = case303_line1165(support, lexer, yyVal, yyVals, yyTop); // line 1165
+case 303: yyVal = case303_line1165(yyVal, yyVals, yyTop); // line 1165
 break;
-case 304: yyVal = case304_line1168(support, lexer, yyVal, yyVals, yyTop); // line 1168
+case 304: yyVal = case304_line1168(yyVal, yyVals, yyTop); // line 1168
 break;
-case 305: yyVal = case305_line1170(support, lexer, yyVal, yyVals, yyTop); // line 1170
+case 305: yyVal = case305_line1170(yyVal, yyVals, yyTop); // line 1170
 break;
-case 306: yyVal = case306_line1172(support, lexer, yyVal, yyVals, yyTop); // line 1172
+case 306: yyVal = case306_line1172(yyVal, yyVals, yyTop); // line 1172
 break;
-case 307: yyVal = case307_line1175(support, lexer, yyVal, yyVals, yyTop); // line 1175
+case 307: yyVal = case307_line1175(yyVal, yyVals, yyTop); // line 1175
 break;
-case 308: yyVal = case308_line1180(support, lexer, yyVal, yyVals, yyTop); // line 1180
+case 308: yyVal = case308_line1180(yyVal, yyVals, yyTop); // line 1180
 break;
-case 309: yyVal = case309_line1186(support, lexer, yyVal, yyVals, yyTop); // line 1186
+case 309: yyVal = case309_line1186(yyVal, yyVals, yyTop); // line 1186
 break;
-case 310: yyVal = case310_line1189(support, lexer, yyVal, yyVals, yyTop); // line 1189
+case 310: yyVal = case310_line1189(yyVal, yyVals, yyTop); // line 1189
 break;
-case 311: yyVal = case311_line1193(support, lexer, yyVal, yyVals, yyTop); // line 1193
+case 311: yyVal = case311_line1193(yyVal, yyVals, yyTop); // line 1193
 break;
-case 312: yyVal = case312_line1199(support, lexer, yyVal, yyVals, yyTop); // line 1199
+case 312: yyVal = case312_line1199(yyVal, yyVals, yyTop); // line 1199
 break;
-case 313: yyVal = case313_line1204(support, lexer, yyVal, yyVals, yyTop); // line 1204
+case 313: yyVal = case313_line1204(yyVal, yyVals, yyTop); // line 1204
 break;
-case 314: yyVal = case314_line1210(support, lexer, yyVal, yyVals, yyTop); // line 1210
+case 314: yyVal = case314_line1210(yyVal, yyVals, yyTop); // line 1210
 break;
-case 315: yyVal = case315_line1213(support, lexer, yyVal, yyVals, yyTop); // line 1213
+case 315: yyVal = case315_line1213(yyVal, yyVals, yyTop); // line 1213
 break;
-case 316: yyVal = case316_line1222(support, lexer, yyVal, yyVals, yyTop); // line 1222
+case 316: yyVal = case316_line1222(yyVal, yyVals, yyTop); // line 1222
 break;
-case 317: yyVal = case317_line1224(support, lexer, yyVal, yyVals, yyTop); // line 1224
+case 317: yyVal = case317_line1224(yyVal, yyVals, yyTop); // line 1224
 break;
-case 318: yyVal = case318_line1228(support, lexer, yyVal, yyVals, yyTop); // line 1228
+case 318: yyVal = case318_line1228(yyVal, yyVals, yyTop); // line 1228
 break;
-case 319: yyVal = case319_line1236(support, lexer, yyVal, yyVals, yyTop); // line 1236
+case 319: yyVal = case319_line1236(yyVal, yyVals, yyTop); // line 1236
 break;
-case 320: yyVal = case320_line1239(support, lexer, yyVal, yyVals, yyTop); // line 1239
+case 320: yyVal = case320_line1239(yyVal, yyVals, yyTop); // line 1239
 break;
-case 321: yyVal = case321_line1242(support, lexer, yyVal, yyVals, yyTop); // line 1242
+case 321: yyVal = case321_line1242(yyVal, yyVals, yyTop); // line 1242
 break;
-case 322: yyVal = case322_line1245(support, lexer, yyVal, yyVals, yyTop); // line 1245
+case 322: yyVal = case322_line1245(yyVal, yyVals, yyTop); // line 1245
 break;
-case 323: yyVal = case323_line1249(support, lexer, yyVal, yyVals, yyTop); // line 1249
+case 323: yyVal = case323_line1249(yyVal, yyVals, yyTop); // line 1249
 break;
-case 332: yyVal = case332_line1264(support, lexer, yyVal, yyVals, yyTop); // line 1264
+case 332: yyVal = case332_line1264(yyVal, yyVals, yyTop); // line 1264
 break;
-case 334: yyVal = case334_line1269(support, lexer, yyVal, yyVals, yyTop); // line 1269
+case 334: yyVal = case334_line1269(yyVal, yyVals, yyTop); // line 1269
 break;
-case 336: yyVal = case336_line1274(support, lexer, yyVal, yyVals, yyTop); // line 1274
+case 336: yyVal = case336_line1274(yyVal, yyVals, yyTop); // line 1274
 break;
-case 337: yyVal = case337_line1278(support, lexer, yyVal, yyVals, yyTop); // line 1278
+case 337: yyVal = case337_line1278(yyVal, yyVals, yyTop); // line 1278
 break;
-case 338: yyVal = case338_line1281(support, lexer, yyVal, yyVals, yyTop); // line 1281
+case 338: yyVal = case338_line1281(yyVal, yyVals, yyTop); // line 1281
 break;
-case 339: yyVal = case339_line1285(support, lexer, yyVal, yyVals, yyTop); // line 1285
+case 339: yyVal = case339_line1285(yyVal, yyVals, yyTop); // line 1285
 break;
-case 340: yyVal = case340_line1292(support, lexer, yyVal, yyVals, yyTop); // line 1292
+case 340: yyVal = case340_line1292(yyVal, yyVals, yyTop); // line 1292
 break;
-case 341: yyVal = case341_line1295(support, lexer, yyVal, yyVals, yyTop); // line 1295
+case 341: yyVal = case341_line1295(yyVal, yyVals, yyTop); // line 1295
 break;
-case 342: yyVal = case342_line1298(support, lexer, yyVal, yyVals, yyTop); // line 1298
+case 342: yyVal = case342_line1298(yyVal, yyVals, yyTop); // line 1298
 break;
-case 343: yyVal = case343_line1301(support, lexer, yyVal, yyVals, yyTop); // line 1301
+case 343: yyVal = case343_line1301(yyVal, yyVals, yyTop); // line 1301
 break;
-case 344: yyVal = case344_line1304(support, lexer, yyVal, yyVals, yyTop); // line 1304
+case 344: yyVal = case344_line1304(yyVal, yyVals, yyTop); // line 1304
 break;
-case 345: yyVal = case345_line1307(support, lexer, yyVal, yyVals, yyTop); // line 1307
+case 345: yyVal = case345_line1307(yyVal, yyVals, yyTop); // line 1307
 break;
-case 346: yyVal = case346_line1310(support, lexer, yyVal, yyVals, yyTop); // line 1310
+case 346: yyVal = case346_line1310(yyVal, yyVals, yyTop); // line 1310
 break;
-case 347: yyVal = case347_line1313(support, lexer, yyVal, yyVals, yyTop); // line 1313
+case 347: yyVal = case347_line1313(yyVal, yyVals, yyTop); // line 1313
 break;
-case 348: yyVal = case348_line1316(support, lexer, yyVal, yyVals, yyTop); // line 1316
+case 348: yyVal = case348_line1316(yyVal, yyVals, yyTop); // line 1316
 break;
-case 349: yyVal = case349_line1319(support, lexer, yyVal, yyVals, yyTop); // line 1319
+case 349: yyVal = case349_line1319(yyVal, yyVals, yyTop); // line 1319
 break;
-case 350: yyVal = case350_line1322(support, lexer, yyVal, yyVals, yyTop); // line 1322
+case 350: yyVal = case350_line1322(yyVal, yyVals, yyTop); // line 1322
 break;
-case 352: yyVal = case352_line1327(support, lexer, yyVal, yyVals, yyTop); // line 1327
+case 352: yyVal = case352_line1327(yyVal, yyVals, yyTop); // line 1327
 break;
-case 353: yyVal = case353_line1331(support, lexer, yyVal, yyVals, yyTop); // line 1331
+case 353: yyVal = case353_line1331(yyVal, yyVals, yyTop); // line 1331
 break;
-case 354: yyVal = case354_line1335(support, lexer, yyVal, yyVals, yyTop); // line 1335
+case 354: yyVal = case354_line1335(yyVal, yyVals, yyTop); // line 1335
 break;
-case 355: yyVal = case355_line1345(support, lexer, yyVal, yyVals, yyTop); // line 1345
+case 355: yyVal = case355_line1345(yyVal, yyVals, yyTop); // line 1345
 break;
-case 356: yyVal = case356_line1347(support, lexer, yyVal, yyVals, yyTop); // line 1347
+case 356: yyVal = case356_line1347(yyVal, yyVals, yyTop); // line 1347
 break;
-case 357: yyVal = case357_line1353(support, lexer, yyVal, yyVals, yyTop); // line 1353
+case 357: yyVal = case357_line1353(yyVal, yyVals, yyTop); // line 1353
 break;
-case 358: yyVal = case358_line1364(support, lexer, yyVal, yyVals, yyTop); // line 1364
+case 358: yyVal = case358_line1364(yyVal, yyVals, yyTop); // line 1364
 break;
-case 359: yyVal = case359_line1367(support, lexer, yyVal, yyVals, yyTop); // line 1367
+case 359: yyVal = case359_line1367(yyVal, yyVals, yyTop); // line 1367
 break;
-case 360: yyVal = case360_line1371(support, lexer, yyVal, yyVals, yyTop); // line 1371
+case 360: yyVal = case360_line1371(yyVal, yyVals, yyTop); // line 1371
 break;
-case 361: yyVal = case361_line1374(support, lexer, yyVal, yyVals, yyTop); // line 1374
+case 361: yyVal = case361_line1374(yyVal, yyVals, yyTop); // line 1374
 break;
-case 362: yyVal = case362_line1377(support, lexer, yyVal, yyVals, yyTop); // line 1377
+case 362: yyVal = case362_line1377(yyVal, yyVals, yyTop); // line 1377
 break;
-case 363: yyVal = case363_line1380(support, lexer, yyVal, yyVals, yyTop); // line 1380
+case 363: yyVal = case363_line1380(yyVal, yyVals, yyTop); // line 1380
 break;
-case 364: yyVal = case364_line1383(support, lexer, yyVal, yyVals, yyTop); // line 1383
+case 364: yyVal = case364_line1383(yyVal, yyVals, yyTop); // line 1383
 break;
-case 365: yyVal = case365_line1386(support, lexer, yyVal, yyVals, yyTop); // line 1386
+case 365: yyVal = case365_line1386(yyVal, yyVals, yyTop); // line 1386
 break;
-case 366: yyVal = case366_line1391(support, lexer, yyVal, yyVals, yyTop); // line 1391
+case 366: yyVal = case366_line1391(yyVal, yyVals, yyTop); // line 1391
 break;
-case 367: yyVal = case367_line1393(support, lexer, yyVal, yyVals, yyTop); // line 1393
+case 367: yyVal = case367_line1393(yyVal, yyVals, yyTop); // line 1393
 break;
-case 368: yyVal = case368_line1397(support, lexer, yyVal, yyVals, yyTop); // line 1397
+case 368: yyVal = case368_line1397(yyVal, yyVals, yyTop); // line 1397
 break;
-case 369: yyVal = case369_line1399(support, lexer, yyVal, yyVals, yyTop); // line 1399
+case 369: yyVal = case369_line1399(yyVal, yyVals, yyTop); // line 1399
 break;
-case 370: yyVal = case370_line1404(support, lexer, yyVal, yyVals, yyTop); // line 1404
+case 370: yyVal = case370_line1404(yyVal, yyVals, yyTop); // line 1404
 break;
-case 372: yyVal = case372_line1409(support, lexer, yyVal, yyVals, yyTop); // line 1409
+case 372: yyVal = case372_line1409(yyVal, yyVals, yyTop); // line 1409
 break;
-case 373: yyVal = case373_line1412(support, lexer, yyVal, yyVals, yyTop); // line 1412
+case 373: yyVal = case373_line1412(yyVal, yyVals, yyTop); // line 1412
 break;
-case 376: yyVal = case376_line1419(support, lexer, yyVal, yyVals, yyTop); // line 1419
+case 376: yyVal = case376_line1419(yyVal, yyVals, yyTop); // line 1419
 break;
-case 377: yyVal = case377_line1432(support, lexer, yyVal, yyVals, yyTop); // line 1432
+case 377: yyVal = case377_line1432(yyVal, yyVals, yyTop); // line 1432
 break;
-case 378: yyVal = case378_line1436(support, lexer, yyVal, yyVals, yyTop); // line 1436
+case 378: yyVal = case378_line1436(yyVal, yyVals, yyTop); // line 1436
 break;
-case 381: yyVal = case381_line1442(support, lexer, yyVal, yyVals, yyTop); // line 1442
+case 381: yyVal = case381_line1442(yyVal, yyVals, yyTop); // line 1442
 break;
-case 383: yyVal = case383_line1447(support, lexer, yyVal, yyVals, yyTop); // line 1447
+case 383: yyVal = case383_line1447(yyVal, yyVals, yyTop); // line 1447
 break;
-case 386: yyVal = case386_line1458(support, lexer, yyVal, yyVals, yyTop); // line 1458
+case 386: yyVal = case386_line1458(yyVal, yyVals, yyTop); // line 1458
 break;
-case 388: yyVal = case388_line1465(support, lexer, yyVal, yyVals, yyTop); // line 1465
+case 388: yyVal = case388_line1465(yyVal, yyVals, yyTop); // line 1465
 break;
-case 390: yyVal = case390_line1471(support, lexer, yyVal, yyVals, yyTop); // line 1471
+case 390: yyVal = case390_line1471(yyVal, yyVals, yyTop); // line 1471
 break;
-case 391: yyVal = case391_line1476(support, lexer, yyVal, yyVals, yyTop); // line 1476
+case 391: yyVal = case391_line1476(yyVal, yyVals, yyTop); // line 1476
 break;
-case 392: yyVal = case392_line1482(support, lexer, yyVal, yyVals, yyTop); // line 1482
+case 392: yyVal = case392_line1482(yyVal, yyVals, yyTop); // line 1482
 break;
-case 393: yyVal = case393_line1499(support, lexer, yyVal, yyVals, yyTop); // line 1499
+case 393: yyVal = case393_line1499(yyVal, yyVals, yyTop); // line 1499
 break;
-case 394: yyVal = case394_line1515(support, lexer, yyVal, yyVals, yyTop); // line 1515
+case 394: yyVal = case394_line1515(yyVal, yyVals, yyTop); // line 1515
 break;
-case 395: yyVal = case395_line1518(support, lexer, yyVal, yyVals, yyTop); // line 1518
+case 395: yyVal = case395_line1518(yyVal, yyVals, yyTop); // line 1518
 break;
-case 396: yyVal = case396_line1524(support, lexer, yyVal, yyVals, yyTop); // line 1524
+case 396: yyVal = case396_line1524(yyVal, yyVals, yyTop); // line 1524
 break;
-case 397: yyVal = case397_line1527(support, lexer, yyVal, yyVals, yyTop); // line 1527
+case 397: yyVal = case397_line1527(yyVal, yyVals, yyTop); // line 1527
 break;
-case 399: yyVal = case399_line1532(support, lexer, yyVal, yyVals, yyTop); // line 1532
+case 399: yyVal = case399_line1532(yyVal, yyVals, yyTop); // line 1532
 break;
-case 400: yyVal = case400_line1537(support, lexer, yyVal, yyVals, yyTop); // line 1537
+case 400: yyVal = case400_line1537(yyVal, yyVals, yyTop); // line 1537
 break;
-case 401: yyVal = case401_line1540(support, lexer, yyVal, yyVals, yyTop); // line 1540
+case 401: yyVal = case401_line1540(yyVal, yyVals, yyTop); // line 1540
 break;
-case 402: yyVal = case402_line1546(support, lexer, yyVal, yyVals, yyTop); // line 1546
+case 402: yyVal = case402_line1546(yyVal, yyVals, yyTop); // line 1546
 break;
-case 403: yyVal = case403_line1549(support, lexer, yyVal, yyVals, yyTop); // line 1549
+case 403: yyVal = case403_line1549(yyVal, yyVals, yyTop); // line 1549
 break;
-case 404: yyVal = case404_line1554(support, lexer, yyVal, yyVals, yyTop); // line 1554
+case 404: yyVal = case404_line1554(yyVal, yyVals, yyTop); // line 1554
 break;
-case 405: yyVal = case405_line1557(support, lexer, yyVal, yyVals, yyTop); // line 1557
+case 405: yyVal = case405_line1557(yyVal, yyVals, yyTop); // line 1557
 break;
-case 406: yyVal = case406_line1561(support, lexer, yyVal, yyVals, yyTop); // line 1561
+case 406: yyVal = case406_line1561(yyVal, yyVals, yyTop); // line 1561
 break;
-case 407: yyVal = case407_line1564(support, lexer, yyVal, yyVals, yyTop); // line 1564
+case 407: yyVal = case407_line1564(yyVal, yyVals, yyTop); // line 1564
 break;
-case 408: yyVal = case408_line1569(support, lexer, yyVal, yyVals, yyTop); // line 1569
+case 408: yyVal = case408_line1569(yyVal, yyVals, yyTop); // line 1569
 break;
-case 409: yyVal = case409_line1572(support, lexer, yyVal, yyVals, yyTop); // line 1572
+case 409: yyVal = case409_line1572(yyVal, yyVals, yyTop); // line 1572
 break;
-case 410: yyVal = case410_line1576(support, lexer, yyVal, yyVals, yyTop); // line 1576
+case 410: yyVal = case410_line1576(yyVal, yyVals, yyTop); // line 1576
 break;
-case 411: yyVal = case411_line1580(support, lexer, yyVal, yyVals, yyTop); // line 1580
+case 411: yyVal = case411_line1580(yyVal, yyVals, yyTop); // line 1580
 break;
-case 412: yyVal = case412_line1586(support, lexer, yyVal, yyVals, yyTop); // line 1586
+case 412: yyVal = case412_line1586(yyVal, yyVals, yyTop); // line 1586
 break;
-case 413: yyVal = case413_line1594(support, lexer, yyVal, yyVals, yyTop); // line 1594
+case 413: yyVal = case413_line1594(yyVal, yyVals, yyTop); // line 1594
 break;
-case 414: yyVal = case414_line1597(support, lexer, yyVal, yyVals, yyTop); // line 1597
+case 414: yyVal = case414_line1597(yyVal, yyVals, yyTop); // line 1597
 break;
-case 415: yyVal = case415_line1600(support, lexer, yyVal, yyVals, yyTop); // line 1600
+case 415: yyVal = case415_line1600(yyVal, yyVals, yyTop); // line 1600
 break;
-case 417: yyVal = case417_line1607(support, lexer, yyVal, yyVals, yyTop); // line 1607
+case 417: yyVal = case417_line1607(yyVal, yyVals, yyTop); // line 1607
 break;
-case 422: yyVal = case422_line1617(support, lexer, yyVal, yyVals, yyTop); // line 1617
+case 422: yyVal = case422_line1617(yyVal, yyVals, yyTop); // line 1617
 break;
-case 424: yyVal = case424_line1634(support, lexer, yyVal, yyVals, yyTop); // line 1634
+case 424: yyVal = case424_line1634(yyVal, yyVals, yyTop); // line 1634
 break;
-case 425: yyVal = case425_line1637(support, lexer, yyVal, yyVals, yyTop); // line 1637
+case 425: yyVal = case425_line1637(yyVal, yyVals, yyTop); // line 1637
 break;
-case 426: yyVal = case426_line1640(support, lexer, yyVal, yyVals, yyTop); // line 1640
+case 426: yyVal = case426_line1640(yyVal, yyVals, yyTop); // line 1640
 break;
-case 432: yyVal = case432_line1646(support, lexer, yyVal, yyVals, yyTop); // line 1646
+case 432: yyVal = case432_line1646(yyVal, yyVals, yyTop); // line 1646
 break;
-case 433: yyVal = case433_line1649(support, lexer, yyVal, yyVals, yyTop); // line 1649
+case 433: yyVal = case433_line1649(yyVal, yyVals, yyTop); // line 1649
 break;
-case 434: yyVal = case434_line1652(support, lexer, yyVal, yyVals, yyTop); // line 1652
+case 434: yyVal = case434_line1652(yyVal, yyVals, yyTop); // line 1652
 break;
-case 435: yyVal = case435_line1655(support, lexer, yyVal, yyVals, yyTop); // line 1655
+case 435: yyVal = case435_line1655(yyVal, yyVals, yyTop); // line 1655
 break;
-case 436: yyVal = case436_line1658(support, lexer, yyVal, yyVals, yyTop); // line 1658
+case 436: yyVal = case436_line1658(yyVal, yyVals, yyTop); // line 1658
 break;
-case 437: yyVal = case437_line1661(support, lexer, yyVal, yyVals, yyTop); // line 1661
+case 437: yyVal = case437_line1661(yyVal, yyVals, yyTop); // line 1661
 break;
-case 438: yyVal = case438_line1666(support, lexer, yyVal, yyVals, yyTop); // line 1666
+case 438: yyVal = case438_line1666(yyVal, yyVals, yyTop); // line 1666
 break;
-case 439: yyVal = case439_line1671(support, lexer, yyVal, yyVals, yyTop); // line 1671
+case 439: yyVal = case439_line1671(yyVal, yyVals, yyTop); // line 1671
 break;
-case 442: yyVal = case442_line1679(support, lexer, yyVal, yyVals, yyTop); // line 1679
+case 442: yyVal = case442_line1679(yyVal, yyVals, yyTop); // line 1679
 break;
-case 443: yyVal = case443_line1682(support, lexer, yyVal, yyVals, yyTop); // line 1682
+case 443: yyVal = case443_line1682(yyVal, yyVals, yyTop); // line 1682
 break;
-case 444: yyVal = case444_line1684(support, lexer, yyVal, yyVals, yyTop); // line 1684
+case 444: yyVal = case444_line1684(yyVal, yyVals, yyTop); // line 1684
 break;
-case 445: yyVal = case445_line1687(support, lexer, yyVal, yyVals, yyTop); // line 1687
+case 445: yyVal = case445_line1687(yyVal, yyVals, yyTop); // line 1687
 break;
-case 446: yyVal = case446_line1692(support, lexer, yyVal, yyVals, yyTop); // line 1692
+case 446: yyVal = case446_line1692(yyVal, yyVals, yyTop); // line 1692
 break;
-case 447: yyVal = case447_line1698(support, lexer, yyVal, yyVals, yyTop); // line 1698
+case 447: yyVal = case447_line1698(yyVal, yyVals, yyTop); // line 1698
 break;
-case 448: yyVal = case448_line1703(support, lexer, yyVal, yyVals, yyTop); // line 1703
+case 448: yyVal = case448_line1703(yyVal, yyVals, yyTop); // line 1703
 break;
-case 449: yyVal = case449_line1706(support, lexer, yyVal, yyVals, yyTop); // line 1706
+case 449: yyVal = case449_line1706(yyVal, yyVals, yyTop); // line 1706
 break;
-case 450: yyVal = case450_line1709(support, lexer, yyVal, yyVals, yyTop); // line 1709
+case 450: yyVal = case450_line1709(yyVal, yyVals, yyTop); // line 1709
 break;
-case 451: yyVal = case451_line1712(support, lexer, yyVal, yyVals, yyTop); // line 1712
+case 451: yyVal = case451_line1712(yyVal, yyVals, yyTop); // line 1712
 break;
-case 452: yyVal = case452_line1715(support, lexer, yyVal, yyVals, yyTop); // line 1715
+case 452: yyVal = case452_line1715(yyVal, yyVals, yyTop); // line 1715
 break;
-case 453: yyVal = case453_line1718(support, lexer, yyVal, yyVals, yyTop); // line 1718
+case 453: yyVal = case453_line1718(yyVal, yyVals, yyTop); // line 1718
 break;
-case 454: yyVal = case454_line1721(support, lexer, yyVal, yyVals, yyTop); // line 1721
+case 454: yyVal = case454_line1721(yyVal, yyVals, yyTop); // line 1721
 break;
-case 455: yyVal = case455_line1724(support, lexer, yyVal, yyVals, yyTop); // line 1724
+case 455: yyVal = case455_line1724(yyVal, yyVals, yyTop); // line 1724
 break;
-case 456: yyVal = case456_line1727(support, lexer, yyVal, yyVals, yyTop); // line 1727
+case 456: yyVal = case456_line1727(yyVal, yyVals, yyTop); // line 1727
 break;
-case 457: yyVal = case457_line1732(support, lexer, yyVal, yyVals, yyTop); // line 1732
+case 457: yyVal = case457_line1732(yyVal, yyVals, yyTop); // line 1732
 break;
-case 458: yyVal = case458_line1735(support, lexer, yyVal, yyVals, yyTop); // line 1735
+case 458: yyVal = case458_line1735(yyVal, yyVals, yyTop); // line 1735
 break;
-case 459: yyVal = case459_line1738(support, lexer, yyVal, yyVals, yyTop); // line 1738
+case 459: yyVal = case459_line1738(yyVal, yyVals, yyTop); // line 1738
 break;
-case 460: yyVal = case460_line1741(support, lexer, yyVal, yyVals, yyTop); // line 1741
+case 460: yyVal = case460_line1741(yyVal, yyVals, yyTop); // line 1741
 break;
-case 461: yyVal = case461_line1744(support, lexer, yyVal, yyVals, yyTop); // line 1744
+case 461: yyVal = case461_line1744(yyVal, yyVals, yyTop); // line 1744
 break;
-case 462: yyVal = case462_line1755(support, lexer, yyVal, yyVals, yyTop); // line 1755
+case 462: yyVal = case462_line1755(yyVal, yyVals, yyTop); // line 1755
 break;
-case 463: yyVal = case463_line1760(support, lexer, yyVal, yyVals, yyTop); // line 1760
+case 463: yyVal = case463_line1760(yyVal, yyVals, yyTop); // line 1760
 break;
-case 464: yyVal = case464_line1764(support, lexer, yyVal, yyVals, yyTop); // line 1764
+case 464: yyVal = case464_line1764(yyVal, yyVals, yyTop); // line 1764
 break;
-case 465: yyVal = case465_line1770(support, lexer, yyVal, yyVals, yyTop); // line 1770
+case 465: yyVal = case465_line1770(yyVal, yyVals, yyTop); // line 1770
 break;
-case 466: yyVal = case466_line1777(support, lexer, yyVal, yyVals, yyTop); // line 1777
+case 466: yyVal = case466_line1777(yyVal, yyVals, yyTop); // line 1777
 break;
-case 467: yyVal = case467_line1788(support, lexer, yyVal, yyVals, yyTop); // line 1788
+case 467: yyVal = case467_line1788(yyVal, yyVals, yyTop); // line 1788
 break;
-case 468: yyVal = case468_line1791(support, lexer, yyVal, yyVals, yyTop); // line 1791
+case 468: yyVal = case468_line1791(yyVal, yyVals, yyTop); // line 1791
 break;
-case 471: yyVal = case471_line1799(support, lexer, yyVal, yyVals, yyTop); // line 1799
+case 471: yyVal = case471_line1799(yyVal, yyVals, yyTop); // line 1799
 break;
-case 472: yyVal = case472_line1808(support, lexer, yyVal, yyVals, yyTop); // line 1808
+case 472: yyVal = case472_line1808(yyVal, yyVals, yyTop); // line 1808
 break;
-case 475: yyVal = case475_line1816(support, lexer, yyVal, yyVals, yyTop); // line 1816
+case 475: yyVal = case475_line1816(yyVal, yyVals, yyTop); // line 1816
 break;
-case 476: yyVal = case476_line1820(support, lexer, yyVal, yyVals, yyTop); // line 1820
+case 476: yyVal = case476_line1820(yyVal, yyVals, yyTop); // line 1820
 break;
-case 477: yyVal = case477_line1823(support, lexer, yyVal, yyVals, yyTop); // line 1823
+case 477: yyVal = case477_line1823(yyVal, yyVals, yyTop); // line 1823
 break;
-case 478: yyVal = case478_line1827(support, lexer, yyVal, yyVals, yyTop); // line 1827
+case 478: yyVal = case478_line1827(yyVal, yyVals, yyTop); // line 1827
 break;
-case 479: yyVal = case479_line1831(support, lexer, yyVal, yyVals, yyTop); // line 1831
+case 479: yyVal = case479_line1831(yyVal, yyVals, yyTop); // line 1831
 break;
-case 480: yyVal = case480_line1833(support, lexer, yyVal, yyVals, yyTop); // line 1833
+case 480: yyVal = case480_line1833(yyVal, yyVals, yyTop); // line 1833
 break;
-case 481: yyVal = case481_line1845(support, lexer, yyVal, yyVals, yyTop); // line 1845
+case 481: yyVal = case481_line1845(yyVal, yyVals, yyTop); // line 1845
 break;
-case 482: yyVal = case482_line1848(support, lexer, yyVal, yyVals, yyTop); // line 1848
+case 482: yyVal = case482_line1848(yyVal, yyVals, yyTop); // line 1848
 break;
-case 483: yyVal = case483_line1851(support, lexer, yyVal, yyVals, yyTop); // line 1851
+case 483: yyVal = case483_line1851(yyVal, yyVals, yyTop); // line 1851
 break;
-case 485: yyVal = case485_line1860(support, lexer, yyVal, yyVals, yyTop); // line 1860
+case 485: yyVal = case485_line1860(yyVal, yyVals, yyTop); // line 1860
 break;
-case 486: yyVal = case486_line1865(support, lexer, yyVal, yyVals, yyTop); // line 1865
+case 486: yyVal = case486_line1865(yyVal, yyVals, yyTop); // line 1865
 break;
-case 506: yyVal = case506_line1884(support, lexer, yyVal, yyVals, yyTop); // line 1884
+case 506: yyVal = case506_line1884(yyVal, yyVals, yyTop); // line 1884
 break;
-case 509: yyVal = case509_line1889(support, lexer, yyVal, yyVals, yyTop); // line 1889
+case 509: yyVal = case509_line1889(yyVal, yyVals, yyTop); // line 1889
 break;
-case 510: yyVal = case510_line1892(support, lexer, yyVal, yyVals, yyTop); // line 1892
+case 510: yyVal = case510_line1892(yyVal, yyVals, yyTop); // line 1892
 break;
-case 511: yyVal = case511_line1896(support, lexer, yyVal, yyVals, yyTop); // line 1896
+case 511: yyVal = case511_line1896(yyVal, yyVals, yyTop); // line 1896
 break;
 // ACTIONS_END
         }
@@ -2175,20 +2175,20 @@ break;
     }
   }
 
-public static Object case355_line1345(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case355_line1345(Object yyVal, Object[] yyVals, int yyTop) {
                   support.pushBlockScope();
     return yyVal;
 }
-public static Object case352_line1327(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case352_line1327(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new ZeroArgNode(((Token)yyVals[-1+yyTop]).getPosition());
                   lexer.commandStart = true;
     return yyVal;
 }
-public static Object case49_line486(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case49_line486(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case79_line585(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case79_line585(Object yyVal, Object[] yyVals, int yyTop) {
                   if (support.isInDef() || support.isInSingle()) {
 		      support.yyerror("dynamic constant assignment");
 		  }
@@ -2198,17 +2198,17 @@ public static Object case79_line585(ParserSupport support, RubyYaccLexer lexer, 
                   yyVal = new ConstDeclNode(position, null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
     return yyVal;
 }
-public static Object case27_line412(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case27_line412(Object yyVal, Object[] yyVals, int yyTop) {
                   support.checkExpression(((Node)yyVals[0+yyTop]));
 
                   yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
     return yyVal;
 }
-public static Object case299_line1148(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case299_line1148(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.getConditionState().end();
     return yyVal;
 }
-public static Object case393_line1499(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case393_line1499(Object yyVal, Object[] yyVals, int yyTop) {
 		  int options = ((RegexpNode)yyVals[0+yyTop]).getOptions();
 		  Node node = ((Node)yyVals[-1+yyTop]);
 
@@ -2223,40 +2223,40 @@ public static Object case393_line1499(ParserSupport support, RubyYaccLexer lexer
                   }
     return yyVal;
 }
-public static Object case362_line1377(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case362_line1377(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case358_line1364(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case358_line1364(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case99_line667(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case99_line667(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.setState(LexState.EXPR_END);
                   yyVal = yyVals[0+yyTop];
     return yyVal;
 }
-public static Object case78_line582(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case78_line582(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case233_line927(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case233_line927(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_concat(support.getPosition(((ListNode)yyVals[-4+yyTop])), ((ListNode)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
                   yyVal = support.arg_blk_pass(((Node)yyVal), ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case307_line1175(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case307_line1175(Object yyVal, Object[] yyVals, int yyTop) {
                   if (support.isInDef() || support.isInSingle()) {
                       support.yyerror("class definition in method body");
                   }
 		  support.pushLocalScope();
     return yyVal;
 }
-public static Object case63_line532(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case63_line532(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(((Token)yyVals[-2+yyTop]).getPosition(), support.newArrayNode(((Token)yyVals[-2+yyTop]).getPosition(), ((MultipleAsgnNode)yyVals[-1+yyTop])), null);
     return yyVal;
 }
-public static Object case279_line1071(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case279_line1071(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[-1+yyTop]) != null) {
                       /* compstmt position includes both parens around it*/
                       ((ISourcePositionHolder) ((Node)yyVals[-1+yyTop])).setPosition(((Token)yyVals[-2+yyTop]).getPosition());
@@ -2266,47 +2266,47 @@ public static Object case279_line1071(ParserSupport support, RubyYaccLexer lexer
                   }
     return yyVal;
 }
-public static Object case179_line748(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case179_line748(Object yyVal, Object[] yyVals, int yyTop) {
 		  support.checkExpression(((Node)yyVals[0+yyTop]));
 
                   yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
     return yyVal;
 }
-public static Object case54_line505(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case54_line505(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case227_line911(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case227_line911(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newArrayNode(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]));
     return yyVal;
 }
-public static Object case103_line684(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case103_line684(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case458_line1735(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case458_line1735(Object yyVal, Object[] yyVals, int yyTop) {
                    support.yyerror("formal argument cannot be a instance variable");
     return yyVal;
 }
-public static Object case222_line893(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case222_line893(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_concat(support.getPosition(((ListNode)yyVals[-4+yyTop])), ((ListNode)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case213_line865(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case213_line865(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newAndNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case15_line338(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case15_line338(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new IfNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((Node)yyVals[-2+yyTop]), null);
     return yyVal;
 }
-public static Object case21_line367(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case21_line367(Object yyVal, Object[] yyVals, int yyTop) {
                   support.getResult().addBeginNode(new PreExeNode(((Token)yyVals[-4+yyTop]).getPosition(), support.getCurrentScope(), ((Node)yyVals[-1+yyTop])));
                   support.popCurrentScope();
                   yyVal = null; /*XXX 0;*/
     return yyVal;
 }
-public static Object case480_line1833(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case480_line1833(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[-2+yyTop]) == null) {
                       support.yyerror("can't define single method for ().");
                   } else if (((Node)yyVals[-2+yyTop]) instanceof ILiteralNode) {
@@ -2316,69 +2316,69 @@ public static Object case480_line1833(ParserSupport support, RubyYaccLexer lexer
                   yyVal = ((Node)yyVals[-2+yyTop]);
     return yyVal;
 }
-public static Object case401_line1540(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case401_line1540(Object yyVal, Object[] yyVals, int yyTop) {
 		   yyVal = ((ListNode)yyVals[-1+yyTop]);
                    ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-2+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case400_line1537(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case400_line1537(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new ZArrayNode(((Token)yyVals[-2+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case361_line1374(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case361_line1374(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case51_line493(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case51_line493(Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = support.new_iter(support.getPosition(((Token)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
                     support.popCurrentScope();
     return yyVal;
 }
-public static Object case266_line1047(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case266_line1047(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newSplatNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case23_line378(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case23_line378(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case298_line1146(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case298_line1146(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.getConditionState().begin();
     return yyVal;
 }
-public static Object case101_line676(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case101_line676(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new LiteralNode(((Token)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case83_line611(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case83_line611(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.aryset(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case105_line691(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case105_line691(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.setState(LexState.EXPR_FNAME);
     return yyVal;
 }
-public static Object case234_line931(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case234_line931(Object yyVal, Object[] yyVals, int yyTop) {
                   ISourcePosition pos = ((ListNode)yyVals[-1+yyTop]).getPosition();
                   yyVal = support.newArrayNode(pos, new HashNode(pos, ((ListNode)yyVals[-1+yyTop])));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case65_line540(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case65_line540(Object yyVal, Object[] yyVals, int yyTop) {
 /*mirko: check*/
                   yyVal = new MultipleAsgnNode(support.getPosition(((Node)yyVals[-1+yyTop])), ((ListNode)yyVals[-1+yyTop]).add(((Node)yyVals[0+yyTop])), null);
     return yyVal;
 }
-public static Object case236_line941(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case236_line941(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((ListNode)yyVals[-3+yyTop]).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case212_line862(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case212_line862(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">>", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case466_line1777(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case466_line1777(Object yyVal, Object[] yyVals, int yyTop) {
                    String identifier = (String) ((Token)yyVals[-2+yyTop]).getValue();
 
                    if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
@@ -2388,42 +2388,42 @@ public static Object case466_line1777(ParserSupport support, RubyYaccLexer lexer
                    yyVal = support.assignable(((Token)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case435_line1655(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case435_line1655(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new Token("false", Tokens.kFALSE, ((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case349_line1319(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case349_line1319(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(((Token)yyVals[0+yyTop]).getPosition(), null, new StarNode(((Token)yyVals[0+yyTop]).getPosition()));
     return yyVal;
 }
-public static Object case61_line526(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case61_line526(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((MultipleAsgnNode)yyVals[-1+yyTop]);
     return yyVal;
 }
-public static Object case207_line847(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case207_line847(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getMatchNode(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case243_line966(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case243_line966(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_concat(support.getPosition(((Node)yyVals[-6+yyTop])), support.newArrayNode(support.getPosition(((Node)yyVals[-6+yyTop])), ((Node)yyVals[-6+yyTop])).addAll(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case417_line1607(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case417_line1607(Object yyVal, Object[] yyVals, int yyTop) {
                    lexer.setState(LexState.EXPR_END);
                    yyVal = ((Token)yyVals[0+yyTop]);
 		   ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-1+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case365_line1386(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case365_line1386(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new ZSuperNode(((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case50_line491(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case50_line491(Object yyVal, Object[] yyVals, int yyTop) {
                     support.pushBlockScope();
     return yyVal;
 }
-public static Object case24_line381(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case24_line381(Object yyVal, Object[] yyVals, int yyTop) {
                   support.checkExpression(((Node)yyVals[0+yyTop]));
 		  if (((MultipleAsgnNode)yyVals[-2+yyTop]).getHeadNode() != null) {
 		      ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(new ToAryNode(support.getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
@@ -2433,49 +2433,49 @@ public static Object case24_line381(ParserSupport support, RubyYaccLexer lexer, 
 		  yyVal = ((MultipleAsgnNode)yyVals[-2+yyTop]);
     return yyVal;
 }
-public static Object case300_line1150(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case300_line1150(Object yyVal, Object[] yyVals, int yyTop) {
                   Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
                   yyVal = new UntilNode(((Token)yyVals[-6+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[-4+yyTop])), body);
     return yyVal;
 }
-public static Object case206_line844(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case206_line844(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new NotNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "==", ((Node)yyVals[0+yyTop]), lexer.getPosition()));
     return yyVal;
 }
-public static Object case37_line453(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case37_line453(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newOrNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case44_line471(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case44_line471(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new ReturnNode(((Token)yyVals[-1+yyTop]).getPosition(), support.ret_args(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop]).getPosition()));
     return yyVal;
 }
-public static Object case74_line570(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case74_line570(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.assignable(((Token)yyVals[0+yyTop]), NilImplicitNode.NIL);
     return yyVal;
 }
-public static Object case447_line1698(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case447_line1698(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = ((Node)yyVals[-1+yyTop]);
     return yyVal;
 }
-public static Object case395_line1518(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case395_line1518(Object yyVal, Object[] yyVals, int yyTop) {
 		   yyVal = ((ListNode)yyVals[-1+yyTop]);
                    ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-2+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case220_line887(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case220_line887(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newArrayNode(support.getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case433_line1649(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case433_line1649(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new Token("self", Tokens.kSELF, ((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case348_line1316(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case348_line1316(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(((Token)yyVals[-1+yyTop]).getPosition(), null, ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case2_line274(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case2_line274(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[0+yyTop]) != null) {
                       /* last expression should not be void */
                       if (((Node)yyVals[0+yyTop]) instanceof BlockNode) {
@@ -2487,54 +2487,54 @@ public static Object case2_line274(ParserSupport support, RubyYaccLexer lexer, O
                   support.getResult().setAST(support.addRootNode(((Node)yyVals[0+yyTop]), support.getPosition(((Node)yyVals[0+yyTop]))));
     return yyVal;
 }
-public static Object case238_line950(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case238_line950(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_blk_pass(support.newSplatNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case340_line1292(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case340_line1292(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(((ListNode)yyVals[-1+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]), null);
     return yyVal;
 }
-public static Object case183_line764(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case183_line764(Object yyVal, Object[] yyVals, int yyTop) {
                   support.backrefAssignError(((Node)yyVals[-2+yyTop]));
     return yyVal;
 }
-public static Object case1_line271(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case1_line271(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.setState(LexState.EXPR_BEG);
                   support.initTopLocalVariables();
     return yyVal;
 }
-public static Object case181_line758(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case181_line758(Object yyVal, Object[] yyVals, int yyTop) {
 	          support.yyerror("constant re-assignment");
     return yyVal;
 }
-public static Object case185_line774(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case185_line774(Object yyVal, Object[] yyVals, int yyTop) {
 		  support.checkExpression(((Node)yyVals[-2+yyTop]));
 		  support.checkExpression(((Node)yyVals[0+yyTop]));
                   boolean isLiteral = ((Node)yyVals[-2+yyTop]) instanceof FixnumNode && ((Node)yyVals[0+yyTop]) instanceof FixnumNode;
                   yyVal = new DotNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]), true, isLiteral);
     return yyVal;
 }
-public static Object case506_line1884(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case506_line1884(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
-public static Object case451_line1712(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case451_line1712(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.new_args(((ISourcePositionHolder)yyVals[-1+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]), null, null, null, ((BlockArgNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case396_line1524(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case396_line1524(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new ArrayNode(lexer.getPosition());
     return yyVal;
 }
-public static Object case394_line1515(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case394_line1515(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new ZArrayNode(((Token)yyVals[-2+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case381_line1442(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case381_line1442(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case80_line594(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case80_line594(Object yyVal, Object[] yyVals, int yyTop) {
                   if (support.isInDef() || support.isInSingle()) {
 		      support.yyerror("dynamic constant assignment");
 		  }
@@ -2544,55 +2544,55 @@ public static Object case80_line594(ParserSupport support, RubyYaccLexer lexer, 
                   yyVal = new ConstDeclNode(position, null, support.new_colon3(position, (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
     return yyVal;
 }
-public static Object case277_line1065(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case277_line1065(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.setState(LexState.EXPR_ENDARG); 
     return yyVal;
 }
-public static Object case450_line1709(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case450_line1709(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.new_args(((ListNode)yyVals[-3+yyTop]).getPosition(), ((ListNode)yyVals[-3+yyTop]), null, ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case445_line1687(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case445_line1687(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = null;
     return yyVal;
 }
-public static Object case334_line1269(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case334_line1269(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case322_line1245(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case322_line1245(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new RetryNode(((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case93_line653(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case93_line653(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_colon2(((Token)yyVals[0+yyTop]).getPosition(), null, (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case350_line1322(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case350_line1322(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case199_line823(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case199_line823(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<=>", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case317_line1224(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case317_line1224(Object yyVal, Object[] yyVals, int yyTop) {
                   support.setInSingle(support.getInSingle() + 1);
 		  support.pushLocalScope();
                   lexer.setState(LexState.EXPR_END); /* force for args */
     return yyVal;
 }
-public static Object case284_line1102(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case284_line1102(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new HashNode(((Token)yyVals[-2+yyTop]).getPosition(), ((ListNode)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case177_line738(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case177_line738(Object yyVal, Object[] yyVals, int yyTop) {
 		  support.checkExpression(((Node)yyVals[0+yyTop]));
 
                   yyVal = support.new_opElementAsgnNode(support.getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop]), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case486_line1865(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case486_line1865(Object yyVal, Object[] yyVals, int yyTop) {
                   ISourcePosition position;
                   if (((Node)yyVals[-2+yyTop]) == null && ((Node)yyVals[0+yyTop]) == null) {
                       position = ((Token)yyVals[-1+yyTop]).getPosition();
@@ -2603,42 +2603,42 @@ public static Object case486_line1865(ParserSupport support, RubyYaccLexer lexer
                   yyVal = support.newArrayNode(position, ((Node)yyVals[-2+yyTop])).add(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case409_line1572(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case409_line1572(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = lexer.getStrTerm();
 		   lexer.setStrTerm(null);
 		   lexer.setState(LexState.EXPR_BEG);
     return yyVal;
 }
-public static Object case399_line1532(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case399_line1532(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.literal_concat(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case85_line617(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case85_line617(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case308_line1180(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case308_line1180(Object yyVal, Object[] yyVals, int yyTop) {
                   Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
 
                   yyVal = new ClassNode(((Token)yyVals[-5+yyTop]).getPosition(), ((Colon3Node)yyVals[-4+yyTop]), support.getCurrentScope(), body, ((Node)yyVals[-3+yyTop]));
                   support.popCurrentScope();
     return yyVal;
 }
-public static Object case186_line780(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case186_line780(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "+", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case247_line984(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case247_line984(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newArrayNode(support.getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop])).addAll(((ListNode)yyVals[-3+yyTop])).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case19_line358(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case19_line358(Object yyVal, Object[] yyVals, int yyTop) {
                   Node body = ((Node)yyVals[0+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[0+yyTop]);
 	          yyVal = new RescueNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), new RescueBodyNode(support.getPosition(((Node)yyVals[-2+yyTop])), null, body, null), null);
     return yyVal;
 }
-public static Object case383_line1447(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case383_line1447(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[0+yyTop]) != null) {
                       yyVal = ((Node)yyVals[0+yyTop]);
                   } else {
@@ -2646,20 +2646,20 @@ public static Object case383_line1447(ParserSupport support, RubyYaccLexer lexer
                   }
     return yyVal;
 }
-public static Object case296_line1140(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case296_line1140(Object yyVal, Object[] yyVals, int yyTop) {
 		  lexer.getConditionState().end();
     return yyVal;
 }
-public static Object case192_line798(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case192_line798(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), lexer.getPosition()), "-@");
     return yyVal;
 }
-public static Object case478_line1827(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case478_line1827(Object yyVal, Object[] yyVals, int yyTop) {
 		  yyVal = ((Node)yyVals[0+yyTop]);
                   support.checkExpression(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case471_line1799(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case471_line1799(Object yyVal, Object[] yyVals, int yyTop) {
                   String identifier = (String) ((Token)yyVals[0+yyTop]).getValue();
 
                   if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
@@ -2669,7 +2669,7 @@ public static Object case471_line1799(ParserSupport support, RubyYaccLexer lexer
                   yyVal = new RestArgNode(((Token)yyVals[-1+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue(), support.getCurrentScope().getLocalScope().addVariable(identifier));
     return yyVal;
 }
-public static Object case461_line1744(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case461_line1744(Object yyVal, Object[] yyVals, int yyTop) {
                    String identifier = (String) ((Token)yyVals[0+yyTop]).getValue();
                    if (support.getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
                        support.yyerror("duplicate argument name");
@@ -2679,105 +2679,105 @@ public static Object case461_line1744(ParserSupport support, RubyYaccLexer lexer
                    yyVal = ((Token)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case98_line662(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case98_line662(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.setState(LexState.EXPR_END);
                   yyVal = ((Token)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case46_line477(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case46_line477(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new NextNode(((Token)yyVals[-1+yyTop]).getPosition(), support.ret_args(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop]).getPosition()));
     return yyVal;
 }
-public static Object case76_line576(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case76_line576(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case295_line1138(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case295_line1138(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.getConditionState().begin();
     return yyVal;
 }
-public static Object case197_line817(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case197_line817(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "^", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case479_line1831(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case479_line1831(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.setState(LexState.EXPR_BEG);
     return yyVal;
 }
-public static Object case414_line1597(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case414_line1597(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new InstVarNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case69_line553(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case69_line553(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(((Token)yyVals[0+yyTop]).getPosition(), null, new StarNode(lexer.getPosition()));
     return yyVal;
 }
-public static Object case81_line603(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case81_line603(Object yyVal, Object[] yyVals, int yyTop) {
 	          support.backrefAssignError(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case464_line1764(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case464_line1764(Object yyVal, Object[] yyVals, int yyTop) {
                    support.allowDubyExtension(((ISourcePositionHolder)yyVals[-4+yyTop]).getPosition());
                    ((ListNode)yyVals[-4+yyTop]).add(new TypedArgumentNode(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition(), (String) ((Token)yyVals[-2+yyTop]).getValue(), ((Node)yyVals[0+yyTop])));
                    ((ListNode)yyVals[-4+yyTop]).setPosition(((ListNode)yyVals[-4+yyTop]).getPosition());
 		   yyVal = ((ListNode)yyVals[-4+yyTop]);
     return yyVal;
 }
-public static Object case286_line1108(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case286_line1108(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_yield(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case8_line317(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case8_line317(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case232_line924(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case232_line924(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_blk_pass(((ListNode)yyVals[-1+yyTop]), ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case102_line681(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case102_line681(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((LiteralNode)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case377_line1432(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case377_line1432(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = null;
     return yyVal;
 }
-public static Object case366_line1391(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case366_line1391(Object yyVal, Object[] yyVals, int yyTop) {
                   support.pushBlockScope();
     return yyVal;
 }
-public static Object case346_line1310(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case346_line1310(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(((Token)yyVals[-4+yyTop]).getPosition(), null, ((Node)yyVals[-3+yyTop])));
     return yyVal;
 }
-public static Object case345_line1307(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case345_line1307(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(((ListNode)yyVals[-2+yyTop]).getPosition(), ((ListNode)yyVals[-2+yyTop]), new StarNode(((Token)yyVals[0+yyTop]).getPosition()));
     return yyVal;
 }
-public static Object case221_line890(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case221_line890(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((ListNode)yyVals[-1+yyTop]);
     return yyVal;
 }
-public static Object case7_line314(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case7_line314(Object yyVal, Object[] yyVals, int yyTop) {
 	          yyVal = support.appendToBlock(((Node)yyVals[-2+yyTop]), support.newline_node(((Node)yyVals[0+yyTop]), support.getPosition(((Node)yyVals[0+yyTop]))));
     return yyVal;
 }
-public static Object case310_line1189(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case310_line1189(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = Integer.valueOf(support.getInSingle());
                   support.setInSingle(0);
 		  support.pushLocalScope();
     return yyVal;
 }
-public static Object case231_line921(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case231_line921(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newArrayNode(support.getPosition(((Node)yyVals[0+yyTop])), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case388_line1465(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case388_line1465(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[0+yyTop]) instanceof EvStrNode ? new DStrNode(((Node)yyVals[0+yyTop]).getPosition()).add(((Node)yyVals[0+yyTop])) : ((Node)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case282_line1086(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case282_line1086(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[-3+yyTop]) instanceof SelfNode) {
                       yyVal = support.new_fcall(new Token("[]", support.getPosition(((Node)yyVals[-3+yyTop]))), ((Node)yyVals[-1+yyTop]), null);
                   } else {
@@ -2785,7 +2785,7 @@ public static Object case282_line1086(ParserSupport support, RubyYaccLexer lexer
                   }
     return yyVal;
 }
-public static Object case3_line286(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case3_line286(Object yyVal, Object[] yyVals, int yyTop) {
                   Node node = ((Node)yyVals[-3+yyTop]);
 
 		  if (((RescueBodyNode)yyVals[-2+yyTop]) != null) {
@@ -2802,33 +2802,33 @@ public static Object case3_line286(ParserSupport support, RubyYaccLexer lexer, O
 	          yyVal = node;
     return yyVal;
 }
-public static Object case311_line1193(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case311_line1193(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new SClassNode(((Token)yyVals[-7+yyTop]).getPosition(), ((Node)yyVals[-5+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
                   support.popCurrentScope();
                   support.setInDef(((Boolean)yyVals[-4+yyTop]).booleanValue());
                   support.setInSingle(((Integer)yyVals[-2+yyTop]).intValue());
     return yyVal;
 }
-public static Object case312_line1199(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case312_line1199(Object yyVal, Object[] yyVals, int yyTop) {
                   if (support.isInDef() || support.isInSingle()) { 
                       support.yyerror("module definition in method body");
                   }
 		  support.pushLocalScope();
     return yyVal;
 }
-public static Object case56_line511(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case56_line511(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case456_line1727(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case456_line1727(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.new_args(support.createEmptyArgsNodePosition(lexer.getPosition()), null, null, null, null, null);
     return yyVal;
 }
-public static Object case215_line871(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case215_line871(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new DefinedNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case32_line433(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case32_line433(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((MultipleAsgnNode)yyVals[-2+yyTop]).getHeadNode() != null) {
 		      ((MultipleAsgnNode)yyVals[-2+yyTop]).setValueNode(new ToAryNode(support.getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
 		  } else {
@@ -2837,87 +2837,87 @@ public static Object case32_line433(ParserSupport support, RubyYaccLexer lexer, 
 		  yyVal = ((MultipleAsgnNode)yyVals[-2+yyTop]);
     return yyVal;
 }
-public static Object case204_line838(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case204_line838(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "==", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case306_line1172(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case306_line1172(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new ForNode(((Token)yyVals[-8+yyTop]).getPosition(), ((Node)yyVals[-7+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[-4+yyTop]));
     return yyVal;
 }
-public static Object case449_line1706(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case449_line1706(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.new_args(((ListNode)yyVals[-3+yyTop]).getPosition(), ((ListNode)yyVals[-3+yyTop]), ((ListNode)yyVals[-1+yyTop]), null, null, ((BlockArgNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case386_line1458(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case386_line1458(Object yyVal, Object[] yyVals, int yyTop) {
                   /* FIXME: We may be intern'ing more than once.*/
                   yyVal = new SymbolNode(((Token)yyVals[0+yyTop]).getPosition(), ((String) ((Token)yyVals[0+yyTop]).getValue()).intern());
     return yyVal;
 }
-public static Object case344_line1304(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case344_line1304(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(((ListNode)yyVals[-3+yyTop]).getPosition(), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case262_line1033(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case262_line1033(Object yyVal, Object[] yyVals, int yyTop) {
                   ISourcePosition pos = ((Node)yyVals[0+yyTop]) == null ? lexer.getPosition() : ((Node)yyVals[0+yyTop]).getPosition();
                   yyVal = support.newArrayNode(pos, ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case39_line459(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case39_line459(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new NotNode(((Token)yyVals[-1+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[0+yyTop])));
     return yyVal;
 }
-public static Object case16_line341(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case16_line341(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new IfNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), null, ((Node)yyVals[-2+yyTop]));
     return yyVal;
 }
-public static Object case225_line904(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case225_line904(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new ArrayNode(((Token)yyVals[-2+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case443_line1682(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case443_line1682(Object yyVal, Object[] yyVals, int yyTop) {
                    lexer.setState(LexState.EXPR_BEG);
     return yyVal;
 }
-public static Object case442_line1679(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case442_line1679(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = null;
     return yyVal;
 }
-public static Object case332_line1264(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case332_line1264(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new IfNode(((Token)yyVals[-4+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case289_line1117(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case289_line1117(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new DefinedNode(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case180_line753(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case180_line753(Object yyVal, Object[] yyVals, int yyTop) {
 		  support.checkExpression(((Node)yyVals[0+yyTop]));
 
                   yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
     return yyVal;
 }
-public static Object case205_line841(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case205_line841(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "===", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case467_line1788(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case467_line1788(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new BlockNode(((Node)yyVals[0+yyTop]).getPosition()).add(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case211_line859(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case211_line859(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<<", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case208_line850(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case208_line850(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new NotNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getMatchNode(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop])));
     return yyVal;
 }
-public static Object case41_line464(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case41_line464(Object yyVal, Object[] yyVals, int yyTop) {
                   support.checkExpression(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case283_line1093(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case283_line1093(Object yyVal, Object[] yyVals, int yyTop) {
                   ISourcePosition position = ((Token)yyVals[-2+yyTop]).getPosition();
                   if (((Node)yyVals[-1+yyTop]) == null) {
                       yyVal = new ZArrayNode(position); /* zero length array */
@@ -2927,18 +2927,18 @@ public static Object case283_line1093(ParserSupport support, RubyYaccLexer lexer
                   }
     return yyVal;
 }
-public static Object case22_line372(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case22_line372(Object yyVal, Object[] yyVals, int yyTop) {
                   if (support.isInDef() || support.isInSingle()) {
                       support.warn(ID.END_IN_METHOD, ((Token)yyVals[-3+yyTop]).getPosition(), "END in method; use at_exit");
                   }
                   yyVal = new PostExeNode(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case439_line1671(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case439_line1671(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.assignable(((Token)yyVals[0+yyTop]), NilImplicitNode.NIL);
     return yyVal;
 }
-public static Object case422_line1617(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case422_line1617(Object yyVal, Object[] yyVals, int yyTop) {
                    lexer.setState(LexState.EXPR_END);
 
                    /* DStrNode: :"some text #{some expression}"*/
@@ -2954,46 +2954,46 @@ public static Object case422_line1617(ParserSupport support, RubyYaccLexer lexer
                    }
     return yyVal;
 }
-public static Object case241_line959(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case241_line959(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_blk_pass(support.newArrayNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case244_line970(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case244_line970(Object yyVal, Object[] yyVals, int yyTop) {
                   ISourcePosition pos = ((ListNode)yyVals[-1+yyTop]).getPosition();
                   yyVal = support.newArrayNode(pos, new HashNode(pos, ((ListNode)yyVals[-1+yyTop])));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case53_line502(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case53_line502(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_fcall(((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop])); 
     return yyVal;
 }
-public static Object case476_line1820(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case476_line1820(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((BlockArgNode)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case364_line1383(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case364_line1383(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_super(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case14_line335(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case14_line335(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case260_line1028(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case260_line1028(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((BlockPassNode)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case425_line1637(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case425_line1637(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.negateInteger(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case242_line962(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case242_line962(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_concat(support.getPosition(((Node)yyVals[-4+yyTop])), support.newArrayNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop])), ((Node)yyVals[-1+yyTop]));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case18_line351(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case18_line351(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[-2+yyTop]) != null && ((Node)yyVals[-2+yyTop]) instanceof BeginNode) {
                       yyVal = new UntilNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((BeginNode)yyVals[-2+yyTop]).getBodyNode(), false);
                   } else {
@@ -3001,11 +3001,11 @@ public static Object case18_line351(ParserSupport support, RubyYaccLexer lexer, 
                   }
     return yyVal;
 }
-public static Object case257_line1016(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case257_line1016(Object yyVal, Object[] yyVals, int yyTop) {
 		  lexer.setState(LexState.EXPR_ENDARG);
     return yyVal;
 }
-public static Object case194_line804(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case194_line804(Object yyVal, Object[] yyVals, int yyTop) {
                   if (support.isLiteral(((Node)yyVals[0+yyTop]))) {
 		      yyVal = ((Node)yyVals[0+yyTop]);
 		  } else {
@@ -3013,65 +3013,65 @@ public static Object case194_line804(ParserSupport support, RubyYaccLexer lexer,
 		  }
     return yyVal;
 }
-public static Object case481_line1845(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case481_line1845(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new ArrayNode(lexer.getPosition());
     return yyVal;
 }
-public static Object case438_line1666(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case438_line1666(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.gettable(((Token)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case256_line1012(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case256_line1012(Object yyVal, Object[] yyVals, int yyTop) {
                   support.warn(ID.ARGUMENT_EXTRA_SPACE, ((Token)yyVals[-2+yyTop]).getPosition(), "don't put space before argument parentheses");
 	          yyVal = null;
     return yyVal;
 }
-public static Object case36_line450(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case36_line450(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newAndNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case437_line1661(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case437_line1661(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new Token("__LINE__", Tokens.k__LINE__, ((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case436_line1658(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case436_line1658(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new Token("__FILE__", Tokens.k__FILE__, ((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case368_line1397(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case368_line1397(Object yyVal, Object[] yyVals, int yyTop) {
                   support.pushBlockScope();
     return yyVal;
 }
-public static Object case356_line1347(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case356_line1347(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_iter(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
                   support.popCurrentScope();
     return yyVal;
 }
-public static Object case246_line980(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case246_line980(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newArrayNode(support.getPosition(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-3+yyTop])).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-1+yyTop])));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case251_line999(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case251_line999(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
-public static Object case275_line1059(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case275_line1059(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new FCallNoArgNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case511_line1896(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case511_line1896(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = null;
     return yyVal;
 }
-public static Object case404_line1554(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case404_line1554(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new StrNode(lexer.getPosition(), ByteList.create(""));
     return yyVal;
 }
-public static Object case342_line1298(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case342_line1298(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(((ListNode)yyVals[-6+yyTop]).getPosition(), ((ListNode)yyVals[-6+yyTop]), ((Node)yyVals[-3+yyTop])));
     return yyVal;
 }
-public static Object case25_line390(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case25_line390(Object yyVal, Object[] yyVals, int yyTop) {
  	          support.checkExpression(((Node)yyVals[0+yyTop]));
 
 		  String asgnOp = (String) ((Token)yyVals[-1+yyTop]).getValue();
@@ -3088,23 +3088,23 @@ public static Object case25_line390(ParserSupport support, RubyYaccLexer lexer, 
 		  }
     return yyVal;
 }
-public static Object case454_line1721(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case454_line1721(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.new_args(((RestArgNode)yyVals[-1+yyTop]).getPosition(), null, null, ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case402_line1546(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case402_line1546(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new ArrayNode(lexer.getPosition());
     return yyVal;
 }
-public static Object case359_line1367(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case359_line1367(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case191_line795(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case191_line795(Object yyVal, Object[] yyVals, int yyTop) {
 		  yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case87_line623(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case87_line623(Object yyVal, Object[] yyVals, int yyTop) {
                   if (support.isInDef() || support.isInSingle()) {
 		      support.yyerror("dynamic constant assignment");
 		  }
@@ -3114,7 +3114,7 @@ public static Object case87_line623(ParserSupport support, RubyYaccLexer lexer, 
                   yyVal = new ConstDeclNode(position, null, support.new_colon2(position, ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
     return yyVal;
 }
-public static Object case315_line1213(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case315_line1213(Object yyVal, Object[] yyVals, int yyTop) {
                   /* TODO: We should use implicit nil for body, but problem (punt til later)*/
                   Node body = ((Node)yyVals[-1+yyTop]); /*$5 == null ? NilImplicitNode.NIL : $5;*/
 
@@ -3124,123 +3124,123 @@ public static Object case315_line1213(ParserSupport support, RubyYaccLexer lexer
                   support.setInDef(false);
     return yyVal;
 }
-public static Object case338_line1281(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case338_line1281(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case337_line1278(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case337_line1278(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newArrayNode(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case226_line907(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case226_line907(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[-2+yyTop]);
 		  ((Node)yyVal).setPosition(((Token)yyVals[-3+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case86_line620(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case86_line620(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case71_line558(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case71_line558(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((MultipleAsgnNode)yyVals[-1+yyTop]);
     return yyVal;
 }
-public static Object case353_line1331(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case353_line1331(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new ZeroArgNode(((Token)yyVals[0+yyTop]).getPosition());
                   lexer.commandStart = true;
     return yyVal;
 }
-public static Object case48_line483(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case48_line483(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-3+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case303_line1165(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case303_line1165(Object yyVal, Object[] yyVals, int yyTop) {
 		  yyVal = ((Node)yyVals[-1+yyTop]);
     return yyVal;
 }
-public static Object case68_line550(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case68_line550(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(((Token)yyVals[-1+yyTop]).getPosition(), null, ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case178_line743(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case178_line743(Object yyVal, Object[] yyVals, int yyTop) {
 		  support.checkExpression(((Node)yyVals[0+yyTop]));
 
                   yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
     return yyVal;
 }
-public static Object case287_line1111(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case287_line1111(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new ZYieldNode(((Token)yyVals[-2+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case452_line1715(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case452_line1715(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.new_args(((ListNode)yyVals[-3+yyTop]).getPosition(), null, ((ListNode)yyVals[-3+yyTop]), ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case397_line1527(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case397_line1527(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]) instanceof EvStrNode ? new DStrNode(((ListNode)yyVals[-2+yyTop]).getPosition()).add(((Node)yyVals[-1+yyTop])) : ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case391_line1476(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case391_line1476(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[-1+yyTop]);
                   ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-2+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case336_line1274(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case336_line1274(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
-public static Object case28_line417(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case28_line417(Object yyVal, Object[] yyVals, int yyTop) {
                   support.checkExpression(((Node)yyVals[0+yyTop]));
 
                   yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
     return yyVal;
 }
-public static Object case198_line820(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case198_line820(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "&", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case20_line362(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case20_line362(Object yyVal, Object[] yyVals, int yyTop) {
                   if (support.isInDef() || support.isInSingle()) {
                       support.yyerror("BEGIN in method");
                   }
 		  support.pushLocalScope();
     return yyVal;
 }
-public static Object case408_line1569(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case408_line1569(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = ((Node)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case6_line311(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case6_line311(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newline_node(((Node)yyVals[0+yyTop]), support.getPosition(((Node)yyVals[0+yyTop])));
     return yyVal;
 }
-public static Object case294_line1135(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case294_line1135(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new IfNode(((Token)yyVals[-5+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[-2+yyTop]));
     return yyVal;
 }
-public static Object case223_line896(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case223_line896(Object yyVal, Object[] yyVals, int yyTop) {
                   ISourcePosition pos = ((ListNode)yyVals[-1+yyTop]).getPosition();
                   yyVal = support.newArrayNode(pos, new HashNode(pos, ((ListNode)yyVals[-1+yyTop])));
     return yyVal;
 }
-public static Object case58_line517(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case58_line517(Object yyVal, Object[] yyVals, int yyTop) {
 		  yyVal = support.new_super(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop])); /* .setPosFrom($2);*/
     return yyVal;
 }
-public static Object case104_line688(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case104_line688(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newUndef(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case64_line537(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case64_line537(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(support.getPosition(((ListNode)yyVals[0+yyTop])), ((ListNode)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case465_line1770(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case465_line1770(Object yyVal, Object[] yyVals, int yyTop) {
                    ((ListNode)yyVals[-2+yyTop]).add(new ArgumentNode(((ISourcePositionHolder)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue()));
                    ((ListNode)yyVals[-2+yyTop]).setPosition(((ListNode)yyVals[-2+yyTop]).getPosition());
 		   yyVal = ((ListNode)yyVals[-2+yyTop]);
     return yyVal;
 }
-public static Object case412_line1586(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case412_line1586(Object yyVal, Object[] yyVals, int yyTop) {
 		   lexer.setStrTerm(((StrTerm)yyVals[-2+yyTop]));
                    lexer.getConditionState().restart();
 	           lexer.getCmdArgumentState().restart();
@@ -3248,64 +3248,64 @@ public static Object case412_line1586(ParserSupport support, RubyYaccLexer lexer
 		   yyVal = support.newEvStrNode(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case407_line1564(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case407_line1564(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.literal_concat(support.getPosition(((Node)yyVals[-1+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case217_line877(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case217_line877(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case224_line900(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case224_line900(Object yyVal, Object[] yyVals, int yyTop) {
 		  yyVal = new NewlineNode(((Token)yyVals[-2+yyTop]).getPosition(), support.newSplatNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop])));
     return yyVal;
 }
-public static Object case9_line321(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case9_line321(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.setState(LexState.EXPR_FNAME);
     return yyVal;
 }
-public static Object case100_line673(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case100_line673(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new LiteralNode(((Token)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case237_line945(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case237_line945(Object yyVal, Object[] yyVals, int yyTop) {
                   support.checkExpression(((Node)yyVals[-1+yyTop]));
 		  yyVal = support.arg_concat(support.getPosition(((ListNode)yyVals[-6+yyTop])), ((ListNode)yyVals[-6+yyTop]).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case301_line1154(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case301_line1154(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newCaseNode(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case457_line1732(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case457_line1732(Object yyVal, Object[] yyVals, int yyTop) {
                    support.yyerror("formal argument cannot be a constant");
     return yyVal;
 }
-public static Object case75_line573(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case75_line573(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.aryset(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case38_line456(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case38_line456(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new NotNode(((Token)yyVals[-1+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[0+yyTop])));
     return yyVal;
 }
-public static Object case297_line1142(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case297_line1142(Object yyVal, Object[] yyVals, int yyTop) {
                   Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
                   yyVal = new WhileNode(((Token)yyVals[-6+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[-4+yyTop])), body);
     return yyVal;
 }
-public static Object case468_line1791(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case468_line1791(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.appendToBlock(((ListNode)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case462_line1755(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case462_line1755(Object yyVal, Object[] yyVals, int yyTop) {
                     support.allowDubyExtension(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition());
                     yyVal = new ListNode(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition());
                     ((ListNode) yyVal).add(new TypedArgumentNode(((ISourcePositionHolder)yyVals[-2+yyTop]).getPosition(), (String) ((Token)yyVals[-2+yyTop]).getValue(), ((Node)yyVals[0+yyTop])));
     return yyVal;
 }
-public static Object case376_line1419(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case376_line1419(Object yyVal, Object[] yyVals, int yyTop) {
                   Node node;
                   if (((Node)yyVals[-3+yyTop]) != null) {
                      node = support.appendToBlock(support.node_assign(((Node)yyVals[-3+yyTop]), new GlobalVarNode(((Token)yyVals[-5+yyTop]).getPosition(), "$!")), ((Node)yyVals[-1+yyTop]));
@@ -3319,158 +3319,158 @@ public static Object case376_line1419(ParserSupport support, RubyYaccLexer lexer
                   yyVal = new RescueBodyNode(((Token)yyVals[-5+yyTop]).getPosition(), ((Node)yyVals[-4+yyTop]), body, ((RescueBodyNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case360_line1371(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case360_line1371(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_fcall(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case434_line1652(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case434_line1652(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new Token("true", Tokens.kTRUE, ((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case372_line1409(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case372_line1409(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_concat(support.getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case253_line1004(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case253_line1004(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.getCmdArgumentState().reset(((Long)yyVals[-1+yyTop]).longValue());
                   yyVal = ((Node)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case210_line856(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case210_line856(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "~");
     return yyVal;
 }
-public static Object case12_line329(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case12_line329(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new VAliasNode(((Token)yyVals[-2+yyTop]).getPosition(), (String) ((Token)yyVals[-1+yyTop]).getValue(), "$" + ((BackRefNode)yyVals[0+yyTop]).getType()); /* XXX*/
     return yyVal;
 }
-public static Object case509_line1889(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case509_line1889(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
-public static Object case448_line1703(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case448_line1703(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.new_args(((ListNode)yyVals[-5+yyTop]).getPosition(), ((ListNode)yyVals[-5+yyTop]), ((ListNode)yyVals[-3+yyTop]), ((RestArgNode)yyVals[-1+yyTop]), null, ((BlockArgNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case30_line427(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case30_line427(Object yyVal, Object[] yyVals, int yyTop) {
                   support.backrefAssignError(((Node)yyVals[-2+yyTop]));
     return yyVal;
 }
-public static Object case240_line956(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case240_line956(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_blk_pass(support.newArrayNode(support.getPosition(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-3+yyTop])).addAll(((ListNode)yyVals[-1+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case11_line326(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case11_line326(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new VAliasNode(((Token)yyVals[-2+yyTop]).getPosition(), (String) ((Token)yyVals[-1+yyTop]).getValue(), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case426_line1640(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case426_line1640(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.negateFloat(((FloatNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case285_line1105(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case285_line1105(Object yyVal, Object[] yyVals, int yyTop) {
 		  yyVal = new ReturnNode(((Token)yyVals[0+yyTop]).getPosition(), NilImplicitNode.NIL);
     return yyVal;
 }
-public static Object case182_line761(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case182_line761(Object yyVal, Object[] yyVals, int yyTop) {
 		  support.yyerror("constant re-assignment");
     return yyVal;
 }
-public static Object case347_line1313(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case347_line1313(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(((Token)yyVals[-3+yyTop]).getPosition(), null, new StarNode(((Token)yyVals[-1+yyTop]).getPosition())));
     return yyVal;
 }
-public static Object case203_line835(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case203_line835(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<=", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case459_line1738(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case459_line1738(Object yyVal, Object[] yyVals, int yyTop) {
                    support.yyerror("formal argument cannot be an global variable");
     return yyVal;
 }
-public static Object case378_line1436(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case378_line1436(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newArrayNode(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case92_line650(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case92_line650(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_colon3(((Token)yyVals[-1+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case33_line441(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case33_line441(Object yyVal, Object[] yyVals, int yyTop) {
                   ((AssignableNode)yyVals[-2+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
 		  yyVal = ((MultipleAsgnNode)yyVals[-2+yyTop]);
                   ((MultipleAsgnNode)yyVals[-2+yyTop]).setPosition(support.getPosition(((MultipleAsgnNode)yyVals[-2+yyTop])));
     return yyVal;
 }
-public static Object case252_line1002(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case252_line1002(Object yyVal, Object[] yyVals, int yyTop) {
 	          yyVal = Long.valueOf(lexer.getCmdArgumentState().begin());
     return yyVal;
 }
-public static Object case281_line1083(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case281_line1083(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_colon3(((Token)yyVals[-1+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case26_line406(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case26_line406(Object yyVal, Object[] yyVals, int yyTop) {
                   support.checkExpression(((Node)yyVals[0+yyTop]));
 
                   yyVal = support.new_opElementAsgnNode(support.getPosition(((Node)yyVals[-5+yyTop])), ((Node)yyVals[-5+yyTop]), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
 
     return yyVal;
 }
-public static Object case446_line1692(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case446_line1692(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = ((Node)yyVals[-2+yyTop]);
                    ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-3+yyTop]).getPosition());
                    lexer.setState(LexState.EXPR_BEG);
                    lexer.commandStart = true;
     return yyVal;
 }
-public static Object case265_line1044(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case265_line1044(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_concat(support.getPosition(((ListNode)yyVals[-3+yyTop])), ((ListNode)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case276_line1062(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case276_line1062(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new BeginNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case444_line1684(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case444_line1684(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = ((Node)yyVals[-1+yyTop]);
     return yyVal;
 }
-public static Object case321_line1242(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case321_line1242(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new RedoNode(((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case290_line1120(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case290_line1120(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new FCallNoArgBlockNode(support.getPosition(((Token)yyVals[-1+yyTop])), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((IterNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case189_line789(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case189_line789(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "/", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case84_line614(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case84_line614(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case309_line1186(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case309_line1186(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = Boolean.valueOf(support.isInDef());
                   support.setInDef(false);
     return yyVal;
 }
-public static Object case248_line988(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case248_line988(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_concat(support.getPosition(((Node)yyVals[-6+yyTop])), support.newArrayNode(support.getPosition(((Node)yyVals[-6+yyTop])), ((Node)yyVals[-6+yyTop])).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case263_line1037(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case263_line1037(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case367_line1393(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case367_line1393(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_iter(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
                   support.popCurrentScope();
     return yyVal;
 }
-public static Object case357_line1353(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case357_line1353(Object yyVal, Object[] yyVals, int yyTop) {
                   /* Workaround for JRUBY-2326 (MRI does not enter this production for some reason)*/
                   if (((Node)yyVals[-1+yyTop]) instanceof YieldNode) {
                       throw new SyntaxException(PID.BLOCK_GIVEN_TO_YIELD, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "block given to yield");
@@ -3482,166 +3482,166 @@ public static Object case357_line1353(ParserSupport support, RubyYaccLexer lexer
 		  ((Node)yyVal).setPosition(support.getPosition(((Node)yyVals[-1+yyTop])));
     return yyVal;
 }
-public static Object case59_line520(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case59_line520(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_yield(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case264_line1041(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case264_line1041(Object yyVal, Object[] yyVals, int yyTop) {
 		  yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case316_line1222(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case316_line1222(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.setState(LexState.EXPR_FNAME);
     return yyVal;
 }
-public static Object case313_line1204(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case313_line1204(Object yyVal, Object[] yyVals, int yyTop) {
                   Node body = ((Node)yyVals[-1+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[-1+yyTop]);
 
                   yyVal = new ModuleNode(((Token)yyVals[-4+yyTop]).getPosition(), ((Colon3Node)yyVals[-3+yyTop]), support.getCurrentScope(), body);
                   support.popCurrentScope();
     return yyVal;
 }
-public static Object case432_line1646(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case432_line1646(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new Token("nil", Tokens.kNIL, ((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case90_line645(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case90_line645(Object yyVal, Object[] yyVals, int yyTop) {
                   support.yyerror("class/module name must be CONSTANT");
     return yyVal;
 }
-public static Object case29_line422(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case29_line422(Object yyVal, Object[] yyVals, int yyTop) {
                   support.checkExpression(((Node)yyVals[0+yyTop]));
 
                   yyVal = new OpAsgnNode(support.getPosition(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[0+yyTop]), (String) ((Token)yyVals[-2+yyTop]).getValue(), (String) ((Token)yyVals[-1+yyTop]).getValue());
     return yyVal;
 }
-public static Object case235_line936(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case235_line936(Object yyVal, Object[] yyVals, int yyTop) {
                   ISourcePosition pos = ((ListNode)yyVals[-4+yyTop]).getPosition();
                   yyVal = support.arg_concat(pos, support.newArrayNode(pos, new HashNode(pos, ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case175_line717(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case175_line717(Object yyVal, Object[] yyVals, int yyTop) {
                   ISourcePosition position = ((Token)yyVals[-1+yyTop]).getPosition();
                   Node body = ((Node)yyVals[0+yyTop]) == null ? NilImplicitNode.NIL : ((Node)yyVals[0+yyTop]);
                   yyVal = support.node_assign(((Node)yyVals[-4+yyTop]), new RescueNode(position, ((Node)yyVals[-2+yyTop]), new RescueBodyNode(position, null, body, null), null));
     return yyVal;
 }
-public static Object case45_line474(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case45_line474(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new BreakNode(((Token)yyVals[-1+yyTop]).getPosition(), support.ret_args(((Node)yyVals[0+yyTop]), ((Token)yyVals[-1+yyTop]).getPosition()));
     return yyVal;
 }
-public static Object case196_line814(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case196_line814(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "|", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case341_line1295(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case341_line1295(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(((ListNode)yyVals[-3+yyTop]).getPosition(), ((ListNode)yyVals[-3+yyTop]), null));
     return yyVal;
 }
-public static Object case195_line811(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case195_line811(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[0+yyTop]), "-@");
     return yyVal;
 }
-public static Object case278_line1067(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case278_line1067(Object yyVal, Object[] yyVals, int yyTop) {
 		  support.warning(ID.GROUPED_EXPRESSION, ((Token)yyVals[-4+yyTop]).getPosition(), "(...) interpreted as grouped expression");
                   yyVal = ((Node)yyVals[-3+yyTop]);
     return yyVal;
 }
-public static Object case258_line1018(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case258_line1018(Object yyVal, Object[] yyVals, int yyTop) {
                   support.warn(ID.ARGUMENT_EXTRA_SPACE, ((Token)yyVals[-3+yyTop]).getPosition(), "don't put space before argument parentheses");
 		  yyVal = ((Node)yyVals[-2+yyTop]);
     return yyVal;
 }
-public static Object case218_line881(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case218_line881(Object yyVal, Object[] yyVals, int yyTop) {
 	          support.checkExpression(((Node)yyVals[0+yyTop]));
 	          yyVal = ((Node)yyVals[0+yyTop]);   
     return yyVal;
 }
-public static Object case460_line1741(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case460_line1741(Object yyVal, Object[] yyVals, int yyTop) {
                    support.yyerror("formal argument cannot be a class variable");
     return yyVal;
 }
-public static Object case424_line1634(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case424_line1634(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = ((FloatNode)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case370_line1404(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case370_line1404(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newWhenNode(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case228_line914(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case228_line914(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((ListNode)yyVals[-4+yyTop]).add(((Node)yyVals[-2+yyTop]));
     return yyVal;
 }
-public static Object case314_line1210(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case314_line1210(Object yyVal, Object[] yyVals, int yyTop) {
                   support.setInDef(true);
 		  support.pushLocalScope();
     return yyVal;
 }
-public static Object case82_line608(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case82_line608(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.assignable(((Token)yyVals[0+yyTop]), NilImplicitNode.NIL);
     return yyVal;
 }
-public static Object case55_line508(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case55_line508(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-4+yyTop]), ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop])); 
     return yyVal;
 }
-public static Object case463_line1760(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case463_line1760(Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = new ListNode(((ISourcePositionHolder)yyVals[0+yyTop]).getPosition());
                     ((ListNode) yyVal).add(new ArgumentNode(((ISourcePositionHolder)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue()));
     return yyVal;
 }
-public static Object case413_line1594(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case413_line1594(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new GlobalVarNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case410_line1576(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case410_line1576(Object yyVal, Object[] yyVals, int yyTop) {
 		   lexer.setStrTerm(((StrTerm)yyVals[-1+yyTop]));
 	           yyVal = new EvStrNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case320_line1239(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case320_line1239(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new NextNode(((Token)yyVals[0+yyTop]).getPosition(), NilImplicitNode.NIL);
     return yyVal;
 }
-public static Object case106_line693(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case106_line693(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.appendToBlock(((Node)yyVals[-3+yyTop]), support.newUndef(((Node)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[0+yyTop])));
     return yyVal;
 }
-public static Object case73_line566(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case73_line566(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case214_line868(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case214_line868(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newOrNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case250_line996(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case250_line996(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_blk_pass(support.newSplatNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop])), ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case259_line1023(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case259_line1023(Object yyVal, Object[] yyVals, int yyTop) {
                   support.checkExpression(((Node)yyVals[0+yyTop]));
                   yyVal = new BlockPassNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case57_line514(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case57_line514(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-4+yyTop]), ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), ((IterNode)yyVals[0+yyTop])); 
     return yyVal;
 }
-public static Object case485_line1860(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case485_line1860(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((ListNode)yyVals[-2+yyTop]).addAll(((ListNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case483_line1851(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case483_line1851(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((ListNode)yyVals[-1+yyTop]).size() % 2 != 0) {
                       support.yyerror("odd number list for Hash.");
                   }
                   yyVal = ((ListNode)yyVals[-1+yyTop]);
     return yyVal;
 }
-public static Object case411_line1580(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case411_line1580(Object yyVal, Object[] yyVals, int yyTop) {
 		   yyVal = lexer.getStrTerm();
 		   lexer.setStrTerm(null);
 		   lexer.setState(LexState.EXPR_BEG);
@@ -3649,7 +3649,7 @@ public static Object case411_line1580(ParserSupport support, RubyYaccLexer lexer
 	           lexer.getCmdArgumentState().stop();
     return yyVal;
 }
-public static Object case392_line1482(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case392_line1482(Object yyVal, Object[] yyVals, int yyTop) {
                   ISourcePosition position = ((Token)yyVals[-2+yyTop]).getPosition();
 
 		  if (((Node)yyVals[-1+yyTop]) == null) {
@@ -3665,11 +3665,11 @@ public static Object case392_line1482(ParserSupport support, RubyYaccLexer lexer
 		  }
     return yyVal;
 }
-public static Object case67_line547(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case67_line547(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(support.getPosition(((ListNode)yyVals[-1+yyTop])), ((ListNode)yyVals[-1+yyTop]), new StarNode(lexer.getPosition()));
     return yyVal;
 }
-public static Object case176_line722(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case176_line722(Object yyVal, Object[] yyVals, int yyTop) {
 		  support.checkExpression(((Node)yyVals[0+yyTop]));
 		  String asgnOp = (String) ((Token)yyVals[-1+yyTop]).getValue();
 
@@ -3686,26 +3686,26 @@ public static Object case176_line722(ParserSupport support, RubyYaccLexer lexer,
 		  }
     return yyVal;
 }
-public static Object case216_line874(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case216_line874(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new IfNode(support.getPosition(((Node)yyVals[-4+yyTop])), support.getConditionNode(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case72_line563(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case72_line563(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newArrayNode(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case66_line544(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case66_line544(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new MultipleAsgnNode(support.getPosition(((ListNode)yyVals[-2+yyTop])), ((ListNode)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case4_line303(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case4_line303(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[-1+yyTop]) instanceof BlockNode) {
                       support.checkUselessStatements(((BlockNode)yyVals[-1+yyTop]));
 		  }
                   yyVal = ((Node)yyVals[-1+yyTop]);
     return yyVal;
 }
-public static Object case17_line344(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case17_line344(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((Node)yyVals[-2+yyTop]) != null && ((Node)yyVals[-2+yyTop]) instanceof BeginNode) {
                       yyVal = new WhileNode(support.getPosition(((Node)yyVals[-2+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])), ((BeginNode)yyVals[-2+yyTop]).getBodyNode(), false);
                   } else {
@@ -3713,23 +3713,23 @@ public static Object case17_line344(ParserSupport support, RubyYaccLexer lexer, 
                   }
     return yyVal;
 }
-public static Object case31_line430(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case31_line430(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), support.newSValueNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop])));
     return yyVal;
 }
-public static Object case472_line1808(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case472_line1808(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new UnnamedRestArgNode(((Token)yyVals[0+yyTop]).getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
     return yyVal;
 }
-public static Object case405_line1557(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case405_line1557(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.literal_concat(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case373_line1412(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case373_line1412(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new SplatNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case292_line1124(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case292_line1124(Object yyVal, Object[] yyVals, int yyTop) {
 	          if (((Node)yyVals[-1+yyTop]) != null && 
                       ((BlockAcceptingNode)yyVals[-1+yyTop]).getIterNode() instanceof BlockPassNode) {
                       throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, ((Node)yyVals[-1+yyTop]).getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
@@ -3738,19 +3738,19 @@ public static Object case292_line1124(ParserSupport support, RubyYaccLexer lexer
 		  ((Node)yyVal).setPosition(((Node)yyVals[-1+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case477_line1823(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case477_line1823(Object yyVal, Object[] yyVals, int yyTop) {
 	          yyVal = null;
     return yyVal;
 }
-public static Object case455_line1724(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case455_line1724(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.new_args(((BlockArgNode)yyVals[0+yyTop]).getPosition(), null, null, null, null, ((BlockArgNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case406_line1561(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case406_line1561(Object yyVal, Object[] yyVals, int yyTop) {
 		   yyVal = null;
     return yyVal;
 }
-public static Object case88_line632(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case88_line632(Object yyVal, Object[] yyVals, int yyTop) {
                   if (support.isInDef() || support.isInSingle()) {
 		      support.yyerror("dynamic constant assignment");
 		  }
@@ -3760,30 +3760,30 @@ public static Object case88_line632(ParserSupport support, RubyYaccLexer lexer, 
                   yyVal = new ConstDeclNode(position, null, support.new_colon3(position, (String) ((Token)yyVals[0+yyTop]).getValue()), NilImplicitNode.NIL);
     return yyVal;
 }
-public static Object case209_line853(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case209_line853(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new NotNode(support.getPosition(((Token)yyVals[-1+yyTop])), support.getConditionNode(((Node)yyVals[0+yyTop])));
     return yyVal;
 }
-public static Object case52_line499(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case52_line499(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_fcall(((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), null);
     return yyVal;
 }
-public static Object case390_line1471(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case390_line1471(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.literal_concat(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case239_line953(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case239_line953(Object yyVal, Object[] yyVals, int yyTop) {
     return yyVal;
 }
-public static Object case305_line1170(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case305_line1170(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.getConditionState().end();
     return yyVal;
 }
-public static Object case475_line1816(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case475_line1816(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newBlockArg(((Token)yyVals[-1+yyTop]).getPosition(), ((Token)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case339_line1285(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case339_line1285(Object yyVal, Object[] yyVals, int yyTop) {
                   if (((ListNode)yyVals[0+yyTop]).size() == 1) {
                       yyVal = ((ListNode)yyVals[0+yyTop]).get(0);
                   } else {
@@ -3791,25 +3791,25 @@ public static Object case339_line1285(ParserSupport support, RubyYaccLexer lexer
                   }
     return yyVal;
 }
-public static Object case323_line1249(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case323_line1249(Object yyVal, Object[] yyVals, int yyTop) {
                   support.checkExpression(((Node)yyVals[0+yyTop]));
 		  yyVal = ((Node)yyVals[0+yyTop]);
     return yyVal;
 }
-public static Object case201_line829(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case201_line829(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">=", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case10_line323(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case10_line323(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newAlias(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case369_line1399(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case369_line1399(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_iter(((Token)yyVals[-4+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), support.getCurrentScope(), ((Node)yyVals[-1+yyTop]));
                   support.popCurrentScope();
     return yyVal;
 }
-public static Object case318_line1228(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case318_line1228(Object yyVal, Object[] yyVals, int yyTop) {
                   /* TODO: We should use implicit nil for body, but problem (punt til later)*/
                   Node body = ((Node)yyVals[-1+yyTop]); /*$8 == null ? NilImplicitNode.NIL : $8;*/
 
@@ -3818,11 +3818,11 @@ public static Object case318_line1228(ParserSupport support, RubyYaccLexer lexer
                   support.setInSingle(support.getInSingle() - 1);
     return yyVal;
 }
-public static Object case13_line332(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case13_line332(Object yyVal, Object[] yyVals, int yyTop) {
                   support.yyerror("can't make alias for the number variables");
     return yyVal;
 }
-public static Object case184_line767(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case184_line767(Object yyVal, Object[] yyVals, int yyTop) {
 		  support.checkExpression(((Node)yyVals[-2+yyTop]));
 		  support.checkExpression(((Node)yyVals[0+yyTop]));
     
@@ -3830,50 +3830,50 @@ public static Object case184_line767(ParserSupport support, RubyYaccLexer lexer,
                   yyVal = new DotNode(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]), false, isLiteral);
     return yyVal;
 }
-public static Object case245_line975(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case245_line975(Object yyVal, Object[] yyVals, int yyTop) {
                   ISourcePosition pos = ((ListNode)yyVals[-4+yyTop]).getPosition();
                   yyVal = support.arg_concat(pos, support.newArrayNode(pos, new HashNode(pos, ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case200_line826(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case200_line826(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), ">", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case482_line1848(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case482_line1848(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((ListNode)yyVals[-1+yyTop]);
     return yyVal;
 }
-public static Object case94_line656(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case94_line656(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_colon2(((Node)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case202_line832(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case202_line832(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "<", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case293_line1132(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case293_line1132(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new IfNode(((Token)yyVals[-5+yyTop]).getPosition(), support.getConditionNode(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case363_line1380(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case363_line1380(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_call(((Node)yyVals[-2+yyTop]), ((Token)yyVals[0+yyTop]), null, null);
     return yyVal;
 }
-public static Object case193_line801(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case193_line801(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((FloatNode)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), lexer.getPosition()), "-@");
     return yyVal;
 }
-public static Object case249_line992(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case249_line992(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.arg_concat(support.getPosition(((Node)yyVals[-8+yyTop])), support.newArrayNode(support.getPosition(((Node)yyVals[-8+yyTop])), ((Node)yyVals[-8+yyTop])).addAll(((ListNode)yyVals[-6+yyTop])).add(new HashNode(lexer.getPosition(), ((ListNode)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
                   yyVal = support.arg_blk_pass((Node)yyVal, ((BlockPassNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case403_line1549(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case403_line1549(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]));
     return yyVal;
 }
-public static Object case302_line1157(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case302_line1157(Object yyVal, Object[] yyVals, int yyTop) {
 /* TODO: MRI is just a when node.  We need this extra logic for IDE consumers (null in casenode statement should be implicit nil)*/
 /*                  if (support.getConfiguration().hasExtraPositionInformation()) {*/
                       yyVal = support.newCaseNode(((Token)yyVals[-3+yyTop]).getPosition(), null, ((Node)yyVals[-1+yyTop]));
@@ -3882,57 +3882,57 @@ public static Object case302_line1157(ParserSupport support, RubyYaccLexer lexer
 /*                  }*/
     return yyVal;
 }
-public static Object case343_line1301(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case343_line1301(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.newBlockArg18(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]), new MultipleAsgnNode(((ListNode)yyVals[-5+yyTop]).getPosition(), ((ListNode)yyVals[-5+yyTop]), new StarNode(((Token)yyVals[-3+yyTop]).getPosition())));
     return yyVal;
 }
-public static Object case188_line786(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case188_line786(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "*", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case187_line783(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case187_line783(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "-", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case319_line1236(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case319_line1236(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new BreakNode(((Token)yyVals[0+yyTop]).getPosition(), NilImplicitNode.NIL);
     return yyVal;
 }
-public static Object case280_line1080(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case280_line1080(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.new_colon2(support.getPosition(((Node)yyVals[-2+yyTop])), ((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case288_line1114(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case288_line1114(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = new ZYieldNode(((Token)yyVals[0+yyTop]).getPosition());
     return yyVal;
 }
-public static Object case174_line712(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case174_line712(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.node_assign(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		  /* FIXME: Consider fixing node_assign itself rather than single case*/
 		  ((Node)yyVal).setPosition(support.getPosition(((Node)yyVals[-2+yyTop])));
     return yyVal;
 }
-public static Object case89_line641(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case89_line641(Object yyVal, Object[] yyVals, int yyTop) {
                    support.backrefAssignError(((Node)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case304_line1168(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case304_line1168(Object yyVal, Object[] yyVals, int yyTop) {
                   lexer.getConditionState().begin();
     return yyVal;
 }
-public static Object case510_line1892(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case510_line1892(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = null;
     return yyVal;
 }
-public static Object case453_line1718(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case453_line1718(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = support.new_args(((ListNode)yyVals[-1+yyTop]).getPosition(), null, ((ListNode)yyVals[-1+yyTop]), null, null, ((BlockArgNode)yyVals[0+yyTop]));
     return yyVal;
 }
-public static Object case415_line1600(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case415_line1600(Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = new ClassVarNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
-public static Object case354_line1335(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case354_line1335(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = ((Node)yyVals[-1+yyTop]);
                   lexer.commandStart = true;
 
@@ -3942,15 +3942,15 @@ public static Object case354_line1335(ParserSupport support, RubyYaccLexer lexer
 		  } 
     return yyVal;
 }
-public static Object case255_line1010(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case255_line1010(Object yyVal, Object[] yyVals, int yyTop) {
 		  lexer.setState(LexState.EXPR_ENDARG);
     return yyVal;
 }
-public static Object case190_line792(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case190_line792(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "%", ((Node)yyVals[0+yyTop]), lexer.getPosition());
     return yyVal;
 }
-public static Object case77_line579(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+private Object case77_line579(Object yyVal, Object[] yyVals, int yyTop) {
                   yyVal = support.attrset(((Node)yyVals[-2+yyTop]), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
 }
