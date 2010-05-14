@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class THROW_EXCEPTION_Instr extends IR_Instr
 {
@@ -20,4 +21,8 @@ public class THROW_EXCEPTION_Instr extends IR_Instr
     public Operand[] getOperands() { return new Operand[] { _exception }; }
 
     public void simplifyOperands(Map<Operand, Operand> valueMap) { _exception = _exception.getSimplifiedOperand(valueMap); }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new THROW_EXCEPTION_Instr(_exception.cloneForInlining(ii));
+    }
 }

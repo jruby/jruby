@@ -104,11 +104,7 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         String name = context.getFrameName();
         RubyModule klazz = context.getFrameKlazz();
-        
-        if (name != null && klazz != null && klazz.getSuperClass().isMethodBound(name, false)) {
-            return "super";
-        }
-        
-        return null;
+
+        return name != null && klazz != null && RuntimeHelpers.getSuperClassForDefined(runtime, klazz).isMethodBound(name, false) ? "super" : null;
     }
 }

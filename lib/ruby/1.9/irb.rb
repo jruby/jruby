@@ -1,7 +1,7 @@
 #
 #   irb.rb - irb main module
 #   	$Release Version: 0.9.6 $
-#   	$Revision: 24233 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -22,7 +22,7 @@ require "irb/locale"
 STDOUT.sync = true
 
 module IRB
-  @RCS_ID='-$Id: irb.rb 24233 2009-07-21 17:35:24Z keiju $-'
+  @RCS_ID='-$Id$-'
 
   class Abort < Exception;end
 
@@ -144,6 +144,8 @@ module IRB
 	      if @context.verbose?
 		printf "Use \"exit\" to leave %s\n", @context.ap_name
 	      end
+	    else
+	      print "\n"
 	    end
 	  end
 	  l

@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2001, 2002, 2003 by Michael Neumann (mneumann@ntecs.de)
 #
-# $Id: parser.rb 22784 2009-03-06 03:56:38Z nobu $
+# $Id$
 #
 
 
@@ -133,7 +133,7 @@ module XMLRPC
 
           hash.delete "___class___"
           hash.each {|key, value|
-            obj.instance_variable_set("@#{ key }", value) if key =~ /^([\w_][\w_0-9]*)$/
+            obj.instance_variable_set("@#{ key }", value) if key =~ /^([a-zA-Z_]\w*)$/
           }
           obj
         rescue

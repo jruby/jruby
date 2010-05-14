@@ -47,6 +47,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -94,6 +95,16 @@ public class JavaObject extends RubyObject {
         return new JavaObject(runtime, value);
     }
 
+    @JRubyMethod(meta = true)
+    public static IRubyObject wrap(ThreadContext context, IRubyObject self, IRubyObject object) {
+        Ruby runtime = context.getRuntime();
+        Object obj = getWrappedObject(object, NEVER);
+
+        if (obj == NEVER) return runtime.getNil();
+
+        return wrap(runtime, obj);
+    }
+
     @Override
     public Class<?> getJavaClass() {
         Object dataStruct = dataGetStruct();
@@ -123,8 +134,18 @@ public class JavaObject extends RubyObject {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof JavaObject &&
-                this.dataGetStruct() == ((JavaObject) other).dataGetStruct();
+        Ruby runtime = getRuntime();
+        Object myValue = getValue();
+        Object otherValue = other;
+        if (other instanceof IRubyObject) {
+            otherValue = getWrappedObject((IRubyObject)other, NEVER);
+        }
+
+        if (otherValue == NEVER) {
+            // not a wrapped object
+            return false;
+        }
+        return myValue == otherValue;
     }
 
     @Override
@@ -145,50 +166,75 @@ public class JavaObject extends RubyObject {
     @JRubyMethod
     @Override
     public IRubyObject to_s() {
-        Object dataStruct = dataGetStruct();
+        return to_s(getRuntime(), dataGetStruct());
+    }
+
+    public static IRubyObject to_s(Ruby runtime, Object dataStruct) {
         if (dataStruct != null) {
             String stringValue = dataStruct.toString();
             if (stringValue != null) {
-                return RubyString.newUnicodeString(getRuntime(), dataStruct.toString());
+                return RubyString.newUnicodeString(runtime, dataStruct.toString());
             }
 
-            return getRuntime().getNil();
+            return runtime.getNil();
         }
-        return RubyString.newEmptyString(getRuntime());
+        return RubyString.newEmptyString(runtime);
     }
 
     @JRubyMethod(name = {"==", "eql?"}, required = 1)
     public IRubyObject op_equal(IRubyObject other) {
-        if (!(other instanceof JavaObject)) {
-            other = (JavaObject)other.dataGetStruct();
-            if (!(other instanceof JavaObject)) {
-                return getRuntime().getFalse();
-            }
+        Object myValue = getValue();
+        return opEqualShared(myValue, other);
+    }
+
+    public static IRubyObject op_equal(JavaProxy self, IRubyObject other) {
+        Object myValue = self.getObject();
+        return opEqualShared(myValue, other);
+    }
+
+    private static IRubyObject opEqualShared(Object myValue, IRubyObject other) {
+        Ruby runtime = other.getRuntime();
+        Object otherValue = getWrappedObject(other, NEVER);
+
+        if (other == NEVER) {
+            // not a wrapped object
+            return runtime.getFalse();
         }
 
-        if (getValue() == null && ((JavaObject) other).getValue() == null) {
-            return getRuntime().getTrue();
+        if (myValue == null && otherValue == null) {
+            return runtime.getTrue();
         }
 
-        boolean isEqual = getValue().equals(((JavaObject) other).getValue());
-        return isEqual ? getRuntime().getTrue() : getRuntime().getFalse();
+        return runtime.newBoolean(myValue.equals(otherValue));
     }
 
     @JRubyMethod(name = "equal?", required = 1)
     public IRubyObject same(IRubyObject other) {
-        if (!(other instanceof JavaObject)) {
-            other = (JavaObject)other.dataGetStruct();
-            if (!(other instanceof JavaObject)) {
-                return getRuntime().getFalse();
-            }
+        Ruby runtime = getRuntime();
+        Object myValue = getValue();
+        Object otherValue = getWrappedObject(other, NEVER);
+
+        if (other == NEVER) {
+            // not a wrapped object
+            return runtime.getFalse();
         }
 
-        if (getValue() == null && ((JavaObject) other).getValue() == null) {
+        if (myValue == null && otherValue == null) {
             return getRuntime().getTrue();
         }
 
         boolean isSame = getValue() == ((JavaObject) other).getValue();
         return isSame ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+
+    private static Object getWrappedObject(IRubyObject other, Object def) {
+        if (other instanceof JavaObject) {
+            return ((JavaObject)other).getValue();
+        } else if (other instanceof JavaProxy) {
+            return ((JavaProxy)other).getObject();
+        } else {
+            return def;
+        }
     }
 
     @JRubyMethod
@@ -229,6 +275,12 @@ public class JavaObject extends RubyObject {
     @JRubyMethod(name = "synchronized")
     public IRubyObject ruby_synchronized(ThreadContext context, Block block) {
         Object lock = getValue();
+        synchronized (lock != null ? lock : NULL_LOCK) {
+            return block.yield(context, null);
+        }
+    }
+    
+    public static IRubyObject ruby_synchronized(ThreadContext context, Object lock, Block block) {
         synchronized (lock != null ? lock : NULL_LOCK) {
             return block.yield(context, null);
         }
@@ -279,7 +331,8 @@ public class JavaObject extends RubyObject {
         if (cls.isAssignableFrom(getValue().getClass())) {
             return getValue();
         }
-        throw getRuntime().newTypeError("cannot convert instance of " + getValue().getClass() + " to " + cls);
+        
+        return super.toJava(cls);
     }
 
     private static final ObjectAllocator JAVA_OBJECT_ALLOCATOR = new ObjectAllocator() {

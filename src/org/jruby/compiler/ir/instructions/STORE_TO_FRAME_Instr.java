@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class STORE_TO_FRAME_Instr extends PUT_Instr
 {
@@ -25,5 +26,9 @@ public class STORE_TO_FRAME_Instr extends PUT_Instr
 
     public String toString() {
         return "\tFRAME(" + _target + ")." + _ref + " = " + _value;
+    }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new STORE_TO_FRAME_Instr((IR_ExecutionScope)((MetaObject)_target)._scope, _ref, _value.cloneForInlining(ii));
     }
 }

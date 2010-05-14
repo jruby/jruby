@@ -1,8 +1,8 @@
 #
 #   irb/help.rb - print usage module
 #   	$Release Version: 0.9.5$
-#   	$Revision: 16857 $
-#   	$Date: 2008-06-06 17:05:24 +0900 (Fri, 06 Jun 2008) $
+#   	$Revision$
+#   	$Date$
 #   	by Keiju ISHITSUKA(keiju@ishitsuka.com)
 #
 # --

@@ -405,15 +405,29 @@ public class RubyDigest {
             if(type == runtime.fastGetModule("Digest").fastGetClass("Base")) {
                 throw runtime.newNotImplementedError("Digest::Base is an abstract class");
             }
-            if(!type.hasInternalVariable("metadata")) {
+
+            Metadata metadata = getMetadata(type);
+            if(metadata == null) {
                 throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
             }
+            
             try {
-                setAlgorithm((Metadata)type.getInternalVariable("metadata"));
+                setAlgorithm(metadata);
             } catch(NoSuchAlgorithmException e) {
                 throw runtime.newNotImplementedError("the " + type + "() function is unimplemented on this machine");
             }
 
+        }
+
+        // if subclass extends particular digest we need to walk to find it...we should rearchitect digest to avoid walking type systems
+        private Metadata getMetadata(RubyModule type) {
+            for (RubyModule current = type; current != null; current = current.getSuperClass()) {
+                Metadata metadata = (Metadata) current.getInternalVariable("metadata");
+
+                if (metadata != null) return metadata;
+            }
+
+            return null;
         }
         
         @JRubyMethod(optional = 1, frame = true)

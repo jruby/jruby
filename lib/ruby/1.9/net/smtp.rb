@@ -14,7 +14,7 @@
 # NOTE: You can find Japanese version of this document at:
 # http://www.ruby-lang.org/ja/man/html/net_smtp.html
 #
-# $Id: smtp.rb 23387 2009-05-10 23:56:22Z matz $
+# $Id$
 #
 # See Net::SMTP for documentation.
 #
@@ -118,7 +118,7 @@ module Net
   #     Net::SMTP.start('your.smtp.server', 25) do |smtp|
   #       smtp.send_message msgstr,
   #                         'your@mail.address',
-  #                         'his_addess@example.com'
+  #                         'his_address@example.com'
   #     end
   #
   # === Closing the Session
@@ -172,7 +172,7 @@ module Net
   #
   class SMTP
 
-    Revision = %q$Revision: 23387 $.split[1]
+    Revision = %q$Revision$.split[1]
 
     # The default SMTP port number, 25.
     def SMTP.default_port
@@ -651,8 +651,7 @@ module Net
     def send_message(msgstr, from_addr, *to_addrs)
       raise IOError, 'closed session' unless @socket
       mailfrom from_addr
-      rcptto_list to_addrs
-      data msgstr
+      rcptto_list(to_addrs) {data msgstr}
     end
 
     alias send_mail send_message
@@ -705,8 +704,7 @@ module Net
     def open_message_stream(from_addr, *to_addrs, &block)   # :yield: stream
       raise IOError, 'closed session' unless @socket
       mailfrom from_addr
-      rcptto_list to_addrs
-      data(&block)
+      rcptto_list(to_addrs) {data(&block)}
     end
 
     alias ready open_message_stream   # obsolete
@@ -830,9 +828,23 @@ module Net
 
     def rcptto_list(to_addrs)
       raise ArgumentError, 'mail destination not given' if to_addrs.empty?
+      ok_users = []
+      unknown_users = []
       to_addrs.flatten.each do |addr|
-        rcptto addr
+        begin
+          rcptto addr
+        rescue SMTPAuthenticationError
+          unknown_users << addr.dump
+        else
+          ok_users << addr
+        end
       end
+      raise ArgumentError, 'mail destination not given' if ok_users.empty?
+      ret = yield
+      unless unknown_users.empty?
+        raise SMTPAuthenticationError, "failed to deliver for #{unknown_users.join(', ')}"
+      end
+      ret
     end
 
     def rcptto(to_addr)

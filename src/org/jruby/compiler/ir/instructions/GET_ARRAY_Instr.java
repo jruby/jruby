@@ -5,6 +5,7 @@ import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // This is an internal ruby array generated during multiple assignment expressions.
 public class GET_ARRAY_Instr extends OneOperandInstr
@@ -26,5 +27,9 @@ public class GET_ARRAY_Instr extends OneOperandInstr
         simplifyOperands(valueMap);
         Operand val = _arg.getValue(valueMap);
         return val.fetchCompileTimeArrayElement(_index, _all);
+    }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new GET_ARRAY_Instr(ii.getRenamedVariable(_result), _arg.cloneForInlining(ii), _index, _all);
     }
 }

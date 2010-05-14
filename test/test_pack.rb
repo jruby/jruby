@@ -75,6 +75,14 @@ class TestPack < Test::Unit::TestCase
       ["A"*50].pack('u'))
   end
 
+  def test_pack_m_0_RFC4648
+    tobe = "QUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD\nQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD\nQUJD\n"
+    if RUBY_VERSION >= "1.9"
+      tobe.gsub!(/\n/, '')
+    end
+    assert_equal(tobe, ["ABC"*31].pack('m0'))
+  end
+
   # JRUBY-3677
   def test_pack_N_star_regression
     arr = ["head",1,1,1]

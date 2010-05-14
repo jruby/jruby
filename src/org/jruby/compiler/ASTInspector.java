@@ -60,7 +60,6 @@ import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.HashNode;
-import org.jruby.ast.Hash19Node;
 import org.jruby.ast.IArgumentNode;
 import org.jruby.ast.IScopingNode;
 import org.jruby.ast.IfNode;
@@ -135,8 +134,8 @@ public class ASTInspector {
     // pragmas
     private boolean noFrame;
     
-    public static Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
-    public static Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
+    public static final Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
+    public static final Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
 
     public static void addFrameAwareMethods(String... methods) {
         FRAME_AWARE_METHODS.addAll(Arrays.asList(methods));
@@ -146,7 +145,7 @@ public class ASTInspector {
         SCOPE_AWARE_METHODS.addAll(Arrays.asList(methods));
     }
 
-    public static Set<String> PRAGMAS = Collections.synchronizedSet(new HashSet<String>());
+    public static final Set<String> PRAGMAS = Collections.synchronizedSet(new HashSet<String>());
     
     static {
         FRAME_AWARE_METHODS.add("eval");

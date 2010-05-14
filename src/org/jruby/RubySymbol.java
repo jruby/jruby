@@ -36,6 +36,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Binding;
+import org.jruby.runtime.Block.Type;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
 
@@ -44,13 +47,20 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.parser.LocalStaticScope;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.assigner.Assigner;
+import org.jruby.runtime.assigner.Pre0Rest1Post0Assigner;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -404,36 +414,69 @@ public class RubySymbol extends RubyObject {
         }
 
         public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block blk) {
-            IRubyObject[] currentArgs = args;
-            switch(currentArgs.length) {
-            case 0: throw symbol.getRuntime().newArgumentError("no receiver given");
-            case 1: {
-                if((currentArgs[0] instanceof RubyArray) && ((RubyArray)currentArgs[0]).getLength() != 0) {
-                    // This is needed to unpack stuff
-                    currentArgs = ((RubyArray)currentArgs[0]).toJavaArrayMaybeUnsafe();
-                    IRubyObject[] args2 = new IRubyObject[currentArgs.length-1];
-                    System.arraycopy(currentArgs, 1, args2, 0, args2.length);
-                    return RuntimeHelpers.invoke(ctx, currentArgs[0], symbol.symbol, args2);
-                } else {
-                    return RuntimeHelpers.invoke(ctx, currentArgs[0], symbol.symbol);
+            if (args.length == 0) {
+                throw symbol.getRuntime().newArgumentError("no receiver given");
+            } else {
+                if (args.length == 1 && args[0] instanceof RubyArray) {
+                    args = ((RubyArray)args[0]).toJavaArrayUnsafe();
                 }
-            }
-            default: {
-                IRubyObject[] args2 = new IRubyObject[currentArgs.length-1];
-                System.arraycopy(currentArgs, 1, args2, 0, args2.length);
-                return RuntimeHelpers.invoke(ctx, currentArgs[0], symbol.symbol, args2);
-            }
+                IRubyObject[] args2 = new IRubyObject[args.length-1];
+                System.arraycopy(args, 1, args2, 0, args2.length);
+                return RuntimeHelpers.invoke(ctx, args[0], symbol.symbol, args2);
             }
         }
     }
-    /*
-    @JRubyMethod
-    public IRubyObject to_proc() {
-        return RubyProc.newProc(getRuntime(),
-                                CallBlock.newCallClosure(this, getRuntime().getSymbol(), Arity.noArguments(), new ToProcCallback(this), getRuntime().getCurrentContext()),
+    
+    @JRubyMethod(frame = true)
+    public IRubyObject to_proc(ThreadContext context) {
+        BlockBody body = new BlockBody(BlockBody.SINGLE_RESTARG) {
+            private StaticScope scope = new LocalStaticScope(null);
+            
+            @Override
+            public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+                RubyArray array = ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
+                if (array.size() == 0) {
+                    throw context.getRuntime().newArgumentError("no receiver given");
+                }
+                IRubyObject receiver = array.shift(context);
+                return RuntimeHelpers.invoke(context, receiver, symbol, array.toJavaArray());
+            }
+
+            @Override
+            public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
+                RubyArray array = aValue ? (RubyArray)value : ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
+                if (array.size() == 0) {
+                    throw context.getRuntime().newArgumentError("no receiver given");
+                }
+                IRubyObject receiver = array.shift(context);
+                return RuntimeHelpers.invoke(context, receiver, symbol, array.toJavaArray());
+            }
+
+            @Override
+            public StaticScope getStaticScope() {
+                return scope;
+            }
+
+            @Override
+            public void setStaticScope(StaticScope newScope) {
+            }
+
+            @Override
+            public Block cloneBlock(Binding binding) {
+                return new Block(this, binding);
+            }
+
+            @Override
+            public Arity arity() {
+                return Arity.OPTIONAL;
+            }
+        };
+        Block block = new Block(body, context.currentBinding());
+        return RubyProc.newProc(context.getRuntime(),
+                                block,
                                 Block.Type.PROC);
     }
-    */
+    
     private static boolean isIdentStart(char c) {
         return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z')
                 || c == '_');
@@ -584,6 +627,7 @@ public class RubySymbol extends RubyObject {
         return result;
     }
 
+    @Override
     public Object toJava(Class target) {
         if (target == String.class || target == CharSequence.class) {
             return symbol;

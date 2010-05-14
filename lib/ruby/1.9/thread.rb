@@ -59,14 +59,18 @@ class ConditionVariable
   #
   # Releases the lock held in +mutex+ and waits; reacquires the lock on wakeup.
   #
-  def wait(mutex)
+  # If +timeout+ is given, this method returns after +timeout+ seconds passed,
+  # even if no other thread doesn't signal.
+  #
+  def wait(mutex, timeout=nil)
     begin
       # TODO: mutex should not be used
       @waiters_mutex.synchronize do
         @waiters.push(Thread.current)
       end
-      mutex.sleep
+      mutex.sleep timeout
     end
+    self
   end
 
   #
@@ -79,6 +83,7 @@ class ConditionVariable
     rescue ThreadError
       retry
     end
+    self
   end
 
   #
@@ -93,10 +98,11 @@ class ConditionVariable
     end
     for t in waiters0
       begin
-	t.run
+        t.run
       rescue ThreadError
       end
     end
+    self
   end
 end
 
@@ -144,7 +150,6 @@ class Queue
   # Pushes +obj+ to the queue.
   #
   def push(obj)
-    t = nil
     @mutex.synchronize{
       @que.push obj
       begin
@@ -154,10 +159,6 @@ class Queue
         retry
       end
     }
-    begin
-      t.run if t
-    rescue ThreadError
-    end
   end
 
   #
@@ -176,8 +177,8 @@ class Queue
   # thread isn't suspended, and an exception is raised.
   #
   def pop(non_block=false)
-    while true
-      @mutex.synchronize{
+    @mutex.synchronize{
+      while true
         if @que.empty?
           raise ThreadError, "queue empty" if non_block
           @waiting.push Thread.current
@@ -185,8 +186,8 @@ class Queue
         else
           return @que.shift
         end
-      }
-    end
+      end
+    }
   end
 
   #
@@ -289,7 +290,6 @@ class SizedQueue < Queue
   # until space becomes available.
   #
   def push(obj)
-    t = nil
     @mutex.synchronize{
       while true
         break if @que.length < @max
@@ -305,11 +305,6 @@ class SizedQueue < Queue
         retry
       end
     }
-
-    begin
-      t.run if t
-    rescue ThreadError
-    end
   end
 
   #
@@ -327,7 +322,6 @@ class SizedQueue < Queue
   #
   def pop(*args)
     retval = super
-    t = nil
     @mutex.synchronize {
       if @que.length < @max
         begin
@@ -338,10 +332,6 @@ class SizedQueue < Queue
         end
       end
     }
-    begin
-      t.run if t
-    rescue ThreadError
-    end
     retval
   end
 

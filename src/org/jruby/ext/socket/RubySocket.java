@@ -185,7 +185,7 @@ public class RubySocket extends RubyBasicSocket {
             RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate();
 
             // normal file descriptor..try to work with it
-            ChannelDescriptor descriptor = socket.getDescriptorByFileno((int)((RubyFixnum)fd).getLongValue());
+            ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno((int)((RubyFixnum)fd).getLongValue());
 
             if (descriptor == null) {
                 throw ruby.newErrnoEBADFError();
@@ -255,7 +255,7 @@ public class RubySocket extends RubyBasicSocket {
                 channel = DatagramChannel.open();
             }
 
-            initSocket(context.getRuntime(), new ChannelDescriptor(channel, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+            initSocket(context.getRuntime(), new ChannelDescriptor(channel, new ModeFlags(ModeFlags.RDWR)));
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
         } catch(IOException e) {

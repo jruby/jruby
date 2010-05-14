@@ -216,8 +216,16 @@ public class IR_Builder
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int     i = isDebug ? 1 : 0;
+
+        String methName = null;
+        if (args.length > i && args[i].equals("-inline")) {
+           methName = args[i+1];
+           i += 2;
+        }
+
         boolean isCommandLineScript = args.length > i && args[i].equals("-e");
         i += (isCommandLineScript ? 1 : 0);
+
         while (i < args.length) {
            long t1 = new Date().getTime();
            Node ast = buildAST(isCommandLineScript, args[i]);
@@ -236,8 +244,17 @@ public class IR_Builder
            }
            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
            long t5 = new Date().getTime();
-           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
+//           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
            long t6 = new Date().getTime();
+
+           if (methName != null) {
+              System.out.println("################## After inline pass ##################");
+              System.out.println("Asked to inline " + methName);
+              scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.InlineTest(methName));
+              scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
+              scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+           }
+
            if (isDebug) {
                System.out.println("################## After dead code elimination pass ##################");
            }
@@ -250,6 +267,7 @@ public class IR_Builder
            if (isDebug) {
                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
            }
+
            System.out.println("Time to build AST         : " + (t2 - t1));
            System.out.println("Time to build IR          : " + (t3 - t2));
            System.out.println("Time to run local opts    : " + (t4 - t3));
@@ -353,7 +371,7 @@ public class IR_Builder
 
     public static Node skipOverNewlines(IR_Scope s, Node n) {
         if (n.getNodeType() == NodeType.NEWLINENODE)
-            s.addInstr(new LINE_NUM_Instr(n.getPosition().getStartLine()));
+            s.addInstr(new LINE_NUM_Instr(s, n.getPosition().getStartLine()));
 
         while (n.getNodeType() == NodeType.NEWLINENODE)
             n = ((NewlineNode)n).getNextNode();
@@ -502,7 +520,7 @@ public class IR_Builder
 
     public List<Operand> setupCallArgs(Node receiver, Node args, IR_Scope s) {
         List<Operand> argsList = new ArrayList<Operand>();
-        argsList.add(build(receiver, s)); // SSS FIXME: I added this in.  Is this correct?
+        argsList.add(build(receiver, s)); // SSS FIXME: Is this correct?
         if (args != null) {
            // unwrap newline nodes to get their actual type
            args = skipOverNewlines(s, args);
@@ -514,7 +532,7 @@ public class IR_Builder
 
     public List<Operand> setupCallArgs(Node args, IR_Scope s) {
         List<Operand> argsList = new ArrayList<Operand>();
-        argsList.add(s.getSelf());
+        argsList.add(s.getSelf()); // SSS FIXME: Is this correct?
         if (args != null) {
            // unwrap newline nodes to get their actual type
            args = skipOverNewlines(s, args);
@@ -1542,7 +1560,7 @@ public class IR_Builder
         }
 
         if (isInstanceMethod) {
-            s.addMethod(m);
+            s.getNearestModule().addMethod(m);
         }
         else {
             // Add 'm' to the meta class of the receiver!
@@ -2773,7 +2791,11 @@ public class IR_Builder
             s.addInstr(new THREAD_POLL_Instr());
 
             s.addInstr(new LABEL_Instr(loop._iterEndLabel));
-            if (!isLoopHeadCondition) {
+            if (isLoopHeadCondition) {
+                // Issue a jump back to the head of the while loop
+                s.addInstr(new JUMP_Instr(loop._loopStartLabel));
+            }
+            else {
                 Operand cv = build(conditionNode, s);
                 s.addInstr(new BEQ_Instr(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop._iterStartLabel));
             }
@@ -2812,8 +2834,19 @@ public class IR_Builder
         return new BacktickString(new StringLiteral(node.getValue()));
     }
 
+    private List<Operand> setupYieldArgs(Node args, IR_Scope s) {
+        List<Operand> argsList = new ArrayList<Operand>();
+        if (args != null) {
+           // unwrap newline nodes to get their actual type
+           args = skipOverNewlines(s, args);
+           buildArgs(argsList, args, s);
+        }
+
+        return argsList;
+    }
+
     public Operand buildYield(YieldNode node, IR_Scope s) {
-        List<Operand> args = setupCallArgs(node.getArgsNode(), s);
+        List<Operand> args = setupYieldArgs(node.getArgsNode(), s);
         Variable      ret  = s.getNewTemporaryVariable();
         s.addInstr(new YIELD_Instr(ret, args.toArray(new Operand[args.size()])));
         return ret;

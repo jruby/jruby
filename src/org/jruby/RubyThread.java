@@ -33,6 +33,7 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -91,6 +92,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // Error info is per-thread
     private IRubyObject errorInfo;
+
+    // weak reference to associated ThreadContext
+    private volatile WeakReference<ThreadContext> contextRef;
     
     private static final boolean DEBUG = false;
 
@@ -154,6 +158,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject setErrorInfo(IRubyObject errorInfo) {
         this.errorInfo = errorInfo;
         return errorInfo;
+    }
+
+    public void setContext(ThreadContext context) {
+        this.contextRef = new WeakReference<ThreadContext>(context);
+    }
+
+    public ThreadContext getContext() {
+        return contextRef.get();
     }
     
     /**
@@ -229,6 +241,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         
         rubyThread.threadImpl = new NativeThread(rubyThread, t);
         ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
+        runtime.getThreadService().associateThread(t, rubyThread);
         
         context.preAdoptThread();
         
@@ -782,17 +795,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         getRuntime().getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.KILL));
         
         if (DEBUG) System.out.println("thread " + Thread.currentThread() + " succeeded with kill");
-
-        // FIXME: is this still necessary?
-//        try {
-//            threadImpl.join();
-//        } catch (InterruptedException ie) {
-//            // we were interrupted, check thread events again
-//            currentThread.pollThreadEvents();
-//        } catch (ExecutionException ie) {
-//            // we were interrupted, check thread events again
-//            currentThread.pollThreadEvents();
-//        }
         
         return this;
     }
@@ -805,6 +807,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = "safe_level")
     public IRubyObject safe_level() {
         throw getRuntime().newNotImplementedError("Thread-specific SAFE levels are not supported");
+    }
+
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject backtrace(ThreadContext context) {
+        return context.createCallerBacktrace(context.getRuntime(), 0);
     }
 
     private boolean isCurrent() {
@@ -917,9 +924,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
     
     public void interrupt() {
-        Selector selector = currentSelector;
-        if (selector != null) {
-            selector.wakeup();
+        Selector activeSelector = currentSelector;
+        if (activeSelector != null) {
+            activeSelector.wakeup();
         }
         BlockingIO.Condition iowait = blockingIO;
         if (iowait != null) {

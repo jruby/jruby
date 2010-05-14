@@ -9,7 +9,7 @@
 # All rights reserved.  You can redistribute and/or modify it under the same
 # terms as Ruby.
 #
-#   $Id: set.rb 23363 2009-05-07 17:32:48Z knu $
+#   $Id$
 #
 # == Overview
 #
@@ -70,11 +70,22 @@ class Set
     enum.nil? and return
 
     if block
-      enum.each { |o| add(block[o]) }
+      do_with_enum(enum) { |o| add(block[o]) }
     else
       merge(enum)
     end
   end
+
+  def do_with_enum(enum, &block)
+    if enum.respond_to?(:each_entry)
+      enum.each_entry(&block)
+    elsif enum.respond_to?(:each)
+      enum.each(&block)
+    else
+      raise ArgumentError, "value must be enumerable"
+    end
+  end
+  private :do_with_enum
 
   # Copy internal hash.
   def initialize_copy(orig)
@@ -123,7 +134,7 @@ class Set
       @hash.replace(enum.instance_eval { @hash })
     else
       clear
-      enum.each { |o| add(o) }
+      merge(enum)
     end
 
     self
@@ -279,7 +290,7 @@ class Set
     if enum.instance_of?(self.class)
       @hash.update(enum.instance_variable_get(:@hash))
     else
-      enum.each { |o| add(o) }
+      do_with_enum(enum) { |o| add(o) }
     end
 
     self
@@ -288,7 +299,7 @@ class Set
   # Deletes every element that appears in the given enumerable object
   # and returns self.
   def subtract(enum)
-    enum.each { |o| delete(o) }
+    do_with_enum(enum) { |o| delete(o) }
     self
   end
 
@@ -311,7 +322,7 @@ class Set
   # given enumerable object.
   def &(enum)
     n = self.class.new
-    enum.each { |o| n.add(o) if include?(o) }
+    do_with_enum(enum) { |o| n.add(o) if include?(o) }
     n
   end
   alias intersection &	##
@@ -327,13 +338,16 @@ class Set
 
   # Returns true if two sets are equal.  The equality of each couple
   # of elements is defined according to Object#eql?.
-  def ==(set)
-    equal?(set) and return true
-
-    set.is_a?(Set) && size == set.size or return false
-
-    hash = @hash.dup
-    set.all? { |o| hash.include?(o) }
+  def ==(other)
+    if self.equal?(other)
+      true
+    elsif other.instance_of?(self.class)
+      @hash == other.instance_variable_get(:@hash)
+    elsif other.is_a?(Set) && self.size == other.size
+      other.all? { |o| @hash.include?(o) }
+    else
+      false
+    end
   end
 
   def hash	# :nodoc:
@@ -506,7 +520,7 @@ class SortedSet < Set
 	  end
 	  
 	  def add(o)
-	    o.respond_to?(:<=>) or raise ArgumentError, "value must repond to <=>"
+	    o.respond_to?(:<=>) or raise ArgumentError, "value must respond to <=>"
 	    super
 	  end
 	  alias << add
@@ -634,14 +648,16 @@ end
 # 	end
 #
 # 	def replace(enum)
+# 	  enum.respond_to?(:each) or raise ArgumentError, "value must be enumerable"
 # 	  clear
-# 	  enum.each { |o| add(o) }
+# 	  enum.each_entry { |o| add(o) }
 #
 # 	  self
 # 	end
 #
 # 	def merge(enum)
-# 	  enum.each { |o| add(o) }
+# 	  enum.respond_to?(:each) or raise ArgumentError, "value must be enumerable"
+# 	  enum.each_entry { |o| add(o) }
 #
 # 	  self
 # 	end
@@ -708,10 +724,10 @@ class TC_Set < Test::Unit::TestCase
       Set.new([1,2])
       Set.new('a'..'c')
     }
-    assert_raises(NoMethodError) {
+    assert_raises(ArgumentError) {
       Set.new(false)
     }
-    assert_raises(NoMethodError) {
+    assert_raises(ArgumentError) {
       Set.new(1)
     }
     assert_raises(ArgumentError) {

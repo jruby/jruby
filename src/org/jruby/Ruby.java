@@ -45,8 +45,6 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -136,7 +134,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
-import org.jruby.runtime.CallBlock;
 import org.jruby.threading.DaemonThreadFactory;
 
 /**
@@ -763,11 +760,10 @@ public final class Ruby {
     public int allocModuleId() {
         return moduleLastId.incrementAndGet();
     }
-    public int allocModuleId(RubyModule module) {
+    public void addModule(RubyModule module) {
         synchronized (allModules) {
             allModules.add(module);
         }
-        return allocModuleId();
     }
     public void eachModule(Function1<Object, IRubyObject> func) {
         synchronized (allModules) {
@@ -1100,7 +1096,7 @@ public final class Ruby {
         boolean oneNine = is1_9();
         // Bootstrap the top of the hierarchy
         if (oneNine) {
-            basicObjectClass = RubyClass.createBootstrapClass(this, "BasicObject", null, RubyBasicObject.OBJECT_ALLOCATOR);
+            basicObjectClass = RubyClass.createBootstrapClass(this, "BasicObject", null, RubyBasicObject.BASICOBJECT_ALLOCATOR);
             objectClass = RubyClass.createBootstrapClass(this, "Object", basicObjectClass, RubyObject.OBJECT_ALLOCATOR);
         } else {
             objectClass = RubyClass.createBootstrapClass(this, "Object", null, RubyObject.OBJECT_ALLOCATOR);
@@ -1378,6 +1374,10 @@ public final class Ruby {
         if (profile.allowModule("Errno")) {
             errnoModule = defineModule("Errno");
             try {
+                // define EAGAIN now, so that future EWOULDBLOCK will alias to it
+                // see MRI's error.c and its explicit ordering of Errno definitions.
+                createSysErr(Errno.EAGAIN.value(), Errno.EAGAIN.name());
+                
                 for (Errno e : Errno.values()) {
                     Constant c = (Constant) e;
                     if (Character.isUpperCase(c.name().charAt(0))) {
@@ -1401,9 +1401,14 @@ public final class Ruby {
      **/
     private void createSysErr(int i, String name) {
         if(profile.allowClass(name)) {
-            RubyClass errno = getErrno().defineClassUnder(name, systemCallError, systemCallError.getAllocator());
-            errnos.put(i, errno);
-            errno.defineConstant("Errno", newFixnum(i));
+            if (errnos.get(i) == null) {
+                RubyClass errno = getErrno().defineClassUnder(name, systemCallError, systemCallError.getAllocator());
+                errnos.put(i, errno);
+                errno.defineConstant("Errno", newFixnum(i));
+            } else {
+                // already defined a class for this errno, reuse it (JRUBY-4747)
+                getErrno().setConstant(name, errnos.get(i));
+            }
         }
     }
 
@@ -1482,7 +1487,6 @@ public final class Ruby {
             loadFile("builtin/gem_prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/gem_prelude.rb"), false);
         }
 
-        getLoadService().require("builtin/core_ext/symbol");
         getLoadService().require("enumerator");
     }
 
@@ -2162,11 +2166,11 @@ public final class Ruby {
      * @return Value of property isVerbose.
      */
     public IRubyObject getVerbose() {
-        return verbose;
+        return verboseValue;
     }
 
     public boolean isVerbose() {
-        return isVerbose;
+        return verbose;
     }
 
     public boolean warningsEnabled() {
@@ -2177,8 +2181,8 @@ public final class Ruby {
      * @param verbose New value of property isVerbose.
      */
     public void setVerbose(IRubyObject verbose) {
-        this.verbose = verbose;
-        isVerbose = verbose.isTrue();
+        this.verbose = verbose.isTrue();
+        this.verboseValue = verbose;
         warningsEnabled = !verbose.isNil();
     }
 
@@ -2186,6 +2190,10 @@ public final class Ruby {
      * @return Value of property isDebug.
      */
     public IRubyObject getDebug() {
+        return debug ? trueObject : falseObject;
+    }
+
+    public boolean isDebug() {
         return debug;
     }
 
@@ -2193,7 +2201,7 @@ public final class Ruby {
      * @param debug New value of property isDebug.
      */
     public void setDebug(IRubyObject debug) {
-        this.debug = debug;
+        this.debug = debug.isTrue();
     }
 
     public JavaSupport getJavaSupport() {
@@ -2563,21 +2571,21 @@ public final class Ruby {
                 Class contents;
                 try {
                     contents = jrubyClassLoader.loadClass(className);
-                    if (JITCompiler.DEBUG) {
-                        System.err.println("found jitted code in classloader: " + className);
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                        System.err.println("found jitted code for " + filename + " at class: " + className);
                     }
                     script = (Script)contents.newInstance();
                     readStream = new ByteArrayInputStream(buffer);
                 } catch (ClassNotFoundException cnfe) {
-                    if (JITCompiler.DEBUG) {
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                         System.err.println("no jitted code in classloader for file " + filename + " at class: " + className);
                     }
                 } catch (InstantiationException ie) {
-                    if (JITCompiler.DEBUG) {
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                         System.err.println("jitted code could not be instantiated for file " + filename + " at class: " + className);
                     }
                 } catch (IllegalAccessException iae) {
-                    if (JITCompiler.DEBUG) {
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                         System.err.println("jitted code could not be instantiated for file " + filename + " at class: " + className);
                     }
                 }
@@ -3340,35 +3348,53 @@ public final class Ruby {
         return objectSpace;
     }
 
-    private class WeakDescriptorReference extends WeakReference {
-        private int fileno;
+    private final Map<Integer, Integer> filenoExtIntMap = new HashMap<Integer, Integer>();
+    private final Map<Integer, Integer> filenoIntExtMap = new HashMap<Integer, Integer>();
 
-        public WeakDescriptorReference(ChannelDescriptor descriptor, ReferenceQueue queue) {
-            super(descriptor, queue);
-            this.fileno = descriptor.getFileno();
-        }
-
-        public int getFileno() {
-            return fileno;
-        }
+    public void putFilenoMap(int external, int internal) {
+        filenoExtIntMap.put(external, internal);
+        filenoIntExtMap.put(internal, external);
     }
 
+    public int getFilenoExtMap(int external) {
+        Integer internal = filenoExtIntMap.get(external);
+        if (internal != null) return internal;
+        return external;
+    }
+
+    public int getFilenoIntMap(int internal) {
+        Integer external = filenoIntExtMap.get(internal);
+        if (external != null) return external;
+        return internal;
+    }
+
+    /**
+     * Get the "external" fileno for a given ChannelDescriptor. Primarily for
+     * the shared 0, 1, and 2 filenos, which we can't actually share across
+     * JRuby runtimes.
+     *
+     * @param descriptor The descriptor for which to get the fileno
+     * @return The external fileno for the descriptor
+     */
+    public int getFileno(ChannelDescriptor descriptor) {
+        return getFilenoIntMap(descriptor.getFileno());
+    }
+
+    @Deprecated
     public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
-        Integer filenoKey = descriptor.getFileno();
-        retainedDescriptors.put(filenoKey, descriptor);
     }
 
+    @Deprecated
     public void registerDescriptor(ChannelDescriptor descriptor) {
-        registerDescriptor(descriptor,false); // default: don't retain
     }
 
+    @Deprecated
     public void unregisterDescriptor(int aFileno) {
-        Integer aFilenoKey = aFileno;
-        retainedDescriptors.remove(aFilenoKey);
     }
 
+    @Deprecated
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        return retainedDescriptors.get(aFileno);
+        return ChannelDescriptor.getDescriptorByFileno(aFileno);
     }
 
     public long incrementRandomSeedSequence() {
@@ -3714,7 +3740,6 @@ public final class Ruby {
     private final ObjectSpace objectSpace = new ObjectSpace();
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
-    private final Map<Integer, ChannelDescriptor> retainedDescriptors = new ConcurrentHashMap<Integer, ChannelDescriptor>();
 
     private long randomSeed = 0;
     private long randomSeedSequence = 0;
@@ -3740,9 +3765,8 @@ public final class Ruby {
     private RubyBoolean falseObject;
     public final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
 
-    private IRubyObject verbose;
-    private boolean isVerbose, warningsEnabled;
-    private IRubyObject debug;
+    private boolean verbose, warningsEnabled, debug;
+    private IRubyObject verboseValue;
     
     private RubyThreadGroup defaultThreadGroup;
 

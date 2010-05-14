@@ -36,7 +36,6 @@ package org.jruby.util.io;
 import static java.util.logging.Logger.getLogger;
 
 import java.io.EOFException;
-import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -605,7 +604,7 @@ public class ChannelStream implements Stream, Finalizable {
         checkWritable();
         try {
             flushWrite();
-        } catch (EOFException eof) {
+        } catch (EOFException eofe) {
             return -1;
         }
         return 0;
@@ -1382,7 +1381,7 @@ public class ChannelStream implements Stream, Finalizable {
         }
 
         if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
-            descriptor = new ChannelDescriptor(new NullChannel(), descriptor.getFileno(), modes, new FileDescriptor());
+            descriptor = descriptor.reopen(new NullChannel(), modes);
         } else {
             String cwd = runtime.getCurrentDirectory();
             JRubyFile theFile = JRubyFile.create(cwd,path);
@@ -1405,7 +1404,7 @@ public class ChannelStream implements Stream, Finalizable {
 
             if (modes.isTruncate()) file.setLength(0L);
 
-            descriptor = new ChannelDescriptor(file.getChannel(), descriptor.getFileno(), modes, file.getFD());
+            descriptor = descriptor.reopen(file, modes);
 
             if (modes.isAppendable()) lseek(0, SEEK_END);
         }

@@ -1645,6 +1645,21 @@ public class RubyObject extends RubyBasicObject {
         return array;
     }
 
+    // In 1.9, return symbols
+    @JRubyMethod(name = "instance_variables", compat = CompatVersion.RUBY1_9)
+    public RubyArray instance_variables19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        List<String> nameList = getInstanceVariableNameList();
+
+        RubyArray array = runtime.newArray(nameList.size());
+
+        for (String name : nameList) {
+            array.append(runtime.newSymbol(name));
+        }
+
+        return array;
+    }
+
     /**
      * Checks if the name parameter represents a legal instance variable name, and otherwise throws a Ruby NameError
      */

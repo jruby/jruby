@@ -146,7 +146,7 @@ public class LocalGlobalVariable extends GlobalVariable {
      */
     @Override
     public void inject(Ruby runtime, IRubyObject receiver) {
-        runtime.getGlobalVariables().set("$"+name, irubyObject);
+        runtime.getGlobalVariables().set(("$"+name).intern(), irubyObject);
     }
 
     /**
@@ -157,6 +157,6 @@ public class LocalGlobalVariable extends GlobalVariable {
     @Override
     public void remove(Ruby runtime) {
         setJavaObject(runtime, null);
-        runtime.getGlobalVariables().set("$"+name, irubyObject);
+        runtime.getGlobalVariables().set(("$"+name).intern(), irubyObject);
     }
 }

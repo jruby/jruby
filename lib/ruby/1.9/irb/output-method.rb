@@ -1,7 +1,7 @@
 #
-#   output-method.rb - optput methods used by irb
+#   output-method.rb - output methods used by irb
 #   	$Release Version: 0.9.6$
-#   	$Revision: 23985 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -16,7 +16,7 @@ module IRB
   #   StdioOutputMethod
 
   class OutputMethod
-    @RCS_ID='-$Id: output-method.rb 23985 2009-07-07 11:36:20Z keiju $-'
+    @RCS_ID='-$Id$-'
 
     def print(*opts)
       IRB.fail NotImplementError, "print"

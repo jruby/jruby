@@ -90,6 +90,13 @@ public class RbConfigLibrary implements Library {
         
         return theOSName == null ? OSName : theOSName;
     }
+
+    public static String getArchitecture() {
+        String architecture = Platform.ARCH;
+        if (architecture == null) architecture = "unknown";
+        
+        return architecture;
+    }
     /**
      * Just enough configuration settings (most don't make sense in Java) to run the rubytests
      * unit tests. The tests use <code>bindir</code>, <code>RUBY_INSTALL_NAME</code> and
@@ -124,7 +131,14 @@ public class RbConfigLibrary implements Library {
         if ((normalizedHome == null) && Ruby.isSecurityRestricted()) {
             normalizedHome = "SECURITY RESTRICTED";
         }
-        setConfig(configHash, "bindir", new NormalizedFile(normalizedHome, "bin").getPath());
+
+        // Use property for binDir if available, otherwise fall back to common bin default
+        String binDir = SafePropertyAccessor.getProperty("jruby.bindir");
+        if (binDir == null) {
+            binDir = new NormalizedFile(normalizedHome, "bin").getPath();
+        }
+        setConfig(configHash, "bindir", binDir);
+
         setConfig(configHash, "RUBY_INSTALL_NAME", jrubyScript());
         setConfig(configHash, "ruby_install_name", jrubyScript());
         setConfig(configHash, "SHELL", jrubyShell());
@@ -133,16 +147,16 @@ public class RbConfigLibrary implements Library {
 
         setConfig(configHash, "host_os", getOSName());
         setConfig(configHash, "host_vendor", System.getProperty("java.vendor"));
-        setConfig(configHash, "host_cpu", Platform.ARCH);
+        setConfig(configHash, "host_cpu", getArchitecture());
         
         setConfig(configHash, "target_os", getOSName());
         
-        setConfig(configHash, "target_cpu", Platform.ARCH);
+        setConfig(configHash, "target_cpu", getArchitecture());
         
         String jrubyJarFile = "jruby.jar";
-        URL jrubyPropertiesUrl = Ruby.getClassLoader().getResource(Constants.JRUBY_PROPERTIES);
+        URL jrubyPropertiesUrl = Ruby.getClassLoader().getResource("/org/jruby/Ruby.class");
         if (jrubyPropertiesUrl != null) {
-            Pattern jarFile = Pattern.compile("jar:file:.*?([a-zA-Z0-9.\\-]+\\.jar)!" + Constants.JRUBY_PROPERTIES);
+            Pattern jarFile = Pattern.compile("jar:file:.*?([a-zA-Z0-9.\\-]+\\.jar)!" + "/org/jruby/Ruby.class");
             Matcher jarMatcher = jarFile.matcher(jrubyPropertiesUrl.toString());
             jarMatcher.find();
             if (jarMatcher.matches()) {
@@ -199,6 +213,12 @@ public class RbConfigLibrary implements Library {
         if (runtime.is1_9()) {
             setConfig(configHash, "ridir", new NormalizedFile(shareDir, "ri").getPath());
         }
+
+        // These will be used as jruby defaults for rubygems if found
+        String gemhome = SafePropertyAccessor.getProperty("jruby.gem.home");
+        String gempath = SafePropertyAccessor.getProperty("jruby.gem.path");
+        if (gemhome != null) setConfig(configHash, "default_gem_home", gemhome);
+        if (gempath != null) setConfig(configHash, "default_gem_path", gempath);
         
         RubyHash mkmfHash = RubyHash.newHash(runtime);
         

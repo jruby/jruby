@@ -10,6 +10,7 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.Map;
 
@@ -34,6 +35,11 @@ public class ALLOC_FRAME_Instr extends IR_Instr {
         }
 
         return (IRMethod)scope;
+    }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        // The frame will now be allocated in the caller's scope
+        return new ALLOC_FRAME_Instr(ii.callerCFG.getScope());
     }
 
     @Override

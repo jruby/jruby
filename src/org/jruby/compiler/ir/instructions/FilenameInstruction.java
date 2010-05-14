@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class FilenameInstruction extends NoOperandInstr {
     public final String filename;
@@ -12,6 +13,8 @@ public class FilenameInstruction extends NoOperandInstr {
 
     @Override
     public String toString() {
-        return super.toString() + ":" + filename;
+        return super.toString() + "(" + filename + ")";
     }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) { return this; }
 }

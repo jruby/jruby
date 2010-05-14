@@ -9,7 +9,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class FieldMethodZero extends JavaMethodZero {
     Field field;
-    String name;
 
     FieldMethodZero(String name, RubyModule host, Field field) {
         super(host, Visibility.PUBLIC);
@@ -17,7 +16,6 @@ public abstract class FieldMethodZero extends JavaMethodZero {
             field.setAccessible(true);
         }
         this.field = field;
-        this.name = name;
     }
 
     protected Object safeConvert(IRubyObject value) {

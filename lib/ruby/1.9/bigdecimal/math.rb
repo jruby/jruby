@@ -1,3 +1,5 @@
+require 'bigdecimal'
+
 #
 #--
 # Contents:
@@ -29,6 +31,7 @@
 #   puts sin(a,100) # -> 0.10000000000000000000......E1
 #
 module BigMath
+  module_function
 
   # Computes the square root of x to the specified number of digits of
   # precision.
@@ -49,6 +52,14 @@ module BigMath
     n    = prec + BigDecimal.double_fig
     one  = BigDecimal("1")
     two  = BigDecimal("2")
+    x = -x if neg = x < 0
+    if x > (twopi = two * BigMath.PI(prec))
+      if x > 30
+        x %= twopi
+      else
+        x -= twopi while x > twopi
+      end
+    end
     x1   = x
     x2   = x.mult(x,n)
     sign = 1
@@ -65,7 +76,7 @@ module BigMath
       d   = sign * x1.div(z,m)
       y  += d
     end
-    y
+    neg ? -y : y
   end
 
   # Computes the cosine of x to the specified number of digits of precision.
@@ -77,6 +88,14 @@ module BigMath
     n    = prec + BigDecimal.double_fig
     one  = BigDecimal("1")
     two  = BigDecimal("2")
+    x = -x if x < 0
+    if x > (twopi = two * BigMath.PI(prec))
+      if x > 30
+        x %= twopi
+      else
+        x -= twopi while x > twopi
+      end
+    end
     x1 = one
     x2 = x.mult(x,n)
     sign = 1
@@ -98,12 +117,16 @@ module BigMath
 
   # Computes the arctangent of x to the specified number of digits of precision.
   #
-  # If x is infinite or NaN, returns NaN.
-  # Raises an argument error if x > 1.
+  # If x is NaN, returns NaN.
   def atan(x, prec)
     raise ArgumentError, "Zero or negative precision for atan" if prec <= 0
-    return BigDecimal("NaN") if x.infinite? || x.nan?
-    raise ArgumentError, "x.abs must be less than 1.0" if x.abs>=1
+    return BigDecimal("NaN") if x.nan?
+    pi = PI(prec)
+    x = -x if neg = x < 0
+    return pi.div(neg ? -2 : 2, prec) if x.infinite?
+    return pi / (neg ? -4 : 4) if x.round(prec) == 1
+    x = BigDecimal("1").div(x, prec) if inv = x > 1
+    x = (-1 + sqrt(1 + x**2, prec))/x if dbl = x > 0.5
     n    = prec + BigDecimal.double_fig
     y = x
     d = y
@@ -117,6 +140,9 @@ module BigMath
       y += d
       r += 2
     end
+    y *= 2 if dbl
+    y = pi / 2 - y if inv
+    y = -y if neg
     y
   end
 
@@ -132,6 +158,7 @@ module BigMath
     return BigDecimal("NaN") if x.infinite? || x.nan?
     n    = prec + BigDecimal.double_fig
     one  = BigDecimal("1")
+    x = -x if neg = x < 0
     x1 = one
     y  = one
     d  = y
@@ -145,7 +172,11 @@ module BigMath
       d  = x1.div(z,m)
       y += d
     end
-    y
+    if neg
+      one.div(y, prec)
+    else
+      y.round(prec - y.exponent)
+    end
   end
 
   # Computes the natural logarithm of x to the specified number of digits
@@ -159,6 +190,11 @@ module BigMath
     one = BigDecimal("1")
     two = BigDecimal("2")
     n  = prec + BigDecimal.double_fig
+    if (expo = x.exponent) < 0 || expo >= 3
+      x = x.mult(BigDecimal("1E#{-expo}"), n)
+    else
+      expo = nil
+    end
     x  = (x - one).div(x + one,n)
     x2 = x.mult(x,n)
     y  = x
@@ -171,7 +207,11 @@ module BigMath
       d  = x.div(i,m)
       y += d
     end
-    y*two
+    y *= two
+    if expo
+      y += log(BigDecimal("10"),prec) * BigDecimal(expo.to_s)
+    end
+    y
   end
 
   # Computes the value of pi to the specified number of digits of precision.

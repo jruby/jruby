@@ -1,2 +1,0 @@
-fails(JRUBY-4009):Class#superclass for a singleton class of an object returns the class of the object
-fails(JRUBY-4009):Class#superclass for a singleton class of a class returns the singleton class of its superclass

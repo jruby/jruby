@@ -37,8 +37,10 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -56,11 +58,17 @@ public class RubyProc extends RubyObject implements DataType {
     private Block.Type type;
     private String file;
     private int line;
+    private ISourcePosition sourcePosition;
 
     public RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
         super(runtime, rubyClass);
         
         this.type = type;
+    }
+
+    public RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, ISourcePosition sourcePosition) {
+        this(runtime, rubyClass, type);
+        this.sourcePosition = sourcePosition;
     }
     
     private static ObjectAllocator PROC_ALLOCATOR = new ObjectAllocator() {
@@ -94,10 +102,15 @@ public class RubyProc extends RubyObject implements DataType {
     public static RubyProc newProc(Ruby runtime, Block.Type type) {
         return new RubyProc(runtime, runtime.getProc(), type);
     }
+
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
-        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type);
+        return newProc(runtime, block, type, null);
+    }
+
+    public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
+        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
         proc.callInit(NULL_ARRAY, block);
-        
+
         return proc;
     }
     
@@ -207,7 +220,7 @@ public class RubyProc extends RubyObject implements DataType {
         return call(context, args, null, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"call", "[]", "yield"}, rest = true, frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
         return call(context, args, null, block);
     }
@@ -285,5 +298,20 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "to_proc")
     public RubyProc to_proc() {
     	return this;
+    }
+
+    @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
+    public IRubyObject source_location(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if (sourcePosition != null) {
+            return runtime.newArray(runtime.newString(sourcePosition.getFile()),
+                    runtime.newFixnum(sourcePosition.getLine() + 1 /*zero-based*/));
+        } else if (block != null) {
+            Binding binding = block.getBinding();
+            return runtime.newArray(runtime.newString(binding.getFile()),
+                    runtime.newFixnum(binding.getLine() + 1 /*zero-based*/));
+        }
+
+        return runtime.getNil();
     }
 }

@@ -74,4 +74,8 @@ public class UsesSingleMethodInterface {
     public static String toString(Object obj) {
         return obj.toString();
     }
+
+    public static Class getClass(Object obj) {
+        return obj.getClass();
+    }
 }

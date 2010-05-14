@@ -155,10 +155,12 @@ public final class IncludedModuleWrapper extends RubyClass {
         return delegate.id();
     }
 
+    @Override
     protected synchronized Map<String, IRubyObject> getClassVariables() {
         return delegate.getClassVariables();
     }
 
+    @Override
     protected Map<String, IRubyObject> getClassVariablesForRead() {
         return delegate.getClassVariablesForRead();
     }

@@ -96,9 +96,6 @@ public class RubyBasicSocket extends RubyIO {
     }
     
     protected void initSocket(Ruby runtime, ChannelDescriptor descriptor) {
-        // make sure descriptor is registered
-        registerDescriptor(descriptor);
-        
         // continue with normal initialization
         openFile = new OpenFile();
         

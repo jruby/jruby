@@ -160,6 +160,18 @@ public class RuntimeHelpers {
 
         return factory.getBlockCallback19(closureMethod, scriptObject);
     }
+
+    public static byte[] createBlockCallbackOffline(String classPath, String closureMethod) {
+        MethodFactory factory = MethodFactory.createFactory(RuntimeHelpers.class.getClassLoader());
+
+        return factory.getBlockCallbackOffline(closureMethod, classPath);
+    }
+
+    public static byte[] createBlockCallback19Offline(String classPath, String closureMethod) {
+        MethodFactory factory = MethodFactory.createFactory(RuntimeHelpers.class.getClassLoader());
+
+        return factory.getBlockCallback19Offline(closureMethod, classPath);
+    }
     
     public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity, 
             String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
@@ -279,6 +291,13 @@ public class RuntimeHelpers {
         
         return runtime.getNil();
     }
+
+    public static byte[] defOffline(String name, String classPath, String invokerName, Arity arity, StaticScope scope, CallConfiguration callConfig, String filename, int line) {
+        MethodFactory factory = MethodFactory.createFactory(RuntimeHelpers.class.getClassLoader());
+        byte[] methodBytes = factory.getCompiledMethodOffline(name, classPath, invokerName, arity, scope, callConfig, filename, line);
+
+        return methodBytes;
+    }
     
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
@@ -299,7 +318,7 @@ public class RuntimeHelpers {
         // store call information so method_missing impl can use it
         context.setLastCallStatusAndVisibility(CallType.FUNCTIONAL, Visibility.PUBLIC);
 
-        if (name == "method_missing") {
+        if (name.equals("method_missing")) {
             return RubyKernel.method_missing(context, receiver, args, Block.NULL_BLOCK);
         }
 
@@ -1827,5 +1846,13 @@ public class RuntimeHelpers {
         if (isModuleAndHasConstant(left, name)) return "constant";
         if (left.getMetaClass().isMethodBound(name, true)) return "method";
         return null;
+    }
+
+    public static RubyModule getSuperClassForDefined(Ruby runtime, RubyModule klazz) {
+        RubyModule superklazz = klazz.getSuperClass();
+
+        if (superklazz == null && klazz.isModule()) superklazz = runtime.getObject();
+
+        return superklazz;
     }
 }

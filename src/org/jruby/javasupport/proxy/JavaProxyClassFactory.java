@@ -694,6 +694,7 @@ public class JavaProxyClassFactory {
             this.arguments = m.getParameterTypes();
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (obj instanceof MethodKey) {
                 MethodKey key = (MethodKey) obj;
@@ -705,6 +706,7 @@ public class JavaProxyClassFactory {
             return false;
         }
 
+        @Override
         public int hashCode() {
             return name.hashCode();
         }
@@ -781,11 +783,6 @@ public class JavaProxyClassFactory {
                 throw runtime.newTypeError("package " + p + " is sealed");
             }
         }
-    }
-
-    private static String packageName(Class clazz) {
-        String clazzName = clazz.getName();
-        return packageName(clazzName);
     }
 
     private static String packageName(String clazzName) {

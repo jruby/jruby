@@ -14,7 +14,7 @@
 # NOTE: You can find Japanese version of this document at:
 # http://www.ruby-lang.org/ja/man/html/net_smtp.html
 # 
-# $Id: smtp.rb 18353 2008-08-04 05:51:11Z shyouhei $
+# $Id$
 #
 # See Net::SMTP for documentation. 
 # 

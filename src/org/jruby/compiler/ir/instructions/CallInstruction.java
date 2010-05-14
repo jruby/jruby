@@ -13,6 +13,8 @@ import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.operands.SelfVariable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 /*
  * args field: [self, reciever, *args]
@@ -74,6 +76,16 @@ public class CallInstruction extends MultiOperandInstr {
         return callArgs;
     }
 
+    public Operand[] cloneCallArgs(InlinerInfo ii) {
+        Operand[] clonedArgs = new Operand[_numArgs];
+
+        for (int i = 0; i < _numArgs; i++) {
+            clonedArgs[i] = _args[i + 1].cloneForInlining(ii);
+        }
+
+        return clonedArgs;
+    }
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         super.simplifyOperands(valueMap);
@@ -104,11 +116,11 @@ public class CallInstruction extends MultiOperandInstr {
         } // self.foo(..);
         // If this call instruction is in a class method, we'll fetch a class method
         // If this call instruction is in an instance method, we'll fetch an instance method
-        else if ((receiver instanceof Variable) && ((Variable) receiver).isSelf()) {
-            IR_Class c = null; // SSS FIXME
+        else if (receiver instanceof SelfVariable) {
             return null;
         } else {
             IR_Class c = receiver.getTargetClass();
+
             return c == null ? null : c.getInstanceMethod(mname);
         }
     }
@@ -241,6 +253,11 @@ public class CallInstruction extends MultiOperandInstr {
                 + _op + "(" + _methAddr + ", " + java.util.Arrays.toString(getCallArgs())
                 + (_closure == null ? "" : ", &" + _closure) + ")";
     }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new CallInstruction(ii.getRenamedVariable(_result), _methAddr.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
+	}
+
 // --------------- Private methods ---------------
 
     private static Operand[] buildAllArgs(Operand methAddr, Operand closure, Operand[] callArgs) {

@@ -182,6 +182,24 @@ describe "Single-method Java interfaces" do
     callable.should_receive(:call).and_return result
     UsesSingleMethodInterface.new.callIt3(callable).should == result
   end
+
+  it "coerces to that interface after duck-typed implementation has happened" do
+    callable = mock "SingleMethodInterfaceImpl"
+    callable.should_receive(:callIt).and_return :callIt
+    UsesSingleMethodInterface.callIt(callable).should == :callIt
+
+    # receives Object, but should return the coerced impl
+    cls = UsesSingleMethodInterface.getClass(callable)
+
+    # pull out interfaces from the resulting class
+    interfaces = []
+    while cls
+      interfaces.concat(cls.interfaces)
+      cls = cls.superclass
+    end
+    
+    interfaces.should include(SingleMethodInterface.java_class)
+  end
 end
 
 describe "A bean-like Java interface" do

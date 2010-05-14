@@ -91,8 +91,6 @@ public class JavaSupport {
     // FIXME: needs to be rethought
     private final Map matchCache = Collections.synchronizedMap(new HashMap(128));
 
-    private Callback concreteProxyCallback;
-
     private RubyModule javaModule;
     private RubyModule javaUtilitiesModule;
     private RubyModule javaArrayUtilitiesModule;

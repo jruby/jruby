@@ -63,6 +63,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -249,33 +250,20 @@ public class JavaUtil {
     }
 
     public static boolean isJavaObject(IRubyObject candidate) {
-        return candidate.dataGetStruct() instanceof JavaObject;
+        return candidate instanceof JavaProxy || candidate.dataGetStruct() instanceof JavaObject;
     }
 
     public static Object unwrapJavaObject(IRubyObject object) {
+        if (object instanceof JavaProxy) {
+            return ((JavaProxy)object).getObject();
+        }
         return ((JavaObject)object.dataGetStruct()).getValue();
     }
 
-    public static JavaObject unwrapJavaObject(Ruby runtime, IRubyObject convertee, String errorMessage) {
-        IRubyObject obj = convertee;
-        if(!(obj instanceof JavaObject)) {
-            if (obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof JavaObject)) {
-                obj = (JavaObject)obj.dataGetStruct();
-            } else {
-                throw runtime.newTypeError(errorMessage);
-            }
-        }
-        return (JavaObject)obj;
-    }
-
     public static Object unwrapJavaValue(Ruby runtime, IRubyObject obj, String errorMessage) {
-        if(obj instanceof JavaMethod) {
-            return ((JavaMethod)obj).getValue();
-        } else if(obj instanceof JavaConstructor) {
-            return ((JavaConstructor)obj).getValue();
-        } else if(obj instanceof JavaField) {
-            return ((JavaField)obj).getValue();
-        } else if(obj instanceof JavaObject) {
+        if (obj instanceof JavaProxy) {
+            return ((JavaProxy)obj).getObject();
+        } else if (obj instanceof JavaObject) {
             return ((JavaObject)obj).getValue();
         } else if(obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof IRubyObject)) {
             return unwrapJavaValue(runtime, ((IRubyObject)obj.dataGetStruct()), errorMessage);
@@ -1329,5 +1317,18 @@ public class JavaUtil {
         } else {
             return javaObject;
         }
+    }
+
+    @Deprecated
+    public static JavaObject unwrapJavaObject(Ruby runtime, IRubyObject convertee, String errorMessage) {
+        IRubyObject obj = convertee;
+        if(!(obj instanceof JavaObject)) {
+            if (obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof JavaObject)) {
+                obj = (JavaObject)obj.dataGetStruct();
+            } else {
+                throw runtime.newTypeError(errorMessage);
+            }
+        }
+        return (JavaObject)obj;
     }
 }

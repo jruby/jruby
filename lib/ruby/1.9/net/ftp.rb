@@ -25,6 +25,7 @@ module Net
   class FTPTempError < FTPError; end
   class FTPPermError < FTPError; end
   class FTPProtoError < FTPError; end
+  class FTPConnectionError < FTPError; end
   # :startdoc:
 
   #
@@ -128,10 +129,12 @@ module Net
     #
     def initialize(host = nil, user = nil, passwd = nil, acct = nil)
       super()
-      @binary = false
+      @binary = true
       @passive = false
       @debug_mode = false
       @resume = false
+      @sock = NullSocket.new
+      @logged_in = false
       if host
 	connect(host)
 	if user
@@ -143,9 +146,18 @@ module Net
     def binary=(newmode)
       if newmode != @binary
         @binary = newmode
-        @binary ? voidcmd("TYPE I") : voidcmd("TYPE A")
+        send_type_command if @logged_in
       end
     end
+
+    def send_type_command
+      if @binary
+        voidcmd("TYPE I")
+      else
+        voidcmd("TYPE A")
+      end
+    end
+    private :send_type_command
 
     def with_binary(newmode)
       oldmode = binary
@@ -363,22 +375,6 @@ module Net
     end
     private :transfercmd
 
-    def getaddress
-      thishost = Socket.gethostname
-      if not thishost.index(".")
-	thishost = Socket.gethostbyname(thishost)[0]
-      end
-      if ENV.has_key?("LOGNAME")
-	realuser = ENV["LOGNAME"]
-      elsif ENV.has_key?("USER")
-	realuser = ENV["USER"]
-      else
-	realuser = "anonymous"
-      end
-      return realuser + "@" + thishost
-    end
-    private :getaddress
-
     #
     # Logs in to the remote host. The session must have been previously
     # connected.  If +user+ is the string "anonymous" and the +password+ is
@@ -389,7 +385,7 @@ module Net
     #
     def login(user = "anonymous", passwd = nil, acct = nil)
       if user == "anonymous" and passwd == nil
-	passwd = getaddress
+	passwd = "anonymous@"
       end
 
       resp = ""
@@ -408,7 +404,8 @@ module Net
 	raise FTPReplyError, resp
       end
       @welcome = resp
-      self.binary = true
+      send_type_command
+      @logged_in = true
     end
 
     #
@@ -445,12 +442,7 @@ module Net
           loop do
             line = conn.gets
             break if line == nil
-            if line[-2, 2] == CRLF
-              line = line[0 .. -3]
-            elsif line[-1] == ?\n
-              line = line[0 .. -2]
-            end
-            yield(line)
+            yield(line.sub(/\r?\n\z/, ""), !line.match(/\n\z/).nil?)
           end
           conn.close
           voidresp
@@ -470,7 +462,7 @@ module Net
       end
       synchronize do
 	with_binary(true) do
-          conn = transfercmd(cmd, rest_offset)
+          conn = transfercmd(cmd)
           loop do
             buf = file.read(blocksize)
             break if buf == nil
@@ -544,7 +536,7 @@ module Net
       end
       begin
 	f.binmode if localfile
-	retrbinary("RETR " + remotefile, blocksize, rest_offset) do |data|
+	retrbinary("RETR " + remotefile.to_s, blocksize, rest_offset) do |data|
 	  f.write(data) if localfile
 	  yield(data) if block_given?
           result.concat(data) if result
@@ -570,10 +562,11 @@ module Net
         result = ""
       end
       begin
-	retrlines("RETR " + remotefile) do |line|
-	  f.puts(line) if localfile
-	  yield(line) if block_given?
-          result.concat(line + "\n") if result
+	retrlines("RETR " + remotefile) do |line, newline|
+          l = newline ? line + "\n" : line
+	  f.print(l) if localfile
+	  yield(line, newline) if block_given?
+          result.concat(l) if result
 	end
         return result
       ensure
@@ -613,7 +606,11 @@ module Net
       f = open(localfile)
       begin
 	f.binmode
-	storbinary("STOR " + remotefile, f, blocksize, rest_offset, &block)
+        if rest_offset
+          storbinary("APPE " + remotefile, f, blocksize, rest_offset, &block)
+        else
+          storbinary("STOR " + remotefile, f, blocksize, rest_offset, &block)
+        end
       ensure
 	f.close
       end
@@ -676,7 +673,7 @@ module Net
     def list(*args, &block) # :yield: line
       cmd = "LIST"
       args.each do |arg|
-	cmd = cmd + " " + arg
+	cmd = cmd + " " + arg.to_s
       end
       if block
 	retrlines(cmd, &block)
@@ -970,8 +967,15 @@ module Net
       return dirname
     end
     private :parse257
-  end
 
+    # :stopdoc:
+    class NullSocket
+      def method_missing(mid, *args)
+        raise FTPConnectionError, "not connected"
+      end
+    end
+    # :startdoc:
+  end
 end
 
 

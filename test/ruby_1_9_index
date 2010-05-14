@@ -12,3 +12,4 @@ test_io_1_9
 test_jruby_4084
 test_string_1_9
 test_win32
+test_time_1_9

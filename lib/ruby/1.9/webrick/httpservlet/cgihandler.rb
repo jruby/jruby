@@ -17,9 +17,7 @@ module WEBrick
   module HTTPServlet
 
     class CGIHandler < AbstractServlet
-      Ruby = File::join(RbConfig::CONFIG['bindir'],
-                        RbConfig::CONFIG['ruby_install_name'])
-      Ruby << RbConfig::CONFIG['EXEEXT']
+      Ruby = RbConfig.ruby
       CGIRunner = "\"#{Ruby}\" \"#{WEBrick::Config::LIBDIR}/httpservlet/cgi_runner.rb\""
 
       def initialize(server, name)
@@ -34,9 +32,9 @@ module WEBrick
         status = -1
 
         cgi_in = IO::popen(@cgicmd, "wb")
-        cgi_out = Tempfile.new("webrick.cgiout.", @tempdir)
+        cgi_out = Tempfile.new("webrick.cgiout.", @tempdir, mode: IO::BINARY)
         cgi_out.set_encoding("ASCII-8BIT")
-        cgi_err = Tempfile.new("webrick.cgierr.", @tempdir)
+        cgi_err = Tempfile.new("webrick.cgierr.", @tempdir, mode: IO::BINARY)
         cgi_err.set_encoding("ASCII-8BIT")
         begin
           cgi_in.sync = true

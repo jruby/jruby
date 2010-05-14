@@ -97,13 +97,36 @@ public abstract class MethodFactory {
      * @param scope The methods static scoping information.
      * @param scriptObject An instace of the target compiled method class.
      * @param callConfig The call configuration to use for this method.
+     * @param position The position to use when generating traceable handles.
      * @return A new method handle for the target compiled method.
      */
     public abstract DynamicMethod getCompiledMethod(
             RubyModule implementationClass, String method, 
             Arity arity, Visibility visibility, StaticScope scope, 
             Object scriptObject, CallConfiguration callConfig, ISourcePosition position);
-    
+
+    /**
+     * Like getCompiledMethod, but produces the actual bytes for the compiled
+     * method handle rather than loading and constructing it. This can be used
+     * to generate all the handles ahead of time, as when doing a full system
+     * precompile.
+     *
+     * @param method The name of the method
+     * @param classPath The path-like (with / instead of .) name of the class
+     * @param invokerPath The path-line name of the invoker to generate
+     * @param arity The Arity of the method
+     * @param scope The methods static scoping information.
+     * @param callConfig The call configuration to use for this method.
+     * @param position The position to use when generating traceable handles.
+     * @return
+     */
+    public byte[] getCompiledMethodOffline(
+            String method, String classPath, String invokerPath,
+            Arity arity, StaticScope scope,
+            CallConfiguration callConfig, String filename, int line) {
+        return null;
+    }
+
     /**
      * Like getCompiledMethod, but postpones any heavy lifting involved in
      * creating the method until first invocation. This helps reduce the cost
@@ -169,6 +192,32 @@ public abstract class MethodFactory {
      * @return A new CompiledBlockCallback for the method
      */
     public abstract CompiledBlockCallback19 getBlockCallback19(String method, Object scriptObject);
+
+    /**
+     * Get a CompiledBlockCallback for the specified block, returning the bytes
+     * but not loading the class. This is used for offline generation of the
+     * callback class file.
+     *
+     * @param method The name of the method
+     * @param classPath The /-based name of the class containing the method
+     * @return The bytes of the class
+     */
+    public byte[] getBlockCallbackOffline(String method, String classPath) {
+        return null;
+    }
+
+    /**
+     * Get a CompiledBlockCallback for the specified block, returning the bytes
+     * but not loading the class. This is used for offline generation of the
+     * callback class file. This version generates a 1.9-compatible callback.
+     *
+     * @param method The name of the method
+     * @param classPath The /-based name of the class containing the method
+     * @return The bytes of the class
+     */
+    public byte[] getBlockCallback19Offline(String method, String classPath) {
+        return null;
+    }
 
     /**
      * Use the reflection-based factory.

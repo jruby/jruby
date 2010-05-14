@@ -1,7 +1,13 @@
 package org.jruby.compiler.ir;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import org.jruby.compiler.ir.compiler_pass.CompilerPass;
+import org.jruby.compiler.ir.instructions.DEFINE_CLASS_METHOD_Instr;
+import org.jruby.compiler.ir.instructions.DEFINE_INSTANCE_METHOD_Instr;
+import org.jruby.compiler.ir.instructions.IR_Instr;
 
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
@@ -15,7 +21,8 @@ public class IR_Module extends IR_ScopeImpl {
     public final String _name;
     private IRMethod _rootMethod; // Dummy top-level method for the class
     private CodeVersion _version;    // Current code version for this module
-
+    final public List<IRMethod> methods = new ArrayList<IRMethod>();
+    
     static {
         bootStrap();
     }
@@ -73,6 +80,34 @@ public class IR_Module extends IR_ScopeImpl {
         _rootMethod = new IRMethod(this, new MetaObject(this), n, false);
         _rootMethod.addInstr(new ReceiveArgumentInstruction(_rootMethod.getSelf(), 0));	// Set up self!
         addMethod(_rootMethod);
+    }
+
+    public void addMethod(IRMethod method) {
+        assert !IR_Module.isAClassRootMethod(method);
+
+        methods.add(method);
+
+        IR_Instr instruction = method.isInstanceMethod ?
+            new DEFINE_INSTANCE_METHOD_Instr(this, method) :
+            new DEFINE_CLASS_METHOD_Instr(this, method);
+        
+        getRootMethod().addInstr(instruction);
+    }
+
+    @Override
+    protected void runCompilerPassOnNestedScopes(CompilerPass p) {
+        super.runCompilerPassOnNestedScopes(p);
+
+        if (!methods.isEmpty()) {
+            for (IR_Scope meth : methods) {
+                meth.runCompilerPass(p);
+            }
+        }
+    }
+
+    @Override
+    public IR_Module getNearestModule() {
+        return this;
     }
 
     public IR_Module(IR_Scope lexicalParent, Operand container, String name) {

@@ -454,7 +454,7 @@ public class LoadService {
         public void trySearch(SearchState state) throws AlreadyLoaded;
     }
     
-    public class AlreadyLoaded extends Exception {
+    public static class AlreadyLoaded extends Exception {
         private RubyString searchNameString;
         
         public AlreadyLoaded(RubyString searchNameString) {
@@ -594,7 +594,7 @@ public class LoadService {
         }
     }
 
-    public class SearchState {
+    public static class SearchState {
         public Library library;
         public String loadName;
         public SuffixType suffixType;

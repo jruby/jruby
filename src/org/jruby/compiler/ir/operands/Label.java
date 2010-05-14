@@ -1,4 +1,5 @@
 package org.jruby.compiler.ir.operands;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class Label extends Operand
 {
@@ -13,4 +14,6 @@ public class Label extends Operand
     public int hashCode() { return _label.hashCode(); }
 
     public boolean equals(Object o) { return (o instanceof Label) && _label.equals(((Label)o)._label); }
+
+    public Operand cloneForInlining(InlinerInfo ii) { return ii.getRenamedLabel(this); }
 }

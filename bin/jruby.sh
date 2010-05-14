@@ -20,6 +20,7 @@ case "`uname`" in
 esac
 
 # ----- Verify and Set Required Environment Variables -------------------------
+JAVA_VM=-client
 
 ## resolve links - $0 may be a link to  home
 PRG=$0
@@ -71,6 +72,9 @@ for opt in ${JRUBY_OPTS[@]}; do
             esac
         fi
     done
+    if [ $opt == "-server" ]; then # JRUBY-4204
+        JAVA_VM="-server"
+    fi
 done
 JRUBY_OPTS=${JRUBY_OPTS_TEMP}
 
@@ -82,6 +86,12 @@ else
   fi
   JAVA_CMD="$JAVA_HOME/bin/java"
 fi
+
+for opt in ${JAVA_OPTS[@]}; do # JRUBY-4204
+  if [ $opt == "-server" ]; then
+    JAVA_VM="-server"
+  fi
+done
 
 # If you're seeing odd exceptions, you may have a bad JVM install.
 # Uncomment this and report the version to the JRuby team along with error.
@@ -150,11 +160,14 @@ if [ -z "$JAVA_MEM" ] ; then
   JAVA_MEM=-Xmx500m
 fi
 
+if [ -z "$JAVA_MEM_MIN" ] ; then
+  JAVA_MEM_MIN=-Xms2m
+fi
+
 if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss1024k
 fi
 
-JAVA_VM=-client
 JAVA_ENCODING=""
 
 declare -a java_args
@@ -172,6 +185,8 @@ do
         val=${1:2}
         if [ "${val:0:4}" = "-Xmx" ]; then
             JAVA_MEM=$val
+        elif [ "${val:0:4}" = "-Xms" ]; then
+            JAVA_MEM_MIN=$val
         elif [ "${val:0:4}" = "-Xss" ]; then
             JAVA_STACK=$val
         elif [ "${val}" = "" ]; then
@@ -273,7 +288,7 @@ ruby_args=("${ruby_args[@]}" "$@")
 # Put the ruby_args back into the position arguments $1, $2 etc
 set -- "${ruby_args[@]}"
 
-JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
+JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
 
 JFFI_BOOT=""
 if [ -d $JRUBY_HOME/lib/native/ ]; then

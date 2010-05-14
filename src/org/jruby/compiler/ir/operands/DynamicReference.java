@@ -1,4 +1,5 @@
 package org.jruby.compiler.ir.operands;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -25,5 +26,9 @@ public class DynamicReference extends Operand
     public void addUsedVariables(List<Variable> l)
     {
         _refName.addUsedVariables(l);
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return _refName.cloneForInlining(ii);
     }
 }

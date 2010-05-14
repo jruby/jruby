@@ -5,8 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jruby.compiler.ir.instructions.DEFINE_CLASS_METHOD_Instr;
-import org.jruby.compiler.ir.instructions.DEFINE_INSTANCE_METHOD_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
 import org.jruby.compiler.ir.operands.Label;
@@ -17,6 +15,7 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
+import org.jruby.compiler.ir.operands.RenamedVariable;
 
 /**
  * Right now, this class abstracts 5 different scopes: Script, Module, Class, 
@@ -61,7 +60,6 @@ public abstract class IR_ScopeImpl implements IR_Scope {
     // cases, the lexical scoping and class/method hierarchies are the same.
     final public List<IR_Module> modules = new ArrayList<IR_Module>();
     final public List<IR_Class> classes = new ArrayList<IR_Class>();
-    final public List<IRMethod> methods = new ArrayList<IRMethod>();
     private Map<String, String> aliases; // oldName -> newName for methods
 
     // ENEBO: This is also only for lexical score too right?
@@ -97,6 +95,20 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         return _lexicalParent;
     }
 
+    public IR_Module getNearestModule() {
+        IR_Scope current = _lexicalParent;
+
+        while (current != null && !(current instanceof IR_Module) && !(current instanceof IR_Script)) {
+            current = current.getLexicalParent();
+        }
+        
+        if (current instanceof IR_Script) { // Possible we are a method at top-level.
+            current = ((IR_Script) current).getRootClass();
+        }
+
+        return (IR_Module) current;
+    }
+
     public int getNextClosureId() {
         _nextClosureIndex++;
         
@@ -111,6 +123,15 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         return new TemporaryVariable(allocateNextPrefixedName("%v"));
     }
 
+    // Generate a new variable for inlined code (just for ease of debugging, use differently named variables for inlined code)
+    public Variable getNewInlineVariable() {
+        return new RenamedVariable("%i", allocateNextPrefixedName("%i"));
+    }
+
+    public int getTemporaryVariableSize() {
+        return getPrefixCountSize("%v");
+    }
+
     public Label getNewLabel(String prefix) {
         return new Label(prefix + "_" + allocateNextPrefixedName(prefix));
     }
@@ -119,13 +140,21 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         return getNewLabel("LBL");
     }
 
+    // Enebo: We should just make n primitive int and not take the hash hit
     private int allocateNextPrefixedName(String prefix) {
-        Integer index = _nextVarIndex.get(prefix);
-        if (index == null) index = 0;
+        int index = getPrefixCountSize(prefix);
         
         _nextVarIndex.put(prefix, index + 1);
         
         return index;
+    }
+
+    private int getPrefixCountSize(String prefix) {
+        Integer index = _nextVarIndex.get(prefix);
+
+        if (index == null) return 0;
+
+        return index.intValue();
     }
 
     // ENEBO: Appears to be dead code?
@@ -149,26 +178,6 @@ public abstract class IR_ScopeImpl implements IR_Scope {
     public void addClass(IR_Class c) {
         setConstantValue(c._name, new MetaObject(c));
         classes.add(c);
-    }
-
-    public void addMethod(IRMethod m) {
-        methods.add(m);
-
-        if (IR_Module.isAClassRootMethod(m)) return;
-
-        if ((this instanceof IRMethod) && ((IRMethod) this).isAClassRootMethod()) {
-            IR_Module c = (IR_Module) (((MetaObject) this._container)._scope);
-            c.getRootMethod().addInstr(m.isInstanceMethod ? new DEFINE_INSTANCE_METHOD_Instr(c, m) : new DEFINE_CLASS_METHOD_Instr(c, m));
-        } else if (m.isInstanceMethod && (this instanceof IR_Module)) {
-            IR_Module c = (IR_Module) this;
-            c.getRootMethod().addInstr(new DEFINE_INSTANCE_METHOD_Instr(c, m));
-        } else if (!m.isInstanceMethod && (this instanceof IR_Module)) {
-            IR_Module c = (IR_Module) this;
-            c.getRootMethod().addInstr(new DEFINE_CLASS_METHOD_Instr(c, m));
-        } else {
-            // SSS FIXME: Do I have to generate a define method instruction here??
-            throw new RuntimeException("Encountered method add in a non-class scope!");
-        }
     }
 
     public void addInstr(IR_Instr i) {
@@ -260,12 +269,6 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         if (!classes.isEmpty()) {
             for (IR_Scope c : classes) {
                 c.runCompilerPass(p);
-            }
-        }
-
-        if (!methods.isEmpty()) {
-            for (IR_Scope meth : methods) {
-                meth.runCompilerPass(p);
             }
         }
     }

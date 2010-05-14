@@ -1,21 +1,19 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.compiler.ir.representations.InlinerInfo;
+
 import java.util.List;
 import java.util.Map;
 
 public abstract class Variable extends Operand implements Comparable {
-    public boolean isSelf() {
-        return false;
-    }
 
     public abstract String getName();
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
-        // You can only value-replace atomic values
         Operand v = valueMap.get(this);
-
-        return ((v != null) && !v.isNonAtomicValue()) ? v : this;
+        // You can only value-replace atomic values
+        return ((v == null) || v.isNonAtomicValue()) ? this : v;
     }
 
     @Override
@@ -29,5 +27,9 @@ public abstract class Variable extends Operand implements Comparable {
     @Override
     public void addUsedVariables(List<Variable> l) {
         l.add(this);
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) { 
+        return ii.getRenamedVariable(this);
     }
 }

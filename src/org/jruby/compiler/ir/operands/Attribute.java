@@ -1,4 +1,5 @@
 package org.jruby.compiler.ir.operands;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.Map;
 
@@ -22,9 +23,14 @@ public class Attribute extends Operand
 
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
+/*
         _target = _target.getSimplifiedOperand(valueMap);
         return _target;
+*/
+        throw new RuntimeException("Unused & not implemented yet!");
     }
 
     public boolean isNonAtomicValue() { return true; }
+
+    public Operand cloneForInlining(InlinerInfo ii) { throw new RuntimeException("Unused & not implemented yet!"); }
 }

@@ -387,9 +387,10 @@ public class Pack {
      * @param i2Encode The String to encode
      * @param iLength The max number of characters to encode
      * @param iType the type of encoding required (this is the same type as used by the pack method)
+     * @param tailLf true if the traililng "\n" is needed
      * @return the io2Append buffer
      **/
-    private static ByteList encodes(Ruby runtime, ByteList io2Append,byte[]charsToEncode, int startIndex, int length, int charCount, byte encodingType) {
+    private static ByteList encodes(Ruby runtime, ByteList io2Append,byte[]charsToEncode, int startIndex, int length, int charCount, byte encodingType, boolean tailLf) {
         charCount = charCount < length ? charCount : length;
 
         io2Append.ensure(charCount * 4 / 3 + 6);
@@ -433,7 +434,9 @@ public class Pack {
             io2Append.append(lPadding);
             io2Append.append(lPadding);
         }
-        io2Append.append('\n');
+        if (tailLf) {
+            io2Append.append('\n');
+        }
         return io2Append;
     }
 
@@ -1864,7 +1867,15 @@ public class Pack {
                             throw runtime.newArgumentError(sTooFew);
                         }
                         IRubyObject from = list.eltInternal(idx++);
-                        lCurElemString = from == runtime.getNil() ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
+                        lCurElemString = from == runtime.getNil() ?
+                            ByteList.EMPTY_BYTELIST :
+                            from.convertToString().getByteList();
+                        if (runtime.is1_9() && occurrences == 0 && type == 'm') {
+                            encodes(runtime, result, lCurElemString.getUnsafeBytes(),
+                                    lCurElemString.getBegin(), lCurElemString.length(),
+                                    lCurElemString.length(), (byte)type, false);
+                            break;
+                        }
                         occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
                         if (lCurElemString.length() == 0) break;
 
@@ -1872,7 +1883,7 @@ public class Pack {
                         for (int i = 0; i < lCurElemString.length(); i += occurrences) {
                             encodes(runtime, result, charsToEncode,
                                     i + lCurElemString.getBegin(), lCurElemString.length() - i,
-                                    occurrences, (byte)type);
+                                    occurrences, (byte)type, true);
                         }
                     }
                     break;

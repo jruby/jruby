@@ -2,7 +2,7 @@
 #
 # benchmark.rb - a performance benchmarking library
 #
-# $Id: benchmark.rb 22784 2009-03-06 03:56:38Z nobu $
+# $Id$
 #
 # Created by Gotoken (gotoken@notwork.org).
 #
@@ -440,7 +440,7 @@ module Benchmark
     #
     # An in-place version of #add.
     #
-    def add!
+    def add!(&blk)
       t = Benchmark::measure(&blk)
       @utime  = utime + t.utime
       @stime  = stime + t.stime

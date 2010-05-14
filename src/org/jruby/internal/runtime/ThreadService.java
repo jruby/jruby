@@ -30,11 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime;
 
-import java.io.IOException;
 import java.lang.ref.SoftReference;
-import java.nio.channels.Channel;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.Selector;
 import java.util.concurrent.locks.ReentrantLock;
 
 import java.util.ArrayList;
@@ -45,20 +41,101 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
 import org.jruby.Ruby;
-import org.jruby.RubyIO;
 import org.jruby.RubyThread;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 
+/**
+ * ThreadService maintains lists ofall the JRuby-specific thread data structures
+ * needed for Ruby's threading API and for JRuby's execution. The main
+ * structures are:
+ *
+ * <ul>
+ * <li>ThreadContext, which contains frames, scopes, etc needed for Ruby execution</li>
+ * <li>RubyThread, the Ruby object representation of a thread's state</li>
+ * <li>RubyThreadGroup, which represents a group of Ruby threads</li>
+ * <li>NativeThread, used to wrap native Java threads</li>
+ * <li>FutureThread, used to wrap java.util.concurrent.Future</li>
+ * </ul>
+ *
+ * In order to ensure these structures do not linger after the thread has terminated,
+ * most of them are either weakly or softly referenced. The references associated
+ * with these structures are:
+ *
+ * <ul>
+ * <li>ThreadService has a hard reference to a ThreadLocal, which holds a soft reference
+ * to a ThreadContext. So the thread's locals softly reference ThreadContext.
+ * We use a soft reference to keep ThreadContext instances from going away too
+ * quickly when a Java thread leaves Ruby space completely, which would otherwise
+ * result in a lot of ThreadContext object churn.</li>
+ * <li>ThreadService maintains a weak map from the actual java.lang.Thread (or
+ * java.util.concurrent.Future) instance to the associated RubyThread. The map
+ * is weak-keyyed, so it will not prevent the collection of the associated
+ * Thread or Future. The associated RubyThread will remain alive as long as the
+ * Thread/Future and this ThreadService instance are both alive, maintaining
+ * the external thread's identity in Ruby-land.</li>
+ * <li>RubyThread has a weak reference to its to ThreadContext.</li>
+ * <li>ThreadContext has a hard reference to its associated RubyThread. Ignoring other
+ * references, this will usually mean RubyThread is softly reachable via the
+ * soft threadlocal reference to ThreadContext in ThreadService.</li>
+ * <li>RubyThreadGroup has hard references to threads it owns. The thread removes
+ * itself on termination (if it's a Ruby thread) or when the ThreadContext is
+ * collected (as in the case of "adopted" Java threads.</li>
+ * </ul>
+ *
+ * These data structures can come to life in one of two ways:
+ *
+ * <ul>
+ * <li>A Ruby thread is started. This constructs a new RubyThread object, which
+ * calls to ThreadService to initialize a ThreadContext and appropriate mappings
+ * in all ThreadService's structures. The body of the thread is wrapped with a
+ * finally block that will forcibly unregister the thread and all related
+ * structures from ThreadService.</li>
+ * <li>A Java thread enters Ruby by doing a call. The thread is "adopted", and
+ * gains a RubyThread instance, a ThreadContext instance, and all associated
+ * mappings in ThreadService. Since we don't know when the thread has "left"
+ * Ruby permanently, no forcible unregistration is attempted for the various
+ * structures and maps. However, they should not be hard-rooted; the
+ * ThreadContext is only softly reachable at best if no calls are in-flight,
+ * so it will collect. Its collection will release the reference to RubyThread,
+ * and its finalizer will unregister that RubyThread from its RubyThreadGroup.
+ * With the RubyThread gone, the Thread-to-RubyThread map will eventually clear,
+ * releasing the hard reference to the Thread itself.</li>
+ * <ul>
+ */
 public class ThreadService {
     private Ruby runtime;
+    /**
+     * A hard reference to the "main" context, so we always have one waiting for
+     * "main" thread execution.
+     */
     private ThreadContext mainContext;
+
+    /**
+     * A thread-local soft reference to the current thread's ThreadContext. We
+     * use a soft reference so that the ThreadContext is still collectible but
+     * will not immediately disappear once dereferenced, to avoid churning
+     * through ThreadContext instances every time a Java thread enters and exits
+     * Ruby space.
+     */
     private ThreadLocal<SoftReference<ThreadContext>> localContext;
+
+    /**
+     * The Java thread group into which we register all Ruby threads. This is
+     * distinct from the RubyThreadGroup, which is simply a mutable collection
+     * of threads.
+     */
     private ThreadGroup rubyThreadGroup;
-    private Map<Object, RubyThread> rubyThreadMap;
+
+    /**
+     * A map from a Java Thread or Future to its RubyThread instance. This is
+     * a synchronized WeakHashMap, so it weakly references its keys; this means
+     * that when the Thread/Future goes away, eventually its entry in this map
+     * will follow.
+     */
+    private final Map<Object, RubyThread> rubyThreadMap;
     
-    private ReentrantLock criticalLock = new ReentrantLock();
-    private Map<RubyThread,ThreadContext> threadContextMap;
+    private final ReentrantLock criticalLock = new ReentrantLock();
 
     public ThreadService(Ruby runtime) {
         this.runtime = runtime;
@@ -72,15 +149,12 @@ public class ThreadService {
         }
 
         this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Object, RubyThread>());
-        this.threadContextMap = Collections.synchronizedMap(new WeakHashMap<RubyThread,ThreadContext>());
         
         // Must be called from main thread (it is currently, but this bothers me)
         localContext.set(new SoftReference<ThreadContext>(mainContext));
     }
 
     public void disposeCurrentThread() {
-        RubyThread thread = getCurrentContext().getThread();
-        threadContextMap.remove(thread);
         localContext.set(null);
         rubyThreadMap.remove(Thread.currentThread());
     }
@@ -144,7 +218,6 @@ public class ThreadService {
 
     public void setMainThread(Thread thread, RubyThread rubyThread) {
         mainContext.setThread(rubyThread);
-        threadContextMap.put(rubyThread, mainContext);
         rubyThreadMap.put(thread, rubyThread);
     }
     
@@ -156,6 +229,8 @@ public class ThreadService {
         
             for (Map.Entry<Object, RubyThread> entry : rubyThreadMap.entrySet()) {
                 Object key = entry.getKey();
+                if (key == null) continue;
+                
                 if (key instanceof Thread) {
                     Thread t = (Thread)key;
 
@@ -178,22 +253,17 @@ public class ThreadService {
         }
     }
 
-    public Map getRubyThreadMap() {
-        return rubyThreadMap;
-    }
-    
     public ThreadGroup getRubyThreadGroup() {
     	return rubyThreadGroup;
     }
 
     public ThreadContext getThreadContextForThread(RubyThread thread) {
-        return threadContextMap.get(thread);
+        return thread.getContext();
     }
 
     public synchronized ThreadContext registerNewThread(RubyThread thread) {
         ThreadContext context = ThreadContext.newContext(runtime);
         localContext.set(new SoftReference(context));
-        threadContextMap.put(thread, context);
         context.setThread(thread);
         return context;
     }
@@ -208,17 +278,24 @@ public class ThreadService {
     
     public synchronized void unregisterThread(RubyThread thread) {
         rubyThreadMap.remove(Thread.currentThread());
-        threadContextMap.remove(thread);
         getCurrentContext().setThread(null);
         localContext.set(null);
     }
     
     public void setCritical(boolean critical) {
         if (critical && !criticalLock.isHeldByCurrentThread()) {
-            criticalLock.lock();
+            acquireCritical();
         } else if (!critical && criticalLock.isHeldByCurrentThread()) {
-            criticalLock.unlock();
+            releaseCritical();
         }
+    }
+
+    private void acquireCritical() {
+        criticalLock.lock();
+    }
+
+    private void releaseCritical() {
+        criticalLock.unlock();
     }
     
     public boolean getCritical() {
@@ -250,5 +327,15 @@ public class ThreadService {
 
         // then deliver mail to the target
         event.target.receiveMail(event);
+    }
+
+    /**
+     * Get the map from threadlike objects to RubyThread instances. Used mainly
+     * for testing purposes.
+     *
+     * @return The ruby thread map
+     */
+    public Map<Object, RubyThread> getRubyThreadMap() {
+        return rubyThreadMap;
     }
 }

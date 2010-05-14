@@ -55,37 +55,6 @@ public class Random {
             // state[j] &= 0xffffffffL;
         }
         left = 1; initf = true;
-        
-    }
-
-    private void init(int[]initKey) {
-        init(19650218);
-        int i = 1;
-        int j = 0;
-        for (int k = initKey.length > 0 ? N : initKey.length; k > 0; k--) {
-            state[i] = (state[i] ^ ((state[i-1] ^ (state[i-1] >>> 30)) * 1664525)) + initKey[j] + j;
-            // state[i] &= 0xffffffffL;
-            i++;
-            j++;
-            if (i >= N) {
-                state[0] = state[N-1];
-                i = 1;
-            }
-            if (j >= initKey.length) j=0;
-        }
-        for (int k= N - 1; k > 0; k--) {
-            state[i] = (state[i] ^ ((state[i-1] ^ (state[i-1] >>> 30)) * 1566083941)) - i;
-            // state[i] &= 0xffffffffL;
-            i++;
-            if (i>=N) {
-                state[0] = state[N-1];
-                i=1;
-            }
-        }
-
-        state[0] = 0x80000000; /* MSB is 1; assuring non-zero initial array */ 
-        left = 1;
-        initf = true;
     }
     
     private void nextState() {

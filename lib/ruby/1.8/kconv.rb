@@ -1,7 +1,7 @@
 #
 # kconv.rb - Kanji Converter.
 #
-# $Id: kconv.rb 11708 2007-02-12 23:01:19Z shyouhei $
+# $Id$
 #
 # ----
 #
@@ -49,7 +49,7 @@ module Kconv
   #
   
   # Revision of kconv.rb
-  REVISION = %q$Revision: 11708 $
+  REVISION = %q$Revision$
   
   #Regexp of Encoding
   

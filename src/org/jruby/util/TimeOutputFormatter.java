@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 /**
- * Support for GNU-C output formattters, see: http://www.gnu.org/software/libc/manual/html_node/Formatting-Calendar-Time.html
+ * Support for GNU-C output formatters, see: http://www.gnu.org/software/libc/manual/html_node/Formatting-Calendar-Time.html
  */
 public class TimeOutputFormatter {
     private final String formatter;
@@ -71,6 +71,9 @@ public class TimeOutputFormatter {
                         break;
                     case '0':
                         paddedWith = '0';
+                        break;
+                    case '-':
+                        sequence = sequence.replaceAll("^[0]", "");
                         break;
                 }
             }

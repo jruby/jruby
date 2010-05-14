@@ -48,10 +48,13 @@ import java.io.Reader;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.ext.posix.FileStat;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -168,12 +171,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         super(runtime, runtime.getFile());
         this.path = path;
         try {
-            this.openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(in), getNewFileno(), new FileDescriptor())));
+            this.openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(in))));
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
         }
         this.openFile.setMode(openFile.getMainStream().getModes().getOpenFileFlags());
-        registerDescriptor(openFile.getMainStream().getDescriptor());
     }
 
     private static ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
@@ -519,8 +521,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
         openFile.setMainStream(fdopen(descriptor, modes));
-        
-        registerDescriptor(descriptor);
     }
 
     protected void openInternal(String path, String modeString, ModeFlags modes) throws InvalidValueException {
@@ -529,8 +529,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setMode(modes.getOpenFileFlags());
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modeString));
-
-        registerDescriptor(openFile.getMainStream().getDescriptor());
     }
     
     protected void openInternal(String path, String modeString) throws InvalidValueException {
@@ -539,8 +537,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setMode(getIOModes(getRuntime(), modeString).getOpenFileFlags());
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modeString));
-        
-        registerDescriptor(openFile.getMainStream().getDescriptor());
     }
     
     private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm) throws InvalidValueException {
@@ -772,7 +768,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Override
     public String toString() {
-        return "RubyFile(" + path + ", " + openFile.getMode() + ", " + openFile.getMainStream().getDescriptor().getFileno() + ")";
+        return "RubyFile(" + path + ", " + openFile.getMode() + ", " + getRuntime().getFileno(openFile.getMainStream().getDescriptor()) + ")";
     }
 
     // TODO: This is also defined in the MetaClass too...Consolidate somewhere.
@@ -1660,6 +1656,44 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         return runtime.newFixnum(args.length);
+    }
+
+    @JRubyMethod(name = "size", backtrace = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject size(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        if ((openFile.getMode() & OpenFile.WRITABLE) != 0) {
+            flush();
+        }
+
+        FileStat stat = runtime.getPosix().fstat(
+                getOpenFileChecked().getMainStream().getDescriptor().getFileDescriptor());
+        if (stat == null) {
+            throw runtime.newErrnoEACCESError(path);
+        }
+
+        return runtime.newFixnum(stat.st_size());
+    }
+
+    public static ZipEntry getFileEntry(ZipFile zf, String path) throws IOException {
+        ZipEntry entry = zf.getEntry(path);
+        if (entry == null) {
+            // try canonicalizing the path to eliminate . and .. (JRUBY-4760)
+            entry = zf.getEntry(new File("/" + path).getCanonicalPath().substring(1));
+        }
+        return entry;
+    }
+
+    public static ZipEntry getDirOrFileEntry(ZipFile zf, String path) throws IOException {
+        ZipEntry entry = zf.getEntry(path + "/"); // first try as directory
+        if (entry == null) {
+            // try canonicalizing the path to eliminate . and .. (JRUBY-4760)
+            entry = zf.getEntry(new File("/" + path + "/").getCanonicalPath().substring(1));
+            if (entry == null) {
+                // try as file
+                entry = getFileEntry(zf, path);
+            }
+        }
+        return entry;
     }
 
     /**

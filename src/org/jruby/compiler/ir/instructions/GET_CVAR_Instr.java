@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class GET_CVAR_Instr extends GET_Instr
 {
@@ -20,5 +21,9 @@ public class GET_CVAR_Instr extends GET_Instr
             scope = ((MetaObject)scope)._scope.getContainer();
 
         return scope;
+    }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new GET_CVAR_Instr(ii.getRenamedVariable(_result), _source.cloneForInlining(ii), _ref); 
     }
 }

@@ -34,6 +34,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.anno.JRubyModule;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Visibility;
 
 /**
@@ -52,13 +53,27 @@ public class JavaArrayUtilities {
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject bytes_to_ruby_string(IRubyObject recv, IRubyObject wrappedObject) {
         Ruby runtime = recv.getRuntime();
-        IRubyObject byteArray = (JavaObject)wrappedObject.dataGetStruct();
-        if (!(byteArray instanceof JavaArray &&
-                ((JavaArray)byteArray).getValue() instanceof byte[])) {
+        byte[] bytes = null;
+        
+        if (wrappedObject instanceof JavaProxy) {
+            Object wrapped = ((JavaProxy)wrappedObject).getObject();
+            if (wrapped instanceof byte[]) {
+                bytes = (byte[])wrapped;
+            }
+        } else {
+            IRubyObject byteArray = (JavaObject)wrappedObject.dataGetStruct();
+            if (byteArray instanceof JavaArray &&
+                    ((JavaArray)byteArray).getValue() instanceof byte[]) {
+                bytes = (byte[])((JavaArray)byteArray).getValue();
+            }
+        }
+
+        if (bytes == null) {
             throw runtime.newTypeError("wrong argument type " + wrappedObject.getMetaClass() +
                     " (expected byte[])");
         }
-        return runtime.newString(new ByteList((byte[])((JavaArray)byteArray).getValue(), true));
+
+        return runtime.newString(new ByteList(bytes, true));
     }
     
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)

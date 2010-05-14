@@ -11,9 +11,9 @@ class CGI
   # Standard internet newline sequence
   EOL = CR + LF
 
-  REVISION = '$Id: core.rb 23560 2009-05-24 20:34:21Z matz $' #:nodoc:
+  REVISION = '$Id$' #:nodoc:
 
-  NEEDS_BINMODE = true if /WIN/i.match(RUBY_PLATFORM)
+  NEEDS_BINMODE = File::BINARY != 0
 
   # Path separators in different environments.
   PATH_SEPARATOR = {'UNIX'=>'/', 'WINDOWS'=>'\\', 'MACINTOSH'=>':'}
@@ -39,12 +39,6 @@ class CGI
     "BAD_GATEWAY"         => "502 Bad Gateway",
     "VARIANT_ALSO_VARIES" => "506 Variant Also Negotiates"
   }
-
-  # Abbreviated day-of-week names specified by RFC 822
-  RFC822_DAYS = %w[ Sun Mon Tue Wed Thu Fri Sat ]
-
-  # Abbreviated month names specified by RFC 822
-  RFC822_MONTHS = %w[ Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec ]
 
   # :startdoc:
 
@@ -408,7 +402,7 @@ class CGI
     # values is an Array.
     attr_reader :params
 
-    # Get the uploaed files as a hash of name=>values pairs
+    # Get the uploaded files as a hash of name=>values pairs
     attr_reader :files
 
     # Set all the parameters.
@@ -555,12 +549,17 @@ class CGI
             %|(offline mode: enter name=value pairs on standard input)\n|
           )
         end
-        readlines.join(' ').gsub(/\n/, '')
-      end.gsub(/\\=/, '%3D').gsub(/\\&/, '%26')
+        array = readlines rescue nil
+        if not array.nil?
+            array.join(' ').gsub(/\n/n, '')
+        else
+            ""
+        end
+      end.gsub(/\\=/n, '%3D').gsub(/\\&/n, '%26')
 
       words = Shellwords.shellwords(string)
 
-      if words.find{|x| /=/.match(x) }
+      if words.find{|x| /=/n.match(x) }
         words.join('&')
       else
         words.join('+')

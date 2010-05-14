@@ -427,6 +427,8 @@ module FileUtils
     fu_check_options options, OPT_TABLE['cp_r']
     fu_output_message "cp -r#{options[:preserve] ? 'p' : ''}#{options[:remove_destination] ? ' --remove-destination' : ''} #{[src,dest].flatten.join ' '}" if options[:verbose]
     return if options[:noop]
+    options = options.dup
+    options[:dereference_root] = true unless options.key?(:dereference_root)
     fu_each_src_dest(src, dest) do |s, d|
       copy_entry s, d, options[:preserve], options[:dereference_root], options[:remove_destination]
     end
@@ -840,10 +842,9 @@ module FileUtils
     fu_check_options options, OPT_TABLE['install']
     fu_output_message "install -c#{options[:preserve] && ' -p'}#{options[:mode] ? (' -m 0%o' % options[:mode]) : ''} #{[src,dest].flatten.join ' '}" if options[:verbose]
     return if options[:noop]
-    fu_each_src_dest(src, dest) do |s, d|
+    fu_each_src_dest(src, dest) do |s, d, st|
       unless File.exist?(d) and compare_file(s, d)
         remove_file d, true
-        st = File.stat(s) if options[:preserve]
         copy_file s, d
         File.utime st.atime, st.mtime, d if options[:preserve]
         File.chmod options[:mode], d if options[:mode]
@@ -977,20 +978,26 @@ module FileUtils
 
     def fu_get_uid(user)   #:nodoc:
       return nil unless user
-      user = user.to_s
-      if /\A\d+\z/ =~ user
-      then user.to_i
-      else Etc.getpwnam(user).uid
+      case user
+      when Integer
+        user
+      when /\A\d+\z/
+        user.to_i
+      else
+        Etc.getpwnam(user).uid
       end
     end
     private_module_function :fu_get_uid
 
     def fu_get_gid(group)   #:nodoc:
       return nil unless group
-      group = group.to_s
-      if /\A\d+\z/ =~ group
-      then group.to_i
-      else Etc.getgrnam(group).gid
+      case group
+      when Integer
+        group
+      when /\A\d+\z/
+        group.to_i
+      else
+        Etc.getgrnam(group).gid
       end
     end
     private_module_function :fu_get_gid
@@ -1261,8 +1268,10 @@ module FileUtils
     end
 
     def copy_file(dest)
-      File.open(dest, 'wb') do |f|
-        IO.copy_stream(path(), f)
+      File.open(path()) do |s|
+        File.open(dest, 'wb') do |f|
+          IO.copy_stream(s, f)
+        end
       end
     end
 
@@ -1393,7 +1402,7 @@ module FileUtils
   def fu_each_src_dest(src, dest)   #:nodoc:
     fu_each_src_dest0(src, dest) do |s, d|
       raise ArgumentError, "same file: #{s} and #{d}" if fu_same?(s, d)
-      yield s, d
+      yield s, d, File.stat(s)
     end
   end
   private_module_function :fu_each_src_dest
@@ -1416,22 +1425,9 @@ module FileUtils
   private_module_function :fu_each_src_dest0
 
   def fu_same?(a, b)   #:nodoc:
-    if fu_have_st_ino?
-      st1 = File.stat(a)
-      st2 = File.stat(b)
-      st1.dev == st2.dev and st1.ino == st2.ino
-    else
-      File.expand_path(a) == File.expand_path(b)
-    end
-  rescue Errno::ENOENT
-    return false
+    File.identical?(a, b)
   end
   private_module_function :fu_same?
-
-  def fu_have_st_ino?   #:nodoc:
-    not fu_windows?
-  end
-  private_module_function :fu_have_st_ino?
 
   def fu_check_options(options, optdecl)   #:nodoc:
     h = options.dup

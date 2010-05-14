@@ -1,5 +1,6 @@
 package org.jruby.java.proxies;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -254,12 +255,22 @@ public class JavaInterfaceTemplate {
     public static void addRealImplClassNew(RubyClass clazz) {
         RubyClass singleton = clazz.getSingletonClass();
         singleton.addMethod("new", new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
+            private Constructor proxyConstructor;
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                 assert self instanceof RubyClass : "new defined on non-class";
 
                 RubyClass clazzSelf = (RubyClass) self;
-                IRubyObject newObj = Java.generateRealClass(clazzSelf);
+
+                // if we haven't been here before, reify the class
+                Class reifiedClass = clazzSelf.getReifiedClass();
+                if (proxyConstructor == null || proxyConstructor.getDeclaringClass() != reifiedClass) {
+                    if (reifiedClass == null) {
+                        reifiedClass = Java.generateRealClass(clazzSelf);
+                    }
+                    proxyConstructor = Java.getRealClassConstructor(context.getRuntime(), reifiedClass);
+                }
+                IRubyObject newObj = Java.constructProxy(context.getRuntime(), proxyConstructor, clazzSelf);
 
                 RuntimeHelpers.invoke(context, newObj, "initialize", args, block);
 

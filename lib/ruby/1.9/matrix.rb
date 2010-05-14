@@ -1,21 +1,15 @@
-#--
-#   matrix.rb -
-#   	$Release Version: 1.0$
-#   	$Revision: 1.13 $
-#       Original Version from Smalltalk-80 version
-#          on July 23, 1985 at 8:37:17 am
-#       by Keiju ISHITSUKA
-#++
+# encoding: utf-8
 #
 # = matrix.rb
 #
 # An implementation of Matrix and Vector classes.
 #
-# Author:: Keiju ISHITSUKA
-# Documentation:: Gavin Sinclair (sourced from <i>Ruby in a Nutshell</i> (Matsumoto, O'Reilly))
-#
 # See classes Matrix and Vector for documentation.
 #
+# Current Maintainer:: Marc-André Lafortune
+# Original Author:: Keiju ISHITSUKA
+# Original Documentation:: Gavin Sinclair (sourced from <i>Ruby in a Nutshell</i> (Matsumoto, O'Reilly))
+##
 
 require "e2mmap.rb"
 
@@ -31,15 +25,9 @@ module ExceptionForMatrix # :nodoc:
 end
 
 #
-# The +Matrix+ class represents a mathematical matrix, and provides methods for creating
-# special-case matrices (zero, identity, diagonal, singular, vector), operating on them
-# arithmetically and algebraically, and determining their mathematical properties (trace, rank,
-# inverse, determinant).
-#
-# Note that matrices must be rectangular, otherwise an ErrDimensionMismatch is raised.
-#
-# Also note that the determinant of integer matrices may be approximated unless you
-# also <tt>require 'mathn'</tt>.  This may be fixed in the future.
+# The +Matrix+ class represents a mathematical matrix. It provides methods for creating
+# matrices, operating on them arithmetically and algebraically,
+# and determining their mathematical properties (trace, rank, inverse, determinant).
 #
 # == Method Catalogue
 #
@@ -48,6 +36,7 @@ end
 # * <tt> Matrix.[](*rows)               </tt>
 # * <tt> Matrix.rows(rows, copy = true) </tt>
 # * <tt> Matrix.columns(columns)        </tt>
+# * <tt> Matrix.build(row_size, column_size, &block) </tt>
 # * <tt> Matrix.diagonal(*values)       </tt>
 # * <tt> Matrix.scalar(n, value)        </tt>
 # * <tt> Matrix.identity(n)             </tt>
@@ -70,6 +59,7 @@ end
 # * <tt> #minor(*param)                 </tt>
 #
 # Properties of a matrix:
+# * <tt> #empty?                        </tt>
 # * <tt> #real?                         </tt>
 # * <tt> #regular?                      </tt>
 # * <tt> #singular?                     </tt>
@@ -113,9 +103,6 @@ end
 # * <tt> #inspect                       </tt>
 #
 class Matrix
-  @RCS_ID='-$Id: matrix.rb,v 1.13 2001/12/09 14:22:23 keiju Exp keiju $-'
-
-#  extend Exception2MessageMapper
   include Enumerable
   include ExceptionForMatrix
 
@@ -143,13 +130,13 @@ class Matrix
   #          -1 66
   #
   def Matrix.rows(rows, copy = true)
-    rows = Matrix.convert_to_array(rows)
+    rows = convert_to_array(rows)
     rows.map! do |row|
-      Matrix.convert_to_array(row, copy)
+      convert_to_array(row, copy)
     end
     size = (rows[0] || []).size
     rows.each do |row|
-      Matrix.Raise ErrDimensionMismatch, "element size differs (#{row.size} should be #{size})" unless row.size == size
+      Matrix.Raise ErrDimensionMismatch, "row size differs (#{row.size} should be #{size})" unless row.size == size
     end
     new rows, size
   end
@@ -165,6 +152,30 @@ class Matrix
   end
 
   #
+  # Creates a matrix of size +row_size+ x +column_size+.
+  # It fills the values by calling the given block,
+  # passing the current row and column.
+  # Returns an enumerator if no block is given.
+  #
+  #   m = Matrix.build(2, 4) {|row, col| col - row }
+  #     => Matrix[[0, 1, 2, 3], [-1, 0, 1, 2]]
+  #   m = Matrix.build(3) { rand }
+  #     => a 3x3 matrix with random elements
+  #
+  def Matrix.build(row_size, column_size = row_size)
+    row_size = CoercionHelper.coerce_to_int(row_size)
+    column_size = CoercionHelper.coerce_to_int(column_size)
+    raise ArgumentError if row_size < 0 || column_size < 0
+    return to_enum :build, row_size, column_size unless block_given?
+    rows = row_size.times.map do |i|
+      column_size.times.map do |j|
+        yield i, j
+      end
+    end
+    new rows, column_size
+  end
+
+  #
   # Creates a matrix where the diagonal elements are composed of +values+.
   #   Matrix.diagonal(9, 5, -3)
   #     =>  9  0  0
@@ -174,7 +185,7 @@ class Matrix
   def Matrix.diagonal(*values)
     size = values.size
     rows = (0 ... size).collect {|j|
-      row = Array.new(size).fill(0, 0, size)
+      row = Array.new(size, 0)
       row[j] = values[j]
       row
     }
@@ -189,7 +200,7 @@ class Matrix
   #        0 5
   #
   def Matrix.scalar(n, value)
-    Matrix.diagonal(*Array.new(n).fill(value, 0, n))
+    Matrix.diagonal(*Array.new(n, value))
   end
 
   #
@@ -223,7 +234,7 @@ class Matrix
   #     => 4 5 6
   #
   def Matrix.row_vector(row)
-    row = Matrix.convert_to_array(row)
+    row = convert_to_array(row)
     new [row]
   end
 
@@ -236,13 +247,13 @@ class Matrix
   #        6
   #
   def Matrix.column_vector(column)
-    column = Matrix.convert_to_array(column)
+    column = convert_to_array(column)
     new [column].transpose, 1
   end
 
   #
   # Creates a empty matrix of +row_size+ x +column_size+.
-  # +row_size+ or +column_size+ must be 0.
+  # At least one of +row_size+ or +column_size+ must be 0.
   #
   #   m = Matrix.empty(2, 0)
   #   m == Matrix[ [], [] ]
@@ -391,7 +402,7 @@ class Matrix
   #
   # Returns a section of the matrix.  The parameters are either:
   # *  start_row, nrows, start_col, ncols; OR
-  # *  col_range, row_range
+  # *  row_range, col_range
   #
   #   Matrix.diagonal(9, 5, -3).minor(0..1, 0..2)
   #     => 9 0 0
@@ -404,17 +415,19 @@ class Matrix
   def minor(*param)
     case param.size
     when 2
-      from_row = param[0].first
+      row_range, col_range = param
+      from_row = row_range.first
       from_row += row_size if from_row < 0
-      to_row = param[0].end
+      to_row = row_range.end
       to_row += row_size if to_row < 0
-      to_row += 1 unless param[0].exclude_end?
+      to_row += 1 unless row_range.exclude_end?
       size_row = to_row - from_row
-      from_col = param[1].first
+
+      from_col = col_range.first
       from_col += column_size if from_col < 0
-      to_col = param[1].end
+      to_col = col_range.end
       to_col += column_size if to_col < 0
-      to_col += 1 unless param[1].exclude_end?
+      to_col += 1 unless col_range.exclude_end?
       size_col = to_col - from_col
     when 4
       from_row, size_row, from_col, size_col = param
@@ -452,17 +465,17 @@ class Matrix
   end
 
   #
-  # Returns +true+ if this is a regular matrix.
+  # Returns +true+ if this is a regular (i.e. non-singular) matrix.
   #
   def regular?
-    square? and rank == column_size
+    not singular?
   end
 
   #
-  # Returns +true+ is this is a singular (i.e. non-regular) matrix.
+  # Returns +true+ is this is a singular matrix.
   #
   def singular?
-    not regular?
+    determinant == 0
   end
 
   #
@@ -495,7 +508,7 @@ class Matrix
   # There should be no good reason to do this since Matrices are immutable.
   #
   def clone
-    new_matrix @rows.map{|row| row.dup}, column_size
+    new_matrix @rows.map(&:dup), column_size
   end
 
   #
@@ -540,8 +553,7 @@ class Matrix
       }
       return new_matrix rows, m.column_size
     else
-      x, y = m.coerce(self)
-      return x * y
+      return apply_through_coercion(m, __method__)
     end
   end
 
@@ -559,8 +571,7 @@ class Matrix
       m = Matrix.column_vector(m)
     when Matrix
     else
-      x, y = m.coerce(self)
-      return x + y
+      return apply_through_coercion(m, __method__)
     end
 
     Matrix.Raise ErrDimensionMismatch unless row_size == m.row_size and column_size == m.column_size
@@ -587,8 +598,7 @@ class Matrix
       m = Matrix.column_vector(m)
     when Matrix
     else
-      x, y = m.coerce(self)
-      return x - y
+      return apply_through_coercion(m, __method__)
     end
 
     Matrix.Raise ErrDimensionMismatch unless row_size == m.row_size and column_size == m.column_size
@@ -619,8 +629,7 @@ class Matrix
     when Matrix
       return self * other.inverse
     else
-      x, y = other.coerce(self)
-      return x / y
+      return apply_through_coercion(other, __method__)
     end
   end
 
@@ -632,21 +641,18 @@ class Matrix
   #
   def inverse
     Matrix.Raise ErrDimensionMismatch unless square?
-    Matrix.I(row_size).inverse_from(self)
+    Matrix.I(row_size).send(:inverse_from, self)
   end
   alias inv inverse
 
-  #
-  # Not for public consumption?
-  #
-  def inverse_from(src)
-    size = row_size
+  def inverse_from(src) # :nodoc:
+    last = row_size - 1
     a = src.to_a
 
-    size.times do |k|
+    0.upto(last) do |k|
       i = k
       akk = a[k][k].abs
-      (k+1 ... size).each do |j|
+      (k+1).upto(last) do |j|
         v = a[j][k].abs
         if v > akk
           i = j
@@ -660,39 +666,40 @@ class Matrix
       end
       akk = a[k][k]
 
-      size.times do |ii|
+      0.upto(last) do |ii|
         next if ii == k
         q = a[ii][k].quo(akk)
         a[ii][k] = 0
 
-        (k + 1 ... size).each do |j|
+        (k + 1).upto(last) do |j|
           a[ii][j] -= a[k][j] * q
         end
-        size.times do |j|
+        0.upto(last) do |j|
           @rows[ii][j] -= @rows[k][j] * q
         end
       end
 
-      (k + 1 ... size).each do |j|
+      (k+1).upto(last) do |j|
         a[k][j] = a[k][j].quo(akk)
       end
-      size.times do |j|
+      0.upto(last) do |j|
         @rows[k][j] = @rows[k][j].quo(akk)
       end
     end
     self
   end
-  #alias reciprocal inverse
+  private :inverse_from
 
   #
-  # Matrix exponentiation.  Defined for integer powers only.  Equivalent to
-  # multiplying the matrix by itself N times.
+  # Matrix exponentiation.  Currently implemented for integer powers only.
+  # Equivalent to multiplying the matrix by itself N times.
   #   Matrix[[7,6], [3,9]] ** 2
   #     => 67 96
   #        48 99
   #
   def ** (other)
-    if other.kind_of?(Integer)
+    case other
+    when Integer
       x = self
       if other <= 0
         x = self.inverse
@@ -705,7 +712,7 @@ class Matrix
         return z if (other >>= 1).zero?
         x *= x
       end
-    elsif other.kind_of?(Float) || defined?(Rational) && other.kind_of?(Rational)
+    when Float, Rational
       Matrix.Raise ErrOperationNotImplemented, "**", self.class, other.class
     else
       Matrix.Raise ErrOperationNotDefined, "**", self.class, other.class
@@ -718,170 +725,146 @@ class Matrix
 
   #
   # Returns the determinant of the matrix.
-  # This method's algorithm is Gaussian elimination method
-  # and using Numeric#quo(). Beware that using Float values, with their
-  # usual lack of precision, can affect the value returned by this method.  Use
-  # Rational values or Matrix#det_e instead if this is important to you.
+  #
+  # Beware that using Float values can yield erroneous results
+  # because of their lack of precision.
+  # Consider using exact types like Rational or BigDecimal instead.
   #
   #   Matrix[[7,6], [3,9]].determinant
-  #     => 45.0
+  #     => 45
   #
   def determinant
     Matrix.Raise ErrDimensionMismatch unless square?
+    m = @rows
+    case row_size
+      # Up to 4x4, give result using Laplacian expansion by minors.
+      # This will typically be faster, as well as giving good results
+      # in case of Floats
+    when 0
+      +1
+    when 1
+      + m[0][0]
+    when 2
+      + m[0][0] * m[1][1] - m[0][1] * m[1][0]
+    when 3
+      m0 = m[0]; m1 = m[1]; m2 = m[2]
+      + m0[0] * m1[1] * m2[2] - m0[0] * m1[2] * m2[1] \
+      - m0[1] * m1[0] * m2[2] + m0[1] * m1[2] * m2[0] \
+      + m0[2] * m1[0] * m2[1] - m0[2] * m1[1] * m2[0]
+    when 4
+      m0 = m[0]; m1 = m[1]; m2 = m[2]; m3 = m[3]
+      + m0[0] * m1[1] * m2[2] * m3[3] - m0[0] * m1[1] * m2[3] * m3[2] \
+      - m0[0] * m1[2] * m2[1] * m3[3] + m0[0] * m1[2] * m2[3] * m3[1] \
+      + m0[0] * m1[3] * m2[1] * m3[2] - m0[0] * m1[3] * m2[2] * m3[1] \
+      - m0[1] * m1[0] * m2[2] * m3[3] + m0[1] * m1[0] * m2[3] * m3[2] \
+      + m0[1] * m1[2] * m2[0] * m3[3] - m0[1] * m1[2] * m2[3] * m3[0] \
+      - m0[1] * m1[3] * m2[0] * m3[2] + m0[1] * m1[3] * m2[2] * m3[0] \
+      + m0[2] * m1[0] * m2[1] * m3[3] - m0[2] * m1[0] * m2[3] * m3[1] \
+      - m0[2] * m1[1] * m2[0] * m3[3] + m0[2] * m1[1] * m2[3] * m3[0] \
+      + m0[2] * m1[3] * m2[0] * m3[1] - m0[2] * m1[3] * m2[1] * m3[0] \
+      - m0[3] * m1[0] * m2[1] * m3[2] + m0[3] * m1[0] * m2[2] * m3[1] \
+      + m0[3] * m1[1] * m2[0] * m3[2] - m0[3] * m1[1] * m2[2] * m3[0] \
+      - m0[3] * m1[2] * m2[0] * m3[1] + m0[3] * m1[2] * m2[1] * m3[0]
+    else
+      # For bigger matrices, use an efficient and general algorithm.
+      # Currently, we use the Gauss-Bareiss algorithm
+      determinant_bareiss
+    end
+  end
+  alias_method :det, :determinant
 
+  #
+  # Private. Use Matrix#determinant
+  #
+  # Returns the determinant of the matrix, using
+  # Bareiss' multistep integer-preserving gaussian elimination.
+  # It has the same computational cost order O(n^3) as standard Gaussian elimination.
+  # Intermediate results are fraction free and of lower complexity.
+  # A matrix of Integers will have thus intermediate results that are also Integers,
+  # with smaller bignums (if any), while a matrix of Float will usually have
+  # intermediate results with better precision.
+  #
+  def determinant_bareiss
     size = row_size
+    last = size - 1
     a = to_a
-
-    det = 1
+    no_pivot = Proc.new{ return 0 }
+    sign = +1
+    pivot = 1
     size.times do |k|
-      if (akk = a[k][k]) == 0
-        i = (k+1 ... size).find {|ii|
-          a[ii][k] != 0
+      previous_pivot = pivot
+      if (pivot = a[k][k]) == 0
+        switch = (k+1 ... size).find(no_pivot) {|row|
+          a[row][k] != 0
         }
-        return 0 if i.nil?
-        a[i], a[k] = a[k], a[i]
-        akk = a[k][k]
-        det *= -1
+        a[switch], a[k] = a[k], a[switch]
+        pivot = a[k][k]
+        sign = -sign
       end
-
-      (k + 1 ... size).each do |ii|
-        q = a[ii][k].quo(akk)
-        (k + 1 ... size).each do |j|
-          a[ii][j] -= a[k][j] * q
+      (k+1).upto(last) do |i|
+        ai = a[i]
+        (k+1).upto(last) do |j|
+          ai[j] =  (pivot * ai[j] - ai[k] * a[k][j]) / previous_pivot
         end
       end
-      det *= akk
     end
-    det
+    sign * pivot
   end
-  alias det determinant
+  private :determinant_bareiss
 
   #
-  # Returns the determinant of the matrix.
-  # This method's algorithm is Gaussian elimination method.
-  # This method uses Euclidean algorithm. If all elements are integer,
-  # really exact value. But, if an element is a float, can't return
-  # exact value.
-  #
-  #   Matrix[[7,6], [3,9]].determinant
-  #     => 63
+  # deprecated; use Matrix#determinant
   #
   def determinant_e
-    Matrix.Raise ErrDimensionMismatch unless square?
-
-    size = row_size
-    a = to_a
-
-    det = 1
-    size.times do |k|
-      if a[k][k].zero?
-        i = (k+1 ... size).find {|ii|
-          a[ii][k] != 0
-        }
-        return 0 if i.nil?
-        a[i], a[k] = a[k], a[i]
-        det *= -1
-      end
-
-      (k + 1 ... size).each do |ii|
-        q = a[ii][k].quo(a[k][k])
-        (k ... size).each do |j|
-          a[ii][j] -= a[k][j] * q
-        end
-        unless a[ii][k].zero?
-          a[ii], a[k] = a[k], a[ii]
-          det *= -1
-          redo
-        end
-      end
-      det *= a[k][k]
-    end
-    det
+    warn "#{caller(1)[0]}: warning: Matrix#determinant_e is deprecated; use #determinant"
+    rank
   end
   alias det_e determinant_e
 
   #
-  # Returns the rank of the matrix. Beware that using Float values,
-  # probably return faild value. Use Rational values or Matrix#rank_e
-  # for getting exact result.
+  # Returns the rank of the matrix.
+  # Beware that using Float values can yield erroneous results
+  # because of their lack of precision.
+  # Consider using exact types like Rational or BigDecimal instead.
   #
   #   Matrix[[7,6], [3,9]].rank
   #     => 2
   #
   def rank
-    if column_size > row_size
-      a = transpose.to_a
-      a_column_size = row_size
-      a_row_size = column_size
-    else
-      a = to_a
-      a_column_size = column_size
-      a_row_size = row_size
-    end
+    # We currently use Bareiss' multistep integer-preserving gaussian elimination
+    # (see comments on determinant)
+    a = to_a
+    last_column = column_size - 1
+    last_row = row_size - 1
     rank = 0
-    a_column_size.times do |k|
-      if (akk = a[k][k]) == 0
-        i = (k+1 ... a_row_size).find {|ii|
-          a[ii][k] != 0
-        }
-        if i
-          a[i], a[k] = a[k], a[i]
-          akk = a[k][k]
-        else
-          i = (k+1 ... a_column_size).find {|ii|
-            a[k][ii] != 0
-          }
-          next if i.nil?
-          (k ... a_column_size).each do |j|
-            a[j][k], a[j][i] = a[j][i], a[j][k]
-          end
-          akk = a[k][k]
-        end
+    pivot_row = 0
+    previous_pivot = 1
+    0.upto(last_column) do |k|
+      switch_row = (pivot_row .. last_row).find {|row|
+        a[row][k] != 0
+      }
+      if switch_row
+        a[switch_row], a[pivot_row] = a[pivot_row], a[switch_row] unless pivot_row == switch_row
+        pivot = a[pivot_row][k]
+        (pivot_row+1).upto(last_row) do |i|
+           ai = a[i]
+           (k+1).upto(last_column) do |j|
+             ai[j] =  (pivot * ai[j] - ai[k] * a[pivot_row][j]) / previous_pivot
+           end
+         end
+        pivot_row += 1
+        previous_pivot = pivot
       end
-
-      (k + 1 ... a_row_size).each do |ii|
-        q = a[ii][k].quo(akk)
-        (k + 1... a_column_size).each do |j|
-          a[ii][j] -= a[k][j] * q
-        end
-      end
-      rank += 1
     end
-    return rank
+    pivot_row
   end
 
   #
-  # Returns the rank of the matrix. This method uses Euclidean
-  # algorithm. If all elements are integer, really exact value. But, if
-  # an element is a float, can't return exact value.
-  #
-  #   Matrix[[7,6], [3,9]].rank
-  #     => 2
+  # deprecated; use Matrix#rank
   #
   def rank_e
-    a = to_a
-    a_column_size = column_size
-    a_row_size = row_size
-    pi = 0
-    a_column_size.times do |j|
-      if i = (pi ... a_row_size).find{|i0| !a[i0][j].zero?}
-        if i != pi
-          a[pi], a[i] = a[i], a[pi]
-        end
-        (pi + 1 ... a_row_size).each do |k|
-          q = a[k][j].quo(a[pi][j])
-          (pi ... a_column_size).each do |j0|
-            a[k][j0] -= q * a[pi][j0]
-          end
-          if k > pi && !a[k][j].zero?
-            a[k], a[pi] = a[pi], a[k]
-            redo
-          end
-        end
-        pi += 1
-      end
-    end
-    pi
+    warn "#{caller(1)[0]}: warning: Matrix#rank_e is deprecated; use #rank"
+    rank
   end
 
 
@@ -975,7 +958,11 @@ class Matrix
   #++
 
   #
-  # FIXME: describe #coerce.
+  # The coerce method provides support for Ruby type coercion.
+  # This coercion mechanism is used by Ruby to handle mixed-type
+  # numeric operations: it is intended to find a compatible common
+  # type between the two operands of the operator.
+  # See also Numeric#coerce.
   #
   def coerce(other)
     case other
@@ -1012,15 +999,18 @@ class Matrix
   end
 
   def elements_to_f
-    collect{|e| e.to_f}
+    warn "#{caller(1)[0]}: warning: Matrix#elements_to_f is deprecated, use map(&:to_f)"
+    map(&:to_f)
   end
 
   def elements_to_i
-    collect{|e| e.to_i}
+    warn "#{caller(1)[0]}: warning: Matrix#elements_to_i is deprecated, use map(&:to_i)"
+    map(&:to_i)
   end
 
   def elements_to_r
-    collect{|e| e.to_r}
+    warn "#{caller(1)[0]}: warning: Matrix#elements_to_r is deprecated, use map(&:to_r)"
+    map(&:to_r)
   end
 
   #--
@@ -1051,31 +1041,79 @@ class Matrix
     end
   end
 
-  #
-  # Converts the obj to an Array. If copy is set to true
-  # a copy of obj will be made if necessary.
-  #
-  def Matrix.convert_to_array(obj, copy = false)
-    case obj
-    when Array
-      copy ? obj.dup : obj
-    when Vector
-      obj.to_a
-    else
-      begin
-        converted = obj.to_ary
-      rescue Exception => e
-        raise TypeError, "can't convert #{obj.class} into an Array (#{e.message})"
+  # Private helper modules
+
+  module ConversionHelper # :nodoc:
+    #
+    # Converts the obj to an Array. If copy is set to true
+    # a copy of obj will be made if necessary.
+    #
+    def convert_to_array(obj, copy = false) # :nodoc:
+      case obj
+      when Array
+        copy ? obj.dup : obj
+      when Vector
+        obj.to_a
+      else
+        begin
+          converted = obj.to_ary
+        rescue Exception => e
+          raise TypeError, "can't convert #{obj.class} into an Array (#{e.message})"
+        end
+        raise TypeError, "#{obj.class}#to_ary should return an Array" unless converted.is_a? Array
+        converted
       end
-      raise TypeError, "#{obj.class}#to_ary should return an Array" unless converted.is_a? Array
-      converted
+    end
+    private :convert_to_array
+  end
+
+  extend ConversionHelper
+
+  module CoercionHelper # :nodoc:
+    #
+    # Applies the operator +oper+ with argument +obj+
+    # through coercion of +obj+
+    #
+    def apply_through_coercion(obj, oper)
+      coercion = obj.coerce(self)
+      raise TypeError unless coercion.is_a?(Array) && coercion.length == 2
+      coercion[0].public_send(oper, coercion[1])
+    rescue
+      raise TypeError, "#{obj.inspect} can't be coerced into #{self.class}"
+    end
+    private :apply_through_coercion
+
+    #
+    # Helper method to coerce a value into a specific class.
+    # Raises a TypeError if the coercion fails or the returned value
+    # is not of the right class.
+    # (from Rubinius)
+    #
+    def self.coerce_to(obj, cls, meth) # :nodoc:
+      return obj if obj.kind_of?(cls)
+
+      begin
+        ret = obj.__send__(meth)
+      rescue Exception => e
+        raise TypeError, "Coercion error: #{obj.inspect}.#{meth} => #{cls} failed:\n" \
+                         "(#{e.message})"
+      end
+      raise TypeError, "Coercion error: obj.#{meth} did NOT return a #{cls} (was #{ret.class})" unless ret.kind_of? cls
+      ret
+    end
+
+    def self.coerce_to_int(obj)
+      coerce_to(obj, Integer, :to_int)
     end
   end
+
+  include CoercionHelper
 
   # Private CLASS
 
   class Scalar < Numeric # :nodoc:
     include ExceptionForMatrix
+    include CoercionHelper
 
     def initialize(value)
       @value = value
@@ -1089,8 +1127,7 @@ class Matrix
       when Vector, Matrix
         Scalar.Raise ErrOperationNotDefined, "+", @value.class, other.class
       else
-        x, y = other.coerce(self)
-        x + y
+        apply_through_coercion(other, __method__)
       end
     end
 
@@ -1101,8 +1138,7 @@ class Matrix
       when Vector, Matrix
         Scalar.Raise ErrOperationNotDefined, "-", @value.class, other.class
       else
-        x, y = other.coerce(self)
-        x - y
+        apply_through_coercion(other, __method__)
       end
     end
 
@@ -1113,8 +1149,7 @@ class Matrix
       when Vector, Matrix
         other.collect{|e| @value * e}
       else
-        x, y = other.coerce(self)
-        x * y
+        apply_through_coercion(other, __method__)
       end
     end
 
@@ -1127,8 +1162,7 @@ class Matrix
       when Matrix
         self * other.inverse
       else
-        x, y = other.coerce(self)
-        x.quo(y)
+        apply_through_coercion(other, __method__)
       end
     end
 
@@ -1142,11 +1176,11 @@ class Matrix
         #other.powered_by(self)
         Scalar.Raise ErrOperationNotImplemented, "**", @value.class, other.class
       else
-        x, y = other.coerce(self)
-        x ** y
+        apply_through_coercion(other, __method__)
       end
     end
   end
+
 end
 
 
@@ -1192,18 +1226,20 @@ end
 class Vector
   include ExceptionForMatrix
   include Enumerable
-
+  include Matrix::CoercionHelper
+  extend Matrix::ConversionHelper
   #INSTANCE CREATION
 
   private_class_method :new
   attr_reader :elements
   protected :elements
+
   #
   # Creates a Vector from a list of elements.
   #   Vector[7, 4, ...]
   #
   def Vector.[](*array)
-    new Matrix.convert_to_array(array, copy = false)
+    new convert_to_array(array, copy = false)
   end
 
   #
@@ -1211,7 +1247,7 @@ class Vector
   # whether the array itself or a copy is used internally.
   #
   def Vector.elements(array, copy = true)
-    new Matrix.convert_to_array(array, copy)
+    new convert_to_array(array, copy)
   end
 
   #
@@ -1334,8 +1370,7 @@ class Vector
     when Vector
       Vector.Raise ErrOperationNotDefined, "*", self.class, x.class
     else
-      s, x = x.coerce(self)
-      s * x
+      apply_through_coercion(x, __method__)
     end
   end
 
@@ -1353,8 +1388,7 @@ class Vector
     when Matrix
       Matrix.column_vector(self) + v
     else
-      s, x = v.coerce(self)
-      s + x
+      apply_through_coercion(v, __method__)
     end
   end
 
@@ -1372,8 +1406,7 @@ class Vector
     when Matrix
       Matrix.column_vector(self) - v
     else
-      s, x = v.coerce(self)
-      s - x
+      apply_through_coercion(v, __method__)
     end
   end
 
@@ -1388,8 +1421,7 @@ class Vector
     when Matrix, Vector
       Vector.Raise ErrOperationNotDefined, "/", self.class, x.class
     else
-      s, x = x.coerce(self)
-      s / x
+      apply_through_coercion(x, __method__)
     end
   end
 
@@ -1457,19 +1489,26 @@ class Vector
   end
 
   def elements_to_f
-    collect{|e| e.to_f}
+    warn "#{caller(1)[0]}: warning: Vector#elements_to_f is deprecated"
+    map(&:to_f)
   end
 
   def elements_to_i
-    collect{|e| e.to_i}
+    warn "#{caller(1)[0]}: warning: Vector#elements_to_i is deprecated"
+    map(&:to_i)
   end
 
   def elements_to_r
-    collect{|e| e.to_r}
+    warn "#{caller(1)[0]}: warning: Vector#elements_to_r is deprecated"
+    map(&:to_r)
   end
 
   #
-  # FIXME: describe Vector#coerce.
+  # The coerce method provides support for Ruby type coercion.
+  # This coercion mechanism is used by Ruby to handle mixed-type
+  # numeric operations: it is intended to find a compatible common
+  # type between the two operands of the operator.
+  # See also Numeric#coerce.
   #
   def coerce(other)
     case other
@@ -1498,6 +1537,3 @@ class Vector
     str = "Vector"+@elements.inspect
   end
 end
-
-# Documentation comments:
-#  - Matrix#coerce and Vector#coerce need to be documented

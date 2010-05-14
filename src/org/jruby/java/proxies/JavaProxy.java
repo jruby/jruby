@@ -39,18 +39,23 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 
 public class JavaProxy extends RubyObject {
+    private static final boolean DEBUG = false;
     private JavaObject javaObject;
-    private Object object;
+    protected Object object;
     
     public JavaProxy(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz);
     }
 
+    @Override
     public Object dataGetStruct() {
+        // for investigating and eliminating code that causes JavaObject to live
+        if (DEBUG) Thread.dumpStack();
         lazyJavaObject();
         return javaObject;
     }
 
+    @Override
     public void dataWrapStruct(Object object) {
         this.javaObject = (JavaObject)object;
         this.object = javaObject.getValue();
@@ -71,11 +76,6 @@ public class JavaProxy extends RubyObject {
 
     public void setObject(Object object) {
         this.object = object;
-    }
-
-    private JavaObject getJavaObject() {
-        lazyJavaObject();
-        return (JavaObject)dataGetStruct();
     }
 
     private void lazyJavaObject() {
@@ -376,12 +376,22 @@ public class JavaProxy extends RubyObject {
         }
     }
 
+    /**
+     * We override RubyBasicObject.inspectHashCode to be the identity hash of
+     * the contained object, so it remains consistent across wrappers.
+     *
+     * @return The identity hashcode of the wrapped object
+     */
+    @Override
+    protected int inspectHashCode() {
+        return System.identityHashCode(object);
+    }
+
     private Method getMethod(String name, Class... argTypes) {
-        Class jclass = getJavaObject().getJavaClass();
         try {
-            return jclass.getMethod(name, argTypes);
+            return getObject().getClass().getMethod(name, argTypes);
         } catch (NoSuchMethodException nsme) {
-            throw JavaMethod.newMethodNotFoundError(getRuntime(), jclass, name + CodegenUtils.prettyParams(argTypes), name);
+            throw JavaMethod.newMethodNotFoundError(getRuntime(), getObject().getClass(), name + CodegenUtils.prettyParams(argTypes), name);
         }
     }
 
@@ -404,8 +414,12 @@ public class JavaProxy extends RubyObject {
 
     @Override
     public Object toJava(Class type) {
-        if (Java.OBJECT_PROXY_CACHE) getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
-        return getObject();
+        if (type.isAssignableFrom(getObject().getClass())) {
+            if (Java.OBJECT_PROXY_CACHE) getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
+            return getObject();
+        } else {
+            return super.toJava(type);
+        }
     }
     
     public Object unwrap() {

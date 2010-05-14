@@ -113,11 +113,24 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     if (DEBUG) {
                         out.println("        System.out.println(\"Using pregenerated populator: \" + \"" + cd.getSimpleName() + "Populator\");");
                     }
+
+                    // scan for meta, compat, etc to reduce findbugs complaints about "dead assignments"
+                    boolean hasMeta = false;
+                    boolean hasCompat = false;
+                    for (MethodDeclaration md : cd.getMethods()) {
+                        JRubyMethod anno = md.getAnnotation(JRubyMethod.class);
+                        if (anno == null) {
+                            continue;
+                        }
+                        hasMeta |= anno.meta();
+                        hasCompat |= anno.compat() != CompatVersion.BOTH;
+                    }
+
                     out.println("        JavaMethod javaMethod;");
                     out.println("        DynamicMethod moduleMethod;");
-                    out.println("        RubyClass metaClass = cls.getMetaClass();");
+                    if (hasMeta) out.println("        RubyClass metaClass = cls.getMetaClass();");
                     out.println("        RubyModule singletonClass;");
-                    out.println("        CompatVersion compatVersion = cls.getRuntime().getInstanceConfig().getCompatVersion();");
+                    if (hasCompat) out.println("        CompatVersion compatVersion = cls.getRuntime().getInstanceConfig().getCompatVersion();");
 
                     Map<String, List<MethodDeclaration>> annotatedMethods = new HashMap<String, List<MethodDeclaration>>();
                     Map<String, List<MethodDeclaration>> staticAnnotatedMethods = new HashMap<String, List<MethodDeclaration>>();

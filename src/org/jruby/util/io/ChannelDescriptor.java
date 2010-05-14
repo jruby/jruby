@@ -46,11 +46,13 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
+import org.jruby.RubyFile;
 
-import org.jruby.RubyIO;
 import org.jruby.ext.posix.POSIX;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
@@ -81,9 +83,10 @@ public class ChannelDescriptor {
     private Channel channel;
     /**
      * The file number (equivalent to the int file descriptor value in POSIX)
-     * for this descriptor.
+     * for this descriptor. This is generated new for most ChannelDescriptor
+     * instances, except when they need to masquerade as another fileno.
      */
-    private int fileno;
+    private int internalFileno;
     /** The java.io.FileDescriptor object for this descriptor. */
     private FileDescriptor fileDescriptor;
     /**
@@ -131,10 +134,16 @@ public class ChannelDescriptor {
     private ChannelDescriptor(Channel channel, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor, AtomicInteger refCounter, boolean canBeSeekable) {
         this.refCounter = refCounter;
         this.channel = channel;
-        this.fileno = fileno;
+        this.internalFileno = fileno;
         this.originalModes = originalModes;
         this.fileDescriptor = fileDescriptor;
         this.canBeSeekable = canBeSeekable;
+
+        registerDescriptor(this);
+    }
+
+    private ChannelDescriptor(Channel channel, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor) {
+        this(channel, fileno, originalModes, fileDescriptor, new AtomicInteger(1), true);
     }
 
     /**
@@ -147,8 +156,21 @@ public class ChannelDescriptor {
      * @param originalModes The mode flags for the new descriptor
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
-    public ChannelDescriptor(Channel channel, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor) {
-        this(channel, fileno, originalModes, fileDescriptor, new AtomicInteger(1), true);
+    public ChannelDescriptor(Channel channel, ModeFlags originalModes, FileDescriptor fileDescriptor) {
+        this(channel, getNewFileno(), originalModes, fileDescriptor, new AtomicInteger(1), true);
+    }
+
+    /**
+     * Construct a new ChannelDescriptor with the given channel, file number, mode flags,
+     * and file descriptor object. The channel will be kept open until all ChannelDescriptor
+     * references to it have been closed.
+     *
+     * @param channel The channel for the new descriptor
+     * @param originalModes The mode flags for the new descriptor
+     * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
+     */
+    public ChannelDescriptor(Channel channel, ModeFlags originalModes) {
+        this(channel, getNewFileno(), originalModes, new FileDescriptor(), new AtomicInteger(1), true);
     }
 
     /**
@@ -163,13 +185,34 @@ public class ChannelDescriptor {
      * @param originalModes The mode flags for the new descriptor
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
-    public ChannelDescriptor(InputStream baseInputStream, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor) {
+    public ChannelDescriptor(InputStream baseInputStream, ModeFlags originalModes, FileDescriptor fileDescriptor) {
         // The reason why we need the stream is to be able to invoke available() on it.
         // STDIN in Java is non-interruptible, non-selectable, and attempt to read
         // on such stream might lead to thread being blocked without *any* way to unblock it.
         // That's where available() comes it, so at least we could check whether
         // anything is available to be read without blocking.
-        this(Channels.newChannel(baseInputStream), fileno, originalModes, fileDescriptor, new AtomicInteger(1), true);
+        this(Channels.newChannel(baseInputStream), getNewFileno(), originalModes, fileDescriptor, new AtomicInteger(1), true);
+        this.baseInputStream = baseInputStream;
+    }
+
+    /**
+     * Special constructor to create the ChannelDescriptor out of the stream, file number,
+     * mode flags, and file descriptor object. The channel will be created from the
+     * provided stream. The channel will be kept open until all ChannelDescriptor
+     * references to it have been closed. <b>Note:</b> in most cases, you should not
+     * use this constructor, it's reserved mostly for STDIN.
+     *
+     * @param baseInputStream The stream to create the channel for the new descriptor
+     * @param originalModes The mode flags for the new descriptor
+     * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
+     */
+    public ChannelDescriptor(InputStream baseInputStream, ModeFlags originalModes) {
+        // The reason why we need the stream is to be able to invoke available() on it.
+        // STDIN in Java is non-interruptible, non-selectable, and attempt to read
+        // on such stream might lead to thread being blocked without *any* way to unblock it.
+        // That's where available() comes it, so at least we could check whether
+        // anything is available to be read without blocking.
+        this(Channels.newChannel(baseInputStream), getNewFileno(), originalModes, new FileDescriptor(), new AtomicInteger(1), true);
         this.baseInputStream = baseInputStream;
     }
 
@@ -183,8 +226,27 @@ public class ChannelDescriptor {
      * @param fileno The file number for the new descriptor
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
+    public ChannelDescriptor(Channel channel, FileDescriptor fileDescriptor) throws InvalidValueException {
+        this(channel, getModesFromChannel(channel), fileDescriptor);
+    }
+    
+    @Deprecated
     public ChannelDescriptor(Channel channel, int fileno, FileDescriptor fileDescriptor) throws InvalidValueException {
-        this(channel, fileno, getModesFromChannel(channel), fileDescriptor);
+        this(channel, getModesFromChannel(channel), fileDescriptor);
+    }
+
+    /**
+     * Construct a new ChannelDescriptor with the given channel, file number,
+     * and file descriptor object. The channel will be kept open until all ChannelDescriptor
+     * references to it have been closed. The channel's capabilities will be used
+     * to determine the "original" set of mode flags. This version generates a
+     * new fileno.
+     *
+     * @param channel The channel for the new descriptor
+     * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
+     */
+    public ChannelDescriptor(Channel channel) throws InvalidValueException {
+        this(channel, getModesFromChannel(channel), new FileDescriptor());
     }
 
     /**
@@ -193,7 +255,7 @@ public class ChannelDescriptor {
      * @return the fileno for this descriptor
      */
     public int getFileno() {
-        return fileno;
+        return internalFileno;
     }
     
     /**
@@ -321,7 +383,7 @@ public class ChannelDescriptor {
         synchronized (refCounter) {
             refCounter.incrementAndGet();
 
-            int newFileno = RubyIO.getNewFileno();
+            int newFileno = getNewFileno();
             
             if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + newFileno + ", refs now: " + refCounter.get());
 
@@ -360,7 +422,7 @@ public class ChannelDescriptor {
         synchronized (refCounter) {
             refCounter.incrementAndGet();
 
-            if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + fileno + ", refs now: " + refCounter.get());
+            if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + internalFileno + ", refs now: " + refCounter.get());
 
             other.close();
             
@@ -370,6 +432,14 @@ public class ChannelDescriptor {
             other.refCounter = refCounter;
             other.canBeSeekable = canBeSeekable;
         }
+    }
+
+    public ChannelDescriptor reopen(Channel channel, ModeFlags modes) {
+        return new ChannelDescriptor(channel, internalFileno, modes, fileDescriptor);
+    }
+
+    public ChannelDescriptor reopen(RandomAccessFile file, ModeFlags modes) throws IOException {
+        return new ChannelDescriptor(file.getChannel(), internalFileno, modes, file.getFD());
     }
     
     /**
@@ -615,7 +685,7 @@ public class ChannelDescriptor {
         if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
             Channel nullChannel = new NullChannel();
             // FIXME: don't use RubyIO for this
-            return new ChannelDescriptor(nullChannel, RubyIO.getNewFileno(), flags, new FileDescriptor());
+            return new ChannelDescriptor(nullChannel, flags);
         } else if (path.startsWith("file:")) {
             int bangIndex = path.indexOf("!");
             if (bangIndex > 0) {
@@ -627,27 +697,27 @@ public class ChannelDescriptor {
                 }
 
                 JarFile jf = new JarFile(filePath);
-                ZipEntry zf = jf.getEntry(internalPath);
+                ZipEntry entry = RubyFile.getFileEntry(jf, internalPath);
 
-                if(zf == null) {
+                if (entry == null) {
                     throw new FileNotFoundException(path);
                 }
 
-                InputStream is = jf.getInputStream(zf);
+                InputStream is = jf.getInputStream(entry);
                 // FIXME: don't use RubyIO for this
-                return new ChannelDescriptor(Channels.newChannel(is), RubyIO.getNewFileno(), flags, new FileDescriptor());
+                return new ChannelDescriptor(Channels.newChannel(is), flags);
             } else {
                 // raw file URL, just open directly
                 URL url = new URL(path);
                 InputStream is = url.openStream();
                 // FIXME: don't use RubyIO for this
-                return new ChannelDescriptor(Channels.newChannel(is), RubyIO.getNewFileno(), flags, new FileDescriptor());
+                return new ChannelDescriptor(Channels.newChannel(is), flags);
             }
         } else if (path.startsWith("classpath:/")) {
             path = path.substring("classpath:/".length());
             InputStream is = ByteList.EMPTY_BYTELIST.getClass().getClassLoader().getResourceAsStream(path);
             // FIXME: don't use RubyIO for this
-            return new ChannelDescriptor(Channels.newChannel(is), RubyIO.getNewFileno(), flags, new FileDescriptor());
+            return new ChannelDescriptor(Channels.newChannel(is), flags);
         } else {
             JRubyFile theFile = JRubyFile.create(cwd,path);
 
@@ -700,7 +770,7 @@ public class ChannelDescriptor {
             // TODO: append should set the FD to end, no? But there is no seek(int) in libc!
             //if (modes.isAppendable()) seek(0, Stream.SEEK_END);
 
-            return new ChannelDescriptor(file.getChannel(), RubyIO.getNewFileno(), flags, file.getFD());
+            return new ChannelDescriptor(file.getChannel(), flags, file.getFD());
         }
     }
     
@@ -727,10 +797,11 @@ public class ChannelDescriptor {
             // otherwise decrement and possibly close as normal
             int count = refCounter.decrementAndGet();
 
-            if (DEBUG) getLogger("ChannelDescriptor").info("Descriptor for fileno " + fileno + " refs: " + count);
+            if (DEBUG) getLogger("ChannelDescriptor").info("Descriptor for fileno " + internalFileno + " refs: " + count);
 
             if (count <= 0) {
                 channel.close();
+                unregisterDescriptor(internalFileno);
             }
         }
     }
@@ -759,4 +830,25 @@ public class ChannelDescriptor {
         
         return modes;
     }
+
+    // FIXME shouldn't use static; would interfere with other runtimes in the same JVM
+    protected static final AtomicInteger internalFilenoIndex = new AtomicInteger(2);
+
+    public static int getNewFileno() {
+        return internalFilenoIndex.incrementAndGet();
+    }
+
+    private static void registerDescriptor(ChannelDescriptor descriptor) {
+        filenoDescriptorMap.put(descriptor.getFileno(), descriptor);
+    }
+
+    private static void unregisterDescriptor(int aFileno) {
+        filenoDescriptorMap.remove(aFileno);
+    }
+
+    public static ChannelDescriptor getDescriptorByFileno(int aFileno) {
+        return filenoDescriptorMap.get(aFileno);
+    }
+    
+    private static final Map<Integer, ChannelDescriptor> filenoDescriptorMap = new ConcurrentHashMap<Integer, ChannelDescriptor>();
 }

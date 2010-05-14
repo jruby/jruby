@@ -110,11 +110,11 @@ public class ClassCache<T> {
         Class contents = null;
         try {
             contents = getClassLoader().loadClass(className);
-            if (JITCompiler.DEBUG) {
+            if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                 System.err.println("found jitted code in classloader: " + className);
             }
         } catch (ClassNotFoundException cnfe) {
-            if (JITCompiler.DEBUG) {
+            if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                 System.err.println("no jitted code in classloader for method " + classGenerator + " at class: " + className);
             }
             // proceed to define in-memory

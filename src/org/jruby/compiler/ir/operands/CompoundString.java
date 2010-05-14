@@ -3,6 +3,8 @@ package org.jruby.compiler.ir.operands;
 import java.util.List;
 import java.util.Map;
 
+import org.jruby.compiler.ir.representations.InlinerInfo;
+
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
 //     - "Hi #{name}"
@@ -50,5 +52,18 @@ public class CompoundString extends Operand
     {
         for (Operand o: _pieces)
             o.addUsedVariables(l);
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) {
+        if (isConstant()) {
+            return this;
+        }
+        else {
+            List<Operand> newPieces = new java.util.ArrayList<Operand>();
+            for (Operand p: _pieces) {
+                newPieces.add(p.cloneForInlining(ii));
+            }
+            return new CompoundString(newPieces);
+        }
     }
 }

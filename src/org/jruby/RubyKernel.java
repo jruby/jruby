@@ -847,6 +847,19 @@ public class RubyKernel {
         return globalVariables;
     }
 
+    // In 1.9, return symbols
+    @JRubyMethod(name = "global_variables", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyArray global_variables19(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        RubyArray globalVariables = runtime.newArray();
+
+        for (String globalVariableName : runtime.getGlobalVariables().getNames()) {
+            globalVariables.append(runtime.newSymbol(globalVariableName));
+        }
+
+        return globalVariables;
+    }
+
     /** Returns an Array with the names of all local variables.
      *
      */
@@ -862,6 +875,18 @@ public class RubyKernel {
         return localVariables;
     }
 
+    // In 1.9, return symbols
+    @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyArray local_variables19(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.getRuntime();
+        RubyArray localVariables = runtime.newArray();
+
+        for (String name: context.getCurrentScope().getAllNamesInScope()) {
+            if (IdUtil.isLocal(name)) localVariables.append(runtime.newSymbol(name));
+        }
+
+        return localVariables;
+    }
     @JRubyMethod(name = "binding", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyBinding binding(ThreadContext context, IRubyObject recv, Block block) {
         return RubyBinding.newBinding(context.getRuntime(), context.currentBinding(recv));
@@ -1074,7 +1099,7 @@ public class RubyKernel {
         int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
 
         if (level < 0) {
-            throw context.getRuntime().newArgumentError("negative level(" + level + ')');
+            throw context.getRuntime().newArgumentError("negative level (" + level + ')');
         }
 
         return context.createCallerBacktrace(context.getRuntime(), level);
@@ -1085,7 +1110,7 @@ public class RubyKernel {
         int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
 
         if (level < 0) {
-            throw context.getRuntime().newArgumentError("negative level(" + level + ')');
+            throw context.getRuntime().newArgumentError("negative level (" + level + ')');
         }
 
         return context.createCallerBacktrace(context.getRuntime(), level);

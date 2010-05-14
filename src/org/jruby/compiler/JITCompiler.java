@@ -32,8 +32,6 @@ package org.jruby.compiler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
@@ -57,22 +55,20 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ClassCache;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.SafePropertyAccessor;
 import org.objectweb.asm.ClassReader;
 
 public class JITCompiler implements JITCompilerMBean {
     public static final boolean USE_CACHE = true;
-    public static final boolean DEBUG = SafePropertyAccessor.getBoolean("jruby.jit.debug", false);
     
-    private AtomicLong compiledCount = new AtomicLong(0);
-    private AtomicLong successCount = new AtomicLong(0);
-    private AtomicLong failCount = new AtomicLong(0);
-    private AtomicLong abandonCount = new AtomicLong(0);
-    private AtomicLong compileTime = new AtomicLong(0);
-    private AtomicLong averageCompileTime = new AtomicLong(0);
-    private AtomicLong codeSize = new AtomicLong(0);
-    private AtomicLong averageCodeSize = new AtomicLong(0);
-    private AtomicLong largestCodeSize = new AtomicLong(0);
+    private final AtomicLong compiledCount = new AtomicLong(0);
+    private final AtomicLong successCount = new AtomicLong(0);
+    private final AtomicLong failCount = new AtomicLong(0);
+    private final AtomicLong abandonCount = new AtomicLong(0);
+    private final AtomicLong compileTime = new AtomicLong(0);
+    private final AtomicLong averageCompileTime = new AtomicLong(0);
+    private final AtomicLong codeSize = new AtomicLong(0);
+    private final AtomicLong averageCodeSize = new AtomicLong(0);
+    private final AtomicLong largestCodeSize = new AtomicLong(0);
     
     public JITCompiler(Ruby ruby) {
         ruby.getBeanManager().register(this);
@@ -188,12 +184,11 @@ public class JITCompiler implements JITCompilerMBean {
             MessageDigest sha1 = MessageDigest.getInstance("SHA1");
             sha1.update(bytes);
             byte[] digest = sha1.digest();
-            char[] digestChars = new char[digest.length * 2];
+            StringBuilder builder = new StringBuilder();
             for (int i = 0; i < digest.length; i++) {
-                digestChars[i * 2] = Character.forDigit(digest[i] & 0xF, 16);
-                digestChars[i * 2 + 1] = Character.forDigit((digest[i] & 0xF0) >> 4, 16);
+                builder.append(Integer.toString( ( digest[i] & 0xff ) + 0x100, 16).substring( 1 ));
             }
-            return new String(digestChars).toUpperCase(Locale.ENGLISH);
+            return builder.toString().toUpperCase(Locale.ENGLISH);
         } catch (NoSuchAlgorithmException nsae) {
             throw new RuntimeException(nsae);
         }
@@ -218,7 +213,7 @@ public class JITCompiler implements JITCompilerMBean {
             // write to code cache
             FileOutputStream fos = null;
             try {
-                if (DEBUG) System.err.println("writing jitted code to to " + cachedClassFile);
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) System.err.println("writing jitted code to to " + cachedClassFile);
                 fos = new FileOutputStream(cachedClassFile);
                 fos.write(bytecode);
             } catch (Exception e) {
@@ -272,7 +267,7 @@ public class JITCompiler implements JITCompilerMBean {
                     cachedClassFile.exists()) {
                 FileInputStream fis = null;
                 try {
-                    if (DEBUG) System.err.println("loading cached code from: " + cachedClassFile);
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) System.err.println("loading cached code from: " + cachedClassFile);
                     fis = new FileInputStream(cachedClassFile);
                     bytecode = new byte[(int)fis.getChannel().size()];
                     fis.read(bytecode);
@@ -348,7 +343,7 @@ public class JITCompiler implements JITCompilerMBean {
             codeSize.addAndGet(bytecode.length);
             averageCompileTime.set(compileTime.get() / compiledCount.get());
             averageCodeSize.set(codeSize.get() / compiledCount.get());
-            synchronized (largestCodeSize) {
+            synchronized (JITCompiler.this) {
                 if (largestCodeSize.get() < bytecode.length) {
                     largestCodeSize.set(bytecode.length);
                 }
@@ -372,6 +367,7 @@ public class JITCompiler implements JITCompilerMBean {
             return jitCallConfig;
         }
 
+        @Override
         public String toString() {
             return methodName + "() at " + bodyNode.getPosition().getFile() + ":" + bodyNode.getPosition().getLine();
         }

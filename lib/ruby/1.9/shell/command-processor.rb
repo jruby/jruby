@@ -1,7 +1,7 @@
 #
 #   shell/command-controller.rb -
 #   	$Release Version: 0.7 $
-#   	$Revision: 22784 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -35,7 +35,7 @@ class Shell
 
       install_builtin_commands
 
-      # define CommandProccessor#methods to Shell#methods and Filter#methods
+      # define CommandProcessor#methods to Shell#methods and Filter#methods
       for m in CommandProcessor.instance_methods(false) - NoDelegateMethods
 	add_delegate_command_to_shell(m)
       end
@@ -520,7 +520,7 @@ class Shell
       id = id.intern if id.kind_of?(String)
       name = id.id2name
       if Shell.method_defined?(id)
-	Shell.notify "warn: override definnition of Shell##{name}."
+	Shell.notify "warn: override definition of Shell##{name}."
 	Shell.notify "warn: alias Shell##{name} to Shell##{name}_org.\n"
 	Shell.module_eval "alias #{name}_org #{name}"
       end
@@ -536,7 +536,7 @@ class Shell
                           end], __FILE__, __LINE__)
 
       if Shell::Filter.method_defined?(id)
-	Shell.notify "warn: override definnition of Shell::Filter##{name}."
+	Shell.notify "warn: override definition of Shell::Filter##{name}."
 	Shell.notify "warn: alias Shell##{name} to Shell::Filter##{name}_org."
 	Filter.module_eval "alias #{name}_org #{name}"
       end

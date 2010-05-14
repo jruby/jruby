@@ -26,9 +26,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     
     private final com.kenai.jffi.Function function;
-    private final Type returnType;
-    private final Type[] parameterTypes;
-    private final CallingConvention convention;
+    private final NativeFunctionInfo functionInfo;
     private final IRubyObject enums;
     private volatile boolean autorelease = true;
 
@@ -47,22 +45,24 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
             Type returnType, Type[] parameterTypes, CallingConvention convention, IRubyObject enums) {
         super(runtime, klass, parameterTypes.length, address);
 
-        final com.kenai.jffi.Type jffiReturnType = FFIUtil.getFFIType(returnType);
-        if (jffiReturnType == null) {
-            throw runtime.newArgumentError("Invalid return type " + returnType);
-        }
-        
-        com.kenai.jffi.Type[] jffiParamTypes = new com.kenai.jffi.Type[parameterTypes.length];
-        for (int i = 0; i < jffiParamTypes.length; ++i) {
-            if ((jffiParamTypes[i] = FFIUtil.getFFIType(parameterTypes[i])) == null) {
-                throw runtime.newArgumentError("Invalid parameter type " + parameterTypes[i]);
-            }
-        }
+        this.functionInfo = new NativeFunctionInfo(runtime, returnType, parameterTypes, convention);
 
-        function = new com.kenai.jffi.Function(address.getAddress(), jffiReturnType, jffiParamTypes);
-        this.parameterTypes = (Type[]) parameterTypes.clone();
-        this.returnType = returnType;
-        this.convention = convention;
+        function = new com.kenai.jffi.Function(address.getAddress(), 
+                functionInfo.jffiReturnType, functionInfo.jffiParameterTypes, functionInfo.convention);
+        
+        this.enums = enums;
+        // Wire up Function#call(*args) to use the super-fast native invokers
+        getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
+    }
+
+    Function(Ruby runtime, RubyClass klass, DirectMemoryIO address,
+            NativeFunctionInfo functionInfo, IRubyObject enums) {
+        super(runtime, klass, functionInfo.parameterTypes.length, address);
+
+        this.functionInfo = functionInfo;
+
+        function = new com.kenai.jffi.Function(address.getAddress(), 
+                functionInfo.jffiReturnType, functionInfo.jffiParameterTypes, functionInfo.convention);
         this.enums = enums;
         // Wire up Function#call(*args) to use the super-fast native invokers
         getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
@@ -162,10 +162,10 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     public DynamicMethod createDynamicMethod(RubyModule module) {
         if (enums == null || enums.isNil()) {
             return MethodFactory.createDynamicMethod(getRuntime(), module, function,
-                    returnType, parameterTypes, convention);
+                    functionInfo.returnType, functionInfo.parameterTypes, functionInfo.convention);
         } else {
             return DefaultMethodFactory.getFactory().createMethod(module,
-                    function, returnType, parameterTypes, convention, enums);
+                    function, functionInfo.returnType, functionInfo.parameterTypes, functionInfo.convention, enums);
         }
     }
     

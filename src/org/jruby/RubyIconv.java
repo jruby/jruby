@@ -125,6 +125,7 @@ public class RubyIconv extends RubyObject {
         }
 
         @JRubyMethod(name = "initialize", required = 1, optional = 2, frame = true)
+        @Override
         public IRubyObject initialize(IRubyObject[] args, Block block) {
             super.initialize(args, block);
             success = args.length >= 2 ? args[1] : getRuntime().getNil();
@@ -144,6 +145,7 @@ public class RubyIconv extends RubyObject {
         }
 
         @JRubyMethod(name = "inspect")
+        @Override
         public IRubyObject inspect() {
             RubyModule rubyClass = getMetaClass();
             StringBuilder buffer = new StringBuilder("#<");

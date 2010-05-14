@@ -35,7 +35,7 @@ public class OpenFile {
         return mainStream;
     }
 
-    public synchronized void setMainStream(Stream mainStream) {
+    public void setMainStream(Stream mainStream) {
         this.mainStream = mainStream;
     }
 
@@ -43,7 +43,7 @@ public class OpenFile {
         return pipeStream;
     }
 
-    public synchronized void setPipeStream(Stream pipeStream) {
+    public void setPipeStream(Stream pipeStream) {
         this.pipeStream = pipeStream;
     }
 
@@ -272,7 +272,6 @@ public class OpenFile {
                     } finally {
                         // make sure the pipe stream is set to null
                         pipeStream = null;
-                        runtime.unregisterDescriptor(pipe.getFileno());
                     }
                 }
                 Stream ms = mainStream;
@@ -292,7 +291,6 @@ public class OpenFile {
                     } finally {
                         // make sure the main stream is set to null
                         mainStream = null;
-                        runtime.unregisterDescriptor(main.getFileno());
                     }
                 }
             }

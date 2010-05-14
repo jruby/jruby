@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2001, 2002, 2003 by Michael Neumann (mneumann@ntecs.de)
 #
-# $Id: httpserver.rb 22784 2009-03-06 03:56:38Z nobu $
+# $Id$
 #
 
 

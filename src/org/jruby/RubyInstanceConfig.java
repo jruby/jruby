@@ -67,17 +67,17 @@ public class RubyInstanceConfig {
     /**
      * The max count of active methods eligible for JIT-compilation.
      */
-    private static final int JIT_MAX_METHODS_LIMIT = 4096;
+    public static final int JIT_MAX_METHODS_LIMIT = 4096;
 
     /**
      * The max size of JIT-compiled methods (full class size) allowed.
      */
-    private static final int JIT_MAX_SIZE_LIMIT = 10000;
+    public static final int JIT_MAX_SIZE_LIMIT = 10000;
 
     /**
      * The JIT threshold to the specified method invocation count.
      */
-    private static final int JIT_THRESHOLD = 50;
+    public static final int JIT_THRESHOLD = 50;
     
     /** The version to use for generated classes. Set to current JVM version by default */
     public static final int JAVA_VERSION;
@@ -85,7 +85,7 @@ public class RubyInstanceConfig {
     /**
      * Default size for chained compilation.
      */
-    private static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = 500;
+    public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = 500;
     
     /**
      * The number of lines at which a method, class, or block body is split into
@@ -281,6 +281,8 @@ public class RubyInstanceConfig {
 
     public static final boolean INTERFACES_USE_PROXY
             = SafePropertyAccessor.getBoolean("jruby.interfaces.useProxy");
+
+    public static final boolean JIT_LOADING_DEBUG = SafePropertyAccessor.getBoolean("jruby.jit.debug", false);
 
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
@@ -521,7 +523,7 @@ public class RubyInstanceConfig {
                 .append("       Set the max count of active methods eligible for JIT-compilation.\n")
                 .append("       Default is " + JIT_MAX_METHODS_LIMIT + " per runtime. A value of 0 disables JIT, -1 disables max.\n")
                 .append("    jruby.jit.maxsize=<jitted method size (full .class)>\n")
-                .append("       Set the maximum full-class byte size allowed for jitted methods. Default is Integer.MAX_VALUE\n")
+                .append("       Set the maximum full-class byte size allowed for jitted methods. Default is " + JIT_MAX_SIZE_LIMIT + ".\n")
                 .append("    jruby.jit.logging=true|false\n")
                 .append("       Enable JIT logging (reports successful compilation). Default is false\n")
                 .append("    jruby.jit.logging.verbose=true|false\n")

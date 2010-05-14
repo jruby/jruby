@@ -30,6 +30,7 @@
 package org.jruby.embed.jsr223;
 
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +40,6 @@ import javax.script.ScriptEngineFactory;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.LocalVariableBehavior;
-import org.jruby.embed.util.PropertyReader;
 import org.jruby.embed.util.SystemPropertyCatcher;
 
 /**
@@ -48,7 +48,6 @@ import org.jruby.embed.util.SystemPropertyCatcher;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class JRubyEngineFactory implements ScriptEngineFactory {
-    private static final String jsr223Props = "org/jruby/embed/jsr223/Jsr223JRubyEngine.properties";
     private ScriptingContainer container = null;
     private final String engineName;
     private final String engineVersion;
@@ -62,13 +61,12 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
     private Map<String, Object> parameters;
 
     public JRubyEngineFactory() {
-        PropertyReader propertyReader = new PropertyReader(jsr223Props);
-        engineName = propertyReader.getSingleValue("engine.name").trim();
-        engineVersion = propertyReader.getSingleValue("engine.version").trim();
-        extensions = Collections.unmodifiableList(propertyReader.getMultipleValue("language.extension"));
-        languageName = propertyReader.getSingleValue("language.name").trim();
-        mimeTypes = Collections.unmodifiableList(propertyReader.getMultipleValue("language.mimetypes"));
-        engineIds = Collections.unmodifiableList(propertyReader.getMultipleValue("engine.ids"));
+        engineName = "JSR 223 JRuby Engine";
+        engineVersion = org.jruby.runtime.Constants.VERSION;
+        extensions = Collections.unmodifiableList(Arrays.asList(new String[]{"rb"}));
+        languageName = "ruby";
+        mimeTypes = Collections.unmodifiableList(Arrays.asList(new String[]{"application/x-ruby"}));
+        engineIds = Collections.unmodifiableList(Arrays.asList(new String[]{"ruby", "jruby"}));
         // does followings on demand to avoid runtime initialization
         //languageVersion = container.getSupportedRubyVersion();
     }
@@ -120,15 +118,19 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
                 return MessageFormat.format("{0}.{1}", obj, m);
             }
         } else {  // with argument(s)
-            String argsString = "";
+            StringBuilder builder = new StringBuilder();
+            boolean first = true;
             for (String arg : args) {
-                argsString += arg + ", ";
+                if (!first) {
+                    builder.append(", ");
+                }
+                first = false;
+                builder.append(arg);
             }
-            argsString = argsString.substring(0, argsString.length()-2);
             if (obj == null || obj.length() == 0) {
-                return MessageFormat.format("{0}({1})", m, argsString); //top level method
+                return MessageFormat.format("{0}({1})", m, builder.toString()); //top level method
             } else {
-                return MessageFormat.format("{0}.{1}({2})", obj, m, argsString);
+                return MessageFormat.format("{0}.{1}({2})", obj, m, builder.toString());
             }
         }
     }

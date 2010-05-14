@@ -6,7 +6,7 @@
 #
 # Copyright (C) 2001, 2002, 2003 by Michael Neumann (mneumann@ntecs.de)
 #
-# $Id: utils.rb 22784 2009-03-06 03:56:38Z nobu $
+# $Id$
 #
 
 module XMLRPC
@@ -112,7 +112,7 @@ module XMLRPC
     def get_methods(obj, delim=".")
       prefix = @prefix + delim
       @methods.collect { |name, meth, sig, help|
-        [prefix + name, obj.method(meth).to_proc, sig, help]
+        [prefix + name.to_s, obj.method(meth).to_proc, sig, help]
       }
     end
 
@@ -132,7 +132,7 @@ module XMLRPC
     def get_methods(obj, delim=".")
       prefix = @prefix + delim
       obj.class.public_instance_methods(false).collect { |name|
-        [prefix + name, obj.method(name).to_proc, nil, nil]
+        [prefix + name.to_s, obj.method(name).to_proc, nil, nil]
       }
     end
   end

@@ -93,12 +93,17 @@ public class JavaArray extends JavaObject {
     }
 
     public IRubyObject arefDirect(int intIndex) {
-        if (intIndex < 0 || intIndex >= getLength()) {
-            throw getRuntime().newArgumentError(
+        return arefDirect(getRuntime(), javaConverter, getValue(), intIndex);
+    }
+
+    public static IRubyObject arefDirect(Ruby runtime, JavaUtil.JavaConverter converter, Object array, int intIndex) {
+        int length = Array.getLength(array);
+        if (intIndex < 0 || intIndex >= length) {
+            throw runtime.newArgumentError(
                                     "index out of bounds for java array (" + intIndex +
-                                    " for length " + getLength() + ")");
+                                    " for length " + length + ")");
         }
-        return JavaUtil.convertJavaArrayElementToRuby(getRuntime(), javaConverter, getValue(), intIndex);
+        return JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, intIndex);
     }
 
     @Deprecated
@@ -131,7 +136,7 @@ public class JavaArray extends JavaObject {
                                     "index out of bounds for java array (" + intIndex +
                                     " for length " + getLength() + ")");
         } catch (ArrayStoreException e) {
-            throw getRuntime().newArgumentError(
+            throw getRuntime().newTypeError(
                                     "wrong element type " + javaObject.getClass() + "(array contains " +
                                     getValue().getClass().getComponentType().getName() + ")");
         } catch (IllegalArgumentException iae) {

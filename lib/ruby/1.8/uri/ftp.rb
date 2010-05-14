@@ -3,7 +3,7 @@
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
 # License:: You can redistribute it and/or modify it under the same term as Ruby.
-# Revision:: $Id: ftp.rb 16085 2008-04-19 11:56:22Z knu $
+# Revision:: $Id$
 #
 
 require 'uri/generic'

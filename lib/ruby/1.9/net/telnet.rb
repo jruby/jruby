@@ -10,7 +10,6 @@
 #
 
 require "socket"
-require "delegate"
 require "timeout"
 require "English"
 
@@ -93,7 +92,7 @@ module Net
   # of relevant RFCs, see
   # http://www.omnifarious.org/~hopper/technical/telnet-rfc.html
   #
-  class Telnet < SimpleDelegator
+  class Telnet
 
     # :stopdoc:
     IAC   = 255.chr # "\377" # "\xff" # interpret as command
@@ -164,7 +163,7 @@ module Net
     CR   = "\015"
     LF   = "\012"
     EOL  = CR + LF
-    REVISION = '$Id: telnet.rb 22784 2009-03-06 03:56:38Z nobu $'
+    REVISION = '$Id$'
     # :startdoc:
 
     #
@@ -368,7 +367,6 @@ module Net
         @dumplog.log_dump('#', message) if @options.has_key?("Dump_log")
       end
 
-      super(@sock)
     end # initialize
 
     # The socket the Telnet object is using.  Note that this object becomes
@@ -681,20 +679,22 @@ module Net
     def cmd(options) # :yield: recvdata
       match    = @options["Prompt"]
       time_out = @options["Timeout"]
+      fail_eof = @options["FailEOF"]
 
       if options.kind_of?(Hash)
         string   = options["String"]
         match    = options["Match"]   if options.has_key?("Match")
         time_out = options["Timeout"] if options.has_key?("Timeout")
+        fail_eof = options["FailEOF"] if options.has_key?("FailEOF")
       else
         string = options
       end
 
       self.puts(string)
       if block_given?
-        waitfor({"Prompt" => match, "Timeout" => time_out}){|c| yield c }
+        waitfor({"Prompt" => match, "Timeout" => time_out, "FailEOF" => fail_eof}){|c| yield c }
       else
-        waitfor({"Prompt" => match, "Timeout" => time_out})
+        waitfor({"Prompt" => match, "Timeout" => time_out, "FailEOF" => fail_eof})
       end
     end
 

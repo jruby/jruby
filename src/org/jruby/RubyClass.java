@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 
@@ -52,7 +53,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -251,11 +251,6 @@ public class RubyClass extends RubyModule {
     public Map<String, VariableAccessor> getVariableAccessorsForRead() {
         return variableAccessors;
     }
-
-    public synchronized Map<String, VariableAccessor> getVariableAccessorsForWrite() {
-        if (variableAccessors == Collections.EMPTY_MAP) variableAccessors = new Hashtable<String, VariableAccessor>(1);
-        return variableAccessors;
-    }
     
     private volatile int accessorCount = 0;
     private volatile VariableAccessor objectIdAccessor = VariableAccessor.DUMMY_ACCESSOR;
@@ -264,12 +259,21 @@ public class RubyClass extends RubyModule {
         return new VariableAccessor(accessorCount++, this.id);
     }
 
-    public synchronized VariableAccessor getVariableAccessorForWrite(String name) {
-        Map<String, VariableAccessor> myVariableAccessors = getVariableAccessorsForWrite();
-        VariableAccessor ivarAccessor = myVariableAccessors.get(name);
+    public VariableAccessor getVariableAccessorForWrite(String name) {
+        VariableAccessor ivarAccessor = variableAccessors.get(name);
         if (ivarAccessor == null) {
-            ivarAccessor = allocateVariableAccessor();
-            myVariableAccessors.put(name, ivarAccessor);
+            synchronized (this) {
+                Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
+                ivarAccessor = myVariableAccessors.get(name);
+                if (ivarAccessor == null) {
+                    // allocate a new accessor and populate a new table
+                    ivarAccessor = allocateVariableAccessor();
+                    Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
+                    newVariableAccessors.putAll(myVariableAccessors);
+                    newVariableAccessors.put(name, ivarAccessor);
+                    variableAccessors = newVariableAccessors;
+                }
+            }
         }
         return ivarAccessor;
     }
@@ -348,16 +352,6 @@ public class RubyClass extends RubyModule {
      */
     protected RubyClass(Ruby runtime, RubyClass superClass, boolean objectSpace) {
         super(runtime, runtime.getClassClass(), objectSpace);
-        this.runtime = runtime;
-        setSuperClass(superClass); // this is the only case it might be null here (in MetaClass construction)
-    }
-
-    /** separate path for MetaClass and IncludedModuleWrapper construction
-     *  (rb_class_boot version for MetaClasses)
-     *  no marshal, allocator initialization and addSubclass(this) here!
-     */
-    protected RubyClass(Ruby runtime, RubyClass superClass, Generation generation, boolean objectSpace) {
-        super(runtime, runtime.getClassClass(), generation, objectSpace);
         this.runtime = runtime;
         setSuperClass(superClass); // this is the only case it might be null here (in MetaClass construction)
     }
@@ -1023,22 +1017,11 @@ public class RubyClass extends RubyModule {
      * 
      * rb_class_superclass
      *
-     */
-    @JRubyMethod(name = "superclass", compat = CompatVersion.RUBY1_8)
+     */    
+    @JRubyMethod(name = "superclass")
     public IRubyObject superclass(ThreadContext context) {
         RubyClass superClazz = superClass;
-
-        if (superClazz == null) throw runtime.newTypeError("uninitialized class");
-
-        if (isSingleton()) superClazz = metaClass;
-        while (superClazz != null && superClazz.isIncluded()) superClazz = superClazz.superClass;
-
-        return superClazz != null ? superClazz : runtime.getNil();
-    }
-    
-    @JRubyMethod(name = "superclass", compat = CompatVersion.RUBY1_9)
-    public IRubyObject superclass19(ThreadContext context) {
-        RubyClass superClazz = superClass;
+        
         if (superClazz == null) {
             if (metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
             throw runtime.newTypeError("uninitialized class");
@@ -1385,8 +1368,7 @@ public class RubyClass extends RubyModule {
             return this;
         }
 
-        // they're asking for something we can't provide
-        throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + klass);
+        return super.toJava(klass);
     }
 
     protected final Ruby runtime;

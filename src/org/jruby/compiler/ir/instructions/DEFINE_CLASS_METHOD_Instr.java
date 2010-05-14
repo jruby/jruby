@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class DEFINE_CLASS_METHOD_Instr extends NoOperandInstr {
     public final IR_Module _module; // class or module
@@ -16,7 +17,8 @@ public class DEFINE_CLASS_METHOD_Instr extends NoOperandInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + _module.getName() + ", "
-                + _method.getName() + ")";
+        return super.toString() + "(" + _module.getName() + ", " + _method.getName() + ")";
     }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) { return this; }
 }

@@ -48,3 +48,4 @@ jruby-findbugs.html
 test/testapp/testapp
 glob_test
 spaces test
+.DS_Store

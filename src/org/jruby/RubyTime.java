@@ -37,7 +37,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -731,8 +733,27 @@ public class RubyTime extends RubyObject {
         return s_mload(recv, (RubyTime)(((RubyClass)recv).allocate()), from);
     }
 
+    @Override
     public Object toJava(Class target) {
-        return getJavaDate();
+        if (target.equals(Date.class)) {
+            return getJavaDate();
+        } else if (target.equals(Calendar.class)) {
+            Calendar cal = GregorianCalendar.getInstance();
+            cal.setTime(getJavaDate());
+            return cal;
+        } else if (target.equals(DateTime.class)) {
+            return this.dt;
+        } else if (target.equals(java.sql.Date.class)) {
+            return new java.sql.Date(dt.getMillis());
+        } else if (target.equals(java.sql.Time.class)) {
+            return new java.sql.Time(dt.getMillis());
+        } else if (target.equals(java.sql.Timestamp.class)) {
+            return new java.sql.Timestamp(dt.getMillis());
+        } else if (target.isAssignableFrom(Date.class)) {
+            return getJavaDate();
+        } else {
+            return super.toJava(target);
+        }
     }
     
     protected static RubyTime s_mload(IRubyObject recv, RubyTime time, IRubyObject from) {

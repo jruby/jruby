@@ -1,7 +1,7 @@
 #
 #   nop.rb -
 #   	$Release Version: 0.9.6$
-#   	$Revision: 23985 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -12,7 +12,7 @@ module IRB
   module ExtendCommand
     class Nop
 
-      @RCS_ID='-$Id: nop.rb 23985 2009-07-07 11:36:20Z keiju $-'
+      @RCS_ID='-$Id$-'
 
       def self.execute(conf, *opts)
 	command = new(conf)

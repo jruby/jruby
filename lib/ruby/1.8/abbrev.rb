@@ -8,7 +8,7 @@
 #
 # $Idaemons: /home/cvs/rb/abbrev.rb,v 1.2 2001/05/30 09:37:45 knu Exp $
 # $RoughId: abbrev.rb,v 1.4 2003/10/14 19:45:42 knu Exp $
-# $Id: abbrev.rb 11708 2007-02-12 23:01:19Z shyouhei $
+# $Id$
 =end
 
 # Calculate the set of unique abbreviations for a given set of strings.

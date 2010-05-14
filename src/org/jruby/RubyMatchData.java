@@ -331,7 +331,7 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
-    final int backrefNumber(IRubyObject obj) {
+    public final int backrefNumber(IRubyObject obj) {
         check();
         if (obj instanceof RubySymbol) {
             return nameToBackrefNumber((RubyString)((RubySymbol)obj).id2name());

@@ -27,14 +27,7 @@ testJavaArraySupport.rb
 testJavaIntegration.rb
 testJRUBY3155.rb
 testLine.rb
-testLine_block_comment.rb
-testLine_block_comment_start.rb
-testLine_code.rb
-testLine_comment.rb
-testLine_line_comment_start.rb
-testLine_mixed_comment.rb
 testLoops.rb
-#testLowerJavaSupport.rb
 testMarshal.rb
 testMath.rb
 testMethods.rb
@@ -46,7 +39,6 @@ testObject.rb
 testObjectSpace.rb
 testPackUnpack.rb
 testPipe.rb
-#testPositions.rb
 testProc.rb
 testRange.rb
 testRbConfig.rb

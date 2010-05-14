@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 //    is_true(a) = (!a.nil? && a != false) 
 //
@@ -28,5 +29,9 @@ public class IS_TRUE_Instr extends OneOperandInstr
         else {
             return null;
         }
+    }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new IS_TRUE_Instr(ii.getRenamedVariable(_result), _arg.cloneForInlining(ii));
     }
 }

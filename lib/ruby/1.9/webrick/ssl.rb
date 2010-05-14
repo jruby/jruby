@@ -3,7 +3,7 @@
 #
 # Copyright (c) 2003 GOTOU Yuuzou All rights reserved.
 #
-# $Id: ssl.rb 22784 2009-03-06 03:56:38Z nobu $
+# $Id$
 
 require 'webrick'
 require 'openssl'
@@ -83,6 +83,7 @@ module WEBrick
       @ssl_context ||= nil
     end
 
+    undef listen
     def listen(address, port)
       listeners = Utils::create_listeners(address, port, @logger)
       if @config[:SSLEnable]

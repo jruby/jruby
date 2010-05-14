@@ -142,9 +142,6 @@ public abstract class Factory {
             if (ffi.fastGetClass(StructLayout.CLASS_NAME) == null) {
                 StructLayout.createStructLayoutClass(runtime, ffi);
             }
-            if (ffi.fastGetClass(StructLayoutBuilder.CLASS_NAME) == null) {
-                StructLayoutBuilder.createStructLayoutBuilderClass(runtime, ffi);
-            }
             if (ffi.fastGetClass("StructByValue") == null) {
                 StructByValue.createStructByValueClass(runtime, ffi);
             }

@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // SSS NOTE: 'variables' are used only during optimizations -- they don't contribute to
 // the list of inputs to the case statement during dataflow analyses.
@@ -34,13 +35,11 @@ public class CASE_Instr extends OneOperandInstr {
         this.elseLabel = elseLabel;
     }
 
-    public String toString()
-    {
+    public String toString() {
        return "\t" + _result + " = CASE(" + _arg + ", ELSE: " + elseLabel + ")";
     }
 
-    public void simplifyOperands(Map<Operand, Operand> valueMap)
-    {
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
         super.simplifyOperands(valueMap);
 
         // Simplify the variables too -- to keep these variables in sync with what is actually used in the when clauses
@@ -49,4 +48,8 @@ public class CASE_Instr extends OneOperandInstr {
             variables[i] = variables[i].getSimplifiedOperand(valueMap);
         }
     }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) { 
+		 throw new RuntimeException("Not implemented yet!");
+	 }
 }

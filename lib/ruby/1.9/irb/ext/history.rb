@@ -1,7 +1,7 @@
 #
 #   history.rb -
 #   	$Release Version: 0.9.6$
-#   	$Revision: 23985 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -48,7 +48,7 @@ module IRB
   end
 
   class History
-    @RCS_ID='-$Id: history.rb 23985 2009-07-07 11:36:20Z keiju $-'
+    @RCS_ID='-$Id$-'
 
     def initialize(size = 16)
       @size = size

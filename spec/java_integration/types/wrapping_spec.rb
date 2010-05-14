@@ -64,3 +64,15 @@ describe "A Java method returning/receiving uncoercible Java types" do
     end
   end
 end
+
+describe "Java::JavaObject.wrap" do
+  it "wraps a Java object with an appropriate JavaObject subclass" do
+    obj = Java::JavaObject.wrap(java.lang.Object.new)
+    str = Java::JavaObject.wrap(java.lang.String.new)
+    cls = Java::JavaObject.wrap(java.lang.Class.forName('java.lang.String'))
+
+    obj.class.should == Java::JavaObject
+    str.class.should == Java::JavaObject
+    cls.class.should == Java::JavaClass
+  end
+end

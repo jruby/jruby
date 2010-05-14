@@ -41,7 +41,6 @@ import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_negate;
 import static org.jruby.util.Numeric.f_negative_p;
 import static org.jruby.util.Numeric.f_one_p;
-import static org.jruby.util.Numeric.f_quo;
 import static org.jruby.util.Numeric.f_rshift;
 import static org.jruby.util.Numeric.f_sub;
 import static org.jruby.util.Numeric.f_to_f;
@@ -152,28 +151,12 @@ public class RubyRational extends RubyNumeric {
         return canonicalizeInternal(context, clazz, x, y);
     }
 
-    /** f_rational_new1
-     * 
-     */
-    private static IRubyObject newRational(ThreadContext context, IRubyObject clazz, IRubyObject x) {
-        assert !(x instanceof RubyRational);
-        return canonicalizeInternal(context, clazz, x, RubyFixnum.one(context.getRuntime()));
-    }
-
     /** f_rational_new_no_reduce2
      * 
      */
     private static IRubyObject newRationalNoReduce(ThreadContext context, IRubyObject clazz, IRubyObject x, IRubyObject y) {
         assert !(x instanceof RubyRational) && !(y instanceof RubyRational);
         return canonicalizeInternalNoReduce(context, clazz, x, y);
-    }
-
-    /** f_rational_new_no_reduce1
-     * 
-     */
-    private static IRubyObject newRationalNoReduce(ThreadContext context, IRubyObject clazz, IRubyObject x) {
-        assert !(x instanceof RubyRational);
-        return canonicalizeInternalNoReduce(context, clazz, x, RubyFixnum.one(context.getRuntime()));
     }
 
     /** f_rational_new_bang2
@@ -415,6 +398,7 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "numerator")
+    @Override
     public IRubyObject numerator(ThreadContext context) {
         return num;
     }
@@ -423,6 +407,7 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "denominator")
+    @Override
     public IRubyObject denominator(ThreadContext context) {
         return den;
     }
@@ -452,7 +437,7 @@ public class RubyRational extends RubyNumeric {
      */
     private IRubyObject f_addsub(ThreadContext context, IRubyObject anum, IRubyObject aden, IRubyObject bnum, IRubyObject bden, boolean plus) {
         Ruby runtime = context.getRuntime();
-        IRubyObject num, den, g, a, b;
+        IRubyObject newNum, newDen, g, a, b;
         if (anum instanceof RubyFixnum && aden instanceof RubyFixnum &&
             bnum instanceof RubyFixnum && bden instanceof RubyFixnum) {
             long an = ((RubyFixnum)anum).getLongValue();
@@ -474,11 +459,11 @@ public class RubyRational extends RubyNumeric {
 
         b = f_idiv(context, aden, g);
         g = f_gcd(context, c, g);
-        num = f_idiv(context, c, g);
+        newNum = f_idiv(context, c, g);
         a = f_idiv(context, bden, g);
-        den = f_mul(context, a, b);
+        newDen = f_mul(context, a, b);
         
-        return RubyRational.newRationalNoReduce(context, getMetaClass(), num, den);
+        return RubyRational.newRationalNoReduce(context, getMetaClass(), newNum, newDen);
     }
     
     /** nurat_add
@@ -527,7 +512,7 @@ public class RubyRational extends RubyNumeric {
             bden = tmp;
         }
         
-        final IRubyObject num, den;
+        final IRubyObject newNum, newDen;
         if (anum instanceof RubyFixnum && aden instanceof RubyFixnum &&
             bnum instanceof RubyFixnum && bden instanceof RubyFixnum) {
             long an = ((RubyFixnum)anum).getLongValue();
@@ -537,17 +522,17 @@ public class RubyRational extends RubyNumeric {
             long g1 = i_gcd(an, bd);
             long g2 = i_gcd(ad, bn);
             
-            num = f_imul(context, an / g1, bn / g2);
-            den = f_imul(context, ad / g2, bd / g1);
+            newNum = f_imul(context, an / g1, bn / g2);
+            newDen = f_imul(context, ad / g2, bd / g1);
         } else {
             IRubyObject g1 = f_gcd(context, anum, bden); 
             IRubyObject g2 = f_gcd(context, aden, bnum);
             
-            num = f_mul(context, f_idiv(context, anum, g1), f_idiv(context, bnum, g2));
-            den = f_mul(context, f_idiv(context, aden, g2), f_idiv(context, bden, g1));
+            newNum = f_mul(context, f_idiv(context, anum, g1), f_idiv(context, bnum, g2));
+            newDen = f_mul(context, f_idiv(context, aden, g2), f_idiv(context, bden, g1));
         }
 
-        return RubyRational.newRationalNoReduce(context, getMetaClass(), num, den);
+        return RubyRational.newRationalNoReduce(context, getMetaClass(), newNum, newDen);
     }
 
     /** nurat_mul
@@ -823,18 +808,18 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "round")
     public IRubyObject op_round(ThreadContext context) {
-        IRubyObject num = this.num;
-        boolean neg = f_negative_p(context, num);
-        if (neg) num = f_negate(context, num);
+        IRubyObject myNum = this.num;
+        boolean neg = f_negative_p(context, myNum);
+        if (neg) myNum = f_negate(context, myNum);
 
-        IRubyObject den = this.den;
+        IRubyObject myDen = this.den;
         IRubyObject two = RubyFixnum.two(context.getRuntime());
-        num = f_add(context, f_mul(context, num, two), den);
-        den = f_mul(context, den, two);
-        num = f_idiv(context, num, den);
+        myNum = f_add(context, f_mul(context, myNum, two), myDen);
+        myDen = f_mul(context, myDen, two);
+        myNum = f_idiv(context, myNum, myDen);
 
-        if (neg) num = f_negate(context, num);
-        return num;
+        if (neg) myNum = f_negate(context, myNum);
+        return myNum;
     }
 
     @JRubyMethod(name = "round")
@@ -852,28 +837,28 @@ public class RubyRational extends RubyNumeric {
         Ruby runtime = context.getRuntime();
         if (f_zero_p(context, num)) return runtime.newFloat(0);
 
-        IRubyObject num = this.num;
-        IRubyObject den = this.den;
+        IRubyObject myNum = this.num;
+        IRubyObject myDen = this.den;
 
         boolean minus = false;
-        if (f_negative_p(context, num)) {
-            num = f_negate(context, num);
+        if (f_negative_p(context, myNum)) {
+            myNum = f_negate(context, myNum);
             minus = true;
         }
 
-        long nl = i_ilog2(context, num);
-        long dl = i_ilog2(context, den);
+        long nl = i_ilog2(context, myNum);
+        long dl = i_ilog2(context, myDen);
 
         long ne = 0;
         if (nl > ML) {
             ne = nl - ML;
-            num = f_rshift(context, num, RubyFixnum.newFixnum(runtime, ne));
+            myNum = f_rshift(context, myNum, RubyFixnum.newFixnum(runtime, ne));
         }
 
         long de = 0;
         if (dl > ML) {
             de = dl - ML;
-            den = f_rshift(context, den, RubyFixnum.newFixnum(runtime, de));
+            myDen = f_rshift(context, myDen, RubyFixnum.newFixnum(runtime, de));
         }
 
         long e = ne - de;
@@ -883,7 +868,7 @@ public class RubyRational extends RubyNumeric {
             return runtime.newFloat(e > 0 ? Double.MAX_VALUE : 0);
         }
 
-        double f = RubyNumeric.num2dbl(num) / RubyNumeric.num2dbl(den); 
+        double f = RubyNumeric.num2dbl(myNum) / RubyNumeric.num2dbl(myDen);
 
         if (minus) f = -f;
 

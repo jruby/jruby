@@ -122,7 +122,7 @@ public class RubyTCPServer extends RubyTCPSocket {
             socket_address = new InetSocketAddress(addr, portInt);
             ssc.socket().bind(socket_address);
             initSocket(context.getRuntime(), new ChannelDescriptor(
-                    ssc, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+                    ssc, new ModeFlags(ModeFlags.RDWR)));
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
         } catch(UnknownHostException e) {
@@ -187,7 +187,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                         }
 
                         // otherwise one key has been selected (ours) so we get the channel and hand it off
-                        socket.initSocket(context.getRuntime(), new ChannelDescriptor(connected, RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+                        socket.initSocket(context.getRuntime(), new ChannelDescriptor(connected, new ModeFlags(ModeFlags.RDWR)));
                     } catch (InvalidValueException ex) {
                         throw context.getRuntime().newErrnoEINVALError();
                     }
@@ -212,7 +212,6 @@ public class RubyTCPServer extends RubyTCPSocket {
             try {
                 ssc.configureBlocking(false);
                 selector = Selector.open();
-                SelectionKey key = ssc.register(selector, SelectionKey.OP_ACCEPT);
 
                 int selected = selector.selectNow();
                 if (selected == 0) {
@@ -221,7 +220,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                 } else {
                     try {
                         // otherwise one key has been selected (ours) so we get the channel and hand it off
-                        socket.initSocket(context.getRuntime(), new ChannelDescriptor(ssc.accept(), RubyIO.getNewFileno(), new ModeFlags(ModeFlags.RDWR), new FileDescriptor()));
+                        socket.initSocket(context.getRuntime(), new ChannelDescriptor(ssc.accept(), new ModeFlags(ModeFlags.RDWR)));
                     } catch (InvalidValueException ex) {
                         throw context.getRuntime().newErrnoEINVALError();
                     }

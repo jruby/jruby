@@ -16,7 +16,7 @@
   You can get it from RAA or Ruby's CVS repository.
 
 == Version
-  $Id: https.rb 16857 2008-06-06 08:05:24Z knu $
+  $Id$
   
   2001-11-06: Contiributed to Ruby/OpenSSL project.
   2004-03-06: Some code is merged in to net/http.

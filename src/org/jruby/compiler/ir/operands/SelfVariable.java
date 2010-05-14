@@ -1,14 +1,11 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.compiler.ir.representations.InlinerInfo;
+
 /**
  * Represents the special variable 'self'
  */
 public class SelfVariable extends Variable {
-    @Override
-    public boolean isSelf() {
-        return true;
-    }
-
     @Override
     public String getName() {
         return "self";
@@ -28,10 +25,14 @@ public class SelfVariable extends Variable {
     public boolean equals(Object other) {
         if (other == null || !(other instanceof SelfVariable)) return false;
 
-        return ((SelfVariable) other).isSelf();
+        return true;
     }
 
     public int compareTo(Object other) {
         return equals(other) == true ? 0 : 1;
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) { 
+        return ii.getCallReceiver();
     }
 }

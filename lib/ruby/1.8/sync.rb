@@ -1,8 +1,8 @@
 #
 #   sync.rb - 2 phase lock with counter
 #   	$Release Version: 1.0$
-#   	$Revision: 22457 $
-#   	$Date: 2009-02-20 01:41:12 +0900 (Fri, 20 Feb 2009) $
+#   	$Revision$
+#   	$Date$
 #   	by Keiju ISHITSUKA(keiju@ishitsuka.com)
 #
 # --

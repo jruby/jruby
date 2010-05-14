@@ -203,7 +203,7 @@
 #
 class OptionParser
   # :stopdoc:
-  RCSID = %w$Id: optparse.rb 23286 2009-04-26 06:13:11Z nobu $[1..-1].each {|s| s.freeze}.freeze
+  RCSID = %w$Id$[1..-1].each {|s| s.freeze}.freeze
   Version = (RCSID[1].split('.').collect {|s| s.to_i}.extend(Comparable).freeze if RCSID[1])
   LastModified = (Time.gm(*RCSID[2, 2].join('-').scan(/\d+/).collect {|s| s.to_i}) if RCSID[2])
   Release = RCSID[2]
@@ -1531,9 +1531,16 @@ class OptionParser
 
   #
   # Generic numeric format, converts to Integer for integer format, Float
-  # for float format.
+  # for float format, and Rational for rational format.
   #
-  accept(Numeric, %r"\A[-+]?(?:#{octal}|#{float})"io) {|s,| eval(s) if s}
+  real = "[-+]?(?:#{octal}|#{float})"
+  accept(Numeric, /\A(#{real})(?:\/(#{real}))?/io) {|s, d, n|
+    if n
+      Rational(d, n)
+    elsif s
+      eval(s)
+    end
+  }
 
   #
   # Decimal integer format, to be converted to Integer.
@@ -1563,7 +1570,7 @@ class OptionParser
   yesno = CompletingHash.new
   %w[- no false].each {|el| yesno[el] = false}
   %w[+ yes true].each {|el| yesno[el] = true}
-  yesno['nil'] = false          # shoud be nil?
+  yesno['nil'] = false          # should be nil?
   accept(TrueClass, yesno) {|arg, val| val == nil or val}
   #
   # Similar to TrueClass, but defaults to false.

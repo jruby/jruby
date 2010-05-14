@@ -21,6 +21,11 @@ public interface IR_Scope {
     public IR_Scope getLexicalParent();
 
     /**
+     * Returns the nearest module/class from this scope which may be itself.
+     */
+    public IR_Module getNearestModule();
+
+    /**
      *  scripts
      */
     public void addClass(IR_Class c);
@@ -29,11 +34,6 @@ public interface IR_Scope {
      *  scripts and modules
      */
     public void addModule(IR_Module m);
-
-    /**
-     *  scripts, classes, and modules
-     */
-    public void addMethod(IRMethod m);
 
     /**
      *  methods and closures
@@ -61,6 +61,11 @@ public interface IR_Scope {
      *  create a new temporary variable
      */
     public Variable getNewTemporaryVariable();
+
+    /**
+     * How many temporary variables are in this scope?
+     */
+    public int getTemporaryVariableSize();
 
     /**
      *  Get a new label using the provided label prefix

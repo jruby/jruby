@@ -111,8 +111,8 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
         if (type == null) {
             type = PathType.ABSOLUTE;
         }
+        InputStream istream = null;
         try {
-            InputStream istream = null;
             switch (type) {
                 case ABSOLUTE:
                     istream = new FileInputStream(filename);
@@ -142,6 +142,10 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
                 }
             }
             throw new ParseFailedException(e);
+        } finally {
+            if (istream != null) {
+                try {istream.close();} catch (IOException ioe) {}
+            }
         }
     }
 

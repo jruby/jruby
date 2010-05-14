@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.IR_Class;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class PUT_CVAR_Instr extends PUT_Instr
 {
@@ -19,5 +20,9 @@ public class PUT_CVAR_Instr extends PUT_Instr
             scope = ((MetaObject)scope)._scope.getContainer();
 
         return scope;
+    }
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) {
+        return new PUT_CVAR_Instr(_target.cloneForInlining(ii), _ref, _value.cloneForInlining(ii));
     }
 }

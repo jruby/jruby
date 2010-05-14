@@ -653,13 +653,37 @@ describe "String\#to_java" do
     str = "123".to_java
     str.class.should == java.lang.String
   end
-  
-  it "coerces to java.lang.String when Object or CharSequence are requested" do
-    obj = "123".to_java java.lang.Object
-    cs = "123".to_java java.lang.CharSequence
 
-    obj.class.should == java.lang.String
-    cs.class.should == java.lang.String
+  describe "when passed java.lang.String" do
+    it "coerces to java.lang.String" do
+      cs = "123".to_java java.lang.String
+
+      cs.class.should == java.lang.String
+    end
+  end
+
+  describe "when passed java.lang.CharSequence" do
+    it "coerces to java.lang.String" do
+      cs = "123".to_java java.lang.CharSequence
+
+      cs.class.should == java.lang.String
+    end
+  end
+
+  describe "when passed java.lang.Object" do
+    it "coerces to java.lang.String" do
+      cs = "123".to_java java.lang.Object
+
+      cs.class.should == java.lang.String
+    end
+  end
+
+  describe "when passed void (java.lang.Void.TYPE)" do
+    it "coerces to null" do
+      cs = "123".to_java Java::java.lang.Void::TYPE
+
+      cs.class.should == NilClass
+    end
   end
 end
 
@@ -705,6 +729,64 @@ describe "Class\#to_java" do
 
     it "converts Java proxy classes to their proxy class (Ruby class) equivalent" do
       java.util.ArrayList.to_java(cls).should == java.util.ArrayList
+    end
+  end
+end
+
+describe "Time\"to_java" do
+  describe "when passed java.util.Date" do
+    it "coerces to java.util.Date" do
+      t = Time.now
+      d = t.to_java(java.util.Date)
+      d.class.should == java.util.Date
+    end
+  end
+
+  describe "when passed java.util.Calendar" do
+    it "coerces to java.util.Calendar" do
+      t = Time.now
+      d = t.to_java(java.util.Calendar)
+      d.class.should < java.util.Calendar
+    end
+  end
+
+  describe "when passed java.sql.Date" do
+    it "coerces to java.sql.Date" do
+      t = Time.now
+      d = t.to_java(java.sql.Date)
+      d.class.should == java.sql.Date
+    end
+  end
+
+  describe "when passed java.sql.Time" do
+    it "coerces to java.sql.Time" do
+      t = Time.now
+      d = t.to_java(java.sql.Time)
+      d.class.should == java.sql.Time
+    end
+  end
+
+  describe "when passed java.sql.Timestamp" do
+    it "coerces to java.sql.Timestamp" do
+      t = Time.now
+      d = t.to_java(java.sql.Timestamp)
+      d.class.should == java.sql.Timestamp
+    end
+  end
+
+  describe "when passed org.joda.time.DateTime" do
+    it "coerces to org.joda.time.DateTime" do
+      t = Time.now
+      d = t.to_java(org.joda.time.DateTime)
+      d.class.should == org.joda.time.DateTime
+    end
+  end
+
+  describe "when passed java.lang.Object" do
+    it "coerces to java.util.Date" do
+      t = Time.now
+      d = t.to_java(java.lang.Object)
+      d.class.should == java.util.Date
     end
   end
 end

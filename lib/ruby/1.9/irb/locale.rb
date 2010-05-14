@@ -1,7 +1,7 @@
 #
 #   irb/locale.rb - internationalization module
 #   	$Release Version: 0.9.6$
-#   	$Revision: 23985 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ruby-lang.org)
 #
 # --
@@ -10,7 +10,7 @@
 #
 module IRB
   class Locale
-    @RCS_ID='-$Id: locale.rb 23985 2009-07-07 11:36:20Z keiju $-'
+    @RCS_ID='-$Id$-'
 
     LOCALE_NAME_RE = %r[
       (?<language>[[:alpha:]]{2})

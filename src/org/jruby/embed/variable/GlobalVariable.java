@@ -185,6 +185,9 @@ public class GlobalVariable extends AbstractVariable {
      * @param receiver is the instance that will have variable injection.
      */
     public void tryEagerInjection(Ruby runtime, IRubyObject receiver) {
+        // wreckages of global local vars might remain on runtime, which may cause
+        // assertion error since those names doesn't start from "$"
+        name = name.startsWith("$") ? name : ("$" + name).intern();
         runtime.getGlobalVariables().set(name, irubyObject);
     }
 

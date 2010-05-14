@@ -1,7 +1,7 @@
 #
 #   irb/completor.rb -
 #   	$Release Version: 0.9$
-#   	$Revision: 23129 $
+#   	$Revision$
 #   	by Keiju ISHITSUKA(keiju@ishitsuka.com)
 #       From Original Idea of shugo@ruby-lang.org
 #
@@ -11,7 +11,7 @@ require "readline"
 module IRB
   module InputCompletor
 
-    @RCS_ID='-$Id: completion.rb 23129 2009-04-03 05:04:02Z knu $-'
+    @RCS_ID='-$Id$-'
 
     ReservedWords = [
       "BEGIN", "END",
@@ -80,10 +80,11 @@ module IRB
 	candidates = Object.constants.collect{|m| m.to_s}
 	candidates.grep(/^#{receiver}/).collect{|e| "::" + e}
 
-      when /^(((::)?[A-Z][^:.\(]*)+)::?([^:.]*)$/
+#      when /^(((::)?[A-Z][^:.\(]*)+)::?([^:.]*)$/
+      when /^([A-Z].*)::([^:.]*)$/
 	# Constant or class methods
 	receiver = $1
-	message = Regexp.quote($4)
+	message = Regexp.quote($2)
 	begin
 	  candidates = eval("#{receiver}.constants.collect{|m| m.to_s}", bind)
 	  candidates |= eval("#{receiver}.methods.collect{|m| m.to_s}", bind)
@@ -129,19 +130,18 @@ module IRB
 	candidates = global_variables.collect{|m| m.to_s}.grep(regmessage)
 
 #      when /^(\$?(\.?[^.]+)+)\.([^.]*)$/
-      when /^((\.?[^.]+)+)\.([^.]*)$/
+#      when /^((\.?[^.]+)+)\.([^.]*)$/
+      when /^([^."].*)\.([^.]*)$/
 	# variable
 	receiver = $1
-	message = Regexp.quote($3)
+	message = Regexp.quote($2)
 
 	gv = eval("global_variables", bind).collect{|m| m.to_s}
 	lv = eval("local_variables", bind).collect{|m| m.to_s}
 	cv = eval("self.class.constants", bind).collect{|m| m.to_s}
 
-	if (gv | lv | cv).include?(receiver)
-	  # foo.func and foo is local var.
-	  candidates = eval("#{receiver}.methods", bind).collect{|m| m.to_s}
-	elsif /^[A-Z]/ =~ receiver and /\./ !~ receiver
+	if (gv | lv | cv).include?(receiver) or /^[A-Z]/ =~ receiver && /\./ !~ receiver
+	  # foo.func and foo is local var. OR
 	  # Foo::Bar.func
 	  begin
 	    candidates = eval("#{receiver}.methods", bind).collect{|m| m.to_s}

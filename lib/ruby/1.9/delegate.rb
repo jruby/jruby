@@ -114,10 +114,20 @@
 # subclasses.  Subclasses should redefine \_\_getobj\_\_.  For a concrete
 # implementation, see SimpleDelegator.
 #
-class Delegator
-  [:to_s,:inspect,:=~,:!~,:===].each do |m|
-    undef_method m
+class Delegator < BasicObject
+  kernel = ::Kernel.dup
+  kernel.class_eval do
+    [:to_s,:inspect,:=~,:!~,:===,:<=>].each do |m|
+      undef_method m
+    end
   end
+  include kernel
+
+  # :stopdoc:
+  def self.const_missing(n)
+    ::Object.const_get(n)
+  end
+  # :startdoc:
 
   #
   # Pass in the _obj_ to delegate method calls to.  All methods supported by
@@ -129,26 +139,25 @@ class Delegator
 
   # Handles the magic of delegation through \_\_getobj\_\_.
   def method_missing(m, *args, &block)
+    target = self.__getobj__
     begin
-      target = self.__getobj__
-      unless target.respond_to?(m)
-        super(m, *args, &block)
-      else
-        target.__send__(m, *args, &block)
-      end
-    rescue Exception
-      $@.delete_if{|s| %r"\A#{Regexp.quote(__FILE__)}:\d+:in `method_missing'\z"o =~ s}
-      ::Kernel::raise
+      target.respond_to?(m) ? target.__send__(m, *args, &block) : super(m, *args, &block)
+    ensure
+      $@.delete_if {|t| %r"\A#{Regexp.quote(__FILE__)}:#{__LINE__-2}:"o =~ t} if $@
     end
   end
 
   #
-  # Checks for a method provided by this the delegate object by fowarding the
+  # Checks for a method provided by this the delegate object by forwarding the
   # call through \_\_getobj\_\_.
   #
-  def respond_to?(m, include_private = false)
-    return true if super
-    return self.__getobj__.respond_to?(m, include_private)
+  def respond_to_missing?(m, include_private)
+    r = self.__getobj__.respond_to?(m, include_private)
+    if r && include_private && !self.__getobj__.respond_to?(m, false)
+      warn "#{caller(3)[0]}: delegator does not forward private method \##{m}"
+      return false
+    end
+    r
   end
 
   #
@@ -177,24 +186,41 @@ class Delegator
 
   # Serialization support for the object returned by \_\_getobj\_\_.
   def marshal_dump
-    __getobj__
+    ivars = instance_variables.reject {|var| /\A@delegate_/ =~ var}
+    [
+      :__v2__,
+      ivars, ivars.map{|var| instance_variable_get(var)},
+      __getobj__
+    ]
   end
   # Reinitializes delegation from a serialized object.
-  def marshal_load(obj)
-    __setobj__(obj)
+  def marshal_load(data)
+    version, vars, values, obj = data
+    if version == :__v2__
+      vars.each_with_index{|var, i| instance_variable_set(var, values[i])}
+      __setobj__(obj)
+    else
+      __setobj__(data)
+    end
   end
 
-  # Clone support for the object returned by \_\_getobj\_\_.
-  def clone
-    new = super
-    new.__setobj__(__getobj__.clone)
-    new
+  def initialize_clone(obj) # :nodoc:
+    self.__setobj__(obj.__getobj__.clone)
   end
-  # Duplication support for the object returned by \_\_getobj\_\_.
-  def dup
-    new = super
-    new.__setobj__(__getobj__.dup)
-    new
+  def initialize_dup(obj) # :nodoc:
+    self.__setobj__(obj.__getobj__.dup)
+  end
+  private :initialize_clone, :initialize_dup
+
+  # Freeze self and target at once.
+  def freeze
+    __getobj__.freeze
+    super
+  end
+
+  @delegator_api = self.public_instance_methods
+  def self.public_api   # :nodoc:
+    @delegator_api
   end
 end
 
@@ -233,12 +259,11 @@ end
 # :stopdoc:
 def Delegator.delegating_block(mid)
   lambda do |*args, &block|
+    target = self.__getobj__
     begin
-      __getobj__.__send__(mid, *args, &block)
-    rescue
-      re = /\A#{Regexp.quote(__FILE__)}:#{__LINE__-2}:/o
-      $!.backtrace.delete_if {|t| re =~ t}
-      raise
+      target.__send__(mid, *args, &block)
+    ensure
+      $@.delete_if {|t| /\A#{Regexp.quote(__FILE__)}:#{__LINE__-2}:/o =~ t} if $@
     end
   end
 end
@@ -257,7 +282,7 @@ end
 def DelegateClass(superclass)
   klass = Class.new(Delegator)
   methods = superclass.public_instance_methods(true)
-  methods -= ::Delegator.public_instance_methods
+  methods -= ::Delegator.public_api
   methods -= [:to_s,:inspect,:=~,:!~,:===]
   klass.module_eval {
     def __getobj__  # :nodoc:

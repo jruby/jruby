@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // Represents a hash { _ =>_, _ => _ .. } in ruby
 //
@@ -50,6 +51,19 @@ public class Hash extends Operand
         for (KeyValuePair kv: _pairs) {
             kv._key.addUsedVariables(l);
             kv._value.addUsedVariables(l);
+        }
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) { 
+        if (isConstant()) {
+            return this;
+        }
+        else {
+            List<KeyValuePair> newPairs = new java.util.ArrayList<KeyValuePair>();
+            for (KeyValuePair kv: _pairs) {
+                newPairs.add(new KeyValuePair(kv._key.cloneForInlining(ii), kv._value.cloneForInlining(ii)));
+            }
+            return new Hash(newPairs);
         }
     }
 }

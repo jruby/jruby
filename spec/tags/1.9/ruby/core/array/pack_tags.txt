@@ -36,9 +36,7 @@ fails:Array#pack with format 'L!' drops higher bytes when a pack argument is < -
 fails:Array#pack with format 'L_' drops higher bytes when a pack argument is >= 2**64
 fails:Array#pack with format 'L_' drops higher bytes when a pack argument is < -2**64
 fails:Array#pack with format 'M' returns an US-ASCII string
-fails:Array#pack with format 'm' does not append newline if line length parameter is 0
 fails:Array#pack with format 'm' returns an US-ASCII string
-fails:Array#pack with format 'U' regards a integer as a Unicode codepoint and encodes into UTF-8 byte sequence
 fails:Array#pack with format 'U' returns a UTF-8 string
 fails:Array#pack with format 'u' returns an US-ASCII string
 fails:Array#pack with format 'x' returns an US-ASCII string

@@ -66,6 +66,8 @@ public class JavaMethod extends JavaCallable {
     private final static boolean USE_HANDLES = RubyInstanceConfig.USE_GENERATED_HANDLES;
     private final static boolean HANDLE_DEBUG = false;
     private final Method method;
+    private final Class boxedReturnType;
+    private final boolean isFinal;
     private final Handle handle;
     private final JavaUtil.JavaConverter returnConverter;
 
@@ -90,6 +92,12 @@ public class JavaMethod extends JavaCallable {
     public JavaMethod(Ruby runtime, Method method) {
         super(runtime, runtime.getJavaSupport().getJavaMethodClass(), method.getParameterTypes());
         this.method = method;
+        this.isFinal = Modifier.isFinal(method.getModifiers());
+        if (method.getReturnType().isPrimitive() && method.getReturnType() != void.class) {
+            this.boxedReturnType = CodegenUtils.getBoxType(method.getReturnType());
+        } else {
+            this.boxedReturnType = method.getReturnType();
+        }
 
         boolean methodIsPublic = Modifier.isPublic(method.getModifiers());
         boolean classIsPublic = Modifier.isPublic(method.getDeclaringClass().getModifiers());
@@ -277,7 +285,7 @@ public class JavaMethod extends JavaCallable {
         Object javaInvokee = null;
 
         if (!isStatic()) {
-            javaInvokee = JavaUtil.unwrapJavaObject(getRuntime(), invokee, "invokee not a java object").getValue();
+            javaInvokee = JavaUtil.unwrapJavaValue(getRuntime(), invokee, "invokee not a java object");
 
             if (! method.getDeclaringClass().isInstance(javaInvokee)) {
                 throw getRuntime().newTypeError("invokee not instance of method's class (" +
@@ -340,8 +348,9 @@ public class JavaMethod extends JavaCallable {
     }
 
     public IRubyObject invokeDirect(Object javaInvokee) {
+        assert method.getDeclaringClass().isInstance(javaInvokee);
+
         checkArity(0);
-        checkInstanceof(javaInvokee);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(javaInvokee);
@@ -351,8 +360,9 @@ public class JavaMethod extends JavaCallable {
     }
 
     public IRubyObject invokeDirect(Object javaInvokee, Object arg0) {
+        assert method.getDeclaringClass().isInstance(javaInvokee);
+
         checkArity(1);
-        checkInstanceof(javaInvokee);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(javaInvokee, arg0);
@@ -362,8 +372,9 @@ public class JavaMethod extends JavaCallable {
     }
 
     public IRubyObject invokeDirect(Object javaInvokee, Object arg0, Object arg1) {
+        assert method.getDeclaringClass().isInstance(javaInvokee);
+
         checkArity(2);
-        checkInstanceof(javaInvokee);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(javaInvokee, arg0, arg1);
@@ -373,8 +384,9 @@ public class JavaMethod extends JavaCallable {
     }
 
     public IRubyObject invokeDirect(Object javaInvokee, Object arg0, Object arg1, Object arg2) {
+        assert method.getDeclaringClass().isInstance(javaInvokee);
+
         checkArity(3);
-        checkInstanceof(javaInvokee);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(javaInvokee, arg0, arg1, arg2);
@@ -384,8 +396,9 @@ public class JavaMethod extends JavaCallable {
     }
 
     public IRubyObject invokeDirect(Object javaInvokee, Object arg0, Object arg1, Object arg2, Object arg3) {
+        assert method.getDeclaringClass().isInstance(javaInvokee);
+
         checkArity(4);
-        checkInstanceof(javaInvokee);
 
         if (mightBeProxy(javaInvokee)) {
             return tryProxyInvocation(javaInvokee, arg0, arg1, arg2, arg3);
@@ -567,7 +580,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     private IRubyObject convertReturn(Object result) {
-        if (result != null && result.getClass() != method.getReturnType()) {
+        if (result != null && result.getClass() != boxedReturnType) {
             // actual type does not exactly match method return type, re-get converter
             // FIXME: when the only autoconversions are primitives, this won't be needed
             return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), result);
@@ -654,7 +667,7 @@ public class JavaMethod extends JavaCallable {
 
     private boolean mightBeProxy(Object javaInvokee) {
         // this test really means, that this is a ruby-defined subclass of a java class
-        return javaInvokee instanceof InternalJavaProxy && !Modifier.isFinal(method.getModifiers());
+        return javaInvokee instanceof InternalJavaProxy && !isFinal;
     }
 
     private IRubyObject tryProxyInvocation(Object javaInvokee, Object... args) {

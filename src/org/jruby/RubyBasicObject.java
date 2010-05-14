@@ -135,7 +135,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @see org.jruby.runtime.ObjectAllocator
      */
-    public static final ObjectAllocator OBJECT_ALLOCATOR = new ObjectAllocator() {
+    public static final ObjectAllocator BASICOBJECT_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyBasicObject(runtime, klass);
         }
@@ -748,6 +748,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see IRubyObject.toJava
      */
     public Object toJava(Class target) {
+        // for callers that unconditionally pass null retval type (JRUBY-4737)
+        if (target == void.class) return null;
+
         if (dataGetStruct() instanceof JavaObject) {
             // for interface impls
 
@@ -755,20 +758,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
             // ensure the object is associated with the wrapper we found it in,
             // so that if it comes back we don't re-wrap it
-            getRuntime().getJavaSupport().getObjectProxyCache().put(innerWrapper.getValue(), this);
+            if (target.isAssignableFrom(innerWrapper.getValue().getClass())) {
+                getRuntime().getJavaSupport().getObjectProxyCache().put(innerWrapper.getValue(), this);
 
-            return innerWrapper.getValue();
-        } else {
-            if (JavaUtil.isDuckTypeConvertable(getClass(), target)) {
-                if (!respondsTo("java_object")) {
-                    return JavaUtil.convertProcToInterface(getRuntime().getCurrentContext(), this, target);
-                }
+                return innerWrapper.getValue();
             }
-
-            // it's either as converted as we can make it via above logic or it's
-            // not one of the types we convert, so just pass it out as-is without wrapping
+        } else if (JavaUtil.isDuckTypeConvertable(getClass(), target)) {
+            if (!respondsTo("java_object")) {
+                return JavaUtil.convertProcToInterface(getRuntime().getCurrentContext(), this, target);
+            }
+        } else if (target.isAssignableFrom(getClass())) {
             return this;
         }
+        
+        throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + target);
     }
 
     public IRubyObject dup() {
@@ -962,28 +965,44 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject inspect() {
         Ruby runtime = getRuntime();
         if ((!isImmediate()) && !(this instanceof RubyModule) && hasVariables()) {
-            StringBuilder part = new StringBuilder();
-            String cname = getMetaClass().getRealClass().getName();
-            part.append("#<").append(cname).append(":0x");
-            part.append(Integer.toHexString(System.identityHashCode(this)));
-
-            if (runtime.isInspecting(this)) {
-                /* 6:tags 16:addr 1:eos */
-                part.append(" ...>");
-                return runtime.newString(part.toString());
-            }
-            try {
-                runtime.registerInspecting(this);
-                return runtime.newString(inspectObj(part).toString());
-            } finally {
-                runtime.unregisterInspecting(this);
-            }
+            return hashyInspect();
         }
 
         if (isNil()) return RubyNil.inspect(this);
         return RuntimeHelpers.invoke(runtime.getCurrentContext(), this, "to_s");
     }
 
+    public IRubyObject hashyInspect() {
+        Ruby runtime = getRuntime();
+        StringBuilder part = new StringBuilder();
+        String cname = getMetaClass().getRealClass().getName();
+        part.append("#<").append(cname).append(":0x");
+        part.append(Integer.toHexString(inspectHashCode()));
+
+        if (runtime.isInspecting(this)) {
+            /* 6:tags 16:addr 1:eos */
+            part.append(" ...>");
+            return runtime.newString(part.toString());
+        }
+        try {
+            runtime.registerInspecting(this);
+            return runtime.newString(inspectObj(part).toString());
+        } finally {
+            runtime.unregisterInspecting(this);
+        }
+    }
+
+    /**
+     * For most objects, the hash used in the default #inspect is just the
+     * identity hashcode of the actual object.
+     *
+     * See org.jruby.java.proxies.JavaProxy for a divergent case.
+     *
+     * @return The identity hashcode of this object
+     */
+    protected int inspectHashCode() {
+        return System.identityHashCode(this);
+    }
 
     /** inspect_obj
      *
@@ -1069,7 +1088,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public void addFinalizer(IRubyObject f) {
         Finalizer finalizer = (Finalizer)fastGetInternalVariable("__finalizer__");
         if (finalizer == null) {
-            finalizer = new Finalizer(getRuntime().getObjectSpace().idOf(this));
+            finalizer = new Finalizer((RubyFixnum)id());
             fastSetInternalVariable("__finalizer__", finalizer);
             getRuntime().addFinalizer(finalizer);
         }
@@ -1112,14 +1131,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return null;
     }
 
-    public synchronized void setVariable(int index, Object value) {
+    public void setVariable(int index, Object value) {
         ensureInstanceVariablesSettable();
         if (index < 0) return;
         Object[] ivarTable = getVariableTableForWrite(index);
         ivarTable[index] = value;
     }
 
-    private synchronized void setObjectId(int index, long value) {
+    private void setObjectId(int index, long value) {
         if (index < 0) return;
         Object[] ivarTable = getVariableTableForWrite(index);
         ivarTable[index] = value;
@@ -1495,13 +1514,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Class that keeps track of the finalizers for the object under
      * operation.
      */
-    public class Finalizer implements Finalizable {
-        private long id;
+    public static class Finalizer implements Finalizable {
+        private RubyFixnum id;
         private IRubyObject firstFinalizer;
         private List<IRubyObject> finalizers;
         private AtomicBoolean finalized;
 
-        public Finalizer(long id) {
+        public Finalizer(RubyFixnum id) {
             this.id = id;
             this.finalized = new AtomicBoolean(false);
         }
@@ -1535,7 +1554,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         private void callFinalizer(IRubyObject finalizer) {
             RuntimeHelpers.invoke(
                     finalizer.getRuntime().getCurrentContext(),
-                    finalizer, "call", RubyBasicObject.this.id());
+                    finalizer, "call", id);
         }
     }
 }

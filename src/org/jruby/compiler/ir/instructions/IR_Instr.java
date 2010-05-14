@@ -8,6 +8,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Attribute;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 //
 // Specialized forms:
@@ -80,6 +81,12 @@ public abstract class IR_Instr {
 
         return vars;
     }
+
+    /**
+     * Clone the instruction for inlining -- this will rename all variables (including local variables and self!)
+     * and replace RECV_ARG and RETURN instructions to regular copy instructions,
+     */
+    public abstract IR_Instr cloneForInlining(InlinerInfo ii);
 
     /**
      * This method takes as input a map of operands to their values, and outputs

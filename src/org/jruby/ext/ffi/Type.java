@@ -42,15 +42,15 @@ public abstract class Type extends RubyObject {
         RubyModule nativeType = ffiModule.defineModuleUnder("NativeType");
 
         
-        defineBuiltinType(runtime, builtinClass, NativeType.CHAR, "char", "int8", "sint8");
+        defineBuiltinType(runtime, builtinClass, NativeType.CHAR, "char", "schar", "int8", "sint8");
         defineBuiltinType(runtime, builtinClass, NativeType.UCHAR, "uchar", "uint8");
-        defineBuiltinType(runtime, builtinClass, NativeType.SHORT, "short", "int16", "sint16");
+        defineBuiltinType(runtime, builtinClass, NativeType.SHORT, "short", "sshort", "int16", "sint16");
         defineBuiltinType(runtime, builtinClass, NativeType.USHORT, "ushort", "uint16");
-        defineBuiltinType(runtime, builtinClass, NativeType.INT, "int", "int32", "sint32");
+        defineBuiltinType(runtime, builtinClass, NativeType.INT, "int", "sint", "int32", "sint32");
         defineBuiltinType(runtime, builtinClass, NativeType.UINT, "uint", "uint32");
-        defineBuiltinType(runtime, builtinClass, NativeType.LONG_LONG, "long_long", "int64", "sint64");
+        defineBuiltinType(runtime, builtinClass, NativeType.LONG_LONG, "long_long", "slong_long", "int64", "sint64");
         defineBuiltinType(runtime, builtinClass, NativeType.ULONG_LONG, "ulong_long", "uint64");
-        defineBuiltinType(runtime, builtinClass, NativeType.LONG, "long");
+        defineBuiltinType(runtime, builtinClass, NativeType.LONG, "long", "slong");
         defineBuiltinType(runtime, builtinClass, NativeType.ULONG, "ulong");
         defineBuiltinType(runtime, builtinClass, NativeType.FLOAT, "float", "float32");
         defineBuiltinType(runtime, builtinClass, NativeType.DOUBLE, "double", "float64");

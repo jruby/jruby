@@ -74,6 +74,7 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.invokers.ConstructorInvoker;
+import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -159,7 +160,6 @@ public class JavaClass extends JavaObject {
         String name;
         int type;
         Visibility visibility = Visibility.PUBLIC;
-        boolean isProtected;
         NamedInstaller () {}
         NamedInstaller (String name, int type) {
             this.name = name;
@@ -433,10 +433,10 @@ public class JavaClass extends JavaObject {
         proxyLock.unlock();
     }
 
-    protected Map<String, AssignedName> getStaticAssignedNames() {
+    private Map<String, AssignedName> getStaticAssignedNames() {
         return staticAssignedNames;
     }
-    protected Map<String, AssignedName> getInstanceAssignedNames() {
+    private Map<String, AssignedName> getInstanceAssignedNames() {
         return instanceAssignedNames;
     }
     
@@ -455,6 +455,11 @@ public class JavaClass extends JavaObject {
     public boolean equals(Object other) {
         return other instanceof JavaClass &&
             this.getValue() == ((JavaClass)other).getValue();
+    }
+
+    @Override
+    public int hashCode() {
+        return javaClass().hashCode();
     }
 
     private interface Initializer {
@@ -723,15 +728,15 @@ public class JavaClass extends JavaObject {
     private void setupClassConstructors(Class<?> javaClass) {
         // TODO: protected methods.  this is going to require a rework
         // of some of the mechanism.
-        Constructor[] constructors = getConstructors(javaClass);
+        Constructor[] clsConstructors = getConstructors(javaClass);
         
         // create constructorInstaller; if there are no constructors, it will disable construction
         constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
 
-        for (int i = constructors.length; --i >= 0;) {
+        for (int i = clsConstructors.length; --i >= 0;) {
             // we need to collect all methods, though we'll only
             // install the ones that are named in this class
-            Constructor ctor = constructors[i];
+            Constructor ctor = clsConstructors[i];
             constructorInstaller.addConstructor(ctor, javaClass);
         }
     }
@@ -1116,6 +1121,7 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod
+    @Override
     public RubyString inspect() {
         return getRuntime().newString("class " + javaClass().getName());
     }
@@ -1167,6 +1173,8 @@ public class JavaClass extends JavaObject {
             }
         } catch (IOException e) {
             throw getRuntime().newIOErrorFromException(e);
+        } finally {
+            try {in.close();} catch (IOException ioe) {}
         }
         return getRuntime().newString(new ByteList(out.toByteArray(), false));
     }
@@ -1308,18 +1316,35 @@ public class JavaClass extends JavaObject {
     }
 
     @JRubyMethod(name = "<=>", required = 1)
-    public RubyFixnum op_cmp(IRubyObject other) {
-        if (! (other instanceof JavaClass)) {
-            throw getRuntime().newTypeError("<=> requires JavaClass (" + other.getType() + " given)");
+    public IRubyObject op_cmp(IRubyObject other) {
+        Class me = javaClass();
+        Class them = null;
+
+        // dig out the other class
+        if (other instanceof JavaClass) {
+            JavaClass otherClass = (JavaClass) other;
+            them = otherClass.javaClass();
+        } else if (other instanceof ConcreteJavaProxy) {
+            ConcreteJavaProxy proxy = (ConcreteJavaProxy)other;
+            if (proxy.getObject() instanceof Class) {
+                them = (Class)proxy.getObject();
+            }
         }
-        JavaClass otherClass = (JavaClass) other;
-        if (this.javaClass() == otherClass.javaClass()) {
-            return getRuntime().newFixnum(0);
+
+        if (them != null) {
+            if (this.javaClass() == them) {
+                return getRuntime().newFixnum(0);
+            }
+            if (them.isAssignableFrom(me)) {
+                return getRuntime().newFixnum(-1);
+            }
+            if (me.isAssignableFrom(them)) {
+                return getRuntime().newFixnum(1);
+            }
         }
-        if (otherClass.javaClass().isAssignableFrom(this.javaClass())) {
-            return getRuntime().newFixnum(-1);
-        }
-        return getRuntime().newFixnum(1);
+
+        // can't do a comparison
+        return getRuntime().getNil();
     }
 
     @JRubyMethod
@@ -1555,9 +1580,9 @@ public class JavaClass extends JavaObject {
    
     public IRubyObject emptyJavaArray(ThreadContext context) {
         JavaArray javaArray = new JavaArray(getRuntime(), Array.newInstance(javaClass(), 0));
-        RubyClass proxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
+        RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
         
-        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), proxyClass);
+        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), newProxyClass);
         proxy.dataWrapStruct(javaArray);
         
         return proxy;
@@ -1575,9 +1600,9 @@ public class JavaClass extends JavaObject {
             Object newArray = Array.newInstance(javaClass(), size);
             JavaArray javaArray = new JavaArray(getRuntime(), newArray);
             System.arraycopy(fromArray.getValue(), index, newArray, 0, size);
-            RubyClass proxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
+            RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
 
-            ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), proxyClass);
+            ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), newProxyClass);
             proxy.dataWrapStruct(javaArray);
 
             return proxy;
@@ -1601,9 +1626,9 @@ public class JavaClass extends JavaObject {
         JavaArray javaArray = new JavaArray(getRuntime(), newArray);
         System.arraycopy(original.getValue(), 0, newArray, 0, oldLength);
         System.arraycopy(additional.getValue(), 0, newArray, oldLength, addLength);
-        RubyClass proxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
+        RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
 
-        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), proxyClass);
+        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), newProxyClass);
         proxy.dataWrapStruct(javaArray);
 
         return proxy;
@@ -1623,8 +1648,8 @@ public class JavaClass extends JavaObject {
         Object newArray = Array.newInstance(javaClass(), oldLength + addLength);
         JavaArray javaArray = new JavaArray(getRuntime(), newArray);
         System.arraycopy(original.getValue(), 0, newArray, 0, oldLength);
-        RubyClass proxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
-        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), proxyClass);
+        RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
+        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), newProxyClass);
         proxy.dataWrapStruct(javaArray);
         
         Ruby runtime = context.getRuntime();
@@ -1655,9 +1680,9 @@ public class JavaClass extends JavaObject {
             ArrayJavaAddons.copyDataToJavaArray(context, rubyArray, javaArray);
         }
         
-        RubyClass proxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
+        RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
 
-        ArrayJavaProxy proxy = new ArrayJavaProxy(runtime, proxyClass);
+        ArrayJavaProxy proxy = new ArrayJavaProxy(runtime, newProxyClass);
         proxy.dataWrapStruct(javaArray);
         
         return proxy;

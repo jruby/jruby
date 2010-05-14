@@ -12,7 +12,18 @@ module WEBrick
 
   module HTTPStatus
 
-    class Status      < StandardError; end
+    class Status < StandardError
+      def initialize(*args)
+        args[0] = AccessLog.escape(args[0]) unless args.empty?
+        super(*args)
+      end
+      class << self
+        attr_reader :code, :reason_phrase
+      end
+      def code() self::class::code end
+      def reason_phrase() self::class::reason_phrase end
+      alias to_i code
+    end
     class Info        < Status; end
     class Success     < Status; end
     class Redirect    < Status; end
@@ -68,6 +79,7 @@ module WEBrick
     CodeToError = {}
 
     StatusMessage.each{|code, message|
+      message.freeze
       var_name = message.gsub(/[ \-]/,'_').upcase
       err_name = message.gsub(/[ \-]/,'')
 
@@ -79,18 +91,12 @@ module WEBrick
       when 500...600; parent = ServerError
       end
 
-      eval %-
-        RC_#{var_name} = #{code}
-        class #{err_name} < #{parent}
-          def self.code() RC_#{var_name} end
-          def self.reason_phrase() StatusMessage[code] end
-          def code() self::class::code end
-          def reason_phrase() self::class::reason_phrase end
-          alias to_i code
-        end
-      -
-
-      CodeToError[code] = const_get(err_name)
+      const_set("RC_#{var_name}", code)
+      err_class = Class.new(parent)
+      err_class.instance_variable_set(:@code, code)
+      err_class.instance_variable_set(:@reason_phrase, message)
+      const_set(err_name, err_class)
+      CodeToError[code] = err_class
     }
 
     def reason_phrase(code)

@@ -120,17 +120,22 @@ public class RubyFileStat extends RubyObject {
             } else {
                 throw getRuntime().newErrnoENOENTError("invalid jar/file URL: " + filename);
             }
-            filename = filename.substring(5, filename.indexOf("!"));
+            String zipfilename = filename.substring(5, filename.indexOf("!"));
             
             try {
-                ZipFile zipFile = new ZipFile(filename);
-                ZipEntry zipEntry = zipFile.getEntry(zipFileEntry);
+                ZipFile zipFile = new ZipFile(zipfilename);
+                ZipEntry zipEntry = RubyFile.getFileEntry(zipFile, zipFileEntry);
 
+                if (zipEntry == null) {
+                    throw getRuntime().newErrnoENOENTError("invalid jar/file URL: " + filename);
+                }
                 stat = new ZipFileStat(zipEntry);
                 return;
             } catch (IOException ioe) {
                 // fall through and use the zip file as the file to stat
             }
+
+            filename = zipfilename;
         }
             
         file = JRubyFile.create(getRuntime().getCurrentDirectory(), filename);

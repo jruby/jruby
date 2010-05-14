@@ -10,11 +10,11 @@ import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class BUILD_CLOSURE_Instr extends OneOperandInstr 
 {
-    public BUILD_CLOSURE_Instr(Variable d, IR_Closure c)
-    {
+    public BUILD_CLOSURE_Instr(Variable d, IR_Closure c) {
         super(Operation.BUILD_CLOSURE, d, new MetaObject(c));
     }
 
@@ -26,4 +26,9 @@ public class BUILD_CLOSURE_Instr extends OneOperandInstr
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) { return _arg; }
 
     // SSS FIXME: Later on, we would probably implement simplifyOperands here and simplify the body of the closure .. something to think about.
+
+    public IR_Instr cloneForInlining(InlinerInfo ii) { 
+        throw new RuntimeException("Not yet implemented!");
+        // Have to clone the entire closure!
+	 }
 }

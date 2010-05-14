@@ -1,4 +1,5 @@
 package org.jruby.compiler.ir.operands;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -63,5 +64,9 @@ public class CompoundArray extends Operand
     {
         _a1.addUsedVariables(l);
         _a2.addUsedVariables(l);
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) { 
+        return isConstant() ? this : new CompoundArray(_a1.cloneForInlining(ii), _a2.cloneForInlining(ii));
     }
 }

@@ -54,12 +54,12 @@ module Kernel
   private
   # prints arguments in pretty form.
   #
-  # pp returns nil.
+  # pp returns argument(s).
   def pp(*objs) # :doc:
     objs.each {|obj|
       PP.pp(obj)
     }
-    nil
+    objs.size <= 1 ? objs.first : objs
   end
   module_function :pp
 end
@@ -164,13 +164,7 @@ class PP < PrettyPrint
       group(1, '#<' + obj.class.name, '>', &block)
     end
 
-    if 0x100000000.class == Bignum
-      # 32bit
-      PointerMask = 0xffffffff
-    else
-      # 64bit
-      PointerMask = 0xffffffffffffffff
-    end
+    PointerMask = (1 << ([""].pack("p").size * 8)) - 1
 
     case Object.new.inspect
     when /\A\#<Object:0x([0-9a-f]+)>\z/
@@ -270,7 +264,7 @@ class PP < PrettyPrint
   module ObjectMixin
     # 1. specific pretty_print
     # 2. specific inspect
-    # 3. specific to_s if instance variable is empty
+    # 3. specific to_s
     # 4. generic pretty_print
 
     # A default pretty printing method for general objects.
@@ -283,9 +277,22 @@ class PP < PrettyPrint
     # This module provides predefined #pretty_print methods for some of
     # the most commonly used built-in classes for convenience.
     def pretty_print(q)
-      if /\(Kernel\)#/ !~ Object.instance_method(:method).bind(self).call(:inspect).inspect
+      method_method = Object.instance_method(:method).bind(self)
+      begin
+        inspect_method = method_method.call(:inspect)
+      rescue NameError
+      end
+      begin
+        to_s_method = method_method.call(:to_s)
+      rescue NameError
+      end
+      if inspect_method && /\(Kernel\)#/ !~ inspect_method.inspect
         q.text self.inspect
-      elsif /\(Kernel\)#/ !~ Object.instance_method(:method).bind(self).call(:to_s).inspect && instance_variables.empty?
+      elsif !inspect_method && self.respond_to?(:inspect)
+        q.text self.inspect
+      elsif to_s_method && /\(Kernel\)#/ !~ to_s_method.inspect
+        q.text self.to_s
+      elsif !to_s_method && self.respond_to?(:to_s)
         q.text self.to_s
       else
         q.pp_object(self)

@@ -85,18 +85,11 @@
     </condition>
     <property name="spec.jvm.model.option" value="-T -J${run.jvm.model}"/>
     <property name="rdoc.archive" value="docs/rdocs.tar.gz"/>
-    <uptodate property="docsNotNeeded" srcfile="${rdoc.archive}" targetfile="${basedir}/share/ri/1.8/system/created.rid"/>
+    <uptodate property="docsNotNeeded" srcfile="${rdoc.archive}" targetfile="${basedir}/share/ri.jar"/>
+    <uptodate property="cacheNotNeeded" srcfile="${rdoc.archive}" targetfile="${basedir}/share/ri_cache.bin.gz"/>
     <uptodate property="native-libs-uptodate" targetfile="${lib.dir}/native/libs.OK">
       <srcfiles dir= "build_lib" includes="jffi-*.jar"/>
     </uptodate>
-    <condition property="dev.install.gems" value="${dev.windows.gems}">
-        <os family="windows"/>
-    </condition>
-    <condition property="dev.install.gems" value="${dev.gems}">
-        <not>
-            <os family="windows"/>
-        </not>
-    </condition>
     <condition property="spec.windows.flag" value="-g windows">
       <os family="windows"/>
     </condition>
@@ -108,7 +101,9 @@
 
   <target name="extract-rdocs" depends="init" unless="docsNotNeeded">
       <untar src="${rdoc.archive}" dest="${basedir}" compression="gzip"/>
-      <touch file="${basedir}/share/ri/1.8/system/created.rid"/>
+      <jar file="${basedir}/share/ri.jar">
+        <fileset dir="${basedir}/share" includes="ri/**/*"/>
+      </jar>
   </target>
 
   <!-- Creates the directories needed for building -->
@@ -160,9 +155,13 @@
         <format property="build.date" pattern="yyyy-MM-dd"/>
     </tstamp>
 
-    <copy todir="${jruby.classes.dir}" overwrite="true">
+    <exec executable="git" outputproperty="jruby.revision" failonerror="false" failifexecutionfails="false">
+      <arg line="log -1 --format=format:%h"/>
+    </exec>
+
+    <copy todir="${basedir}/src_gen" overwrite="true">
         <fileset dir="${src.dir}">
-            <include name="**/*.properties"/>
+            <include name="org/jruby/runtime/Constants.java"/>
         </fileset>
         <filterset>
             <filter token="version.ruby.major" value="${version.ruby.major}"/>
@@ -176,8 +175,13 @@
             <filter token="java.specification.version" value="${java.specification.version}"/>
             <filter token="javac.version" value="${javac.version}"/>
             <filter token="os.arch" value="${os.arch}"/>
+            <filter token="jruby.revision" value="${jruby.revision}"/>
         </filterset>
     </copy>
+
+    <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${basedir}/src_gen"
+        includes="org/jruby/runtime/Constants.java" source="${javac.version}"
+        target="${javac.version}" deprecation="true" encoding="UTF-8"/>
   </target>
 
   <target name="compile-annotation-binder">
@@ -196,9 +200,11 @@
 
   <target name="compile-jruby" depends="prepare-resources, compile-annotation-binder, check-for-optional-packages">
     <!-- Generate binding logic ahead of time -->
-    <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}" debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
+    <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}"
+        debug="true" source="${javac.version}" target="${javac.version}" deprecation="true" encoding="UTF-8">
       <classpath refid="jruby.execute.classpath"/>
       <src path="${src.dir}"/>
+      <exclude name="org/jruby/runtime/Constants.java"/>
       <patternset refid="java.src.pattern"/>
       <compilerarg line="-XDignore.symbol.file=true"/>
       <compilerarg line="-J-Xmx${jruby.compile.memory}"/>
@@ -255,46 +261,12 @@
     </java>
   </target>
 
-  <target name="_update_scm_revision_">
-      <condition property="ruby.available">
-          <available file="${ruby.executable}"/>
-      </condition>
-      <antcall target="_update_scm_revision_with_ruby_"/>
-      <antcall target="_update_scm_revision_with_jruby_"/>
-  </target>
-
-  <target name="_update_scm_revision_with_ruby_" if="ruby.available">
-      <echo message="Using '${ruby.executable}' to calculate revision"/>
-      <exec failonerror="false" failifexecutionfails="false" errorproperty="ruby.command.failed" dir="${base.dir}" executable="${ruby.executable}">
-          <arg value="${base.dir}/tool/snapshot.rb"/>
-          <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
-      </exec>
-      <condition property="ruby.failed">
-          <istrue value="${ruby.command.failed}"/>
-      </condition>
-  </target>
-
-  <target name="_update_scm_revision_with_jruby_" unless="ruby.available">
-      <echo message="Using JRuby to calculate revision..."/>
-      <echo message="Adjust ruby.executable value in build.properties to speed things up!"/>
-      <property name="jruby.home" value="${basedir}"/>
-      <java classname="org.jruby.Main" resultproperty="snapshot.result" errorproperty="snapshot.error" failonerror="false">
-        <classpath refid="jruby.execute.classpath"/>
-        <sysproperty key="jruby.home" value="${jruby.home}"/>
-        <jvmarg value="${run.jvm.model}"/>
-        <arg value="${base.dir}/tool/snapshot.rb"/>
-        <arg value="${jruby.classes.dir}/org/jruby/jruby.properties"/>
-      </java>
-  </target>
-
   <target name="unzip-native-libs" unless="native-libs-uptodate">
       <unzip-native-libs destination.dir="${lib.dir}/native"/>
       <echo file="${lib.dir}/native/libs.OK"/>
   </target>
 
   <target name="jar-jruby" depends="generate-method-classes, generate-unsafe, unzip-native-libs" unless="jar-up-to-date">
-      <antcall target="_update_scm_revision_"/>
-
       <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true">
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
@@ -339,11 +311,21 @@
           <attribute name="Main-Class" value="org.jruby.Main"/>
         </manifest>
       </jar>
+
+      <antcall target="generate-ri-cache"/>
+  </target>
+
+  <target name="generate-ri-cache" unless="cacheNotNeeded">
+      <echo message="Using JRuby to generate RI cache to ${basedir}/share"/>
+      <property name="jruby.home" value="${basedir}"/>
+      <java classname="org.jruby.Main" resultproperty="ri.output" output="false" failonerror="true">
+        <classpath refid="jruby.execute.classpath"/>
+        <sysproperty key="jruby.home" value="${basedir}"/>
+        <arg value="-S"/><arg value="ri"/><arg value="String"/>
+      </java>
   </target>
 
   <target name="jar-jruby-light" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">
-      <antcall target="_update_scm_revision_"/>
-
       <jar destfile="${lib.dir}/jruby-light.jar" compress="true" index="true">
         <fileset dir="${jruby.classes.dir}">
             <exclude name="**/*$Populator.class"/>
@@ -367,11 +349,11 @@
           <attribute name="Main-Class" value="org.jruby.Main"/>
         </manifest>
       </jar>
+      
+      <antcall target="generate-ri-cache"/>
   </target>
 
   <target name="jar-jruby-dist" depends="generate-method-classes, generate-unsafe" unless="jar-up-to-date">
-      <antcall target="_update_scm_revision_"/>
-
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
       <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
         <fileset dir="${jruby.classes.dir}"/>
@@ -423,6 +405,8 @@
         <param name="jar.wrap" value="${lib.dir}/jruby.jar" />
         <param name="bar.wrap" value="${lib.dir}/jruby.bar" />
       </antcall>
+      
+      <antcall target="generate-ri-cache"/>
   </target>
 
   <!-- Use Bnd to wrap the JAR generated by jarjar in above task -->
@@ -698,15 +682,29 @@
     </emma>
   </target>
 
-  <target name="install-gems" depends="init,jar">
+  <target name="install-dist-gems" depends="init,jar">
     <property name="jruby.home" value="${basedir}"/>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
-      <arg line="--command maybe_install_gems ${dev.install.gems}"/>
+      <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
+      <arg line="--command maybe_install_gems ${dev.gems}"/>
     </java>
   </target>
+
+  <target name="install-jruby-launcher-gem" depends="init,jar">
+    <property name="jruby.home" value="${basedir}"/>
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${jruby.home}"/>
+      <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
+      <arg line="--command maybe_install_gems ${jruby.launcher.gem}"/>
+    </java>
+  </target>
+
+  <target name="install-gems" depends="install-dist-gems,install-jruby-launcher-gem"/>
 
   <target name="test" depends="
     copy-test-files,
@@ -1179,7 +1177,7 @@
           description="Creates the Java API docs">
     <javadoc destdir="${api.docs.dir}" author="true" version="true" use="true"
              windowtitle="JRuby API" source="${javac.version}" useexternalfile="true"
-             maxmemory="128m">
+             maxmemory="256m">
       <fileset dir="${src.dir}">
         <include name="**/*.java"/>
       </fileset>
@@ -1238,6 +1236,8 @@
     <include name="bench/**"/>
     <include name="src/**"/>
     <include name="test/**"/>
+    <exclude name="test/testapp/testapp"/>
+    <exclude name="test/testapp/testapp.exe"/>
     <include name="spec/**"/>
     <exclude name="spec/mspec"/>
     <exclude name="spec/ruby"/>
@@ -1247,6 +1247,7 @@
     <include name="Rakefile"/>
     <include name="build.xml"/>
     <include name="ivy/**"/>
+    <include name="rakelib/**"/>
     <include name="nbproject/*"/>
     <include name=".project"/>
     <include name=".classpath"/>
@@ -1254,6 +1255,7 @@
     <include name="jruby.bnd.template"/>
     <include name="pom.xml"/>
     <include name="maven/**"/>
+    <include name="gem/**"/>
     <exclude name="lib/jruby*.jar"/>
   </patternset>
 
@@ -1345,7 +1347,14 @@
         <patternset refid="dist.nailgun.files"/>
       </tarfileset>
       <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
-        <include name="tool/nailgun/configure"/>
+          <include name="tool/nailgun/configure"/>
+      </tarfileset>
+      <tarfileset dir="${base.dir}" prefix="jruby-${version.jruby}">
+          <include name="spi/**"/>
+      </tarfileset>
+      <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
+          <include name="test/testapp/testapp"/>
+          <include name="test/testapp/testapp.exe"/>
       </tarfileset>
     </tar>
     <zip destfile="${dist.dir}/jruby-src-${version.jruby}.zip">
@@ -1364,9 +1373,13 @@
       <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
         <include name="tool/nailgun/configure"/>
       </zipfileset>
-	  <zipfileset dir="${dist.stage.src.dir}" prefix="jruby-${version.jruby}">
-	    <include name="spi/**"/>
-	  </zipfileset>
+      <zipfileset dir="${base.dir}" prefix="jruby-${version.jruby}">
+	<include name="spi/**"/>
+      </zipfileset>
+      <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
+        <include name="test/testapp/testapp"/>
+        <include name="test/testapp/testapp.exe"/>
+      </zipfileset>
     </zip>
 
     <checksum file="${dist.dir}/jruby-src-${version.jruby}.zip" algorithm="md5"/>
@@ -1404,7 +1417,7 @@
     </antcall>
   </target>
 
-  <target name="dist" depends="install-gems,dist-bin,dist-src,dist-jar-complete"/>
+  <target name="dist" depends="install-dist-gems,dist-bin,dist-src,dist-jar-complete"/>
 
   <target name="dist-clean">
     <delete dir="${dist.dir}"/>
