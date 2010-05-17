@@ -553,7 +553,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         part.append(Integer.toHexString(System.identityHashCode(this)));
         part.append(' ');
         part.append(status.toString().toLowerCase());
-        part.append(">");
+        part.append('>');
         return getRuntime().newString(part.toString());
     }
 
