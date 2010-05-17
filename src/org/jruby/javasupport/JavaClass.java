@@ -135,9 +135,6 @@ public class JavaClass extends JavaObject {
     static {
         RESERVED_NAMES.put("__id__", new AssignedName("__id__", Priority.RESERVED));
         RESERVED_NAMES.put("__send__", new AssignedName("__send__", Priority.RESERVED));
-        RESERVED_NAMES.put("private", new AssignedName("private", Priority.RESERVED));
-        RESERVED_NAMES.put("protected", new AssignedName("protected", Priority.RESERVED));
-        RESERVED_NAMES.put("public", new AssignedName("public", Priority.RESERVED));
     }
     private static final Map<String, AssignedName> STATIC_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
     static {
