@@ -236,7 +236,7 @@ class TestBigDecimal < Test::Unit::TestCase
     require 'java'
     format = java.text.DecimalFormat.new("#,##0.00")
     value = java.math.BigDecimal.new("10")
-    assert format.format(value) == "10.00"
+    assert_equal "10.00", format.format(value)
   end
 
 end
