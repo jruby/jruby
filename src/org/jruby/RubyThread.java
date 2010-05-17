@@ -551,6 +551,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         String cname = getMetaClass().getRealClass().getName();
         part.append("#<").append(cname).append(":0x");
         part.append(Integer.toHexString(System.identityHashCode(this)));
+        part.append(' ');
         part.append(status.toString().toLowerCase());
         part.append(">");
         return getRuntime().newString(part.toString());
