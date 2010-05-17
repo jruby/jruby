@@ -33,8 +33,6 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyFixnum;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodIndex;
@@ -53,7 +51,7 @@ public final class CallOneArgFixnumNode extends CallNode {
         assert args.size() == 1 : "args.size() is 1";
 
         arg1 = ((FixnumNode) args.get(0)).getValue();
-        callAdapter = MethodIndex.getFastOpsCallSite(name);
+        callAdapter = MethodIndex.getCallSite(name);
     }
     
     @Override

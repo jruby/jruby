@@ -544,9 +544,13 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod(name = {"%", "modulo"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
-            return moduloFixnum(context, other);
+            return moduloFixnum(context, (RubyFixnum)other);
         }
         return coerceBin(context, "%", other);
+    }
+    
+    public IRubyObject op_mod(ThreadContext context, long other) {
+        return moduloFixnum(context, other);
     }
 
     @JRubyMethod(name = {"%", "modulo"}, compat = CompatVersion.RUBY1_9)
@@ -555,10 +559,14 @@ public class RubyFixnum extends RubyInteger {
         return op_mod(context, other);
     }
 
-    private IRubyObject moduloFixnum(ThreadContext context, IRubyObject other) {
+    private IRubyObject moduloFixnum(ThreadContext context, RubyFixnum other) {
+        return moduloFixnum(context, other.value);
+    }
+
+    private IRubyObject moduloFixnum(ThreadContext context, long other) {
         // Java / and % are not the same as ruby
         long x = value;
-        long y = ((RubyFixnum) other).value;
+        long y = other;
         if (y == 0) {
             throw context.getRuntime().newZeroDivisionError();
         }
