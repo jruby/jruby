@@ -62,10 +62,10 @@ public class RubyYaccLexer {
     private static ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});
     private static ByteList END_DOC_MARKER = new ByteList(new byte[] {'e', 'n', 'd'});
     private static HashMap<String, Keyword> map;
-    
+
     static {
         map = new HashMap<String, Keyword>();
-        
+
         map.put("end", Keyword.END);
         map.put("else", Keyword.ELSE);
         map.put("case", Keyword.CASE);
@@ -291,6 +291,12 @@ public class RubyYaccLexer {
      */
     public boolean advance() throws IOException {
         return (token = yylex()) != EOF;
+    }
+
+    public int nextToken() throws IOException {
+        token = yylex();
+
+        return token == EOF ? 0 : token;
     }
     
     /**
@@ -1138,7 +1144,7 @@ public class RubyYaccLexer {
         LexState last_state = lex_state;
         lex_state = LexState.EXPR_END;
 
-        return identifierToken(last_state, result, tokenBuffer.toString().intern());        
+        return identifierToken(last_state, result, tokenBuffer.toString().intern());
     }
     
     private int backtick(boolean commandState) throws IOException {
