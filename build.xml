@@ -1053,7 +1053,7 @@
         <sysproperty key="emma.coverage.out.merge" value="true" />
         <sysproperty key="emma.verbosity.level" value="silent" />
 
-        <arg line="@{jruby.args} -S rake @{task}"/>
+        <arg line="@{jruby.args} -S rake @{task} ${rake.args}"/>
       </java>
     </sequential>
   </macrodef>
