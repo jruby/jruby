@@ -87,6 +87,13 @@ else
   JAVA_CMD="$JAVA_HOME/bin/java"
 fi
 
+if [ -z "$JAVA_MEM" ] ; then
+  JAVA_MEM=-Xmx500m
+fi
+
+if [ -z "$JAVA_STACK" ] ; then
+  JAVA_STACK=-Xss1024k
+fi
 
 # process JAVA_OPTS
 unset JAVA_OPTS_TEMP
@@ -96,11 +103,17 @@ for opt in ${JAVA_OPTS[@]}; do
     -server)
       JAVA_VM="-server";;
     -Xmx*)
-      JAVA_MEM=$opt;;
+      if [ -z "$JAVA_MEM" ]; then
+        JAVA_MEM=$opt
+      fi
+      ;;
     -Xms*)
       JAVA_MEM_MIN=$opt;;
     -Xss*)
-      JAVA_STACK=$opt;;
+      if [ -z "$JAVA_STACK" ]; then
+        JAVA_STACK=$opt
+      fi
+      ;;
     *)
       JAVA_OPTS_TEMP="${JAVA_OPTS_TEMP} $opt";;
   esac
@@ -171,7 +184,6 @@ if $cygwin; then
 fi
 
 # ----- Execute The Requested Command -----------------------------------------
-
 JAVA_ENCODING=""
 
 declare -a java_args
