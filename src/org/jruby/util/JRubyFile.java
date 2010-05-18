@@ -98,7 +98,7 @@ public class JRubyFile extends JavaSecuredFile {
         } catch (IOException e) {
             // usually IOExceptions don't tell us anything about the path,
             // so add an extra wrapper to give more debugging help.
-            throw new IOException("Unable to canonicalize path: " + getAbsolutePath(), e);
+            throw (IOException) new IOException("Unable to canonicalize path: " + getAbsolutePath()).initCause(e);
         }
     }
 
