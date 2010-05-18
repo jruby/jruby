@@ -103,17 +103,11 @@ for opt in ${JAVA_OPTS[@]}; do
     -server)
       JAVA_VM="-server";;
     -Xmx*)
-      if [ -z "$JAVA_MEM" ]; then
-        JAVA_MEM=$opt
-      fi
-      ;;
+      JAVA_MEM=$opt;;
     -Xms*)
       JAVA_MEM_MIN=$opt;;
     -Xss*)
-      if [ -z "$JAVA_STACK" ]; then
-        JAVA_STACK=$opt
-      fi
-      ;;
+      JAVA_STACK=$opt;;
     *)
       JAVA_OPTS_TEMP="${JAVA_OPTS_TEMP} $opt";;
   esac
