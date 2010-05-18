@@ -87,11 +87,27 @@ else
   JAVA_CMD="$JAVA_HOME/bin/java"
 fi
 
-for opt in ${JAVA_OPTS[@]}; do # JRUBY-4204
-  if [ $opt == "-server" ]; then
-    JAVA_VM="-server"
-  fi
+
+# process JAVA_OPTS
+unset JAVA_OPTS_TEMP
+JAVA_OPTS_TEMP=""
+for opt in ${JAVA_OPTS[@]}; do
+  case $opt in
+    -server)
+      JAVA_VM="-server";;
+    -Xmx*)
+      JAVA_MEM=$opt;;
+    -Xms*)
+      JAVA_MEM_MIN=$opt;;
+    -Xss*)
+      JAVA_STACK=$opt;;
+    *)
+      JAVA_OPTS_TEMP="${JAVA_OPTS_TEMP} $opt";;
+  esac
 done
+
+JAVA_OPTS=$JAVA_OPTS_TEMP
+
 
 # If you're seeing odd exceptions, you may have a bad JVM install.
 # Uncomment this and report the version to the JRuby team along with error.
@@ -155,18 +171,6 @@ if $cygwin; then
 fi
 
 # ----- Execute The Requested Command -----------------------------------------
-
-if [ -z "$JAVA_MEM" ] ; then
-  JAVA_MEM=-Xmx500m
-fi
-
-if [ -z "$JAVA_MEM_MIN" ] ; then
-  JAVA_MEM_MIN=-Xms2m
-fi
-
-if [ -z "$JAVA_STACK" ] ; then
-  JAVA_STACK=-Xss1024k
-fi
 
 JAVA_ENCODING=""
 
