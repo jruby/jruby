@@ -29,6 +29,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
+import org.jruby.RubyNil;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
@@ -150,15 +151,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.start();
 
         method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-        method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-        method.astore(getRuntimeIndex());
-
-        // grab nil for local variables
-        method.aload(getRuntimeIndex());
-        method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-        method.astore(getNilIndex());
-
-        method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
         method.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
         method.astore(getDynamicScopeIndex());
 
@@ -239,7 +231,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void loadRuntime() {
-        method.aload(getRuntimeIndex());
+        loadThreadContext();
+        method.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
     }
 
     public void loadBlock() {
@@ -247,7 +240,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void loadNil() {
-        method.aload(getNilIndex());
+        loadThreadContext();
+        method.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
     }
 
     public void loadNull() {
@@ -598,14 +592,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                     null,
                     null));
             method.start();
-            
-            method.aload(1);
-            method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-            method.astore(getRuntimeIndex());
-
-            method.aload(getRuntimeIndex());
-            method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-            method.astore(getNilIndex());
 
             for (int i = 0; i < sourceArray.length; i++) {
                 // for every hundred elements, chain to the next call
@@ -626,14 +612,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                             null,
                             null));
                     method.start();
-                    
-                    method.aload(1);
-                    method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                    method.astore(getRuntimeIndex());
-
-                    method.aload(getRuntimeIndex());
-                    method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-                    method.astore(getNilIndex());
                 }
 
                 method.aload(2);
@@ -729,14 +707,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                     null));
             method.start();
 
-            method.aload(1);
-            method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-            method.astore(getRuntimeIndex());
-
-            method.aload(getRuntimeIndex());
-            method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-            method.astore(getNilIndex());
-
             for (int i = 0; i < keyCount; i++) {
                 // for every hundred keys, chain to the next call
                 if ((i + 1) % 100 == 0) {
@@ -756,14 +726,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                             null,
                             null));
                     method.start();
-
-                    method.aload(1);
-                    method.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-                    method.astore(getRuntimeIndex());
-
-                    method.aload(getRuntimeIndex());
-                    method.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-                    method.astore(getNilIndex());
                 }
 
                 method.aload(2);
@@ -1500,17 +1462,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             getInvocationCompiler().setMethodAdapter(mv);
 
             mv.visitCode();
-            // set up a local IRuby variable
 
             mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-            mv.dup();
-            mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-            mv.dup();
-            mv.astore(getRuntimeIndex());
-
-            // grab nil for local variables
-            mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-            mv.astore(getNilIndex());
             mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
             mv.dup();
             mv.astore(getDynamicScopeIndex());
@@ -1648,20 +1601,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
             mv.start();
 
-            // set up a local IRuby variable
-            mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-            mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-            mv.astore(getRuntimeIndex());
-
             // store previous exception for restoration if we rescue something
             loadThreadContext();
             invokeThreadContext("getErrorInfo", sig(IRubyObject.class));
             mv.astore(getPreviousExceptionIndex());
-
-            // grab nil for local variables
-            loadRuntime();
-            mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-            mv.astore(getNilIndex());
 
             mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
             mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
@@ -2037,20 +1980,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
             mv.start();
 
-            // set up a local IRuby variable
-            mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-            mv.invokevirtual(p(ThreadContext.class), "getRuntime", sig(Ruby.class));
-            mv.astore(getRuntimeIndex());
-
             // store previous exception for restoration if we rescue something
             loadThreadContext();
             invokeThreadContext("getErrorInfo", sig(IRubyObject.class));
             mv.astore(getPreviousExceptionIndex());
-
-            // grab nil for local variables
-            loadRuntime();
-            mv.invokevirtual(p(Ruby.class), "getNil", sig(IRubyObject.class));
-            mv.astore(getNilIndex());
 
             mv.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
             mv.invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));

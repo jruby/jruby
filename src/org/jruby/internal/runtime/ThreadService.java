@@ -139,7 +139,6 @@ public class ThreadService {
 
     public ThreadService(Ruby runtime) {
         this.runtime = runtime;
-        this.mainContext = ThreadContext.newContext(runtime);
         this.localContext = new ThreadLocal<SoftReference<ThreadContext>>();
 
         try {
@@ -149,14 +148,18 @@ public class ThreadService {
         }
 
         this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Object, RubyThread>());
-        
-        // Must be called from main thread (it is currently, but this bothers me)
-        localContext.set(new SoftReference<ThreadContext>(mainContext));
     }
 
     public void disposeCurrentThread() {
         localContext.set(null);
         rubyThreadMap.remove(Thread.currentThread());
+    }
+
+    public void initMainThread() {
+        this.mainContext = ThreadContext.newContext(runtime);
+
+        // Must be called from main thread (it is currently, but this bothers me)
+        localContext.set(new SoftReference<ThreadContext>(mainContext));
     }
 
     /**

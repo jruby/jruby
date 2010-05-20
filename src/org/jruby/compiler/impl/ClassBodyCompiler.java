@@ -1,6 +1,5 @@
 package org.jruby.compiler.impl;
 
-import org.jruby.Ruby;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.exceptions.JumpException;
@@ -17,16 +16,6 @@ public class ClassBodyCompiler extends RootScopedBodyCompiler {
     @Override
     public void beginMethod(CompilerCallback bodyPrep, StaticScope scope) {
         method.start();
-
-        // set up a local IRuby variable
-        method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-        invokeThreadContext("getRuntime", sig(Ruby.class));
-        method.dup();
-        method.astore(getRuntimeIndex());
-
-        // grab nil for local variables
-        invokeRuby("getNil", sig(IRubyObject.class));
-        method.astore(getNilIndex());
 
         variableCompiler.beginClass(bodyPrep, scope);
 

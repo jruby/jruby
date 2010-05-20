@@ -64,12 +64,15 @@ public final class ThreadContext {
     }
     
     private final static int INITIAL_SIZE = 10;
+    private final static int INITIAL_FRAMES_SIZE = 1000;
     
     /** The number of calls after which to do a thread event poll */
     private final static int CALL_POLL_COUNT = 0xFFF;
     private final static String UNKNOWN_NAME = "(unknown)";
-    
-    private final Ruby runtime;
+
+    // runtime and nil cached here for speed of access from any thread
+    public final Ruby runtime;
+    public final IRubyObject nil;
     
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
@@ -83,7 +86,7 @@ public final class ThreadContext {
     private RubyModule[] parentStack = new RubyModule[INITIAL_SIZE];
     private int parentIndex = -1;
     
-    private Frame[] frameStack = new Frame[INITIAL_SIZE];
+    private Frame[] frameStack = new Frame[INITIAL_FRAMES_SIZE];
     private int frameIndex = -1;
     
     // List of active dynamic scopes.  Each of these may have captured other dynamic scopes
@@ -114,6 +117,7 @@ public final class ThreadContext {
      */
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
+        this.nil = runtime.getNil();
         
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.

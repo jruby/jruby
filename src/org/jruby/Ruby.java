@@ -1039,9 +1039,6 @@ public final class Ruby {
      * loaded.
      */
     private void init() {
-        // Get the main threadcontext (gets constructed for us)
-        ThreadContext tc = getCurrentContext();
-
         safeLevel = config.getSafeLevel();
         
         // Construct key services
@@ -1061,6 +1058,12 @@ public final class Ruby {
         
         // initialize the root of the class hierarchy completely
         initRoot();
+
+        // Set up the main thread in thread service
+        threadService.initMainThread();
+
+        // Get the main threadcontext (gets constructed for us)
+        ThreadContext tc = getCurrentContext();
 
         // Construct the top-level execution frame and scope for the main thread
         tc.prepareTopLevel(objectClass, topSelf);
@@ -1132,9 +1135,7 @@ public final class Ruby {
 
         // Object is ready, create top self
         topSelf = TopSelfFactory.createTopSelf(this);
-    }
-
-    private void initCore() {
+        
         // Pre-create all the core classes potentially referenced during startup
         RubyNil.createNilClass(this);
         RubyBoolean.createFalseClass(this);
@@ -1146,7 +1147,9 @@ public final class Ruby {
 
         falseObject = new RubyBoolean(this, false);
         trueObject = new RubyBoolean(this, true);
+    }
 
+    private void initCore() {
         if (profile.allowClass("Data")) {
             defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         }

@@ -1941,8 +1941,7 @@ public class ASTCompiler {
                         public void nextValue(BodyCompiler context, Object object, int index) {
                             Node optArg = ((ListNode) object).get(index);
 
-                            compileAssignment(optArg, context,true);
-                            context.consumeCurrentValue();
+                            compileAssignment(optArg, context, false);
                         }
                     };
             optionalNotGiven = new ArrayCallback() {
@@ -1950,8 +1949,7 @@ public class ASTCompiler {
                         public void nextValue(BodyCompiler context, Object object, int index) {
                             Node optArg = ((ListNode) object).get(index);
 
-                            compile(optArg, context,true);
-                            context.consumeCurrentValue();
+                            compile(optArg, context, false);
                         }
                     };
         }
@@ -2884,7 +2882,6 @@ public class ASTCompiler {
     }
 
     public void compileNewline(Node node, BodyCompiler context, boolean expr) {
-        // TODO: add trace call?
         context.lineNumber(node.getPosition());
 
         context.setLinePosition(node.getPosition());
@@ -2931,11 +2928,9 @@ public class ASTCompiler {
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
             if (expr) {
                 context.loadNil();
-                context.pollThreadEvents();
             }
         } else {
             context.loadNil();
-            context.pollThreadEvents();
             if (!expr) context.consumeCurrentValue();
         }
     }

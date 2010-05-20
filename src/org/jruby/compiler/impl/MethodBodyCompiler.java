@@ -6,7 +6,6 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.AnnotationVisitor;
@@ -54,16 +53,6 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
     @Override
     public void beginMethod(CompilerCallback args, StaticScope scope) {
         method.start();
-
-        // set up a local IRuby variable
-        method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-        invokeThreadContext("getRuntime", sig(Ruby.class));
-        method.astore(getRuntimeIndex());
-
-        // grab nil for local variables
-        method.aload(getRuntimeIndex());
-        invokeRuby("getNil", sig(IRubyObject.class));
-        method.astore(getNilIndex());
 
         variableCompiler.beginMethod(args, scope);
 
