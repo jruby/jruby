@@ -102,7 +102,7 @@ class Gem::PackageTask < Rake::PackageTask
 
     gem_file = gem_spec.file_name
     gem_path = File.join package_dir, gem_file
-    gem_dir  = File.join package_dir, gem_spec.full_name
+    gem_dir  = package_dir_path
 
     desc "Build the gem file #{gem_file}"
     task :gem => [gem_path]
