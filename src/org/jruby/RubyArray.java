@@ -2398,7 +2398,9 @@ public class RubyArray extends RubyObject implements List {
         RubyArray result = new RubyArray(runtime, realLength);
 
         for (int i = 0; i < realLength; i++) {
-            if (block.yield(context, values[begin + i]).isTrue()) result.append(elt(i));
+            IRubyObject value = values[begin + i];
+
+            if (block.yield(context, value).isTrue()) result.append(value);
         }
 
         RuntimeHelpers.fillNil(result.values, result.realLength, result.values.length, runtime);
@@ -3800,7 +3802,9 @@ public class RubyArray extends RubyObject implements List {
 
     public IRubyObject detectCommon(ThreadContext context, IRubyObject ifnone, Block block) {
         for (int i = begin; i < begin + realLength; i++) {
-            if (block.yield(context, values[i]).isTrue()) return values[i];
+            IRubyObject value = values[i];
+
+            if (block.yield(context, value).isTrue()) return value;
         }
 
         return ifnone != null ? ifnone.callMethod(context, "call") : 
@@ -3976,12 +3980,12 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public int indexOf(Object element) {
-        int begin = this.begin;
+        int myBegin = this.begin;
 
         if (element != null) {
             IRubyObject convertedElement = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element);
 
-            for (int i = begin; i < begin + realLength; i++) {
+            for (int i = myBegin; i < myBegin + realLength; i++) {
                 if (convertedElement.equals(values[i])) {
                     return i;
                 }
