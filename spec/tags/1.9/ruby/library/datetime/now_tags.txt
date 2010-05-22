@@ -1,0 +1,1 @@
+fails:DateTime.now creates an instance of DateTime

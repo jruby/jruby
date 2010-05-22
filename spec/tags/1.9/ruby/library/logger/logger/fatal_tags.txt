@@ -1,0 +1,4 @@
+fails:Logger#fatal? returns true if severity level allows fatal messages
+fails:Logger#fatal? returns false if severity level does not allow fatal messages
+fails:Logger#fatal logs a FATAL message
+fails:Logger#fatal accepts an application name with a block

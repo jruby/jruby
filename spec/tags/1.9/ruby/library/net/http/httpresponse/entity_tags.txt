@@ -1,0 +1,2 @@
+fails:Net::HTTPResponse#entity returns the read body
+fails:Net::HTTPResponse#entity returns the previously read body if called a second time

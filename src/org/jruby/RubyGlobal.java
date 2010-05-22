@@ -339,9 +339,7 @@ public class RubyGlobal {
         
         @Override
         public IRubyObject set(IRubyObject lastExitStatus) {
-            runtime.getCurrentContext().setLastExitStatus(lastExitStatus);
-            
-            return lastExitStatus;
+            throw runtime.newNameError("$? is a read-only variable", "$?");
         }
     }
 

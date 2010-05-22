@@ -1,0 +1,4 @@
+fails:Logger#warn? returns true if severity level allows printing warn messages
+fails:Logger#warn? returns false if severity level does not allow printing warn messages
+fails:Logger#warn logs a WARN message
+fails:Logger#warn accepts an application name with a block

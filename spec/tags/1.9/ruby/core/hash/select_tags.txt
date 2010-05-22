@@ -1,0 +1,4 @@
+fails:Hash#select! is equivalent to keep_if if changes are made
+fails:Hash#select! returns nil if no changes were made
+fails:Hash#select! raises a RuntimeError if called on a frozen instance that is modified
+fails:Hash#select! raises a RuntimeError if called on a frozen instance that would not be modified

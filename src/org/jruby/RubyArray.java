@@ -852,16 +852,20 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_splice
      * 
      */
-    private final void splice(long beg, long len, IRubyObject rpl) {
+    private final void splice(long beg, long len, IRubyObject rpl, boolean oneNine) {
         if (len < 0) throw getRuntime().newIndexError("negative length (" + len + ")");
         if (beg < 0 && (beg += realLength) < 0) throw getRuntime().newIndexError("index " + (beg - realLength) + " out of array");
 
         final RubyArray rplArr;
         final int rlen;
 
-        if (rpl == null || rpl.isNil()) {
+        if (rpl == null || (rpl.isNil() && !oneNine)) {
             rplArr = null;
             rlen = 0;
+        } else if (rpl.isNil()) {
+            // 1.9 replaces with nil
+            rplArr = newArray(getRuntime(), rpl);
+            rlen = 1;
         } else {
             rplArr = aryToAry(rpl);
             rlen = rplArr.realLength;
@@ -1004,7 +1008,7 @@ public class RubyArray extends RubyObject implements List {
         inserted.begin = 1;
         inserted.realLength = args.length - 1;
         
-        splice(pos, 0, inserted); // rb_ary_new4
+        splice(pos, 0, inserted, false); // rb_ary_new4
         
         return this;
     }
@@ -1432,7 +1436,7 @@ public class RubyArray extends RubyObject implements List {
             store(((RubyFixnum)arg0).getLongValue(), arg1);
         } else if (arg0 instanceof RubyRange) {
             long[] beglen = ((RubyRange) arg0).begLen(realLength, 1);
-            splice(beglen[0], beglen[1], arg1);
+            splice(beglen[0], beglen[1], arg1, false);
         } else if(arg0 instanceof RubySymbol) {
             throw getRuntime().newTypeError("Symbol as array index");
         } else {
@@ -1447,7 +1451,7 @@ public class RubyArray extends RubyObject implements List {
             store(((RubyFixnum)arg0).getLongValue(), arg1);
         } else if (arg0 instanceof RubyRange) {
             long[] beglen = ((RubyRange) arg0).begLen(realLength, 1);
-            splice(beglen[0], beglen[1], arg1);
+            splice(beglen[0], beglen[1], arg1, true);
         } else {
             store(RubyNumeric.num2long(arg0), arg1);
         }
@@ -1462,13 +1466,13 @@ public class RubyArray extends RubyObject implements List {
         assert !getRuntime().is1_9();
         if (arg0 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as array index");
         if (arg1 instanceof RubySymbol) throw getRuntime().newTypeError("Symbol as subarray length");
-        splice(RubyNumeric.num2long(arg0), RubyNumeric.num2long(arg1), arg2);
+        splice(RubyNumeric.num2long(arg0), RubyNumeric.num2long(arg1), arg2, false);
         return arg2;
     }
 
     @JRubyMethod(name = "[]=", compat = CompatVersion.RUBY1_9)
     public IRubyObject aset19(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        splice(RubyNumeric.num2long(arg0), RubyNumeric.num2long(arg1), arg2);
+        splice(RubyNumeric.num2long(arg0), RubyNumeric.num2long(arg1), arg2, true);
         return arg2;
     }
 
@@ -1487,7 +1491,7 @@ public class RubyArray extends RubyObject implements List {
     public RubyArray concat(IRubyObject obj) {
         RubyArray ary = obj.convertToArray();
         
-        if (ary.realLength > 0) splice(realLength, 0, ary);
+        if (ary.realLength > 0) splice(realLength, 0, ary, false);
 
         return this;
     }
@@ -2699,7 +2703,7 @@ public class RubyArray extends RubyObject implements List {
         }
 
         arg1 = makeShared(begin + (int)pos, (int)len, getMetaClass());
-        splice(pos, len, null);
+        splice(pos, len, null, false);
 
         return arg1;
     }
@@ -3266,7 +3270,10 @@ public class RubyArray extends RubyObject implements List {
     }
 
     private IRubyObject sortInternal(final ThreadContext context, final Block block) {
-        Qsort.sort(values, begin, begin + realLength, new Comparator() {
+        IRubyObject[] newValues = new IRubyObject[realLength];
+        int length = realLength;
+        System.arraycopy(values, begin, newValues, 0, length);
+        Qsort.sort(newValues, 0, length, new Comparator() {
             public int compare(Object o1, Object o2) {
                 IRubyObject obj1 = (IRubyObject) o1;
                 IRubyObject obj2 = (IRubyObject) o2;
@@ -3275,6 +3282,9 @@ public class RubyArray extends RubyObject implements List {
                 return RubyComparable.cmpint(context, ret, obj1, obj2);
             }
         });
+        values = newValues;
+        begin = 0;
+        realLength = length;
         return this;
     }
 
@@ -3381,11 +3391,17 @@ public class RubyArray extends RubyObject implements List {
         return context.getRuntime().getNil();
     }
 
+
     /** rb_ary_product
-     * 
+     *
      */
-    @JRubyMethod(name = "product", rest = true)
+    @JRubyMethod(name = "product", rest = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject product(ThreadContext context, IRubyObject[] args) {
+        return product(context, args, Block.NULL_BLOCK);
+    }
+    
+    @JRubyMethod(name = "product", rest = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject product(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
 
         int n = args.length + 1;
@@ -3406,13 +3422,19 @@ public class RubyArray extends RubyObject implements List {
             }
         }
 
-        RubyArray result = newArray(runtime, resultLen);
+        boolean useBlock = block.isGiven();
+
+        RubyArray result = useBlock ? null : newArray(runtime, resultLen);
 
         for (int i = 0; i < resultLen; i++) {
             RubyArray sub = newArray(runtime, n);
             for (int j = 0; j < n; j++) sub.append(arrays[j].entry(counters[j]));
 
-            result.append(sub);
+            if (useBlock) {
+                block.yieldSpecific(context, sub);
+            } else {
+                result.append(sub);
+            }
             int m = n - 1;
             counters[m]++;
 
@@ -3422,7 +3444,7 @@ public class RubyArray extends RubyObject implements List {
                 counters[m]++;
             }
         }
-        return result;
+        return useBlock ? this : result;
     }
 
     private int combinationLength(ThreadContext context, int n, int k) {

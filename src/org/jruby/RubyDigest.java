@@ -329,8 +329,13 @@ public class RubyDigest {
         @JRubyMethod
         public static IRubyObject file(ThreadContext ctx, IRubyObject self, IRubyObject filename) {
             Ruby runtime = self.getRuntime();
+            RubyString filenameStr = filename.convertToString();
+            
+            if (RubyFileTest.directory_p(runtime, filenameStr).isTrue()) {
+                throw runtime.newErrnoEISDirError();
+            }
             IRubyObject io = RuntimeHelpers.invoke(ctx, runtime.getFile(),
-                    "open", filename, runtime.newString("rb"));
+                    "open", filenameStr, runtime.newString("rb"));
 
             try {
                 RubyString buf = runtime.newString();

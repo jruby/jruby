@@ -1,0 +1,4 @@
+fails:Logger#debug? returns true if severity level allows debug messages
+fails:Logger#debug? returns false if severity level does not allow debug messages
+fails:Logger#debug logs a DEBUG message
+fails:Logger#debug accepts an application name with a block

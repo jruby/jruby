@@ -1,1 +1,2 @@
 unstable:Thread#terminate killing dying running does nothing
+fails:Thread#terminate killing dying running does nothing

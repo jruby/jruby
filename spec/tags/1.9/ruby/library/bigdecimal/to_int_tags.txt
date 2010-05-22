@@ -1,0 +1,1 @@
+fails:BigDecimal#to_int raises FloatDomainError if BigDecimal is infinity or NaN

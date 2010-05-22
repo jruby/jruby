@@ -1,0 +1,3 @@
+fails:Syslog.debug logs a message
+fails:Syslog.debug accepts sprintf arguments
+fails:Syslog.debug works as an alias for Syslog.log

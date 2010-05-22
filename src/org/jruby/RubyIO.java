@@ -2009,7 +2009,7 @@ public class RubyIO extends RubyObject {
         if (openFile.getProcess() != null) {
             obliterateProcess(openFile.getProcess());
             IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().exitValue());
-            runtime.getGlobalVariables().set("$?", processResult);
+            runtime.getCurrentContext().setLastExitStatus(processResult);
         }
         
         return runtime.getNil();
@@ -3289,10 +3289,19 @@ public class RubyIO extends RubyObject {
     private static RubyIO newFile(ThreadContext context, IRubyObject recv, IRubyObject... args) {
        return (RubyIO) RubyKernel.open(context, recv, args, Block.NULL_BLOCK);
     }
+
+    public static void failIfDirectory(Ruby runtime, RubyString pathStr) {
+        if (RubyFileTest.directory_p(runtime, pathStr).isTrue()) {
+            throw runtime.newErrnoEISDirError();
+        }
+    }
    
     @JRubyMethod(name = "read", meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject path, Block unusedBlock) {
-        RubyIO file = newFile(context, recv, path);
+        RubyString pathStr = path.convertToString();
+        Ruby runtime = context.getRuntime();
+        failIfDirectory(runtime, pathStr);
+        RubyIO file = newFile(context, recv, pathStr);
 
        try {
            return file.read(context);
@@ -3303,7 +3312,10 @@ public class RubyIO extends RubyObject {
    
     @JRubyMethod(name = "read", meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject length) {
-        RubyIO file = newFile(context, recv, path);
+        RubyString pathStr = path.convertToString();
+        Ruby runtime = context.getRuntime();
+        failIfDirectory(runtime, pathStr);
+        RubyIO file = newFile(context, recv, pathStr);
        
         try {
             return !length.isNil() ? file.read(context, length) : file.read(context);
@@ -3314,7 +3326,10 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "read", meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject length, IRubyObject offset) {
-        RubyIO file = newFile(context, recv, path);
+        RubyString pathStr = path.convertToString();
+        Ruby runtime = context.getRuntime();
+        failIfDirectory(runtime, pathStr);
+        RubyIO file = newFile(context, recv, pathStr);
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
@@ -3333,7 +3348,10 @@ public class RubyIO extends RubyObject {
     private static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject length, IRubyObject offset, RubyHash options) {
         // FIXME: process options
 
-        RubyIO file = newFile(context, recv, path);
+        RubyString pathStr = path.convertToString();
+        Ruby runtime = context.getRuntime();
+        failIfDirectory(runtime, pathStr);
+        RubyIO file = newFile(context, recv, pathStr);
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
@@ -3448,7 +3466,7 @@ public class RubyIO extends RubyObject {
                     if (io.openFile.isOpen()) {
                         io.close();
                     }
-                    runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor())));
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor())));
                 }
             }
             return io;
@@ -3478,7 +3496,7 @@ public class RubyIO extends RubyObject {
                     return block.yield(context, yieldArgs);
                 } finally {
                     cleanupPOpen(tuple);
-                    runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, (tuple.process.waitFor() * 256)));
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (tuple.process.waitFor() * 256)));
                 }
             }
             return yieldArgs;
@@ -3505,7 +3523,7 @@ public class RubyIO extends RubyObject {
                     return block.yield(context, yieldArgs);
                 } finally {
                     cleanupPOpen(tuple);
-                    runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, (tuple.process.waitFor() * 256)));
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (tuple.process.waitFor() * 256)));
                 }
             }
             return yieldArgs;

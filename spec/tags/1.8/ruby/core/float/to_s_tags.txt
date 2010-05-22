@@ -1,0 +1,1 @@
+fails(JRUBY-4809):Float#to_s outputs the minimal, unique form necessary to recreate the value

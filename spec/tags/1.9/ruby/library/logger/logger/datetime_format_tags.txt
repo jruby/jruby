@@ -1,0 +1,4 @@
+fails:Logger#datetime_format returns the date format used for the logs
+fails:Logger#datetime_format returns nil logger is using the default date format
+fails:Logger#datetime_format= sets the date format for the logs
+fails:Logger#datetime_format= follows the Time#strftime format

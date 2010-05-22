@@ -1,1 +1,0 @@
-fails(JRUBY-4176):Matrix.column_vector returns an empty Matrix when called with an empty Array

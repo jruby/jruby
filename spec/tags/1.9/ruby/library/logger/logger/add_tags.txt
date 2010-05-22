@@ -1,0 +1,7 @@
+fails:Logger#add writes a new message to the logger
+fails:Logger#add receives a severity
+fails:Logger#add receives a message
+fails:Logger#add receives a program name
+fails:Logger#add receives a block
+fails:Logger#add calls the block if message is nil
+fails:Logger#add ignores the block if the message is not nil

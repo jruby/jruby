@@ -1,0 +1,5 @@
+fails:BigDecimal#mod_part_of_divmod returns the dividend if the divisor is Infinity
+fails:BigDecimal#mod_part_of_divmod raises ZeroDivisionError if other is zero
+fails:BigDecimal#divmod raises ZeroDivisionError if the divisor is zero
+fails:BigDecimal#divmod returns an array of Infinity and NaN if the dividend is Infinity
+fails:BigDecimal#divmod returns an array of zero and the dividend if the divisor is Infinity
