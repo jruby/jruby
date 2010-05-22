@@ -2606,4 +2606,23 @@ public class ScriptingContainerTest {
 
         instance = null;
     }
+
+    /**
+     * Test of clear method, of class ScriptingContainer.
+     */
+    @Test
+    public void testNullToContextClassLoader() {
+        logger1.info("clear");
+        ScriptingContainer instance = null;
+        try {
+            ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+            Thread.currentThread().setContextClassLoader(null);
+            instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+            Thread.currentThread().setContextClassLoader(oldClassLoader);
+        } catch (NullPointerException e) {
+            fail(e.getMessage());
+        } finally {
+            instance = null;
+        }
+    }
 }
