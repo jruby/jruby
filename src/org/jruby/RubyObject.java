@@ -316,205 +316,6 @@ public class RubyObject extends RubyBasicObject {
         return evalUnder(context, mod, evalStr, file, line);
     }
 
-    /** specific_eval
-     *
-     * Evaluates the block or string inside of the context of this
-     * object, using the supplied arguments. If a block is given, this
-     * will be yielded in the specific context of this object. If no
-     * block is given then a String-like object needs to be the first
-     * argument, and this string will be evaluated. Second and third
-     * arguments in the args-array is optional, but can contain the
-     * filename and line of the string under evaluation.
-     */
-    public IRubyObject specificEval(ThreadContext context, RubyModule mod, Block block) {
-        if (block.isGiven()) {
-            return yieldUnder(context, mod, block);
-        } else {
-            throw context.getRuntime().newArgumentError("block not supplied");
-        }
-    }
-
-    /** specific_eval
-     *
-     * Evaluates the block or string inside of the context of this
-     * object, using the supplied arguments. If a block is given, this
-     * will be yielded in the specific context of this object. If no
-     * block is given then a String-like object needs to be the first
-     * argument, and this string will be evaluated. Second and third
-     * arguments in the args-array is optional, but can contain the
-     * filename and line of the string under evaluation.
-     */
-    public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg, Block block) {
-        if (block.isGiven()) throw context.getRuntime().newArgumentError(1, 0);
-
-        // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
-        RubyString evalStr;
-        if (arg instanceof RubyString) {
-            evalStr = (RubyString)arg;
-        } else {
-            evalStr = arg.convertToString();
-        }
-
-        String file = "(eval)";
-        int line = 0;
-
-        return evalUnder(context, mod, evalStr, file, line);
-    }
-
-    /** specific_eval
-     *
-     * Evaluates the block or string inside of the context of this
-     * object, using the supplied arguments. If a block is given, this
-     * will be yielded in the specific context of this object. If no
-     * block is given then a String-like object needs to be the first
-     * argument, and this string will be evaluated. Second and third
-     * arguments in the args-array is optional, but can contain the
-     * filename and line of the string under evaluation.
-     */
-    public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg0, IRubyObject arg1, Block block) {
-        if (block.isGiven()) throw context.getRuntime().newArgumentError(2, 0);
-
-        // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
-        RubyString evalStr;
-        if (arg0 instanceof RubyString) {
-            evalStr = (RubyString)arg0;
-        } else {
-            evalStr = arg0.convertToString();
-        }
-
-        String file = arg1.convertToString().asJavaString();
-        int line = 0;
-
-        return evalUnder(context, mod, evalStr, file, line);
-    }
-
-    /** specific_eval
-     *
-     * Evaluates the block or string inside of the context of this
-     * object, using the supplied arguments. If a block is given, this
-     * will be yielded in the specific context of this object. If no
-     * block is given then a String-like object needs to be the first
-     * argument, and this string will be evaluated. Second and third
-     * arguments in the args-array is optional, but can contain the
-     * filename and line of the string under evaluation.
-     */
-    public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        if (block.isGiven()) throw context.getRuntime().newArgumentError(2, 0);
-
-        // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
-        RubyString evalStr;
-        if (arg0 instanceof RubyString) {
-            evalStr = (RubyString)arg0;
-        } else {
-            evalStr = arg0.convertToString();
-        }
-
-        String file = arg1.convertToString().asJavaString();
-        int line = (int)(arg2.convertToInteger().getLongValue() - 1);
-
-        return evalUnder(context, mod, evalStr, file, line);
-    }
-
-    /**
-     * Evaluates the string src with self set to the current object,
-     * using the module under as the context.
-     * @deprecated Call with an int line number and String file
-     */
-    public IRubyObject evalUnder(final ThreadContext context, RubyModule under, IRubyObject src, IRubyObject file, IRubyObject line) {
-        return evalUnder(context, under, src.convertToString(), file.convertToString().toString(), (int) (line.convertToInteger().getLongValue() - 1));
-    }
-
-    /**
-     * Evaluates the string src with self set to the current object,
-     * using the module under as the context.
-     */
-    public IRubyObject evalUnder(final ThreadContext context, RubyModule under, RubyString src, String file, int line) {
-        Visibility savedVisibility = context.getCurrentVisibility();
-        context.setCurrentVisibility(Visibility.PUBLIC);
-        context.preExecuteUnder(under, Block.NULL_BLOCK);
-        try {
-            return ASTInterpreter.evalSimple(context, this, src,
-                    file, line);
-        } finally {
-            context.postExecuteUnder();
-            context.setCurrentVisibility(savedVisibility);
-        }
-    }
-
-    /**
-     * Will yield to the specific block changing the self to be the
-     * current object instead of the self that is part of the frame
-     * saved in the block frame. This method is the basis for the Ruby
-     * instance_eval and module_eval methods. The arguments sent in to
-     * it in the args array will be yielded to the block. This makes
-     * it possible to emulate both instance_eval and instance_exec
-     * with this implementation.
-     */
-    private IRubyObject yieldUnder(final ThreadContext context, RubyModule under, IRubyObject[] args, Block block) {
-        context.preExecuteUnder(under, block);
-
-        Visibility savedVisibility = block.getBinding().getVisibility();
-        block.getBinding().setVisibility(Visibility.PUBLIC);
-
-        try {
-            IRubyObject valueInYield;
-
-            // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
-            block = block.cloneBlock();
-            block.getBinding().setSelf(RubyObject.this);
-            block.getBinding().getFrame().setSelf(RubyObject.this);
-            // end hack
-
-            if (args.length == 1) {
-                valueInYield = args[0];
-                return block.yieldNonArray(context, valueInYield, RubyObject.this, context.getRubyClass());
-            } else {
-                valueInYield = RubyArray.newArrayNoCopy(context.getRuntime(), args);
-                return block.yieldArray(context, valueInYield, RubyObject.this, context.getRubyClass());
-            }
-            //TODO: Should next and return also catch here?
-        } catch (JumpException.BreakJump bj) {
-            return (IRubyObject) bj.getValue();
-        } finally {
-            block.getBinding().setVisibility(savedVisibility);
-
-            context.postExecuteUnder();
-        }
-    }
-
-    /**
-     * Will yield to the specific block changing the self to be the
-     * current object instead of the self that is part of the frame
-     * saved in the block frame. This method is the basis for the Ruby
-     * instance_eval and module_eval methods. The arguments sent in to
-     * it in the args array will be yielded to the block. This makes
-     * it possible to emulate both instance_eval and instance_exec
-     * with this implementation.
-     */
-    private IRubyObject yieldUnder(final ThreadContext context, RubyModule under, Block block) {
-        context.preExecuteUnder(under, block);
-
-        Visibility savedVisibility = block.getBinding().getVisibility();
-        block.getBinding().setVisibility(Visibility.PUBLIC);
-
-        try {
-            // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
-            block = block.cloneBlock();
-            block.getBinding().setSelf(RubyObject.this);
-            block.getBinding().getFrame().setSelf(RubyObject.this);
-            // end hack
-
-            return block.yieldNonArray(context, this, this, context.getRubyClass());
-            //TODO: Should next and return also catch here?
-        } catch (JumpException.BreakJump bj) {
-            return (IRubyObject) bj.getValue();
-        } finally {
-            block.getBinding().setVisibility(savedVisibility);
-
-            context.postExecuteUnder();
-        }
-    }
-
     // Methods of the Object class (rb_obj_*):
 
     /** rb_obj_equal
@@ -1280,19 +1081,19 @@ public class RubyObject extends RubyBasicObject {
      *     k = Klass.new
      *     k.instance_eval { @secret }   #=> 99
      */
-    @JRubyMethod(name = "instance_eval", frame = true)
+    @JRubyMethod(name = "instance_eval", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject instance_eval(ThreadContext context, Block block) {
         return specificEval(context, getInstanceEvalClass(), block);
     }
-    @JRubyMethod(name = "instance_eval", frame = true)
+    @JRubyMethod(name = "instance_eval", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, block);
     }
-    @JRubyMethod(name = "instance_eval", frame = true)
+    @JRubyMethod(name = "instance_eval", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, block);
     }
-    @JRubyMethod(name = "instance_eval", frame = true)
+    @JRubyMethod(name = "instance_eval", frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block);
     }
@@ -1308,15 +1109,6 @@ public class RubyObject extends RubyBasicObject {
         }
 
         return specificEval(context, klazz, args, block);
-    }
-
-    private RubyModule getInstanceEvalClass() {
-        if (isImmediate()) {
-            // Ruby uses Qnil here, we use "dummy" because we need a class
-            return getRuntime().getDummy();
-        } else {
-            return getSingletonClass();
-        }
     }
 
     /** rb_obj_instance_exec
@@ -1337,7 +1129,7 @@ public class RubyObject extends RubyBasicObject {
      *     k = Klass.new
      *     k.instance_exec(5) {|x| @secret+x }   #=> 104
      */
-    @JRubyMethod(name = "instance_exec", optional = 3, rest = true, frame = true)
+    @JRubyMethod(name = "instance_exec", optional = 3, rest = true, frame = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) throw context.getRuntime().newArgumentError("block not supplied");
 
@@ -1426,29 +1218,29 @@ public class RubyObject extends RubyBasicObject {
      *
      * @return the result of invoking the method identified by aSymbol.
      */
-    @JRubyMethod(name = {"send", "__send__"})
+    @JRubyMethod(name = {"send", "__send__"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject send(ThreadContext context, Block block) {
         throw context.getRuntime().newArgumentError(0, 1);
     }
-    @JRubyMethod(name = {"send", "__send__"})
+    @JRubyMethod(name = {"send", "__send__"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, block);
     }
-    @JRubyMethod(name = {"send", "__send__"})
+    @JRubyMethod(name = {"send", "__send__"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, arg1, block);
     }
-    @JRubyMethod(name = {"send", "__send__"})
+    @JRubyMethod(name = {"send", "__send__"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"send", "__send__"}, rest = true)
+    @JRubyMethod(name = {"send", "__send__"}, rest = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         String name = args[0].asJavaString();
         int newArgsLength = args.length - 1;
@@ -1462,6 +1254,32 @@ public class RubyObject extends RubyBasicObject {
         }
 
         return getMetaClass().finvoke(context, this, name, newArgs, block);
+    }
+
+    @JRubyMethod(name = {"send"}, compat = CompatVersion.RUBY1_9)
+    @Override
+    public IRubyObject send19(ThreadContext context, Block block) {
+        return super.send19(context, block);
+    }
+    @JRubyMethod(name = {"send"}, compat = CompatVersion.RUBY1_9)
+    @Override
+    public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
+        return super.send19(context, arg0, block);
+    }
+    @JRubyMethod(name = {"send"}, compat = CompatVersion.RUBY1_9)
+    @Override
+    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return super.send19(context, arg0, arg1, block);
+    }
+    @JRubyMethod(name = {"send"}, compat = CompatVersion.RUBY1_9)
+    @Override
+    public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return super.send19(context, arg0, arg1, arg2, block);
+    }
+    @JRubyMethod(name = {"send"}, rest = true, compat = CompatVersion.RUBY1_9)
+    @Override
+    public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
+        return super.send19(context, args, block);
     }
 
     /** rb_false

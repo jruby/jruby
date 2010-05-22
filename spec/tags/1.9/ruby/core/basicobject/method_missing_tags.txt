@@ -1,1 +1,0 @@
-fails:BasicObject#method_missing is a private method
