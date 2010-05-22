@@ -1155,7 +1155,7 @@ public class RubyObject extends RubyBasicObject {
         return singletonMethods(context, args, false);
     }
 
-    @JRubyMethod(name = "singleton_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "singleton_methods", optional = 1 , compat = CompatVersion.RUBY1_9)
     public RubyArray singleton_methods19(ThreadContext context, IRubyObject[] args) {
         return singletonMethods(context, args, true);
     }
