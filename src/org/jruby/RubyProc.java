@@ -378,7 +378,7 @@ public class RubyProc extends RubyObject implements DataType {
             parms.add(elem);
         }
 
-        BlockArgNode blockArg = args.getBlockArgNode();
+        BlockArgNode blockArg = args.getBlock();
         if (blockArg != null) {
             elem = RubyArray.newEmptyArray(runtime);
             elem.add(RubySymbol.newSymbol(runtime, "block"));
