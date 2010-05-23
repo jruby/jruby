@@ -1030,7 +1030,7 @@ public class RubyObject extends RubyBasicObject {
      */
     @JRubyMethod(name = "method", required = 1)
     public IRubyObject method(IRubyObject symbol) {
-        return getMetaClass().newMethod(this, symbol.asJavaString(), true);
+        return getMetaClass().newMethod(this, symbol.asJavaString(), true, null);
     }
 
     /** rb_any_to_s

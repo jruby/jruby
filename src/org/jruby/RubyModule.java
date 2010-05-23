@@ -1245,9 +1245,11 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound) {
+    public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound, Visibility visibility) {
         DynamicMethod method = searchMethod(name);
-        if (method.isUndefined()) {
+
+        if (method.isUndefined() ||
+            (visibility != null && method.getVisibility() != visibility)) {
             throw getRuntime().newNameError("undefined method `" + name +
                 "' for class `" + this.getName() + "'", name);
         }
@@ -1258,7 +1260,7 @@ public class RubyModule extends RubyObject {
             originModule = ((MetaClass)originModule).getRealClass();
         }
 
-        RubyMethod newMethod = null;
+        RubyMethod newMethod;
         if (bound) {
             newMethod = RubyMethod.newMethod(implementationModule, name, originModule, name, method, receiver);
         } else {
@@ -1798,7 +1800,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "instance_method", required = 1)
     public IRubyObject instance_method(IRubyObject symbol) {
-        return newMethod(null, symbol.asJavaString(), false);
+        return newMethod(null, symbol.asJavaString(), false, null);
     }
 
     /** rb_class_protected_instance_methods
