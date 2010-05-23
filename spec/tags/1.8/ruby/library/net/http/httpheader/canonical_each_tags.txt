@@ -1,0 +1,1 @@
+fails(JRUBY-4818):Net::HTTPHeader#canonical_each when passed no block returns an Enumerator

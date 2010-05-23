@@ -1,0 +1,1 @@
+fails(JRUBY-4818):Net::HTTPHeader#content_range returns a Range object that represents the 'Content-Range' header entry
