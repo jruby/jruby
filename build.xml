@@ -57,6 +57,9 @@
     <condition property="ruby.home" value="${env.RUBY_HOME}">
       <not><isset property="ruby.home"/></not>
     </condition>
+    <condition property="is.windows" value="true">
+      <os family="windows"/>
+    </condition>
     <condition property="run.jvm.model" value="">
         <os family="windows"/>
     </condition>
@@ -694,9 +697,9 @@
     </java>
   </target>
 
-  <target name="install-jruby-launcher-gem" depends="init,jar">
+  <target name="install-jruby-launcher-gem" depends="init, jar" unless="is.windows">
     <property name="jruby.home" value="${basedir}"/>
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
