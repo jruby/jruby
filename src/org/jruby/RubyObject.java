@@ -1307,9 +1307,14 @@ public class RubyObject extends RubyBasicObject {
      *  <code>Regexp</code> and <code>String</code>) to provide meaningful
      *  pattern-match semantics.
      */
-    @JRubyMethod(name = "=~", required = 1)
+    @JRubyMethod(name = "=~", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
     	return context.getRuntime().getFalse();
+    }
+
+    @JRubyMethod(name = "=~", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
+    	return context.getRuntime().getNil();
     }
 
     @JRubyMethod(name = "!~", required = 1, compat = CompatVersion.RUBY1_9)
