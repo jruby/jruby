@@ -452,6 +452,12 @@ public class RubyHash extends RubyObject implements Map {
     private void checkResize() {
         if (MRI_HASH_RESIZE) MRICheckResize(); else JavaSoftCheckResize();
     }
+
+    private void checkIterating() {
+        if (iteratorCount.get() > 0) {
+            throw getRuntime().newRuntimeError("can't add a new key into hash during iteration");
+        }
+    }
     // ------------------------------
     public static long collisions = 0;
 
@@ -476,6 +482,8 @@ public class RubyHash extends RubyObject implements Map {
                 }
             }
         }
+
+        checkIterating();
 
         table[i] = new RubyHashEntry(hash, key, value, table[i], head);
         size++;
@@ -887,6 +895,7 @@ public class RubyHash extends RubyObject implements Map {
         if (entry != NO_ENTRY) {
             entry.value = value;
         } else {
+            checkIterating();
             if (!key.isFrozen()) {
                 key = key.strDup(runtime, key.getMetaClass().getRealClass());
                 key.setFrozen(true);
@@ -1125,7 +1134,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_each
      *
      */
-    public RubyHash each(final ThreadContext context, final Block block) {
+    public RubyHash eachCommon(final ThreadContext context, final Block block) {
         if (block.arity() == Arity.TWO_ARGUMENTS) {
             iteratorVisitAll(new Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
@@ -1146,20 +1155,24 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @JRubyMethod(name = "each", frame = true)
-    public IRubyObject each19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each(context, block) : enumeratorize(context.getRuntime(), this, "each");
+    public IRubyObject each(final ThreadContext context, final Block block) {
+        return block.isGiven() ? eachCommon(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
 
     /** rb_hash_each_pair
      *
      */
-    public RubyHash each_pair(final ThreadContext context, final Block block) {
+    public RubyHash each_pairCommon(final ThreadContext context, final Block block, final boolean oneNine) {
         final Ruby runtime = getRuntime();
 
         iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 // rb_yield_values(2,...) equivalent
-                block.yieldArray(context, RubyArray.newArray(runtime, key, value), null, null);
+                if (oneNine) {
+                    block.yield(context, RubyArray.newArray(runtime, key, value));
+                } else {
+                    block.yieldArray(context, RubyArray.newArray(runtime, key, value), null, null);
+                }
             }
         });
 
@@ -1167,14 +1180,14 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @JRubyMethod(name = "each_pair", frame = true)
-    public IRubyObject each_pair19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pair(context, block) : enumeratorize(context.getRuntime(), this, "each_pair");
+    public IRubyObject each_pair(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_pairCommon(context, block, context.getRuntime().is1_9()) : enumeratorize(context.getRuntime(), this, "each_pair");
     }
 
     /** rb_hash_each_value
      *
      */
-    public RubyHash each_value(final ThreadContext context, final Block block) {
+    public RubyHash each_valueCommon(final ThreadContext context, final Block block) {
         iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 block.yield(context, value);
@@ -1185,14 +1198,14 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @JRubyMethod(name = "each_value", frame = true)
-    public IRubyObject each_value19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_value(context, block) : enumeratorize(context.getRuntime(), this, "each_value");
+    public IRubyObject each_value(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_valueCommon(context, block) : enumeratorize(context.getRuntime(), this, "each_value");
     }
 
     /** rb_hash_each_key
      *
      */
-    public RubyHash each_key(final ThreadContext context, final Block block) {
+    public RubyHash each_keyCommon(final ThreadContext context, final Block block) {
         iteratorVisitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 block.yield(context, key);
@@ -1203,8 +1216,45 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @JRubyMethod(name = "each_key", frame = true)
-    public IRubyObject each_key19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_key(context, block) : enumeratorize(context.getRuntime(), this, "each_key");
+    public IRubyObject each_key(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_keyCommon(context, block) : enumeratorize(context.getRuntime(), this, "each_key");
+    }
+
+    @JRubyMethod(name = "select!", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject select_bang(final ThreadContext context, final Block block) {
+        if (block.isGiven()) {
+            if (keep_ifCommon(context, block)) {
+                return this;
+            } else {
+                return context.getRuntime().getNil();
+            }
+        } else {
+            return enumeratorize(context.getRuntime(), this, "each_key");
+        }
+    }
+
+    @JRubyMethod(name = "keep_if", frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject keep_if(final ThreadContext context, final Block block) {
+        if (block.isGiven()) {
+            keep_ifCommon(context, block);
+            return this;
+        } else {
+            return enumeratorize(context.getRuntime(), this, "each_key");
+        }
+    }
+    
+    public boolean keep_ifCommon(final ThreadContext context, final Block block) {
+        testFrozen("hash");
+        final boolean[] modified = {false};
+        iteratorVisitAll(new Visitor() {
+            public void visit(IRubyObject key, IRubyObject value) {
+                if (!block.yieldSpecific(context, key, value).isTrue()) {
+                    modified[0] = true;
+                    remove(key);
+                }
+            }
+        });
+        return modified[0];
     }
 
     /** rb_hash_sort
