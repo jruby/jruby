@@ -280,6 +280,16 @@ public class RubyException extends RubyObject {
         return getRuntime().newString(sb.toString());
     }
 
+    @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_9)
+    @Override
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        boolean equal =
+                context.getRuntime().getException().isInstance(other) &&
+                callMethod(context, "message").equals(other.callMethod(context, "message")) &&
+                callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace"));
+        return context.getRuntime().newBoolean(equal);
+    }
+
     @JRubyMethod(name = "===", meta = true)
     public static IRubyObject op_eqq(ThreadContext context, IRubyObject recv, IRubyObject other) {
         Ruby runtime = context.getRuntime();

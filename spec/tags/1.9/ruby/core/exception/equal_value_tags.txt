@@ -1,6 +1,0 @@
-fails:Exception#== returns true if one exception is the dup'd copy of the other
-fails:Exception#== returns true if both exceptions have the same class, no message, and no backtrace
-fails:Exception#== returns true if both exceptions have the same class, the same message, and no backtrace
-fails:Exception#== returns true if both exceptions have the same class, the same message, and the same backtrace
-fails:Exception#== returns true if the two exceptions inherit from Exception but have different classes
-fails:Exception#== returns true if the two objects subclass Exception and have the same message and backtrace
