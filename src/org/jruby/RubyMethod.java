@@ -104,6 +104,10 @@ public class RubyMethod extends RubyObject implements DataType {
         return newMethod;
     }
 
+    public DynamicMethod getMethod() {
+        return method;
+    }
+
     /** Call the method.
      * 
      */
