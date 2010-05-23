@@ -3292,7 +3292,11 @@ public class RubyIO extends RubyObject {
 
     public static void failIfDirectory(Ruby runtime, RubyString pathStr) {
         if (RubyFileTest.directory_p(runtime, pathStr).isTrue()) {
-            throw runtime.newErrnoEISDirError();
+            if (Platform.IS_WINDOWS) {
+                throw runtime.newErrnoEACCESError(pathStr.asJavaString());
+            } else {
+                throw runtime.newErrnoEISDirError(pathStr.asJavaString());
+            }
         }
     }
    
