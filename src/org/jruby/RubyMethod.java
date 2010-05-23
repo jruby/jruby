@@ -288,9 +288,11 @@ public class RubyMethod extends RubyObject implements DataType {
 
     @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
     public IRubyObject source_location(ThreadContext context) {
-        if (method instanceof PositionAware) {
+        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
+        
+        if (realMethod instanceof PositionAware) {
             Ruby runtime = context.getRuntime();
-            PositionAware poser = (PositionAware) method;
+            PositionAware poser = (PositionAware) realMethod;
             return runtime.newArray(runtime.newString(poser.getFile()),
                     runtime.newFixnum(poser.getLine() + 1 /*zero-based*/));
         }
