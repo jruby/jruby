@@ -30,19 +30,19 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.File;
+import static org.jruby.RubyFile.get_path;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
-
+import org.jruby.platform.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
-
-import static org.jruby.RubyFile.get_path;
 
 @JRubyModule(name = "FileTest")
 public class RubyFileTest {
@@ -307,7 +307,16 @@ public class RubyFileTest {
 
         JRubyFile file = file(filename);
 
-        return runtime.newBoolean(file.exists() && file.length() == 0L);
+        if (file.exists()) {
+            if (file.isDirectory()) {
+                // MRI behavior, enforced by RubySpecs.
+                return runtime.newBoolean(Platform.IS_WINDOWS);
+            } else {
+                return runtime.newBoolean(file.length() == 0L);
+            }
+        } else {
+            return runtime.getFalse();
+        }
     }
 
     private static JRubyFile file(IRubyObject pathOrFile) {
