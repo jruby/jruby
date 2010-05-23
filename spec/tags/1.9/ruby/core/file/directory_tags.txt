@@ -1,1 +1,0 @@
-fails:File.directory? accepts an object that has a #to_path method

@@ -28,12 +28,16 @@
 
 package org.jruby.environment;
 
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 
 import org.jruby.Ruby;
+import org.jruby.util.ByteList;
 
 public class OSEnvironment {
     /**
@@ -72,12 +76,20 @@ public class OSEnvironment {
            return getAsMapOfRubyStrings(runtime, System.getProperties().entrySet());
     }
     
-	private static Map getAsMapOfRubyStrings(Ruby runtime, Set entrySet) {
+	private static Map getAsMapOfRubyStrings(Ruby runtime, Set<Map.Entry<Object, Object>> entrySet) {
 		Map envs = new HashMap();
-		for (Iterator iter = entrySet.iterator(); iter.hasNext();) {
-			Map.Entry entry  = (Map.Entry) iter.next();
-            envs.put(runtime.newString(entry.getKey().toString()),runtime.newString(entry.getValue().toString()));
+        Encoding encoding = EncodingDB.getEncodings().get(Charset.defaultCharset().name().getBytes()).getEncoding();
+        
+		for (Map.Entry<Object, Object> entry : entrySet) {
+            String value = (String)entry.getValue();
+            String key = (String)entry.getKey();
+
+            ByteList keyBytes = new ByteList(key.getBytes(), encoding);
+            ByteList valueBytes = new ByteList(value.getBytes(), encoding);
+
+            envs.put(runtime.newString(keyBytes), runtime.newString(valueBytes));
 		}
+        
 		return envs;
 	}
 }
