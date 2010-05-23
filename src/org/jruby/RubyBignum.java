@@ -599,7 +599,11 @@ public class RubyBignum extends RubyInteger {
             return coerceBin(context, "**", other);
 
         }
-        return RubyNumeric.dbl2num(runtime, Math.pow(big2dbl(this), d));
+        double pow = Math.pow(big2dbl(this), d);
+        if (Double.isInfinite(pow)) {
+            return RubyFloat.newFloat(runtime, pow);
+        }
+        return RubyNumeric.dbl2num(runtime, pow);
     }    
     
     /** rb_big_and
