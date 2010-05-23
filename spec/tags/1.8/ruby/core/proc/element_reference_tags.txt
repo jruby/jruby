@@ -1,1 +1,0 @@
-fails(JRUBY-4180):Proc#[] can receive block arguments
