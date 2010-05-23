@@ -35,6 +35,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
@@ -145,6 +146,7 @@ public class RubyMethod extends RubyObject implements DataType {
     @Override
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyMethod)) return context.getRuntime().getFalse();
+        if (method instanceof ProcMethod) return context.getRuntime().newBoolean(((ProcMethod) method).isSame(((RubyMethod) other).getMethod()));
         RubyMethod otherMethod = (RubyMethod)other;
         return context.getRuntime().newBoolean(implementationModule == otherMethod.implementationModule &&
                                        originModule == otherMethod.originModule &&

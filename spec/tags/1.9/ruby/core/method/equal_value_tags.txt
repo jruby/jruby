@@ -1,2 +1,1 @@
-fails:Method#== returns true for methods defined using the same block/proc
 fails:Method#== returns true for the same method missing

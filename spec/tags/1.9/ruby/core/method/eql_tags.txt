@@ -1,2 +1,1 @@
-fails:Method#eql? returns true for methods defined using the same block/proc
 fails:Method#eql? returns true for the same method missing
