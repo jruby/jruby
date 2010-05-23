@@ -329,63 +329,63 @@ public class RubyProc extends RubyObject implements DataType {
         Ruby runtime = context.getRuntime();
         RubyArray parms = RubyArray.newEmptyArray(runtime);
         ArgsNode args;
-        if (this.getBlock().getBody() instanceof Interpreted19Block) {
-            // argument names are easily accessible from interpreter
-            RubyArray elem = RubyArray.newEmptyArray(runtime);
-            args = ((Interpreted19Block) this.getBlock().getBody()).getArgs();
 
-            // required parameters
-            List<Node> children = new ArrayList();
-            if (args.getPreCount() > 0) children.addAll(args.getPre().childNodes());
-            if (args.getPostCount() > 0) children.addAll(args.getPost().childNodes());
+        if (!(this.getBlock().getBody() instanceof Interpreted19Block))
+            return parms;
 
-            Iterator iter = children.iterator();
-            while (iter.hasNext()) {
-                Node node = (Node) iter.next();
-                elem = RubyArray.newEmptyArray(runtime);
-                elem.add(RubySymbol.newSymbol(runtime, block.type.equals(Block.Type.LAMBDA) ? "req" : "opt"));
-                if (node instanceof ArgumentNode) {
-                    elem.add(RubySymbol.newSymbol(runtime, ((ArgumentNode) node).getName()));
-                }
-                parms.add(elem);
+        // argument names are easily accessible from interpreter
+        RubyArray elem = RubyArray.newEmptyArray(runtime);
+        args = ((Interpreted19Block) this.getBlock().getBody()).getArgs();
+
+        // required parameters
+        List<Node> children = new ArrayList();
+        if (args.getPreCount() > 0) children.addAll(args.getPre().childNodes());
+        if (args.getPostCount() > 0) children.addAll(args.getPost().childNodes());
+
+        Iterator iter = children.iterator();
+        while (iter.hasNext()) {
+            Node node = (Node) iter.next();
+            elem = RubyArray.newEmptyArray(runtime);
+            elem.add(RubySymbol.newSymbol(runtime, block.type.equals(Block.Type.LAMBDA) ? "req" : "opt"));
+            if (node instanceof ArgumentNode) {
+                elem.add(RubySymbol.newSymbol(runtime, ((ArgumentNode) node).getName()));
             }
+            parms.add(elem);
+        }
 
-            // optional parameters
-            if (args.getOptArgs() != null) {
-                 children = args.getOptArgs().childNodes();
-                if (! children.isEmpty()) {
-                    iter = children.iterator();
-                    while (iter.hasNext()) {
-                        Node node = (Node) iter.next();
-                        elem = RubyArray.newEmptyArray(runtime);
-                        elem.add(RubySymbol.newSymbol(runtime, "opt"));
-                        if (node instanceof OptArgNode) {
-                            elem.add(RubySymbol.newSymbol(runtime, ((OptArgNode) node).getName()));
-                        }
-                        parms.add(elem);
+        // optional parameters
+        if (args.getOptArgs() != null) {
+             children = args.getOptArgs().childNodes();
+            if (! children.isEmpty()) {
+                iter = children.iterator();
+                while (iter.hasNext()) {
+                    Node node = (Node) iter.next();
+                    elem = RubyArray.newEmptyArray(runtime);
+                    elem.add(RubySymbol.newSymbol(runtime, "opt"));
+                    if (node instanceof OptArgNode) {
+                        elem.add(RubySymbol.newSymbol(runtime, ((OptArgNode) node).getName()));
                     }
+                    parms.add(elem);
                 }
             }
-            
-            ArgumentNode rest = args.getRestArgNode();
-            if (rest != null) {
-                elem = RubyArray.newEmptyArray(runtime);
-                elem.add(RubySymbol.newSymbol(runtime, "rest"));
-                elem.add(RubySymbol.newSymbol(runtime, rest.getName()));
-                parms.add(elem);
-            }
+        }
 
-            BlockArgNode blockArg = args.getBlockArgNode();
-            if (blockArg != null) {
-                elem = RubyArray.newEmptyArray(runtime);
-                elem.add(RubySymbol.newSymbol(runtime, "block"));
-                elem.add(RubySymbol.newSymbol(runtime, blockArg.getName()));
-                parms.add(elem);
-            }
+        ArgumentNode rest = args.getRestArgNode();
+        if (rest != null) {
+            elem = RubyArray.newEmptyArray(runtime);
+            elem.add(RubySymbol.newSymbol(runtime, "rest"));
+            elem.add(RubySymbol.newSymbol(runtime, rest.getName()));
+            parms.add(elem);
+        }
 
+        BlockArgNode blockArg = args.getBlockArgNode();
+        if (blockArg != null) {
+            elem = RubyArray.newEmptyArray(runtime);
+            elem.add(RubySymbol.newSymbol(runtime, "block"));
+            elem.add(RubySymbol.newSymbol(runtime, blockArg.getName()));
+            parms.add(elem);
         }
         
         return parms;
-
     }
 }
