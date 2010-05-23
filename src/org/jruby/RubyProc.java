@@ -346,7 +346,7 @@ public class RubyProc extends RubyObject implements DataType {
         while (iter.hasNext()) {
             Node node = (Node) iter.next();
             elem = RubyArray.newEmptyArray(runtime);
-            elem.add(RubySymbol.newSymbol(runtime, block.type.equals(Block.Type.LAMBDA) ? "req" : "opt"));
+            elem.add(RubySymbol.newSymbol(runtime, this.isLambda() ? "req" : "opt"));
             if (node instanceof ArgumentNode) {
                 elem.add(RubySymbol.newSymbol(runtime, ((ArgumentNode) node).getName()));
             }
@@ -386,6 +386,19 @@ public class RubyProc extends RubyObject implements DataType {
             parms.add(elem);
         }
         
-        return parms;
+       return parms;
+    }
+
+    @JRubyMethod(name = "lambda?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject lambda_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(isLambda());
+    }
+
+    private boolean isLambda() {
+        return type.equals(Block.Type.LAMBDA);
+    }
+
+    private boolean isProc() {
+        return type.equals(Block.Type.PROC);
     }
 }
