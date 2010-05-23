@@ -339,8 +339,6 @@ public class RubyProc extends RubyObject implements DataType {
             if (args.getPreCount() > 0) children.addAll(args.getPre().childNodes());
             if (args.getPostCount() > 0) children.addAll(args.getPost().childNodes());
 
-//            if (children.isEmpty()) return parms;
-
             Iterator iter = children.iterator();
             while (iter.hasNext()) {
                 Node node = (Node) iter.next();
