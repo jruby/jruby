@@ -362,6 +362,15 @@ public class RubyObject extends RubyBasicObject {
         return context.getRuntime().newBoolean(equalInternal(context, this, other));
     }
 
+    @JRubyMethod(name = "<=>", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        if (this == other || this.callMethod(context, "==", other).isTrue()){
+            return RubyFixnum.zero(runtime);
+        }
+        return runtime.getNil();
+    }
+
     /**
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "==" method.
