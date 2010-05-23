@@ -49,8 +49,6 @@ import java.util.Set;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.exceptions.JumpException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -154,7 +152,12 @@ public class RubyObject extends RubyBasicObject {
      */
     public static class ObjectMethods {
         @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
-        public static IRubyObject intialize(IRubyObject self) {
+        public static IRubyObject initialize(IRubyObject self) {
+            return self.getRuntime().getNil();
+        }
+
+        @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, rest = true, compat = CompatVersion.RUBY1_9)
+        public static IRubyObject initialize19(IRubyObject self, IRubyObject[] args) {
             return self.getRuntime().getNil();
         }
     }
