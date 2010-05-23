@@ -1,4 +1,0 @@
-fails(JRUBY-4457):Proc#parameters regards parameters with default values as optional
-fails(JRUBY-4457):Proc#parameters sets the first element of each sub-Array to :rest for parameters prefixed with asterisks
-fails(JRUBY-4457):Proc#parameters sets the first element of each sub-Array to :block for parameters prefixed with ampersands
-fails(JRUBY-4457):Proc#parameters sets the second element of each sub-Array to the name of the argument

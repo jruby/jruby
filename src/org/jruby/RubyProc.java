@@ -43,6 +43,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.OptArgNode;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.BlockStaticScope;
@@ -338,7 +339,7 @@ public class RubyProc extends RubyObject implements DataType {
             if (args.getPreCount() > 0) children.addAll(args.getPre().childNodes());
             if (args.getPostCount() > 0) children.addAll(args.getPost().childNodes());
 
-            if (children.isEmpty()) return parms;
+//            if (children.isEmpty()) return parms;
 
             Iterator iter = children.iterator();
             while (iter.hasNext()) {
@@ -349,6 +350,23 @@ public class RubyProc extends RubyObject implements DataType {
                     elem.add(RubySymbol.newSymbol(runtime, ((ArgumentNode) node).getName()));
                 }
                 parms.add(elem);
+            }
+
+            // optional parameters
+            if (args.getOptArgs() != null) {
+                 children = args.getOptArgs().childNodes();
+                if (! children.isEmpty()) {
+                    iter = children.iterator();
+                    while (iter.hasNext()) {
+                        Node node = (Node) iter.next();
+                        elem = RubyArray.newEmptyArray(runtime);
+                        elem.add(RubySymbol.newSymbol(runtime, "opt"));
+                        if (node instanceof OptArgNode) {
+                            elem.add(RubySymbol.newSymbol(runtime, ((OptArgNode) node).getName()));
+                        }
+                        parms.add(elem);
+                    }
+                }
             }
             
             ArgumentNode rest = args.getRestArgNode();
