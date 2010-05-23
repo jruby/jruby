@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -332,8 +333,13 @@ public class RubyDigest {
             RubyString filenameStr = filename.convertToString();
             
             if (RubyFileTest.directory_p(runtime, filenameStr).isTrue()) {
-                throw runtime.newErrnoEISDirError();
+                if (Platform.IS_WINDOWS) {
+                    throw runtime.newErrnoEACCESError(filenameStr.asJavaString());
+                } else {
+                    throw runtime.newErrnoEISDirError(filenameStr.asJavaString());
+                }
             }
+
             IRubyObject io = RuntimeHelpers.invoke(ctx, runtime.getFile(),
                     "open", filenameStr, runtime.newString("rb"));
 
