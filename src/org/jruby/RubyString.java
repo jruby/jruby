@@ -108,6 +108,7 @@ import org.jruby.util.string.JavaCrypt;
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
 public class RubyString extends RubyObject implements EncodingCapable {
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
+    private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     // string doesn't share any resources
@@ -374,6 +375,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         assert value != null;
         byte[] bytes = RubyEncoding.encodeUTF8(value);
         this.value = new ByteList(bytes, false);
+        this.value.setEncoding(UTF8);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {

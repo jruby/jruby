@@ -1,2 +1,0 @@
-fails:Dir.chdir calls #to_path on the argument if it's not a String
-fails:Dir.chdir prefers #to_path over #to_str

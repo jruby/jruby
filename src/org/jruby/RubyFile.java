@@ -720,10 +720,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     public static RubyString get_path(ThreadContext context, IRubyObject obj) {
         if (context.getRuntime().is1_9()) {
-            IRubyObject str = obj.checkStringType();
-            if (!str.isNil()) {
-                return (RubyString) str;
+            if (obj instanceof RubyString) {
+                return (RubyString)obj;
             }
+            
             if (obj.respondsTo("to_path")) {
                 obj = obj.callMethod(context, "to_path");
             }
