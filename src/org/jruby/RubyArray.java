@@ -3397,12 +3397,14 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "product", rest = true, compat = CompatVersion.RUBY1_8)
     public IRubyObject product(ThreadContext context, IRubyObject[] args) {
-        return product(context, args, Block.NULL_BLOCK);
+        return product19(context, args, Block.NULL_BLOCK);
     }
     
     @JRubyMethod(name = "product", rest = true, compat = CompatVersion.RUBY1_9)
-    public IRubyObject product(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject product19(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
+
+        boolean useBlock = block.isGiven();
 
         int n = args.length + 1;
         RubyArray arrays[] = new RubyArray[n];
@@ -3415,14 +3417,12 @@ public class RubyArray extends RubyObject implements List {
         for (int i = 0; i < n; i++) {
             int k = arrays[i].realLength;
             int l = resultLen;
-            if (k == 0) return newEmptyArray(runtime);
+            if (k == 0) return useBlock ? this : newEmptyArray(runtime);
             resultLen *= k;
             if (resultLen < k || resultLen < l || resultLen / k != l) {
                 throw runtime.newRangeError("too big to product");
             }
         }
-
-        boolean useBlock = block.isGiven();
 
         RubyArray result = useBlock ? null : newArray(runtime, resultLen);
 
