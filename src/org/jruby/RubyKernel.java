@@ -298,10 +298,14 @@ public class RubyKernel {
 
     @JRubyMethod(name = "abort", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject abort(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+
         if(args.length == 1) {
-            context.getRuntime().getGlobalVariables().get("$stderr").callMethod(context,"puts",args[0]);
+            runtime.getGlobalVariables().get("$stderr").callMethod(context,"puts",args[0]);
         }
-        throw new MainExitException(1,true);
+        
+        exit(runtime, new IRubyObject[] { runtime.getFalse() }, false);
+        return runtime.getNil(); // not reached
     }
 
     @JRubyMethod(name = "Array", required = 1, module = true, visibility = PRIVATE)
@@ -519,6 +523,11 @@ public class RubyKernel {
     @JRubyMethod(name = "readlines", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyArgsFile.readlines(context, context.getRuntime().getArgsFile(), args);
+    }
+
+    @JRubyMethod(name = "respond_to_missing?", module = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol, IRubyObject isPrivate) {
+        return context.getRuntime().getFalse();
     }
 
     /** Returns value of $_.
