@@ -3498,13 +3498,13 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
     
-    private void permute(ThreadContext context, int n, int r, int[]p, int index, boolean[]used, RubyArray values, Block block) {
+    private void permute(ThreadContext context, int n, int r, int[]p, int index, boolean[]used, boolean repeat, RubyArray values, Block block) {
         for (int i = 0; i < n; i++) {
-            if (!used[i]) {
+            if (repeat || !used[i]) {
                 p[index] = i;
                 if (index < r - 1) {
                     used[i] = true;
-                    permute(context, n, r, p, index + 1, used, values, block);
+                    permute(context, n, r, p, index + 1, used, repeat, values, block);
                     used[i] = false;
                 } else {
                     RubyArray result = newArray(context.getRuntime(), r);
@@ -3525,15 +3525,25 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "permutation")
     public IRubyObject permutation(ThreadContext context, IRubyObject num, Block block) {
-        return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), block) : enumeratorize(context.getRuntime(), this, "permutation", num);
+        return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), false, block) : enumeratorize(context.getRuntime(), this, "permutation", num);
     }
 
     @JRubyMethod(name = "permutation")
     public IRubyObject permutation(ThreadContext context, Block block) {
-        return block.isGiven() ? permutationCommon(context, realLength, block) : enumeratorize(context.getRuntime(), this, "permutation");
+        return block.isGiven() ? permutationCommon(context, realLength, false, block) : enumeratorize(context.getRuntime(), this, "permutation");
     }
 
-    private IRubyObject permutationCommon(ThreadContext context, int r, Block block) {
+    @JRubyMethod(name = "repeated_permutation", compat = CompatVersion.RUBY1_9)
+    public IRubyObject repeated_permutation(ThreadContext context, IRubyObject num, Block block) {
+        return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), true, block) : enumeratorize(context.getRuntime(), this, "repeated_permutation", num);
+    }
+
+    @JRubyMethod(name = "repeated_permutation", compat = CompatVersion.RUBY1_9)
+    public IRubyObject repeated_permutation(ThreadContext context, Block block) {
+        return block.isGiven() ? permutationCommon(context, realLength, true, block) : enumeratorize(context.getRuntime(), this, "repeated_permutation");
+    }
+
+    private IRubyObject permutationCommon(ThreadContext context, int r, boolean repeat, Block block) {
         if (r == 0) {
             block.yield(context, newEmptyArray(context.getRuntime()));
         } else if (r == 1) {
@@ -3545,6 +3555,7 @@ public class RubyArray extends RubyObject implements List {
             permute(context, n, r,
                     new int[n], 0,
                     new boolean[n],
+                    repeat,
                     makeShared(begin, n, getMetaClass()), block);
         }
         return this;
