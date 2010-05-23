@@ -1,0 +1,1 @@
+windows(JRUBY-4186):FileTest.zero? returns true for NUL
