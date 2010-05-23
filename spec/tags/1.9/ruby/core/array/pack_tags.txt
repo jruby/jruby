@@ -47,3 +47,4 @@ fails:Array#pack with format 'a' returns result in ASCII-8BIT
 fails:Array#pack with format 'Z' treats a multibyte character just as a byte sequence
 fails:Array#pack with format 'Z' returns result in ASCII-8BIT
 fails:Array#pack with format 'm' ignores star parameter
+fails:Array#pack with format 'U' regards a integer as a Unicode codepoint and encodes into UTF-8 byte sequence

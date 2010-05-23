@@ -26,8 +26,10 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Converter")
@@ -61,5 +63,10 @@ public class RubyConverter extends RubyObject {
 
     public RubyConverter(Ruby runtime) {
         super(runtime, runtime.getConverter());
+    }
+
+    @JRubyMethod(name = "convpath", compat = CompatVersion.RUBY1_9)
+    public IRubyObject convpath(ThreadContext context) {
+        return context.getRuntime().getNil();
     }
 }
