@@ -1,32 +1,3 @@
-fails:File.open opens a file with mode num
-fails:File.open opens the file when passed mode, num and permissions
-fails:File.open opens a file that no exists when use File::WRONLY mode
-fails:File.open opens a file that no exists when use File::RDONLY mode
-fails:File.open opens a file that no exists when use File::EXCL mode
-fails:File.open opens a file that no exists when use File::NONBLOCK mode
-fails:File.open opens a file that no exists when use File::TRUNC mode
-fails:File.open opens a file that no exists when use File::NOCTTY mode
-fails:File.open opens a file that no exists when use File::CREAT mode
-fails:File.open can read in a block when call open with RDONLY mode
-fails:File.open raises an IO exception when write in a block opened with RDONLY mode
-fails:File.open can't write in a block when call open with File::WRONLY||File::RDONLY mode
-fails:File.open can't read in a block when call open with File::WRONLY||File::RDONLY mode
-fails:File.open can write in a block when call open with WRONLY mode
-fails:File.open raises an IOError when read in a block opened with WRONLY mode
-fails:File.open raises an IOError when read in a block opened with File::WRONLY|File::APPEND mode
 fails:File.open raises an IOError when read in a block opened with File::RDONLY|File::APPEND mode
-fails:File.open can read and write in a block when call open with RDWR mode
-fails:File.open can't read in a block when call open with File::EXCL mode
-fails:File.open can read in a block when call open with File::EXCL mode
-fails:File.open can read and write in a block when call open with File::RDWR|File::EXCL mode
-fails:File.open raises an Errorno::EEXIST if the file exists when open with File::CREAT|File::EXCL
-fails:File.open create a new file when use File::WRONLY|File::APPEND mode
-fails:File.open opens a file when use File::WRONLY|File::APPEND mode
 fails:File.open raises an IOError if the file exists when open with File::RDONLY|File::APPEND
-fails:File.open truncates the file when passed File::TRUNC mode
-fails:File.open can't read in a block when call open with File::TRUNC mode
-fails:File.open opens a file when use File::WRONLY|File::TRUNC mode
-fails:File.open can't write in a block when call open with File::TRUNC mode
-fails:File.open raises an Errorno::EEXIST if the file exists when open with File::RDONLY|File::TRUNC
 fails:File.open opens directories
-fails:File.open raises an IOError when read in a block opened with 'a' mode
