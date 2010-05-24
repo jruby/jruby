@@ -1081,6 +1081,7 @@ public class RubyIO extends RubyObject {
                     RubyException rubyEx = re.getException();
                     if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
                         // MRI behavior: swallow StandardErorrs
+                        runtime.getGlobalVariables().clear("$!");
                     } else {
                         throw re;
                     }
