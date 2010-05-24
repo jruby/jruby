@@ -1,3 +1,0 @@
-fails:Time#- decrements the time by the specified amount
-fails:Time#- accepts arguments that can be coerced into Rational
-fails:Time#- tracks microseconds

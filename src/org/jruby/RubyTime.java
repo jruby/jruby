@@ -78,6 +78,8 @@ public class RubyTime extends RubyObject {
     private final static DateTimeFormatter TO_S_FORMATTER = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss Z yyyy").withLocale(Locale.ENGLISH);
     private final static DateTimeFormatter TO_S_UTC_FORMATTER = DateTimeFormat.forPattern("EEE MMM dd HH:mm:ss 'UTC' yyyy").withLocale(Locale.ENGLISH);
 
+    private final static DateTimeFormatter TO_S_FORMATTER_19 = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss Z").withLocale(Locale.ENGLISH);
+    private final static DateTimeFormatter TO_S_UTC_FORMATTER_19 = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss 'UTC'").withLocale(Locale.ENGLISH);
     // There are two different popular TZ formats: legacy (AST+3:00:00, GMT-3), and
     // newer one (US/Pacific, America/Los_Angeles). This pattern is to detect
     // the legacy TZ format in order to convert it to the newer format
@@ -344,19 +346,34 @@ public class RubyTime extends RubyObject {
 
         return 0;
     }
-    
-    @JRubyMethod(name = "+", required = 1)
-    public IRubyObject op_plus(IRubyObject other) {
-        long time = getTimeInMillis();
 
+    @JRubyMethod(name = "+", required = 1, compat = CompatVersion.RUBY1_8)
+    public IRubyObject op_plus(IRubyObject other) {
         if (other instanceof RubyTime) {
             throw getRuntime().newTypeError("time + time ?");
         }
-        
         long adjustment = Math.round(RubyNumeric.num2dbl(other) * 1000000);
+
+        return opPlusCommon(adjustment);
+    }
+
+    @JRubyMethod(name = "+", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
+        checkOpCoercion(context, other);
+        if (other instanceof RubyTime) {
+            throw getRuntime().newTypeError("time + time ?");
+        }
+        other = other.callMethod(context, "to_r");
+
+        long adjustment = new Double(RubyNumeric.num2dbl(other) * 1000000).longValue();
+        return opPlusCommon(adjustment);
+    }
+
+    private IRubyObject opPlusCommon(long adjustment) {
         long micro = adjustment % 1000;
         adjustment = adjustment / 1000;
 
+        long time = getTimeInMillis();
         time += adjustment;
 
         if ((getUSec() + micro) >= 1000) {
@@ -372,7 +389,17 @@ public class RubyTime extends RubyObject {
 
         return newTime;
     }
-    
+
+    private void checkOpCoercion(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyString) {
+            throw context.getRuntime().newTypeError("no implicit conversion to rational from string");
+        } else if (other.isNil()) {
+            throw context.getRuntime().newTypeError("no implicit conversion to rational from nil");
+        } else if (!other.respondsTo("to_r")){
+            throw context.getRuntime().newTypeError("can't convert " + other.getMetaClass().getBaseName() + " into Rational");
+        }
+    }
+
     private IRubyObject opMinus(RubyTime other) {
         long time = getTimeInMillis() * 1000 + getUSec();
 
@@ -381,10 +408,20 @@ public class RubyTime extends RubyObject {
         return RubyFloat.newFloat(getRuntime(), time / 1000000.0); // float number of seconds
     }
 
-    @JRubyMethod(name = "-", required = 1)
+    @JRubyMethod(name = "-", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_minus(IRubyObject other) {
         if (other instanceof RubyTime) return opMinus((RubyTime) other);
-        
+        return opMinusCommon(other);
+    }
+
+    @JRubyMethod(name = "-", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_minus19(ThreadContext context, IRubyObject other) {
+        checkOpCoercion(context, other);
+        if (other instanceof RubyTime) return opMinus((RubyTime) other);
+        return opMinusCommon(other.callMethod(context, "to_r"));
+    }
+
+    private IRubyObject opMinusCommon(IRubyObject other) {
         long time = getTimeInMillis();
         long adjustment = Math.round(RubyNumeric.num2dbl(other) * 1000000);
         long micro = adjustment % 1000;
@@ -444,14 +481,23 @@ public class RubyTime extends RubyObject {
         return getRuntime().newString(result);
     }
 
-    @JRubyMethod(name = {"to_s", "inspect"})
+    @JRubyMethod(name = {"to_s", "inspect"}, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject to_s() {
+        return inspectCommon(TO_S_FORMATTER, TO_S_UTC_FORMATTER);
+    }
+
+    @JRubyMethod(name = {"to_s", "inspect"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_s19() {
+        return inspectCommon(TO_S_FORMATTER_19, TO_S_UTC_FORMATTER_19);
+    }
+
+    private IRubyObject inspectCommon(DateTimeFormatter formatter, DateTimeFormatter utcFormatter) {
         DateTimeFormatter simpleDateFormat;
         if (dt.getZone() == DateTimeZone.UTC) {
-            simpleDateFormat = TO_S_UTC_FORMATTER;
+            simpleDateFormat = utcFormatter;
         } else {
-            simpleDateFormat = TO_S_FORMATTER;
+            simpleDateFormat = formatter;
         }
 
         String result = simpleDateFormat.print(dt);
@@ -678,8 +724,8 @@ public class RubyTime extends RubyObject {
             // the first argument after a decimal point (i.e., "floor").
             // However in the case of a single argument, any portion after
             // the decimal point is honored.
-            if (arg instanceof RubyFloat) {
-                double dbl = ((RubyFloat) arg).getDoubleValue();
+            if (arg instanceof RubyFloat || arg instanceof RubyRational) {
+                double dbl = RubyNumeric.num2dbl(arg);
                 long micro = Math.round((dbl - seconds) * 1000000);
                 if(dbl < 0)
                     micro += 1000000;
