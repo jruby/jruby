@@ -1150,21 +1150,7 @@ public class RubyIO extends RubyObject {
     public IRubyObject op_binmode(ThreadContext context) {
         return RubyBoolean.newBoolean(context.getRuntime(), openFile.isBinmode());
     }
-    
-    /** @deprecated will be removed in 1.2 */
-    protected void checkInitialized() {
-        if (openFile == null) {
-            throw getRuntime().newIOError("uninitialized stream");
-        }
-    }
-    
-    /** @deprecated will be removed in 1.2 */
-    protected void checkClosed() {
-        if (openFile.getMainStream() == null && openFile.getPipeStream() == null) {
-            throw getRuntime().newIOError("closed stream");
-        }
-    }
-    
+
     @JRubyMethod(name = "syswrite", required = 1)
     public IRubyObject syswrite(ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.getRuntime();
