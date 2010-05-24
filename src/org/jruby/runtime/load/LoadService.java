@@ -544,7 +544,7 @@ public class LoadService {
                 state.library = new ClassExtensionLibrary(theClass);
             } catch (Exception ee) {
                 state.library = null;
-                runtime.getGlobalVariables().set("$!", runtime.getNil());
+                runtime.getGlobalVariables().clear("$!");
             }
 
             // If there was a good library before, we go back to that

@@ -461,6 +461,14 @@ class TestIO < Test::Unit::TestCase
     end
   end
 
+  # JRUBY-4821
+  def test_clear_dollar_bang_after_open_block
+    open(__FILE__) do |io|
+      io.close
+    end
+    assert_nil $!
+  end
+
   private
   def ensure_files(*files)
     files.each {|f| File.open(f, "w") {|g| g << " " } }
