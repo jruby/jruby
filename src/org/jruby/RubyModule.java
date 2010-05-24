@@ -352,9 +352,13 @@ public class RubyModule extends RubyObject {
      */
     public String getName() {
         if (fullName == null) {
-            fullName = calculateFullName();
+            calculateName();
         }
         return fullName;
+    }
+
+    private void calculateName() {
+        fullName = calculateFullName();
     }
 
     private String calculateFullName() {
@@ -2307,7 +2311,12 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        return fastSetConstant(validateConstant(symbol.asJavaString()).intern(), value);
+        IRubyObject constant = fastSetConstant(validateConstant(symbol.asJavaString()).intern(), value);
+
+        if (constant instanceof RubyModule) {
+            ((RubyModule)constant).calculateName();
+        }
+        return constant;
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
