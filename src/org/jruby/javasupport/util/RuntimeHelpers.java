@@ -358,7 +358,7 @@ public class RuntimeHelpers {
         if (methodMissing.isUndefined() || methodMissing == runtime.getDefaultMethodMissing()) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing);
+        return new MethodMissingMethod(methodMissing, callType);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -372,7 +372,7 @@ public class RuntimeHelpers {
         if (methodMissing.isUndefined() || methodMissing == runtime.getDefaultMethodMissing()) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing);
+        return new MethodMissingMethod(methodMissing, callType);
     }
 
     public static DynamicMethod selectMethodMissing(RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -386,18 +386,21 @@ public class RuntimeHelpers {
         if (methodMissing.isUndefined() || methodMissing == runtime.getDefaultMethodMissing()) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing);
+        return new MethodMissingMethod(methodMissing, callType);
     }
 
     private static class MethodMissingMethod extends DynamicMethod {
-        private DynamicMethod delegate;
+        private final DynamicMethod delegate;
+        private final CallType lastCallStatus;
 
-        public MethodMissingMethod(DynamicMethod delegate) {
+        public MethodMissingMethod(DynamicMethod delegate, CallType lastCallStatus) {
             this.delegate = delegate;
+            this.lastCallStatus = lastCallStatus;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            context.setLastCallStatus(lastCallStatus);
             return this.delegate.call(context, self, clazz, "method_missing", prepareMethodMissingArgs(args, context, name), block);
         }
 
