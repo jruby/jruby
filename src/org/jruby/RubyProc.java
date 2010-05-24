@@ -210,9 +210,12 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "to_s")
     @Override
     public IRubyObject to_s() {
-        return RubyString.newString(getRuntime(), 
-                "#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" + 
-                file + ":" + (line + 1) + ">");
+        StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
+                file + ":" + (line + 1));
+        if (isLambda())
+            sb.append(" (lambda)");
+        sb.append(">");
+        return RubyString.newString(getRuntime(), sb.toString());
     }
 
     @JRubyMethod(name = "binding")
