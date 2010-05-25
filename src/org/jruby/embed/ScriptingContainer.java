@@ -36,7 +36,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +57,6 @@ import org.jruby.embed.internal.SingletonLocalContextProvider;
 import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
 import org.jruby.embed.io.ReaderInputStream;
 import org.jruby.embed.io.WriterOutputStream;
-import org.jruby.embed.util.PropertyReader;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
@@ -158,7 +156,6 @@ import org.jruby.util.KCode;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
-    private PropertyReader propertyReader = null;
     private Map basicProperties = null;
     private LocalContextProvider provider = null;
     private EmbedRubyRuntimeAdapter runtimeAdapter = new EmbedRubyRuntimeAdapterImpl(this);
@@ -180,10 +177,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         this(LocalContextScope.SINGLETON, behavior);
     }
 
-    public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior) {
-        this(scope, behavior, null);
-    }
-
     /**
      * Constructs a ScriptingContainer with a specified local context scope,
      * local variable behavior and property file.
@@ -196,13 +189,9 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @param scope is one of a local context scope defined by {@link LocalContextScope}
      * @param behavior is one of a local variable behavior defined by {@link LocalVariableBehavior}
-     * @param propertyname is a property file name
      */
-    public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, String propertyname) {
+    public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior) {
         provider = getProviderInstance(scope, behavior);
-        if (propertyname != null && propertyname.length() != 0) {
-            propertyReader = new PropertyReader(propertyname);
-        }
         try {
             initConfig();
         } catch (URISyntaxException ex) {
@@ -932,8 +921,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public String[] getProperty(String key) {
         if (basicProperties.containsKey(key)) {
             return (String[]) basicProperties.get(key);
-        } else if (propertyReader != null) {
-            return propertyReader.getProperty(key);
         } else {
             return null;
         }
