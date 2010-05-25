@@ -1453,7 +1453,7 @@ public class RubyKernel {
         return RubyString.newStringNoCopy(runtime, out, 0, length);
     }
 
-    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyInteger srand(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
 
@@ -1468,7 +1468,7 @@ public class RubyKernel {
         return runtime.newFixnum(oldRandomSeed);
     }
     
-    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyInteger srand(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         RubyInteger integerSeed = arg.convertToInteger("to_int");
         Ruby runtime = context.getRuntime();
@@ -1490,13 +1490,13 @@ public class RubyKernel {
         return RubyRandom.srandCommon(context, recv, arg.convertToInteger("to_int"), true);
     }
 
-    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyNumeric rand(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         return RubyFloat.newFloat(runtime, runtime.getRandom().nextDouble());
     }
 
-    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyNumeric rand(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         Random random = runtime.getRandom();
