@@ -70,6 +70,7 @@ class MSpecScript
 
   # Enable features
   MSpec.enable_feature :fiber
+  MSpec.enable_feature :fiber_library
   MSpec.enable_feature :encoding
 
   if WINDOWS

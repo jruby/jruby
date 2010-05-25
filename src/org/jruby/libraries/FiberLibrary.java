@@ -36,9 +36,11 @@ import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
+import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
@@ -47,7 +49,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
-import org.jruby.runtime.CallbackFactory;
 
 import static org.jruby.runtime.Visibility.*;
 
@@ -94,8 +95,13 @@ public class FiberLibrary implements Library {
 
         @JRubyMethod(rest = true, visibility = PRIVATE)
         public IRubyObject initialize(ThreadContext context, final IRubyObject[] args, Block block) {
-            this.block = block;
             final Ruby runtime = context.getRuntime();
+
+            if (block == null || !block.isGiven()) {
+                throw runtime.newArgumentError("tried to create Proc object without a block");
+            }
+
+            this.block = block;
             this.parent = context.getThread();
             this.result = runtime.getNil();
             this.runnable = new Runnable() {
@@ -106,6 +112,13 @@ public class FiberLibrary implements Library {
                         context.setFiber(Fiber.this);
                         try {
                             result = Fiber.this.block.yieldArray(context, result, null, null);
+                        } catch (JumpException.RetryJump rtry) {
+                            // FIXME: technically this should happen before the block is executed
+                            parent.raise(new IRubyObject[] {runtime.newSyntaxError("Invalid retry").getException()}, Block.NULL_BLOCK);
+                        } catch (JumpException.BreakJump brk) {
+                            parent.raise(new IRubyObject[] {runtime.newLocalJumpError(Reason.BREAK, runtime.getNil(), "break from proc-closure").getException()}, Block.NULL_BLOCK);
+                        } catch (JumpException.ReturnJump ret) {
+                            parent.raise(new IRubyObject[] {runtime.newLocalJumpError(Reason.RETURN, runtime.getNil(), "unexpected return").getException()}, Block.NULL_BLOCK);
                         } catch (RaiseException re) {
                             // re-raise exception in parent thread
                             parent.raise(new IRubyObject[] {re.getException()}, Block.NULL_BLOCK);
@@ -193,12 +206,9 @@ public class FiberLibrary implements Library {
                 throw context.getRuntime().newFiberError("can't yield from root fiber");
             }
 
-            // FIXME: Broken but behaving
-            if (args.length == 0) {
-                fiber.result = context.getRuntime().getNil();
-            } else if (args.length == 1) {
+            if (args.length == 1) {
                 fiber.result = args[0];
-            } else {
+            } else if (args.length > 0) {
                 fiber.result = context.getRuntime().newArrayNoCopyLight(args);
             }
             synchronized (fiber.yieldLock) {
@@ -210,7 +220,7 @@ public class FiberLibrary implements Library {
                     throw context.getRuntime().newConcurrencyError(ie.getLocalizedMessage());
                 }
             }
-            return context.getRuntime().getNil();
+            return fiber.result;
         }
     }
 

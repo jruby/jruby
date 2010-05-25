@@ -1,2 +1,0 @@
-fails:Fiber.yield raises a FiberError if called from the root Fiber
-fails:Fiber.yield returns to the Fiber the value of the #resume call that invoked it
