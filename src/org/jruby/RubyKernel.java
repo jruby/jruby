@@ -1480,6 +1480,16 @@ public class RubyKernel {
         return runtime.newFixnum(oldRandomSeed);
     }
 
+    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject srand19(ThreadContext context, IRubyObject recv) {
+        return RubyRandom.srand(context, recv);
+    }
+
+    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject srand19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return RubyRandom.srandCommon(context, recv, arg.convertToInteger("to_int"), true);
+    }
+
     @JRubyMethod(name = "rand", module = true, visibility = PRIVATE)
     public static RubyNumeric rand(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
@@ -1491,16 +1501,34 @@ public class RubyKernel {
         Ruby runtime = context.getRuntime();
         Random random = runtime.getRandom();
 
+        return randCommon(context, runtime, random, recv, arg);
+    }
+
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyNumeric rand19(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        return RubyFloat.newFloat(runtime, RubyRandom.globalRandom.nextDouble());
+    }
+
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyNumeric rand19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        Random random = RubyRandom.globalRandom;
+
+        return randCommon(context, runtime, random, recv, arg);
+    }
+
+    private static RubyNumeric randCommon(ThreadContext context, Ruby runtime, Random random, IRubyObject recv, IRubyObject arg) {
         if (arg instanceof RubyBignum) {
             byte[] bigCeilBytes = ((RubyBignum) arg).getValue().toByteArray();
             BigInteger bigCeil = new BigInteger(bigCeilBytes).abs();
             byte[] randBytes = new byte[bigCeilBytes.length];
             random.nextBytes(randBytes);
             BigInteger result = new BigInteger(randBytes).abs().mod(bigCeil);
-            return new RubyBignum(runtime, result); 
+            return new RubyBignum(runtime, result);
         }
 
-        RubyInteger integerCeil = (RubyInteger)RubyKernel.new_integer(context, recv, arg); 
+        RubyInteger integerCeil = (RubyInteger)RubyKernel.new_integer(context, recv, arg);
         long ceil = Math.abs(integerCeil.getLongValue());
         if (ceil == 0) return RubyFloat.newFloat(runtime, random.nextDouble());
         if (ceil > Integer.MAX_VALUE) return runtime.newFixnum(Math.abs(random.nextLong()) % ceil);
