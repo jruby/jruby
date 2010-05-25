@@ -1,0 +1,1 @@
+fails(JRUBY-4456):Random.new_seed returns an arbitrary seed value each time
