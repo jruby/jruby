@@ -1,6 +1,0 @@
-fails(JRUBY-4645):The defined? keyword for an expression returns 'assignment' for assigning multiple variables
-fails(JRUBY-4656):The defined? keyword for an expression returns nil for an expression with 'not' and an undefined method
-fails(JRUBY-4656):The defined? keyword for an expression returns nil for an expression with 'not' and an unset class variable
-fails(JRUBY-4656):The defined? keyword for an expression does not propagate an exception raised by a method in a 'not' expression
-fails(JRUBY-4656):The defined? keyword for an expression returns nil for an expression with '!' and an undefined method
-fails(JRUBY-4656):The defined? keyword for an expression returns nil for an expression with '!' and an unset class variable

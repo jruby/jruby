@@ -1292,6 +1292,9 @@ public class ASTCompiler {
             // these are all simple cases that don't require the heavier defined logic
             compileGetDefinition(node, context);
             break;
+        case NEWLINENODE:
+            compileGetDefinitionBase(((NewlineNode)node).getNextNode(), context);
+            break;
         default:
             BranchCallback reg = new BranchCallback() {
 
