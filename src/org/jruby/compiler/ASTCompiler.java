@@ -1288,6 +1288,7 @@ public class ASTCompiler {
         case CLASSVARNODE:
         case COLON2NODE:
         case COLON3NODE:
+        case CALLNODE:
             // these are all simple cases that don't require the heavier defined logic
             compileGetDefinition(node, context);
             break;
@@ -1364,8 +1365,30 @@ public class ASTCompiler {
             case OPASGNANDNODE:
             case OPASGNORNODE:
             case OPELEMENTASGNNODE:
+            case INSTASGNNODE: // simple assignment cases
                 context.pushString("assignment");
                 break;
+            case NOTNODE: // all these just evaluate and then do expression if there's no error
+            case ANDNODE:
+            case ORNODE:
+            case DSTRNODE:
+            case DREGEXPNODE:
+                {
+                    context.rescue(new BranchCallback() {
+
+                                public void branch(BodyCompiler context) {
+                                    compile(node, context, false);
+                                    context.pushString("expression");
+                                }
+                            }, JumpException.class,
+                            new BranchCallback() {
+
+                                public void branch(BodyCompiler context) {
+                                    context.pushNull();
+                                }
+                            }, String.class);
+                    break;
+                }
             case BACKREFNODE:
                 context.backref();
                 context.isInstanceOf(RubyMatchData.class,
