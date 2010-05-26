@@ -1,5 +1,4 @@
 fails:The defined? keyword returns 'local-variable' when defined? is called on a block var
-fails(JRUBY-4645):The defined? keyword for an expression returns 'assignment' for assigning multiple variables
 fails(JRUBY-4655):The defined? keyword when called with a method name having a local variable as receiver calls #respond_to_missing?
 fails(JRUBY-4655):The defined? keyword for an expression returns 'method' for an expression with '!~'
 fails(JRUBY-4655):The defined? keyword for an expression with a dynamic String returns 'expression' when the String contains a call to an undefined method
