@@ -151,13 +151,13 @@ public class RubyProc extends RubyObject implements DataType {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }
         
-        if (type == Block.Type.LAMBDA && procBlock == null) {
+        if (isLambda() && procBlock == null) {
             // TODO: warn "tried to create Proc object without a block"
         }
         
         block = procBlock.cloneBlock();
 
-        if (type == Block.Type.THREAD) {
+        if (isThread()) {
             // modify the block with a new backref/lastline-grabbing scope
             StaticScope oldScope = block.getBody().getStaticScope();
             StaticScope newScope = new BlockStaticScope(oldScope.getEnclosingScope(), oldScope.getVariables());
@@ -285,12 +285,12 @@ public class RubyProc extends RubyObject implements DataType {
         Ruby runtime = context.getRuntime();
 
         // lambda always just returns the value
-        if (target == jumpTarget && block.type == Block.Type.LAMBDA) {
+        if (target == jumpTarget && isLambda()) {
             return (IRubyObject) rj.getValue();
         }
 
         // returns can't propagate out of threads
-        if (type == Block.Type.THREAD) {
+        if (isThread()) {
             throw runtime.newThreadError("return can't jump across threads");
         }
 
@@ -408,7 +408,15 @@ public class RubyProc extends RubyObject implements DataType {
         return type.equals(Block.Type.LAMBDA);
     }
 
+    private boolean isNormal() {
+        return type.equals(Block.Type.NORMAL);
+    }
     private boolean isProc() {
         return type.equals(Block.Type.PROC);
     }
+
+    private boolean isThread() {
+        return type.equals(Block.Type.THREAD);
+    }
+
 }
