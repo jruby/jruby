@@ -171,10 +171,8 @@ public class JavaMethod extends JavaCallable {
         // Special classes like Collections.EMPTY_LIST are inner classes that are private but 
         // implement public interfaces.  Their methods are all public methods for the public 
         // interface.  Let these public methods execute via setAccessible(true). 
-        if (methodIsPublic &&
-            !Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
-            accessibleObject().setAccessible(true);
-        }
+        assert Modifier.isPublic(method.getDeclaringClass().getModifiers()) :
+            "we should not be trying to bind methods declared on non-public classes";
         
         returnConverter = JavaUtil.getJavaConverter(method.getReturnType());
     }
