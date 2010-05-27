@@ -79,7 +79,6 @@ public class IR_Module extends IR_ScopeImpl {
         String n = ROOT_METHOD_PREFIX + _name;
         _rootMethod = new IRMethod(this, new MetaObject(this), n, false);
         _rootMethod.addInstr(new ReceiveArgumentInstruction(_rootMethod.getSelf(), 0));	// Set up self!
-        addMethod(_rootMethod);
     }
 
     public void addMethod(IRMethod method) {
@@ -98,6 +97,7 @@ public class IR_Module extends IR_ScopeImpl {
     protected void runCompilerPassOnNestedScopes(CompilerPass p) {
         super.runCompilerPassOnNestedScopes(p);
 
+		  getRootMethod().runCompilerPass(p);
         if (!methods.isEmpty()) {
             for (IR_Scope meth : methods) {
                 meth.runCompilerPass(p);

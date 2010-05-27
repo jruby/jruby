@@ -18,7 +18,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.BRANCH_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
-import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.CallInstruction;
 import org.jruby.compiler.ir.instructions.IR_Instr;
@@ -285,8 +284,11 @@ public class CFG {
                     retAddrMap.put(v, addrs);
                 }
                 addrs.add(((SET_RETADDR_Instr) i).getReturnAddr());
-            } else if (i instanceof BUILD_CLOSURE_Instr) { // Build CFG for the closure!
-                ((BUILD_CLOSURE_Instr) i).getClosure().buildCFG();
+            } else if (i instanceof CallInstruction) { // Build CFG for the closure if there exists one 
+                Operand closureArg = ((CallInstruction)i).getClosureArg();
+                if (closureArg instanceof MetaObject) {
+                    ((IR_Closure)((MetaObject)closureArg)._scope).buildCFG();
+                }
             }
         }
 

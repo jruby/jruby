@@ -44,7 +44,7 @@ public enum Operation
 
 // others
     ATTR_ASSIGN(OpType.dont_care),
-    BUILD_CLOSURE(OpType.dont_care), ALLOC_FRAME(OpType.dont_care), LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
+	 ALLOC_FRAME(OpType.dont_care), LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
 
 // comparisons & checks
     IS_TRUE(OpType.dont_care), // checks if the operand is non-null and non-false
