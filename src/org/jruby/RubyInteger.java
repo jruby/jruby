@@ -35,6 +35,7 @@
 package org.jruby;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.util.Numeric.checkInteger;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
 
@@ -386,6 +387,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcd", compat = CompatVersion.RUBY1_9)
     public IRubyObject gcd(ThreadContext context, IRubyObject other) {
+        checkInteger(context, other);
         return f_gcd(context, this, RubyRational.intValue(context, other));
     }    
 
@@ -394,6 +396,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "lcm", compat = CompatVersion.RUBY1_9)
     public IRubyObject lcm(ThreadContext context, IRubyObject other) {
+        checkInteger(context, other);
         return f_lcm(context, this, RubyRational.intValue(context, other));
     }    
 
@@ -402,6 +405,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcdlcm", compat = CompatVersion.RUBY1_9)
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
+        checkInteger(context, other);
         other = RubyRational.intValue(context, other);
         return context.getRuntime().newArray(f_gcd(context, this, other), f_lcm(context, this, other));
     }

@@ -25,6 +25,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.util.Numeric.checkInteger;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
 import static org.jruby.util.Numeric.f_cmp;
@@ -747,8 +748,8 @@ public class RubyRational extends RubyNumeric {
     }
 
     private IRubyObject op_roundCommonPre(ThreadContext context, IRubyObject n) {
+        checkInteger(context, n);
         Ruby runtime = context.getRuntime();
-        if (!(n instanceof RubyInteger)) throw runtime.newTypeError("not an integer");
         return f_expt(context, RubyFixnum.newFixnum(runtime, 10), n);
     }
 
