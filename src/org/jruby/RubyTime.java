@@ -594,6 +594,12 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(dt.getDayOfYear());
     }
 
+    @JRubyMethod(name = "subsec", compat = CompatVersion.RUBY1_9)
+    public RubyRational subsec() {
+        // TODO: nanosecond resolution (JSR310?)
+        return getRuntime().newRational(dt.getMillisOfSecond(),1000);
+    }
+
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
     public RubyInteger gmt_offset() {
         int offset = dt.getZone().getOffsetFromLocal(dt.getMillis());

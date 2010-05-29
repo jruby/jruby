@@ -2925,6 +2925,10 @@ public final class Ruby {
         return RubyNumeric.newNumeric(this);
     }
 
+    public RubyRational newRational(long num, long den) {
+        return RubyRational.newRationalRaw(this, newFixnum(num), newFixnum(den));
+    }
+
     public RubyProc newProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
