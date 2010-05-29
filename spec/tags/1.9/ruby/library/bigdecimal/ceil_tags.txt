@@ -1,2 +1,0 @@
-fails:BigDecimal#ceil returns an Integer, if n is unspecified
-fails:BigDecimal#ceil raise exception, if self is special value
