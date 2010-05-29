@@ -877,15 +877,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "ceil", optional = 1, compat = CompatVersion.RUBY1_9)
     public IRubyObject ceil19(IRubyObject[] args) {
-        if (isNaN)
-            throw this.getRuntime().newFloatDomainError("NaN");
-        if (infinitySign != 0) {
-            if (infinitySign == -1) {
-                throw getRuntime().newFloatDomainError("-Infinity");
-            } else {
-                throw getRuntime().newFloatDomainError("Infinity");
-            }
-        }
+        checkFloatDomain();
         
         if (args.length == 0) {
             BigInteger ceil = value.setScale(0, RoundingMode.CEILING).toBigInteger();
@@ -1238,7 +1230,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return RubyFloat.newFloat(getRuntime(), value.doubleValue());
     }
 
-    @JRubyMethod(name = {"to_i", "to_int"})
+    @JRubyMethod(name = {"to_i", "to_int"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject to_int() {
         if (isNaN() || infinitySign != 0) {
             return getRuntime().getNil();
@@ -1250,6 +1242,12 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
+    @JRubyMethod(name = {"to_i", "to_int"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_int19() {
+        checkFloatDomain();
+        return to_int();
+    }
+    
     private String removeTrailingZeroes(String in) {
         while(in.length() > 0 && in.charAt(in.length()-1)=='0') {
             in = in.substring(0,in.length()-1);
@@ -1584,5 +1582,17 @@ public class RubyBigDecimal extends RubyNumeric {
       }
 
       return x;                      // return sqrt(squarD) with precision of rootMC
+    }
+
+    private void checkFloatDomain() {
+        if (isNaN)
+            throw this.getRuntime().newFloatDomainError("NaN");
+        if (infinitySign != 0) {
+            if (infinitySign == -1) {
+                throw getRuntime().newFloatDomainError("-Infinity");
+            } else {
+                throw getRuntime().newFloatDomainError("Infinity");
+            }
+        }
     }
 }// RubyBigdecimal
