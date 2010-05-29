@@ -1,3 +1,1 @@
 fails(JRUBY-4457):Proc#yield on a Proc created with Proc.new auto-explodes a single Array argument
-fails(JRUBY-4457):Proc#yield on a Proc created with Kernel#lambda or Kernel#proc raises an ArgumentError on excess arguments when self is a lambda
-fails(JRUBY-4457):Proc#yield on a Proc created with Kernel#lambda or Kernel#proc raises an ArgumentError on missing arguments when self is a lambda
