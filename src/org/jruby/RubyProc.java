@@ -35,6 +35,7 @@
 package org.jruby;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
@@ -241,6 +242,22 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"call", "[]", "yield"}, rest = true, frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
+        if (isLambda())
+           this.block.arity().checkArity(context.getRuntime(), args.length);
+
+        if (isProc()) {
+            List<IRubyObject> list = new ArrayList<IRubyObject>(Arrays.asList(args));
+            int required = this.block.arity().required();
+            if (required > args.length) {
+                for (int i = args.length; i < required; i++) {
+                    list.add(context.getRuntime().getNil());
+                }
+                args = list.toArray(args);
+            } else if (required < args.length) {
+                args = list.subList(0, required).toArray(args);
+            }
+        }
+
         return call(context, args, null, block);
     }
 
