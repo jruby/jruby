@@ -248,13 +248,15 @@ public class RubyProc extends RubyObject implements DataType {
         if (isProc()) {
             List<IRubyObject> list = new ArrayList<IRubyObject>(Arrays.asList(args));
             int required = this.block.arity().required();
-            if (required > args.length) {
-                for (int i = args.length; i < required; i++) {
-                    list.add(context.getRuntime().getNil());
+            if (this.block.arity().isFixed()) {
+                if (required > args.length) {
+                    for (int i = args.length; i < required; i++) {
+                        list.add(context.getRuntime().getNil());
+                    }
+                    args = list.toArray(args);
+                } else if (required < args.length) {
+                    args = list.subList(0, required).toArray(args);
                 }
-                args = list.toArray(args);
-            } else if (required < args.length) {
-                args = list.subList(0, required).toArray(args);
             }
         }
 
