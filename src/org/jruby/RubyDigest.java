@@ -359,7 +359,7 @@ public class RubyDigest {
             super(runtime, type);
         }
         
-        @JRubyMethod(name = "digest", required = 1, optional = 1, frame = true, meta = true)
+        @JRubyMethod(name = "digest", required = 1, rest = true, frame = true, meta = true)
         public static IRubyObject s_digest(ThreadContext ctx, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
             Ruby runtime = recv.getRuntime();
             if (args.length < 1) {
