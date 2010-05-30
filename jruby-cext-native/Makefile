@@ -1,6 +1,6 @@
 # -*- makefile -*-
 
-JRUBY_DIR = ../../jruby.git
+JRUBY_DIR = ../../jruby
 JRUBY_JAR = $(JRUBY_DIR)/lib/jruby.jar
 CEXT_JAVA = ../jruby-cext-java
 CEXT_JAR = $(CEXT_JAVA)/dist/jruby-cext-java.jar
@@ -240,7 +240,8 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 
 .SECONDARY: $(JAVA_HDRS)
 
-$(BUILD_DIR)/org_jruby_%.h:	$(JRUBY_JAR) $(CEXT_JAR)
+$(JAVA_HDRS):	$(JRUBY_JAR) $(CEXT_JAR)
+	@mkdir -p $(@D)
 	javah -classpath $(CEXT_JAR):$(JRUBY_JAR) -d $(@D) $(subst _,., $(basename $(@F)))
 
 
