@@ -55,12 +55,9 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.BlockCallback;
-import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.assigner.Assigner;
-import org.jruby.runtime.assigner.Pre0Rest1Post0Assigner;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -711,7 +708,7 @@ public class RubySymbol extends RubyObject {
         }
 
         private static boolean isSymbolMatch(String internedName, SymbolEntry entry) {
-            return internedName == entry.name;
+            return internedName.equals(entry.name);
         }
 
         private RubySymbol createSymbol(String name, ByteList value, int hash, SymbolEntry[] table) {
@@ -757,7 +754,7 @@ public class RubySymbol extends RubyObject {
                 int hash;
                 // try lookup again under lock
                 for (SymbolEntry e = table[index = (hash = internedName.hashCode()) & (table.length - 1)]; e != null; e = e.next) {
-                    if (internedName == e.name) {
+                    if (internedName.equals(e.name)) {
                         return e.symbol;
                     }
                 }

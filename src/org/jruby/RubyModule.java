@@ -1139,7 +1139,7 @@ public class RubyModule extends RubyObject {
 
     // FIXME: create AttrReaderMethod, AttrWriterMethod, for faster attr access
     private void addAccessor(ThreadContext context, String internedName, Visibility visibility, boolean readable, boolean writeable) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
 
         final Ruby runtime = context.getRuntime();
 
@@ -2455,7 +2455,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fastSetClassVar(final String internedName, final IRubyObject value) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         RubyModule module = this;
         do {
             if (module.fastHasClassVariable(internedName)) {
@@ -2487,7 +2487,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fastGetClassVar(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         assert IdUtil.isClassVariable(internedName);
         IRubyObject value;
         RubyModule module = this;
@@ -2517,7 +2517,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean fastIsClassVarDefined(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         RubyModule module = this;
         do {
             if (module.fastHasClassVariable(internedName)) return true;
@@ -2558,7 +2558,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fastGetConstantAt(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         IRubyObject value = fastFetchConstant(internedName);
 
         return value == UNDEF ? resolveUndefConstant(getRuntime(), internedName) : value;
@@ -2624,7 +2624,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fastGetConstantFromNoConstMissing(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
         Ruby runtime = getRuntime();
         RubyClass objectClass = runtime.getObject();
@@ -2653,7 +2653,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fastGetConstantFromConstMissing(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
 
         return callMethod(getRuntime().getCurrentContext(),
@@ -2771,7 +2771,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean fastIsConstantDefined(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
         boolean isObject = this == getRuntime().getObject();
 
@@ -2791,7 +2791,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean fastIsConstantDefined19(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
 
         RubyModule module = this;
@@ -3077,9 +3077,7 @@ public class RubyModule extends RubyObject {
     private static void define(RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {
         JRubyMethod jrubyMethod = desc.anno;
         if (jrubyMethod.frame()) {
-            for (String name : jrubyMethod.name()) {
-                ASTInspector.FRAME_AWARE_METHODS.add(name);
-            }
+            ASTInspector.FRAME_AWARE_METHODS.addAll(Arrays.asList(jrubyMethod.name()));
         }
         if(jrubyMethod.compat() == CompatVersion.BOTH ||
                 module.getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
