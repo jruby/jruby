@@ -829,30 +829,8 @@ public class ASTCompiler {
 
                     // check for a recursive call
                     if (callNode.getReceiverNode() instanceof SelfNode) {
-                        if (currentBodyNode != null) {
-                            if (entry.method instanceof InterpretedMethod) {
-                                InterpretedMethod target = (InterpretedMethod)entry.method;
-                                if (target.getBodyNode() == currentBodyNode) {
-                                    context.getInvocationCompiler().invokeRecursive(argsCallback);
-                                    return;
-                                }
-                            }
-                            if (entry.method instanceof DefaultMethod) {
-                                DefaultMethod target = (DefaultMethod)entry.method;
-                                if (target.getBodyNode() == currentBodyNode) {
-                                    context.getInvocationCompiler().invokeRecursive(argsCallback);
-                                    return;
-                                }
-                            }
-
-                            if (entry.method instanceof JittedMethod) {
-                                DefaultMethod target = (DefaultMethod)((JittedMethod)entry.method).getRealMethod();
-                                if (target.getBodyNode() == currentBodyNode) {
-                                    context.getInvocationCompiler().invokeRecursive(argsCallback);
-                                    return;
-                                }
-                            }
-                        }
+                        // recursive calls
+                        if (compileRecursiveCall(entry.method, context, argsCallback, expr)) return;
                     }
                 }
             }
@@ -940,6 +918,77 @@ public class ASTCompiler {
         floatDoubleIntrinsics.put(">=", "op_ge");
         floatDoubleIntrinsics.put("==", "op_equal");
         floatDoubleIntrinsics.put("<=>", "op_cmp");
+    }
+
+    private boolean compileRecursiveCall(DynamicMethod method, BodyCompiler context, ArgumentsCallback argsCallback, boolean expr) {
+        if (currentBodyNode != null) {
+            if (method instanceof InterpretedMethod) {
+                InterpretedMethod target = (InterpretedMethod)method;
+                if (target.getBodyNode() == currentBodyNode) {
+                    context.getInvocationCompiler().invokeRecursive(argsCallback);
+                    if (!expr) context.consumeCurrentValue();
+                    return true;
+                }
+            }
+            if (method instanceof DefaultMethod) {
+                DefaultMethod target = (DefaultMethod)method;
+                if (target.getBodyNode() == currentBodyNode) {
+                    context.getInvocationCompiler().invokeRecursive(argsCallback);
+                    if (!expr) context.consumeCurrentValue();
+                    return true;
+                }
+            }
+
+            if (method instanceof JittedMethod) {
+                DefaultMethod target = (DefaultMethod)((JittedMethod)method).getRealMethod();
+                if (target.getBodyNode() == currentBodyNode) {
+                    context.getInvocationCompiler().invokeRecursive(argsCallback);
+                    if (!expr) context.consumeCurrentValue();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean compileTrivialCall(DynamicMethod method, BodyCompiler context, boolean expr) {
+        Node simpleBody = null;
+        if (method instanceof InterpretedMethod) {
+            InterpretedMethod target = (InterpretedMethod)method;
+            simpleBody = target.getBodyNode();
+            while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
+        }
+
+        if (method instanceof DefaultMethod) {
+            DefaultMethod target = (DefaultMethod)method;
+            simpleBody = target.getBodyNode();
+            while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
+        }
+
+        if (method instanceof JittedMethod) {
+            DefaultMethod target = (DefaultMethod)((JittedMethod)method).getRealMethod();
+            simpleBody = target.getBodyNode();
+            while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
+        }
+
+        if (simpleBody != null) {
+            switch (simpleBody.getNodeType()) {
+            case SELFNODE:
+            case INSTVARNODE:
+            case NILNODE:
+            case FIXNUMNODE:
+            case FLOATNODE:
+            case STRNODE:
+            case BIGNUMNODE:
+            case FALSENODE:
+            case TRUENODE:
+            case SYMBOLNODE:
+            case XSTRNODE:
+                compile(simpleBody, context, expr);
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean compileIntrinsic(BodyCompiler context, CallNode callNode, String name, DynamicMethod method, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CompilerCallback closureCallback) {
@@ -2361,69 +2410,13 @@ public class ASTCompiler {
                 CachingCallSite cacheSite = (CachingCallSite)fcallNode.callAdapter;
                 if (cacheSite.isOptimizable()) {
                     CacheEntry entry = cacheSite.getCache();
-                    if (currentBodyNode != null) {
-                        if (entry.method instanceof InterpretedMethod) {
-                            InterpretedMethod target = (InterpretedMethod)entry.method;
-                            if (target.getBodyNode() == currentBodyNode) {
-                                context.getInvocationCompiler().invokeRecursive(argsCallback);
-                                return;
-                            }
-                        }
-                        if (entry.method instanceof DefaultMethod) {
-                            DefaultMethod target = (DefaultMethod)entry.method;
-                            if (target.getBodyNode() == currentBodyNode) {
-                                context.getInvocationCompiler().invokeRecursive(argsCallback);
-                                return;
-                            }
-                        }
 
-                        if (entry.method instanceof JittedMethod) {
-                            DefaultMethod target = (DefaultMethod)((JittedMethod)entry.method).getRealMethod();
-                            if (target.getBodyNode() == currentBodyNode) {
-                                context.getInvocationCompiler().invokeRecursive(argsCallback);
-                                return;
-                            }
-                        }
-                    }
+                    if (closureArg == null && (argsCallback == null || (argsCallback.getArity() >= 0 && argsCallback.getArity() <= 3))) {
+                        // recursive calls
+                        if (compileRecursiveCall(entry.method, context, argsCallback, expr)) return;
 
-                    // peephole inlining for trivial targets
-                    if (closureArg == null) {
-                        Node simpleBody = null;
-                        if (entry.method instanceof InterpretedMethod) {
-                            InterpretedMethod target = (InterpretedMethod)entry.method;
-                            simpleBody = target.getBodyNode();
-                            while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
-                        }
-
-                        if (entry.method instanceof DefaultMethod) {
-                            DefaultMethod target = (DefaultMethod)entry.method;
-                            simpleBody = target.getBodyNode();
-                            while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
-                        }
-
-                        if (entry.method instanceof JittedMethod) {
-                            DefaultMethod target = (DefaultMethod)((JittedMethod)entry.method).getRealMethod();
-                            simpleBody = target.getBodyNode();
-                            while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
-                        }
-
-                        if (simpleBody != null) {
-                            switch (simpleBody.getNodeType()) {
-                            case SELFNODE:
-                            case INSTVARNODE:
-                            case NILNODE:
-                            case FIXNUMNODE:
-                            case FLOATNODE:
-                            case STRNODE:
-                            case BIGNUMNODE:
-                            case FALSENODE:
-                            case TRUENODE:
-                            case SYMBOLNODE:
-                            case XSTRNODE:
-                                compile(simpleBody, context, expr);
-                                return;
-                            }
-                        }
+                        // peephole inlining for trivial targets
+                        if (compileTrivialCall(entry.method, context, expr)) return;
                     }
                 }
             }
@@ -3888,68 +3881,12 @@ public class ASTCompiler {
                 CachingCallSite cacheSite = (CachingCallSite)vcallNode.callAdapter;
                 if (cacheSite.isOptimizable()) {
                     CacheEntry entry = cacheSite.getCache();
-                    if (currentBodyNode != null) {
-                        if (entry.method instanceof InterpretedMethod) {
-                            InterpretedMethod target = (InterpretedMethod)entry.method;
-                            if (target.getBodyNode() == currentBodyNode) {
-                                context.getInvocationCompiler().invokeRecursive(null);
-                                return;
-                            }
-                        }
-                        if (entry.method instanceof DefaultMethod) {
-                            DefaultMethod target = (DefaultMethod)entry.method;
-                            if (target.getBodyNode() == currentBodyNode) {
-                                context.getInvocationCompiler().invokeRecursive(null);
-                                return;
-                            }
-                        }
 
-                        if (entry.method instanceof JittedMethod) {
-                            DefaultMethod target = (DefaultMethod)((JittedMethod)entry.method).getRealMethod();
-                            if (target.getBodyNode() == currentBodyNode) {
-                                context.getInvocationCompiler().invokeRecursive(null);
-                                return;
-                            }
-                        }
-                    }
+                    // recursive calls
+                    if (compileRecursiveCall(entry.method, context, null, expr)) return;
 
                     // peephole inlining for trivial targets
-                    Node simpleBody = null;
-                    if (entry.method instanceof InterpretedMethod) {
-                        InterpretedMethod target = (InterpretedMethod)entry.method;
-                        simpleBody = target.getBodyNode();
-                        while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
-                    }
-
-                    if (entry.method instanceof DefaultMethod) {
-                        DefaultMethod target = (DefaultMethod)entry.method;
-                        simpleBody = target.getBodyNode();
-                        while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
-                    }
-
-                    if (entry.method instanceof JittedMethod) {
-                        DefaultMethod target = (DefaultMethod)((JittedMethod)entry.method).getRealMethod();
-                        simpleBody = target.getBodyNode();
-                        while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
-                    }
-
-                    if (simpleBody != null) {
-                        switch (simpleBody.getNodeType()) {
-                        case SELFNODE:
-                        case INSTVARNODE:
-                        case NILNODE:
-                        case FIXNUMNODE:
-                        case FLOATNODE:
-                        case STRNODE:
-                        case BIGNUMNODE:
-                        case FALSENODE:
-                        case TRUENODE:
-                        case SYMBOLNODE:
-                        case XSTRNODE:
-                            compile(simpleBody, context, expr);
-                            return;
-                        }
-                    }
+                    if (compileTrivialCall(entry.method, context, expr)) return;
                 }
             }
         }

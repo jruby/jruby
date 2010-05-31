@@ -423,7 +423,9 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.aload(0);
         methodCompiler.loadThreadContext();
         methodCompiler.loadSelf();
-        argsCallback.call(methodCompiler);
+        if (argsCallback != null) {
+            argsCallback.call(methodCompiler);
+        }
         method.aconst_null();
 
         method.invokestatic(methodCompiler.getScriptCompiler().getClassname(), methodCompiler.getNativeMethodName(), methodCompiler.getSignature());
