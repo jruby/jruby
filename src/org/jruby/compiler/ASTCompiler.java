@@ -142,6 +142,7 @@ import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod.NativeCall;
 import org.jruby.internal.runtime.methods.InterpretedMethod;
+import org.jruby.internal.runtime.methods.JittedMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -838,6 +839,14 @@ public class ASTCompiler {
                             }
                             if (entry.method instanceof DefaultMethod) {
                                 DefaultMethod target = (DefaultMethod)entry.method;
+                                if (target.getBodyNode() == currentBodyNode) {
+                                    context.getInvocationCompiler().invokeRecursive(argsCallback);
+                                    return;
+                                }
+                            }
+
+                            if (entry.method instanceof JittedMethod) {
+                                DefaultMethod target = (DefaultMethod)((JittedMethod)entry.method).getRealMethod();
                                 if (target.getBodyNode() == currentBodyNode) {
                                     context.getInvocationCompiler().invokeRecursive(argsCallback);
                                     return;
@@ -2367,6 +2376,54 @@ public class ASTCompiler {
                                 return;
                             }
                         }
+
+                        if (entry.method instanceof JittedMethod) {
+                            DefaultMethod target = (DefaultMethod)((JittedMethod)entry.method).getRealMethod();
+                            if (target.getBodyNode() == currentBodyNode) {
+                                context.getInvocationCompiler().invokeRecursive(argsCallback);
+                                return;
+                            }
+                        }
+                    }
+
+                    // peephole inlining for trivial targets
+                    if (closureArg == null) {
+                        Node simpleBody = null;
+                        if (entry.method instanceof InterpretedMethod) {
+                            InterpretedMethod target = (InterpretedMethod)entry.method;
+                            simpleBody = target.getBodyNode();
+                            while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
+                        }
+
+                        if (entry.method instanceof DefaultMethod) {
+                            DefaultMethod target = (DefaultMethod)entry.method;
+                            simpleBody = target.getBodyNode();
+                            while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
+                        }
+
+                        if (entry.method instanceof JittedMethod) {
+                            DefaultMethod target = (DefaultMethod)((JittedMethod)entry.method).getRealMethod();
+                            simpleBody = target.getBodyNode();
+                            while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
+                        }
+
+                        if (simpleBody != null) {
+                            switch (simpleBody.getNodeType()) {
+                            case SELFNODE:
+                            case INSTVARNODE:
+                            case NILNODE:
+                            case FIXNUMNODE:
+                            case FLOATNODE:
+                            case STRNODE:
+                            case BIGNUMNODE:
+                            case FALSENODE:
+                            case TRUENODE:
+                            case SYMBOLNODE:
+                            case XSTRNODE:
+                                compile(simpleBody, context, expr);
+                                return;
+                            }
+                        }
                     }
                 }
             }
@@ -3826,7 +3883,77 @@ public class ASTCompiler {
 
     public void compileVCall(Node node, BodyCompiler context, boolean expr) {
         VCallNode vcallNode = (VCallNode) node;
-        
+        if (RubyInstanceConfig.DYNOPT_COMPILE_ENABLED) {
+            if (vcallNode.callAdapter instanceof CachingCallSite) {
+                CachingCallSite cacheSite = (CachingCallSite)vcallNode.callAdapter;
+                if (cacheSite.isOptimizable()) {
+                    CacheEntry entry = cacheSite.getCache();
+                    if (currentBodyNode != null) {
+                        if (entry.method instanceof InterpretedMethod) {
+                            InterpretedMethod target = (InterpretedMethod)entry.method;
+                            if (target.getBodyNode() == currentBodyNode) {
+                                context.getInvocationCompiler().invokeRecursive(null);
+                                return;
+                            }
+                        }
+                        if (entry.method instanceof DefaultMethod) {
+                            DefaultMethod target = (DefaultMethod)entry.method;
+                            if (target.getBodyNode() == currentBodyNode) {
+                                context.getInvocationCompiler().invokeRecursive(null);
+                                return;
+                            }
+                        }
+
+                        if (entry.method instanceof JittedMethod) {
+                            DefaultMethod target = (DefaultMethod)((JittedMethod)entry.method).getRealMethod();
+                            if (target.getBodyNode() == currentBodyNode) {
+                                context.getInvocationCompiler().invokeRecursive(null);
+                                return;
+                            }
+                        }
+                    }
+
+                    // peephole inlining for trivial targets
+                    Node simpleBody = null;
+                    if (entry.method instanceof InterpretedMethod) {
+                        InterpretedMethod target = (InterpretedMethod)entry.method;
+                        simpleBody = target.getBodyNode();
+                        while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
+                    }
+
+                    if (entry.method instanceof DefaultMethod) {
+                        DefaultMethod target = (DefaultMethod)entry.method;
+                        simpleBody = target.getBodyNode();
+                        while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
+                    }
+
+                    if (entry.method instanceof JittedMethod) {
+                        DefaultMethod target = (DefaultMethod)((JittedMethod)entry.method).getRealMethod();
+                        simpleBody = target.getBodyNode();
+                        while (simpleBody instanceof NewlineNode) simpleBody = ((NewlineNode)simpleBody).getNextNode();
+                    }
+
+                    if (simpleBody != null) {
+                        switch (simpleBody.getNodeType()) {
+                        case SELFNODE:
+                        case INSTVARNODE:
+                        case NILNODE:
+                        case FIXNUMNODE:
+                        case FLOATNODE:
+                        case STRNODE:
+                        case BIGNUMNODE:
+                        case FALSENODE:
+                        case TRUENODE:
+                        case SYMBOLNODE:
+                        case XSTRNODE:
+                            compile(simpleBody, context, expr);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
         context.getInvocationCompiler().invokeDynamic(vcallNode.getName(), null, null, CallType.VARIABLE, null, false);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();

@@ -626,4 +626,6 @@ public interface BodyCompiler {
     public void traceLine();
     public void traceClass();
     public void traceEnd();
+
+    public String getNativeMethodName();
 }
