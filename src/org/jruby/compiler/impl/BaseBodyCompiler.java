@@ -121,6 +121,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
     }
 
+    public String getNativeMethodName() {
+        return methodName;
+    }
+
     protected boolean shouldUseBoxedArgs(StaticScope scope) {
         return scope.getRestArg() >= 0 || scope.getRestArg() == -2 || scope.getOptionalArgs() > 0 || scope.getRequiredArgs() > 3;
     }

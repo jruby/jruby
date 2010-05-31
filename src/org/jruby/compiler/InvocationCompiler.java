@@ -30,6 +30,7 @@ package org.jruby.compiler;
 import org.jruby.runtime.CallType;
 
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.internal.runtime.methods.DynamicMethod.NativeCall;
 
 /**
  *
@@ -90,4 +91,11 @@ public interface InvocationCompiler {
     public void invokeEqq(ArgumentsCallback receivers, CompilerCallback argument);
 
     public void invokeBinaryFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum);
+
+    public void invokeFixnumLong(CompilerCallback receiverCallback, String method, long fixnum);
+    public void invokeFloatDouble(CompilerCallback receiverCallback, String method, double flote);
+
+    public void invokeRecursive(ArgumentsCallback callback);
+
+    public void invokeNative(NativeCall nativeCall, CompilerCallback receiver, ArgumentsCallback args, CompilerCallback closure);
 }

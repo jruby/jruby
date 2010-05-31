@@ -1,5 +1,6 @@
 package org.jruby.runtime.callsite;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyLocalJumpError;
@@ -18,6 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class CachingCallSite extends CallSite {
     protected CacheEntry cache = CacheEntry.NULL_CACHE;
     public static volatile int totalCallSites;
+//    private AtomicBoolean isPolymorphic = new AtomicBoolean(false);
 
     public CachingCallSite(String methodName, CallType callType) {
         super(methodName, callType);
@@ -29,10 +31,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     public boolean isOptimizable() {
-        if (getCache() != CacheEntry.NULL_CACHE) {
-            return true;
-        }
-        return false;
+        return getCache() != CacheEntry.NULL_CACHE;// && !isPolymorphic.get();
     }
 
     public int getCachedClassIndex() {
@@ -265,7 +264,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, args, block);
         }
-        cache = entry;
+        updateCache(entry);
         return method.call(context, self, selfType, methodName, args, block);
     }
 
@@ -275,7 +274,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, args);
         }
-        cache = entry;
+        updateCache(entry);
         return method.call(context, self, selfType, methodName, args);
     }
 
@@ -285,7 +284,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method);
         }
-        cache = entry;
+        updateCache(entry);
         return method.call(context, self, selfType, methodName);
     }
 
@@ -295,7 +294,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, block);
         }
-        cache = entry;
+        updateCache(entry);
         return method.call(context, self, selfType, methodName, block);
     }
 
@@ -305,7 +304,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg);
         }
-        cache = entry;
+        updateCache(entry);
         return method.call(context, self, selfType, methodName, arg);
     }
 
@@ -315,7 +314,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg, block);
         }
-        cache = entry;
+        updateCache(entry);
         return method.call(context, self, selfType, methodName, arg, block);
     }
 
@@ -325,7 +324,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg1, arg2);
         }
-        cache = entry;
+        updateCache(entry);
         return method.call(context, self, selfType, methodName, arg1, arg2);
     }
 
@@ -335,7 +334,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg1, arg2, block);
         }
-        cache = entry;
+        updateCache(entry);
         return method.call(context, self, selfType, methodName, arg1, arg2, block);
     }
 
@@ -345,7 +344,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg1, arg2, arg3);
         }
-        cache = entry;
+        updateCache(entry);
         return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
     }
 
@@ -355,8 +354,17 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg1, arg2, arg3, block);
         }
-        cache = entry;
+        updateCache(entry);
         return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+    }
+
+    protected void updateCache(CacheEntry newEntry) {
+        // not really working because it flags jitted methods as polymorphic
+//        CacheEntry oldCache = cache;
+//        if (oldCache != CacheEntry.NULL_CACHE && oldCache.method != newEntry.method) {
+//            isPolymorphic.set(true);
+//        }
+        cache = newEntry;
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, DynamicMethod method, IRubyObject[] args) {

@@ -34,6 +34,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
@@ -117,6 +120,7 @@ import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.SClassNode;
 import org.jruby.ast.SValueNode;
+import org.jruby.ast.SelfNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
@@ -134,10 +138,16 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod.NativeCall;
+import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.CachingCallSite;
 
 /**
  *
@@ -145,6 +155,13 @@ import org.jruby.runtime.CallType;
  */
 public class ASTCompiler {
     private boolean isAtRoot = true;
+
+    public void compileBody(Node node, BodyCompiler context, boolean expr) {
+        Node oldBodyNode = currentBodyNode;
+        currentBodyNode = node;
+        compile(node, context, expr);
+        currentBodyNode = oldBodyNode;
+    }
     
     public void compile(Node node, BodyCompiler context, boolean expr) {
         if (node == null) {
@@ -788,6 +805,50 @@ public class ASTCompiler {
         String name = callNode.getName();
         CallType callType = CallType.NORMAL;
 
+        if (RubyInstanceConfig.DYNOPT_COMPILE_ENABLED) {
+            if (callNode.callAdapter instanceof CachingCallSite) {
+                CachingCallSite cacheSite = (CachingCallSite)callNode.callAdapter;
+                if (cacheSite.isOptimizable()) {
+                    CacheEntry entry = cacheSite.getCache();
+                    if (entry.method.getNativeCall() != null) {
+                        NativeCall nativeCall = entry.method.getNativeCall();
+
+                        // only do direct calls for specific arity
+                        if (argsCallback == null || argsCallback.getArity() >= 0 && argsCallback.getArity() <= 3) {
+                            if (compileIntrinsic(context, callNode, cacheSite.methodName, entry.method, receiverCallback, argsCallback, closureArg)) {
+                                // intrinsic compilation worked, hooray!
+                                return;
+                            } else {
+                                // otherwise, normal straight-through native call
+                                context.getInvocationCompiler().invokeNative(nativeCall, receiverCallback, argsCallback, closureArg);
+                                return;
+                            }
+                        }
+                    }
+
+                    // check for a recursive call
+                    if (callNode.getReceiverNode() instanceof SelfNode) {
+                        if (currentBodyNode != null) {
+                            if (entry.method instanceof InterpretedMethod) {
+                                InterpretedMethod target = (InterpretedMethod)entry.method;
+                                if (target.getBodyNode() == currentBodyNode) {
+                                    context.getInvocationCompiler().invokeRecursive(argsCallback);
+                                    return;
+                                }
+                            }
+                            if (entry.method instanceof DefaultMethod) {
+                                DefaultMethod target = (DefaultMethod)entry.method;
+                                if (target.getBodyNode() == currentBodyNode) {
+                                    context.getInvocationCompiler().invokeRecursive(argsCallback);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (argsCallback != null && argsCallback.getArity() == 1) {
             Node argument = callNode.getArgsNode().childNodes().get(0);
             if (name.length() == 1) {
@@ -829,6 +890,78 @@ public class ASTCompiler {
         
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
+    }
+
+    private static final Map<Class, Map<Class, Map<String, String>>> Intrinsics;
+    static {
+        Intrinsics = new HashMap();
+
+        Map<Class, Map<String, String>> fixnumIntrinsics = new HashMap();
+        Intrinsics.put(RubyFixnum.class, fixnumIntrinsics);
+
+        Map<String, String> fixnumLongIntrinsics = new HashMap();
+        fixnumIntrinsics.put(FixnumNode.class, fixnumLongIntrinsics);
+        
+        fixnumLongIntrinsics.put("+", "op_plus");
+        fixnumLongIntrinsics.put("-", "op_minus");
+        fixnumLongIntrinsics.put("/", "op_div");
+        fixnumLongIntrinsics.put("*", "op_plus");
+        fixnumLongIntrinsics.put("**", "op_pow");
+        fixnumLongIntrinsics.put("<", "op_lt");
+        fixnumLongIntrinsics.put("<=", "op_le");
+        fixnumLongIntrinsics.put(">", "op_gt");
+        fixnumLongIntrinsics.put(">=", "op_ge");
+        fixnumLongIntrinsics.put("==", "op_equal");
+        fixnumLongIntrinsics.put("<=>", "op_cmp");
+
+        Map<Class, Map<String, String>> floatIntrinsics = new HashMap();
+        Intrinsics.put(RubyFloat.class, floatIntrinsics);
+
+        Map<String, String>floatDoubleIntrinsics = new HashMap();
+        floatIntrinsics.put(FloatNode.class, floatDoubleIntrinsics);
+        
+        floatDoubleIntrinsics.put("+", "op_plus");
+        floatDoubleIntrinsics.put("-", "op_minus");
+        floatDoubleIntrinsics.put("/", "op_div");
+        floatDoubleIntrinsics.put("*", "op_plus");
+        floatDoubleIntrinsics.put("**", "op_pow");
+        floatDoubleIntrinsics.put("<", "op_lt");
+        floatDoubleIntrinsics.put("<=", "op_le");
+        floatDoubleIntrinsics.put(">", "op_gt");
+        floatDoubleIntrinsics.put(">=", "op_ge");
+        floatDoubleIntrinsics.put("==", "op_equal");
+        floatDoubleIntrinsics.put("<=>", "op_cmp");
+    }
+
+    private boolean compileIntrinsic(BodyCompiler context, CallNode callNode, String name, DynamicMethod method, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CompilerCallback closureCallback) {
+        if (!(method.getImplementationClass() instanceof RubyClass)) return false;
+
+        RubyClass implClass = (RubyClass)method.getImplementationClass();
+        Map<Class, Map<String, String>> typeIntrinsics = Intrinsics.get(implClass.getReifiedClass());
+        if (typeIntrinsics != null) {
+            if (argsCallback != null && argsCallback.getArity() == 1) {
+                Node argument = callNode.getArgsNode().childNodes().get(0);
+                if (argument instanceof FixnumNode) {
+                    Map<String, String> typeLongIntrinsics = typeIntrinsics.get(FixnumNode.class);
+                    if (typeLongIntrinsics.containsKey(name)) {
+                        context.getInvocationCompiler().invokeFixnumLong(receiverCallback, typeLongIntrinsics.get(name), ((FixnumNode)argument).getValue());
+                        return true;
+                    }
+                }
+            }
+        } else if (method.getImplementationClass() == method.getImplementationClass().getRuntime().getFloat()) {
+            if (argsCallback != null && argsCallback.getArity() == 1) {
+                Node argument = callNode.getArgsNode().childNodes().get(0);
+                if (argument instanceof FloatNode) {
+                    Map<String, String> typeDoubleIntrinsics = typeIntrinsics.get(FloatNode.class);
+                    if (typeDoubleIntrinsics.containsKey(name)) {
+                        context.getInvocationCompiler().invokeFloatDouble(receiverCallback, typeDoubleIntrinsics.get(name), ((FloatNode)argument).getValue());
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private String getLiteralSend(CallNode callNode) {
@@ -1830,6 +1963,8 @@ public class ASTCompiler {
         context.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth(), expr);
     }
 
+    private Node currentBodyNode;
+
     public void compileDefn(Node node, BodyCompiler context, boolean expr) {
         final DefnNode defnNode = (DefnNode) node;
         final ArgsNode argsNode = defnNode.getArgsNode();
@@ -1838,12 +1973,15 @@ public class ASTCompiler {
 
                     public void call(BodyCompiler context) {
                         if (defnNode.getBodyNode() != null) {
+                            Node oldBodyNode = currentBodyNode;
+                            currentBodyNode = defnNode.getBodyNode();
                             if (defnNode.getBodyNode() instanceof RescueNode) {
                                 // if root of method is rescue, compile as a light rescue
                                 compileRescueInternal(defnNode.getBodyNode(), context, true);
                             } else {
                                 compile(defnNode.getBodyNode(), context, true);
                             }
+                            currentBodyNode = oldBodyNode;
                         } else {
                             context.loadNil();
                         }
@@ -2208,6 +2346,31 @@ public class ASTCompiler {
         ArgumentsCallback argsCallback = getArgsCallback(fcallNode.getArgsNode());
         
         CompilerCallback closureArg = getBlock(fcallNode.getIterNode());
+
+        if (RubyInstanceConfig.DYNOPT_COMPILE_ENABLED) {
+            if (fcallNode.callAdapter instanceof CachingCallSite) {
+                CachingCallSite cacheSite = (CachingCallSite)fcallNode.callAdapter;
+                if (cacheSite.isOptimizable()) {
+                    CacheEntry entry = cacheSite.getCache();
+                    if (currentBodyNode != null) {
+                        if (entry.method instanceof InterpretedMethod) {
+                            InterpretedMethod target = (InterpretedMethod)entry.method;
+                            if (target.getBodyNode() == currentBodyNode) {
+                                context.getInvocationCompiler().invokeRecursive(argsCallback);
+                                return;
+                            }
+                        }
+                        if (entry.method instanceof DefaultMethod) {
+                            DefaultMethod target = (DefaultMethod)entry.method;
+                            if (target.getBodyNode() == currentBodyNode) {
+                                context.getInvocationCompiler().invokeRecursive(argsCallback);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
         // TODO: don't require pop

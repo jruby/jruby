@@ -541,15 +541,7 @@ public class RubyBignum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             RubyFixnum fix = (RubyFixnum) other;
             long fixValue = fix.getLongValue();
-            // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
-            if (((value.bitLength() + 7) / 8) * 4 * Math.abs(fixValue) > 1024 * 1024) {
-                getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", fixValue);
-            }
-            if (fixValue >= 0) {
-                return bignorm(getRuntime(), value.pow((int) fixValue)); // num2int is also implemented
-            } else {
-                return RubyFloat.newFloat(getRuntime(), Math.pow(big2dbl(this), (double)fixValue));
-            }
+            return op_pow(context, fixValue);
         } else if (other instanceof RubyBignum) {
             d = ((RubyBignum) other).getDoubleValue();
             getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", d);
@@ -560,6 +552,18 @@ public class RubyBignum extends RubyInteger {
 
         }
         return RubyFloat.newFloat(getRuntime(), Math.pow(big2dbl(this), d));
+    }
+
+    public IRubyObject op_pow(ThreadContext context, long other) {
+        // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
+        if (((value.bitLength() + 7) / 8) * 4 * Math.abs(other) > 1024 * 1024) {
+            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", other);
+        }
+        if (other >= 0) {
+            return bignorm(getRuntime(), value.pow((int) other)); // num2int is also implemented
+        } else {
+            return RubyFloat.newFloat(getRuntime(), Math.pow(big2dbl(this), (double)other));
+        }
     }
 
     /** rb_big_pow
