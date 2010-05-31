@@ -1058,7 +1058,7 @@ public class RubyKernel {
         return runtime.getTrue();
     }
 
-    @JRubyMethod(name = "eval", required = 1, optional = 3, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "eval", required = 1, optional = 3, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject eval(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         // string to eval
@@ -1089,14 +1089,6 @@ public class RubyKernel {
         }
         
         return ASTInterpreter.evalWithBinding(context, src, binding);
-    }
-
-    @JRubyMethod(name = "eval", required = 1, optional = 3, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject eval19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        if (args.length > 1 && ! (args[1] instanceof RubyBinding)) {
-            throw context.getRuntime().newTypeError(args[1], context.getRuntime().getBinding());
-        }
-        return eval(context, recv, args, block);
     }
 
     private static Binding convertToBinding(IRubyObject scope) {
