@@ -38,7 +38,7 @@ public final class InstanceVariableTable {
         public final VariableTableEntry next;
 
         VariableTableEntry(int hash, String name, Object value, VariableTableEntry next) {
-            assert name.equals(name.intern()) : name + " is not interned";
+            assert name == name.intern() : name + " is not interned";
             this.hash = hash;
             this.name = name;
             this.value = value;
@@ -57,12 +57,12 @@ public final class InstanceVariableTable {
         }
 
         Object fastStore(String internedName, Object value) {
-            assert internedName.equals(internedName.intern()) : internedName + " is not interned";
-            if (internedName.equals(name1)) return value1 = value;
-            if (internedName.equals(name2)) return value2 = value;
-            if (internedName.equals(name3)) return value3 = value;
-            if (internedName.equals(name4)) return value4 = value;
-            if (internedName.equals(name5)) return value5 = value;
+            assert internedName == internedName.intern() : internedName + " is not interned";
+            if (internedName == name1) return value1 = value;
+            if (internedName == name2) return value2 = value;
+            if (internedName == name3) return value3 = value;
+            if (internedName == name4) return value4 = value;
+            if (internedName == name5) return value5 = value;
             return insert(internedName, value);
         }
 
@@ -125,11 +125,11 @@ public final class InstanceVariableTable {
 
         boolean fastContains(String name) {
             return 
-                name.equals(name1) ||
-                name.equals(name2) ||
-                name.equals(name3) ||
-                name.equals(name4) ||
-                name.equals(name5);
+                name == name1 ||
+                name == name2 ||
+                name == name3 ||
+                name == name4 ||
+                name == name5;
         }
         
         Object fetch(String name) {
@@ -143,11 +143,11 @@ public final class InstanceVariableTable {
         }
         
         Object fastFetch(String name) {
-            if (name.equals(name1)) return value1;
-            if (name.equals(name2)) return value2;
-            if (name.equals(name3)) return value3;
-            if (name.equals(name4)) return value4;
-            if (name.equals(name5)) return value5;
+            if (name == name1) return value1;
+            if (name == name2) return value2;
+            if (name == name3) return value3;
+            if (name == name4) return value4;
+            if (name == name5) return value5;
             return null;
         }
         
@@ -204,7 +204,7 @@ public final class InstanceVariableTable {
         if (USE_PACKED_ARRAY) {
             // prefill ?
             packedVTable = new Object[MAX_PACKED * 2];
-            assert name.equals(name.intern()) : name + " is not interned";
+            assert name == name.intern() : name + " is not interned";
             packedVTable[0] = name;
             packedVTable[MAX_PACKED] = value;
         } else if (USE_PACKED_FIELDS) { 
@@ -376,7 +376,7 @@ public final class InstanceVariableTable {
     }
 
     private Object packedInsert(Object[]table, int index, String internedName, Object value) {
-        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
+        assert internedName == internedName.intern() : internedName + " is not interned";
         if (index == MAX_PACKED) {
             unpack();
             return hashStore(internedName, value);
@@ -449,7 +449,7 @@ public final class InstanceVariableTable {
         int hash = internedName.hashCode();
         VariableTableEntry e;
         for (e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-            if (internedName.equals(e.name)) {
+            if (internedName == e.name) {
                 e.value = value;
                 return value;
             }
@@ -521,7 +521,7 @@ public final class InstanceVariableTable {
                 int i = 0;
                 for (Variable<IRubyObject> var : vars) {
                     String name = var.getName();
-                    assert name.equals(name.intern()) : name + " is not interned";
+                    assert name == name.intern() : name + " is not interned";
                     packedVTable[i] = name;
                     packedVTable[i + MAX_PACKED] = var.getValue();
                     i++;
@@ -531,7 +531,7 @@ public final class InstanceVariableTable {
                 packedVFields = new PackedFields();
                 for (Variable<IRubyObject> var : vars) {
                     String name = var.getName();
-                    assert name.equals(name.intern()) : name + " is not interned";
+                    assert name == name.intern() : name + " is not interned";
                     packedVFields.insert(name, var.getValue());
                 }
             }
@@ -616,7 +616,7 @@ public final class InstanceVariableTable {
     private boolean fastHashContains(String internedName) {
         VariableTableEntry[] table = vTable;
         for (VariableTableEntry e = table[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
-            if (internedName.equals(e.name)) {
+            if (internedName == e.name) {
                 return true;
             }
         }
@@ -677,7 +677,7 @@ public final class InstanceVariableTable {
         VariableTableEntry[] table = vTable;
         Object readValue;
         for (VariableTableEntry e = table[internedName.hashCode() & (table.length - 1)]; e != null; e = e.next) {
-            if (internedName.equals(e.name)) {
+            if (internedName == e.name) {
                 if ((readValue = e.value) != null) return readValue;
                 return readLocked(e);
             }
