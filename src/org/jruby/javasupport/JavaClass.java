@@ -49,6 +49,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ReflectPermission;
+import java.security.AccessControlException;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -90,6 +93,21 @@ import org.jruby.util.IdUtil;
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
     public static final String METHOD_MANGLE = "__method";
+
+    public static final boolean CAN_SET_ACCESSIBLE;
+
+    static {
+        boolean canSetAccessible = false;
+
+        try {
+            AccessController.checkPermission(new ReflectPermission("suppressAccessChecks"));
+            canSetAccessible = true;
+        } catch (AccessControlException ace) {
+            canSetAccessible = false;
+        }
+
+        CAN_SET_ACCESSIBLE = canSetAccessible;
+    }
     
     // An object that's never wrapped, so we can safely compare it with a
     // wrapped null and not treat
@@ -1858,20 +1876,24 @@ public class JavaClass extends JavaObject {
     
     private static Method[] getMethods(Class<?> javaClass) {
         HashMap<String, List<Method>> nameMethods = new HashMap<String, List<Method>>();
-        ArrayList<Method> list2 = new ArrayList<Method>();
+        ArrayList<Method> finalList = new ArrayList<Method>();
 
+        // we only bind methods declared onnon-public classes if we're able to
+        // set those methods accessible (JRUBY-4799)
+        boolean useImmediateClass = CAN_SET_ACCESSIBLE || Modifier.isPublic(javaClass.getModifiers());
+        
         // aggregate all candidate method names from child, with their method objects
-
         // Instance methods only; static methods are local to the class and always bound.
         // Don't do this class's methods if it isn't public, since only superclass
         // methods will be available.
-        if (Modifier.isPublic(javaClass.getModifiers())) {
+        if (useImmediateClass) {
+            // class is public or we can set its methods accessible
             for (Method m: javaClass.getDeclaredMethods()) {
                 int modifiers = m.getModifiers();
                 if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
                     if (Modifier.isStatic(modifiers)) {
                         // static methods are always bound
-                        list2.add(m);
+                        finalList.add(m);
                     } else {
                         List<Method> methods = nameMethods.get(m.getName());
                         if (methods == null) {
@@ -1883,10 +1905,11 @@ public class JavaClass extends JavaObject {
             }
         }
 
-        // add all directly-implemented interface methods
+        // add immediately-implemented interface methods in case they're not
+        // provided by superclasses or left abstract
         for (Class c : javaClass.getInterfaces()) {
             if (!Modifier.isPublic(c.getModifiers())) continue;
-            
+
             for (Method m: c.getDeclaredMethods()) {
                 List<Method> methods = nameMethods.get(m.getName());
                 if (methods == null) {
@@ -1896,7 +1919,8 @@ public class JavaClass extends JavaObject {
             }
         }
 
-        // we all all superclasses, but avoid adding superclass methods with same name+signature as subclass methods
+        // we scan all superclasses, but avoid adding superclass methods with
+        // same name+signature as subclass methods
         // see JRUBY-3130
         for (Class c = javaClass.getSuperclass(); c != null; c = c.getSuperclass()) {
             try {
@@ -1917,31 +1941,46 @@ public class JavaClass extends JavaObject {
         }
         
         // now only bind the ones that remain
-        for (Class c = javaClass; c != null; c = c.getSuperclass()) {
-            // skip non-public classes
-            if (!Modifier.isPublic(c.getModifiers())) continue;
-            
+
+        // first the immediate class, if we used it above
+        if (useImmediateClass) {
             try {
-                for (Method m : c.getDeclaredMethods()) {
+                for (Method m : javaClass.getDeclaredMethods()) {
                     int modifiers = m.getModifiers();
                     if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
                         if (!nameMethods.containsKey(m.getName())) continue;
-                        list2.add(m);
+                        finalList.add(m);
                     }
                 }
             } catch (SecurityException e) {
             }
         }
+
+        // then superclasses
+        for (Class c = javaClass.getSuperclass(); c != null; c = c.getSuperclass()) {
+            try {
+                for (Method m : c.getDeclaredMethods()) {
+                    int modifiers = m.getModifiers();
+                    if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
+                        if (!nameMethods.containsKey(m.getName())) continue;
+                        finalList.add(m);
+                    }
+                }
+            } catch (SecurityException e) {
+            }
+        }
+
+        // then immediately implemented interfaces
         for (Class c : javaClass.getInterfaces()) {
             try {
                 for (Method m : c.getDeclaredMethods()) {
                     if (!nameMethods.containsKey(m.getName())) continue;
-                    list2.add(m);
+                    finalList.add(m);
                 }
             } catch (SecurityException e) {
             }
         }
         
-        return list2.toArray(new Method[list2.size()]);
+        return finalList.toArray(new Method[finalList.size()]);
     }
 }
