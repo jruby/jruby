@@ -122,6 +122,10 @@ public class RubyInstanceConfig {
         public boolean shouldPrecompileCLI() {
             switch (this) {
             case JIT: case FORCE:
+                if (DYNOPT_COMPILE_ENABLED) {
+                    // don't precompile the CLI script in dynopt mode
+                    return false;
+                }
                 return true;
             }
             return false;
