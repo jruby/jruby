@@ -1139,7 +1139,7 @@ public class ChannelStream implements Stream, Finalizable {
      * Ensure close (especially flush) when we're finished with.
      */
     @Override
-    public synchronized void finalize() {
+    public void finalize() {
         if (closedExplicitly) return;
 
         if (DEBUG) {
