@@ -46,7 +46,7 @@ public class ByteArrayLexerSource extends LexerSource {
                 // skip
                 c = readCursor.at(matchPos);
             }
-            if (c != '\n') {
+            if (c != '\n' && c != RubyYaccLexer.EOF) {
                 return false;
             }
         }
