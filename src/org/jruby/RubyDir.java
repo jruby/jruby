@@ -51,6 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Dir;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 
 /**
  * .The Ruby built-in class Dir.
@@ -271,7 +272,7 @@ public class RubyDir extends RubyObject {
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         RubyString path = args.length == 1 ?
-            (RubyString) args[0].convertToString() : getHomeDirectoryPath(context);
+            RubyFile.get_path(context, args[0]) : getHomeDirectoryPath(context);
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.getUnicodeValue(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
         JRubyFile dir = getDir(runtime, adjustedPath, true);

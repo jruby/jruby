@@ -1,0 +1,1 @@
+fails:Logger::LogDevice#write can create a file and writes empty message

@@ -1039,9 +1039,6 @@ public final class Ruby {
      * loaded.
      */
     private void init() {
-        // Get the main threadcontext (gets constructed for us)
-        ThreadContext tc = getCurrentContext();
-
         safeLevel = config.getSafeLevel();
         
         // Construct key services
@@ -1061,6 +1058,12 @@ public final class Ruby {
         
         // initialize the root of the class hierarchy completely
         initRoot();
+
+        // Set up the main thread in thread service
+        threadService.initMainThread();
+
+        // Get the main threadcontext (gets constructed for us)
+        ThreadContext tc = getCurrentContext();
 
         // Construct the top-level execution frame and scope for the main thread
         tc.prepareTopLevel(objectClass, topSelf);
@@ -1132,9 +1135,7 @@ public final class Ruby {
 
         // Object is ready, create top self
         topSelf = TopSelfFactory.createTopSelf(this);
-    }
-
-    private void initCore() {
+        
         // Pre-create all the core classes potentially referenced during startup
         RubyNil.createNilClass(this);
         RubyBoolean.createFalseClass(this);
@@ -1146,7 +1147,9 @@ public final class Ruby {
 
         falseObject = new RubyBoolean(this, false);
         trueObject = new RubyBoolean(this, true);
+    }
 
+    private void initCore() {
         if (profile.allowClass("Data")) {
             defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         }
@@ -1337,11 +1340,12 @@ public final class Ruby {
 
         if (is1_9()) {
             if (profile.allowClass("EncodingError")) {
-                encodingError = defineClass("EncodingError", standardError, standardError.getAllocator()); 
+                encodingError = defineClass("EncodingError", standardError, standardError.getAllocator());
                 encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
                 invalidByteSequenceError = defineClassUnder("InvalidByteSequenceError", encodingError, encodingError.getAllocator(), encodingClass);
                 undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
                 converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
+                fiberError = defineClass("FiberError", standardError, standardError.getAllocator());
             }
 
             mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
@@ -1450,8 +1454,9 @@ public final class Ruby {
         if (is1_9()) {
             addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
             addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
+            addLazyBuiltin("fiber.rb", "fiber", "org.jruby.libraries.FiberLibrary$ExtLibrary");
         }
-        
+
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.libraries.NetProtocolBufferedIOLibrary");
         }
@@ -2138,6 +2143,10 @@ public final class Ruby {
 
     public RubyClass getConverterNotFoundError() {
         return converterNotFoundError;
+    }
+
+    public RubyClass getFiberError() {
+        return fiberError;
     }
 
     public RubyClass getUndefinedConversionError() {
@@ -2916,6 +2925,10 @@ public final class Ruby {
         return RubyNumeric.newNumeric(this);
     }
 
+    public RubyRational newRational(long num, long den) {
+        return RubyRational.newRationalRaw(this, newFixnum(num), newFixnum(den));
+    }
+
     public RubyProc newProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
@@ -3295,6 +3308,10 @@ public final class Ruby {
 
     public RaiseException newConverterNotFoundError(String message) {
         return newRaiseException(getConverterNotFoundError(), message);
+    }
+
+    public RaiseException newFiberError(String message) {
+        return newRaiseException(getFiberError(), message);
     }
 
     public RaiseException newUndefinedConversionError(String message) {
@@ -3792,7 +3809,7 @@ public final class Ruby {
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
-            invalidByteSequenceError, randomClass;
+            invalidByteSequenceError, fiberError, randomClass;
 
     /**
      * All the core modules we keep direct references to, for quick access and

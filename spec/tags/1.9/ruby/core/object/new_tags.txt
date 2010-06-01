@@ -1,1 +1,0 @@
-fails:Object.new accepts any number of arguments

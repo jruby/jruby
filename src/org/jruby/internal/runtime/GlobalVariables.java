@@ -129,7 +129,11 @@ public class GlobalVariables {
         variable.trace(value);
         return result;
     }
-    
+
+    public IRubyObject clear(String name) {
+        return set(name, runtime.getNil());
+    }
+
     public void setTraceVar(String name, RubyProc proc) {
         assert name != null;
         assert name.startsWith("$");

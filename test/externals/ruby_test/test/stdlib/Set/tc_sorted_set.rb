@@ -15,13 +15,15 @@ class TC_SortedSet_Stdlib < Test::Unit::TestCase
 
    def test_new_aref_basic
       assert_nothing_raised{ SortedSet[] }
-      assert_nothing_raised{ SortedSet[nil] }
+      # See Ruby Bug #118
+      #assert_nothing_raised{ SortedSet[nil] }
       assert_nothing_raised{ SortedSet[[3,1,2]] }
    end
 
    def test_new_aref_values
       assert_equal(0, SortedSet[].size)
-      assert_equal(1, SortedSet[nil].size)
+      # See Ruby Bug #118
+      #assert_equal(1, SortedSet[nil].size)
       assert_equal(1, SortedSet[[]].size)
       assert_equal(1, SortedSet[[nil]].size)
    end

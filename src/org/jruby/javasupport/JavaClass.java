@@ -135,9 +135,6 @@ public class JavaClass extends JavaObject {
     static {
         RESERVED_NAMES.put("__id__", new AssignedName("__id__", Priority.RESERVED));
         RESERVED_NAMES.put("__send__", new AssignedName("__send__", Priority.RESERVED));
-        RESERVED_NAMES.put("private", new AssignedName("private", Priority.RESERVED));
-        RESERVED_NAMES.put("protected", new AssignedName("protected", Priority.RESERVED));
-        RESERVED_NAMES.put("public", new AssignedName("public", Priority.RESERVED));
     }
     private static final Map<String, AssignedName> STATIC_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
     static {
@@ -250,7 +247,8 @@ public class JavaClass extends JavaObject {
                 methods = new ArrayList<Method>(4);
             }
             methods.add(method);
-            haveLocalMethod |= javaClass == method.getDeclaringClass();
+            haveLocalMethod |= javaClass == method.getDeclaringClass() ||
+                    method.getDeclaringClass().isInterface();
         }
 
         // called only by initializing thread; no synchronization required
@@ -1864,20 +1862,37 @@ public class JavaClass extends JavaObject {
 
         // aggregate all candidate method names from child, with their method objects
 
-        // instance methods only; static methods are local to the class and always bound
-        for (Method m: javaClass.getDeclaredMethods()) {
-            int modifiers = m.getModifiers();
-            if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
-                if (Modifier.isStatic(modifiers)) {
-                    // static methods are always bound
-                    list2.add(m);
-                } else {
-                    List<Method> methods = nameMethods.get(m.getName());
-                    if (methods == null) {
-                        nameMethods.put(m.getName(), methods = new ArrayList<Method>());
+        // Instance methods only; static methods are local to the class and always bound.
+        // Don't do this class's methods if it isn't public, since only superclass
+        // methods will be available.
+        if (Modifier.isPublic(javaClass.getModifiers())) {
+            for (Method m: javaClass.getDeclaredMethods()) {
+                int modifiers = m.getModifiers();
+                if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
+                    if (Modifier.isStatic(modifiers)) {
+                        // static methods are always bound
+                        list2.add(m);
+                    } else {
+                        List<Method> methods = nameMethods.get(m.getName());
+                        if (methods == null) {
+                            nameMethods.put(m.getName(), methods = new ArrayList<Method>());
+                        }
+                        methods.add(m);
                     }
-                    methods.add(m);
                 }
+            }
+        }
+
+        // add all directly-implemented interface methods
+        for (Class c : javaClass.getInterfaces()) {
+            if (!Modifier.isPublic(c.getModifiers())) continue;
+            
+            for (Method m: c.getDeclaredMethods()) {
+                List<Method> methods = nameMethods.get(m.getName());
+                if (methods == null) {
+                    nameMethods.put(m.getName(), methods = new ArrayList<Method>());
+                }
+                methods.add(m);
             }
         }
 
@@ -1903,6 +1918,9 @@ public class JavaClass extends JavaObject {
         
         // now only bind the ones that remain
         for (Class c = javaClass; c != null; c = c.getSuperclass()) {
+            // skip non-public classes
+            if (!Modifier.isPublic(c.getModifiers())) continue;
+            
             try {
                 for (Method m : c.getDeclaredMethods()) {
                     int modifiers = m.getModifiers();
@@ -1910,6 +1928,15 @@ public class JavaClass extends JavaObject {
                         if (!nameMethods.containsKey(m.getName())) continue;
                         list2.add(m);
                     }
+                }
+            } catch (SecurityException e) {
+            }
+        }
+        for (Class c : javaClass.getInterfaces()) {
+            try {
+                for (Method m : c.getDeclaredMethods()) {
+                    if (!nameMethods.containsKey(m.getName())) continue;
+                    list2.add(m);
                 }
             } catch (SecurityException e) {
             }

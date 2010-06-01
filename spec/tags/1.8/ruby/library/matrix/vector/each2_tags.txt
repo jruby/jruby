@@ -1,1 +1,0 @@
-fails(JRUBY-4176):Vector.each2 given one argument returns self when given a block

@@ -1,0 +1,1 @@
+fails:BasicSocket#send accepts flags to specify unusual sending behaviour

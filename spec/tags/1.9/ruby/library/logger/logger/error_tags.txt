@@ -1,0 +1,4 @@
+fails:Logger#error? returns true if severity level allows printing errors
+fails:Logger#error? returns false if severity level does not allow errors
+fails:Logger#error logs a ERROR message
+fails:Logger#error accepts an application name with a block

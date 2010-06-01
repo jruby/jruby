@@ -34,8 +34,17 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.BlockArgNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.OptArgNode;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.BlockStaticScope;
@@ -43,6 +52,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Interpreted19Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -142,13 +152,13 @@ public class RubyProc extends RubyObject implements DataType {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }
         
-        if (type == Block.Type.LAMBDA && procBlock == null) {
+        if (isLambda() && procBlock == null) {
             // TODO: warn "tried to create Proc object without a block"
         }
         
         block = procBlock.cloneBlock();
 
-        if (type == Block.Type.THREAD) {
+        if (isThread()) {
             // modify the block with a new backref/lastline-grabbing scope
             StaticScope oldScope = block.getBody().getStaticScope();
             StaticScope newScope = new BlockStaticScope(oldScope.getEnclosingScope(), oldScope.getVariables());
@@ -198,12 +208,22 @@ public class RubyProc extends RubyObject implements DataType {
         return getRuntime().getFalse();
     }
     
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject to_s() {
-        return RubyString.newString(getRuntime(), 
-                "#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" + 
+        return RubyString.newString(
+                getRuntime(),"#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
                 file + ":" + (line + 1) + ">");
+    }
+
+    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_s19() {
+        StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
+                file + ":" + (line + 1));
+        if (isLambda())
+            sb.append(" (lambda)");
+        sb.append(">");
+        return RubyString.newString(getRuntime(), sb.toString());
     }
 
     @JRubyMethod(name = "binding")
@@ -222,6 +242,24 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"call", "[]", "yield"}, rest = true, frame = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
+        if (isLambda())
+           this.block.arity().checkArity(context.getRuntime(), args.length);
+
+        if (isProc()) {
+            List<IRubyObject> list = new ArrayList<IRubyObject>(Arrays.asList(args));
+            int required = this.block.arity().required();
+            if (this.block.arity().isFixed()) {
+                if (required > args.length) {
+                    for (int i = args.length; i < required; i++) {
+                        list.add(context.getRuntime().getNil());
+                    }
+                    args = list.toArray(args);
+                } else if (required < args.length) {
+                    args = list.subList(0, required).toArray(args);
+                }
+            }
+        }
+
         return call(context, args, null, block);
     }
 
@@ -266,12 +304,12 @@ public class RubyProc extends RubyObject implements DataType {
         Ruby runtime = context.getRuntime();
 
         // lambda always just returns the value
-        if (target == jumpTarget && block.type == Block.Type.LAMBDA) {
+        if (target == jumpTarget && isLambda()) {
             return (IRubyObject) rj.getValue();
         }
 
         // returns can't propagate out of threads
-        if (type == Block.Type.THREAD) {
+        if (isThread()) {
             throw runtime.newThreadError("return can't jump across threads");
         }
 
@@ -314,4 +352,90 @@ public class RubyProc extends RubyObject implements DataType {
 
         return runtime.getNil();
     }
+
+    @JRubyMethod(name = "parameters", compat = CompatVersion.RUBY1_9)
+    public IRubyObject parameters(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        RubyArray parms = RubyArray.newEmptyArray(runtime);
+        ArgsNode args;
+
+        if (!(this.getBlock().getBody() instanceof Interpreted19Block))
+            return parms;
+
+        // argument names are easily accessible from interpreter
+        RubyArray elem = RubyArray.newEmptyArray(runtime);
+        args = ((Interpreted19Block) this.getBlock().getBody()).getArgs();
+
+        // required parameters
+        List<Node> children = new ArrayList();
+        if (args.getPreCount() > 0) children.addAll(args.getPre().childNodes());
+        if (args.getPostCount() > 0) children.addAll(args.getPost().childNodes());
+
+        Iterator iter = children.iterator();
+        while (iter.hasNext()) {
+            Node node = (Node) iter.next();
+            elem = RubyArray.newEmptyArray(runtime);
+            elem.add(RubySymbol.newSymbol(runtime, this.isLambda() ? "req" : "opt"));
+            if (node instanceof ArgumentNode) {
+                elem.add(RubySymbol.newSymbol(runtime, ((ArgumentNode) node).getName()));
+            }
+            parms.add(elem);
+        }
+
+        // optional parameters
+        if (args.getOptArgs() != null) {
+             children = args.getOptArgs().childNodes();
+            if (! children.isEmpty()) {
+                iter = children.iterator();
+                while (iter.hasNext()) {
+                    Node node = (Node) iter.next();
+                    elem = RubyArray.newEmptyArray(runtime);
+                    elem.add(RubySymbol.newSymbol(runtime, "opt"));
+                    if (node instanceof OptArgNode) {
+                        elem.add(RubySymbol.newSymbol(runtime, ((OptArgNode) node).getName()));
+                    }
+                    parms.add(elem);
+                }
+            }
+        }
+
+        ArgumentNode rest = args.getRestArgNode();
+        if (rest != null) {
+            elem = RubyArray.newEmptyArray(runtime);
+            elem.add(RubySymbol.newSymbol(runtime, "rest"));
+            elem.add(RubySymbol.newSymbol(runtime, rest.getName()));
+            parms.add(elem);
+        }
+
+        BlockArgNode blockArg = args.getBlock();
+        if (blockArg != null) {
+            elem = RubyArray.newEmptyArray(runtime);
+            elem.add(RubySymbol.newSymbol(runtime, "block"));
+            elem.add(RubySymbol.newSymbol(runtime, blockArg.getName()));
+            parms.add(elem);
+        }
+        
+       return parms;
+    }
+
+    @JRubyMethod(name = "lambda?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject lambda_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(isLambda());
+    }
+
+    private boolean isLambda() {
+        return type.equals(Block.Type.LAMBDA);
+    }
+
+    private boolean isNormal() {
+        return type.equals(Block.Type.NORMAL);
+    }
+    private boolean isProc() {
+        return type.equals(Block.Type.PROC);
+    }
+
+    private boolean isThread() {
+        return type.equals(Block.Type.THREAD);
+    }
+
 }

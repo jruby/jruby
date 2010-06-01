@@ -65,9 +65,16 @@ public class ProcMethod extends DynamicMethod {
     public DynamicMethod dup() {
         return new ProcMethod(getImplementationClass(), proc, getVisibility());
     }
+
+    // TODO: Push isSame up to DynamicMethod to simplify general equality
+    public boolean isSame(DynamicMethod method) {
+        if (!(method instanceof ProcMethod)) return false;
+
+        return ((ProcMethod) method).proc == proc;
+    }
     
     @Override
     public Arity getArity() {
         return proc.getBlock().arity();
-    }    
+    }
 }

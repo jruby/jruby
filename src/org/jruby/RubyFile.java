@@ -445,16 +445,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         path = filename.getUnicodeValue();
 
-        String modeString;
+        String modeString = "r";
         ModeFlags modes = new ModeFlags();
         int perm = 0;
 
         try {
             if (args.length > 1) {
-                modeString = args[1].convertToString().toString();
                 modes = parseModes19(context, args[1]);
+                if (args[1] instanceof RubyFixnum) {
+                    perm = getFilePermissions(args);
+                } else {
+                    modeString = args[1].convertToString().toString();
+                }
             } else {
-                modeString = "r";
                 modes = parseModes19(context, RubyString.newString(context.getRuntime(), modeString));
             }
             if (args.length > 2 && !args[2].isNil()) {
@@ -471,7 +474,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
-        } finally {}
+        }
 
         return this;
     }
@@ -720,10 +723,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     public static RubyString get_path(ThreadContext context, IRubyObject obj) {
         if (context.getRuntime().is1_9()) {
-            IRubyObject str = obj.checkStringType();
-            if (!str.isNil()) {
-                return (RubyString) str;
+            if (obj instanceof RubyString) {
+                return (RubyString)obj;
             }
+            
             if (obj.respondsTo("to_path")) {
                 obj = obj.callMethod(context, "to_path");
             }

@@ -292,7 +292,7 @@ public class RubyComplex extends RubyNumeric {
             break;
         default:
              if (!(num instanceof RubyNumeric ) || !f_real_p(context, num).isTrue()) {
-                 throw context.getRuntime().newArgumentError("not a real");
+                 throw context.getRuntime().newTypeError("not a real");
              }
         }
     }

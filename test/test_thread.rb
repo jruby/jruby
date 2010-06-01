@@ -315,11 +315,15 @@ class TestThread < Test::Unit::TestCase
 
     awoke = false
     start_time = Time.now
-    end_time = nil
-    t = Thread.new { sleep 100; end_time = Time.now }
+    done = false
+    t = Thread.new { sleep 100; done = true }
     Thread.pass until t.status == "sleep"
-    t.wakeup.join
-    assert (end_time - start_time) < 1
+    t.wakeup
+    loop {
+      break if done || Time.now - start_time > 10
+      Thread.pass
+    }
+    assert done
   end
 
   # JRUBY-4154

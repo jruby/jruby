@@ -35,7 +35,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.MethodArgs;
+import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
@@ -105,6 +105,10 @@ public class RubyMethod extends RubyObject implements DataType {
         return newMethod;
     }
 
+    public DynamicMethod getMethod() {
+        return method;
+    }
+
     /** Call the method.
      * 
      */
@@ -142,11 +146,17 @@ public class RubyMethod extends RubyObject implements DataType {
     @Override
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyMethod)) return context.getRuntime().getFalse();
+        if (method instanceof ProcMethod) return context.getRuntime().newBoolean(((ProcMethod) method).isSame(((RubyMethod) other).getMethod()));
         RubyMethod otherMethod = (RubyMethod)other;
         return context.getRuntime().newBoolean(implementationModule == otherMethod.implementationModule &&
                                        originModule == otherMethod.originModule &&
                                        receiver == otherMethod.receiver &&
                                        method.getRealMethod() == otherMethod.method.getRealMethod());
+    }
+
+    @JRubyMethod(name = "eql?", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_eql19(ThreadContext context, IRubyObject other) {
+        return op_equal(context, other);
     }
 
     @JRubyMethod(name = "clone")
@@ -284,9 +294,11 @@ public class RubyMethod extends RubyObject implements DataType {
 
     @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
     public IRubyObject source_location(ThreadContext context) {
-        if (method instanceof PositionAware) {
+        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
+        
+        if (realMethod instanceof PositionAware) {
             Ruby runtime = context.getRuntime();
-            PositionAware poser = (PositionAware) method;
+            PositionAware poser = (PositionAware) realMethod;
             return runtime.newArray(runtime.newString(poser.getFile()),
                     runtime.newFixnum(poser.getLine() + 1 /*zero-based*/));
         }

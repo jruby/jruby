@@ -1,1 +1,0 @@
-fails:Integer#gcdlcm raises an TypeError unless the argument is an Integer

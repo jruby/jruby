@@ -352,9 +352,13 @@ public class RubyModule extends RubyObject {
      */
     public String getName() {
         if (fullName == null) {
-            fullName = calculateFullName();
+            calculateName();
         }
         return fullName;
+    }
+
+    private void calculateName() {
+        fullName = calculateFullName();
     }
 
     private String calculateFullName() {
@@ -1245,9 +1249,11 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound) {
+    public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound, Visibility visibility) {
         DynamicMethod method = searchMethod(name);
-        if (method.isUndefined()) {
+
+        if (method.isUndefined() ||
+            (visibility != null && method.getVisibility() != visibility)) {
             throw getRuntime().newNameError("undefined method `" + name +
                 "' for class `" + this.getName() + "'", name);
         }
@@ -1258,7 +1264,7 @@ public class RubyModule extends RubyObject {
             originModule = ((MetaClass)originModule).getRealClass();
         }
 
-        RubyMethod newMethod = null;
+        RubyMethod newMethod;
         if (bound) {
             newMethod = RubyMethod.newMethod(implementationModule, name, originModule, name, method, receiver);
         } else {
@@ -1798,7 +1804,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "instance_method", required = 1)
     public IRubyObject instance_method(IRubyObject symbol) {
-        return newMethod(null, symbol.asJavaString(), false);
+        return newMethod(null, symbol.asJavaString(), false, null);
     }
 
     /** rb_class_protected_instance_methods
@@ -2305,7 +2311,12 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        return fastSetConstant(validateConstant(symbol.asJavaString()).intern(), value);
+        IRubyObject constant = fastSetConstant(validateConstant(symbol.asJavaString()).intern(), value);
+
+        if (constant instanceof RubyModule) {
+            ((RubyModule)constant).calculateName();
+        }
+        return constant;
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)

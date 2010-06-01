@@ -1,0 +1,1 @@
+fails:Tempfile#length returns the size of self even if self is closed

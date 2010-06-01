@@ -63,4 +63,9 @@ public class MethodMethod extends DynamicMethod {
     public DynamicMethod dup() {
         return new MethodMethod(getImplementationClass(), method, getVisibility());
     }
+
+    @Override
+    public DynamicMethod getRealMethod() {
+        return method.getMethod();
+    }
 }

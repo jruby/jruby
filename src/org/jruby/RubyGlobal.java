@@ -186,7 +186,14 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("PLATFORM", platform);
         
         IRubyObject jrubyVersion = runtime.newString(Constants.VERSION).freeze(context);
+        IRubyObject jrubyRevision = runtime.newString(Constants.REVISION).freeze(context);
         runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
+        runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
+
+        if (runtime.is1_9()) {
+            // needs to be a fixnum, but our revision is a sha1 hash from git
+            runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY1_9_REVISION));
+        }
 		
         GlobalVariable kcodeGV = new KCodeGlobalVariable(runtime, "$KCODE", runtime.newString("NONE"));
         runtime.defineVariable(kcodeGV);
@@ -339,9 +346,7 @@ public class RubyGlobal {
         
         @Override
         public IRubyObject set(IRubyObject lastExitStatus) {
-            runtime.getCurrentContext().setLastExitStatus(lastExitStatus);
-            
-            return lastExitStatus;
+            throw runtime.newNameError("$? is a read-only variable", "$?");
         }
     }
 

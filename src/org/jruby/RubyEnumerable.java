@@ -43,8 +43,10 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
@@ -68,6 +70,12 @@ public class RubyEnumerable {
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self,
             BlockCallback callback) {
         return RuntimeHelpers.invoke(context, self, "each", CallBlock.newCallClosure(self, runtime.getEnumerable(), 
+                Arity.noArguments(), callback, context));
+    }
+
+    public static IRubyObject callEach19(Ruby runtime, ThreadContext context, IRubyObject self,
+            BlockCallback callback) {
+        return RuntimeHelpers.invoke(context, self, "each", CallBlock19.newCallClosure(self, runtime.getEnumerable(),
                 Arity.noArguments(), callback, context));
     }
 
@@ -703,7 +711,7 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             final RubyArray result = runtime.newArray();
 
-            callEach(runtime, context, self, new BlockCallback() {
+            callEach19(runtime, context, self, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
                     IRubyObject value = block.yield(ctx, larg);
@@ -878,6 +886,20 @@ public class RubyEnumerable {
     @JRubyMethod(name = "enum_with_index", frame = true)
     public static IRubyObject enum_with_index(ThreadContext context, IRubyObject self, Block block) {
         return block.isGiven() ? each_with_indexCommon(context, self, block) : enumeratorize(context.getRuntime(), self, "enum_with_index");
+    }
+
+    @JRubyMethod(name = "each_entry", frame = true, rest = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject each_entry(ThreadContext context, final IRubyObject self, final IRubyObject[] args, final Block block) {
+        return block.isGiven() ? each_entryCommon(context, self, args, block) : enumeratorize(context.getRuntime(), self, "each_entry", args);
+    }
+
+    private static IRubyObject each_entryCommon(ThreadContext context, final IRubyObject self, final IRubyObject[] args, final Block block) {
+        callEach(context.getRuntime(), context, self, args, new BlockCallback() {
+            public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                return block.yieldSpecific(ctx, checkArgs(ctx.getRuntime(), largs));
+            }
+        });
+        return self;
     }
 
     @JRubyMethod(name = "reverse_each", frame = true)

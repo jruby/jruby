@@ -33,6 +33,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyInteger;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -614,5 +615,8 @@ public class Numeric {
 
     }
 
-
+    public static void checkInteger(ThreadContext context, IRubyObject obj) {
+        if (!(obj instanceof RubyInteger))
+            throw context.getRuntime().newTypeError("not an integer");
+    }
 }

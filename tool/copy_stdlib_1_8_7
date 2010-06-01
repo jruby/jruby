@@ -153,7 +153,7 @@ for file in STDLIB_FILES
 end
 
 for file, target in EXT_FILES
-  if File.directory? file
+  if File.directory? "#{FORK_DIR}/#{file}"
   	FileUtils.cp_r "#{FORK_DIR}/#{file}", "#{JRUBY_DIR}/lib/ruby/1.8/", :verbose => true
   else
   	FileUtils.cp_r "#{FORK_DIR}/#{file}", "#{JRUBY_DIR}/lib/ruby/1.8/#{target}", :verbose => true

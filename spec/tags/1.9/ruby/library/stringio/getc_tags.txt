@@ -1,0 +1,1 @@
+fails:StringIO#getc returns the charactor at the current position

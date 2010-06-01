@@ -1,0 +1,1 @@
+fails(JRUBY-4819):Socket#gethostbyname returns broadcast address info for '<broadcast>'

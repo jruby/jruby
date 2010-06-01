@@ -302,7 +302,7 @@ public class JITCompiler implements JITCompilerMBean {
             if (bodyNode != null) {
                 // we have a body, do a full-on method
                 methodCompiler = asmCompiler.startFileMethod(args, staticScope, inspector);
-                compiler.compile(bodyNode, methodCompiler,true);
+                compiler.compileBody(bodyNode, methodCompiler,true);
             } else {
                 // If we don't have a body, check for required or opt args
                 // if opt args, they could have side effects

@@ -333,4 +333,14 @@ class TestClass < Test::Unit::TestCase
 
     assert_equal 'foo', c.new.foo
   end
+
+  # JRUBY-4815
+  def test_const_set
+    klass_name = 'ExampleClass'
+    klass = Class.new
+    assert_not_equal klass_name, klass.name
+
+    Object.const_set klass_name, klass
+    assert_equal klass_name, klass.name
+  end
 end

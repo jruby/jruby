@@ -491,9 +491,7 @@ public class RubyProcess {
             throw runtime.newErrnoECHILDError();
         }
         
-        runtime.getGlobalVariables().set(
-                "$?", 
-                RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
+        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
         return runtime.newFixnum(pid);
     }
 
@@ -518,9 +516,7 @@ public class RubyProcess {
             throw runtime.newErrnoECHILDError();
         }
         
-        runtime.getGlobalVariables().set(
-                "$?", 
-                RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
+        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
         return runtime.newFixnum(pid);
     }
 

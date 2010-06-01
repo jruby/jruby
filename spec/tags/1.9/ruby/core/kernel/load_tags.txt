@@ -2,3 +2,4 @@ fails:Kernel#load returns __FILE__ as an absolute path
 fails:Kernel#load calls #to_path on non-String arguments
 fails:Kernel#load allows wrapping the code in the file in an anonymous module
 fails(JRUBY-4543):Kernel#load sets the enclosing scope to an anonymous module if passed true for 'wrap'
+fails:Kernel.load sets the enclosing scope to an anonymous module if passed true for 'wrap'

@@ -46,6 +46,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callsite.ArefCallSite;
 import org.jruby.runtime.callsite.AsetCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.callsite.ModCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.callsite.SuperCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
@@ -131,7 +132,7 @@ public class MethodIndex {
         return index;
     }
     
-    public synchronized static CallSite getCallSite(String name) {
+    public static CallSite getCallSite(String name) {
         // fast and safe respond_to? call site logic
         if (name.equals("respond_to?")) return new RespondToCallSite();
         
@@ -140,7 +141,7 @@ public class MethodIndex {
         return new NormalCachingCallSite(name);
     }
 
-    public synchronized static CallSite getFastOpsCallSite(String name) {
+    public static CallSite getFastOpsCallSite(String name) {
         if (name.equals("+")) {
             return new PlusCallSite();
         } else if (name.equals("-")) {
@@ -159,20 +160,22 @@ public class MethodIndex {
             return new ArefCallSite();
         } else if (name.equals("[]=")) {
             return new AsetCallSite();
+        } else if (name.equals("%")) {
+            return new ModCallSite();
         }
 
         return new NormalCachingCallSite(name);
     }
     
-    public synchronized static CallSite getFunctionalCallSite(String name) {
+    public static CallSite getFunctionalCallSite(String name) {
         return new FunctionalCachingCallSite(name);
     }
     
-    public synchronized static CallSite getVariableCallSite(String name) {
+    public static CallSite getVariableCallSite(String name) {
         return new VariableCachingCallSite(name);
     }
 
-    public synchronized static CallSite getSuperCallSite() {
+    public static CallSite getSuperCallSite() {
         return new SuperCallSite();
     }
 }

@@ -26,9 +26,8 @@
 package org.jruby;
 
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
+import java.util.Locale;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
@@ -49,6 +48,7 @@ import org.jruby.util.StringSupport;
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject {
     public static final Charset UTF8 = Charset.forName("UTF-8");
+    public static final ByteList LOCALE = ByteList.create("locale");
 
     public static RubyClass createEncodingClass(Ruby runtime) {
         RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -255,6 +255,9 @@ public class RubyEncoding extends RubyObject {
         EncodingService service = runtime.getEncodingService();
         // TODO: check for ascii string
         ByteList name = str.convertToString().getByteList();
+        if (name.equals(LOCALE)) {
+            name = ByteList.create(Charset.defaultCharset().name());
+        }
         Entry e = service.findEncodingOrAliasEntry(name);
 
         if (e == null) throw context.getRuntime().newArgumentError("unknown encoding name - " + name);

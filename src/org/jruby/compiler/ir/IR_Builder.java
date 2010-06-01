@@ -103,7 +103,6 @@ import org.jruby.compiler.ir.instructions.ALU_Instr;
 import org.jruby.compiler.ir.instructions.ATTR_ASSIGN_Instr;
 import org.jruby.compiler.ir.instructions.BEQ_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
-import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.CallInstruction;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
@@ -267,6 +266,10 @@ public class IR_Builder
            if (isDebug) {
                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
            }
+           if (isDebug) {
+               System.out.println("################## After cfg linearization pass ##################");
+           }
+           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LinearizeCFG());
 
            System.out.println("Time to build AST         : " + (t2 - t1));
            System.out.println("Time to build IR          : " + (t3 - t2));
@@ -1909,10 +1912,7 @@ public class IR_Builder
         if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
             closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
 
-            // Assign the closure to the block variable in the parent scope and return it
-        Variable blockVar = s.getNewTemporaryVariable();
-        s.addInstr(new BUILD_CLOSURE_Instr(blockVar, closure));
-        return blockVar;
+        return new MetaObject(closure);
     }
 
     public Operand buildGlobalAsgn(GlobalAsgnNode globalAsgnNode, IR_Scope m) {
@@ -2047,10 +2047,7 @@ public class IR_Builder
         if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
             closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
 
-            // Assign the closure to the block variable in the parent scope and return it
-        Variable blockVar = s.getNewTemporaryVariable();
-        s.addInstr(new BUILD_CLOSURE_Instr(blockVar, closure));
-        return blockVar;
+        return new MetaObject(closure);
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode, IR_Scope s) {

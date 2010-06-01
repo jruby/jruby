@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -329,8 +330,18 @@ public class RubyDigest {
         @JRubyMethod
         public static IRubyObject file(ThreadContext ctx, IRubyObject self, IRubyObject filename) {
             Ruby runtime = self.getRuntime();
+            RubyString filenameStr = filename.convertToString();
+            
+            if (RubyFileTest.directory_p(runtime, filenameStr).isTrue()) {
+                if (Platform.IS_WINDOWS) {
+                    throw runtime.newErrnoEACCESError(filenameStr.asJavaString());
+                } else {
+                    throw runtime.newErrnoEISDirError(filenameStr.asJavaString());
+                }
+            }
+
             IRubyObject io = RuntimeHelpers.invoke(ctx, runtime.getFile(),
-                    "open", filename, runtime.newString("rb"));
+                    "open", filenameStr, runtime.newString("rb"));
 
             try {
                 RubyString buf = runtime.newString();
@@ -359,7 +370,7 @@ public class RubyDigest {
             super(runtime, type);
         }
         
-        @JRubyMethod(name = "digest", required = 1, optional = 1, frame = true, meta = true)
+        @JRubyMethod(name = "digest", required = 1, rest = true, frame = true, meta = true)
         public static IRubyObject s_digest(ThreadContext ctx, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
             Ruby runtime = recv.getRuntime();
             if (args.length < 1) {

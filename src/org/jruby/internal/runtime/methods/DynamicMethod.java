@@ -71,6 +71,8 @@ public abstract class DynamicMethod {
     protected long serialNumber;
     /** Is this a builtin core method or not */
     protected boolean builtin = false;
+    /** Data on what native call will eventually be made */
+    protected NativeCall nativeCall;
 
     /**
      * Base constructor for dynamic method handles.
@@ -424,6 +426,50 @@ public abstract class DynamicMethod {
      */
     public void setCallConfig(CallConfiguration callConfig) {
         this.callConfig = callConfig;
+    }
+    
+    public static class NativeCall {
+        private final Class nativeTarget;
+        private final String nativeName;
+        private final Class nativeReturn;
+        private final Class[] nativeSignature;
+        private final boolean statik;
+
+        public NativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
+            this.nativeTarget = nativeTarget;
+            this.nativeName = nativeName;
+            this.nativeReturn = nativeReturn;
+            this.nativeSignature = nativeSignature;
+            this.statik = statik;
+        }
+
+        public Class getNativeTarget() {
+            return nativeTarget;
+        }
+
+        public String getNativeName() {
+            return nativeName;
+        }
+
+        public Class getNativeReturn() {
+            return nativeReturn;
+        }
+
+        public Class[] getNativeSignature() {
+            return nativeSignature;
+        }
+
+        public boolean isStatic() {
+            return statik;
+        }
+    }
+
+    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
+        this.nativeCall = new NativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik);
+    }
+
+    public NativeCall getNativeCall() {
+        return nativeCall;
     }
 
     /**

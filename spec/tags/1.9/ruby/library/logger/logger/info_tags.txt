@@ -1,0 +1,4 @@
+fails:Logger#info? returns true if severity level allows info messages
+fails:Logger#info? returns false if severity level does not allow info messages
+fails:Logger#info logs a INFO message
+fails:Logger#info accepts an application name with a block

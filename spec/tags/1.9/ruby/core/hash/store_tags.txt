@@ -1,1 +1,0 @@
-fails(JRUBY-4565):Hash#store raises a RuntimeError if a new key is added during iteration

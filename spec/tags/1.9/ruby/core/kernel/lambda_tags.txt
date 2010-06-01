@@ -1,1 +1,5 @@
 fails:Kernel.lambda allows long returns to flow through it
+fails:Kernel.lambda checks the arity of the call when no args are specified
+fails:Kernel.lambda checks the arity when 1 arg is specified
+fails:Kernel.lambda accepts 0 arguments when used with ||
+fails:Kernel.lambda strictly checks the arity when 0 or 2..inf args are specified

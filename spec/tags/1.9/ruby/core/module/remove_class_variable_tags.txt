@@ -1,0 +1,2 @@
+fails:Module#remove_class_variable removes class variable
+fails:Module#remove_class_variable returns the value of removing class variable

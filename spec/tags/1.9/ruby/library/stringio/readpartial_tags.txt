@@ -1,0 +1,10 @@
+fails:StringIO#readpartial raises IOError on closed stream
+fails:StringIO#readpartial reads at most the specified number of bytes
+fails:StringIO#readpartial reads after ungetc with data in the buffer
+fails:StringIO#readpartial reads after ungetc without data in the buffer
+fails:StringIO#readpartial discards the existing buffer content upon successful read
+fails:StringIO#readpartial raises EOFError on EOF
+fails:StringIO#readpartial discards the existing buffer content upon error
+fails:StringIO#readpartial raises IOError if the stream is closed
+fails:StringIO#readpartial raises ArgumentError if the negative argument is provided
+fails:StringIO#readpartial immediately returns an empty string if the length argument is 0

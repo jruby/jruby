@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -36,9 +36,11 @@ import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
+import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
@@ -47,6 +49,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
+
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -59,8 +62,6 @@ public class FiberLibrary implements Library {
                 return new Fiber(runtime, klazz);
             }
         });
-        // FIXME: Not sure what the semantics of transfer are
-        //cFiber.defineFastMethod("transfer", cb.getFastOptMethod("transfer"));
 
         cFiber.defineAnnotatedMethods(Fiber.class);
         cFiber.defineAnnotatedMethods(FiberMeta.class);
@@ -74,6 +75,14 @@ public class FiberLibrary implements Library {
 
     private Executor executor;
 
+    public enum FiberState {
+        NOT_STARTED,
+        STARTED,
+        YIELDED,
+        RUNNING,
+        FINISHED
+    }
+
     @JRubyClass(name="Fiber")
     public class Fiber extends RubyObject implements ExecutionContext {
         private final Object yieldLock = new Object();
@@ -82,27 +91,40 @@ public class FiberLibrary implements Library {
         private IRubyObject result;
         private RubyThread parent;
         private Runnable runnable;
-        private boolean alive = false;
+        private FiberState state = FiberState.NOT_STARTED;
 
         @JRubyMethod(rest = true, visibility = PRIVATE)
         public IRubyObject initialize(ThreadContext context, final IRubyObject[] args, Block block) {
-            this.block = block;
             final Ruby runtime = context.getRuntime();
+
+            if (block == null || !block.isGiven()) {
+                throw runtime.newArgumentError("tried to create Proc object without a block");
+            }
+
+            this.block = block;
             this.parent = context.getThread();
             this.result = runtime.getNil();
             this.runnable = new Runnable() {
                 public void run() {
                     synchronized (yieldLock) {
-                        alive = true;
+                        state = FiberState.STARTED;
                         ThreadContext context = runtime.getCurrentContext();
                         context.setFiber(Fiber.this);
                         try {
-                            result = Fiber.this.block.yieldArray(runtime.getCurrentContext(), result, null, null);
+                            result = Fiber.this.block.yieldArray(context, result, null, null);
+                        } catch (JumpException.RetryJump rtry) {
+                            // FIXME: technically this should happen before the block is executed
+                            parent.raise(new IRubyObject[] {runtime.newSyntaxError("Invalid retry").getException()}, Block.NULL_BLOCK);
+                        } catch (JumpException.BreakJump brk) {
+                            parent.raise(new IRubyObject[] {runtime.newLocalJumpError(Reason.BREAK, runtime.getNil(), "break from proc-closure").getException()}, Block.NULL_BLOCK);
+                        } catch (JumpException.ReturnJump ret) {
+                            parent.raise(new IRubyObject[] {runtime.newLocalJumpError(Reason.RETURN, runtime.getNil(), "unexpected return").getException()}, Block.NULL_BLOCK);
                         } catch (RaiseException re) {
                             // re-raise exception in parent thread
                             parent.raise(new IRubyObject[] {re.getException()}, Block.NULL_BLOCK);
                         } finally {
                             yieldLock.notify();
+                            state = FiberState.FINISHED;
                         }
                     }
                 }
@@ -127,12 +149,22 @@ public class FiberLibrary implements Library {
                     result = context.getRuntime().newArrayNoCopyLight(args);
                 }
                 try {
-                    if (!alive) {
+                    switch (state) {
+                    case NOT_STARTED:
                         executor.execute(runnable);
                         yieldLock.wait();
-                    } else {
+                        break;
+                    case RUNNING:
+                        throw context.getRuntime().newFiberError("double resume");
+                    case FINISHED:
+                        throw context.getRuntime().newFiberError("dead fiber called");
+                    case YIELDED:
+                        state = FiberState.RUNNING;
                         yieldLock.notify();
                         yieldLock.wait();
+                        break;
+                    default:
+                        throw context.getRuntime().newFiberError("fiber in an unknown state");
                     }
                 } catch (InterruptedException ie) {
                     throw context.getRuntime().newConcurrencyError(ie.getLocalizedMessage());
@@ -141,22 +173,24 @@ public class FiberLibrary implements Library {
             return result;
         }
 
-        @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
-        public IRubyObject transfer(IRubyObject[] args) {
+        // This should only be defined after require 'fiber'
+        @JRubyMethod(name = "transfer", rest = true, compat = CompatVersion.RUBY1_9)
+        public IRubyObject transfer(ThreadContext context, IRubyObject[] args) {
             synchronized (yieldLock) {
                 yieldLock.notify();
                 try {
                     yieldLock.wait();
                 } catch (InterruptedException ie) {
-                    throw getRuntime().newConcurrencyError(ie.getLocalizedMessage());
+                    throw context.getRuntime().newConcurrencyError(ie.getLocalizedMessage());
                 }
             }
             return result;
         }
 
+        // This should only be defined after require 'fiber'
         @JRubyMethod(name = "alive?", compat = CompatVersion.RUBY1_9)
         public IRubyObject alive_p(ThreadContext context) {
-            return context.getRuntime().newBoolean(alive);
+            return context.getRuntime().newBoolean(state != FiberState.FINISHED);
         }
 
         public Map<Object, IRubyObject> getContextVariables() {
@@ -168,28 +202,41 @@ public class FiberLibrary implements Library {
         @JRubyMethod(compat = CompatVersion.RUBY1_9, rest = true, meta = true)
         public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
             Fiber fiber = context.getFiber();
-            // FIXME: Broken but behaving
-            if (args.length == 0) {
-                fiber.result = context.getRuntime().getNil();
-            } else if (args.length == 1) {
+            if (fiber == null) {
+                throw context.getRuntime().newFiberError("can't yield from root fiber");
+            }
+
+            if (args.length == 1) {
                 fiber.result = args[0];
-            } else {
+            } else if (args.length > 0) {
                 fiber.result = context.getRuntime().newArrayNoCopyLight(args);
             }
             synchronized (fiber.yieldLock) {
                 fiber.yieldLock.notify();
                 try {
+                    fiber.state = FiberState.YIELDED;
                     fiber.yieldLock.wait();
                 } catch (InterruptedException ie) {
                     throw context.getRuntime().newConcurrencyError(ie.getLocalizedMessage());
                 }
             }
-            return context.getRuntime().getNil();
+            return fiber.result;
+        }
+    }
+
+    /** These methods get loaded when you require 'fiber'. */
+    public static class ExtLibrary implements Library {
+        @SuppressWarnings("deprecation")
+        public void load(final Ruby runtime, boolean wrap) {
+            RubyClass cFiber = runtime.getClass("Fiber");
+            cFiber.defineAnnotatedMethods(FiberExtMeta.class);
         }
 
-        @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
-        public static IRubyObject current(ThreadContext context, IRubyObject recv) {
-            return context.getRuntime().getCurrentContext().getFiber();
+        public static class FiberExtMeta {
+            @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
+            public static IRubyObject current(ThreadContext context, IRubyObject recv) {
+                return context.getRuntime().getCurrentContext().getFiber();
+            }
         }
     }
 }

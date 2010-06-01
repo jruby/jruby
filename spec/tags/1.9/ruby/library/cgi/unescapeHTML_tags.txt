@@ -1,0 +1,2 @@
+fails:CGI.unescapeHTML unescapes '&#99' format entities
+fails:CGI.unescapeHTML unescapes '&#x9999' format entities

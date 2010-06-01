@@ -1,2 +1,0 @@
-fails:Array#product when given a block yields all combinations in turn
-fails:Array#product when given a block returns self

@@ -18,7 +18,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.BRANCH_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
-import org.jruby.compiler.ir.instructions.BUILD_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.CallInstruction;
 import org.jruby.compiler.ir.instructions.IR_Instr;
@@ -70,6 +69,7 @@ public class CFG {
     Map<String, DataFlowProblem>        _dfProbs;       // Map of name -> dataflow problem
     Map<Label, BasicBlock>              _bbMap;         // Map of label -> basic blocks with that label
     BasicBlock[]                        _bbArray;       // Array indexed by bb id
+    List<BasicBlock>                    _linearizedBBList;  // Linearized list of bbs
 
     public CFG(IR_ExecutionScope s) {
         _nextBBId = 0; // Init before building basic blocks below!
@@ -285,8 +285,11 @@ public class CFG {
                     retAddrMap.put(v, addrs);
                 }
                 addrs.add(((SET_RETADDR_Instr) i).getReturnAddr());
-            } else if (i instanceof BUILD_CLOSURE_Instr) { // Build CFG for the closure!
-                ((BUILD_CLOSURE_Instr) i).getClosure().buildCFG();
+            } else if (i instanceof CallInstruction) { // Build CFG for the closure if there exists one 
+                Operand closureArg = ((CallInstruction)i).getClosureArg();
+                if (closureArg instanceof MetaObject) {
+                    ((IR_Closure)((MetaObject)closureArg)._scope).buildCFG();
+                }
             }
         }
 
@@ -357,6 +360,7 @@ public class CFG {
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, getNewLabel(), false);
         _cfg.addVertex(splitBB);
+        _bbMap.put(splitBB._label, splitBB);
         List<CFG_Edge> edgesToRemove = new java.util.ArrayList<CFG_Edge>();
         for (CFG_Edge e: outgoingEdgesOf(yieldBB)) {
             _cfg.addEdge(splitBB, e._dst);
@@ -372,6 +376,7 @@ public class CFG {
         for (BasicBlock b: ccfg.getNodes()) {
             if (b != cEntry && b != cExit) {
               _cfg.addVertex(b);
+              _bbMap.put(b._label, b);
               b.updateCFG(this);
               b.processClosureArgAndReturnInstrs(ii, yield);
             }
@@ -397,6 +402,7 @@ public class CFG {
 
         // 1. split callsite bb and move outbound edges from callsite bb to split bb.
         BasicBlock splitBB = callBB.splitAtInstruction(call, getNewLabel(), false);
+        _bbMap.put(splitBB._label, splitBB);
         _cfg.addVertex(splitBB);
         List<CFG_Edge> edgesToRemove = new java.util.ArrayList<CFG_Edge>();
         for (CFG_Edge e: outgoingEdgesOf(callBB)) {
@@ -411,12 +417,15 @@ public class CFG {
         BasicBlock mEntry = mcfg.getEntryBB(); 
         BasicBlock mExit  = mcfg.getExitBB(); 
         DirectedGraph<BasicBlock, CFG_Edge> g = getNewCFG();
+
+        // map of original bb in callee to renamed (inlined) bb in the caler 
         Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
         for (BasicBlock b: mcfg.getNodes()) {
             if (b != mEntry && b != mExit) {
               BasicBlock b2 = b.cloneForInlining(ii);
               bbRenameMap.put(b, b2);
               _cfg.addVertex(b2);
+              _bbMap.put(b2._label, b2);
             }
         }
 
@@ -636,5 +645,85 @@ public class CFG {
 
     public DataFlowProblem getDataFlowSolution(String name) {
         return _dfProbs.get(name);
+    }
+
+    private void pushBBOnStack(Stack<BasicBlock> stack, BitSet bbSet, BasicBlock bb) {
+        if (!bbSet.get(bb.getID()))
+            stack.push(bb);
+    }
+
+	public List<BasicBlock> linearize() {
+        _linearizedBBList = new ArrayList<BasicBlock>();
+       
+        // Linearize the basic blocks of the cfg!
+        // This is a simple linearization -- nothing fancy
+        // To break cycles, we assume that a cfg edge where the target BB id is 
+        // smaller than the source BB id is a loop back edge.
+        BasicBlock root = getEntryBB();
+        BitSet bbSet = new BitSet(1+getMaxNodeID());
+        bbSet.set(root.getID());
+        Stack<BasicBlock> stack = new Stack<BasicBlock>();
+        stack.push(root);
+        while (!stack.empty()) {
+            BasicBlock b = stack.pop();
+            _linearizedBBList.add(b);
+            bbSet.set(b.getID());
+
+//            System.out.println("processing bb: " + b.getID());
+       
+            // Find the basic block that is the target of the 'taken' branch
+            List<IR_Instr> bis = b.getInstrs();
+            int n = bis.size();
+            if (n == 0) {
+                // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
+                BasicBlock b1 = null, b2 = null; 
+                for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                    if (b1 == null)
+                        b1 = e._dst;
+                    else if (b2 == null)
+                        b2 = e._dst;
+                    else
+                        throw new RuntimeException("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
+                }
+
+                // Process lower number target first!
+                if (b1 == null) {
+                    ;
+                }
+                else if (b2 == null) {
+                    pushBBOnStack(stack, bbSet, b1);
+                }
+                else if (b1.getID() < b2.getID()) {
+                    pushBBOnStack(stack, bbSet, b2);
+                    pushBBOnStack(stack, bbSet, b1);
+                }
+                else {
+                    pushBBOnStack(stack, bbSet, b1);
+                    pushBBOnStack(stack, bbSet, b2);
+                }
+            }
+            else {
+               IR_Instr lastInstr = bis.get(n-1);
+//             System.out.println("last instr is: " + lastInstr);
+               // Ignore target bbs if this bb ends in a jump
+               if (! (lastInstr instanceof JUMP_Instr)) {
+                   BasicBlock takenBlock = null;
+
+                   // Push the taken block onto the stack first so that it gets processed last!
+                   if (lastInstr instanceof BRANCH_Instr) {
+                       takenBlock = _bbMap.get(((BRANCH_Instr)lastInstr).getJumpTarget());
+                       pushBBOnStack(stack, bbSet, takenBlock);
+                   }
+          
+                   // Push everything else
+                   for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                       BasicBlock x = e._dst;
+                       if (x != takenBlock)
+                           pushBBOnStack(stack, bbSet, x);
+                   }
+               }
+            }
+        }
+        return _linearizedBBList;
     }
 }

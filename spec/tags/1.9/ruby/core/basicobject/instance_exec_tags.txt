@@ -1,1 +1,0 @@
-fails:BasicObject#instance_exec raises a LocalJumpError unless given a block

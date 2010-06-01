@@ -1,2 +1,0 @@
-fails:BasicObject behaves privately
-fails:BasicObject behaves publically

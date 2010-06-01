@@ -165,3 +165,15 @@ class C
   end
 end
 C.new.var =()
+
+# JRUBY-4807
+class JR4807
+  def bar; yield; end
+  def baz; bar { foo }; end
+
+  def method_missing(name, *args, &block)
+    super
+  end
+end
+
+test_exception(NameError) { JR4807.new.baz }

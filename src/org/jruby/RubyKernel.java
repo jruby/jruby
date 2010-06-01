@@ -55,7 +55,6 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
@@ -147,7 +146,9 @@ public class RubyKernel {
             }
         });
 
-        runtime.setDefaultMethodMissing(module.searchMethod("method_missing"));
+        if (!runtime.is1_9()) { // method_missing is in BasicObject in 1.9
+            runtime.setDefaultMethodMissing(module.searchMethod("method_missing"));
+        }
 
         return module;
     }
@@ -213,7 +214,7 @@ public class RubyKernel {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "method_missing", rest = true, frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "method_missing", rest = true, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject method_missing(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
@@ -223,7 +224,7 @@ public class RubyKernel {
         return methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args, block);
     }
 
-    private static IRubyObject methodMissingDirect(ThreadContext context, IRubyObject recv, RubySymbol symbol, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
+    protected static IRubyObject methodMissingDirect(ThreadContext context, IRubyObject recv, RubySymbol symbol, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         
         // create a lightweight thunk
@@ -297,10 +298,14 @@ public class RubyKernel {
 
     @JRubyMethod(name = "abort", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject abort(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+
         if(args.length == 1) {
-            context.getRuntime().getGlobalVariables().get("$stderr").callMethod(context,"puts",args[0]);
+            runtime.getGlobalVariables().get("$stderr").callMethod(context,"puts",args[0]);
         }
-        throw new MainExitException(1,true);
+        
+        exit(runtime, new IRubyObject[] { runtime.getFalse() }, false);
+        return runtime.getNil(); // not reached
     }
 
     @JRubyMethod(name = "Array", required = 1, module = true, visibility = PRIVATE)
@@ -467,6 +472,11 @@ public class RubyKernel {
         return result;
     }
 
+    @JRubyMethod(name = "public_method", required = 1, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject public_method(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
+        return recv.getMetaClass().newMethod(recv, symbol.asJavaString(), true, PUBLIC);
+    }
+
     /** rb_f_putc
      */
     @JRubyMethod(name = "putc", required = 1, module = true, visibility = PRIVATE)
@@ -518,6 +528,11 @@ public class RubyKernel {
     @JRubyMethod(name = "readlines", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyArgsFile.readlines(context, context.getRuntime().getArgsFile(), args);
+    }
+
+    @JRubyMethod(name = "respond_to_missing?", module = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol, IRubyObject isPrivate) {
+        return context.getRuntime().getFalse();
     }
 
     /** Returns value of $_.
@@ -1227,17 +1242,17 @@ public class RubyKernel {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "singleton_method_added", required = 1, frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "singleton_method_added", required = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject singleton_method_added(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "singleton_method_removed", required = 1, frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "singleton_method_removed", required = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject singleton_method_removed(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "singleton_method_undefined", required = 1, frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "singleton_method_undefined", required = 1, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject singleton_method_undefined(ThreadContext context, IRubyObject recv, IRubyObject symbolId, Block block) {
         return context.getRuntime().getNil();
     }
@@ -1410,7 +1425,7 @@ public class RubyKernel {
             resultCode = 127;
         }
 
-        runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
+        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
 
         byte[] out = output.toByteArray();
         int length = out.length;
@@ -1438,7 +1453,7 @@ public class RubyKernel {
         return RubyString.newStringNoCopy(runtime, out, 0, length);
     }
 
-    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyInteger srand(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
 
@@ -1453,39 +1468,75 @@ public class RubyKernel {
         return runtime.newFixnum(oldRandomSeed);
     }
     
-    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyInteger srand(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        RubyInteger integerSeed = arg.convertToInteger("to_int");
+        IRubyObject newRandomSeed = arg.convertToInteger("to_int");
         Ruby runtime = context.getRuntime();
 
+        long seedArg = 0;
+        if (newRandomSeed instanceof RubyBignum) {
+            seedArg = ((RubyBignum)newRandomSeed).getValue().longValue();
+        } else if (!arg.isNil()) {
+            seedArg = RubyNumeric.num2long(newRandomSeed);
+        }
+
         long oldRandomSeed = runtime.getRandomSeed();
-        runtime.setRandomSeed(integerSeed.getLongValue());
+        runtime.setRandomSeed(seedArg);
 
         runtime.getRandom().setSeed(runtime.getRandomSeed());
         return runtime.newFixnum(oldRandomSeed);
     }
 
-    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE)
+
+    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject srand19(ThreadContext context, IRubyObject recv) {
+        return RubyRandom.srand(context, recv);
+    }
+
+    @JRubyMethod(name = "srand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject srand19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return RubyRandom.srandCommon(context, recv, arg.convertToInteger("to_int"), true);
+    }
+
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyNumeric rand(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         return RubyFloat.newFloat(runtime, runtime.getRandom().nextDouble());
     }
 
-    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyNumeric rand(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         Random random = runtime.getRandom();
 
+        return randCommon(context, runtime, random, recv, arg);
+    }
+
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyNumeric rand19(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        return RubyFloat.newFloat(runtime, RubyRandom.globalRandom.nextDouble());
+    }
+
+    @JRubyMethod(name = "rand", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static RubyNumeric rand19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
+        Random random = RubyRandom.globalRandom;
+
+        return randCommon(context, runtime, random, recv, arg);
+    }
+
+    private static RubyNumeric randCommon(ThreadContext context, Ruby runtime, Random random, IRubyObject recv, IRubyObject arg) {
         if (arg instanceof RubyBignum) {
             byte[] bigCeilBytes = ((RubyBignum) arg).getValue().toByteArray();
             BigInteger bigCeil = new BigInteger(bigCeilBytes).abs();
             byte[] randBytes = new byte[bigCeilBytes.length];
             random.nextBytes(randBytes);
             BigInteger result = new BigInteger(randBytes).abs().mod(bigCeil);
-            return new RubyBignum(runtime, result); 
+            return new RubyBignum(runtime, result);
         }
 
-        RubyInteger integerCeil = (RubyInteger)RubyKernel.new_integer(context, recv, arg); 
+        RubyInteger integerCeil = (RubyInteger)RubyKernel.new_integer(context, recv, arg);
         long ceil = Math.abs(integerCeil.getLongValue());
         if (ceil == 0) return RubyFloat.newFloat(runtime, random.nextDouble());
         if (ceil > Integer.MAX_VALUE) return runtime.newFixnum(Math.abs(random.nextLong()) % ceil);
@@ -1516,7 +1567,7 @@ public class RubyKernel {
             resultCode = 127;
         }
 
-        runtime.getGlobalVariables().set("$?", RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
+        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
         return runtime.newBoolean(resultCode == 0);
     }
     

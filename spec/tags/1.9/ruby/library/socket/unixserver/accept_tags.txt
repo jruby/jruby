@@ -1,0 +1,2 @@
+critical(JRUBY-4291):UNIXServer#accept can be interrupted by Thread#kill
+critical(JRUBY-4291):UNIXServer#accept can be interrupted by Thread#raise

@@ -122,6 +122,10 @@ public class RubyInstanceConfig {
         public boolean shouldPrecompileCLI() {
             switch (this) {
             case JIT: case FORCE:
+                if (DYNOPT_COMPILE_ENABLED) {
+                    // don't precompile the CLI script in dynopt mode
+                    return false;
+                }
                 return true;
             }
             return false;
@@ -205,6 +209,8 @@ public class RubyInstanceConfig {
 
     public static final boolean PEEPHOLE_OPTZ
             = SafePropertyAccessor.getBoolean("jruby.compile.peephole", true);
+    public static boolean DYNOPT_COMPILE_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.compile.dynopt");
     public static boolean FASTEST_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
     public static boolean FASTOPS_COMPILE_ENABLED

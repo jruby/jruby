@@ -1,0 +1,5 @@
+fails:StringIO#ungetc when passed [char] writes the passed char before the current position
+fails:StringIO#ungetc when passed [char] returns nil
+fails:StringIO#ungetc when passed [char] decreases the current position by one
+fails:StringIO#ungetc when passed [char] pads with \000 when the current position is after the end
+fails:StringIO#ungetc when passed [char] tries to convert the passed argument to an String using #to_str

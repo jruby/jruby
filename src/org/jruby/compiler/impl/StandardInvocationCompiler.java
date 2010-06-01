@@ -28,6 +28,8 @@
 package org.jruby.compiler.impl;
 
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ArgumentsCallback;
@@ -397,6 +399,78 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         String callSiteMethod = "call";
 
         method.invokevirtual(p(CallSite.class), callSiteMethod, signature);
+    }
+
+    public void invokeFixnumLong(CompilerCallback receiverCallback, String methodName, long other) {
+        receiverCallback.call(methodCompiler);
+        method.checkcast(p(RubyFixnum.class));
+        methodCompiler.loadThreadContext();
+        method.ldc(other);
+
+        method.invokevirtual(p(RubyFixnum.class), methodName, sig(IRubyObject.class, ThreadContext.class, long.class));
+    }
+
+    public void invokeFloatDouble(CompilerCallback receiverCallback, String methodName, double flote) {
+        receiverCallback.call(methodCompiler);
+        method.checkcast(p(RubyFloat.class));
+        methodCompiler.loadThreadContext();
+        method.ldc(flote);
+
+        method.invokevirtual(p(RubyFloat.class), methodName, sig(IRubyObject.class, ThreadContext.class, double.class));
+    }
+
+    public void invokeRecursive(ArgumentsCallback argsCallback) {
+        method.aload(0);
+        methodCompiler.loadThreadContext();
+        methodCompiler.loadSelf();
+        if (argsCallback != null) {
+            argsCallback.call(methodCompiler);
+        }
+        method.aconst_null();
+
+        method.invokestatic(methodCompiler.getScriptCompiler().getClassname(), methodCompiler.getNativeMethodName(), methodCompiler.getSignature());
+    }
+
+    public void invokeNative(DynamicMethod.NativeCall nativeCall, CompilerCallback receiver, ArgumentsCallback args, CompilerCallback closure) {
+        Class[] nativeSignature = nativeCall.getNativeSignature();
+
+        int leadingArgs = 0;
+        if (nativeCall.isStatic()) {
+            if (nativeSignature.length > 0 && nativeSignature[0] == ThreadContext.class) {
+                methodCompiler.loadThreadContext();
+                leadingArgs++;
+            }
+            receiver.call(methodCompiler);
+            leadingArgs++;
+        } else {
+            receiver.call(methodCompiler);
+            method.checkcast(p(nativeCall.getNativeTarget()));
+            if (nativeSignature.length > 0 && nativeSignature[0] == ThreadContext.class) {
+                methodCompiler.loadThreadContext();
+                leadingArgs++;
+            }
+        }
+
+        if (args != null) {
+            args.call(methodCompiler);
+            leadingArgs += args.getArity();
+        }
+
+        if (closure != null) {
+            closure.call(methodCompiler);
+            if (nativeSignature.length == leadingArgs + 1 && nativeSignature[leadingArgs] == Block.class) {
+                // ok, pass the block
+            } else {
+                // doesn't receive block, dump it
+                method.pop();
+            }
+        }
+
+        if (nativeCall.isStatic()) {
+            method.invokestatic(p(nativeCall.getNativeTarget()), nativeCall.getNativeName(), sig(nativeCall.getNativeReturn(), nativeSignature));
+        } else {
+            method.invokevirtual(p(nativeCall.getNativeTarget()), nativeCall.getNativeName(), sig(nativeCall.getNativeReturn(), nativeSignature));
+        }
     }
     
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {

@@ -1,1 +1,0 @@
-fails:Fixnum#** switches to a Float when the number is too big

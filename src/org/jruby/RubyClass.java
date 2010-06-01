@@ -1010,7 +1010,9 @@ public class RubyClass extends RubyModule {
     public void inherit(RubyClass superClazz) {
         if (superClazz == null) superClazz = runtime.getObject();
 
-        superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
+        if (getRuntime().getNil() != null) {
+            superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
+        }
     }
 
     /** Return the real super class of this class.

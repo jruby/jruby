@@ -1,0 +1,1 @@
+fails:Socket#getnameinfo gets the name information and resolves the service

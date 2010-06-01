@@ -1,0 +1,1 @@
+fails:BigDecimal.mode returns Infinity when too big

@@ -1,2 +1,0 @@
-fails:Time.to_s formats the time following the pattern 'yyyy-MM-dd HH:mm:ss Z'
-fails:Time.to_s formats the UTC time following the pattern 'yyyy-MM-dd HH:mm:ss UTC'

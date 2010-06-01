@@ -42,15 +42,15 @@ public class TestJavaReentrantExceptions extends TestCase {
             assertTrue("Java Exception should have been thrown and wrapped as a RaiseException",exceptionThrown);
         }
     }
+
+    public static class ExceptionThrower {
+        public static final ExpectedException expectedException = new ExpectedException();
+
+        public void throwException() throws ExpectedException {
+            throw expectedException;
+        }
+    }
 }
 class ExpectedException extends Exception {
     
-}
-
-class ExceptionThrower {
-    public static final ExpectedException expectedException = new ExpectedException();
-    
-    public void throwException() throws ExpectedException {
-        throw expectedException;
-    }
 }

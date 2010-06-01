@@ -1,0 +1,2 @@
+fails:Syslog.close sets the options to nil
+fails:Syslog.close sets the facility to nil

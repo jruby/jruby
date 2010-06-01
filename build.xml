@@ -57,6 +57,9 @@
     <condition property="ruby.home" value="${env.RUBY_HOME}">
       <not><isset property="ruby.home"/></not>
     </condition>
+    <condition property="is.windows" value="true">
+      <os family="windows"/>
+    </condition>
     <condition property="run.jvm.model" value="">
         <os family="windows"/>
     </condition>
@@ -170,6 +173,7 @@
             <filter token="version.ruby1_9.major" value="${version.ruby1_9.major}"/>
             <filter token="version.ruby1_9" value="${version.ruby1_9}"/>
             <filter token="version.ruby1_9.patchlevel" value="${version.ruby1_9.patchlevel}"/>
+            <filter token="version.ruby1_9.revision" value="${version.ruby1_9.revision}"/>
             <filter token="build.date" value="${build.date}"/>
             <filter token="version.jruby" value="${version.jruby}"/>
             <filter token="java.specification.version" value="${java.specification.version}"/>
@@ -693,9 +697,9 @@
     </java>
   </target>
 
-  <target name="install-jruby-launcher-gem" depends="init,jar">
+  <target name="install-jruby-launcher-gem" depends="init, jar" unless="is.windows">
     <property name="jruby.home" value="${basedir}"/>
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${jruby.home}"/>
@@ -1053,7 +1057,7 @@
         <sysproperty key="emma.coverage.out.merge" value="true" />
         <sysproperty key="emma.verbosity.level" value="silent" />
 
-        <arg line="@{jruby.args} -S rake @{task}"/>
+        <arg line="@{jruby.args} -S rake @{task} ${rake.args}"/>
       </java>
     </sequential>
   </macrodef>
@@ -1421,7 +1425,10 @@
 
   <target name="dist-clean">
     <delete dir="${dist.dir}"/>
+    <delete dir="${basedir}/gem/pkg"/>
   </target>
+
+  <target name="gem" depends="dist-jar-complete"><rake task="gem"/></target>
 
   <target name="clean" depends="init" description="Cleans almost everything, leaves downloaded specs">
     <delete dir="${build.dir}"/>

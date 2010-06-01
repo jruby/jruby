@@ -1,4 +1,2 @@
-fails:Time#+ increments the time by the specified amount as rational numbers
-fails:Time#+ accepts arguments that can be coerced into Rational
 fails:Time#+ does NOT round
 fails:Time#+ adds a negative Float

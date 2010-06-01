@@ -41,16 +41,6 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
     public void beginMethod(CompilerCallback args, StaticScope scope) {
         method.start();
 
-        // set up a local IRuby variable
-        method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-        invokeThreadContext("getRuntime", sig(Ruby.class));
-        method.astore(getRuntimeIndex());
-
-        // grab nil for local variables
-        method.aload(getRuntimeIndex());
-        invokeRuby("getNil", sig(IRubyObject.class));
-        method.astore(getNilIndex());
-
         if (scope == null) {
             // not using a new scope, use saved one for a flat closure
             variableCompiler.beginFlatClosure(args, this.scope);

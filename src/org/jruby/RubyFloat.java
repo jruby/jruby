@@ -279,6 +279,10 @@ public class RubyFloat extends RubyNumeric {
         }
     }
 
+    public IRubyObject op_plus(ThreadContext context, double other) {
+        return RubyFloat.newFloat(getRuntime(), value + other);
+    }
+
     /** flo_minus
      * 
      */
@@ -292,6 +296,10 @@ public class RubyFloat extends RubyNumeric {
         default:
             return coerceBin(context, "-", other);
         }
+    }
+
+    public IRubyObject op_minus(ThreadContext context, double other) {
+        return RubyFloat.newFloat(getRuntime(), value - other);
     }
 
     /** flo_mul
@@ -309,6 +317,11 @@ public class RubyFloat extends RubyNumeric {
             return coerceBin(context, "*", other);
         }
     }
+
+    public IRubyObject op_mul(ThreadContext context, double other) {
+        return RubyFloat.newFloat(
+                getRuntime(), value * other);
+    }
     
     /** flo_div
      * 
@@ -323,6 +336,10 @@ public class RubyFloat extends RubyNumeric {
         default:
             return coerceBin(context, "/", other);
         }
+    }
+
+    public IRubyObject op_fdiv(ThreadContext context, double other) { // don't override Numeric#div !
+        return RubyFloat.newFloat(getRuntime(), value / other);
     }
 
     /** flo_quo
@@ -427,6 +444,10 @@ public class RubyFloat extends RubyNumeric {
         default:
             return coerceBin(context, "**", other);
         }
+    }
+
+    public IRubyObject op_pow(ThreadContext context, double other) {
+        return RubyFloat.newFloat(getRuntime(), Math.pow(value, other));
     }
     
     @JRubyMethod(name = "**", required = 1, compat = CompatVersion.RUBY1_9)
@@ -553,6 +574,10 @@ public class RubyFloat extends RubyNumeric {
         default:
             return coerceRelOp(context, "<=", other);
 		}
+	}
+
+    public IRubyObject op_le(ThreadContext context, double other) {
+        return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(other) && value <= other);
 	}
 	
     /** flo_eql

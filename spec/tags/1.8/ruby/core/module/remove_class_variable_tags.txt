@@ -1,0 +1,2 @@
+fails(JRUBY-4812):Module#remove_class_variable removes class variable
+fails(JRUBY-4812):Module#remove_class_variable returns the value of removing class variable

@@ -1,8 +1,0 @@
-fails:Array#[]= just sets the section defined by [start,length] to other even if other is nil
-fails:Array#[]= just sets the section defined by range to other even if other is nil
-fails:Array#[]= just inserts nil if the section defined by range is zero-width and the rhs is nil
-fails:Array#[]= just inserts nil if the section defined by range has negative width and the rhs is nil
-fails:Array#[]= with [index, count] just sets the section defined by [start,length] to nil even if the rhs is nil
-fails:Array#[]= with [index, count] just sets the section defined by [start,length] to nil if negative index within bounds, cnt > 0 and the rhs is nil
-fails:Array#[]= with [m..n] just sets the section defined by range to nil even if the rhs is nil
-fails:Array#[]= with [m..n] just sets the section defined by range to nil if m and n < 0 and the rhs is nil

@@ -1,0 +1,1 @@
+fails:BigDecimal#floor raise exception, if self is special value

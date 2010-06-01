@@ -1,0 +1,1 @@
+fails:StringIO#path is not defined

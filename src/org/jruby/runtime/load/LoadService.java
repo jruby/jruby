@@ -544,7 +544,7 @@ public class LoadService {
                 state.library = new ClassExtensionLibrary(theClass);
             } catch (Exception ee) {
                 state.library = null;
-                runtime.getGlobalVariables().set("$!", runtime.getNil());
+                runtime.getGlobalVariables().clear("$!");
             }
 
             // If there was a good library before, we go back to that
@@ -861,11 +861,10 @@ public class LoadService {
                 debugLogTry("resourceFromHome", file.toString());
                 if (file.isFile() && file.isAbsolute() && file.canRead()) {
                     boolean absolute = true;
-                    String s = "~/" + namePlusSuffix;
-                    
-                    foundResource = new LoadServiceResource(file, s, absolute);
+
+                    state.loadName = file.getPath();
+                    foundResource = new LoadServiceResource(file, state.loadName, absolute);
                     debugLogFound(foundResource);
-                    state.loadName = resolveLoadName(foundResource, s);
                     break;
                 }
             } catch (IllegalArgumentException illArgEx) {

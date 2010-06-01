@@ -103,4 +103,8 @@ public class NewlineNode extends Node {
         // TODO: do above but not below for additional newline nodes
         return nextNode.interpret(runtime, context, self, aBlock);
     }
+
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return nextNode.definition(runtime, context, self, aBlock);
+    }
 }
