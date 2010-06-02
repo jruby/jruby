@@ -648,17 +648,17 @@ public class CFG {
     }
 
     private void pushBBOnStack(Stack<BasicBlock> stack, BitSet bbSet, BasicBlock bb) {
-        if (!bbSet.get(bb.getID()))
+        if (!bbSet.get(bb.getID())) {
             stack.push(bb);
+            bbSet.set(bb.getID());
+		  }
     }
 
-	public List<BasicBlock> linearize() {
+    public List<BasicBlock> linearize() {
         _linearizedBBList = new ArrayList<BasicBlock>();
        
         // Linearize the basic blocks of the cfg!
         // This is a simple linearization -- nothing fancy
-        // To break cycles, we assume that a cfg edge where the target BB id is 
-        // smaller than the source BB id is a loop back edge.
         BasicBlock root = getEntryBB();
         BitSet bbSet = new BitSet(1+getMaxNodeID());
         bbSet.set(root.getID());
@@ -666,61 +666,65 @@ public class CFG {
         stack.push(root);
         while (!stack.empty()) {
             BasicBlock b = stack.pop();
-            _linearizedBBList.add(b);
-            bbSet.set(b.getID());
-
 //            System.out.println("processing bb: " + b.getID());
-       
-            // Find the basic block that is the target of the 'taken' branch
-            List<IR_Instr> bis = b.getInstrs();
-            int n = bis.size();
-            if (n == 0) {
-                // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
-                BasicBlock b1 = null, b2 = null; 
-                for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
-                    if (b1 == null)
-                        b1 = e._dst;
-                    else if (b2 == null)
-                        b2 = e._dst;
-                    else
-                        throw new RuntimeException("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
-                }
+            _linearizedBBList.add(b);
 
-                // Process lower number target first!
-                if (b1 == null) {
-                    ;
-                }
-                else if (b2 == null) {
-                    pushBBOnStack(stack, bbSet, b1);
-                }
-                else if (b1.getID() < b2.getID()) {
-                    pushBBOnStack(stack, bbSet, b2);
-                    pushBBOnStack(stack, bbSet, b1);
-                }
-                else {
-                    pushBBOnStack(stack, bbSet, b1);
-                    pushBBOnStack(stack, bbSet, b2);
-                }
+            if (b == _exitBB) {
+                assert stack.empty();
             }
             else {
-               IR_Instr lastInstr = bis.get(n-1);
-//             System.out.println("last instr is: " + lastInstr);
-               // Ignore target bbs if this bb ends in a jump
-               if (! (lastInstr instanceof JUMP_Instr)) {
-                   BasicBlock takenBlock = null;
-
-                   // Push the taken block onto the stack first so that it gets processed last!
-                   if (lastInstr instanceof BRANCH_Instr) {
-                       takenBlock = _bbMap.get(((BRANCH_Instr)lastInstr).getJumpTarget());
-                       pushBBOnStack(stack, bbSet, takenBlock);
-                   }
+                assert !stack.empty();
           
-                   // Push everything else
+               // Find the basic block that is the target of the 'taken' branch
+               List<IR_Instr> bis = b.getInstrs();
+               int n = bis.size();
+               if (n == 0) {
+                   // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
+                   BasicBlock b1 = null, b2 = null; 
                    for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
-                       BasicBlock x = e._dst;
-                       if (x != takenBlock)
-                           pushBBOnStack(stack, bbSet, x);
+                       if (b1 == null)
+                           b1 = e._dst;
+                       else if (b2 == null)
+                           b2 = e._dst;
+                       else
+                           throw new RuntimeException("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
                    }
+
+                   assert (b1 != null);
+
+                   // Process lower number target first!
+                   if (b2 == null) {
+                       pushBBOnStack(stack, bbSet, b1);
+                   }
+                   else if (b1.getID() < b2.getID()) {
+                       pushBBOnStack(stack, bbSet, b2);
+                       pushBBOnStack(stack, bbSet, b1);
+                   }
+                   else {
+                       pushBBOnStack(stack, bbSet, b1);
+                       pushBBOnStack(stack, bbSet, b2);
+                   }
+               }
+               else {
+                  IR_Instr lastInstr = bis.get(n-1);
+//                  System.out.println("last instr is: " + lastInstr);
+                  // Ignore target bbs if this bb ends in a jump
+                  if (! (lastInstr instanceof JUMP_Instr)) {
+                      BasicBlock takenBlock = null;
+
+                      // Push the taken block onto the stack first so that it gets processed last!
+                      if (lastInstr instanceof BRANCH_Instr) {
+                          takenBlock = _bbMap.get(((BRANCH_Instr)lastInstr).getJumpTarget());
+                          pushBBOnStack(stack, bbSet, takenBlock);
+                      }
+             
+                      // Push everything else
+                      for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                          BasicBlock x = e._dst;
+                          if (x != takenBlock)
+                              pushBBOnStack(stack, bbSet, x);
+                      }
+                  }
                }
             }
         }
