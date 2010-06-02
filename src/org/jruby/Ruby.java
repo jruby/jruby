@@ -126,6 +126,7 @@ import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.ast.RootNode;
@@ -337,7 +338,7 @@ public final class Ruby {
         int oldLine = context.getLine();
         try {
             context.setFileAndLine(node.getPosition());
-            return runNormally(node);
+            return runInterpreter(node);
         } finally {
             context.setFileAndLine(oldFile, oldLine);
         }
@@ -677,7 +678,7 @@ public final class Ruby {
         ThreadContext context = getCurrentContext();
         
         try {
-            return script.load(context, context.getFrameSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            return script.load(context, getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
@@ -691,7 +692,7 @@ public final class Ruby {
         ThreadContext context = getCurrentContext();
 
         try {
-            return script.__file__(context, context.getFrameSelf(), Block.NULL_BLOCK);
+            return script.__file__(context, getTopSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
