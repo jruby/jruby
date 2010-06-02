@@ -602,7 +602,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
     public RubyInteger gmt_offset() {
-        int offset = dt.getZone().getOffsetFromLocal(dt.getMillis());
+        int offset = dt.getZone().getOffset(dt.getMillis());
         
         return getRuntime().newFixnum((int)(offset/1000));
     }
