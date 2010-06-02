@@ -931,29 +931,55 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Return the internal id of an object.
      */
     public IRubyObject id() {
-        Ruby runtime = getRuntime();
-        Long id;
+        return getRuntime().newFixnum(getObjectId());
+    }
 
-        // The logic here is to use the special objectId accessor slot from the
-        // parent as a lazy store for an object ID. IDs are generated atomically,
-        // in serial, and guaranteed unique for up to 2^63 objects. The special
-        // objectId slot is managed separately from the "normal" vars so it
-        // does not marshal, clone/dup, or refuse to be initially set when the
+    /**
+     * The logic here is to use the special objectId accessor slot from the
+     * parent as a lazy store for an object ID. IDs are generated atomically,
+     * in serial, and guaranteed unique for up to 2^63 objects. The special
+     * objectId slot is managed separately from the "normal" vars so it
+     * does not marshal, clone/dup, or refuse to be initially set when the
+     */
+    protected synchronized long getObjectId() {
         // object is frozen.
         synchronized (this) {
             RubyClass.VariableAccessor objectIdAccessor = getMetaClass().getRealClass().getObjectIdAccessorForWrite();
-            id = (Long)objectIdAccessor.get(this);
+            Long id = (Long)objectIdAccessor.get(this);
             if (id == null) {
-                if (runtime.isObjectSpaceEnabled()) {
-                    id = runtime.getObjectSpace().idOf(this);
-                } else {
-                    id = ObjectSpace.calculateObjectID(this);
-                }
-                // we use a direct path here to avoid frozen checks
-                setObjectId(objectIdAccessor.getIndex(), id);
+                return initObjectId(objectIdAccessor);
             }
+            return id;
         }
-        return runtime.newFixnum(id);
+    }
+
+    /**
+     * We lazily stand up the object ID since it forces us to stand up
+     * per-object state for a given object. We also check for ObjectSpace here,
+     * and normally we do not register a given object ID into ObjectSpace due
+     * to the high cost associated with constructing the related weakref. Most
+     * uses of id/object_id will only ever need it to be a unique identifier,
+     * and the id2ref behavior provided by ObjectSpace is considered internal
+     * and not generally supported.
+     * 
+     * @param objectIdAccessor The variable accessor to use for storing the
+     * generated object ID
+     * @return The generated object ID
+     */
+    protected synchronized long initObjectId(RubyClass.VariableAccessor objectIdAccessor) {
+        Ruby runtime = getRuntime();
+        long id;
+        
+        if (runtime.isObjectSpaceEnabled()) {
+            id = runtime.getObjectSpace().createAndRegisterObjectId(this);
+        } else {
+            id = ObjectSpace.calculateObjectId(this);
+        }
+        
+        // we use a direct path here to avoid frozen checks
+        setObjectId(objectIdAccessor.getIndex(), id);
+
+        return id;
     }
 
     /** rb_obj_inspect
@@ -1094,7 +1120,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public void addFinalizer(IRubyObject f) {
         Finalizer finalizer = (Finalizer)fastGetInternalVariable("__finalizer__");
         if (finalizer == null) {
-            finalizer = new Finalizer((RubyFixnum)id());
+            // since this is the first time we're registering a finalizer, we
+            // must also register this object in ObjectSpace, so that future
+            // calls to undefine_finalizer, which takes an object ID, can
+            // locate the object properly. See JRUBY-4839.
+            long id = getObjectId();
+            RubyFixnum fixnumId = (RubyFixnum)id();
+
+            getRuntime().getObjectSpace().registerObjectId(id, this);
+
+            finalizer = new Finalizer(fixnumId);
             fastSetInternalVariable("__finalizer__", finalizer);
             getRuntime().addFinalizer(finalizer);
         }
