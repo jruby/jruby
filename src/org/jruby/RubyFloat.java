@@ -150,12 +150,6 @@ public class RubyFloat extends RubyNumeric {
 
     @Override
     public Class<?> getJavaClass() {
-        // this needs to be thought out more along with the changes in RubyFixnum
-        // since "to Object" coercion will generally want to produce the same
-        // type every time
-//        if (value >= Float.MIN_VALUE && value <= Float.MAX_VALUE) {
-//            return float.class;
-//        }
         return double.class;
     }
 
@@ -360,18 +354,22 @@ public class RubyFloat extends RubyNumeric {
         case ClassIndex.BIGNUM:
         case ClassIndex.FLOAT:
             double y = ((RubyNumeric) other).getDoubleValue();
-            // Modelled after c ruby implementation (java /,% not same as ruby)
-            double x = value;
-
-            double mod = Math.IEEEremainder(x, y);
-            if (y * mod < 0) {
-                mod += y;
-            }
-
-            return RubyFloat.newFloat(getRuntime(), mod);
+            return op_mod(context, y);
         default:
             return coerceBin(context, "%", other);
         }
+    }
+
+    public IRubyObject op_mod(ThreadContext context, double other) {
+        // Modelled after c ruby implementation (java /,% not same as ruby)
+        double x = value;
+
+        double mod = Math.IEEEremainder(x, other);
+        if (other * mod < 0) {
+            mod += other;
+        }
+
+        return RubyFloat.newFloat(getRuntime(), mod);
     }
 
     /** flo_mod
@@ -481,6 +479,13 @@ public class RubyFloat extends RubyNumeric {
         }
     }
 
+    public IRubyObject op_equal(ThreadContext context, double other) {
+        if (Double.isNaN(value)) {
+            return getRuntime().getFalse();
+        }
+        return RubyBoolean.newBoolean(getRuntime(), value == other);
+    }
+
     @Override
     public final int compareTo(IRubyObject other) {
         switch (other.getMetaClass().index) {
@@ -512,6 +517,10 @@ public class RubyFloat extends RubyNumeric {
         }
     }
 
+    public IRubyObject op_cmp(ThreadContext context, double other) {
+        return dbl_cmp(getRuntime(), value, other);
+    }
+
     /** flo_gt
      * 
      */
@@ -526,6 +535,10 @@ public class RubyFloat extends RubyNumeric {
         default:
             return coerceRelOp(context, ">", other);
         }
+    }
+
+    public IRubyObject op_gt(ThreadContext context, double other) {
+        return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(other) && value > other);
     }
 
     /** flo_ge
@@ -544,6 +557,10 @@ public class RubyFloat extends RubyNumeric {
         }
     }
 
+    public IRubyObject op_ge(ThreadContext context, double other) {
+        return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(other) && value >= other);
+    }
+
     /** flo_lt
      * 
      */
@@ -558,6 +575,10 @@ public class RubyFloat extends RubyNumeric {
         default:
             return coerceRelOp(context, "<", other);
 		}
+    }
+
+    public IRubyObject op_lt(ThreadContext context, double other) {
+        return RubyBoolean.newBoolean(getRuntime(), !Double.isNaN(other) && value < other);
     }
 
     /** flo_le
