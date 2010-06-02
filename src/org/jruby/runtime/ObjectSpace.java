@@ -60,7 +60,20 @@ public class ObjectSpace {
     private final Map identitiesByObject = new WeakIdentityHashMap();
     private static final AtomicLong maxId = new AtomicLong(1000);
 
-    public long idOf(IRubyObject rubyObject) {
+    public void registerObjectId(long id, IRubyObject object) {
+        synchronized (identities) {
+            cleanIdentities();
+            identities.put(id, new IdReference(object, id, deadIdentityReferences));
+            identitiesByObject.put(object, id);
+        }
+    }
+
+    public static long calculateObjectId(Object object) {
+        // Fixnums get all the odd IDs, so we use identityHashCode * 2
+        return maxId.getAndIncrement() * 2;
+    }
+    
+    public long createAndRegisterObjectId(IRubyObject rubyObject) {
         synchronized (identities) {
             Long longId = (Long) identitiesByObject.get(rubyObject);
             if (longId == null) {
@@ -70,16 +83,9 @@ public class ObjectSpace {
         }
     }
 
-    public static long calculateObjectID(Object object) {
-        // Fixnums get all the odd IDs, so we use identityHashCode * 2
-        return maxId.getAndIncrement() * 2;
-    }
-
-    private Long createId(IRubyObject object) {
-        cleanIdentities();
-        long id = calculateObjectID(object);
-        identities.put(id, new IdReference(object, id, deadIdentityReferences));
-        identitiesByObject.put(object, id);
+    private long createId(IRubyObject object) {
+        long id = calculateObjectId(object);
+        registerObjectId(id, object);
         return id;
     }
 
@@ -97,6 +103,11 @@ public class ObjectSpace {
         IdReference ref;
         while ((ref = (IdReference) deadIdentityReferences.poll()) != null)
             identities.remove(Long.valueOf(ref.id()));
+    }
+
+    @Deprecated
+    public long idOf(IRubyObject rubyObject) {
+        return createAndRegisterObjectId(rubyObject);
     }
     
     public void addFinalizer(IRubyObject object, IRubyObject proc) {
