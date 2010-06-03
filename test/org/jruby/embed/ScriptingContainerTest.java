@@ -66,6 +66,7 @@ import org.jruby.embed.internal.SingletonLocalContextProvider;
 import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache;
 import org.jruby.util.KCode;
@@ -154,7 +155,7 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        String expResult = "jruby 1.5.0";
+        String expResult = "jruby " + Constants.VERSION;
         String result = instance.getSupportedRubyVersion();
         assertTrue(result.startsWith(expResult));
         instance = null;
