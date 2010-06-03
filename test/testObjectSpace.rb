@@ -47,6 +47,34 @@ if (defined?(JRUBY_VERSION))
     id_without_objectspace = obj.object_id
     test_equal(id_with_objectspace, id_without_objectspace)
 
+    # JRUBY-4839
+    def finalizer(results)
+      proc do |i|
+        results << "finalizing #{i}"
+      end
+    end
+
+    [true, false].each do |objectspace|
+      JRuby.objectspace = objectspace
+      obj1 = "lemon"
+      obj2 = "apple"
+      results = []
+
+      ObjectSpace.define_finalizer obj1, finalizer(results)
+      ObjectSpace.define_finalizer obj2, finalizer(results)
+
+      obj1_id = obj1.object_id
+
+      ObjectSpace.undefine_finalizer obj2
+
+      obj1 = nil
+      obj2 = nil
+
+      t = Time.now
+      (JRuby.gc; sleep 0.1) until (Time.now - t > 1) || results.length > 0
+      test_equal ["finalizing #{obj1_id}"], results
+    end
+
   ensure
     JRuby.objectspace = orig_obj_space
   end
