@@ -1,0 +1,104 @@
+#!/usr/bin/env jruby
+
+# This script is for use with JRuby, to copy the (patched) stdlib and external test files from
+# various locations in MRI's layout to JRuby's layout. It should be used
+# against the jruby-specific fork of MRI's repository at
+# github.com/jruby/ruby. 
+#
+# This script selects the branch to use against with the version number, i.e: jruby-ruby_1_8_7 or jruby-ruby_1_9_2.
+#
+# usage: sync_ruby <tests|stdlib|all> <version(1_8_7|1_9_2)> <jruby ruby fork clone> <jruby dir>
+
+require 'fileutils'
+
+class Sync
+  include FileUtils
+
+  def initialize(version, source, target)
+    @version = format_version(version)
+    @source = source
+    @target = target
+
+    checkout @source, @version
+  end
+
+  def sync_tests
+    Dir.glob("#{@source}/test/*") do |file|
+      cp_r file, "#{@target}/test/externals/ruby#{@version}", :verbose => true
+    end
+  end
+
+  def sync_stdlib
+    load "globals_#{@version}.rb"
+
+    for file in STDLIB_FILES
+      cp_r "#{@source}/lib/#{file}", "#{@target}/lib/ruby/#{@version}", :verbose => true
+    end
+
+    for file, target in EXT_FILES
+      if File.directory? "#{@source}/#{file}"
+        cp_r "#{@source}/#{file}", "#{@target}/lib/ruby/#{@version}/", :verbose => true
+      else
+        cp_r "#{@source}/#{file}", "#{@target}/lib/ruby/#{@version}/#{target}", :verbose => true
+      end
+    end
+
+    if defined? YAML_FILES
+      for file in YAML_FILES
+        cp_r "#{@source}/lib/#{file}", "#{@target}/src/builtin", :verbose => true
+      end
+    end
+  end
+
+  private
+  def format_version(version)
+    version.gsub(/_\d+$/, '').gsub(/_/, '.')
+  end
+
+  def checkout(source, version)
+    cd(source) do
+      branch = "jruby-ruby_#{version}"
+
+      if (branches = `git branch | sed 's/[\*\s]*//'`).split("\n").include? branch
+        `git checkout #{branch}`
+      else
+        `git checkout -t origin/#{branch}`
+      end
+    end
+  end
+end
+
+if $0 == __FILE__
+  if ARGV.size != 4
+    puts "usage: sync_ruby <tests|stdlib|all> <version(1_8_7|1_9_2)> <jruby ruby fork clone> <jruby dir>"
+    exit 1
+  end
+
+  if !%w{tests stdlib all}.include? ARGV[0]
+    puts "invalid source to sync: #{ARGV[0]}"
+    exit 1
+  end
+
+  if !(ARGV[1] =~ /\d+_\d+_\d+/)
+    puts "invalid version number: #{ARGV[1]}"
+    exit 1
+  end
+
+  if !File.exist?(ARGV[2]) || !File.directory?(ARGV[2])
+    puts "invalid source dir: #{ARGV[2]}"
+    exit 1
+  end
+
+  if !File.exist?(ARGV[3]) || !File.directory?(ARGV[2])
+    puts "invalid target dir: #{ARGV[2]}"
+    exit 1
+  end
+
+  sync = Sync.new(ARGV[1], ARGV[2], ARGV[3])
+  if ARGV[0] == 'all'
+    sync.sync_tests
+    sync.sync_stdlib
+  else
+    sync.send(:"sync_#{ARGV[0]}")
+  end
+end

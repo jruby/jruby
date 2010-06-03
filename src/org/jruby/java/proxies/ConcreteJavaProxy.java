@@ -159,15 +159,17 @@ public class ConcreteJavaProxy extends JavaProxy {
         return concreteJavaProxy;
     }
 
-    @Override
-    public Object getVariable(int index) {
-        return getRuntime().getJavaSupport().getJavaObjectVariable(this, index);
-    }
-
-    @Override
-    public void setVariable(int index, Object value) {
-        getRuntime().getJavaSupport().setJavaObjectVariable(this, index, value);
-    }
+    // This alternate ivar logic is disabled because it can cause self-referencing
+    // chains to keep the original object alive. See JRUBY-4832.
+//    @Override
+//    public Object getVariable(int index) {
+//        return getRuntime().getJavaSupport().getJavaObjectVariable(this, index);
+//    }
+//
+//    @Override
+//    public void setVariable(int index, Object value) {
+//        getRuntime().getJavaSupport().setJavaObjectVariable(this, index, value);
+//    }
 
     /**
      * Because we can't physically associate an ID with a Java object, we can

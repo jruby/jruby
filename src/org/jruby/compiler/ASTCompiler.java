@@ -1006,10 +1006,6 @@ public class ASTCompiler {
                         return true;
                     }
                 }
-            }
-        } else if (method.getImplementationClass() == method.getImplementationClass().getRuntime().getFloat()) {
-            if (argsCallback != null && argsCallback.getArity() == 1) {
-                Node argument = callNode.getArgsNode().childNodes().get(0);
                 if (argument instanceof FloatNode) {
                     Map<String, String> typeDoubleIntrinsics = typeIntrinsics.get(FloatNode.class);
                     if (typeDoubleIntrinsics.containsKey(name)) {
