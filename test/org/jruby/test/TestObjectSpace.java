@@ -62,8 +62,8 @@ public class TestObjectSpace extends TestCase {
         RubyString o1 = runtime.newString("hey");
         RubyString o2 = runtime.newString("ho");
 
-        long id1 = target.idOf(o1);
-        long id2 = target.idOf(o2);
+        long id1 = target.createAndRegisterObjectId(o1);
+        long id2 = target.createAndRegisterObjectId(o2);
 
         assertEquals("id of normal objects must be even", 0, id1 % 2);
         assertEquals("id of normal objects must be even", 0, id2 % 2);
