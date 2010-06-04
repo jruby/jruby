@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
 
 /**
  * Represents the special variable 'self'
@@ -32,7 +33,13 @@ public class SelfVariable extends Variable {
         return equals(other) == true ? 0 : 1;
     }
 
+    @Override
     public Operand cloneForInlining(InlinerInfo ii) { 
         return ii.getCallReceiver();
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return interp.getSelf();
     }
 }

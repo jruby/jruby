@@ -2,7 +2,7 @@ package org.jruby.compiler.ir.dataflow;
 
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
-import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.Instr;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -36,7 +36,7 @@ abstract public class FlowGraphNode
     public abstract boolean applyTransferFunction();
 
     /** Builds the data-flow variables (or facts) for a particular instruction. */
-    public abstract void buildDataFlowVars(IR_Instr i);
+    public abstract void buildDataFlowVars(Instr i);
 
 /* ----------- Public methods with a default implementation ---------- */
     /** Initialize this data flow node for solving the current problem
@@ -54,7 +54,7 @@ abstract public class FlowGraphNode
         all relevant LOCAL data flow vars for this problem! */
     public void buildDataFlowVars()
     {
-        for (IR_Instr i: _bb.getInstrs())
+        for (Instr i: _bb.getInstrs())
             buildDataFlowVars(i);
     }
 

@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
@@ -180,7 +180,7 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         classes.add(c);
     }
 
-    public void addInstr(IR_Instr i) {
+    public void addInstr(Instr i) {
         throw new RuntimeException("Encountered instruction add in a non-execution scope!");
     }
 
@@ -202,7 +202,7 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         return n;
     }
 
-    public List<IR_Instr> getInstrs() {
+    public List<Instr> getInstrs() {
         return null;
     }
 
@@ -230,13 +230,13 @@ public abstract class IR_ScopeImpl implements IR_Scope {
         // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the container is a static scope
         if ((cv == null) && (p != null) && (p instanceof MetaObject)) {
             // Can be null for IR_Script meta objects
-            if (((MetaObject) p)._scope == null) {
+            if (((MetaObject) p).scope == null) {
 //                System.out.println("Looking for core class: " + constRef);
                 IR_Class coreClass = IR_Module.getCoreClass(constRef);
 
                 return coreClass != null ? new MetaObject(coreClass) : null;
             }
-            cv = ((MetaObject) p)._scope.getConstantValue(constRef);
+            cv = ((MetaObject) p).scope.getConstantValue(constRef);
         }
 
         return cv;

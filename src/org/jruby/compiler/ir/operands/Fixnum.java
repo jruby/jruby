@@ -3,48 +3,66 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.compiler.ir.IR_Class;
 
 import java.math.BigInteger;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
-public class Fixnum extends Constant
-{
-    final public Long _value;
+public class Fixnum extends Constant {
+    final public Long value;
 
-    public Fixnum(Long val) { _value = val; }
-    public Fixnum(BigInteger val) { _value = val.longValue(); }
+    public Fixnum(Long val) {
+        value = val;
+    }
 
-    public String toString() { return _value + ":fixnum"; }
+    public Fixnum(BigInteger val) { 
+        value = val.longValue();
+    }
+
+    @Override
+    public String toString() { 
+        return value + ":fixnum";
+    }
 
 // ---------- These methods below are used during compile-time optimizations ------- 
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { return (argIndex == 0) ? this : Nil.NIL; }
+    @Override
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { 
+        return (argIndex == 0) ? this : Nil.NIL;
+    }
 
-    public IR_Class getTargetClass() { return IR_Class.getCoreClass("Fixnum"); }
+    @Override
+    public IR_Class getTargetClass() {
+        return IR_Class.getCoreClass("Fixnum");
+    }
 
-    public Constant computeValue(String methodName, Constant arg)
-    {
+    public Constant computeValue(String methodName, Constant arg) {
         if (arg instanceof Fixnum) {
             if (methodName.equals("+"))
-                return new Fixnum(_value + ((Fixnum)arg)._value);
+                return new Fixnum(value + ((Fixnum)arg).value);
             else if (methodName.equals("-"))
-                return new Fixnum(_value - ((Fixnum)arg)._value);
+                return new Fixnum(value - ((Fixnum)arg).value);
             else if (methodName.equals("*"))
-                return new Fixnum(_value * ((Fixnum)arg)._value);
+                return new Fixnum(value * ((Fixnum)arg).value);
             else if (methodName.equals("/")) {
-                Long divisor = ((Fixnum)arg)._value;
-                return divisor == 0L ? null : new Fixnum(_value / divisor); // If divisor is zero, don't simplify!
+                Long divisor = ((Fixnum)arg).value;
+                return divisor == 0L ? null : new Fixnum(value / divisor); // If divisor is zero, don't simplify!
             }
-        }
-        else if (arg instanceof Float) {
+        } else if (arg instanceof Float) {
             if (methodName.equals("+"))
-                return new Float(_value + ((Float)arg)._value);
+                return new Float(value + ((Float)arg).value);
             else if (methodName.equals("-"))
-                return new Float(_value - ((Float)arg)._value);
+                return new Float(value - ((Float)arg).value);
             else if (methodName.equals("*"))
-                return new Float(_value * ((Float)arg)._value);
+                return new Float(value * ((Float)arg).value);
             else if (methodName.equals("/")) {
-                Double divisor = ((Float)arg)._value;
-                return divisor == 0.0 ? null : new Float(_value / divisor); // If divisor is zero, don't simplify!
+                Double divisor = ((Float)arg).value;
+                return divisor == 0.0 ? null : new Float(value / divisor); // If divisor is zero, don't simplify!
             }
         }
 
         return null;
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return interp.getContext().getRuntime().newFixnum(value);
     }
 }

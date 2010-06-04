@@ -40,7 +40,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DummyDynamicScope;
-import org.jruby.runtime.scope.NoVarsDynamicScope;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.

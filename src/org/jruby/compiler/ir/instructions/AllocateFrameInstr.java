@@ -13,16 +13,19 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.Map;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
-public class ALLOC_FRAME_Instr extends IR_Instr {
+public class AllocateFrameInstr extends Instr {
     IR_ExecutionScope scope;   // Scope for which frame is needed
 
-    public ALLOC_FRAME_Instr(IR_ExecutionScope scope) {
+    public AllocateFrameInstr(IR_ExecutionScope scope) {
         super(Operation.ALLOC_FRAME);
         
         this.scope = getClosestMethodAncestor(scope);
     }
 
+    // ENEBO: Should we be reallocing this every time?
     public Operand[] getOperands() { 
         return new Operand[] { new MetaObject(scope) };
     }
@@ -37,13 +40,19 @@ public class ALLOC_FRAME_Instr extends IR_Instr {
         return (IRMethod)scope;
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         // The frame will now be allocated in the caller's scope
-        return new ALLOC_FRAME_Instr(ii.callerCFG.getScope());
+        return new AllocateFrameInstr(ii.callerCFG.getScope());
     }
 
     @Override
     public String toString() {
-        return "\t" + _op + "(" + scope + ")";
+        return "\t" + operation + "(" + scope + ")";
+    }
+
+    @Override
+    public void interpret(InterpreterContext interp, IRubyObject self) {
+        interp.getContext().pushFrame();
+        interp.setFrame(interp.getContext().getCurrentFrame());
     }
 }

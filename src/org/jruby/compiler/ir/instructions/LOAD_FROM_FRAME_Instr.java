@@ -34,10 +34,10 @@ public class LOAD_FROM_FRAME_Instr extends GET_Instr {
 
     @Override
     public String toString() {
-        return "\t" + _result + " = FRAME(" + _source + ")." + _ref;
+        return "\t" + result + " = FRAME(" + _source + ")." + _ref;
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new LOAD_FROM_FRAME_Instr(ii.getRenamedVariable(_result), (IR_ExecutionScope)((MetaObject)_source)._scope, _ref);
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new LOAD_FROM_FRAME_Instr(ii.getRenamedVariable(result), (IR_ExecutionScope)((MetaObject)_source).scope, _ref);
     }
 }

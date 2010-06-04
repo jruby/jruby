@@ -15,7 +15,7 @@ public class RETRY_Instr extends OneOperandInstr
         _jumpLabel = loopStart;
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new RETRY_Instr(ii.getRenamedLabel(_jumpLabel));
     }
 }

@@ -10,7 +10,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-public class RESCUED_BODY_START_MARKER_Instr extends IR_Instr
+public class RESCUED_BODY_START_MARKER_Instr extends Instr
 {
     private static Operand[] _empty = new Operand[] {};
 
@@ -41,7 +41,7 @@ public class RESCUED_BODY_START_MARKER_Instr extends IR_Instr
 
     public void simplifyOperands(Map<Operand, Operand> valueMap) { }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { 
+    public Instr cloneForInlining(InlinerInfo ii) { 
         List<Label> newLabels = new ArrayList<Label>();
         for (Label l: _rescueBlockLabels)
             newLabels.add(ii.getRenamedLabel(l));

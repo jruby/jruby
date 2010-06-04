@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.instructions.DEFINE_CLASS_METHOD_Instr;
-import org.jruby.compiler.ir.instructions.DEFINE_INSTANCE_METHOD_Instr;
-import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
+import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.compiler.ir.instructions.Instr;
 
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
@@ -86,9 +86,9 @@ public class IR_Module extends IR_ScopeImpl {
 
         methods.add(method);
 
-        IR_Instr instruction = method.isInstanceMethod ?
-            new DEFINE_INSTANCE_METHOD_Instr(this, method) :
-            new DEFINE_CLASS_METHOD_Instr(this, method);
+        Instr instruction = method.isInstanceMethod ?
+            new DefineInstanceMethodInstr(this, method) :
+            new DefineClassMethodInstr(this, method);
         
         getRootMethod().addInstr(instruction);
     }

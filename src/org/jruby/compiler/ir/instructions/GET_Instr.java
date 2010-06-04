@@ -7,7 +7,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
 // Represents result = source.ref or result = source where source is not a stack variable
-public abstract class GET_Instr extends IR_Instr
+public abstract class GET_Instr extends Instr
 {
     Operand _source;
     String  _ref;

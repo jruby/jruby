@@ -4,9 +4,9 @@ import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.YIELD_Instr;
-import org.jruby.compiler.ir.instructions.COPY_Instr;
+import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
 import org.jruby.compiler.ir.instructions.RECV_CLOSURE_ARG_Instr;
 
@@ -18,11 +18,11 @@ public class BasicBlock {
     int _id;                        // Basic Block id
     CFG _cfg;                       // CFG that this basic block belongs to
     Label _label;                   // All basic blocks have a starting label
-    List<IR_Instr> _instrs;         // List of non-label instructions
+    List<Instr> _instrs;         // List of non-label instructions
     boolean _isLive;
 
     public BasicBlock(CFG c, Label l) {
-        _instrs = new ArrayList<IR_Instr>();
+        _instrs = new ArrayList<Instr>();
         _label = l;
         _isLive = true;
         _cfg = c;
@@ -38,24 +38,24 @@ public class BasicBlock {
         return _id;
     }
 
-    public void addInstr(IR_Instr i) {
+    public void addInstr(Instr i) {
         _instrs.add(i);
     }
 
-    public void insertInstr(IR_Instr i) {
+    public void insertInstr(Instr i) {
         _instrs.add(0, i);
     }
 
-    public List<IR_Instr> getInstrs() {
+    public List<Instr> getInstrs() {
         return _instrs;
     }
 
-    public IR_Instr getLastInstr() {
+    public Instr getLastInstr() {
         int n = _instrs.size();
         return (n == 0) ? null : _instrs.get(n-1);
     }
 
-    public boolean removeInstr(IR_Instr i) {
+    public boolean removeInstr(Instr i) {
        if (i == null)
           return false;
        else
@@ -66,12 +66,12 @@ public class BasicBlock {
         return _instrs.isEmpty();
     }
 
-    public BasicBlock splitAtInstruction(IR_Instr splitPoint, Label newLabel, boolean includeSplitPointInstr) {
+    public BasicBlock splitAtInstruction(Instr splitPoint, Label newLabel, boolean includeSplitPointInstr) {
         BasicBlock newBB = new BasicBlock(_cfg, newLabel);
         int idx = 0;
         int numInstrs = _instrs.size();
         boolean found = false;
-        for (IR_Instr i: _instrs) {
+        for (Instr i: _instrs) {
             if (i == splitPoint)
                 found = true;
 
@@ -98,8 +98,8 @@ public class BasicBlock {
 
     public BasicBlock cloneForInlining(InlinerInfo ii) {
         BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
-        for (IR_Instr i: getInstrs()) {
-				IR_Instr clonedInstr = i.cloneForInlining(ii);
+        for (Instr i: getInstrs()) {
+				Instr clonedInstr = i.cloneForInlining(ii);
             clonedBB.addInstr(clonedInstr);
             if (clonedInstr instanceof YIELD_Instr)
                 ii.recordYieldSite(clonedBB, (YIELD_Instr)clonedInstr);
@@ -109,14 +109,14 @@ public class BasicBlock {
     }
 
     public void processClosureArgAndReturnInstrs(InlinerInfo ii, YIELD_Instr yi) {
-        Variable  yieldResult = ii.getRenamedVariable(yi._result);
+        Variable  yieldResult = ii.getRenamedVariable(yi.result);
         Operand[] yieldArgs   = yi.getOperands();
 
-        for (ListIterator<IR_Instr> it = ((ArrayList<IR_Instr>)_instrs).listIterator(); it.hasNext(); ) {
-            IR_Instr i = it.next();
+        for (ListIterator<Instr> it = ((ArrayList<Instr>)_instrs).listIterator(); it.hasNext(); ) {
+            Instr i = it.next();
             if (i instanceof CLOSURE_RETURN_Instr) {
                 // Replace the closure return receive with a simple copy
-                it.set(new COPY_Instr(yieldResult, ((CLOSURE_RETURN_Instr)i).getArg()));
+                it.set(new CopyInstr(yieldResult, ((CLOSURE_RETURN_Instr)i).getArg()));
             }
             else if (i instanceof RECV_CLOSURE_ARG_Instr) {
                 Operand closureArg;
@@ -138,7 +138,7 @@ public class BasicBlock {
                 }
 
                 // Replace the arg receive with a simple copy
-                it.set(new COPY_Instr(rcai._result, closureArg));
+                it.set(new CopyInstr(rcai.result, closureArg));
             }
         }
     }
@@ -151,7 +151,7 @@ public class BasicBlock {
     public String toStringInstrs() {
         StringBuilder buf = new StringBuilder(toString() + "\n");
 
-        for (IR_Instr instr : getInstrs()) {
+        for (Instr instr : getInstrs()) {
             if (!instr.isDead()) buf.append('\t').append(instr).append('\n');
         }
         

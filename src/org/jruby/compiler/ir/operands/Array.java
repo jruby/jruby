@@ -5,87 +5,113 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents an array [_, _, .., _] in ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this array operand could get converted to calls
 // that actually build a Ruby object
-public class Array extends Operand
-{
-    public final Operand[] _elts;
+public class Array extends Operand {
+    public final Operand[] elts;
 
-    public Array() { _elts = new Operand[0]; }
-
-    public Array(List<Operand> elts) { this(elts.toArray(new Operand[elts.size()])); }
-
-    public Array(Operand[] elts) { _elts = (elts == null) ? new Operand[0] : elts; }
-
-    public boolean isBlank() { return _elts.length == 0; }
-
-    public String toString() { return "Array:" + (isBlank() ? "" : java.util.Arrays.toString(_elts)); }
-
-// ---------- These methods below are used during compile-time optimizations ------- 
-    public boolean isConstant() 
-    {
-        for (Operand o: _elts)
-            if (!o.isConstant())
-                return false;
-
-       return true;
+    public Array() {
+        elts = new Operand[0];
     }
 
-    public boolean isNonAtomicValue() { return true; }
+    public Array(List<Operand> elts) {
+        this(elts.toArray(new Operand[elts.size()]));
+    }
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
-    {
-        for (int i = 0; i < _elts.length; i++) {
-            _elts[i] = _elts[i].getSimplifiedOperand(valueMap);
+    public Array(Operand[] elts) {
+        this.elts = elts == null ? new Operand[0] : elts;
+    }
+
+    public boolean isBlank() {
+        return elts.length == 0;
+    }
+
+    @Override
+    public String toString() {
+        return "Array:" + (isBlank() ? "" : java.util.Arrays.toString(elts));
+    }
+
+// ---------- These methods below are used during compile-time optimizations ------- 
+    @Override
+    public boolean isConstant() {
+        for (Operand o : elts) {
+            if (!o.isConstant()) return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean isNonAtomicValue() { 
+        return true;
+    }
+
+    @Override
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
+        for (int i = 0; i < elts.length; i++) {
+            elts[i] = elts[i].getSimplifiedOperand(valueMap);
         }
 
         return this;
     }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
-    {
-        if (!getSubArray) {
-            return (argIndex < _elts.length) ? _elts[argIndex] : Nil.NIL;
-        }
-        else {
-            if (argIndex < _elts.length) {
-                Operand[] newElts = new Operand[_elts.length-argIndex]; 
-                System.arraycopy(_elts, argIndex, newElts, 0, newElts.length);
-                return new Array(newElts);
-            }
-            else {
-                return new Array();
-            }
-        }
-    }
-
-    public IR_Class getTargetClass() { return IR_Class.getCoreClass("Array"); }
-
-    public Operand toArray() { return this; }
-
-    /** Append the list of variables used in this operand to the input list */
     @Override
-    public void addUsedVariables(List<Variable> l)
-    {
-        for (Operand o: _elts)
-            o.addUsedVariables(l);
-    }
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
+        if (!getSubArray) return argIndex < elts.length ? elts[argIndex] : Nil.NIL;
 
-    public Operand cloneForInlining(InlinerInfo ii) { 
-        if (isConstant()) {
-            return this;
-        }
-        else {
-            Operand[] newElts = new Operand[_elts.length];
-            for (int i = 0; i < _elts.length; i++) {
-                newElts[i] = _elts[i].cloneForInlining(ii);
-            }
+        if (argIndex < elts.length) {
+            Operand[] newElts = new Operand[elts.length - argIndex];
+            System.arraycopy(elts, argIndex, newElts, 0, newElts.length);
 
             return new Array(newElts);
         }
+
+        return new Array();
+    }
+
+    @Override
+    public IR_Class getTargetClass() {
+        return IR_Class.getCoreClass("Array");
+    }
+
+    public Operand toArray() {
+        return this;
+    }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l) {
+        for (Operand o: elts) {
+            o.addUsedVariables(l);
+        }
+    }
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) { 
+        if (isConstant()) return this;
+
+        Operand[] newElts = new Operand[elts.length];
+        for (int i = 0; i < elts.length; i++) {
+            newElts[i] = elts[i].cloneForInlining(ii);
+        }
+
+        return new Array(newElts);
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        IRubyObject[] elements = new IRubyObject[elts.length];
+
+        for (int i = 0; i < elements.length; i++) {
+            elements[i] = (IRubyObject) elts[i].retrieve(interp);
+        }
+
+        return interp.getContext().getRuntime().newArray(elements);
     }
 }

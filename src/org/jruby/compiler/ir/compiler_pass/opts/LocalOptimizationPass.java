@@ -5,17 +5,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 
-import org.jruby.compiler.ir.IR_Class;
 import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.CopyInstr;
+import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.METHOD_VERSION_GUARD_Instr;
-import org.jruby.compiler.ir.instructions.CallInstruction;
-import org.jruby.compiler.ir.instructions.COPY_Instr;
-import org.jruby.compiler.ir.instructions.IR_Instr;
-import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.CodeVersion;
 import org.jruby.compiler.ir.operands.Array;
@@ -88,10 +87,10 @@ public class LocalOptimizationPass implements CompilerPass
         Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
         Map<Variable,List<Variable>> simplificationMap = new HashMap<Variable,List<Variable>>();
         Map<String,CodeVersion> versionMap = new HashMap<String,CodeVersion>();
-        ListIterator<IR_Instr> instrs = s.getInstrs().listIterator();
+        ListIterator<Instr> instrs = s.getInstrs().listIterator();
         while (instrs.hasNext()) {
-            IR_Instr i = instrs.next();
-            Operation iop = i._op;
+            Instr i = instrs.next();
+            Operation iop = i.operation;
             if (iop.startsBasicBlock()) {
                 valueMap = new HashMap<Operand,Operand>();
                 simplificationMap = new HashMap<Variable,List<Variable>>();
@@ -110,14 +109,14 @@ public class LocalOptimizationPass implements CompilerPass
                 if (val instanceof BreakResult) {
                     BreakResult br = (BreakResult)val;
                     i.markDead();
-                    instrs.add(new COPY_Instr(res, br._result));
-                    instrs.add(new JUMP_Instr(br._jumpTarget));
+                    instrs.add(new CopyInstr(res, br._result));
+                    instrs.add(new JumpInstr(br._jumpTarget));
                 }
             }
             // Optimize some core class method calls for constant values
             else if (iop.isCall()) {
                 val = null;
-                CallInstruction call = (CallInstruction) i;
+                CallInstr call = (CallInstr) i;
                 Operand    r    = call.getReceiver(); 
                 // SSS FIXME: r can be null for ruby/jruby internal call instructions!
                 // Cannot optimize them as of now.
@@ -153,14 +152,14 @@ public class LocalOptimizationPass implements CompilerPass
                             Operand[] args = call.getOperands();
                             if (args[2] instanceof Fixnum && (rm.getName() == "[]")) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                                val = ((Array)r).fetchCompileTimeArrayElement(((Fixnum)args[2])._value.intValue(), false);
+                                val = ((Array)r).fetchCompileTimeArrayElement(((Fixnum)args[2]).value.intValue(), false);
                             }
                         }
 
                         // If we got a simplified value, mark the call dead and insert a copy in its place!
                         if (val != null) {
                             i.markDead();
-                            instrs.add(new COPY_Instr(res, val));
+                            instrs.add(new CopyInstr(res, val));
                             recordSimplification(res, val, valueMap, simplificationMap);
                         }
                     }

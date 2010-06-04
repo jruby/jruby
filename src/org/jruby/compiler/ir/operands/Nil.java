@@ -1,13 +1,27 @@
 package org.jruby.compiler.ir.operands;
 
 // Records the nil object
-public class Nil extends Constant
-{
+
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
+public class Nil extends Constant {
     public static final Nil NIL = new Nil();
 
     private Nil() { }
 
-    public String toString() { return "nil"; }
+    @Override
+    public String toString() { 
+        return "nil";
+    }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { return Nil.NIL; }
+    @Override
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { 
+        return Nil.NIL;
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return interp.getContext().getRuntime().getNil();
+    }
 }

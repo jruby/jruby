@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -38,7 +38,7 @@ public interface IR_Scope {
     /**
      *  methods and closures
      */
-    public void addInstr(IR_Instr i);
+    public void addInstr(Instr i);
 
     /**
      *  Record that newName is a new method name for method with oldName

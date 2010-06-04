@@ -8,7 +8,7 @@ public class RECV_EXCEPTION_Instr extends NoOperandInstr
 {
     public RECV_EXCEPTION_Instr(Variable dest) { super(Operation.RECV_EXCEPTION, dest); }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new RECV_EXCEPTION_Instr(ii.getRenamedVariable(_result));
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new RECV_EXCEPTION_Instr(ii.getRenamedVariable(result));
     }
 }

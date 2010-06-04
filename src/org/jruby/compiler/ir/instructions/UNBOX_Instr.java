@@ -15,14 +15,14 @@ public class UNBOX_Instr extends OneOperandInstr
         super(Operation.UNBOX_VALUE, dst, v);
     }
 
-    public String toString() { return super.toString() + "(" + _arg + ")"; }
+    public String toString() { return super.toString() + "(" + argument + ")"; }
 
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
-	    return (_arg instanceof BoxedValue) ? ((BoxedValue)_arg)._value : new UnboxedValue(_arg);
+	    return (argument instanceof BoxedValue) ? ((BoxedValue)argument)._value : new UnboxedValue(argument);
 	}
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new UNBOX_Instr(ii.getRenamedVariable(_result), _arg.cloneForInlining(ii));
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new UNBOX_Instr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));
     }
 }

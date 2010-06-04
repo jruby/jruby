@@ -20,16 +20,16 @@ public class GET_ARRAY_Instr extends OneOperandInstr
         _all   = getRestOfArray; 
     }
 
-    public String toString() { return "\t" + _result + " = " + _arg + "[" + _index + (_all ? ":END" : "") + "] (GET_ARRAY)"; }
+    public String toString() { return "\t" + result + " = " + argument + "[" + _index + (_all ? ":END" : "") + "] (GET_ARRAY)"; }
 
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap)
     {
         simplifyOperands(valueMap);
-        Operand val = _arg.getValue(valueMap);
+        Operand val = argument.getValue(valueMap);
         return val.fetchCompileTimeArrayElement(_index, _all);
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new GET_ARRAY_Instr(ii.getRenamedVariable(_result), _arg.cloneForInlining(ii), _index, _all);
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new GET_ARRAY_Instr(ii.getRenamedVariable(result), argument.cloneForInlining(ii), _index, _all);
     }
 }

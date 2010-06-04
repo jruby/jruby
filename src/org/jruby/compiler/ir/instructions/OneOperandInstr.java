@@ -10,30 +10,33 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 // This is of the form:
 //   v = OP(arg, attribute_array); Ex: v = NOT(v1)
 
-public class OneOperandInstr extends IR_Instr
-{
-    Operand _arg;
+public class OneOperandInstr extends Instr {
+    Operand argument;
 
-    public OneOperandInstr(Operation op, Variable dest, Operand arg) {
+    public OneOperandInstr(Operation op, Variable dest, Operand argument) {
         super(op, dest);
-        _arg = arg;
+        
+        this.argument = argument;
     }
 
-    public String toString() { return super.toString() + "(" + _arg + ")"; }
+    @Override
+    public String toString() { 
+        return super.toString() + "(" + argument + ")";
+    }
 
     public Operand getArg() {
-        return _arg;
+        return argument;
     }
 
     public Operand[] getOperands() {
-        return new Operand[] {_arg};
+        return new Operand[] {argument};
     }
 
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        _arg = _arg.getSimplifiedOperand(valueMap);
+        argument = argument.getSimplifiedOperand(valueMap);
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new OneOperandInstr(_op, ii.getRenamedVariable(_result), _arg.cloneForInlining(ii));
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new OneOperandInstr(operation, ii.getRenamedVariable(result), argument.cloneForInlining(ii));
     }
 }

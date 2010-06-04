@@ -15,7 +15,7 @@ public class LABEL_Instr extends NoOperandInstr
 
     public String toString() { return _lbl + ":"; }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new LABEL_Instr(ii.getRenamedLabel(_lbl));
     }
 }

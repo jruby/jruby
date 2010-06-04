@@ -15,7 +15,7 @@ public class RECV_CLOSURE_Instr extends NoOperandInstr
         super(Operation.RECV_CLOSURE, dest);
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new COPY_Instr(ii.getRenamedVariable(_result), ii.getCallClosure());
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
 	}
 }

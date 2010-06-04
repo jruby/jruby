@@ -7,7 +7,7 @@ import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowVar;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.LOAD_FROM_FRAME_Instr;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;

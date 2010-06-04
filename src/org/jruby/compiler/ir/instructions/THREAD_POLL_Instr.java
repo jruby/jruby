@@ -9,5 +9,5 @@ public class THREAD_POLL_Instr extends NoOperandInstr
         super(Operation.THREAD_POLL, null);
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { return this; }
+    public Instr cloneForInlining(InlinerInfo ii) { return this; }
 }

@@ -11,13 +11,12 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.operands.TemporaryVariable;
-import org.jruby.compiler.ir.instructions.CallInstruction;
+import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.YIELD_Instr;
 
 public class InlinerInfo {
     public final CFG callerCFG;
-    public final CallInstruction call;
+    public final CallInstr call;
 
     private Operand[] callArgs;
     private Map<Label, Label> lblRenameMap;
@@ -25,7 +24,7 @@ public class InlinerInfo {
     private Map<BasicBlock, BasicBlock> bbRenameMap;
     private List yieldSites;
 
-    public InlinerInfo(CallInstruction call, CFG c) {
+    public InlinerInfo(CallInstr call, CFG c) {
         this.call = call;
         this.callArgs = call.getCallArgs();
         this.callerCFG = c;
@@ -103,7 +102,7 @@ public class InlinerInfo {
     }
 
     public Variable getCallResultVariable() {
-        return call._result;
+        return call.result;
     }
 
     public void recordYieldSite(BasicBlock bb, YIELD_Instr i) {

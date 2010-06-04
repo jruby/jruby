@@ -1,8 +1,10 @@
 package org.jruby.compiler.ir.operands;
 
 // Placeholder class for method address
-public class MethAddr extends Reference 
-{
+
+import org.jruby.interpreter.InterpreterContext;
+
+public class MethAddr extends Reference {
     // The following constants capture pre-known static call sites -- used to implement ruby internals
     public final static MethAddr DEFINE_ALIAS      = new MethAddr("defineAlias");
     public final static MethAddr RETRIEVE_CONSTANT = new MethAddr("retrieveConstant");
@@ -23,9 +25,21 @@ public class MethAddr extends Reference
     public final static MethAddr TO_ARY            = new MethAddr("aryToAry");
     public final static MethAddr GET_FILE_NAME     = new MethAddr("getFileName");
 
-    public MethAddr(String name) { super(name); }
+    public MethAddr(String name) {
+        super(name);
+    }
 
-    public String getName() { return _refName; }
+    public String getName() {
+        return _refName;
+    }
 
-    public String toString() { return _refName; }
+    @Override
+    public String toString() {
+        return _refName;
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return getName();
+    }
 }

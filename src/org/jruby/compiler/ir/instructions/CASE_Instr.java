@@ -36,7 +36,7 @@ public class CASE_Instr extends OneOperandInstr {
     }
 
     public String toString() {
-       return "\t" + _result + " = CASE(" + _arg + ", ELSE: " + elseLabel + ")";
+       return "\t" + result + " = CASE(" + argument + ", ELSE: " + elseLabel + ")";
     }
 
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
@@ -49,7 +49,7 @@ public class CASE_Instr extends OneOperandInstr {
         }
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { 
+    public Instr cloneForInlining(InlinerInfo ii) {
 		 throw new RuntimeException("Not implemented yet!");
 	 }
 }

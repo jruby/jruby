@@ -7,6 +7,8 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.parser.BlockStaticScope;
+import org.jruby.parser.StaticScope;
 
 public class IR_Closure extends IR_ExecutionScope {
 
@@ -60,5 +62,10 @@ public class IR_Closure extends IR_ExecutionScope {
         }
         buf.append("\n}\n\n");
         return buf.toString();
+    }
+
+    @Override
+    protected StaticScope constructStaticScope(StaticScope parent) {
+        return new BlockStaticScope(parent);
     }
 }

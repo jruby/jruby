@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 // A generic IR instruction is of the form: v = OP(arg_array, attribute_array)
+import org.jruby.compiler.ir.Interp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,8 @@ import org.jruby.compiler.ir.operands.Attribute;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 //
 // Specialized forms:
@@ -21,55 +24,61 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 //
 // Ex: v = BOXED_FIXNUM(n)
 //     v = HAS_TYPE(Fixnum)
-public abstract class IR_Instr {
-    public final Operation _op;
-    public final Variable _result;
+public abstract class Instr {
+    public final Operation operation;
+    public final Variable result;
     // Used during optimization passes to propagate type and other information
-    private Attribute[] _attributes;
+    private Attribute[] attributes;
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
     // we can remove this instruction altogether without affecting program correctness.
-    private boolean _isDead;
+    private boolean isDead;
 
-    public IR_Instr(Operation op) {
-        _op = op;
-        _result = null;
+    public Instr(Operation operation) {
+        this.operation = operation;
+        this.result = null;
     }
 
-    public IR_Instr(Operation op, Variable res) {
-        _op = op;
-        _result = res;
-        _attributes = null;
-        _isDead = false;
+    public Instr(Operation operation, Variable result) {
+        this.operation = operation;
+        this.result = result;
     }
 
     @Override
     public String toString() {
-        return "\t" + (isDead() ? "[DEAD]" : "") + (_result == null ? "" : _result + " = ") + _op;
+        return "\t" + (isDead() ? "[DEAD]" : "") + (result == null ? "" : result + " = ") + operation;
     }
 
+    @Interp
     public Variable getResult() {
-        return _result;
+        return result;
+    }
+
+    @Interp
+    public Operation getOperation() {
+        return operation;
     }
 
     // Does this instruction have side effects as a result of its operation
     // This information is used in optimization phases to impact dead code elimination
     // and other optimization passes
     public boolean hasSideEffects() {
-        return _op.hasSideEffects();
+        return operation.hasSideEffects();
     }
 
     public void markDead() {
-        _isDead = true;
+        isDead = true;
     }
 
+    @Interp
     public boolean isDead() {
-        return _isDead;
+        return isDead;
     }
 
     /* --------- "Abstract"/"please-override" methods --------- */
 
     /* Array of all operands for this instruction */
+    @Interp
     public abstract Operand[] getOperands();
 
     /* List of all variables used by all operands of this instruction */
@@ -86,7 +95,7 @@ public abstract class IR_Instr {
      * Clone the instruction for inlining -- this will rename all variables (including local variables and self!)
      * and replace RECV_ARG and RETURN instructions to regular copy instructions,
      */
-    public abstract IR_Instr cloneForInlining(InlinerInfo ii);
+    public abstract Instr cloneForInlining(InlinerInfo ii);
 
     /**
      * This method takes as input a map of operands to their values, and outputs
@@ -114,5 +123,10 @@ public abstract class IR_Instr {
         simplifyOperands(valueMap);
 
         return null; // By default, no simplifications!
+    }
+
+    @Interp
+    public void interpret(InterpreterContext interp, IRubyObject self) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 }

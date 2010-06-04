@@ -32,7 +32,7 @@ public class GET_CONST_Instr extends GET_Instr
     {
         simplifyOperands(valueMap);
         if (_source instanceof MetaObject) {
-            IR_Scope s = ((MetaObject)_source)._scope;
+            IR_Scope s = ((MetaObject)_source).scope;
             return s.getConstantValue(_ref);
         }
         else {
@@ -40,7 +40,7 @@ public class GET_CONST_Instr extends GET_Instr
         }
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new GET_CONST_Instr(ii.getRenamedVariable(_result), _source.cloneForInlining(ii), _ref); 
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new GET_CONST_Instr(ii.getRenamedVariable(result), _source.cloneForInlining(ii), _ref);
     }
 }

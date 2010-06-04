@@ -11,7 +11,7 @@ public class GET_GLOBAL_VAR_Instr extends GET_Instr
         super(Operation.GET_GLOBAL_VAR, dest, new GlobalVariable(gvarName), null);
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new GET_GLOBAL_VAR_Instr(ii.getRenamedVariable(_result), ((GlobalVariable)_source).name);
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new GET_GLOBAL_VAR_Instr(ii.getRenamedVariable(result), ((GlobalVariable)_source).name);
     }
 }

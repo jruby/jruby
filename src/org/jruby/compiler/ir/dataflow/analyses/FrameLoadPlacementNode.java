@@ -5,8 +5,8 @@ import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
-import org.jruby.compiler.ir.instructions.IR_Instr;
-import org.jruby.compiler.ir.instructions.CallInstruction;
+import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.LOAD_FROM_FRAME_Instr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
@@ -36,7 +36,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
 
     // Only ruby local variables are candidates for frame loads.  Ignore the rest!
     // SSS FIXME: What about self?
-    public void buildDataFlowVars(IR_Instr i) {
+    public void buildDataFlowVars(Instr i) {
         FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem) _prob;
         for (Variable v : i.getUsedVariables()) {
             if ((v instanceof LocalVariable) || (v instanceof SelfVariable))
@@ -62,12 +62,12 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
         FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem) _prob;
         Set<Variable> reqdLoads = new HashSet<Variable>(_inReqdLoads);
 
-        List<IR_Instr> instrs = _bb.getInstrs();
-        ListIterator<IR_Instr> it = instrs.listIterator(instrs.size());
+        List<Instr> instrs = _bb.getInstrs();
+        ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
-            IR_Instr i = it.previous();
+            Instr i = it.previous();
 
-            if (i._op == Operation.FRAME_STORE) continue;
+            if (i.operation == Operation.FRAME_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
             Variable r = i.getResult();
@@ -75,11 +75,11 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
             if (r != null) reqdLoads.remove(r);
 
             // Process calls specially -- these are the sites of frame loads!
-            if (i instanceof CallInstruction) {
-                CallInstruction call = (CallInstruction) i;
+            if (i instanceof CallInstr) {
+                CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
-                    IR_Closure cl = (IR_Closure) ((MetaObject) o)._scope;
+                    IR_Closure cl = (IR_Closure) ((MetaObject) o).scope;
                     CFG cl_cfg = cl.getCFG();
                     FrameLoadPlacementProblem cl_flp = new FrameLoadPlacementProblem();
                     cl_flp.initLoadsOnScopeExit(reqdLoads);
@@ -126,24 +126,24 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
     public void addLoads() {
         FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem) _prob;
         IR_ExecutionScope s = flp.getCFG().getScope();
-        List<IR_Instr> instrs = _bb.getInstrs();
-        ListIterator<IR_Instr> it = instrs.listIterator(instrs.size());
+        List<Instr> instrs = _bb.getInstrs();
+        ListIterator<Instr> it = instrs.listIterator(instrs.size());
         Set<Variable> reqdLoads = new HashSet<Variable>(_inReqdLoads);
         while (it.hasPrevious()) {
-            IR_Instr i = it.previous();
+            Instr i = it.previous();
 
-            if (i._op == Operation.FRAME_STORE) continue;
+            if (i.operation == Operation.FRAME_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
             Variable r = i.getResult();
 
             if (r != null) reqdLoads.remove(r);
 
-            if (i instanceof CallInstruction) {
-                CallInstruction call = (CallInstruction) i;
+            if (i instanceof CallInstr) {
+                CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
-                    CFG cl_cfg = ((IR_Closure) ((MetaObject) o)._scope).getCFG();
+                    CFG cl_cfg = ((IR_Closure) ((MetaObject) o).scope).getCFG();
                     FrameLoadPlacementProblem cl_flp = (FrameLoadPlacementProblem) cl_cfg.getDataFlowSolution(flp.getName());
 
                     // Only those variables that are defined in the closure, and are in the required loads set 

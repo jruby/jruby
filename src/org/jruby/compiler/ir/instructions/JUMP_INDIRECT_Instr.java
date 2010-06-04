@@ -21,7 +21,7 @@ public class JUMP_INDIRECT_Instr extends NoOperandInstr
 
     public Variable getJumpTarget() { return _target; }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new JUMP_INDIRECT_Instr(ii.getRenamedVariable(_target));
     }
 }

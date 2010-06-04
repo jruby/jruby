@@ -17,5 +17,5 @@ public class DECLARE_LOCAL_TYPE_Instr extends NoOperandInstr
 
     public String toString() { return super.toString() + "(" + _argIndex + ":" + _typeName  + ")"; }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { return this; }
+    public Instr cloneForInlining(InlinerInfo ii) { return this; }
 }

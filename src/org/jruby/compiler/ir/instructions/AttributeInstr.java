@@ -7,5 +7,5 @@ public class AttributeInstr extends NoOperandInstr
 {
     public AttributeInstr(Operation op) { super(op); }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { return this; }
+    public Instr cloneForInlining(InlinerInfo ii) { return this; }
 }

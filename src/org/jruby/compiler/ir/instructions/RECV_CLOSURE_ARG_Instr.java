@@ -21,7 +21,7 @@ public class RECV_CLOSURE_ARG_Instr extends NoOperandInstr
 
     public String toString() { return super.toString() + "(" + _argIndex + (_restOfArgArray ? ", ALL" : "") + ")"; }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { 
+    public Instr cloneForInlining(InlinerInfo ii) {
         throw new RuntimeException("Not implemented yet!");
     }
 }

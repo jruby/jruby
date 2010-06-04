@@ -3,7 +3,10 @@ package org.jruby.compiler.ir.operands;
 import java.util.List;
 import java.util.Map;
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class Operand
 {
@@ -44,4 +47,14 @@ public abstract class Operand
     public void addUsedVariables(List<Variable> l) { /* Nothing to do by default */ }
 
 	 public Operand cloneForInlining(InlinerInfo ii) { return this; }
+     
+    @Interp
+    public Object retrieve(InterpreterContext interp) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
+    }
+
+    @Interp
+    public Object store(InterpreterContext interp, Object value) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
+    }
 }

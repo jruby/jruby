@@ -1,10 +1,15 @@
 package org.jruby.interpreter;
 
+import com.kenai.jaffl.mapper.FunctionMapper.Context;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.compiler.ir.IR_Builder;
 import org.jruby.compiler.ir.IRMethod;
@@ -17,17 +22,29 @@ import org.jruby.compiler.ir.compiler_pass.IR_Printer;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
-import org.jruby.compiler.ir.instructions.BRANCH_Instr;
-import org.jruby.compiler.ir.instructions.CallInstruction;
-import org.jruby.compiler.ir.instructions.IR_Instr;
-import org.jruby.compiler.ir.instructions.JUMP_Instr;
+import org.jruby.compiler.ir.instructions.BranchInstr;
+import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
+import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 
 public class Interpreter {
+    private Ruby runtime;
+
+    public Interpreter(Ruby runtime) {
+        this.runtime = runtime;
+    }
+
     public static void main(String[] args) {
         Ruby runtime = Ruby.getGlobalRuntime();
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
@@ -62,7 +79,7 @@ public class Interpreter {
             scope.runCompilerPass(new AddFrameInstructions());
             long t9 = new Date().getTime();
             if (isDebug) scope.runCompilerPass(new IR_Printer());
-            interpretTop(runtime, scope);
+            new Interpreter(runtime).interpretTop(scope);
             long t10 = new Date().getTime();
 
             System.out.println("Time to build AST         : " + (t2 - t1));
@@ -90,16 +107,39 @@ public class Interpreter {
         }
     }
 
-    public static void interpretTop(Ruby runtime, IR_Scope scope) {
+    /*
+    public void interpretTop(IR_Scope scope) {
+        IRubyObject self = runtime.getTopSelf();
+
         if (scope instanceof IR_Script) {
-            interpretMethod(runtime, ((IR_Script) scope).getRootClass().getRootMethod());
+            interpretMethod(self, ((IR_Script) scope).getRootClass().getRootMethod());
         } else {
             System.out.println("BONED");
         }
+    }*/
+
+    public void interpretTop(IR_Scope scope) {
+        IRubyObject self = runtime.getTopSelf();
+
+        if (!(scope instanceof IR_Script)) {
+            System.out.println("BONED (not IR_Script)");
+            return;
+        }
+
+        IRMethod rootMethod = ((IR_Script) scope).getRootClass().getRootMethod();
+        RubyModule metaclass = self.getMetaClass();
+
+        InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, metaclass);
+
+        method.call(runtime.getCurrentContext(), self, metaclass, "", new IRubyObject[]{});
     }
 
-    public static void interpretMethod(Ruby runtime, IRMethod method) {
-        System.out.print(method.toString() + "(");
+    public void interpretMethod(IRubyObject self, IRMethod method) {
+        if (method == null) {
+            System.out.println("Interpreting null method?");
+            return;
+        }
+        System.out.print(method + "(");
 
         Operand operands[] = method.getCallArgs();
         for (int i = 0; i < operands.length; i++) {
@@ -118,32 +158,48 @@ public class Interpreter {
         // Construct primitive array as simple store for temporary variables in method and pass along
 
         CFG cfg = method.getCFG();
- //       BasicBlock basicBlock = cfg.getEntryBB();
+/*        try {
+            System.out.println("GETS:" + System.in.read());
+        } catch (IOException ex) {
+            Logger.getLogger(Interpreter.class.getName()).log(Level.SEVERE, null, ex);
+        }*/
+
+
+
         for (BasicBlock basicBlock : cfg.getNodes()) {
-            for (IR_Instr i : basicBlock.getInstrs()) {
+            System.out.println("NEW BB");
+            for (Instr i : basicBlock.getInstrs()) {
                 // .. interpret i ..
-                if (i instanceof BRANCH_Instr) {
+                if (i instanceof BranchInstr) {
                     System.out.println("In branch");
-                    BRANCH_Instr branch = (BRANCH_Instr) i;
+                    BranchInstr branch = (BranchInstr) i;
                     boolean taken = false; // .. the interpreter will tell you whether the branch was taken or not ...
                     if (taken) {
                         basicBlock = cfg.getTargetBB(branch.getJumpTarget());
                     } else {
                         basicBlock = cfg.getFallThroughBB(basicBlock);
                     }
-                } else if (i instanceof JUMP_Instr) {
+                } else if (i instanceof JumpInstr) {
                     System.out.println("In jump");
-                    JUMP_Instr jump = (JUMP_Instr) i;
+                    JumpInstr jump = (JumpInstr) i;
                     basicBlock = cfg.getTargetBB(jump.getJumpTarget());
-                } else if (i instanceof CallInstruction) {
-                    CallInstruction callInstruction = (CallInstruction) i;
+                } else if (i instanceof CallInstr) {
+                    CallInstr callInstruction = (CallInstr) i;
 
                     System.out.println("Call: " + callInstruction);
 
                     // Does not need to be recursive...except for scope handling
-                    interpretMethod(runtime, callInstruction.getTargetMethod());
+                    interpretMethod(self, callInstruction.getTargetMethod());
+                } else if (i instanceof DefineClassMethodInstr) {
+                    if (((DefineClassMethodInstr) i).method.getCFG() != cfg) {
+                        System.out.println("def class method");
+//                        createClassMethod(self, (DefineClassMethodInstr) i);
+                    }
+                } else if (i instanceof DefineInstanceMethodInstr) {
+                    System.out.println("def instance method");
+//                    createInstanceMethod(self, (DefineInstanceMethodInstr) i);
                 } else {
-                    System.out.println("NOT HANDLING: " + i);
+                    System.out.println("NOT HANDLING: " + i + ", (" + i.getClass() + ")");
                 }
                 //... handle returns ..
             }
@@ -153,9 +209,5 @@ public class Interpreter {
                 //.. pop call stack, etc ..
             }
         }
-    }
-
-    public static void interpret() {
-
     }
 }

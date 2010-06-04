@@ -5,15 +5,27 @@
 
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.interpreter.InterpreterContext;
+
 /**
  *
  * @author enebo
  */
 public class LocalVariable extends Variable {
     final public String name;
+    protected int location;
 
+    // FIXME: We should resolve to an index into an array but localvariable has no allocator
     public LocalVariable(String name) {
         this.name = name;
+    }
+
+    public void setLocation(int slot) {
+        this.location = slot;
+    }
+    
+    public int getLocation() {
+        return location;
     }
 
     @Override
@@ -43,5 +55,16 @@ public class LocalVariable extends Variable {
         if (!(arg0 instanceof LocalVariable)) return 0;
 
         return name.compareTo(((LocalVariable) arg0).name);
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return interp.getLocalVariable(location);
+    }
+
+    @Override
+    public Object store(InterpreterContext interp, Object value) {
+        System.out.println("LOCATION = " + location);
+        return interp.setLocalVariable(location, value);
     }
 }

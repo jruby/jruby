@@ -6,6 +6,7 @@ public class GlobalVariable extends LocalVariable {
         super(n);
     }
 
+    @Override
     public Operand cloneForInlining(InlinerInfo ii) { 
        return this;
     }

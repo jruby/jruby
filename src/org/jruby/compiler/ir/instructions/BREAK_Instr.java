@@ -26,7 +26,7 @@ public class BREAK_Instr extends OneOperandInstr
         super(Operation.BREAK, null, rv);
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { 
-        return new BREAK_Instr(_arg.cloneForInlining(ii));
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new BREAK_Instr(argument.cloneForInlining(ii));
     }
 }

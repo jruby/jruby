@@ -100,27 +100,27 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.instructions.ATTR_ASSIGN_Instr;
-import org.jruby.compiler.ir.instructions.BEQ_Instr;
+import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
-import org.jruby.compiler.ir.instructions.CallInstruction;
+import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
 import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
-import org.jruby.compiler.ir.instructions.COPY_Instr;
+import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
 import org.jruby.compiler.ir.instructions.EQQ_Instr;
-import org.jruby.compiler.ir.instructions.FilenameInstruction;
+import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GET_ARRAY_Instr;
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
 import org.jruby.compiler.ir.instructions.GET_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.GET_FIELD_Instr;
 import org.jruby.compiler.ir.instructions.GET_GLOBAL_VAR_Instr;
-import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.IS_TRUE_Instr;
 import org.jruby.compiler.ir.instructions.JRUBY_IMPL_CALL_Instr;
-import org.jruby.compiler.ir.instructions.JUMP_Instr;
+import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
-import org.jruby.compiler.ir.instructions.LINE_NUM_Instr;
+import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.NOT_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
@@ -130,10 +130,10 @@ import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.RECV_CLOSURE_ARG_Instr;
 import org.jruby.compiler.ir.instructions.RECV_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
-import org.jruby.compiler.ir.instructions.RECV_OPT_ARG_Instr;
+import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.RESCUED_BODY_START_MARKER_Instr;
 import org.jruby.compiler.ir.instructions.RESCUED_BODY_END_MARKER_Instr;
-import org.jruby.compiler.ir.instructions.RETURN_Instr;
+import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.RUBY_INTERNALS_CALL_Instr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.THREAD_POLL_Instr;
@@ -339,7 +339,7 @@ public class IR_Builder
             for (int i = n-1; i >= 0; i--) {
                 Label retLabel = m.getNewLabel();
                 m.addInstr(new SET_RETADDR_Instr(ebArray[i].returnAddr, retLabel));
-                m.addInstr(new JUMP_Instr(ebArray[i].start));
+                m.addInstr(new JumpInstr(ebArray[i].start));
                 m.addInstr(new LABEL_Instr(retLabel));
                 ebArray[i].noFallThru = true;
             }
@@ -383,7 +383,7 @@ public class IR_Builder
             // Do not emit multiple line number instrs for the same line
             int currLineNum = n.getPosition().getStartLine();
             if (currLineNum != _lastProcessedLineNum) {
-               s.addInstr(new LINE_NUM_Instr(s, currLineNum));
+               s.addInstr(new LineNumberInstr(s, currLineNum));
                _lastProcessedLineNum = currLineNum;
             }
         }
@@ -603,7 +603,7 @@ public class IR_Builder
                 s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
                 break;
             case LOCALASGNNODE:
-                s.addInstr(new COPY_Instr(new LocalVariable(((LocalAsgnNode)node).getName()), v));
+                s.addInstr(new CopyInstr(new LocalVariable(((LocalAsgnNode)node).getName()), v));
                 break;
             case MULTIPLEASGNNODE:
                 buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, v);
@@ -712,10 +712,10 @@ public class IR_Builder
             Variable ret = m.getNewTemporaryVariable();
             Label    l   = m.getNewLabel();
             Operand  v1  = build(andNode.getFirstNode(), m);
-            m.addInstr(new COPY_Instr(ret, BooleanLiteral.FALSE));
-            m.addInstr(new BEQ_Instr(v1, BooleanLiteral.FALSE, l));
+            m.addInstr(new CopyInstr(ret, BooleanLiteral.FALSE));
+            m.addInstr(new BEQInstr(v1, BooleanLiteral.FALSE, l));
             Operand  v2  = build(andNode.getSecondNode(), m);
-            m.addInstr(new COPY_Instr(ret, v2));
+            m.addInstr(new CopyInstr(ret, v2));
             m.addInstr(new LABEL_Instr(l));
             return ret;
         }
@@ -796,7 +796,7 @@ public class IR_Builder
         List<Operand> args         = setupCallArgs(receiverNode, callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        IR_Instr      callInstr    = new CallInstruction(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
+        Instr      callInstr    = new CallInstr(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -831,7 +831,7 @@ public class IR_Builder
                     labels.add(bodyLabel);
                     
                     m.addInstr(new EQQ_Instr(eqqResult, build(expression, m), value));
-                    m.addInstr(new BEQ_Instr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
+                    m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
                 }
             } else {
                 Variable eqqResult = m.getNewTemporaryVariable();
@@ -840,7 +840,7 @@ public class IR_Builder
                 labels.add(bodyLabel);
 
                 m.addInstr(new EQQ_Instr(eqqResult, build(whenNode.getExpressionNodes(), m), value));
-                m.addInstr(new BEQ_Instr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
+                m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
             }
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
@@ -871,8 +871,8 @@ public class IR_Builder
                 bodyValue = br._result;
                 tgt = br._jumpTarget;
             }
-            m.addInstr(new COPY_Instr(result, bodyValue));
-            m.addInstr(new JUMP_Instr(tgt));
+            m.addInstr(new CopyInstr(result, bodyValue));
+            m.addInstr(new JumpInstr(tgt));
         }
 
         // close it out
@@ -1010,7 +1010,7 @@ public class IR_Builder
             // 2. Then load the constant from the module
             Operand module = build(iVisited.getLeftNode(), s);
             if (module instanceof MetaObject) {
-                return loadConst(((MetaObject)module)._scope, s, name);
+                return loadConst(((MetaObject)module).scope, s, name);
             }
             else {
                 Variable constVal = s.getNewTemporaryVariable();
@@ -1023,7 +1023,7 @@ public class IR_Builder
             List<Operand> args       = setupCallArgs(null, s);
             Operand       block      = setupCallClosure(null, s);
             Variable      callResult = s.getNewTemporaryVariable();
-            IR_Instr      callInstr  = new CallInstruction(callResult, new MethAddr(c2mNode.getName()), args.toArray(new Operand[args.size()]), block);
+            Instr      callInstr  = new CallInstr(callResult, new MethAddr(c2mNode.getName()), args.toArray(new Operand[args.size()]), block);
             s.addInstr(callInstr);
             return callResult;
         }
@@ -1540,7 +1540,7 @@ public class IR_Builder
         // assignments to block variables within a block.  As far as the IR is concerned,
         // this is just a simple copy
         Variable arg = new LocalVariable(dasgnNode.getName());
-        s.addInstr(new COPY_Instr(arg, build(dasgnNode.getValueNode(), s)));
+        s.addInstr(new CopyInstr(arg, build(dasgnNode.getValueNode(), s)));
         return arg;
     }
 
@@ -1569,9 +1569,9 @@ public class IR_Builder
             Node bodyNode = defnNode.getBodyNode();
             Operand rv = (bodyNode instanceof RescueNode) ? buildRescueInternal(bodyNode, m) : build(bodyNode, m);
             if (rv != null)
-               m.addInstr(new RETURN_Instr(rv));
+               m.addInstr(new ReturnInstr(rv));
         } else {
-            m.addInstr(new RETURN_Instr(Nil.NIL));
+            m.addInstr(new ReturnInstr(Nil.NIL));
         }
 
         if (isInstanceMethod) {
@@ -1635,7 +1635,7 @@ public class IR_Builder
                     // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = s.getNewLabel();
                 LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
-                s.addInstr(new RECV_OPT_ARG_Instr(new LocalVariable(n.getName()), argIndex, l));
+                s.addInstr(new ReceiveOptionalArgumentInstr(new LocalVariable(n.getName()), argIndex, l));
                 build(n, s);
                 s.addInstr(new LABEL_Instr(l));
             }
@@ -1763,7 +1763,7 @@ public class IR_Builder
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        IR_Instr      callInstr    = new CallInstruction(callResult, new MethAddr(fcallNode.getName()), args.toArray(new Operand[args.size()]), block);
+        Instr      callInstr    = new CallInstr(callResult, new MethAddr(fcallNode.getName()), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -1982,7 +1982,7 @@ public class IR_Builder
         Label    falseLabel = s.getNewLabel();
         Label    doneLabel  = s.getNewLabel();
         Operand  thenResult = null;
-        s.addInstr(new BEQ_Instr(build(actualCondition, s), BooleanLiteral.FALSE, falseLabel));
+        s.addInstr(new BEQInstr(build(actualCondition, s), BooleanLiteral.FALSE, falseLabel));
 
         boolean thenNull = false;
         boolean elseNull = false;
@@ -1999,16 +1999,16 @@ public class IR_Builder
                     thenResult = br._result;
                     tgt = br._jumpTarget;
                 }
-                s.addInstr(new COPY_Instr(result, thenResult));
-                s.addInstr(new JUMP_Instr(tgt));
+                s.addInstr(new CopyInstr(result, thenResult));
+                s.addInstr(new JumpInstr(tgt));
             }
             else {
                 thenNull = true;
             }
         }
         else {
-            s.addInstr(new COPY_Instr(result, Nil.NIL));
-            s.addInstr(new JUMP_Instr(doneLabel));
+            s.addInstr(new CopyInstr(result, Nil.NIL));
+            s.addInstr(new JumpInstr(doneLabel));
         }
 
         // Build the else part of the if-statement
@@ -2016,12 +2016,12 @@ public class IR_Builder
         if (ifNode.getElseBody() != null) {
             Operand elseResult = build(ifNode.getElseBody(), s);
             if (elseResult != null) // elseResult can be null if then-body ended with a return!
-                s.addInstr(new COPY_Instr(result, elseResult));
+                s.addInstr(new CopyInstr(result, elseResult));
             else
                 elseNull = true;
         }
         else {
-            s.addInstr(new COPY_Instr(result, Nil.NIL));
+            s.addInstr(new CopyInstr(result, Nil.NIL));
         }
 
         if (thenNull && elseNull) {
@@ -2066,7 +2066,7 @@ public class IR_Builder
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode, IR_Scope s) {
         Operand value = build(localAsgnNode.getValueNode(), s);
-        s.addInstr(new COPY_Instr(new LocalVariable(localAsgnNode.getName()), value));
+        s.addInstr(new CopyInstr(new LocalVariable(localAsgnNode.getName()), value));
 
         return value;
     }
@@ -2130,7 +2130,7 @@ public class IR_Builder
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IR_Scope s) {
         Operand  values = build(multipleAsgnNode.getValueNode(), s);
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new COPY_Instr(ret, values));
+        s.addInstr(new CopyInstr(ret, values));
         buildMultipleAsgnAssignment(multipleAsgnNode, s, ret);
         return ret;
     }
@@ -2179,7 +2179,7 @@ public class IR_Builder
         s.addInstr(new THREAD_POLL_Instr());
         // If a closure, the next is simply a return from the closure!
         // If a regular loop, the next is simply a jump to the end of the iteration
-        s.addInstr((s instanceof IR_Closure) ? new CLOSURE_RETURN_Instr(rv) : new JUMP_Instr(s.getCurrentLoop()._iterEndLabel));
+        s.addInstr((s instanceof IR_Closure) ? new CLOSURE_RETURN_Instr(rv) : new JumpInstr(s.getCurrentLoop()._iterEndLabel));
         return rv;
     }
 
@@ -2206,18 +2206,18 @@ public class IR_Builder
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode(), s);
         Variable      getResult   = s.getNewTemporaryVariable();
-        IR_Instr      callInstr    = new CallInstruction(getResult, new MethAddr(opAsgnNode.getVariableName()), new Operand[] {v1}, null);
+        Instr      callInstr    = new CallInstr(getResult, new MethAddr(opAsgnNode.getVariableName()), new Operand[] {v1}, null);
         s.addInstr(callInstr);
 
         // call operator
         Operand  v2 = build(opAsgnNode.getValueNode(), s);
         Variable      setValue   = s.getNewTemporaryVariable();
-        callInstr    = new CallInstruction(setValue, new MethAddr(opAsgnNode.getOperatorName()), new Operand[] {getResult, v2}, null);
+        callInstr    = new CallInstr(setValue, new MethAddr(opAsgnNode.getOperatorName()), new Operand[] {getResult, v2}, null);
         s.addInstr(callInstr);
 
         // set attr
         Variable      setResult   = s.getNewTemporaryVariable();
-        callInstr    = new CallInstruction(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), new Operand[] {v1, setValue}, null);
+        callInstr    = new CallInstr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), new Operand[] {v1, setValue}, null);
         s.addInstr(callInstr);
 
         return setResult;
@@ -2236,7 +2236,7 @@ public class IR_Builder
         Operand  v1 = build(andNode.getFirstNode(), s);
         Variable f  = s.getNewTemporaryVariable();
         s.addInstr(new IS_TRUE_Instr(f, v1));
-        s.addInstr(new BEQ_Instr(f, BooleanLiteral.FALSE, l));
+        s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
         build(andNode.getSecondNode(), s);  // This does the assignment!
         s.addInstr(new LABEL_Instr(l));
         s.addInstr(new THREAD_POLL_Instr());
@@ -2269,7 +2269,7 @@ public class IR_Builder
         } else {
             v1 = build(orNode.getFirstNode(), s);
             s.addInstr(new IS_TRUE_Instr(f, v1));
-            s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
+            s.addInstr(new BEQInstr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done!
         }
         build(orNode.getSecondNode(), s); // This does the assignment!
         s.addInstr(new LABEL_Instr(l1));
@@ -2427,9 +2427,9 @@ public class IR_Builder
             allArgs[i] = x;
             i++;
         }
-        s.addInstr(new CallInstruction(elt, new MethAddr("[]"), allArgs, null));
+        s.addInstr(new CallInstr(elt, new MethAddr("[]"), allArgs, null));
         s.addInstr(new IS_TRUE_Instr(f, elt));
-        s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l));
+        s.addInstr(new BEQInstr(f, BooleanLiteral.TRUE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
         allArgs = new Operand[args.size()+2];
         i = 1;
@@ -2439,8 +2439,8 @@ public class IR_Builder
             i++;
         }
         allArgs[i] = value;
-        s.addInstr(new CallInstruction(elt, new MethAddr("[]="), allArgs, null));
-        s.addInstr(new COPY_Instr(elt, value));
+        s.addInstr(new CallInstr(elt, new MethAddr("[]="), allArgs, null));
+        s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
     }
@@ -2460,9 +2460,9 @@ public class IR_Builder
             allArgs[i] = x;
             i++;
         }
-        s.addInstr(new CallInstruction(elt, new MethAddr("[]"), allArgs, null));
+        s.addInstr(new CallInstr(elt, new MethAddr("[]"), allArgs, null));
         s.addInstr(new IS_TRUE_Instr(f, elt));
-        s.addInstr(new BEQ_Instr(f, BooleanLiteral.FALSE, l));
+        s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
         allArgs = new Operand[args.size()+2];
         i = 1;
@@ -2472,8 +2472,8 @@ public class IR_Builder
             i++;
         }
         allArgs[i] = value;
-        s.addInstr(new CallInstruction(elt, new MethAddr("[]="), allArgs, null));
-        s.addInstr(new COPY_Instr(elt, value));
+        s.addInstr(new CallInstr(elt, new MethAddr("[]="), allArgs, null));
+        s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
     }
@@ -2508,10 +2508,10 @@ public class IR_Builder
             Variable ret = m.getNewTemporaryVariable();
             Label    l   = m.getNewLabel();
             Operand  v1  = build(orNode.getFirstNode(), m);
-            m.addInstr(new COPY_Instr(ret, BooleanLiteral.TRUE));
-            m.addInstr(new BEQ_Instr(v1, BooleanLiteral.TRUE, l));
+            m.addInstr(new CopyInstr(ret, BooleanLiteral.TRUE));
+            m.addInstr(new BEQInstr(v1, BooleanLiteral.TRUE, l));
             Operand  v2  = build(orNode.getSecondNode(), m);
-            m.addInstr(new COPY_Instr(ret, v2));
+            m.addInstr(new CopyInstr(ret, v2));
             m.addInstr(new LABEL_Instr(l));
             return ret;
         }
@@ -2556,7 +2556,7 @@ public class IR_Builder
     public Operand buildRedo(Node node, IR_ExecutionScope s) {
         // For closures, a redo is a jump to the beginning of the closure
         // For non-closures, a redo is a jump to the beginning of the loop
-        s.addInstr(new JUMP_Instr((s instanceof IR_Closure) ? ((IR_Closure)s)._startLabel : s.getCurrentLoop()._iterStartLabel));
+        s.addInstr(new JumpInstr((s instanceof IR_Closure) ? ((IR_Closure)s)._startLabel : s.getCurrentLoop()._iterStartLabel));
         return Nil.NIL;
     }
 
@@ -2597,20 +2597,20 @@ public class IR_Builder
         }
 
         if (tmp != null) {
-            m.addInstr(new COPY_Instr(rv, tmp));
+            m.addInstr(new CopyInstr(rv, tmp));
 
             // No explicit return from the protected body
             // - If we dont have any ensure blocks, simply jump to the end of the rescue block
             // - If we do, get the innermost ensure block, set up the return address to the end of the ensure block, and go execute the ensure code.
             if (noEnsure) {
-                m.addInstr(new JUMP_Instr(rEndLabel));
+                m.addInstr(new JumpInstr(rEndLabel));
             }
             else {
                 EnsureBlockInfo ebi = _ensureBlockStack.peek();
                 ebi.endLabelNeeded = true;
                 ebi.noFallThru = true;
                 m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, ebi.end));
-                m.addInstr(new JUMP_Instr(ebi.start));
+                m.addInstr(new JumpInstr(ebi.start));
             }
         }
         else {
@@ -2655,24 +2655,24 @@ public class IR_Builder
             uncaughtLabel = m.getNewLabel();
             Variable eqqResult = m.getNewTemporaryVariable();
             m.addInstr(new EQQ_Instr(eqqResult, exc, excType));
-            m.addInstr(new BEQ_Instr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
+            m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
         }
 
         // Caught exception case -- build rescue body
         Node realBody = skipOverNewlines(m, rescueBodyNode.getBodyNode());
         Operand x = build(realBody, m);
         if (x != null) { // can be null if the rescue block has an explicit return
-            m.addInstr(new COPY_Instr(rv, x));
+            m.addInstr(new CopyInstr(rv, x));
             // Jump to end of rescue block since we've caught and processed the exception
             if (haveEnsureBlocks) {
                 EnsureBlockInfo ebi = _ensureBlockStack.peek();
                 ebi.endLabelNeeded = true;
                 ebi.noFallThru = true;
                 m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, ebi.end));
-                m.addInstr(new JUMP_Instr(ebi.start));
+                m.addInstr(new JumpInstr(ebi.start));
             }
             else {
-                m.addInstr(new JUMP_Instr(endLabel));
+                m.addInstr(new JumpInstr(endLabel));
             }
         }
 
@@ -2730,7 +2730,7 @@ public class IR_Builder
         // Before we return, have to go execute all the ensure blocks (except the one we are currently executing!)
         if (!_ensureBlockStack.empty())
             EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
-        m.addInstr(new RETURN_Instr(retVal));
+        m.addInstr(new ReturnInstr(retVal));
         return null;
     }
 
@@ -2741,7 +2741,7 @@ public class IR_Builder
         IRMethod rootMethod = rootClass.getRootMethod();
 
         // Debug info: record file name
-        rootMethod.addInstr(new FilenameInstruction(node.getPosition().getFile()));
+        rootMethod.addInstr(new FilenameInstr(node.getPosition().getFile()));
 
         // add a "self" recv here
         // TODO: is this right?
@@ -2815,7 +2815,7 @@ public class IR_Builder
 
             if (isLoopHeadCondition) {
                 Operand cv = build(conditionNode, s);
-                s.addInstr(new BEQ_Instr(cv, isWhile ? BooleanLiteral.FALSE : BooleanLiteral.TRUE, loop._loopEndLabel));
+                s.addInstr(new BEQInstr(cv, isWhile ? BooleanLiteral.FALSE : BooleanLiteral.TRUE, loop._loopEndLabel));
             }
             s.addInstr(new LABEL_Instr(loop._iterStartLabel));
 
@@ -2826,7 +2826,7 @@ public class IR_Builder
                 Operand v = build(bodyNode, s);
                 if (v != null) {
                     whileResult = s.getNewTemporaryVariable();
-                    s.addInstr(new COPY_Instr(whileResult, v));
+                    s.addInstr(new CopyInstr(whileResult, v));
                 }
             }
 
@@ -2836,11 +2836,11 @@ public class IR_Builder
             s.addInstr(new LABEL_Instr(loop._iterEndLabel));
             if (isLoopHeadCondition) {
                 // Issue a jump back to the head of the while loop
-                s.addInstr(new JUMP_Instr(loop._loopStartLabel));
+                s.addInstr(new JumpInstr(loop._loopStartLabel));
             }
             else {
                 Operand cv = build(conditionNode, s);
-                s.addInstr(new BEQ_Instr(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop._iterStartLabel));
+                s.addInstr(new BEQInstr(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop._iterStartLabel));
             }
 
             s.addInstr(new LABEL_Instr(loop._loopEndLabel));
@@ -2864,7 +2864,7 @@ public class IR_Builder
     public Operand buildVCall(VCallNode node, IR_Scope s) {
         List<Operand> args       = new ArrayList<Operand>(); args.add(s.getSelf());
         Variable      callResult = s.getNewTemporaryVariable();
-        IR_Instr      callInstr  = new CallInstruction(callResult, new MethAddr(node.getName()), args.toArray(new Operand[args.size()]), null);
+        Instr      callInstr  = new CallInstr(callResult, new MethAddr(node.getName()), args.toArray(new Operand[args.size()]), null);
         s.addInstr(callInstr);
         return callResult;
     }

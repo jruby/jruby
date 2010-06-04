@@ -16,17 +16,17 @@ import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.Tuple;
-import org.jruby.compiler.ir.instructions.BRANCH_Instr;
+import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
-import org.jruby.compiler.ir.instructions.CallInstruction;
-import org.jruby.compiler.ir.instructions.IR_Instr;
-import org.jruby.compiler.ir.instructions.JUMP_Instr;
+import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.RESCUED_BODY_START_MARKER_Instr;
 import org.jruby.compiler.ir.instructions.RESCUED_BODY_END_MARKER_Instr;
-import org.jruby.compiler.ir.instructions.RETURN_Instr;
+import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.YIELD_Instr;
@@ -130,7 +130,12 @@ public class CFG {
     // haven't been reordered around.  This code is there temporarily
     // to get Tom & Charlie started on the IR interpreter.
     public BasicBlock getFallThroughBB(BasicBlock bb) {
-        return _bbArray[bb.getID()];
+        int id = bb.getID();
+
+        // FIXME: This fail easily and this is a bandaid since I think
+        if (id >= _bbArray.length) return null;
+
+        return _bbArray[id];
     }
 
     public BasicBlock getTargetBB(Label l) {
@@ -183,7 +188,7 @@ public class CFG {
                     });
     }
 
-    public void build(List<IR_Instr> instrs) {
+    public void build(List<Instr> instrs) {
         // Map of label & basic blocks which are waiting for a bb with that label
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<Label, List<BasicBlock>>();
 
@@ -216,8 +221,8 @@ public class CFG {
         BasicBlock newBB = null;
         boolean bbEnded = false;
         boolean bbEndedWithControlXfer = false;
-        for (IR_Instr i : instrs) {
-            Operation iop = i._op;
+        for (Instr i : instrs) {
+            Operation iop = i.operation;
             if (iop == Operation.LABEL) {
                 Label l = ((LABEL_Instr) i)._lbl;
                 prevBB = currBB;
@@ -271,10 +276,10 @@ public class CFG {
                 bbEnded = true;
                 currBB.addInstr(i);
                 Label tgt;
-                if (i instanceof BRANCH_Instr) {
-                    tgt = ((BRANCH_Instr) i).getJumpTarget();
-                } else if (i instanceof JUMP_Instr) {
-                    tgt = ((JUMP_Instr) i).getJumpTarget();
+                if (i instanceof BranchInstr) {
+                    tgt = ((BranchInstr) i).getJumpTarget();
+                } else if (i instanceof JumpInstr) {
+                    tgt = ((JumpInstr) i).getJumpTarget();
                     bbEndedWithControlXfer = true;
                 } // CASE IR instructions are dummy instructions
                 // -- all when/then clauses have been converted into if-then-else blocks
@@ -284,7 +289,7 @@ public class CFG {
                 else if (i instanceof BREAK_Instr) {
                     tgt = null;
                     bbEndedWithControlXfer = true;
-                } else if (i instanceof RETURN_Instr) {
+                } else if (i instanceof ReturnInstr) {
                     tgt = null;
                     retBBs.add(currBB);
                     bbEndedWithControlXfer = true;
@@ -318,10 +323,10 @@ public class CFG {
                     retAddrMap.put(v, addrs);
                 }
                 addrs.add(((SET_RETADDR_Instr) i).getReturnAddr());
-            } else if (i instanceof CallInstruction) { // Build CFG for the closure if there exists one 
-                Operand closureArg = ((CallInstruction)i).getClosureArg();
+            } else if (i instanceof CallInstr) { // Build CFG for the closure if there exists one
+                Operand closureArg = ((CallInstr)i).getClosureArg();
                 if (closureArg instanceof MetaObject) {
-                    ((IR_Closure)((MetaObject)closureArg)._scope).buildCFG();
+                    ((IR_Closure)((MetaObject)closureArg).scope).buildCFG();
                 }
             }
         }
@@ -484,7 +489,7 @@ public class CFG {
         mergeStraightlineBBs(yieldBB, splitBB);
     }
 
-    public void inlineMethod(IRMethod m, BasicBlock callBB, CallInstruction call) {
+    public void inlineMethod(IRMethod m, BasicBlock callBB, CallInstr call) {
         InlinerInfo ii =  new InlinerInfo(call, this);
 
         // 1. split callsite bb and move outbound edges from callsite bb to split bb.
@@ -589,7 +594,7 @@ public class CFG {
                 throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
 
             Tuple t = (Tuple)yieldSites.get(0);
-            inlineClosureAtYieldSite(ii, (IR_Closure)((MetaObject)closureArg)._scope, (BasicBlock)t._a, (YIELD_Instr)t._b);
+            inlineClosureAtYieldSite(ii, (IR_Closure)((MetaObject)closureArg).scope, (BasicBlock)t._a, (YIELD_Instr)t._b);
         }
     }
 
@@ -836,7 +841,7 @@ public class CFG {
                 assert !stack.empty();
 
                // Find the basic block that is the target of the 'taken' branch
-               IR_Instr lastInstr = b.getLastInstr();
+               Instr lastInstr = b.getLastInstr();
                if (lastInstr == null) {
                    // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
                    BasicBlock b1 = null, b2 = null; 
@@ -867,24 +872,24 @@ public class CFG {
                else {
 //                  System.out.println("last instr is: " + lastInstr);
                   BasicBlock blockToIgnore = null;
-                  if (lastInstr instanceof JUMP_Instr) {
-                      blockToIgnore = _bbMap.get(((JUMP_Instr)lastInstr)._target);
+                  if (lastInstr instanceof JumpInstr) {
+                      blockToIgnore = _bbMap.get(((JumpInstr)lastInstr).target);
 
                       // Check if all of blockToIgnore's predecessors get to it with a jump!
                       // This can happen because of exceptions and rescue handlers
                       // If so, dont ignore it.  Process it right away (because everyone will end up ignoring this block!)
                       boolean allJumps = true;
                       for (CFG_Edge e: _cfg.incomingEdgesOf(blockToIgnore)) {
-                          if (! (e._src.getLastInstr() instanceof JUMP_Instr))
+                          if (! (e._src.getLastInstr() instanceof JumpInstr))
                               allJumps = false;
                       }
 
                       if (allJumps)
                           blockToIgnore = null;
                   }
-                  else if (lastInstr instanceof BRANCH_Instr) {
+                  else if (lastInstr instanceof BranchInstr) {
                       // Push the taken block onto the stack first so that it gets processed last!
-                      BasicBlock takenBlock = _bbMap.get(((BRANCH_Instr)lastInstr).getJumpTarget());
+                      BasicBlock takenBlock = _bbMap.get(((BranchInstr)lastInstr).getJumpTarget());
                       pushBBOnStack(stack, bbSet, takenBlock);
                       blockToIgnore = takenBlock;
                   }
@@ -909,13 +914,13 @@ public class CFG {
         int n = _linearizedBBList.size();
         for (int i = 0; i < n; i++) {
             BasicBlock curr = _linearizedBBList.get(i); 
-            IR_Instr   li   = curr.getLastInstr();
+            Instr   li   = curr.getLastInstr();
             if ((i+1) < n) {
                 BasicBlock next = _linearizedBBList.get(i+1);
 
                 // If curr ends in a jump to next, remove the jump!
-                if (li instanceof JUMP_Instr) {
-                    if (next == _bbMap.get(((JUMP_Instr)li)._target)) {
+                if (li instanceof JumpInstr) {
+                    if (next == _bbMap.get(((JumpInstr)li).target)) {
                         System.out.println("BB " + curr.getID() + " falls through in layout to BB " + next.getID() + ".  Removing jump from former bb!"); 
                         curr.removeInstr(li);
                     }
@@ -927,7 +932,7 @@ public class CFG {
                         BasicBlock tgt = succs.iterator().next()._dst;
                         if ((tgt != next) && ((li == null) || !li._op.xfersControl())) {
                             System.out.println("BB " + curr.getID() + " doesn't fall through to " + next.getID() + ".  Adding a jump to " + tgt._label);
-                            curr.addInstr(new JUMP_Instr(tgt._label));
+                            curr.addInstr(new JumpInstr(tgt._label));
                         }
                     }
                 }
@@ -935,7 +940,7 @@ public class CFG {
                 if (curr == _exitBB) {
                     // Add a dummy ret
                     System.out.println("Exit bb is not the last bb in the layout!  Adding a dummy return!");
-                    curr.addInstr(new RETURN_Instr(Nil.NIL));
+                    curr.addInstr(new ReturnInstr(Nil.NIL));
                 }
             }
             else if (curr != _exitBB) {
@@ -944,7 +949,7 @@ public class CFG {
                 BasicBlock tgt = succs.iterator().next()._dst;
                 if ((li == null) || !li._op.xfersControl()) {
                     System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
-                    curr.addInstr(new JUMP_Instr(tgt._label));
+                    curr.addInstr(new JumpInstr(tgt._label));
                 }
             }
         }

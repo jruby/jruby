@@ -4,8 +4,8 @@ import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowVar;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
-import org.jruby.compiler.ir.instructions.CallInstruction;
-import org.jruby.compiler.ir.instructions.IR_Instr;
+import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
@@ -40,7 +40,7 @@ public class LiveVariableNode extends FlowGraphNode
         }
     }
 
-    public void buildDataFlowVars(IR_Instr i) 
+    public void buildDataFlowVars(Instr i)
     {
 //        System.out.println("BV: Processing: " + i);
         addDFVar(i.getResult());
@@ -89,10 +89,10 @@ public class LiveVariableNode extends FlowGraphNode
 //        System.out.println("After MEET, df state is:\n" + toString());
 
         // Traverse the instructions in this basic block in reverse order!
-        List<IR_Instr> instrs = _bb.getInstrs();
-        ListIterator<IR_Instr> it = instrs.listIterator(instrs.size());
+        List<Instr> instrs = _bb.getInstrs();
+        ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
-            IR_Instr i = it.previous();
+            Instr i = it.previous();
 //            System.out.println("TF: Processing: " + i);
 
             // v is defined => It is no longer live before 'i'
@@ -105,15 +105,15 @@ public class LiveVariableNode extends FlowGraphNode
 
             // Check if 'i' is a call and uses a closure!
             // If so, we need to process the closure for live variable info.
-            if (i instanceof CallInstruction) {
-                CallInstruction c = (CallInstruction) i;
+            if (i instanceof CallInstr) {
+                CallInstr c = (CallInstr) i;
                 // SSS FIXME: This relies on the local opt. pass having run already
                 // so that the built closure from the previous istnr. is propagated to the call site here.
                 // Formalize this dependency somewhere?
                 Operand o = c.getClosureArg();
 //                   System.out.println("Processing closure: " + o + "-------");
                 if ((o != null) && (o instanceof MetaObject)) {
-                    IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
+                    IR_Closure cl = (IR_Closure)((MetaObject)o).scope;
                     if (c.isLVADataflowBarrier()) {
                         processClosure(cl, lvp.getAllVars());
 
@@ -238,10 +238,10 @@ public class LiveVariableNode extends FlowGraphNode
 
         // Traverse the instructions in this basic block in reverse order!
         // Mark as dead all instructions whose results are not used! 
-        List<IR_Instr> instrs = _bb.getInstrs();
-        ListIterator<IR_Instr> it = instrs.listIterator(instrs.size());
+        List<Instr> instrs = _bb.getInstrs();
+        ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
-            IR_Instr i = it.previous();
+            Instr i = it.previous();
 //            System.out.println("DEAD?? " + i);
             Variable v = i.getResult();
             if (v != null) {
@@ -263,8 +263,8 @@ public class LiveVariableNode extends FlowGraphNode
 //                System.out.println("IGNORING! No result!");
             }
 
-            if (i instanceof CallInstruction) {
-                CallInstruction c = (CallInstruction) i;
+            if (i instanceof CallInstr) {
+                CallInstr c = (CallInstr) i;
                 if (c.isLVADataflowBarrier()) {
                     // Mark all variables live if 'c' is a dataflow barrier!
                     for (int j = 0; j < _setSize; j++)
@@ -274,7 +274,7 @@ public class LiveVariableNode extends FlowGraphNode
                     Operand o = c.getClosureArg();
                     if ((o != null) && (o instanceof MetaObject)) {
                         // 2. Run LVA on the closure
-                        IR_Closure cl = (IR_Closure)((MetaObject)o)._scope;
+                        IR_Closure cl = (IR_Closure)((MetaObject)o).scope;
                         CFG x = cl.getCFG();
                         LiveVariablesProblem xlvp = (LiveVariablesProblem)x.getDataFlowSolution(lvp.getName());
                         // 3. Collect variables live on entry and merge that info into the current problem.

@@ -16,11 +16,11 @@ public class SET_RETADDR_Instr extends OneOperandInstr
         super(Operation.SET_RETADDR, d, l);
     }
 
-    public Label getReturnAddr() { return (Label)_arg; }
+    public Label getReturnAddr() { return (Label)argument; }
 
-    public String toString() { return "\t" + _result + " = " + _arg; }
+    public String toString() { return "\t" + result + " = " + argument; }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new SET_RETADDR_Instr(ii.getRenamedVariable(_result), ii.getRenamedLabel((Label)_arg));
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new SET_RETADDR_Instr(ii.getRenamedVariable(result), ii.getRenamedLabel((Label)argument));
     }
 }

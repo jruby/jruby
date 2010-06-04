@@ -8,5 +8,5 @@ public abstract class GuardInstr extends NoOperandInstr
 {
     public GuardInstr(Operation op) { super(op); }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { return this; }
+    public Instr cloneForInlining(InlinerInfo ii) { return this; }
 }

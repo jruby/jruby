@@ -15,16 +15,16 @@ public class BOX_Instr extends OneOperandInstr
         super(Operation.BOX_VALUE, dst, v);
     }
 
-    public Operand[] getOperands() { return new Operand[] {_arg}; }
+    public Operand[] getOperands() { return new Operand[] {argument}; }
 
-    public String toString() { return super.toString() + "(" + _arg + ")"; }
+    public String toString() { return super.toString() + "(" + argument + ")"; }
 
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
-		  return (_arg instanceof UnboxedValue) ? ((UnboxedValue)_arg)._value : new BoxedValue(_arg);
+		  return (argument instanceof UnboxedValue) ? ((UnboxedValue)argument)._value : new BoxedValue(argument);
 	}
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new BOX_Instr(ii.getRenamedVariable(_result), _arg.cloneForInlining(ii));
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new BOX_Instr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));
     }
 }

@@ -16,7 +16,7 @@ public class YIELD_Instr extends MultiOperandInstr
     public boolean isRubyInternalsCall() { return false; }
     public boolean isStaticCallTarget()  { return false; }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
 		 // This is just a placeholder during inlining.
 		 return this;
     }

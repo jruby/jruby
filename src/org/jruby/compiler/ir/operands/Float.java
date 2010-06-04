@@ -1,23 +1,32 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.compiler.ir.IR_Class;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
-public class Float extends Constant
-{
-    final public Double _value;
+public class Float extends Constant {
+    final public Double value;
 
-    public Float(Double val) { _value = val; }
+    public Float(Double val) {
+        value = val;
+    }
 
-    public String toString() { return _value + ":float"; }
+    @Override
+    public String toString() {
+        return value + ":float";
+    }
 
+    @Override
     public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { return (argIndex == 0) ? this : Nil.NIL; }
 
-    public IR_Class getTargetClass() { return IR_Class.getCoreClass("Float"); }
+    @Override
+    public IR_Class getTargetClass() {
+        return IR_Class.getCoreClass("Float");
+    }
 
-    public Constant computeValue(String methodName, Constant arg)
-    {
-        Double v1 = _value;
-        Double v2 = (arg instanceof Fixnum) ? 1.0 * ((Fixnum)arg)._value : (Double)((Float)arg)._value;
+    public Constant computeValue(String methodName, Constant arg) {
+        Double v1 = value;
+        Double v2 = (arg instanceof Fixnum) ? 1.0 * ((Fixnum)arg).value : (Double)((Float)arg).value;
 
         if (methodName.equals("+"))
             return new Float(v1 + v2);
@@ -30,5 +39,10 @@ public class Float extends Constant
         }
 
         return null;
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return interp.getContext().getRuntime().newFloat(value);
     }
 }

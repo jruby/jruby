@@ -1,5 +1,8 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
 /**
  * A set of variables which are only used in a particular scope and never
  * visible to Ruby itself.
@@ -39,5 +42,15 @@ public class TemporaryVariable extends Variable {
     @Override
     public String toString() {
         return getPrefix() + offset;
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return interp.getTemporaryVariable(offset);
+    }
+
+    @Override
+    public Object store(InterpreterContext interp, Object value) {
+        return interp.setTemporaryVariable(offset, value);
     }
 }

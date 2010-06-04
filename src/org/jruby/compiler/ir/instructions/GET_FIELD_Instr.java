@@ -11,7 +11,7 @@ public class GET_FIELD_Instr extends GET_Instr
         super(Operation.GET_FIELD, dest, obj, fieldName);
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new GET_FIELD_Instr(ii.getRenamedVariable(_result), _source.cloneForInlining(ii), _ref); 
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new GET_FIELD_Instr(ii.getRenamedVariable(result), _source.cloneForInlining(ii), _ref);
     }
 }

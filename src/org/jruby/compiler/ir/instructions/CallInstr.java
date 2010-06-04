@@ -15,11 +15,13 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Scope;
 import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /*
  * args field: [self, reciever, *args]
  */
-public class CallInstruction extends MultiOperandInstr {
+public class CallInstr extends MultiOperandInstr {
     Operand _methAddr;
     Operand _closure;
     
@@ -28,7 +30,7 @@ public class CallInstruction extends MultiOperandInstr {
     private boolean _requiresFrame;
     private int _numArgs;
 
-    public CallInstruction(Variable result, Operand methAddr, Operand[] args, Operand closure) {
+    public CallInstr(Variable result, Operand methAddr, Operand[] args, Operand closure) {
         super(Operation.CALL, result, buildAllArgs(methAddr, closure, args));
         _methAddr = methAddr;
         _closure = closure;
@@ -38,7 +40,7 @@ public class CallInstruction extends MultiOperandInstr {
         _numArgs = args.length;
     }
 
-    public CallInstruction(Operation op, Variable result, Operand methAddr, Operand[] args, Operand closure) {
+    public CallInstr(Operation op, Variable result, Operand methAddr, Operand[] args, Operand closure) {
         super(op, result, buildAllArgs(methAddr, closure, args));
         _methAddr = methAddr;
         _closure = closure;
@@ -111,7 +113,7 @@ public class CallInstruction extends MultiOperandInstr {
         String mname = ((MethAddr) _methAddr).getName();
 
         if (receiver instanceof MetaObject) {
-            IR_Module m = (IR_Module) (((MetaObject) receiver)._scope);
+            IR_Module m = (IR_Module) (((MetaObject) receiver).scope);
             return m.getClassMethod(mname);
         } // self.foo(..);
         // If this call instruction is in a class method, we'll fetch a class method
@@ -175,7 +177,7 @@ public class CallInstruction extends MultiOperandInstr {
             // can be a symbol .. ex: [1,2,3,4].map(&:foo) .. &:foo is a closure
             if (!(_closure instanceof MetaObject)) return false;
 
-            IR_Closure cl = (IR_Closure) ((MetaObject) _closure)._scope;
+            IR_Closure cl = (IR_Closure) ((MetaObject) _closure).scope;
 
             if (cl.requiresFrame()) return true;
         }
@@ -195,7 +197,7 @@ public class CallInstruction extends MultiOperandInstr {
             // Unknown receiver -- could be Proc!!
             if (!(receiver instanceof MetaObject)) return true;
 
-            IR_Scope c = ((MetaObject) receiver)._scope;
+            IR_Scope c = ((MetaObject) receiver).scope;
 
             if ((c instanceof IR_Class) && (((IR_Class) c)._name.equals("Proc"))) return true;
         }
@@ -249,13 +251,13 @@ public class CallInstruction extends MultiOperandInstr {
     @Override
     public String toString() {
         return "\t"
-                + (_result == null ? "" : _result + " = ")
-                + _op + "(" + _methAddr + ", " + java.util.Arrays.toString(getCallArgs())
+                + (result == null ? "" : result + " = ")
+                + operation + "(" + _methAddr + ", " + java.util.Arrays.toString(getCallArgs())
                 + (_closure == null ? "" : ", &" + _closure) + ")";
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new CallInstruction(ii.getRenamedVariable(_result), _methAddr.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new CallInstr(ii.getRenamedVariable(result), _methAddr.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
 	}
 
 // --------------- Private methods ---------------
@@ -271,5 +273,27 @@ public class CallInstruction extends MultiOperandInstr {
         if (closure != null) allArgs[callArgs.length + 1] = closure;
 
         return allArgs;
+    }
+
+    @Override
+    public void interpret(InterpreterContext interp, IRubyObject self) {
+        IRubyObject receiver = (IRubyObject) getReceiver().retrieve(interp);
+        String name = (String) _methAddr.retrieve(interp);        // TODO: What happens when _methAddr is not actually a name?
+        Object resultValue = receiver.callMethod(interp.getContext(), name, prepareArguments(interp));
+
+        getResult().store(interp, resultValue);
+    }
+
+    public IRubyObject[] prepareArguments(InterpreterContext interp) {
+        Operand[] operands = getOperands();
+        IRubyObject[] args = new IRubyObject[operands.length - 2];
+
+        System.out.println("Operands: " + java.util.Arrays.toString(operands));
+        for (int i = 0; i < args.length; i++) {
+            args[i] = (IRubyObject) operands[i + 2].retrieve(interp);
+        }
+
+        System.out.println("ARGS: " + java.util.Arrays.toString(args));
+        return args;
     }
 }

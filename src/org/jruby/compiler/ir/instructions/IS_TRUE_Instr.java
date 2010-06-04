@@ -23,15 +23,15 @@ public class IS_TRUE_Instr extends OneOperandInstr
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap)
     {
         simplifyOperands(valueMap);
-        if (_arg.isConstant()) {
-            return (_arg == Nil.NIL || _arg == BooleanLiteral.FALSE) ? BooleanLiteral.FALSE : BooleanLiteral.TRUE;
+        if (argument.isConstant()) {
+            return (argument == Nil.NIL || argument == BooleanLiteral.FALSE) ? BooleanLiteral.FALSE : BooleanLiteral.TRUE;
         }
         else {
             return null;
         }
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new IS_TRUE_Instr(ii.getRenamedVariable(_result), _arg.cloneForInlining(ii));
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new IS_TRUE_Instr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));
     }
 }

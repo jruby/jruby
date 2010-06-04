@@ -30,7 +30,7 @@ public class SValue extends Operand
         _array = _array.getSimplifiedOperand(valueMap);
         if (_array instanceof Array) {
             Array a = (Array)_array;
-            return (a._elts.length == 1) ? a._elts[0] : a;
+            return (a.elts.length == 1) ? a.elts[0] : a;
         }
         else {
             return this;

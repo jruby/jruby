@@ -10,7 +10,7 @@ public class ATTR_ASSIGN_Instr extends MultiOperandInstr
         super(Operation.ATTR_ASSIGN, null, new Operand[] { obj, attr, value });
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
+    public Instr cloneForInlining(InlinerInfo ii) {
         return new ATTR_ASSIGN_Instr(_args[0].cloneForInlining(ii), _args[1].cloneForInlining(ii), _args[2].cloneForInlining(ii));
     }
 }

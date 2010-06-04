@@ -368,7 +368,7 @@ public final class ThreadContext {
         }
     }
     
-    private void pushFrame() {
+    public void pushFrame() {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
         stack[index].updateFrame(file, line);
@@ -377,7 +377,7 @@ public final class ThreadContext {
         }
     }
     
-    private void popFrame() {
+    public void popFrame() {
         Frame frame = frameStack[frameIndex--];
         setFileAndLine(frame);
         

@@ -10,7 +10,7 @@ public class CLOSURE_RETURN_Instr extends OneOperandInstr
         super(Operation.CLOSURE_RETURN, null, rv);
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { 
+    public Instr cloneForInlining(InlinerInfo ii) {
 		 throw new RuntimeException("Not implemented yet!");
 	 }
 }

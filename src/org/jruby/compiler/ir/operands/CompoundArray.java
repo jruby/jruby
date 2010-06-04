@@ -38,8 +38,8 @@ public class CompoundArray extends Operand
         if ((p1 instanceof Array) && (p2 instanceof Array)) {
             // SSS FIXME: Move this code to some utils area .. or probably there is already a method for this in some jruby utils class
             // Holy cow!  Just to append two darned arrays!
-            Operand[] p1Elts = ((Array)p1)._elts;
-            Operand[] p2Elts = ((Array)p2)._elts;
+            Operand[] p1Elts = ((Array)p1).elts;
+            Operand[] p2Elts = ((Array)p2).elts;
             Operand[] newElts = new Operand[p1Elts.length + p2Elts.length];
             System.arraycopy(p1Elts, 0, newElts, 0, p1Elts.length);
             System.arraycopy(p2Elts, 0, newElts, p1Elts.length, p2Elts.length);
