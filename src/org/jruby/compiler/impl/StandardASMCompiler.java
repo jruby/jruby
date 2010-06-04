@@ -37,6 +37,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,6 +66,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -476,6 +478,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.newobj(getClassname());
             method.dup();
             method.invokespecial(getClassname(), "<init>", sig(Void.TYPE));
+
+            // set filename for the loaded script class (JRUBY-4825)
+            method.dup();
+            method.ldc(Type.getType("L" + getClassname() + ";"));
+            method.invokevirtual(p(Class.class), "getClassLoader", sig(ClassLoader.class));
+            method.ldc(getClassname() + ".class");
+            method.invokevirtual(p(ClassLoader.class), "getResource", sig(URL.class, String.class));
+            method.invokevirtual(p(Object.class), "toString", sig(String.class));
+            method.invokevirtual(p(AbstractScript.class), "setFilename", sig(void.class, String.class));
 
             // instance config for the script run
             method.newobj(p(RubyInstanceConfig.class));
