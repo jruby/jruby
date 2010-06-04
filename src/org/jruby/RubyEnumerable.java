@@ -858,7 +858,16 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            this.block.call(context, new IRubyObject[] { runtime.newArray(checkArgs(runtime, iargs), runtime.newFixnum(index++)) });
+            switch (iargs.length) {
+            case 0:
+                // FIXME: Does this ever happen?
+            case 1:
+                this.block.call(context, checkArgs(runtime, iargs), runtime.newFixnum(index++));
+                break;
+            case 2:
+                this.block.call(context, runtime.newArrayNoCopy(iargs), runtime.newFixnum(index++));
+                break;
+            }
             return runtime.getNil();            
         }
     }
