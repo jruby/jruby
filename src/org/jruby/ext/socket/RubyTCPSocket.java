@@ -84,8 +84,12 @@ public class RubyTCPSocket extends RubyIPSocket {
     }
     
     private int getPortFrom(Ruby runtime, IRubyObject arg) {
-        return RubyNumeric.fix2int(arg instanceof RubyString ? 
-                RubyNumeric.str2inum(runtime, (RubyString) arg, 0, true) : arg);
+        if (arg instanceof RubyString) {
+            jnr.netdb.Service service = jnr.netdb.Service.getServiceByName(arg.asJavaString(), "tcp");
+            return service != null ?
+                service.getPort() : RubyNumeric.fix2int(RubyNumeric.str2inum(runtime, (RubyString) arg, 0, true));
+        }
+        return RubyNumeric.fix2int(arg);
     }
 
     @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE, backtrace = true)
