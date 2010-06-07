@@ -19,7 +19,7 @@ class Ant
           listing_path = $1
         elsif line =~ /^(.*\.home): (.*)$/
           home_var, path = $1, $2
-          jar_path = listing_path.sub(home_var.upcase.sub('.','_'), path)
+          jar_path = listing_path.sub(home_var.upcase.sub('.','_'), path) if listing_path
         elsif line =~ /^ant\.core\.lib: (.*)$/
           classpath_jars << $1
         elsif line =~ /^(.*\.jar) \(\d+ bytes\)/
@@ -37,7 +37,19 @@ class Ant
     else
       load_from_ant
     end
+
+    # Explicitly add javac path to classpath
+    if ENV['JAVA_HOME'] && File.exist?(ENV['JAVA_HOME'])
+      const_set(:JAVA_HOME, ENV['JAVA_HOME'])
+      load_if_exist "#{JAVA_HOME}/lib/tools.jar"
+      load_if_exist "#{JAVA_HOME}/lib/classes.zip"
+    end
   end
+
+  def self.load_if_exist(jar)
+    $CLASSPATH << jar if File.exist?(jar)
+  end
+
   load
 end
 
