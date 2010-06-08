@@ -152,7 +152,6 @@ import org.jruby.compiler.ir.operands.Float;
 import org.jruby.compiler.ir.operands.Hash;
 import org.jruby.compiler.ir.operands.KeyValuePair;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
@@ -637,8 +636,7 @@ public class IR_Builder
 // to be figured out during live var analysis.
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
-                int depth = dynamicAsgn.getDepth();
-                v = getScopeNDown(s, depth).getLocalVariable(dynamicAsgn.getName());
+                v = getScopeNDown(s, dynamicAsgn.getDepth()).getLocalVariable(dynamicAsgn.getName());
                 s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
                 break;
             }
@@ -1934,7 +1932,7 @@ public class IR_Builder
 
     public Operand buildForIter(final ForNode forNode, IR_ExecutionScope s) {
             // Create a new closure context
-        IR_Closure closure = new IR_Closure(s);
+        IR_Closure closure = new IR_Closure(s, forNode.getScope());
         s.addClosure(closure);
 
             // Build args
@@ -2072,7 +2070,7 @@ public class IR_Builder
 
     public Operand buildIter(final IterNode iterNode, IR_ExecutionScope s) {
             // Create a new closure context
-        IR_Closure closure = new IR_Closure(s);
+        IR_Closure closure = new IR_Closure(s, iterNode.getScope());
         s.addClosure(closure);
 
             // Build args

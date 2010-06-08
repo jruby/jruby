@@ -17,12 +17,13 @@ public class IR_Closure extends IR_ExecutionScope {
     public final int _closureId;  // Unique id for this closure within the nearest ancestor method.
     public final String _name;       // Name useful for debugging and reading ir output
 
-    public IR_Closure(IR_Scope lexicalParent) {
+    public IR_Closure(IR_Scope lexicalParent, StaticScope staticScope) {
         super(lexicalParent, new MetaObject(lexicalParent));
         _startLabel = getNewLabel("_CLOSURE_START");
         _endLabel = getNewLabel("_CLOSURE_END");
         _closureId = getNextClosureId();
         _name = "_CLOSURE_" + _closureId;
+        this.staticScope = staticScope;
     }
 
     @Override
