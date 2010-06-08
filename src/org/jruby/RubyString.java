@@ -5484,10 +5484,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "strip!", compat = CompatVersion.RUBY1_9)
     public IRubyObject strip_bang19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        if (value.getRealSize() == 0) {
-            modifyCheck();
-            return runtime.getNil();
-        }
+        modifyCheck();
 
         Encoding enc = value.getEncoding();
         int s = value.getBegin();
@@ -6618,6 +6615,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (sep.isNil()) {
             block.yield(context, this);
             return this;
+        }
+        if (! sep.respondsTo("to_str")) {
+            throw runtime.newTypeError("can't convert " + sep.getMetaClass() + " into String");
         }
 
         ByteList val = value.shallowDup();

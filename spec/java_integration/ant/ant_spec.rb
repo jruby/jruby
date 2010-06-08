@@ -1,6 +1,39 @@
 require File.expand_path('../../ant_spec_helper', __FILE__)
 
-describe Ant, "new", :type => :ant do
+describe Ant, '.load', :type => :ant do
+  before :each do
+    @previous_java_home = ENV['JAVA_HOME']
+
+    ENV['JAVA_HOME'] = '/System/Library/Frameworks/JavaVM.framework/Home'
+    @tools_jar = "#{ENV['JAVA_HOME']}/lib/tools.jar"
+    @classes_zip = "#{ENV['JAVA_HOME']}/lib/classes.zip"
+  end
+
+  after :each do
+    ENV['JAVA_HOME'] = @previous_java_home
+  end
+
+  it "adds tools.jar to the CLASSPATH when JAVA_HOME is set and it exists" do
+    stubs_file!
+    Ant.load
+    $CLASSPATH.should include("file:#{@tools_jar}")
+  end
+
+  it "adds classes.zip to the CLASSPATH when JAVA_HOME is set and it exists" do
+    stubs_file!
+    Ant.load
+    $CLASSPATH.should include("file:#{@classes_zip}")
+  end
+
+  def stubs_file!
+    File.stub!(:exist?).and_return false
+    File.should_receive(:exist?).with(ENV['JAVA_HOME']).and_return true
+    File.should_receive(:exist?).with(@tools_jar).and_return true
+    File.should_receive(:exist?).with(@classes_zip).and_return true
+  end
+end
+
+describe Ant, ".new", :type => :ant do
   it "can be instantiated with a block" do
     Ant.new do
       self.class.should == Ant

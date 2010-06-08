@@ -15,6 +15,7 @@ class Sync
   include FileUtils
 
   def initialize(version, source, target)
+    @named_version = version
     @version = format_version(version)
     @source = source
     @target = target
@@ -29,7 +30,7 @@ class Sync
   end
 
   def sync_stdlib
-    load "globals_#{@version}.rb"
+    load File.dirname(__FILE__) + "/globals_#{@named_version}.rb"
 
     for file in STDLIB_FILES
       cp_r "#{@source}/lib/#{file}", "#{@target}/lib/ruby/#{@version}", :verbose => true
@@ -57,7 +58,7 @@ class Sync
 
   def checkout(source, version)
     cd(source) do
-      branch = "jruby-ruby_#{version}"
+      branch = "jruby-ruby_#{@named_version}"
 
       if (branches = `git branch | sed 's/[\*\s]*//'`).split("\n").include? branch
         `git checkout #{branch}`
