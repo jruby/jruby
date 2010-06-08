@@ -559,9 +559,10 @@ public class IRBuilder {
                 break;
             case ARRAYNODE:
                 ArrayNode arrayNode = (ArrayNode)args;
-                if (arrayNode.size() > 3)
-                    buildVariableArityArguments(argsList, arrayNode, s);
-                else if (arrayNode.size() > 0)
+                // ENEBO: This is not right.  ArrayNode is not just for boxing
+//                if (arrayNode.size() > 3)
+//                    buildVariableArityArguments(argsList, arrayNode, s);
+//                else if (arrayNode.size() > 0)
                     buildSpecificArityArguments(argsList, arrayNode, s);
                 break;
             default:

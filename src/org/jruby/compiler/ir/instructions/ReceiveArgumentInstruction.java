@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.Variable;
@@ -40,9 +41,16 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
         // All interpretation already has self so we have no need to receive it.
         if (getResult() instanceof SelfVariable) return;
 
-        Object value = interp.getParameter(argIndex);
+        if (restOfArgArray) {
+            interpretAsRestArg(interp, self);
+            return;
+        }
+        
+        getResult().store(interp, interp.getParameter(argIndex));
+    }
 
-        System.out.println("PARM INDEX: " + argIndex + " : " + value + " -> " + getResult());
-        getResult().store(interp, value);
+    @Interp
+    private void  interpretAsRestArg(InterpreterContext interp, IRubyObject self) {
+        getResult().store(interp, interp.getContext().getRuntime().newArray(interp.getParametersFrom(argIndex)));
     }
 }

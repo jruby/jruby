@@ -2,6 +2,7 @@ package org.jruby.interpreter;
 
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Meant as a simple interface for all the various methods we will want
@@ -37,4 +38,6 @@ public interface InterpreterContext {
 
     public void setFrame(Frame currentFrame);
     public Frame getFrame();
+
+    public IRubyObject[] getParametersFrom(int argIndex);
 }

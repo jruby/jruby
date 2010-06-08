@@ -31,7 +31,8 @@ public class InterpretedIRMethod extends DynamicMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         InterpreterContext interp = new IRInterpreterContext(context, self, args, method.getStaticScope());
 
-        System.out.println("ARGS IN IRMETHOD: " + java.util.Arrays.toString(args));
+        Arity.checkArgumentCount(context.getRuntime(), args.length, requiredArgsCount, maxArgsCount);
+
         try {
             CFG cfg = method.getCFG();
             BasicBlock basicBlock = cfg.getEntryBB();
@@ -148,6 +149,16 @@ public class InterpretedIRMethod extends DynamicMethod {
 
         public void setFrame(Frame frame) {
             this.frame = frame;
+        }
+
+        public IRubyObject[] getParametersFrom(int argIndex) {
+            argIndex -= 1;
+            int length = parameters.length - argIndex;
+            IRubyObject[] args = new IRubyObject[length];
+
+            System.arraycopy(parameters, argIndex, args, 0, length);
+
+            return args;
         }
     }
 }
