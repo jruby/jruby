@@ -602,9 +602,13 @@ public class IR_Builder
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
                 s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
                 break;
-            case LOCALASGNNODE:
-                s.addInstr(new CopyInstr(new LocalVariable(((LocalAsgnNode)node).getName()), v));
+            case LOCALASGNNODE: {
+                LocalAsgnNode localVariable = (LocalAsgnNode) node;
+                int depth = localVariable.getDepth();
+
+                s.addInstr(new CopyInstr(getScopeNDown(s, depth).getLocalVariable(localVariable.getName()), v));
                 break;
+            }
             case MULTIPLEASGNNODE:
                 buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, v);
                 break;
@@ -631,10 +635,13 @@ public class IR_Builder
 //
 // The semantics of how this shadows other variables outside the block needs
 // to be figured out during live var analysis.
-            case DASGNNODE:
-                v = new LocalVariable(((DAsgnNode)node).getName());
+            case DASGNNODE: {
+                DAsgnNode dynamicAsgn = (DAsgnNode) node;
+                int depth = dynamicAsgn.getDepth();
+                v = getScopeNDown(s, depth).getLocalVariable(dynamicAsgn.getName());
                 s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
                 break;
+            }
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
                 v = s.getNewTemporaryVariable();
@@ -662,10 +669,14 @@ public class IR_Builder
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
                 s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
                 break;
-            case LOCALASGNNODE:
-                v = new LocalVariable(((LocalAsgnNode)node).getName());
+            case LOCALASGNNODE: {
+                LocalAsgnNode localVariable = (LocalAsgnNode) node;
+                int depth = localVariable.getDepth();
+
+                v = getScopeNDown(s, depth).getLocalVariable(localVariable.getName());
                 s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
                 break;
+            }
             case MULTIPLEASGNNODE:
                 // SSS FIXME: Are we guaranteed that we splats dont head to multiple-assignment nodes!  i.e. |*(a,b)|?
                 buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, null);
@@ -1539,9 +1550,20 @@ public class IR_Builder
         // We won't get here for argument receives!  So, buildDasgn is called for
         // assignments to block variables within a block.  As far as the IR is concerned,
         // this is just a simple copy
-        Variable arg = new LocalVariable(dasgnNode.getName());
+        int depth = dasgnNode.getDepth();
+        Variable arg = getScopeNDown(s, depth).getLocalVariable(dasgnNode.getName());
+        
         s.addInstr(new CopyInstr(arg, build(dasgnNode.getValueNode(), s)));
         return arg;
+    }
+    
+    // ENEBO: On IR_Scope?
+    private IR_Scope getScopeNDown(IR_Scope current, int depth) {
+        for (int i = 0; i < depth; i++) {
+            current.getLexicalParent();
+        }
+            
+        return current;
     }
 
 /**
@@ -1552,13 +1574,13 @@ public class IR_Builder
     }
 **/
 
-    private void defineNewMethod(MethodDefNode defnNode, IR_Scope s, Operand receiver, boolean isInstanceMethod)
-    {
+    private void defineNewMethod(MethodDefNode defnNode, IR_Scope s, Operand receiver, boolean isInstanceMethod) {
         IRMethod m;
-        if (isInstanceMethod)
-            m = new IRMethod(s, new MetaObject(s), defnNode.getName(), isInstanceMethod);
-        else
-            m = new IRMethod(s, receiver, defnNode.getName(), isInstanceMethod);
+        if (isInstanceMethod) {
+            m = new IRMethod(s, new MetaObject(s), defnNode.getName(), isInstanceMethod, defnNode.getScope());
+        } else {
+            m = new IRMethod(s, receiver, defnNode.getName(), isInstanceMethod, defnNode.getScope());
+        }
 
             // Build IR for args
         receiveArgs(defnNode.getArgsNode(), m);
@@ -1597,6 +1619,8 @@ public class IR_Builder
         return null;
     }
 
+    // ENEBO: Since we are now targeting 1.9 semantics then it can be assumed that all
+    // method parameters are now going to be local to this scope.
     public Operand receiveArgs(final ArgsNode argsNode, IR_Scope s) {
         final int required = argsNode.getRequiredArgsCount();
         final int opt = argsNode.getOptionalArgsCount();
@@ -1619,14 +1643,14 @@ public class IR_Builder
                 TypedArgumentNode t = (TypedArgumentNode)a;
                 s.addInstr(new DECLARE_LOCAL_TYPE_Instr(argIndex, buildType(t.getTypeNode())));
             }
-            s.addInstr(new ReceiveArgumentInstruction(new LocalVariable(a.getName()), argIndex));
+            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(a.getName()), argIndex));
         }
 
             // IMPORTANT: Receive the block argument before the opt and splat args
             // This is so that the *arg can be encoded as 'rest of the array'.  This
             // won't work if the block argument hasn't been received yet!
         if (argsNode.getBlock() != null)
-            s.addInstr(new RECV_CLOSURE_Instr(new LocalVariable(argsNode.getBlock().getName())));
+            s.addInstr(new RECV_CLOSURE_Instr(s.getLocalVariable(argsNode.getBlock().getName())));
 
             // Now for the rest
         if (opt > 0 || rest > -1) {
@@ -1635,13 +1659,13 @@ public class IR_Builder
                     // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = s.getNewLabel();
                 LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
-                s.addInstr(new ReceiveOptionalArgumentInstr(new LocalVariable(n.getName()), argIndex, l));
+                s.addInstr(new ReceiveOptionalArgumentInstr(s.getLocalVariable(n.getName()), argIndex, l));
                 build(n, s);
                 s.addInstr(new LABEL_Instr(l));
             }
 
             if (rest > -1) {
-                s.addInstr(new ReceiveArgumentInstruction(new LocalVariable(argsNode.getRestArgNode().getName()), argIndex, true));
+                s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(argsNode.getRestArgNode().getName()), argIndex, true));
                 argIndex++;
             }
         }
@@ -1692,7 +1716,7 @@ public class IR_Builder
     }
 
     public Operand buildDVar(DVarNode node, IR_Scope m) {
-        return new LocalVariable(node.getName());
+        return m.getLocalVariable(node.getName());
     }
 
     public Operand buildDXStr(final DXStrNode dstrNode, IR_Scope m) {
@@ -2066,13 +2090,13 @@ public class IR_Builder
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode, IR_Scope s) {
         Operand value = build(localAsgnNode.getValueNode(), s);
-        s.addInstr(new CopyInstr(new LocalVariable(localAsgnNode.getName()), value));
+        s.addInstr(new CopyInstr(s.getLocalVariable(localAsgnNode.getName()), value));
 
         return value;
     }
 
     public Operand buildLocalVar(LocalVarNode node, IR_Scope s) {
-        return new LocalVariable(node.getName());
+        return s.getLocalVariable(node.getName());
     }
 
     public Operand buildMatch(MatchNode matchNode, IR_Scope m) {

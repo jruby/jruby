@@ -8,10 +8,12 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
 import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.operands.LocalVariable;
 
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
+import org.jruby.parser.LocalStaticScope;
 
 public class IR_Module extends IR_ScopeImpl {
     // The "root" method of a class -- the scope in which all definitions, and class code executes, equivalent to java clinit
@@ -32,7 +34,7 @@ public class IR_Module extends IR_ScopeImpl {
         _coreClasses.put(c.getName(), c);
         if (coreMethods != null) {
             for (String m : coreMethods) {
-                IRMethod meth = new IRMethod(c, null, m, true);
+                IRMethod meth = new IRMethod(c, null, m, true, null);
                 meth.setCodeModificationFlag(false);
                 c.addMethod(meth);
             }
@@ -77,7 +79,7 @@ public class IR_Module extends IR_ScopeImpl {
         //    end
         //
         String n = ROOT_METHOD_PREFIX + _name;
-        _rootMethod = new IRMethod(this, new MetaObject(this), n, false);
+        _rootMethod = new IRMethod(this, new MetaObject(this), n, false, new LocalStaticScope(null));
         _rootMethod.addInstr(new ReceiveArgumentInstruction(_rootMethod.getSelf(), 0));	// Set up self!
     }
 
@@ -158,5 +160,9 @@ public class IR_Module extends IR_ScopeImpl {
     @Override
     public String toString() {
         return "Module: " + getName() + super.toString();
+    }
+
+    public LocalVariable getLocalVariable(String name) {
+        throw new UnsupportedOperationException("This should be happening in the root method of this module/class instead");
     }
 }

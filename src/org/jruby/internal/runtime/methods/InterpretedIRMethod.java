@@ -23,8 +23,6 @@ public class InterpretedIRMethod extends DynamicMethod {
     public InterpretedIRMethod(IRMethod method, RubyModule implementationClass) {
         super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameNoneScopeNone);
 
-        method.allocateStaticScope(null);
-
         this.temporaryVariableSize = method.getTemporaryVariableSize();
         this.method = method;
     }
@@ -38,7 +36,6 @@ public class InterpretedIRMethod extends DynamicMethod {
             CFG cfg = method.getCFG();
             BasicBlock basicBlock = cfg.getEntryBB();
             BasicBlock jumpBlock = basicBlock;
-
 
             while (basicBlock != null) {
 //            System.out.println("BB:" + basicBlock);

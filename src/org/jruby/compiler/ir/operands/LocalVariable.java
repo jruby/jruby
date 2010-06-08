@@ -13,17 +13,18 @@ import org.jruby.interpreter.InterpreterContext;
  */
 public class LocalVariable extends Variable {
     final public String name;
-    protected int location;
+    private int location;
 
     // FIXME: We should resolve to an index into an array but localvariable has no allocator
-    public LocalVariable(String name) {
+    public LocalVariable(String name, int location) {
         this.name = name;
+        this.location = location;
     }
-
+    
     public void setLocation(int slot) {
         this.location = slot;
     }
-    
+
     public int getLocation() {
         return location;
     }

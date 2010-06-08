@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
+import org.jruby.compiler.ir.operands.LocalVariable;
 
 /**
  *  Script, Module, Class, Method, Closure
@@ -66,6 +67,11 @@ public interface IR_Scope {
      * How many temporary variables are in this scope?
      */
     public int getTemporaryVariableSize();
+
+    /**
+     * Get Local Variable from this scope
+     */
+    public LocalVariable getLocalVariable(String name);
 
     /**
      *  Get a new label using the provided label prefix

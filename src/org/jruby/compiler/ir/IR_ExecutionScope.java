@@ -86,6 +86,8 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl {
     // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
     // This lets us implement next/redo/break/retry easily for the non-closure cases
     private Stack<IR_Loop> _loopStack;
+
+    private Map<String, LocalVariable> localVariables;
     protected int requiredArgs = 0;
     protected int optionalArgs = 0;
     protected int restArg = -1;
@@ -94,6 +96,7 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl {
         instructions = new ArrayList<Instr>();
         closures = new ArrayList<IR_Closure>();
         _loopStack = new Stack<IR_Loop>();
+        localVariables = new HashMap<String, LocalVariable>();
 
         // All flags are true by default!
         _canModifyCode = true;
@@ -331,19 +334,21 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl {
      * @param parent scope should be non-null for all closures and null for methods
      */
     @Interp
-    public void allocateStaticScope(StaticScope parent) {
+    public StaticScope allocateStaticScope(StaticScope parent) {
         Iterator<LocalVariable> variables = getLiveLocalVariables();
-        staticScope = constructStaticScope(parent);
+        StaticScope scope = constructStaticScope(parent);
 
         while (variables.hasNext()) {
             LocalVariable variable = variables.next();
-            int destination = staticScope.addVariable(variable.getName());
+            int destination = scope.addVariable(variable.getName());
             System.out.println("Allocating " + variable + " to " + destination);
 
                     // Ick: Same Variable objects are not used for all references to the same variable.  S
                     // o setting destination on one will not set them on all
             variable.setLocation(destination);
         }
+
+        return scope;
     }
 
     @Interp
@@ -362,4 +367,17 @@ public abstract class IR_ExecutionScope extends IR_ScopeImpl {
      */
     @Interp
     protected abstract StaticScope constructStaticScope(StaticScope parent);
+
+    public LocalVariable getLocalVariable(String name) {
+        LocalVariable variable = localVariables.get(name);
+
+        if (variable == null) {
+            // We use addVariable here because variable inlining may add new lvars
+            variable = new LocalVariable(name, staticScope.addVariable(name));
+
+            localVariables.put(name, variable);
+        }
+
+        return variable;
+    }
 }

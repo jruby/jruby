@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir;
 
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 
@@ -29,5 +30,9 @@ public class IR_Script extends IR_ScopeImpl {
     @Override
     public String toString() {
         return "Script: file: " + getFileName() + super.toString();
+    }
+
+    public LocalVariable getLocalVariable(String name) {
+        throw new UnsupportedOperationException("This should be happening on Root Method instead");
     }
 }
