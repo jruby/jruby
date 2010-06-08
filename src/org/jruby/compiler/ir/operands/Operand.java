@@ -2,7 +2,7 @@ package org.jruby.compiler.ir.operands;
 
 import java.util.List;
 import java.util.Map;
-import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -41,7 +41,7 @@ public abstract class Operand
     public Operand fetchCompileTimeArrayElement(int index, boolean getSubArray) { return null; }
 
     // Get the target class of this operand, if we know it!
-    public IR_Class getTargetClass() { return null; }
+    public IRClass getTargetClass() { return null; }
 
     /** Append the list of variables used in this operand to the input list */
     public void addUsedVariables(List<Variable> l) { /* Nothing to do by default */ }

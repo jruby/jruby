@@ -4,7 +4,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import java.util.List;
 import java.util.Map;
 
-import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IRClass;
 
 // Represents a range (1..5) or (a..b) in ruby code
 //
@@ -36,7 +36,7 @@ public class Range extends Operand
         return null;
     }
 
-    public IR_Class getTargetClass() { return IR_Class.getCoreClass("Range"); }
+    public IRClass getTargetClass() { return IRClass.getCoreClass("Range"); }
 
     public boolean isNonAtomicValue() { return true; }
 

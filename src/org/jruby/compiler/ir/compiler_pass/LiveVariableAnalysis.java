@@ -1,8 +1,8 @@
 package org.jruby.compiler.ir.compiler_pass;
 
-import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IR_Closure;
+import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.CFG;
@@ -14,7 +14,7 @@ public class LiveVariableAnalysis implements CompilerPass
 
     public boolean isPreOrder() { return false; }
 
-    public void run(IR_Scope s)
+    public void run(IRScope s)
     {
         if (!(s instanceof IRMethod))
             return;
@@ -25,7 +25,7 @@ public class LiveVariableAnalysis implements CompilerPass
         lvp.compute_MOP_Solution();
         c.setDataFlowSolution(lvp.getName(), lvp);
 //        System.out.println("LVP for " + s + " is: " + lvp);
-        for (IR_Closure x: ((IRMethod)s).getClosures()) {
+        for (IRClosure x: ((IRMethod)s).getClosures()) {
            lvp = (LiveVariablesProblem)x.getCFG().getDataFlowSolution(lvp.getName());
 /*
            System.out.println("LVP for closure: " + x + " is: " + lvp);

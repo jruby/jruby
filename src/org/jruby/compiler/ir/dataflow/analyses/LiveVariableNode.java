@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
-import org.jruby.compiler.ir.IR_Closure;
+import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowVar;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
@@ -68,7 +68,7 @@ public class LiveVariableNode extends FlowGraphNode
         _tmp.or(((LiveVariableNode)pred)._in);
     }
 
-    private LiveVariablesProblem processClosure(IR_Closure cl, Collection<Variable> liveOnEntry)
+    private LiveVariablesProblem processClosure(IRClosure cl, Collection<Variable> liveOnEntry)
     {
         CFG c = cl.getCFG();
         LiveVariablesProblem lvp = new LiveVariablesProblem();
@@ -113,7 +113,7 @@ public class LiveVariableNode extends FlowGraphNode
                 Operand o = c.getClosureArg();
 //                   System.out.println("Processing closure: " + o + "-------");
                 if ((o != null) && (o instanceof MetaObject)) {
-                    IR_Closure cl = (IR_Closure)((MetaObject)o).scope;
+                    IRClosure cl = (IRClosure)((MetaObject)o).scope;
                     if (c.isLVADataflowBarrier()) {
                         processClosure(cl, lvp.getAllVars());
 
@@ -274,7 +274,7 @@ public class LiveVariableNode extends FlowGraphNode
                     Operand o = c.getClosureArg();
                     if ((o != null) && (o instanceof MetaObject)) {
                         // 2. Run LVA on the closure
-                        IR_Closure cl = (IR_Closure)((MetaObject)o).scope;
+                        IRClosure cl = (IRClosure)((MetaObject)o).scope;
                         CFG x = cl.getCFG();
                         LiveVariablesProblem xlvp = (LiveVariablesProblem)x.getDataFlowSolution(lvp.getName());
                         // 3. Collect variables live on entry and merge that info into the current problem.

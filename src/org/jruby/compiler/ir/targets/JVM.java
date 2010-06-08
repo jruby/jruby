@@ -12,10 +12,10 @@ import java.util.Stack;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyObject;
 import org.jruby.compiler.ir.CompilerTarget;
-import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.IR_Script;
+import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
@@ -50,7 +50,7 @@ public class JVM implements CompilerTarget {
     
     Stack<ClassData> clsStack = new Stack();
     List<ClassData> clsAccum = new ArrayList();
-    IR_Script script;
+    IRScript script;
 
     private static class ClassData {
         public ClassData(ClassVisitor cls) {
@@ -143,18 +143,18 @@ public class JVM implements CompilerTarget {
         clsData().popmethod();
     }
 
-    public void codegen(IR_Scope scope) {
-        if (scope instanceof IR_Script) {
-            codegen((IR_Script)scope);
+    public void codegen(IRScope scope) {
+        if (scope instanceof IRScript) {
+            codegen((IRScript)scope);
         }
     }
 
-    public void codegen(IR_Script script) {
+    public void codegen(IRScript script) {
         this.script = script;
         emit(script.getRootClass());
     }
 
-    public void emit(IR_Class cls) {
+    public void emit(IRClass cls) {
         pushclass();
         cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, cls.getName(), null, p(RubyObject.class), null);
         cls().visitSource(script.getFileName().toString(), null);
@@ -172,7 +172,7 @@ public class JVM implements CompilerTarget {
         }
 
         // root-level classes
-        for (IR_Class cls2 : cls.classes) {
+        for (IRClass cls2 : cls.classes) {
             emit(cls2);
         }
 

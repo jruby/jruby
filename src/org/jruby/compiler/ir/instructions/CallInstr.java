@@ -8,11 +8,11 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.IR_Class;
-import org.jruby.compiler.ir.IR_Closure;
-import org.jruby.compiler.ir.IR_Module;
+import org.jruby.compiler.ir.IRClass;
+import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -113,7 +113,7 @@ public class CallInstr extends MultiOperandInstr {
         String mname = ((MethAddr) _methAddr).getName();
 
         if (receiver instanceof MetaObject) {
-            IR_Module m = (IR_Module) (((MetaObject) receiver).scope);
+            IRModule m = (IRModule) (((MetaObject) receiver).scope);
             return m.getClassMethod(mname);
         } // self.foo(..);
         // If this call instruction is in a class method, we'll fetch a class method
@@ -121,7 +121,7 @@ public class CallInstr extends MultiOperandInstr {
         else if (receiver instanceof SelfVariable) {
             return null;
         } else {
-            IR_Class c = receiver.getTargetClass();
+            IRClass c = receiver.getTargetClass();
 
             return c == null ? null : c.getInstanceMethod(mname);
         }
@@ -177,7 +177,7 @@ public class CallInstr extends MultiOperandInstr {
             // can be a symbol .. ex: [1,2,3,4].map(&:foo) .. &:foo is a closure
             if (!(_closure instanceof MetaObject)) return false;
 
-            IR_Closure cl = (IR_Closure) ((MetaObject) _closure).scope;
+            IRClosure cl = (IRClosure) ((MetaObject) _closure).scope;
 
             if (cl.requiresFrame()) return true;
         }
@@ -197,9 +197,9 @@ public class CallInstr extends MultiOperandInstr {
             // Unknown receiver -- could be Proc!!
             if (!(receiver instanceof MetaObject)) return true;
 
-            IR_Scope c = ((MetaObject) receiver).scope;
+            IRScope c = ((MetaObject) receiver).scope;
 
-            if ((c instanceof IR_Class) && (((IR_Class) c)._name.equals("Proc"))) return true;
+            if ((c instanceof IRClass) && (((IRClass) c).name.equals("Proc"))) return true;
         }
         
         return false;  // All checks done -- dont need one

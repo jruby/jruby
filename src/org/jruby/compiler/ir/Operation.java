@@ -2,8 +2,7 @@ package org.jruby.compiler.ir;
 
 enum OpType { dont_care, debug_op, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, exc_op, load_op, store_op, declare_type_op, guard_op, box_op };
 
-public enum Operation
-{
+public enum Operation {
 // ------ Define the operations below ----
 
 // value copy and type conversion operations
@@ -62,23 +61,57 @@ public enum Operation
 // primitive value boxing/unboxing
 	 BOX_VALUE(OpType.box_op), UNBOX_VALUE(OpType.box_op);
 
-    private OpType _type;
+    private OpType type;
 
-    Operation(OpType t) { _type = t; }
+    Operation(OpType t) { 
+        type = t;
+    }
 
-    public boolean isALU()        { return _type == OpType.alu_op; }
-    public boolean isBranch()     { return _type == OpType.branch_op; }
-    public boolean isLoad()       { return _type == OpType.load_op; }
-    public boolean isStore()      { return _type == OpType.store_op; }
-    public boolean isCall()       { return _type == OpType.call_op; }
-    public boolean isEval()       { return _type == OpType.eval_op; }
-    public boolean isReturn()     { return _type == OpType.ret_op; }
-    public boolean isException()  { return _type == OpType.exc_op; }
-    public boolean isArgReceive() { return _type == OpType.recv_arg_op; }
+    public boolean isALU() {
+        return type == OpType.alu_op;
+    }
+
     public boolean xfersControl() { return isBranch() || isReturn() || isException(); }
 
-    public boolean startsBasicBlock() { return this == LABEL; }
-    public boolean endsBasicBlock() { return xfersControl(); }
+    public boolean isBranch() {
+        return type == OpType.branch_op;
+    }
+
+    public boolean isLoad() {
+        return type == OpType.load_op;
+    }
+
+    public boolean isStore() {
+        return type == OpType.store_op;
+    }
+
+    public boolean isCall() {
+        return type == OpType.call_op;
+    }
+
+    public boolean isEval() {
+        return type == OpType.eval_op;
+    }
+
+    public boolean isReturn() {
+        return type == OpType.ret_op;
+    }
+    
+    public boolean isException() {
+        return type == OpType.exc_op;
+    }
+
+    public boolean isArgReceive() {
+        return type == OpType.recv_arg_op;
+    }
+
+    public boolean startsBasicBlock() {
+        return this == LABEL;
+    }
+
+    public boolean endsBasicBlock() {
+        return isBranch() || isReturn() || isException();
+    }
 
     // By default, call instructions cannot be deleted even if their results aren't used by anyone
     // unless we know more about what the call is, what it does, etc.
@@ -87,6 +120,7 @@ public enum Operation
         return isCall() || isEval() || isStore() || isReturn();
     }
 
+    @Override
     public String toString() { 
         return name().toLowerCase();
     }

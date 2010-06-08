@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
-import org.jruby.compiler.ir.IR_Closure;
+import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
@@ -39,7 +39,7 @@ public class FrameStorePlacementProblem extends DataFlowProblem
             return true;
         }
         else {
-            for (IR_Closure cl: getCFG().getScope().getClosures()) {
+            for (IRClosure cl: getCFG().getScope().getClosures()) {
                 FrameStorePlacementProblem nestedProblem = (FrameStorePlacementProblem)cl.getCFG().getDataFlowSolution(DataFlowConstants.FSP_NAME);
                 if (nestedProblem.scopeDefinesVariable(v)) 
                     return true;
@@ -54,7 +54,7 @@ public class FrameStorePlacementProblem extends DataFlowProblem
             return true;
         }
         else {
-            for (IR_Closure cl: getCFG().getScope().getClosures()) {
+            for (IRClosure cl: getCFG().getScope().getClosures()) {
                 FrameStorePlacementProblem nestedProblem = (FrameStorePlacementProblem)cl.getCFG().getDataFlowSolution(DataFlowConstants.FSP_NAME);
                 if (nestedProblem.scopeUsesVariable(v)) 
                     return true;

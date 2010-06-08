@@ -11,10 +11,10 @@ import java.util.logging.Logger;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
-import org.jruby.compiler.ir.IR_Builder;
+import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.IR_Script;
+import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.compiler_pass.AddFrameInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
 import org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder;
@@ -55,7 +55,7 @@ public class Interpreter {
             long t1 = new Date().getTime();
             Node ast = buildAST(runtime, isCommandLineScript, args[i]);
             long t2 = new Date().getTime();
-            IR_Scope scope = new IR_Builder().buildRoot(ast);
+            IRScope scope = new IRBuilder().buildRoot(ast);
             long t3 = new Date().getTime();
             if (isDebug) {
                 System.out.println("## Before local optimization pass");
@@ -118,15 +118,15 @@ public class Interpreter {
         }
     }*/
 
-    public void interpretTop(IR_Scope scope) {
+    public void interpretTop(IRScope scope) {
         IRubyObject self = runtime.getTopSelf();
 
-        if (!(scope instanceof IR_Script)) {
+        if (!(scope instanceof IRScript)) {
             System.out.println("BONED (not IR_Script)");
             return;
         }
 
-        IRMethod rootMethod = ((IR_Script) scope).getRootClass().getRootMethod();
+        IRMethod rootMethod = ((IRScript) scope).getRootClass().getRootMethod();
         RubyModule metaclass = self.getMetaClass();
 
         InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, metaclass);

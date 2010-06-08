@@ -5,11 +5,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 
+<<<<<<< HEAD
 import org.jruby.compiler.ir.IR_Closure;
 import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IR_Scope;
+=======
+import org.jruby.compiler.ir.IRClass;
+import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.IRModule;
+import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.instructions.ASSERT_METHOD_VERSION_Instr;
+>>>>>>> Simple renaming in ir package
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -34,14 +44,14 @@ public class LocalOptimizationPass implements CompilerPass
     // Should we run this pass on the current scope before running it on nested scopes?
     public boolean isPreOrder() { return false; }
 
-    public void run(IR_Scope s) {
-        if (s instanceof IR_ExecutionScope) {
-            IR_ExecutionScope es = (IR_ExecutionScope)s;
+    public void run(IRScope s) {
+        if (s instanceof IRExecutionScope) {
+            IRExecutionScope es = (IRExecutionScope)s;
 
             // Run this pass on nested closures first!
             // This let us compute execute scope flags for a method based on what all nested closures do
-            List<IR_Closure> closures = es.getClosures();
-            for (IR_Closure c: closures)
+            List<IRClosure> closures = es.getClosures();
+            for (IRClosure c: closures)
                 run(c);
 
             // Now, run on current scope
@@ -69,7 +79,7 @@ public class LocalOptimizationPass implements CompilerPass
         }
     }
 
-    private static void runLocalOpts(IR_ExecutionScope s) {
+    private static void runLocalOpts(IRExecutionScope s) {
         // Reset value map if this instruction is the start/end of a basic block
         //
         // Right now, calls are considered hard boundaries for optimization and
@@ -133,22 +143,20 @@ public class LocalOptimizationPass implements CompilerPass
                     // Use the simplified receiver!
                     IRMethod rm = call.getTargetMethodWithReceiver(r);
                     if (rm != null) {
-                        IR_Module rc = rm.getDefiningModule();
-								if (rc.isCoreClass("Fixnum")) {
+                        IRModule rc = rm.getDefiningModule();
+                        if (rc.isCoreClass("Fixnum")) {
                             Operand[] args = call.getOperands();
                             if (args[2].isConstant()) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
                                 val = ((Fixnum)r).computeValue(rm.getName(), (Constant)args[2]);
                             }
-                        }
-								else if (rc.isCoreClass("Float")) {
+                        } else if (rc.isCoreClass("Float")) {
                             Operand[] args = call.getOperands();
                             if (args[2].isConstant()) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);
                                 val = ((Float)r).computeValue(rm.getName(), (Constant)args[2]);
                             }
-                        }
-								else if (rc.isCoreClass("Array")) {
+                        } else if (rc.isCoreClass("Array")) {
                             Operand[] args = call.getOperands();
                             if (args[2] instanceof Fixnum && (rm.getName() == "[]")) {
                                 addMethodGuard(rm, deoptLabel, versionMap, instrs);

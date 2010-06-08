@@ -8,7 +8,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.IR_ExecutionScope;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
@@ -17,9 +17,9 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class AllocateFrameInstr extends Instr {
-    IR_ExecutionScope scope;   // Scope for which frame is needed
+    IRExecutionScope scope;   // Scope for which frame is needed
 
-    public AllocateFrameInstr(IR_ExecutionScope scope) {
+    public AllocateFrameInstr(IRExecutionScope scope) {
         super(Operation.ALLOC_FRAME);
         
         this.scope = getClosestMethodAncestor(scope);
@@ -32,9 +32,9 @@ public class AllocateFrameInstr extends Instr {
 
     public void simplifyOperands(Map<Operand, Operand> valueMap) {}
 
-    private static IRMethod getClosestMethodAncestor(IR_ExecutionScope scope) {
+    private static IRMethod getClosestMethodAncestor(IRExecutionScope scope) {
         while (!(scope instanceof IRMethod)) {
-            scope = (IR_ExecutionScope)scope.getLexicalParent();
+            scope = (IRExecutionScope)scope.getLexicalParent();
         }
 
         return (IRMethod)scope;

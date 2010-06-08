@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
@@ -18,7 +18,7 @@ import java.util.Map;
 //
 public class GET_CONST_Instr extends GET_Instr
 {
-    public GET_CONST_Instr(Variable dest, IR_Scope scope, String constName)
+    public GET_CONST_Instr(Variable dest, IRScope scope, String constName)
     {
         super(Operation.GET_CONST, dest, new MetaObject(scope), constName);
     }
@@ -32,7 +32,7 @@ public class GET_CONST_Instr extends GET_Instr
     {
         simplifyOperands(valueMap);
         if (_source instanceof MetaObject) {
-            IR_Scope s = ((MetaObject)_source).scope;
+            IRScope s = ((MetaObject)_source).scope;
             return s.getConstantValue(_ref);
         }
         else {

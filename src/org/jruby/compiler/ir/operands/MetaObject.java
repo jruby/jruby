@@ -1,32 +1,32 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.compiler.ir.IR_Class;
-import org.jruby.compiler.ir.IR_Module;
-import org.jruby.compiler.ir.IR_Closure;
+import org.jruby.compiler.ir.IRClass;
+import org.jruby.compiler.ir.IRModule;
+import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.IR_Script;
+import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRScript;
 import org.jruby.interpreter.InterpreterContext;
 
 public class MetaObject extends Operand {
-    public final IR_Scope scope;
+    public final IRScope scope;
 
-    public MetaObject(IR_Scope s) {
+    public MetaObject(IRScope s) {
         scope = s;
     }
 
     @Override
     public String toString() {
-        if (scope instanceof IR_Class) {
-            return "Class " + ((IR_Class) scope).getName();
-        } else if (scope instanceof IR_Module) {
-            return "Module " + ((IR_Module) scope).getName();
+        if (scope instanceof IRClass) {
+            return "Class " + ((IRClass) scope).getName();
+        } else if (scope instanceof IRModule) {
+            return "Module " + ((IRModule) scope).getName();
         } else if (scope instanceof IRMethod) {
             return "Method " + ((IRMethod) scope).getName();
-        } else if (scope instanceof IR_Script) {
-            return "Script " + ((IR_Script) scope)._fileName;
+        } else if (scope instanceof IRScript) {
+            return "Script " + ((IRScript) scope).fileName;
         } else {
-            return ((IR_Closure) scope).toString().replace("\t", "\t\t");
+            return ((IRClosure) scope).toString().replace("\t", "\t\t");
         }
     }
 
@@ -36,7 +36,7 @@ public class MetaObject extends Operand {
     }
 
     public boolean isClass() {
-        return scope instanceof IR_Class;
+        return scope instanceof IRClass;
     }
 
     public Operand getContainer() {
@@ -45,8 +45,8 @@ public class MetaObject extends Operand {
 
     // SSS FIXME: Incomplete!
     @Override
-    public IR_Class getTargetClass() {
-        return (scope instanceof IR_Module) ? IR_Class.getCoreClass("Module") : null;
+    public IRClass getTargetClass() {
+        return (scope instanceof IRModule) ? IRClass.getCoreClass("Module") : null;
     }
 
     @Override

@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IRClass;
 
 import java.math.BigInteger;
 import org.jruby.interpreter.InterpreterContext;
@@ -29,8 +29,8 @@ public class Fixnum extends Constant {
     }
 
     @Override
-    public IR_Class getTargetClass() {
-        return IR_Class.getCoreClass("Fixnum");
+    public IRClass getTargetClass() {
+        return IRClass.getCoreClass("Fixnum");
     }
 
     public Constant computeValue(String methodName, Constant arg) {

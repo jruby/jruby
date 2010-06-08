@@ -11,8 +11,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import org.jruby.compiler.ir.IR_ExecutionScope;
-import org.jruby.compiler.ir.IR_Closure;
+import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.Tuple;
@@ -61,7 +61,7 @@ public class CFG {
         }
     }
 
-    IR_ExecutionScope _scope;   // Scope (method/closure) to which this cfg belongs
+    IRExecutionScope _scope;   // Scope (method/closure) to which this cfg belongs
     BasicBlock _entryBB;        // Entry BB -- dummy
     BasicBlock _exitBB;         // Exit BB -- dummy
     int        _nextBBId;       // Next available basic block id
@@ -74,7 +74,7 @@ public class CFG {
     Map<BasicBlock, BasicBlock>         _bbRescuerMap;  // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
     List<RescuedRegion>                 _outermostRRs;  // Outermost rescued regions
 
-    public CFG(IR_ExecutionScope s) {
+    public CFG(IRExecutionScope s) {
         _nextBBId = 0; // Init before building basic blocks below!
         _scope = s;
         _postOrderList = null;
@@ -88,7 +88,7 @@ public class CFG {
         return _cfg;
     }
 
-    public IR_ExecutionScope getScope() {
+    public IRExecutionScope getScope() {
         return _scope;
     }
 
@@ -326,7 +326,7 @@ public class CFG {
             } else if (i instanceof CallInstr) { // Build CFG for the closure if there exists one
                 Operand closureArg = ((CallInstr)i).getClosureArg();
                 if (closureArg instanceof MetaObject) {
-                    ((IR_Closure)((MetaObject)closureArg).scope).buildCFG();
+                    ((IRClosure)((MetaObject)closureArg).scope).buildCFG();
                 }
             }
         }
@@ -413,7 +413,7 @@ public class CFG {
         mergeBBs(edges.iterator().next()._src, splitBB);
     }
 
-    private void inlineClosureAtYieldSite(InlinerInfo ii, IR_Closure cl, BasicBlock yieldBB, YIELD_Instr yield) {
+    private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YIELD_Instr yield) {
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, getNewLabel(), false);
         _cfg.addVertex(splitBB);
@@ -594,7 +594,7 @@ public class CFG {
                 throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
 
             Tuple t = (Tuple)yieldSites.get(0);
-            inlineClosureAtYieldSite(ii, (IR_Closure)((MetaObject)closureArg).scope, (BasicBlock)t._a, (YIELD_Instr)t._b);
+            inlineClosureAtYieldSite(ii, (IRClosure)((MetaObject)closureArg).scope, (BasicBlock)t.a, (YIELD_Instr)t.b);
         }
     }
 
@@ -757,10 +757,10 @@ public class CFG {
             buf.append("BB " + bb.getID() + " --> BB " + _bbRescuerMap.get(bb).getID() + "\n");
         }
 
-        List<IR_Closure> closures = _scope.getClosures();
+        List<IRClosure> closures = _scope.getClosures();
         if (!closures.isEmpty()) {
             buf.append("\n\n------ Closures encountered in this scope ------\n");
-            for (IR_Closure c : closures) {
+            for (IRClosure c : closures) {
                 buf.append(c.toStringBody());
             }
             buf.append("------------------------------------------------\n");

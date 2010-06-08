@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.compiler_pass;
 
-import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.IR_ExecutionScope;
+import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.representations.CFG;
@@ -12,11 +12,11 @@ public class DominatorTreeBuilder implements CompilerPass
 
     public boolean isPreOrder() { return false; }
 
-    public void run(IR_Scope s)
+    public void run(IRScope s)
     {
-        if (s instanceof IR_ExecutionScope) {
+        if (s instanceof IRExecutionScope) {
 //            System.out.println("Starting build of dom tree for " + s);
-            CFG c = ((IR_ExecutionScope)s).getCFG();
+            CFG c = ((IRExecutionScope)s).getCFG();
             try {
                 c.buildDominatorTree();
             } catch (Exception e) {

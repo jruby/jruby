@@ -2,7 +2,7 @@ package org.jruby.compiler.ir.operands;
 
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.util.ByteList;
-import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IRClass;
 
 // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 public class StringLiteral extends Constant
@@ -19,8 +19,8 @@ public class StringLiteral extends Constant
     }
 
     @Override
-    public IR_Class getTargetClass() {
-        return IR_Class.getCoreClass("String");
+    public IRClass getTargetClass() {
+        return IRClass.getCoreClass("String");
     }
 
     @Override

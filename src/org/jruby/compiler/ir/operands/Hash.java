@@ -3,7 +3,7 @@ package org.jruby.compiler.ir.operands;
 import java.util.List;
 import java.util.Map;
 
-import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // Represents a hash { _ =>_, _ => _ .. } in ruby
@@ -42,7 +42,7 @@ public class Hash extends Operand
         return this;
     }
 
-    public IR_Class getTargetClass() { return IR_Class.getCoreClass("Hash"); }
+    public IRClass getTargetClass() { return IRClass.getCoreClass("Hash"); }
 
     /** Append the list of variables used in this operand to the input list */
     @Override

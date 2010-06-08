@@ -4,7 +4,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import java.util.List;
 import java.util.Map;
 
-import org.jruby.compiler.ir.IR_Class;
+import org.jruby.compiler.ir.IRClass;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -76,8 +76,8 @@ public class Array extends Operand {
     }
 
     @Override
-    public IR_Class getTargetClass() {
-        return IR_Class.getCoreClass("Array");
+    public IRClass getTargetClass() {
+        return IRClass.getCoreClass("Array");
     }
 
     public Operand toArray() {

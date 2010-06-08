@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
-import org.jruby.compiler.ir.IR_Closure;
-import org.jruby.compiler.ir.IR_ExecutionScope;
+import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
@@ -79,7 +79,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                 CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
-                    IR_Closure cl = (IR_Closure) ((MetaObject) o).scope;
+                    IRClosure cl = (IRClosure) ((MetaObject) o).scope;
                     CFG cl_cfg = cl.getCFG();
                     FrameLoadPlacementProblem cl_flp = new FrameLoadPlacementProblem();
                     cl_flp.initLoadsOnScopeExit(reqdLoads);
@@ -125,7 +125,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
 
     public void addLoads() {
         FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem) _prob;
-        IR_ExecutionScope s = flp.getCFG().getScope();
+        IRExecutionScope s = flp.getCFG().getScope();
         List<Instr> instrs = _bb.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         Set<Variable> reqdLoads = new HashSet<Variable>(_inReqdLoads);
@@ -143,7 +143,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                 CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
-                    CFG cl_cfg = ((IR_Closure) ((MetaObject) o).scope).getCFG();
+                    CFG cl_cfg = ((IRClosure) ((MetaObject) o).scope).getCFG();
                     FrameLoadPlacementProblem cl_flp = (FrameLoadPlacementProblem) cl_cfg.getDataFlowSolution(flp.getName());
 
                     // Only those variables that are defined in the closure, and are in the required loads set 
@@ -181,7 +181,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
         }
 
         // Load first use of variables in closures
-        if ((s instanceof IR_Closure) && (_bb == _prob.getCFG().getEntryBB())) {
+        if ((s instanceof IRClosure) && (_bb == _prob.getCFG().getEntryBB())) {
             for (Variable v : reqdLoads) {
                 if (flp.scopeUsesVariable(v)) {
                     it.add(new LOAD_FROM_FRAME_Instr(v, s, v.getName()));

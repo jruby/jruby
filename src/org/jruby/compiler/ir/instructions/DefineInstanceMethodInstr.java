@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.RubyModule;
-import org.jruby.compiler.ir.IR_Module;
+import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -10,10 +10,10 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineInstanceMethodInstr extends NoOperandInstr {
-    public final IR_Module module; // Can be either class of module
+    public final IRModule module; // Can be either class of module
     public final IRMethod method;
 
-    public DefineInstanceMethodInstr(IR_Module module, IRMethod method) {
+    public DefineInstanceMethodInstr(IRModule module, IRMethod method) {
         super(Operation.DEF_INST_METH);
         this.module = module;
         this.method = method;

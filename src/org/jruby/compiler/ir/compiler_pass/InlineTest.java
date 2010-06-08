@@ -1,8 +1,8 @@
 package org.jruby.compiler.ir.compiler_pass;
 
-import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IR_Module;
+import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.BasicBlock;
@@ -19,10 +19,10 @@ public class InlineTest implements CompilerPass
 
     public boolean isPreOrder()  { return true; }
 
-    public void run(IR_Scope s) { 
+    public void run(IRScope s) {
         if (s instanceof IRMethod) {
            CFG       c  = ((IRMethod)s).getCFG();
-           IR_Module m  = s.getNearestModule();
+           IRModule m  = s.getNearestModule();
            IRMethod  mi = m.getInstanceMethod(methodToInline);
            for (BasicBlock b: c.getNodes()) {
                for (Instr i: b.getInstrs()) {

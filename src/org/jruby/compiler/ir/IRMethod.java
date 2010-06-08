@@ -11,7 +11,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 
-public class IRMethod extends IR_ExecutionScope {
+public class IRMethod extends IRExecutionScope {
     public final String  name;     // Ruby name
     public final boolean isInstanceMethod;
 
@@ -26,7 +26,7 @@ public class IRMethod extends IR_ExecutionScope {
     // Call parameters
     private List<Operand> callArgs;
 
-    public IRMethod(IR_Scope lexicalParent, Operand container, String name, boolean isInstanceMethod, StaticScope staticScope) {
+    public IRMethod(IRScope lexicalParent, Operand container, String name, boolean isInstanceMethod, StaticScope staticScope) {
         super(lexicalParent, container);
         this.name = name;
         this.isInstanceMethod = isInstanceMethod;
@@ -61,23 +61,23 @@ public class IRMethod extends IR_ExecutionScope {
     public void setConstantValue(String constRef, Operand val) {
         if (!isAClassRootMethod()) throw new NotCompilableException("Unexpected: Encountered set constant value in a method!");
         
-        ((MetaObject) _container).scope.setConstantValue(constRef, val);
+        ((MetaObject) container).scope.setConstantValue(constRef, val);
     }
 
     public boolean isAClassRootMethod() { 
-        return IR_Module.isAClassRootMethod(this);
+        return IRModule.isAClassRootMethod(this);
     }
 
     // SSS FIXME: Incorect!
     // ENEBO: Should it be: return (m == null) ? ":" + getName() : m.getName() + ":" + getName();
     public String getFullyQualifiedName() {
-        IR_Module m = getDefiningModule();
+        IRModule m = getDefiningModule();
         
         return (m == null) ? null : m.getName() + ":" + getName();
     }
 
-    public IR_Module getDefiningModule() {
-        return (_container instanceof MetaObject) ? (IR_Module)((MetaObject)_container).scope : null;
+    public IRModule getDefiningModule() {
+        return (container instanceof MetaObject) ? (IRModule)((MetaObject)container).scope : null;
     }
 
     public String getName() {

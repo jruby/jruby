@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.compiler_pass.opts;
 
-import org.jruby.compiler.ir.IR_Scope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.representations.CFG;
@@ -12,7 +12,7 @@ public class DeadCodeElimination implements CompilerPass {
         return false;
     }
 
-    public void run(IR_Scope s) {
+    public void run(IRScope s) {
         if (!(s instanceof IRMethod)) return;
 
         CFG c = ((IRMethod) s).getCFG();

@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.compiler_pass;
 
-import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.IR_ExecutionScope;
+import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.CFG;
 
@@ -9,14 +9,14 @@ public class IR_Printer implements CompilerPass {
     // Should we run this pass on the current scope before running it on nested scopes?
     public boolean isPreOrder()  { return true; }
 
-    public void run(IR_Scope s) {
+    public void run(IRScope s) {
         System.out.println("----------------------------------------");
         System.out.println(s.toString());
 
         // If the cfg of the method is around, print the CFG!
         CFG c = null;
-        if (s instanceof IR_ExecutionScope)
-            c = ((IR_ExecutionScope)s).getCFG();
+        if (s instanceof IRExecutionScope)
+            c = ((IRExecutionScope)s).getCFG();
 
         if (c != null) {
             System.out.println("\nGraph:\n" + c.getGraph().toString());

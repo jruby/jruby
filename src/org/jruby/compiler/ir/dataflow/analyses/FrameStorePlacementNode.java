@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
-import org.jruby.compiler.ir.IR_Closure;
-import org.jruby.compiler.ir.IR_ExecutionScope;
+import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
@@ -37,7 +37,7 @@ public class FrameStorePlacementNode extends FlowGraphNode {
 
         // For closure scopes, the heap frame will already have been allocated in the parent scope
         // So, don't even bother with the frame allocation in closures!
-        if (_prob.getCFG().getScope() instanceof IR_Closure) {
+        if (_prob.getCFG().getScope() instanceof IRClosure) {
             _inFrameAllocated = _outFrameAllocated = true;
         } else {
             _inFrameAllocated = _outFrameAllocated = false;
@@ -87,7 +87,7 @@ public class FrameStorePlacementNode extends FlowGraphNode {
                     // At this call site, a frame will get allocated if it has not been already!
                     frameAllocated = true;
 
-                    IR_Closure cl = (IR_Closure) ((MetaObject) o).scope;
+                    IRClosure cl = (IRClosure) ((MetaObject) o).scope;
                     CFG cl_cfg = cl.getCFG();
                     FrameStorePlacementProblem cl_fsp = new FrameStorePlacementProblem();
                     cl_fsp.setup(cl_cfg);
@@ -142,7 +142,7 @@ public class FrameStorePlacementNode extends FlowGraphNode {
 
     public void addStoreAndFrameAllocInstructions() {
         FrameStorePlacementProblem fsp = (FrameStorePlacementProblem) _prob;
-        IR_ExecutionScope s = fsp.getCFG().getScope();
+        IRExecutionScope s = fsp.getCFG().getScope();
         ListIterator<Instr> instrs = _bb.getInstrs().listIterator();
         Set<Variable> dirtyVars = new HashSet<Variable>(_inDirtyVars);
         boolean frameAllocated = _inFrameAllocated;
@@ -155,7 +155,7 @@ public class FrameStorePlacementNode extends FlowGraphNode {
                 CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
-                    CFG cl_cfg = ((IR_Closure) ((MetaObject) o).scope).getCFG();
+                    CFG cl_cfg = ((IRClosure) ((MetaObject) o).scope).getCFG();
                     FrameStorePlacementProblem cl_fsp = (FrameStorePlacementProblem) cl_cfg.getDataFlowSolution(fsp.getName());
 
                     // Add a frame allocation instruction, if necessary
