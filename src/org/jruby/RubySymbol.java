@@ -317,6 +317,11 @@ public class RubySymbol extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "intern", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_sym19() {
+        return this;
+    }
+
     @Override
     public IRubyObject taint(ThreadContext context) {
         return this;
