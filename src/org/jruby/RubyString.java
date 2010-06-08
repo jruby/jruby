@@ -6616,6 +6616,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
             block.yield(context, this);
             return this;
         }
+        if (! sep.respondsTo("to_str")) {
+            throw runtime.newTypeError("can't convert " + sep.getMetaClass() + " into String");
+        }
 
         ByteList val = value.shallowDup();
         int p = val.getBegin();

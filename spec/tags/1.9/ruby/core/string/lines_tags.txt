@@ -1,1 +1,0 @@
-fails:String#lines raises a TypeError when the separator is a symbol
