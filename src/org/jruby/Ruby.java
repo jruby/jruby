@@ -3071,6 +3071,10 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("EISDIR"), message);
     }
 
+    public RaiseException newErrnoEPERMError(String name) {
+        return newRaiseException(getErrno().fastGetClass("EPERM"), "Operation not permitted - " + name);
+    }
+
     public RaiseException newErrnoEISDirError() {
         return newErrnoEISDirError("Is a directory");
     }

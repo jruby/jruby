@@ -1653,6 +1653,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
 
+            if (lToDelete.isDirectory()) {
+                throw runtime.newErrnoEPERMError(filename.toString());
+            }
+
             if (!lToDelete.delete()) {
                 throw runtime.newErrnoEACCESError(filename.toString());
             }
