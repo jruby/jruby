@@ -991,6 +991,13 @@ public class RubyBigDecimal extends RubyNumeric {
             return this;
         }
     }
+
+    @JRubyMethod(name = "floor", optional =1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject floor19(IRubyObject[] args) {
+        if (isNaN || isInfinity())
+            throw getRuntime().newFloatDomainError("Computation results to '" + to_s(args).asJavaString() + "'");
+        return floor(args);
+    }
  
     @JRubyMethod(name = "frac")
     public IRubyObject frac() {
