@@ -202,14 +202,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         return StandardASMCompiler.ARGS_INDEX + argParamCount + StandardASMCompiler.CLOSURE_OFFSET;
     }
 
-    protected int getRuntimeIndex() {
-        return StandardASMCompiler.ARGS_INDEX + argParamCount + StandardASMCompiler.RUNTIME_OFFSET;
-    }
-
-    protected int getNilIndex() {
-        return StandardASMCompiler.ARGS_INDEX + argParamCount + StandardASMCompiler.NIL_OFFSET;
-    }
-
     protected int getPreviousExceptionIndex() {
         return StandardASMCompiler.ARGS_INDEX + argParamCount + StandardASMCompiler.PREVIOUS_EXCEPTION_OFFSET;
     }
