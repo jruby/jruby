@@ -91,11 +91,12 @@ public interface InvocationCompiler {
     public void invokeEqq(ArgumentsCallback receivers, CompilerCallback argument);
 
     public void invokeBinaryFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum);
+    public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote);
 
-    public void invokeFixnumLong(CompilerCallback receiverCallback, String method, long fixnum);
-    public void invokeFloatDouble(CompilerCallback receiverCallback, String method, double flote);
+    public void invokeFixnumLong(String rubyName, int moduleGeneration, CompilerCallback receiverCallback, String methodName, long fixnum);
+    public void invokeFloatDouble(String rubyName, int moduleGeneration, CompilerCallback receiverCallback, String methodName, double flote);
 
-    public void invokeRecursive(ArgumentsCallback callback);
+    public void invokeRecursive(String name, int moduleGeneration, ArgumentsCallback argsCallback, CompilerCallback closure, CallType callType, boolean iterator);
 
-    public void invokeNative(NativeCall nativeCall, CompilerCallback receiver, ArgumentsCallback args, CompilerCallback closure);
+    public void invokeNative(String name, NativeCall nativeCall, int generation, CompilerCallback receiver, ArgumentsCallback args, CompilerCallback closure, CallType callType, boolean iterator);
 }

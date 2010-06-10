@@ -3,6 +3,7 @@ package org.jruby.runtime.callsite;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.JumpException.BreakJump;
@@ -56,6 +57,10 @@ public abstract class CachingCallSite extends CallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
         return call(context, caller, self, RubyFixnum.newFixnum(context.getRuntime(), fixnum));
+    }
+
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote) {
+        return call(context, caller, self, RubyFloat.newFloat(context.getRuntime(), flote));
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {

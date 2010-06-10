@@ -816,12 +816,15 @@ public class ASTCompiler {
 
                         // only do direct calls for specific arity
                         if (argsCallback == null || argsCallback.getArity() >= 0 && argsCallback.getArity() <= 3) {
-                            if (compileIntrinsic(context, callNode, cacheSite.methodName, entry.method, receiverCallback, argsCallback, closureArg)) {
+                            if (compileIntrinsic(context, callNode, cacheSite.methodName, entry.token, entry.method, receiverCallback, argsCallback, closureArg)) {
                                 // intrinsic compilation worked, hooray!
                                 return;
                             } else {
                                 // otherwise, normal straight-through native call
-                                context.getInvocationCompiler().invokeNative(nativeCall, receiverCallback, argsCallback, closureArg);
+                                context.getInvocationCompiler().invokeNative(
+                                        name, nativeCall, entry.token, receiverCallback,
+                                        argsCallback, closureArg, CallType.NORMAL,
+                                        callNode.getIterNode() instanceof IterNode);
                                 return;
                             }
                         }
@@ -830,7 +833,7 @@ public class ASTCompiler {
                     // check for a recursive call
                     if (callNode.getReceiverNode() instanceof SelfNode) {
                         // recursive calls
-                        if (compileRecursiveCall(entry.method, context, argsCallback, expr)) return;
+                        if (compileRecursiveCall(callNode.getName(), entry.token, CallType.NORMAL, callNode.getIterNode() instanceof IterNode, entry.method, context, argsCallback, closureArg, expr)) return;
                     }
                 }
             }
@@ -920,12 +923,12 @@ public class ASTCompiler {
         floatDoubleIntrinsics.put("<=>", "op_cmp");
     }
 
-    private boolean compileRecursiveCall(DynamicMethod method, BodyCompiler context, ArgumentsCallback argsCallback, boolean expr) {
+    private boolean compileRecursiveCall(String name, int generation, CallType callType, boolean iterator, DynamicMethod method, BodyCompiler context, ArgumentsCallback argsCallback, CompilerCallback closure, boolean expr) {
         if (currentBodyNode != null) {
             if (method instanceof InterpretedMethod) {
                 InterpretedMethod target = (InterpretedMethod)method;
                 if (target.getBodyNode() == currentBodyNode) {
-                    context.getInvocationCompiler().invokeRecursive(argsCallback);
+                    context.getInvocationCompiler().invokeRecursive(name, generation, argsCallback, closure, callType, iterator);
                     if (!expr) context.consumeCurrentValue();
                     return true;
                 }
@@ -933,7 +936,7 @@ public class ASTCompiler {
             if (method instanceof DefaultMethod) {
                 DefaultMethod target = (DefaultMethod)method;
                 if (target.getBodyNode() == currentBodyNode) {
-                    context.getInvocationCompiler().invokeRecursive(argsCallback);
+                    context.getInvocationCompiler().invokeRecursive(name, generation, argsCallback, closure, callType, iterator);
                     if (!expr) context.consumeCurrentValue();
                     return true;
                 }
@@ -942,7 +945,7 @@ public class ASTCompiler {
             if (method instanceof JittedMethod) {
                 DefaultMethod target = (DefaultMethod)((JittedMethod)method).getRealMethod();
                 if (target.getBodyNode() == currentBodyNode) {
-                    context.getInvocationCompiler().invokeRecursive(argsCallback);
+                    context.getInvocationCompiler().invokeRecursive(name, generation, argsCallback, closure, callType, iterator);
                     if (!expr) context.consumeCurrentValue();
                     return true;
                 }
@@ -991,7 +994,7 @@ public class ASTCompiler {
         return false;
     }
 
-    private boolean compileIntrinsic(BodyCompiler context, CallNode callNode, String name, DynamicMethod method, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CompilerCallback closureCallback) {
+    private boolean compileIntrinsic(BodyCompiler context, CallNode callNode, String name, int generation, DynamicMethod method, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CompilerCallback closureCallback) {
         if (!(method.getImplementationClass() instanceof RubyClass)) return false;
 
         RubyClass implClass = (RubyClass)method.getImplementationClass();
@@ -1002,14 +1005,14 @@ public class ASTCompiler {
                 if (argument instanceof FixnumNode) {
                     Map<String, String> typeLongIntrinsics = typeIntrinsics.get(FixnumNode.class);
                     if (typeLongIntrinsics.containsKey(name)) {
-                        context.getInvocationCompiler().invokeFixnumLong(receiverCallback, typeLongIntrinsics.get(name), ((FixnumNode)argument).getValue());
+                        context.getInvocationCompiler().invokeFixnumLong(name, generation, receiverCallback, typeLongIntrinsics.get(name), ((FixnumNode)argument).getValue());
                         return true;
                     }
                 }
                 if (argument instanceof FloatNode) {
                     Map<String, String> typeDoubleIntrinsics = typeIntrinsics.get(FloatNode.class);
                     if (typeDoubleIntrinsics.containsKey(name)) {
-                        context.getInvocationCompiler().invokeFloatDouble(receiverCallback, typeDoubleIntrinsics.get(name), ((FloatNode)argument).getValue());
+                        context.getInvocationCompiler().invokeFloatDouble(name, generation, receiverCallback, typeDoubleIntrinsics.get(name), ((FloatNode)argument).getValue());
                         return true;
                     }
                 }
@@ -2409,7 +2412,7 @@ public class ASTCompiler {
 
                     if (closureArg == null && (argsCallback == null || (argsCallback.getArity() >= 0 && argsCallback.getArity() <= 3))) {
                         // recursive calls
-                        if (compileRecursiveCall(entry.method, context, argsCallback, expr)) return;
+                        if (compileRecursiveCall(fcallNode.getName(), entry.token, CallType.FUNCTIONAL, fcallNode.getIterNode() instanceof IterNode, entry.method, context, argsCallback, closureArg, expr)) return;
 
                         // peephole inlining for trivial targets
                         if (compileTrivialCall(entry.method, context, expr)) return;
@@ -3879,7 +3882,7 @@ public class ASTCompiler {
                     CacheEntry entry = cacheSite.getCache();
 
                     // recursive calls
-                    if (compileRecursiveCall(entry.method, context, null, expr)) return;
+                    if (compileRecursiveCall(vcallNode.getName(), entry.token, CallType.VARIABLE, false, entry.method, context, null, null, expr)) return;
 
                     // peephole inlining for trivial targets
                     if (compileTrivialCall(entry.method, context, expr)) return;

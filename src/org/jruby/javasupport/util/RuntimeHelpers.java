@@ -1858,4 +1858,8 @@ public class RuntimeHelpers {
 
         return superklazz;
     }
+
+    public static boolean isGenerationEqual(IRubyObject object, int generation) {
+        return object.getMetaClass().getCacheToken() == generation;
+    }
 }
