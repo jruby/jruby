@@ -931,7 +931,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void invalidateCacheDescendants() {
-        System.out.println("invalidating descendants: " + classId);
+        if (DEBUG) System.out.println("invalidating descendants: " + classId);
         generation = getRuntime().getNextModuleGeneration();
         // update all hierarchies into which this module has been included
         synchronized (getRuntime().getHierarchyLock()) {
