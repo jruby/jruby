@@ -64,7 +64,7 @@ public final class ThreadContext {
     }
     
     private final static int INITIAL_SIZE = 10;
-    private final static int INITIAL_FRAMES_SIZE = 1000;
+    private final static int INITIAL_FRAMES_SIZE = 10;
     
     /** The number of calls after which to do a thread event poll */
     private final static int CALL_POLL_COUNT = 0xFFF;
