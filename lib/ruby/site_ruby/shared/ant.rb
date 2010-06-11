@@ -7,6 +7,10 @@ class Ant
       listing_path = nil
       jar_path = nil
       diag.readlines.each do |line|
+
+        # workaround for JRUBY-4814 (IO.popen doesnt convert CRLF to LF on Windows)
+        line.chomp!
+
         if line =~ /^ant\.home: (.*)$/ && !defined?(ANT_HOME)
           const_set(:ANT_HOME, $1)
         elsif line =~ /Tasks availability/
