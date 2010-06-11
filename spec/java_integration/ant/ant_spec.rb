@@ -4,7 +4,11 @@ describe Ant, '.load', :type => :ant do
   before :each do
     @previous_java_home = ENV['JAVA_HOME']
 
-    ENV['JAVA_HOME'] = '/System/Library/Frameworks/JavaVM.framework/Home'
+    if (WINDOWS)
+      ENV['JAVA_HOME'] = '/C:/java6'
+    else
+      ENV['JAVA_HOME'] = '/System/Library/Frameworks/JavaVM.framework/Home'
+    end
     @tools_jar = "#{ENV['JAVA_HOME']}/lib/tools.jar"
     @classes_zip = "#{ENV['JAVA_HOME']}/lib/classes.zip"
   end
