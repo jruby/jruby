@@ -105,6 +105,13 @@ class SocketTest < Test::Unit::TestCase
   ensure
     socket.close
   end
+
+  # JRUBY-4868
+  def test_getservbyname
+    assert_equal(21, Socket.getservbyname('ftp'))
+    assert_equal(21, Socket.getservbyname('21'))
+    assert_equal(21, Socket.getservbyname('       21'))
+  end
 end
 
 class UNIXSocketTests < Test::Unit::TestCase
@@ -370,7 +377,6 @@ class UNIXSocketTests < Test::Unit::TestCase
         sock1.recv(1)
       end
     end
-
   end
 end
 

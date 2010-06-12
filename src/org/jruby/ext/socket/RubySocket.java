@@ -316,22 +316,34 @@ public class RubySocket extends RubyBasicSocket {
         ret[3] = args[0];
         return runtime.newArrayNoCopy(ret);
     }
+
     @Deprecated
     public static IRubyObject getservbyname(IRubyObject recv, IRubyObject[] args) {
         return getservbyname(recv.getRuntime().getCurrentContext(), recv, args);
     }
+
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject getservbyname(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
         String name = args[0].convertToString().toString();
         String proto = argc == 1 ? "tcp" : args[1].convertToString().toString();
-        
+
         jnr.netdb.Service service = jnr.netdb.Service.getServiceByName(name, proto);
-        if(service == null) {
-            throw sockerr(runtime, "no such service " + name + "/" + proto);
+
+        int port;
+        if (service != null) {
+            port = service.getPort();
+        } else {
+            // MRI behavior: try to convert the name string to port directly
+            try {
+                port = Integer.parseInt(name.trim());
+            } catch (NumberFormatException nfe) {
+                throw sockerr(runtime, "no such service " + name + "/" + proto);
+            }
         }
-        return runtime.newFixnum(service.getPort());
+
+        return runtime.newFixnum(port);
     }
 
     @Deprecated
