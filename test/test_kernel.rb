@@ -469,7 +469,7 @@ class TestKernel < Test::Unit::TestCase
     if (WINDOWS)
       res = system('cd .')
     else
-      res = system('pwd .')
+      res = system('pwd . 2>&1 > /dev/null')
     end
     assert_equal true, res
   end
