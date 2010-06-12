@@ -502,6 +502,21 @@ class TestKernel < Test::Unit::TestCase
     }
   end
 
+  # JRUBY-4834
+  def test_backquote_with_changed_path
+    orig_env = ENV['PATH']
+
+    # Append a directory where testapp resides to the PATH
+    paths = (ENV["PATH"] || "").split(File::PATH_SEPARATOR)
+    paths.unshift TESTAPP_DIR
+    ENV["PATH"] = paths.uniq.join(File::PATH_SEPARATOR)
+
+    res = `testapp`.chomp
+    assert_equal("NO_ARGS", res)
+  ensure
+    ENV['PATH'] = orig_env
+  end
+
   # JRUBY-4127
   def test_backquote_with_quotes
     if (WINDOWS)
