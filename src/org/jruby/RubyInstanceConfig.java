@@ -211,6 +211,8 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getBoolean("jruby.compile.peephole", true);
     public static boolean DYNOPT_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.dynopt");
+    public static boolean NOGUARDS_COMPILE_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.compile.noguards");
     public static boolean FASTEST_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
     public static boolean FASTOPS_COMPILE_ENABLED
