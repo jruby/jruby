@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'test/test_helper'
 require 'rbconfig'
+require 'jruby/path_helper'
 
 
 def load_behavior_block(&block)
@@ -9,6 +10,18 @@ end
 
 class TestLoad < Test::Unit::TestCase
   include TestHelper
+
+  def setup
+    @prev_loaded_features = $LOADED_FEATURES.dup
+    @prev_load_path = $LOAD_PATH.dup
+  end
+
+  def teardown
+    $LOADED_FEATURES.clear
+    $LOADED_FEATURES.concat(@prev_loaded_features)
+    $LOAD_PATH.clear
+    $LOAD_PATH.concat(@prev_load_path)
+  end
 
   def test_require
     # Allow us to run MRI against non-Java dependent tests
@@ -48,14 +61,13 @@ class TestLoad < Test::Unit::TestCase
   def test_require_bogus
     assert_raises(LoadError) { require 'foo/' }
     assert_raises(LoadError) { require '' }
-    
+
     # Yes, the following line is supposed to appear twice
     assert_raises(LoadError) { require 'NonExistantRequriedFile'}
     assert_raises(LoadError) { require 'NonExistantRequriedFile'}
   end
 
   def test_require_jar_should_make_its_scripts_accessible
-    $LOADED_FEATURES.delete_if {|f| f =~ /hello_from|with_ruby/}
     $hello = nil
     require 'test/jar_with_ruby_files'
     require 'hello_from_jar'
@@ -63,7 +75,6 @@ class TestLoad < Test::Unit::TestCase
   end
 
   def test_require_nested_jar_should_make_its_scripts_accessible
-    $LOADED_FEATURES.delete_if {|f| f =~ /nested_jar|files_in_jar/}
     $hello = nil
     require 'test/jar_with_ruby_files_in_jar'
     require 'jar_with_ruby_file'
@@ -86,23 +97,16 @@ class TestLoad < Test::Unit::TestCase
     `#{cmd}`
   end
 
-  def test_load_relative_with_classpath
-    # FIX for Windows
-    unless WINDOWS
+  unless WINDOWS                # FIXME for Windows
+    def test_load_relative_with_classpath
       assert_equal call_extern_load_foo_bar(File.join('test', 'jar_with_ruby_files.jar')), 'OK'
     end
-  end
 
-  def test_load_relative_with_classpath_ends_colon
-    # FIX for Windows
-    unless WINDOWS
+    def test_load_relative_with_classpath_ends_colon
       assert_equal call_extern_load_foo_bar(File.join('test', 'jar_with_ruby_files.jar') + ':'), 'OK'
     end
-  end
 
-  def test_load_relative_without_classpath
-    # FIX for Windows
-    unless WINDOWS
+    def test_load_relative_without_classpath
       assert_equal 'OK', call_extern_load_foo_bar()
     end
   end
@@ -112,9 +116,9 @@ class TestLoad < Test::Unit::TestCase
 
     filename = File.join(File.dirname(__FILE__), "blargus1.rb")
     require_name = File.join(File.dirname(__FILE__), "blargus1")
-    
+
     assert !defined?($_blargus_has_been_loaded_oh_yeah_baby_1)
-    
+
     File.open(filename, "w") do |f|
       f.write <<OUT
 $_blargus_has_been_loaded_oh_yeah_baby_1 = true
@@ -122,7 +126,7 @@ OUT
     end
 
     require require_name
-    
+
     assert $_blargus_has_been_loaded_oh_yeah_baby_1
   ensure
     File.unlink(filename) rescue nil
@@ -134,9 +138,9 @@ OUT
 
     filename = File.join(File.dirname(__FILE__), "blargus2.rb")
     require_name = File.join(File.dirname(__FILE__), "blargus2")
-    
+
     assert !defined?($_blargus_has_been_loaded_oh_yeah_baby_2)
-    
+
     File.open(filename, "w") do |f|
       f.write <<OUT
 $_blargus_has_been_loaded_oh_yeah_baby_2 = true
@@ -144,7 +148,7 @@ OUT
     end
 
     require require_name
-    
+
     assert $_blargus_has_been_loaded_oh_yeah_baby_2
   ensure
     File.unlink(filename) rescue nil
@@ -156,9 +160,9 @@ OUT
 
     filename = File.join(File.dirname(__FILE__), "blargus3.rb")
     require_name = File.join(File.dirname(__FILE__), "blargus3")
-    
+
     assert !defined?($_blargus_has_been_loaded_oh_yeah_baby_3)
-    
+
     File.open(filename, "w") do |f|
       f.write <<OUT
 $_blargus_has_been_loaded_oh_yeah_baby_3 = true
@@ -166,18 +170,18 @@ OUT
     end
 
     require require_name
-    
+
     assert $_blargus_has_been_loaded_oh_yeah_baby_3
   ensure
     File.unlink(filename) rescue nil
     $:.shift
   end
-  
+
   def test_overriding_require_shouldnt_cause_problems
     eval(<<DEPS, binding, "deps")
 class ::Object
   alias old_require require
-  
+
   def require(file)
     old_require(file)
   end
@@ -190,15 +194,26 @@ DEPS
 
     assert_equal File.expand_path(File.join('test', 'test_loading_behavior.rb')), res
   end
-  
+
   def test_loading_so_fails
     assert_raise(LoadError) { load("test/bogus.so") }
   end
-  
+
+  # JRUBY-3894
   def test_require_relative_from_jar_in_classpath
     $CLASSPATH << File.join(
       File.dirname(__FILE__), 'jar_with_relative_require1.jar')
     require 'test/require_relative1'
+    assert $loaded_relative_foo
+  end
+
+  # JRUBY-4875
+  def test_require_relative_from_jar_in_classpath_with_different_cwd
+    Dir.chdir("test") do
+      $CLASSPATH << File.join(File.dirname(__FILE__), 'jar_with_relative_require1.jar')
+      require 'test/require_relative1'
+      assert $loaded_relative_foo
+    end
   end
 
   def test_loading_jar_with_dot_so

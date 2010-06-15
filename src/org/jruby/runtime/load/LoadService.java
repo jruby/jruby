@@ -1247,7 +1247,7 @@ public class LoadService {
     
     protected String canonicalizePath(String path) {
         try {
-            String cwd = new File(runtime.getCurrentDirectory()).getCanonicalPath();
+            String cwd = new File(".").getCanonicalPath();
             return new File(path).getCanonicalPath()
                                  .substring(cwd.length() + 1)
                                  .replaceAll("\\\\","/");
