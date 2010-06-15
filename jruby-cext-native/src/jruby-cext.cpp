@@ -216,6 +216,10 @@ Java_org_jruby_cext_Native_getFalse(JNIEnv* env, jobject self)
 extern "C" JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *vm, void *reserved)
 {
+    if (jruby::jvm != vm) {
+        return JNI_FALSE;
+    }
+
     jruby::jvm = vm;
     return JNI_VERSION_1_4;
 }
