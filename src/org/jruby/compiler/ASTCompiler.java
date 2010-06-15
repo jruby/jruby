@@ -912,7 +912,7 @@ public class ASTCompiler {
         
         floatDoubleIntrinsics.put("+", "op_plus");
         floatDoubleIntrinsics.put("-", "op_minus");
-        floatDoubleIntrinsics.put("/", "op_div");
+        floatDoubleIntrinsics.put("/", "op_fdiv");
         floatDoubleIntrinsics.put("*", "op_plus");
         floatDoubleIntrinsics.put("**", "op_pow");
         floatDoubleIntrinsics.put("<", "op_lt");
@@ -1004,14 +1004,14 @@ public class ASTCompiler {
                 Node argument = callNode.getArgsNode().childNodes().get(0);
                 if (argument instanceof FixnumNode) {
                     Map<String, String> typeLongIntrinsics = typeIntrinsics.get(FixnumNode.class);
-                    if (typeLongIntrinsics.containsKey(name)) {
+                    if (typeLongIntrinsics != null && typeLongIntrinsics.containsKey(name)) {
                         context.getInvocationCompiler().invokeFixnumLong(name, generation, receiverCallback, typeLongIntrinsics.get(name), ((FixnumNode)argument).getValue());
                         return true;
                     }
                 }
                 if (argument instanceof FloatNode) {
                     Map<String, String> typeDoubleIntrinsics = typeIntrinsics.get(FloatNode.class);
-                    if (typeDoubleIntrinsics.containsKey(name)) {
+                    if (typeDoubleIntrinsics != null && typeDoubleIntrinsics.containsKey(name)) {
                         context.getInvocationCompiler().invokeFloatDouble(name, generation, receiverCallback, typeDoubleIntrinsics.get(name), ((FloatNode)argument).getValue());
                         return true;
                     }
