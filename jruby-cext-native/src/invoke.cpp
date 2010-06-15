@@ -67,7 +67,7 @@ Java_org_jruby_cext_Native_callInit(JNIEnv* env, jobject self, jobject jThreadCo
  */
 extern "C" JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject jThreadContext,
-        jlong address, jobject recv, jint arity, jobjectArray argArray)
+        jlong address, jlong recv, jint arity, jlongArray argArray)
 {
     jobject runtime = env->CallObjectMethod(jThreadContext, jruby::ThreadContext_getRuntime_method);
     if (!env->IsSameObject(runtime, jruby::runtime)) {
@@ -76,13 +76,17 @@ Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject 
     }
 
     int argCount = env->GetArrayLength(argArray);
+    jlong* largs = (jlong *) alloca(argCount * sizeof(jlong));
+    env->GetLongArrayRegion(argArray, 0, argCount, largs);
+
     VALUE* values = (VALUE *) alloca(argCount * sizeof(VALUE));
     for (int i = 0; i < argCount; ++i) {
-        values[i] = objectToValue(env, env->GetObjectArrayElement(argArray, i));
+        values[i] = (VALUE) largs[i];
     }
+
     try {
 
-        VALUE v = dispatch((void *) address, arity, argCount, objectToValue(env, recv), values);
+        VALUE v = dispatch((void *) address, arity, argCount, (VALUE) recv, values);
         return valueToObject(env, v);    
         
     } catch (jruby::JavaException& ex) {

@@ -28,15 +28,23 @@ final class Native {
     private static Native INSTANCE;
     private static Library shim = null; // keep a hard ref to avoid GC
 
-    public synchronized static final Native getInstance(Ruby runtime) {
+    private final Ruby runtime;
+
+    synchronized static final Native getInstance(Ruby runtime) {
         if (INSTANCE == null) {
-            INSTANCE = new Native();
+            INSTANCE = new Native(runtime);
             INSTANCE.load(runtime);
+        
+        } else if (INSTANCE.runtime != runtime) {
+            throw runtime.newRuntimeError("invalid runtime");
         }
 
         return INSTANCE;
     }
 
+    private Native(Ruby runtime) {
+        this.runtime = runtime;
+    }
 
     private void load(Ruby runtime) {
 
@@ -58,7 +66,18 @@ final class Native {
     private final native void initNative(Ruby runtime);
     
     public final native long callInit(ThreadContext ctx, long init);
-    public final native IRubyObject callMethod(ThreadContext ctx, long fn, IRubyObject recv, int arity, IRubyObject[] args);
+    public final IRubyObject callMethod(ThreadContext ctx, long fn, IRubyObject recv, int arity, IRubyObject[] args) {
+        long[] largs = new long[args.length];
+        for (int i = 0; i < largs.length; ++i) {
+            largs[0] = Handle.valueOf(args[i]).getAddress();
+        }
+        return callMethod(ctx, fn, Handle.valueOf(recv).getAddress(), arity, largs);
+    }
+    public final native IRubyObject callMethod(ThreadContext ctx, long fn, long recv, int arity, long[] args);
+    public final native IRubyObject callMethod0(ThreadContext ctx, long fn, long recv);
+    public final native IRubyObject callMethod1(ThreadContext ctx, long fn, long recv, long arg0);
+    public final native IRubyObject callMethod2(ThreadContext ctx, long fn, long recv, long arg0, long arg1);
+    public final native IRubyObject callMethod3(ThreadContext ctx, long fn, long recv, long arg0, long arg1, long arg2);
 
     public final native long newHandle(IRubyObject obj);
     public final native void freeHandle(long handle);
