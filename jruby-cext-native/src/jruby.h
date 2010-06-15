@@ -20,6 +20,7 @@
 #define	JRUBY_H
 
 #include <jni.h>
+#include <map>
 #include "Handle.h"
 #include "ruby.h"
 
@@ -62,12 +63,21 @@ namespace jruby {
     extern jmethodID RubyObject_getNativeTypeIndex_method;
     extern jfieldID Handle_address_field;
     extern jobject runtime, nilRef, trueRef, falseRef;
+    extern std::map<const char*, jobject> methodNameMap;
 
     void initRubyClasses(JNIEnv* env, jobject runtime);
 
     Handle* newHandle(JNIEnv* env);
-    VALUE callMethod(VALUE recv, const char* methodName, int argCount, ...);
+
+#define callMethod(recv, method, argCount, a...) \
+    (__builtin_constant_p(method) \
+        ? jruby::callMethodVConst(recv, method, argCount, ##a) \
+        : jruby::callMethodV(recv, method, argCount, ##a))
+
+    VALUE callMethodV(VALUE recv, const char* methodName, int argCount, ...);
     VALUE callMethodA(VALUE recv, const char* methodName, int argCount, VALUE* args);
+    VALUE callMethodVConst(VALUE recv, const char* methodName, int argCount, ...);
+    VALUE callMethodAConst(VALUE recv, const char* methodName, int argCount, VALUE* args);
     VALUE getClass(const char* className);
     VALUE getModule(const char* className);
     VALUE getSymbol(const char* name);

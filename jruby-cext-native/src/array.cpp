@@ -32,20 +32,20 @@ using namespace jruby;
 extern "C" VALUE 
 rb_Array(VALUE val) 
 {
-    return callMethod(getClass("Array"), "new", 1, val);
+    return callMethod(rb_cArray, "new", 1, val);
 }
 
 extern "C" VALUE 
 rb_ary_new2(long length) 
 {
     VALUE num = INT2NUM(length);
-    return callMethod(getClass("Array"), "new", 1, num);
+    return callMethod(rb_cArray, "new", 1, num);
 }
 
 extern "C" VALUE
 rb_ary_new(void) 
 {
-    return callMethod(getClass("Array"), "new", 0);
+    return callMethod(rb_cArray, "new", 0);
 }
 
 extern "C" VALUE 
@@ -104,7 +104,7 @@ rb_ary_reverse(VALUE array)
 extern "C" VALUE 
 rb_ary_unshift(VALUE array, VALUE val) 
 {
-    return callMethod(array, "unshift", 1);
+    return callMethod(array, "unshift", 1, val);
 }
 
 extern "C" VALUE 

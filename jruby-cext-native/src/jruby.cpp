@@ -28,13 +28,12 @@
 #include "JUtil.h"
 #include "JavaException.h"
 
+using namespace jruby;
 
-VALUE
-jruby::callMethodA(VALUE recv, const char* method, int argCount, VALUE* args)
+static VALUE
+callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE* args)
 {
-    JLocalEnv env;
     jobjectArray argArray;
- 
 
     argArray = env->NewObjectArray(argCount, IRubyObject_class, NULL);
     checkExceptions(env);
@@ -45,7 +44,7 @@ jruby::callMethodA(VALUE recv, const char* method, int argCount, VALUE* args)
     
     jvalue jparams[3];
     jparams[0].l = env->CallObjectMethod(getRuntime(), Ruby_getCurrentContext_method);
-    jparams[1].l = env->NewStringUTF(method);
+    jparams[1].l = methodName;
     jparams[2].l = argArray;
 
     jobject ret = env->CallObjectMethodA(valueToObject(env, recv), IRubyObject_callMethod, jparams);
@@ -54,8 +53,36 @@ jruby::callMethodA(VALUE recv, const char* method, int argCount, VALUE* args)
     return objectToValue(env, ret);
 }
 
+static jobject
+getCachedMethodNameInstance(JNIEnv* env, const char* methodName)
+{
+    jobject jMethodObject = methodNameMap[methodName];
+    if (jMethodObject == NULL) {
+        jMethodObject = methodNameMap[methodName] = env->NewGlobalRef(env->NewStringUTF(methodName));
+    }
+    
+    return jMethodObject;
+}
+
 VALUE
-jruby::callMethod(VALUE recv, const char* method, int argCount, ...)
+jruby::callMethodA(VALUE recv, const char* method, int argCount, VALUE* args)
+{
+    JLocalEnv env;
+
+    return callRubyMethod(env, recv, env->NewStringUTF(method), argCount, args);
+}
+
+VALUE
+jruby::callMethodAConst(VALUE recv, const char* method, int argCount, VALUE* args)
+{
+    JLocalEnv env;
+    
+    return callRubyMethod(env, recv, getCachedMethodNameInstance(env, method), argCount, args);
+}
+
+
+VALUE
+jruby::callMethodV(VALUE recv, const char* method, int argCount, ...)
 {
     VALUE args[argCount];
 
@@ -68,10 +95,32 @@ jruby::callMethod(VALUE recv, const char* method, int argCount, ...)
 
     va_end(ap);
 
-    return callMethodA(recv, method, argCount, args);
+    JLocalEnv env;
+    return callRubyMethod(env, recv, env->NewStringUTF(method), argCount, args);
 }
 
-static jobject callObjectMethod(JNIEnv* env, jobject recv, jmethodID mid)
+VALUE
+jruby::callMethodVConst(VALUE recv, const char* method, int argCount, ...)
+{
+    VALUE args[argCount];
+
+    va_list ap;
+    va_start(ap, argCount);
+
+    for (int i = 0; i < argCount; ++i) {
+        args[i] = va_arg(ap, VALUE);
+    }
+
+    va_end(ap);
+
+    
+    JLocalEnv env;
+    return callRubyMethod(env, recv, getCachedMethodNameInstance(env, method), argCount, args);
+}
+
+
+static jobject
+callObjectMethod(JNIEnv* env, jobject recv, jmethodID mid)
 {
     jobject result = env->CallObjectMethod(recv, mid);
     jruby::checkExceptions(env);

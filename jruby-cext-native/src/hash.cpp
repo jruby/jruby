@@ -25,7 +25,7 @@ using namespace jruby;
 extern "C" VALUE 
 rb_hash_new(void)
 {
-    return callMethod(getClass("Hash"), "new", 0);
+    return callMethod(rb_cHash, "new", 0);
 }
 extern "C" VALUE 
 rb_hash_aref(VALUE hash, VALUE key) 

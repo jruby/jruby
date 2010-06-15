@@ -17,6 +17,7 @@
  */
 
 #include <jni.h>
+#include <map>
 #include "JUtil.h"
 #include "jruby.h"
 #include "JavaException.h"
@@ -63,6 +64,7 @@ namespace jruby {
     jobject nilRef;
     jobject trueRef;
     jobject falseRef;
+    std::map<const char*, jobject> methodNameMap;
 };
 
 using namespace jruby;
@@ -216,7 +218,7 @@ Java_org_jruby_cext_Native_getFalse(JNIEnv* env, jobject self)
 extern "C" JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *vm, void *reserved)
 {
-    if (jruby::jvm != vm) {
+    if (jruby::jvm != NULL && jruby::jvm != vm) {
         return JNI_FALSE;
     }
 
