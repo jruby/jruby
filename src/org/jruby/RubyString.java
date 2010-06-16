@@ -646,7 +646,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public final RubyString makeShared(Ruby runtime, int index, int len) {
-        return makeShared(runtime, getMetaClass(), index, len);
+        return makeShared(runtime, getType(), index, len);
     }
 
     public final RubyString makeShared(Ruby runtime, RubyClass meta, int index, int len) {
@@ -673,7 +673,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private RubyString makeShared19(Ruby runtime, ByteList value, int index, int len) {
         final RubyString shared;
         Encoding enc = value.getEncoding();
-        RubyClass meta = getMetaClass();
+        RubyClass meta = getType();
+
         if (len == 0) {
             shared = newEmptyString(runtime, meta, enc);
         } else {
