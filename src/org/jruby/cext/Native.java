@@ -18,7 +18,16 @@
 
 package org.jruby.cext;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+
 import com.kenai.jffi.Library;
+import com.kenai.jffi.Platform;
+
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -27,6 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 final class Native {
     private static Native INSTANCE;
     private static Library shim = null; // keep a hard ref to avoid GC
+    private static final String libName = "jruby-cext";
 
     private final Ruby runtime;
 
@@ -47,13 +57,20 @@ final class Native {
     }
 
     private void load(Ruby runtime) {
+        if (shim != null) return;
 
         // Force the shim library to load into the global namespace
         if ((shim = Library.openLibrary(System.mapLibraryName("jruby-cext"), Library.NOW | Library.GLOBAL)) == null) {
             throw new UnsatisfiedLinkError("failed to load shim library, error: " + Library.getLastError());
         }
         
-        System.loadLibrary("jruby-cext");
+        try {
+            System.loadLibrary(libName);
+            return;
+        } catch (UnsatisfiedLinkError ex) {}
+
+        loadFromJar();
+        
         // Register Qfalse, Qtrue, Qnil constants to avoid reverse lookups in native code
         GC.register(runtime.getFalse(), Handle.newHandle(runtime, runtime.getFalse(), getFalse()));
         GC.register(runtime.getTrue(), Handle.newHandle(runtime, runtime.getTrue(), getTrue()));
@@ -62,6 +79,70 @@ final class Native {
         initNative(runtime);        
     }
 
+    private void loadFromJar() {
+        InputStream is = getCextLibraryStream();
+        File dstFile = null;
+        FileOutputStream os = null;
+
+        try {
+            dstFile = File.createTempFile(libName, null);
+            dstFile.deleteOnExit();
+            os = new FileOutputStream(dstFile);
+            ReadableByteChannel srcChannel = Channels.newChannel(is);
+
+            for (long pos = 0; is.available() > 0; ) {
+                pos += os.getChannel().transferFrom(srcChannel, pos, Math.max(4096, is.available()));
+            }
+
+            System.load(dstFile.getAbsolutePath());
+
+        } catch (IOException ex) {
+            throw new UnsatisfiedLinkError(ex.getMessage());
+
+        } finally {
+            try {
+                if (os != null) {
+                    os.close();
+                }
+                is.close();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+    }
+    
+    /**
+     * Gets an <tt>InputStream</tt> representing the stub library image stored in
+     * the jar file.
+     *
+     * @return A new <tt>InputStream</tt>
+     */
+    private static final InputStream getCextLibraryStream() {
+        String path = getCextLibraryPath();
+
+        InputStream is = Native.class.getResourceAsStream(path);
+
+        // On MacOS, the stub might be named .dylib or .jnilib - cater for both
+        if (is == null && Platform.getPlatform().getOS() == Platform.OS.DARWIN) {
+            is = Init.class.getResourceAsStream(path.replaceAll("dylib", "jnilib"));
+        }
+        if (is == null) {
+            throw new UnsatisfiedLinkError("Could not locate jruby-cext ("
+                    + path + ") in jar file");
+        }
+
+        return is;
+    }
+
+    /**
+     * Gets the path within the jar file of the jruby-cext native library.
+     *
+     * @return The path in the jar file.
+     */
+    private static final String getCextLibraryPath() {
+        //return "/cext/" + Platform.getPlatform().getName() + "/"+ System.mapLibraryName(libName);
+        return "/cext/build/"+ System.mapLibraryName(libName);
+    }
 
     private final native void initNative(Ruby runtime);
     
