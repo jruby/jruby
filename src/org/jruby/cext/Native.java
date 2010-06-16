@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
@@ -60,16 +62,17 @@ final class Native {
         if (shim != null) return;
 
         // Force the shim library to load into the global namespace
-        if ((shim = Library.openLibrary(System.mapLibraryName("jruby-cext"), Library.NOW | Library.GLOBAL)) == null) {
-            throw new UnsatisfiedLinkError("failed to load shim library, error: " + Library.getLastError());
-        }
-        
-        try {
+        shim = Library.openLibrary(System.mapLibraryName(libName), Library.NOW | Library.GLOBAL);
+        if (shim == null) {
+            File libFile = loadOutsideLibraryPath();
+            shim = Library.openLibrary(libFile.getAbsolutePath(), Library.NOW | Library.GLOBAL);
+            if (shim == null) {
+                throw new UnsatisfiedLinkError("failed to load shim library, error: " + Library.getLastError());
+            }
+            System.load(libFile.getAbsolutePath());
+        } else {
             System.loadLibrary(libName);
-            return;
-        } catch (UnsatisfiedLinkError ex) {}
-
-        loadFromJar();
+        }
         
         // Register Qfalse, Qtrue, Qnil constants to avoid reverse lookups in native code
         GC.register(runtime.getFalse(), Handle.newHandle(runtime, runtime.getFalse(), getFalse()));
@@ -78,8 +81,21 @@ final class Native {
 
         initNative(runtime);        
     }
+    
+    private File loadOutsideLibraryPath() {
+        URL fileUrl = Native.class.getResource(getCextLibraryPath());
+        if (fileUrl.getProtocol().equals("jar")) {
+            return loadFromJar();
+        } else {
+            try {
+                return new File(fileUrl.toURI());
+            } catch (URISyntaxException e) {
+                throw new UnsatisfiedLinkError(e.getLocalizedMessage());
+            }
+        }
+    }
 
-    private void loadFromJar() {
+    private File loadFromJar() {
         InputStream is = getCextLibraryStream();
         File dstFile = null;
         FileOutputStream os = null;
@@ -93,12 +109,8 @@ final class Native {
             for (long pos = 0; is.available() > 0; ) {
                 pos += os.getChannel().transferFrom(srcChannel, pos, Math.max(4096, is.available()));
             }
-
-            System.load(dstFile.getAbsolutePath());
-
         } catch (IOException ex) {
             throw new UnsatisfiedLinkError(ex.getMessage());
-
         } finally {
             try {
                 if (os != null) {
@@ -109,6 +121,7 @@ final class Native {
                 throw new RuntimeException(ex);
             }
         }
+        return dstFile;
     }
     
     /**
