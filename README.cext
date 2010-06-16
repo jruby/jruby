@@ -5,10 +5,9 @@ Compile it using:
 It is not in anyway meant to be a pretty, high-performance or in any way actually usable as a way of loading C extensions under JRuby. There is a lot of code that is written in the worst-possible way w.r.t. performance - on purpose.
 
 To run the one example that works currently, do:
-  LD_LIBRARY_PATH=jruby-cext/example/MyTest/:lib/ruby/cext \
-  java -jar -Djava.library.path=lib/ruby/cext lib/jruby-complete.jar \
-  jruby-cext/example/MyTest/MyTest.rb
+  ant jar-complete
 
-  LD_LIBRARY_PATH=jruby-cext/example/DefineClass/:lib/ruby/cext \
-  java -jar -Djava.library.path=lib/ruby/cext lib/jruby-complete.jar \
-  jruby-cext/example/DefineClass/DefineClass.rb
+  bin/jruby jruby-cext/example/MyTest/MyTest.rb
+    or
+  bin/jruby jruby-cext/example/Bench/Bench.rb
+

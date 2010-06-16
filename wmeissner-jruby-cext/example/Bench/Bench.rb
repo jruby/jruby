@@ -5,7 +5,7 @@
 require 'java'
 
 m = org.jruby.cext.ModuleLoader.new
-m.load(self, "bench")
+m.load(self, File.expand_path(File.join(__FILE__, "..", "bench")))
 
 h = Hello.new
 puts "Hello.new returned #{h.inspect}"
