@@ -131,8 +131,8 @@ public class LoadService {
         Source, Extension, Both, Neither;
         
         public static final String[] sourceSuffixes = { ".class", ".rb" };
-        public static final String[] extensionSuffixes = { ".jar" };
-        private static final String[] allSuffixes = { ".class", ".rb", ".jar" };
+        public static final String[] extensionSuffixes = { ".jar", ".so", ".bundle", ".dll" };
+        private static final String[] allSuffixes = { ".class", ".rb", ".jar", ".so", ".bundle", ".dll" };
         private static final String[] emptySuffixes = { "" };
         
         public String[] getSuffixes() {
@@ -803,7 +803,7 @@ public class LoadService {
             return null;
         }
         String file = state.loadName;
-        if (file.endsWith(".so")) {
+        if (file.endsWith(".so") || file.endsWith(".dll") || file.endsWith(".bundle")) {
             throw runtime.newLoadError("JRuby does not support .so libraries from filesystem");
         } else if (file.endsWith(".jar")) {
             return new JarredScript(resource);
