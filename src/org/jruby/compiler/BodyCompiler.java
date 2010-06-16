@@ -539,8 +539,8 @@ public interface BodyCompiler {
      */
     public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret);
     public void rescue(BranchCallback regularCode, Class exception, BranchCallback protectedCode, Class ret);
-    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, boolean needsRetry);
-    public void performRescueLight(BranchCallback regularCode, BranchCallback rubyCatchCode, boolean needsRetry);
+    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback rubyElseCode, boolean needsRetry);
+    public void performRescueLight(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback rubyElseCode, boolean needsRetry);
     public void performEnsure(BranchCallback regularCode, BranchCallback ensuredCode);
     public void inDefined();
     public void outDefined();

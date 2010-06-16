@@ -1684,14 +1684,14 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 sig(ret, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class));
     }
 
-    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, boolean needsRetry) {
+    public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback rubyElseCode, boolean needsRetry) {
         String mname = getNewRescueName();
         BaseBodyCompiler rescueMethod = outline(mname);
-        rescueMethod.performRescueLight(regularCode, rubyCatchCode, needsRetry);
+        rescueMethod.performRescueLight(regularCode, rubyCatchCode, rubyElseCode, needsRetry);
         rescueMethod.endBody();
     }
 
-    public void performRescueLight(BranchCallback regularCode, BranchCallback rubyCatchCode, boolean needsRetry) {
+    public void performRescueLight(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback rubyElseCode, boolean needsRetry) {
         Label afterRubyCatchBody = new Label();
         Label catchRetry = new Label();
         Label catchJumps = new Label();
@@ -1706,6 +1706,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         Label afterBody = new Label();
         Label rubyCatchBlock = new Label();
         Label flowCatchBlock = new Label();
+        Label elseLabel = new Label();
+
         method.visitTryCatchBlock(beforeBody, afterBody, flowCatchBlock, p(JumpException.FlowControlException.class));
         method.visitTryCatchBlock(beforeBody, afterBody, rubyCatchBlock, p(Throwable.class));
 
@@ -1714,7 +1716,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             regularCode.branch(this);
         }
         method.label(afterBody);
-        method.go_to(exitRescue);
+
+        if (rubyElseCode != null) {
+            method.go_to(elseLabel);
+        } else {
+            method.go_to(exitRescue);
+        }
 
         // Handle Flow exceptions, just propagating them
         method.label(flowCatchBlock);
@@ -1752,6 +1759,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             invokeThreadContext("setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
             method.pop();
             method.athrow();
+        }
+
+        if (rubyElseCode != null) {
+            method.label(elseLabel);
+            rubyElseCode.branch(this);
         }
 
         method.label(exitRescue);

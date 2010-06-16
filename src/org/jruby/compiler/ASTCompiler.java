@@ -3578,13 +3578,18 @@ public class ASTCompiler {
                 } else {
                     context.loadNil();
                 }
+            }
+        };
 
-                if (rescueNode.getElseNode() != null) {
+        BranchCallback elseBody = null;
+        if (rescueNode.getElseNode() != null) {
+            elseBody = new BranchCallback() {
+                public void branch(BodyCompiler context) {
                     context.consumeCurrentValue();
                     compile(rescueNode.getElseNode(), context, true);
                 }
-            }
-        };
+            };
+        }
 
         BranchCallback rubyHandler = new BranchCallback() {
             public void branch(BodyCompiler context) {
@@ -3595,9 +3600,9 @@ public class ASTCompiler {
         ASTInspector rescueInspector = new ASTInspector();
         rescueInspector.inspect(rescueNode.getRescueNode());
         if (light) {
-            context.performRescueLight(body, rubyHandler, rescueInspector.getFlag(ASTInspector.RETRY));
+            context.performRescueLight(body, rubyHandler, elseBody, rescueInspector.getFlag(ASTInspector.RETRY));
         } else {
-            context.performRescue(body, rubyHandler, rescueInspector.getFlag(ASTInspector.RETRY));
+            context.performRescue(body, rubyHandler, elseBody, rescueInspector.getFlag(ASTInspector.RETRY));
         }
     }
 
