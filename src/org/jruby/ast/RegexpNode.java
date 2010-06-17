@@ -97,7 +97,7 @@ public class RegexpNode extends Node implements ILiteralNode {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if(pattern == null) {
+        if (pattern == null || runtime.getKCode() != pattern.getKCode()) {
             setPattern(RubyRegexp.newRegexp(runtime, value, options));
         }
 
