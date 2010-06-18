@@ -2,10 +2,9 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
  
-require 'java'
 
-m = org.jruby.cext.ModuleLoader.new
-m.load(self, File.expand_path(File.join(__FILE__, "..", "bench")))
+$LOAD_PATH.unshift(File.expand_path(File.join(__FILE__, "..")))
+require 'bench_cext'
 
 h = Hello.new
 puts "Hello.new returned #{h.inspect}"

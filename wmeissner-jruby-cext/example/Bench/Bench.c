@@ -8,7 +8,7 @@ VALUE say_hello(VALUE self, VALUE hello);
 VALUE get_hello(VALUE self);
 
 void
-Init_bench()
+Init_bench_cext()
 {
     HelloClass = rb_define_class("Hello", rb_cObject);
     rb_define_method(HelloClass, "get_hello", get_hello, 0);
