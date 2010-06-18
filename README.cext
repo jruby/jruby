@@ -7,7 +7,7 @@ It is not in anyway meant to be a pretty, high-performance or in any way actuall
 To run the one example that works currently, do:
   ant jar-complete
 
-  bin/jruby jruby-cext/example/MyTest/MyTest.rb
+  bin/jruby jruby-cext/example/RequireTest/RequireTest.rb
     or
   bin/jruby jruby-cext/example/Bench/Bench.rb
 
