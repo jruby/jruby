@@ -38,7 +38,6 @@ import static com.kenai.constantine.platform.Sock.SOCK_STREAM;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -51,8 +50,6 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,7 +57,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -73,7 +69,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.InvalidValueException;
@@ -93,24 +88,6 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 public class RubySocket extends RubyBasicSocket {
     @JRubyClass(name="SocketError", parent="StandardError")
     public static class SocketError {}
-
-    public static class Service implements Library {
-        public void load(final Ruby runtime, boolean wrap) throws IOException {
-            runtime.defineClass("SocketError", runtime.getStandardError(), runtime.getStandardError().getAllocator());
-            RubyBasicSocket.createBasicSocket(runtime);
-            RubySocket.createSocket(runtime);
-
-            if(runtime.getInstanceConfig().nativeEnabled && RubyUNIXSocket.tryUnixDomainSocket()) {
-                RubyUNIXSocket.createUNIXSocket(runtime);
-                RubyUNIXServer.createUNIXServer(runtime);
-            }
-
-            RubyIPSocket.createIPSocket(runtime);
-            RubyTCPSocket.createTCPSocket(runtime);
-            RubyTCPServer.createTCPServer(runtime);
-            RubyUDPSocket.createUDPSocket(runtime);
-        }
-    }
 
     private static ObjectAllocator SOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
