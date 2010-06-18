@@ -135,8 +135,9 @@ public class RuntimeCache {
 
     public final RubyRegexp cacheRegexp(int index, RubyString pattern, int options) {
         RubyRegexp regexp = regexps[index];
-        if (regexp == null) {
-            regexp = RubyRegexp.newRegexp(pattern.getRuntime(), pattern.getByteList(), options);
+        Ruby runtime = pattern.getRuntime();
+        if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
+            regexp = RubyRegexp.newRegexp(runtime, pattern.getByteList(), options);
             regexps[index] = regexp;
         }
         return regexp;
