@@ -11,7 +11,7 @@ import org.jruby.compiler.ir.IR_ExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IR_Module;
 import org.jruby.compiler.ir.IR_Scope;
-import org.jruby.compiler.ir.instructions.ASSERT_METHOD_VERSION_Instr;
+import org.jruby.compiler.ir.instructions.METHOD_VERSION_GUARD_Instr;
 import org.jruby.compiler.ir.instructions.CallInstruction;
 import org.jruby.compiler.ir.instructions.COPY_Instr;
 import org.jruby.compiler.ir.instructions.IR_Instr;
@@ -35,8 +35,7 @@ public class LocalOptimizationPass implements CompilerPass
     // Should we run this pass on the current scope before running it on nested scopes?
     public boolean isPreOrder() { return false; }
 
-    public void run(IR_Scope s)
-    {
+    public void run(IR_Scope s) {
         if (s instanceof IR_ExecutionScope) {
             IR_ExecutionScope es = (IR_ExecutionScope)s;
 
@@ -193,7 +192,7 @@ public class LocalOptimizationPass implements CompilerPass
         CodeVersion knownVersion = versionMap.get(fullName);
         CodeVersion mVersion     = m.getVersion();
         if ((knownVersion == null) || (knownVersion._version != mVersion._version)) {
-            instrs.add(new ASSERT_METHOD_VERSION_Instr(m.getDefiningModule(), m.getName(), m.getVersion(), deoptLabel));
+            instrs.add(new METHOD_VERSION_GUARD_Instr(m, m.getVersion(), deoptLabel));
             versionMap.put(fullName, mVersion);
         }
     }

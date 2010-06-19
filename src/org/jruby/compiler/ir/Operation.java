@@ -12,8 +12,11 @@ public enum Operation
 // debugging / stacktrace info
     LINE_NUM(OpType.debug_op), FILE_NAME(OpType.debug_op),
 
-// alu operations
-    NOT(OpType.alu_op),
+// ruby NOT
+    NOT(OpType.dont_care),
+	 
+// primitive alu operations -- unboxed primitive ops (not native ruby)
+	 ADD(OpType.alu_op), SUB(OpType.alu_op), MUL(OpType.alu_op), DIV(OpType.alu_op),
 
 // method handle, arg receive, return value, and  call instructions
     RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op),
@@ -53,8 +56,8 @@ public enum Operation
 // a case/when branch
     CASE(OpType.dont_care),
     
-// optimization guards
-    ASSERT_METHOD_VERSION(OpType.guard_op),
+// optimization version guards
+    MODULE_VERSION_GUARD(OpType.guard_op), METHOD_VERSION_GUARD(OpType.guard_op),
 
 // primitive value boxing/unboxing
 	 BOX_VALUE(OpType.box_op), UNBOX_VALUE(OpType.box_op);
@@ -79,8 +82,7 @@ public enum Operation
     // By default, call instructions cannot be deleted even if their results aren't used by anyone
     // unless we know more about what the call is, what it does, etc.
     // Similarly for evals, stores, returns.
-    public boolean hasSideEffects() 
-    {
+    public boolean hasSideEffects() {
         return isCall() || isEval() || isStore() || isReturn();
     }
 
