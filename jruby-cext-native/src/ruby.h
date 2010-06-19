@@ -284,6 +284,10 @@ VALUE rb_data_object_alloc(VALUE,void*,RUBY_DATA_FUNC,RUBY_DATA_FUNC);
 void rb_gc_mark_locations(VALUE*, VALUE*);
 void rb_gc_mark(VALUE);
 
+extern ID rb_intern_const(const char *);
+extern ID jruby_intern_nonconst(const char *);
+#define rb_intern(name) \
+    (__builtin_constant_p(name) ? rb_intern_const(name) : jruby_intern_nonconst(name))
 
 extern VALUE rb_mKernel;
 extern VALUE rb_mComparable;

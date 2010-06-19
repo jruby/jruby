@@ -67,18 +67,14 @@ rb_funcall2(VALUE recv, ID meth, int argCount, VALUE* args)
 static VALUE
 jruby_funcall(JNIEnv* env, VALUE recv, ID meth, jobjectArray argArray)
 {
-    jvalue jparams[4];
-    jobject obj = valueToObject(env, recv);
+    jvalue jparams[3];
 
-    jparams[0].l = env->CallObjectMethod(getRuntime(), Ruby_getCurrentContext_method);
-    checkExceptions(env);
-    jparams[1].l = env->CallObjectMethod(obj, IRubyObject_asJavaString_method);
-    checkExceptions(env);
+    jparams[0].l = valueToObject(env, recv);
+    jparams[1].l = valueToObject(env, meth);
     jparams[2].l = argArray;
 
-
-    jobject ret = env->CallObjectMethodA(obj, IRubyObject_callMethod, jparams);
+    jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
     checkExceptions(env);
 
-    return objectToValue(env, ret);
+    return (VALUE) ret;
 }
