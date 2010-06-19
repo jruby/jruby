@@ -43,14 +43,14 @@ callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE*
     }
     
     jvalue jparams[3];
-    jparams[0].l = env->CallObjectMethod(getRuntime(), Ruby_getCurrentContext_method);
+    jparams[0].l = valueToObject(env, recv);
     jparams[1].l = methodName;
     jparams[2].l = argArray;
 
-    jobject ret = env->CallObjectMethodA(valueToObject(env, recv), IRubyObject_callMethod, jparams);
+    jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
     checkExceptions(env);
 
-    return objectToValue(env, ret);
+    return (VALUE) ret;
 }
 
 static jobject

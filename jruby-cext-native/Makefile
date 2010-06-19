@@ -207,7 +207,7 @@ ifneq ($(strip $(findstring $(OS), linux solaris)),)
 endif
 
 
-JAVA_HDRS = $(patsubst %.h, $(BUILD_DIR)/%.h, org_jruby_cext_Native.h org_jruby_cext_GC.h  org_jruby_runtime_ClassIndex.h)
+JAVA_HDRS = $(patsubst %.h, $(BUILD_DIR)/%.h, org_jruby_cext_JRuby.h org_jruby_cext_Native.h org_jruby_cext_GC.h  org_jruby_runtime_ClassIndex.h)
 
 all:	$(LIBCEXT)
 

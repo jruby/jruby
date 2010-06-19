@@ -42,6 +42,8 @@ namespace jruby {
     extern jclass Handle_class;
     extern jclass ThreadContext_class;
     extern jclass Symbol_class;
+    extern jclass JRuby_class;
+
     extern jmethodID IRubyObject_callMethod;
     extern jmethodID IRubyObject_asJavaString_method;
     extern jmethodID ThreadContext_getRuntime_method;
@@ -61,6 +63,7 @@ namespace jruby {
     extern jmethodID GC_mark;
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
+    extern jmethodID JRuby_callMethod;
     extern jfieldID Handle_address_field;
     extern jobject runtime, nilRef, trueRef, falseRef;
     extern std::map<const char*, jobject> methodNameMap;

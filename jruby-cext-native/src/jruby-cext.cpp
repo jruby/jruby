@@ -40,6 +40,8 @@ namespace jruby {
     jclass NativeObjectAllocator_class;
     jclass ThreadContext_class;
     jclass Symbol_class;
+    jclass JRuby_class;
+    jmethodID JRuby_callMethod;
     jmethodID ThreadContext_getRuntime_method;
     jmethodID Ruby_defineModule_method;
     jmethodID Ruby_getNil_method;
@@ -142,6 +144,7 @@ loadIds(JNIEnv* env)
     ObjectAllocator_class = loadClass(env, "org/jruby/runtime/ObjectAllocator");
     ThreadContext_class = loadClass(env, "org/jruby/runtime/ThreadContext");
     Symbol_class = loadClass(env, "org/jruby/RubySymbol");
+    JRuby_class = loadClass(env, "org/jruby/cext/JRuby");
 
     Handle_address_field = getFieldID(env, Handle_class, "address", "J");
     Ruby_defineModule_method = getMethodID(env, Ruby_class, "defineModule", "(Ljava/lang/String;)Lorg/jruby/RubyModule;");
@@ -170,6 +173,8 @@ loadIds(JNIEnv* env)
     RubyData_newRubyData_method = getStaticMethodID(env, RubyData_class, "newRubyData", "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;J)Lorg/jruby/cext/RubyData;");
     RubyString_newStringNoCopy = getStaticMethodID(env, RubyString_class,
             "newStringNoCopy", "(Lorg/jruby/Ruby;[B)Lorg/jruby/RubyString;");
+    JRuby_callMethod = getStaticMethodID(env, JRuby_class, "callRubyMethod",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
 }
 
 static jobject
