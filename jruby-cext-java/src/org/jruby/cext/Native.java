@@ -66,13 +66,16 @@ final class Native {
     private final native void initNative(Ruby runtime);
     
     public final native long callInit(ThreadContext ctx, long init);
+
+
     public final IRubyObject callMethod(ThreadContext ctx, long fn, IRubyObject recv, int arity, IRubyObject[] args) {
         long[] largs = new long[args.length];
         for (int i = 0; i < largs.length; ++i) {
-            largs[0] = Handle.valueOf(args[i]).getAddress();
+            largs[i] = Handle.valueOf(args[i]).getAddress();
         }
         return callMethod(ctx, fn, Handle.valueOf(recv).getAddress(), arity, largs);
     }
+
     public final native IRubyObject callMethod(ThreadContext ctx, long fn, long recv, int arity, long[] args);
     public final native IRubyObject callMethod0(ThreadContext ctx, long fn, long recv);
     public final native IRubyObject callMethod1(ThreadContext ctx, long fn, long recv, long arg0);
