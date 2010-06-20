@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.PortUnreachableException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -191,6 +192,8 @@ public class RubyUDPSocket extends RubyIPSocket {
             return context.getRuntime().newArray(new IRubyObject[]{result, addressArray});
         } catch (UnknownHostException e) {
             throw sockerr(context.getRuntime(), "recvfrom: name or service not known");
+        } catch (PortUnreachableException e) {
+            throw context.getRuntime().newErrnoECONNREFUSEDError();
         } catch (IOException e) {
             throw sockerr(context.getRuntime(), "recvfrom: name or service not known");
         }
