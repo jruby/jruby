@@ -216,7 +216,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     result = jruby(%Q{--server -rjava \
       -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
     assert_equal 0, $?.exitstatus
-    assert_match /(tiered|server|j9jit24|j9jit23|bea jrockit\(r\) optimizing compiler)/, result.downcase
+    assert_match /(tiered|server|j9jit24|j9jit23|(oracle|bea) jrockit\(r\) optimizing compiler)/, result.downcase
   end
 
   # JRUBY-3962

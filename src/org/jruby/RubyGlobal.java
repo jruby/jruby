@@ -282,13 +282,11 @@ public class RubyGlobal {
         }
         
         runtime.getGlobalVariables().defineReadonly("$-p", 
-                new ValueAccessor(runtime.getInstanceConfig().isAssumePrinting() ? runtime.getTrue() : runtime.getNil()));
-        runtime.getGlobalVariables().defineReadonly("$-n", 
-                new ValueAccessor(runtime.getInstanceConfig().isAssumeLoop() ? runtime.getTrue() : runtime.getNil()));
+                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isAssumePrinting())));
         runtime.getGlobalVariables().defineReadonly("$-a", 
-                new ValueAccessor(runtime.getInstanceConfig().isSplit() ? runtime.getTrue() : runtime.getNil()));
+                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isSplit())));
         runtime.getGlobalVariables().defineReadonly("$-l", 
-                new ValueAccessor(runtime.getInstanceConfig().isProcessLineEnds() ? runtime.getTrue() : runtime.getNil()));
+                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isProcessLineEnds())));
 
         // ARGF, $< object
         RubyArgsFile.initArgsFile(runtime);

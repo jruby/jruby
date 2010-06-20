@@ -469,7 +469,7 @@ class TestKernel < Test::Unit::TestCase
     if (WINDOWS)
       res = system('cd .')
     else
-      res = system('pwd .')
+      res = system('pwd . 2>&1 > /dev/null')
     end
     assert_equal true, res
   end
@@ -500,6 +500,21 @@ class TestKernel < Test::Unit::TestCase
     assert_raise(Errno::ENOENT) {
       exec("program-that-doesnt-exist-for-sure", "arg1", "arg2")
     }
+  end
+
+  # JRUBY-4834
+  def test_backquote_with_changed_path
+    orig_env = ENV['PATH']
+
+    # Append a directory where testapp resides to the PATH
+    paths = (ENV["PATH"] || "").split(File::PATH_SEPARATOR)
+    paths.unshift TESTAPP_DIR
+    ENV["PATH"] = paths.uniq.join(File::PATH_SEPARATOR)
+
+    res = `testapp`.chomp
+    assert_equal("NO_ARGS", res)
+  ensure
+    ENV['PATH'] = orig_env
   end
 
   # JRUBY-4127

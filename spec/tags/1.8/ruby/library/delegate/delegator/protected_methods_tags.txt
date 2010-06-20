@@ -1,0 +1,1 @@
+fails(JRUBY-4870):Delegator#protected_methods includes protected methods of the delegate object

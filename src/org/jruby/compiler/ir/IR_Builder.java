@@ -99,7 +99,6 @@ import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.ir.instructions.ALU_Instr;
 import org.jruby.compiler.ir.instructions.ATTR_ASSIGN_Instr;
 import org.jruby.compiler.ir.instructions.BEQ_Instr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
@@ -122,6 +121,7 @@ import org.jruby.compiler.ir.instructions.JUMP_Instr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.LINE_NUM_Instr;
+import org.jruby.compiler.ir.instructions.NOT_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
@@ -346,7 +346,7 @@ public class IR_Builder
         }
     }
 
-	 private int _lastProcessedLineNum = -1;
+    private int _lastProcessedLineNum = -1;
     private Stack<EnsureBlockInfo> _ensureBlockStack = new Stack<EnsureBlockInfo>();
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
@@ -375,13 +375,13 @@ public class IR_Builder
 
     public Node skipOverNewlines(IR_Scope s, Node n) {
         if (n.getNodeType() == NodeType.NEWLINENODE) {
-				// Do not emit multiple line number instrs for the same line
-				int currLineNum = n.getPosition().getStartLine();
-				if (currLineNum != _lastProcessedLineNum) {
-					s.addInstr(new LINE_NUM_Instr(s, currLineNum));
-					_lastProcessedLineNum = currLineNum;
-				}
-		  }
+            // Do not emit multiple line number instrs for the same line
+            int currLineNum = n.getPosition().getStartLine();
+            if (currLineNum != _lastProcessedLineNum) {
+               s.addInstr(new LINE_NUM_Instr(s, currLineNum));
+               _lastProcessedLineNum = currLineNum;
+            }
+        }
 
         while (n.getNodeType() == NodeType.NEWLINENODE)
             n = ((NewlineNode)n).getNextNode();
@@ -2187,7 +2187,7 @@ public class IR_Builder
 
     public Operand buildNot(NotNode node, IR_Scope m) {
         Variable ret = m.getNewTemporaryVariable();
-        m.addInstr(new ALU_Instr(Operation.NOT, ret, build(node.getConditionNode(), m)));
+        m.addInstr(new NOT_Instr(ret, build(node.getConditionNode(), m)));
         return ret;
     }
 

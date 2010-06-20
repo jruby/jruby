@@ -40,6 +40,7 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -211,6 +212,8 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getBoolean("jruby.compile.peephole", true);
     public static boolean DYNOPT_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.dynopt");
+    public static boolean NOGUARDS_COMPILE_ENABLED
+            = SafePropertyAccessor.getBoolean("jruby.compile.noguards");
     public static boolean FASTEST_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
     public static boolean FASTOPS_COMPILE_ENABLED
@@ -379,7 +382,7 @@ public class RubyInstanceConfig {
             
             if (COMPILE_EXCLUDE != null) {
                 String[] elements = COMPILE_EXCLUDE.split(",");
-                for (String element : elements) excludedMethods.add(element);
+                excludedMethods.addAll(Arrays.asList(elements));
             }
             
             managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", false);
@@ -517,19 +520,19 @@ public class RubyInstanceConfig {
                 .append("    jruby.compile.fastcase=true|false\n")
                 .append("       (EXPERIMENTAL) Turn on fast case/when for all-Fixnum whens. Default is false\n")
                 .append("    jruby.compile.chainsize=<line count>\n")
-                .append("       Set the number of lines at which compiled bodies are \"chained\". Default is " + CHAINED_COMPILE_LINE_COUNT_DEFAULT + "\n")
+                .append("       Set the number of lines at which compiled bodies are \"chained\". Default is ").append(CHAINED_COMPILE_LINE_COUNT_DEFAULT).append("\n")
                 .append("    jruby.compile.lazyHandles=true|false\n")
                 .append("       Generate method bindings (handles) for compiled methods lazily. Default is false.\n")
                 .append("    jruby.compile.peephole=true|false\n")
                 .append("       Enable or disable peephole optimizations. Default is true (on).\n")
                 .append("\nJIT SETTINGS:\n")
                 .append("    jruby.jit.threshold=<invocation count>\n")
-                .append("       Set the JIT threshold to the specified method invocation count. Default is " + JIT_THRESHOLD + ".\n")
+                .append("       Set the JIT threshold to the specified method invocation count. Default is ").append(JIT_THRESHOLD).append(".\n")
                 .append("    jruby.jit.max=<method count>\n")
                 .append("       Set the max count of active methods eligible for JIT-compilation.\n")
-                .append("       Default is " + JIT_MAX_METHODS_LIMIT + " per runtime. A value of 0 disables JIT, -1 disables max.\n")
+                .append("       Default is ").append(JIT_MAX_METHODS_LIMIT).append(" per runtime. A value of 0 disables JIT, -1 disables max.\n")
                 .append("    jruby.jit.maxsize=<jitted method size (full .class)>\n")
-                .append("       Set the maximum full-class byte size allowed for jitted methods. Default is " + JIT_MAX_SIZE_LIMIT + ".\n")
+                .append("       Set the maximum full-class byte size allowed for jitted methods. Default is ").append(JIT_MAX_SIZE_LIMIT).append(".\n")
                 .append("    jruby.jit.logging=true|false\n")
                 .append("       Enable JIT logging (reports successful compilation). Default is false\n")
                 .append("    jruby.jit.logging.verbose=true|false\n")
@@ -907,7 +910,7 @@ public class RubyInstanceConfig {
             }
 
             // Remaining arguments are for the script itself
-            for (String arg : argv) arglist.add(arg);
+            arglist.addAll(Arrays.asList(argv));
             argv = arglist.toArray(new String[arglist.size()]);
         }
 
@@ -994,9 +997,7 @@ public class RubyInstanceConfig {
                 case 'I':
                     String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
                     String[] ls = s.split(java.io.File.pathSeparator);
-                    for (int i = 0; i < ls.length; i++) {
-                        loadPaths.add(ls[i]);
-                    }
+                    loadPaths.addAll(Arrays.asList(ls));
                     break FOR;
                 case 'K':
                     // FIXME: No argument seems to work for -K in MRI plus this should not
@@ -1201,7 +1202,7 @@ public class RubyInstanceConfig {
             if (scriptFileName == null) {
                 scriptFileName = scriptName;
                 requiredLibraries.add("jruby/commands");
-                inlineScript.append("JRuby::Commands." + scriptName);
+                inlineScript.append("JRuby::Commands.").append(scriptName);
                 inlineScript.append("\n");
                 hasInlineScript = true;
             }

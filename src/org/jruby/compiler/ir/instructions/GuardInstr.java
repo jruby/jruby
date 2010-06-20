@@ -4,7 +4,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // Not used anywhere right now!
-public class GuardInstr extends NoOperandInstr
+public abstract class GuardInstr extends NoOperandInstr
 {
     public GuardInstr(Operation op) { super(op); }
 

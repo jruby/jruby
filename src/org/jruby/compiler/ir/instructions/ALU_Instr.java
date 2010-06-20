@@ -5,6 +5,9 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
+// This instruction represents primitive arithmetic and logical operations
+// and would be generated only during optimization passes that unbox ruby objects
+// into native platform objects.
 public class ALU_Instr extends TwoOperandInstr
 {
     public ALU_Instr(Operation op, Variable dst, Operand arg1, Operand arg2) {

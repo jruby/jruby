@@ -67,12 +67,6 @@ public class RubyMath {
         }
     }
 
-    private static void zeroInLogCheck(IRubyObject recv, double value) {
-        if (value == 0.0) {
-            throw recv.getRuntime().newErrnoEDOMError("log");
-        }
-    }
-    
     private static double chebylevSerie(double x, double coef[]) {
         double  b0, b1, b2, twox;
         int i;
@@ -410,9 +404,18 @@ public class RubyMath {
         return RubyFloat.newFloat(recv.getRuntime(),Math.exp(value));
     }
 
-    private static RubyFloat log_common(IRubyObject recv, double value, double base) {
+    private static RubyFloat log_common(IRubyObject recv, double value, double base, String msg) {
         double result = Math.log(value)/Math.log(base);
-        domainCheck(recv, result, "log");
+        domainCheck(recv, result, msg);
+        return RubyFloat.newFloat(recv.getRuntime(),result);
+    }
+
+    private static RubyFloat log_common19(IRubyObject recv, double value, double base, String msg) {
+        if (value < 0) {
+            throw recv.getRuntime().newMathDomainError(msg);
+        }
+        double result = Math.log(value)/Math.log(base);
+        domainCheck(recv, result, msg);
         return RubyFloat.newFloat(recv.getRuntime(),result);
     }
 
@@ -421,7 +424,7 @@ public class RubyMath {
      */
     @JRubyMethod(name = "log", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat log(IRubyObject recv, IRubyObject x) {
-        return log_common(recv, ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue(), Math.E);
+        return log_common(recv, ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue(), Math.E, "log");
     }
 
     @JRubyMethod(name = "log", required = 1, optional = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
@@ -431,8 +434,7 @@ public class RubyMath {
         if (args.length == 2) {
             base = needFloat(args[1]).getDoubleValue();
         }
-        zeroInLogCheck(recv, value);
-        return log_common(recv, value, base);
+        return log_common19(recv, value, base, "log");
     }
 
     /** Returns the base 10 logarithm of x.
@@ -440,14 +442,13 @@ public class RubyMath {
      */
     @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat log10(IRubyObject recv, IRubyObject x) {
-        return log_common(recv, ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue(), 10);
+        return log_common(recv, ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue(), 10, "log10");
     }
 
     @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public static RubyFloat log10_19(IRubyObject recv, IRubyObject x) {
         double value = needFloat(x).getDoubleValue();
-        zeroInLogCheck(recv, value);
-        return log_common(recv, value, 10);
+        return log_common19(recv, value, 10, "log10");
     }
 
     /** Returns the base 2 logarithm of x.
@@ -455,14 +456,13 @@ public class RubyMath {
      */
     @JRubyMethod(name = "log2", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyFloat log2(IRubyObject recv, IRubyObject x) {
-        return log_common(recv, ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue(), 2);
+        return log_common(recv, ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue(), 2, "log2");
     }
 
     @JRubyMethod(name = "log2", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public static RubyFloat log2_19(IRubyObject recv, IRubyObject x) {
         double value = needFloat(x).getDoubleValue();
-        zeroInLogCheck(recv, value);
-        return log_common(recv, value, 2);
+        return log_common19(recv, value, 2, "log2");
     }
 
     @JRubyMethod(name = "sqrt", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)

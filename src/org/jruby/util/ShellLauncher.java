@@ -28,10 +28,12 @@
 
 package org.jruby.util;
 
+import static java.lang.System.out;
+
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.BufferedInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,15 +42,14 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
-import static java.lang.System.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jruby.Main;
 import org.jruby.Ruby;
@@ -330,7 +331,11 @@ public class ShellLauncher {
     }
 
     private static File findPathExecutable(Ruby runtime, String fname) {
-        String path = System.getenv(PATH_ENV);
+        RubyHash envHash = (RubyHash) runtime.getObject().fastGetConstant("ENV");
+        String path = envHash.op_aref(
+                runtime.getCurrentContext(),
+                runtime.newString(PATH_ENV)).asJavaString();
+
         String[] pathNodes = null;
         if (path == null) {
             pathNodes = DEFAULT_PATH; // ASSUME: not modified by callee

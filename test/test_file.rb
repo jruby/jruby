@@ -978,4 +978,14 @@ class TestFile < Test::Unit::TestCase
       File::Stat.new("file:" + File.expand_path("test/test_jar2.jar") + "!/foo_bar.rb").file?
     }
   end
+
+  # JRUBY-4859
+  def test_file_delete_directory
+    Dir.mkdir("dir_tmp")
+    assert_raise(Errno::EPERM) {
+      File.delete "dir_tmp"
+    }
+  ensure
+    Dir.rmdir("dir_tmp")
+  end
 end

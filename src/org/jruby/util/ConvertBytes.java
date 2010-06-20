@@ -607,7 +607,7 @@ public class ConvertBytes {
             }
         }
 
-        return new RubyBignum(runtime, z);
+        return RubyBignum.bignorm(runtime, z);
     }
 
     public static class ERange extends RuntimeException {

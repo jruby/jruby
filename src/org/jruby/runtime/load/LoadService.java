@@ -905,12 +905,11 @@ public class LoadService {
                 try {
                     String jarFile = namePlusSuffix.substring(5, namePlusSuffix.indexOf("!/"));
                     JarFile file = new JarFile(jarFile);
-                    String filename = namePlusSuffix.substring(namePlusSuffix.indexOf("!/") + 2);
-                    String canonicalFilename = canonicalizePath(filename);
-                    
-                    debugLogTry("resourceFromJarURL", canonicalFilename.toString());
-                    if(file.getJarEntry(canonicalFilename) != null) {
-                        foundResource = new LoadServiceResource(new URL("jar:file:" + jarFile + "!/" + canonicalFilename), namePlusSuffix);
+                    String expandedFilename = expandRelativeJarPath(namePlusSuffix.substring(namePlusSuffix.indexOf("!/") + 2));
+
+                    debugLogTry("resourceFromJarURL", expandedFilename.toString());
+                    if(file.getJarEntry(expandedFilename) != null) {
+                        foundResource = new LoadServiceResource(new URL("jar:file:" + jarFile + "!/" + expandedFilename), namePlusSuffix);
                         debugLogFound(foundResource);
                     }
                 } catch(Exception e) {}
@@ -1244,16 +1243,18 @@ public class LoadService {
         }
         return null;
     }
-    
-    protected String canonicalizePath(String path) {
+
+    // Canonicalization here is only used to expand '.' and '..' in jar
+    // paths, not for real files that exist on the filesystem
+    private String expandRelativeJarPath(String path) {
         try {
-            String cwd = new File(runtime.getCurrentDirectory()).getCanonicalPath();
+            String cwd = new File(".").getCanonicalPath();
             return new File(path).getCanonicalPath()
-                                 .substring(cwd.length() + 1)
-                                 .replaceAll("\\\\","/");
-      } catch(Exception e) {
-        return path;
-      }
+                .substring(cwd.length() + 1)
+                .replaceAll("\\\\","/");
+        } catch(Exception e) {
+            return path;
+        }
     }
 
     protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {

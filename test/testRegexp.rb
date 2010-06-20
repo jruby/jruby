@@ -237,3 +237,15 @@ test_equal "lib/foo.rb", Regexp.last_match.to_s
 name = [151, 215, 254, 246, 95, 254, 87, 193, 179, 240, 32, 95].pack('C*')
 name =~ %r(\A[\[\]]*([^\[\]]+)\]*)
 test_no_exception {$1.hash}
+
+# JRUBY-4881
+module Yeller
+  def holler(); "hey, look"; end
+end
+
+str = "one_two"
+str.extend(Yeller)
+str =~ /(one)_(two)/
+
+test_exception(NoMethodError) { $1.holler }
+test_exception(NoMethodError) { $2.holler }

@@ -41,6 +41,7 @@ public abstract class CallSite {
 
     // binary typed calls
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum);
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote);
     
     // no block
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self);

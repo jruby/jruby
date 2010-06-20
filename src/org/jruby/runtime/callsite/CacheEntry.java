@@ -5,11 +5,11 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 
 public class CacheEntry {
-    public static final CacheEntry NULL_CACHE = new CacheEntry(UndefinedMethod.INSTANCE, new Object());
+    public static final CacheEntry NULL_CACHE = new CacheEntry(UndefinedMethod.INSTANCE, 0);
     public final DynamicMethod method;
-    public final Object token;
+    public final int token;
 
-    public CacheEntry(DynamicMethod method, Object token) {
+    public CacheEntry(DynamicMethod method, int token) {
         this.method = method;
         this.token = token;
     }

@@ -20,7 +20,8 @@ public class BoxedValue extends Operand
 
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
         Operand v = _value.getSimplifiedOperand(valueMap);
-        return (v == _value) ? this : new BoxedValue(v);
+        return (v == _value) ? this 
+		                       : (v instanceof UnboxedValue) ? ((UnboxedValue)v)._value : new BoxedValue(v);
     }
 
     public void addUsedVariables(List<Variable> l) {

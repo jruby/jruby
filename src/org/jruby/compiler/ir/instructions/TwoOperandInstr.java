@@ -21,23 +21,17 @@ public abstract class TwoOperandInstr extends IR_Instr
         _arg2 = a2;
     }
 
-    public String toString() { return super.toString() + "(" + _arg1 + ", " + _arg2 + ")"; }
+    public String toString() { 
+        return super.toString() + "(" + _arg1 + ", " + _arg2 + ")"; 
+    }
 
     public Operand[] getOperands() {
-        // SSS FIXME: Looks like _arg2 can be null for NOT alu instructions -- fix this IR bug.
-        if (_arg2 == null)
-            return new Operand[] {_arg1};
-        else 
-            return new Operand[] {_arg1, _arg2};
+        return new Operand[] {_arg1, _arg2};
     }
 
     public void simplifyOperands(Map<Operand, Operand> valueMap)
     {
         _arg1 = _arg1.getSimplifiedOperand(valueMap);
-        // SSS FIXME: Looks like _arg2 can be null for NOT alu instructions -- fix this IR bug.
-        if (_arg2 == null)
-           ; //System.out.println("Got null arg2 for a 2-operand instruction: " + this.toString());
-        else
-           _arg2 = _arg2.getSimplifiedOperand(valueMap);
+        _arg2 = _arg2.getSimplifiedOperand(valueMap);
     }
 }

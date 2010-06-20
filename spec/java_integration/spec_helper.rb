@@ -1,10 +1,12 @@
 require 'java'
-require File.dirname(__FILE__) + '/../../build/jruby-test-classes.jar'
+require File.expand_path('../../../build/jruby-test-classes.jar', __FILE__)
 require 'spec'
 
 Spec::Runner.configure do |config|
-  # config.before :each do
-  # end
+  config.append_before :suite do
+    require File.expand_path('../../../test/test_helper', __FILE__)
+    include TestHelper
+  end
 
   # config.after :each do
   # end

@@ -1446,7 +1446,7 @@ public final class Ruby {
         addLazyBuiltin("weakref.rb", "weakref", "org.jruby.ext.WeakRef$WeakRefLibrary");
         addLazyBuiltin("delegate_internal.jar", "delegate_internal", "org.jruby.ext.DelegateLibrary");
         addLazyBuiltin("timeout.rb", "timeout", "org.jruby.ext.Timeout");
-        addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.RubySocket$Service");
+        addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.SocketLibrary");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.libraries.RbConfigLibrary");
         addLazyBuiltin("jruby/serialization.rb", "serialization", "org.jruby.libraries.JRubySerializationLibrary");
         addLazyBuiltin("ffi-internal.jar", "ffi-internal", "org.jruby.ext.ffi.Factory$Service");
@@ -3071,6 +3071,10 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("EISDIR"), message);
     }
 
+    public RaiseException newErrnoEPERMError(String name) {
+        return newRaiseException(getErrno().fastGetClass("EPERM"), "Operation not permitted - " + name);
+    }
+
     public RaiseException newErrnoEISDirError() {
         return newErrnoEISDirError("Is a directory");
     }
@@ -3739,6 +3743,15 @@ public final class Ruby {
     }
 
     /**
+     * Get a new generation number for a module or class.
+     *
+     * @return a new generation number
+     */
+    public int getNextModuleGeneration() {
+        return moduleGeneration.incrementAndGet();
+    }
+
+    /**
      * Get the global object used to synchronize class-hierarchy modifications like
      * cache invalidation, subclass sets, and included hierarchy sets.
      *
@@ -3932,4 +3945,7 @@ public final class Ruby {
 
     // An atomic long for generating DynamicMethod serial numbers
     private final AtomicLong dynamicMethodSerial = new AtomicLong(0);
+
+    // An atomic int for generating class generation numbers
+    private final AtomicInteger moduleGeneration = new AtomicInteger(1);
 }

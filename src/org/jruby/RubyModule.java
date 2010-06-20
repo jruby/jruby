@@ -205,7 +205,7 @@ public class RubyModule extends RubyObject {
         runtime.addModule(this);
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
-        generation = new Object();
+        generation = runtime.getNextModuleGeneration();
     }
     
     /** used by MODULE_ALLOCATOR and RubyClass constructors
@@ -851,7 +851,7 @@ public class RubyModule extends RubyObject {
 
         // we grab serial number first; the worst that will happen is we cache a later
         // update with an earlier serial number, which would just flush anyway
-        Object token = getCacheToken();
+        int token = getCacheToken();
         DynamicMethod method = searchMethodInner(name);
 
         if (method instanceof DefaultMethod) {
@@ -861,7 +861,7 @@ public class RubyModule extends RubyObject {
         return method != null ? addToCache(name, method, token) : addToCache(name, UndefinedMethod.getInstance(), token);
     }
     
-    public final Object getCacheToken() {
+    public final int getCacheToken() {
         return generation;
     }
 
@@ -889,17 +889,17 @@ public class RubyModule extends RubyObject {
     }
     
     protected static abstract class CacheEntryFactory {
-        public abstract CacheEntry newCacheEntry(DynamicMethod method, Object token);
+        public abstract CacheEntry newCacheEntry(DynamicMethod method, int token);
     }
 
     protected static final CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
-        public CacheEntry newCacheEntry(DynamicMethod method, Object token) {
+        public CacheEntry newCacheEntry(DynamicMethod method, int token) {
             return new CacheEntry(method, token);
         }
     };
 
     protected static final CacheEntryFactory SynchronizedCacheEntryFactory = new CacheEntryFactory() {
-        public CacheEntry newCacheEntry(DynamicMethod method, Object token) {
+        public CacheEntry newCacheEntry(DynamicMethod method, int token) {
             return new CacheEntry(new SynchronizedDynamicMethod(method), token);
         }
     };
@@ -915,7 +915,7 @@ public class RubyModule extends RubyObject {
         return cacheEntryFactory == SynchronizedCacheEntryFactory;
     }
 
-    private CacheEntry addToCache(String name, DynamicMethod method, Object token) {
+    private CacheEntry addToCache(String name, DynamicMethod method, int token) {
         CacheEntry entry = cacheEntryFactory.newCacheEntry(method, token);
         getCachedMethodsForWrite().put(name, entry);
 
@@ -931,7 +931,8 @@ public class RubyModule extends RubyObject {
     }
 
     public void invalidateCacheDescendants() {
-        generation = new Object();
+        if (DEBUG) System.out.println("invalidating descendants: " + classId);
+        generation = getRuntime().getNextModuleGeneration();
         // update all hierarchies into which this module has been included
         synchronized (getRuntime().getHierarchyLock()) {
             for (RubyClass includingHierarchy : includingHierarchies) {
@@ -3163,7 +3164,7 @@ public class RubyModule extends RubyObject {
     private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
     private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
     private Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
-    protected Object generation;
+    protected int generation;
 
     protected volatile Set<RubyClass> includingHierarchies = Collections.EMPTY_SET;
 

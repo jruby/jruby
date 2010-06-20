@@ -109,16 +109,21 @@ public class RescueNode extends Node {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return interpretWithJavaExceptions(runtime, context, self, aBlock);
     }
-    
+
     private IRubyObject interpretWithJavaExceptions(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject result = null;
+        boolean exceptionRaised = false;
         RescuedBlock : while (true) {
             IRubyObject globalExceptionState = runtime.getGlobalVariables().get("$!");
             boolean anotherExceptionRaised = false;
             try {
-                return executeBody(runtime, context, self, aBlock);
+                result = executeBody(runtime, context, self, aBlock);
+                break;
             } catch (RaiseException raiseJump) {
                 try {
-                    return handleException(runtime, context, self, aBlock, raiseJump);
+                    result = handleException(runtime, context, self, aBlock, raiseJump);
+                    exceptionRaised = true;
+                    break;
                 } catch (JumpException.RetryJump rj) {
                     // let RescuedBlock continue
                 } catch (RaiseException je) {
@@ -133,7 +138,9 @@ public class RescueNode extends Node {
                     UnsafeFactory.getUnsafe().throwException(t);
                 }
                 try {
-                    return handleJavaException(runtime, context, self, aBlock, t);
+                    result = handleJavaException(runtime, context, self, aBlock, t);
+                    exceptionRaised = true;
+                    break;
                 } catch (JumpException.RetryJump rj) {
                     // let RescuedBlock continue
                 } catch (RaiseException je) {
@@ -146,8 +153,17 @@ public class RescueNode extends Node {
                     runtime.getGlobalVariables().set("$!", globalExceptionState);
             }
         }
+
+        // If no exception is thrown execute else block
+        if (elseNode != null && !exceptionRaised) {
+            if (rescueNode == null) {
+                runtime.getWarnings().warn(ID.ELSE_WITHOUT_RESCUE, elseNode.getPosition(), "else without rescue is useless");
+            }
+            result = elseNode.interpret(runtime, context, self, aBlock);
+        }
+        return result;
     }
-    
+
     private IRubyObject handleException(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RaiseException raiseJump) {
         RubyException raisedException = raiseJump.getException();
         // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
@@ -196,17 +212,7 @@ public class RescueNode extends Node {
             return runtime.getNil();
         }
         // Execute rescue block
-        IRubyObject result = bodyNode.interpret(runtime, context, self, aBlock);
-
-        // If no exception is thrown execute else block
-        if (elseNode != null) {
-            if (rescueNode == null) {
-                runtime.getWarnings().warn(ID.ELSE_WITHOUT_RESCUE, elseNode.getPosition(), "else without rescue is useless");
-            }
-            result = elseNode.interpret(runtime, context, self, aBlock);
-        }
-
-        return result;
+        return bodyNode.interpret(runtime, context, self, aBlock);
     }
 
     private IRubyObject[] getExceptions(RescueBodyNode cRescueNode, Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {

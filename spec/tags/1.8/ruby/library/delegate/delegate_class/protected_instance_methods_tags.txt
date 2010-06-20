@@ -1,0 +1,1 @@
+fails(JRUBY-4870):DelegateClass.protected_instance_methods includes the protected methods of the delegated class

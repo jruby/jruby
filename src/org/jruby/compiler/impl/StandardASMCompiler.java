@@ -136,12 +136,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     
     public static final int CLOSURE_OFFSET = 0;
     public static final int DYNAMIC_SCOPE_OFFSET = 1;
-    public static final int RUNTIME_OFFSET = 2;
-    public static final int VARS_ARRAY_OFFSET = 3;
-    public static final int NIL_OFFSET = 4;
-    public static final int EXCEPTION_OFFSET = 5;
-    public static final int PREVIOUS_EXCEPTION_OFFSET = 6;
-    public static final int FIRST_TEMP_OFFSET = 7;
+    public static final int VARS_ARRAY_OFFSET = 2;
+    public static final int EXCEPTION_OFFSET = 3;
+    public static final int PREVIOUS_EXCEPTION_OFFSET = 4;
+    public static final int FIRST_TEMP_OFFSET = 5;
 
     public static final int STARTING_DSTR_SIZE = 20;
     

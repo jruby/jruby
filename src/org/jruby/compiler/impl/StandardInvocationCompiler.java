@@ -401,25 +401,108 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokevirtual(p(CallSite.class), callSiteMethod, signature);
     }
 
-    public void invokeFixnumLong(CompilerCallback receiverCallback, String methodName, long other) {
-        receiverCallback.call(methodCompiler);
-        method.checkcast(p(RubyFixnum.class));
-        methodCompiler.loadThreadContext();
-        method.ldc(other);
+    public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote) {
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.NORMAL);
+        methodCompiler.loadThreadContext(); // [adapter, tc]
 
-        method.invokevirtual(p(RubyFixnum.class), methodName, sig(IRubyObject.class, ThreadContext.class, long.class));
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
+        methodCompiler.loadSelf();
+
+        if (receiverCallback != null) {
+            receiverCallback.call(methodCompiler);
+        } else {
+            methodCompiler.loadSelf();
+        }
+
+        method.ldc(flote);
+
+        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, double.class));
+        String callSiteMethod = "call";
+
+        method.invokevirtual(p(CallSite.class), callSiteMethod, signature);
     }
 
-    public void invokeFloatDouble(CompilerCallback receiverCallback, String methodName, double flote) {
+    public void invokeFixnumLong(String rubyName, int moduleGeneration, CompilerCallback receiverCallback, String methodName, long fixnum) {
         receiverCallback.call(methodCompiler);
+        final int tmp = methodCompiler.getVariableCompiler().grabTempLocal();
+        method.astore(tmp);
+
+        Label slow = new Label();
+        Label after = new Label();
+        if (!RubyInstanceConfig.NOGUARDS_COMPILE_ENABLED) {
+            method.aload(tmp);
+            method.ldc(moduleGeneration);
+            methodCompiler.invokeUtilityMethod("isGenerationEqual", sig(boolean.class, IRubyObject.class, int.class));
+
+            method.ifne(slow);
+        }
+
+        method.aload(tmp);
+        method.checkcast(p(RubyFixnum.class));
+        methodCompiler.loadThreadContext();
+        method.ldc(fixnum);
+
+        method.invokevirtual(p(RubyFixnum.class), methodName, sig(IRubyObject.class, ThreadContext.class, long.class));
+
+        if (!RubyInstanceConfig.NOGUARDS_COMPILE_ENABLED) {
+            method.go_to(after);
+            method.label(slow);
+
+            invokeBinaryFixnumRHS(rubyName, new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    method.aload(tmp);
+                }
+            }, fixnum);
+
+            method.label(after);
+        }
+        methodCompiler.getVariableCompiler().releaseTempLocal();
+    }
+
+    public void invokeFloatDouble(String rubyName, int moduleGeneration, CompilerCallback receiverCallback, String methodName, double flote) {
+        receiverCallback.call(methodCompiler);
+        final int tmp = methodCompiler.getVariableCompiler().grabTempLocal();
+        method.astore(tmp);
+        
+        method.aload(tmp);
+        method.ldc(moduleGeneration);
+        methodCompiler.invokeUtilityMethod("isGenerationEqual", sig(boolean.class, IRubyObject.class, int.class));
+
+        Label slow = new Label();
+        Label after = new Label();
+        method.ifne(slow);
+
+        method.aload(tmp);
         method.checkcast(p(RubyFloat.class));
         methodCompiler.loadThreadContext();
         method.ldc(flote);
 
         method.invokevirtual(p(RubyFloat.class), methodName, sig(IRubyObject.class, ThreadContext.class, double.class));
+
+        method.go_to(after);
+        method.label(slow);
+
+        invokeBinaryFloatRHS(rubyName, new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                method.aload(tmp);
+            }
+        }, flote);
+
+        method.label(after);
     }
 
-    public void invokeRecursive(ArgumentsCallback argsCallback) {
+    public void invokeRecursive(String name, int moduleGeneration, ArgumentsCallback argsCallback, CompilerCallback closure, CallType callType, boolean iterator) {
+        Label slow = new Label();
+        Label after = new Label();
+        if (!RubyInstanceConfig.NOGUARDS_COMPILE_ENABLED) {
+            methodCompiler.loadSelf();
+            method.ldc(moduleGeneration);
+            methodCompiler.invokeUtilityMethod("isGenerationEqual", sig(boolean.class, IRubyObject.class, int.class));
+
+            method.ifne(slow);
+        }
+
         method.aload(0);
         methodCompiler.loadThreadContext();
         methodCompiler.loadSelf();
@@ -429,21 +512,47 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.aconst_null();
 
         method.invokestatic(methodCompiler.getScriptCompiler().getClassname(), methodCompiler.getNativeMethodName(), methodCompiler.getSignature());
+
+        if (!RubyInstanceConfig.NOGUARDS_COMPILE_ENABLED) {
+            method.go_to(after);
+            method.label(slow);
+
+            invokeDynamic(name, null, argsCallback, callType, closure, iterator);
+
+            method.label(after);
+        }
     }
 
-    public void invokeNative(DynamicMethod.NativeCall nativeCall, CompilerCallback receiver, ArgumentsCallback args, CompilerCallback closure) {
+    public void invokeNative(String name, DynamicMethod.NativeCall nativeCall,
+            int moduleGeneration, CompilerCallback receiver, ArgumentsCallback args,
+            CompilerCallback closure, CallType callType, boolean iterator) {
         Class[] nativeSignature = nativeCall.getNativeSignature();
 
         int leadingArgs = 0;
+        receiver.call(methodCompiler);
+        final int tmp = methodCompiler.getVariableCompiler().grabTempLocal();
+        method.astore(tmp);
+
+        // validate generation
+        Label slow = new Label();
+        Label after = new Label();
+        if (!RubyInstanceConfig.NOGUARDS_COMPILE_ENABLED) {
+            method.aload(tmp);
+            method.ldc(moduleGeneration);
+            methodCompiler.invokeUtilityMethod("isGenerationEqual", sig(boolean.class, IRubyObject.class, int.class));
+
+            method.ifne(slow);
+        }
+
         if (nativeCall.isStatic()) {
             if (nativeSignature.length > 0 && nativeSignature[0] == ThreadContext.class) {
                 methodCompiler.loadThreadContext();
                 leadingArgs++;
             }
-            receiver.call(methodCompiler);
+            method.aload(tmp);
             leadingArgs++;
         } else {
-            receiver.call(methodCompiler);
+            method.aload(tmp);
             method.checkcast(p(nativeCall.getNativeTarget()));
             if (nativeSignature.length > 0 && nativeSignature[0] == ThreadContext.class) {
                 methodCompiler.loadThreadContext();
@@ -461,8 +570,17 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             if (nativeSignature.length == leadingArgs + 1 && nativeSignature[leadingArgs] == Block.class) {
                 // ok, pass the block
             } else {
-                // doesn't receive block, dump it
+                // doesn't receive block, drop it
+                // note: have to evaluate it because it could be a & block arg
+                // with side effects
                 method.pop();
+            }
+        } else {
+            if (nativeSignature.length == leadingArgs + 1 && nativeSignature[leadingArgs] == Block.class) {
+                // needs a block
+                method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+            } else {
+                // ok with no block
             }
         }
 
@@ -471,6 +589,21 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         } else {
             method.invokevirtual(p(nativeCall.getNativeTarget()), nativeCall.getNativeName(), sig(nativeCall.getNativeReturn(), nativeSignature));
         }
+
+        if (!RubyInstanceConfig.NOGUARDS_COMPILE_ENABLED) {
+            method.go_to(after);
+            method.label(slow);
+
+            invokeDynamic(name, new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    method.aload(tmp);
+                }
+            }, args, callType, closure, iterator);
+
+            method.label(after);
+        }
+
+        methodCompiler.getVariableCompiler().releaseTempLocal();
     }
     
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
