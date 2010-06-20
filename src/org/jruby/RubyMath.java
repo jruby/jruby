@@ -434,7 +434,6 @@ public class RubyMath {
         if (args.length == 2) {
             base = needFloat(args[1]).getDoubleValue();
         }
-//        zeroInLogCheck(recv, value, "log");
         return log_common19(recv, value, base, "log");
     }
 
@@ -463,7 +462,6 @@ public class RubyMath {
     @JRubyMethod(name = "log2", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public static RubyFloat log2_19(IRubyObject recv, IRubyObject x) {
         double value = needFloat(x).getDoubleValue();
-//        zeroInLogCheck(recv, value, "log2");
         return log_common19(recv, value, 2, "log2");
     }
 
