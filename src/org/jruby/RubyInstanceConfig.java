@@ -40,6 +40,7 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -381,7 +382,7 @@ public class RubyInstanceConfig {
             
             if (COMPILE_EXCLUDE != null) {
                 String[] elements = COMPILE_EXCLUDE.split(",");
-                for (String element : elements) excludedMethods.add(element);
+                excludedMethods.addAll(Arrays.asList(elements));
             }
             
             managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", false);
@@ -909,7 +910,7 @@ public class RubyInstanceConfig {
             }
 
             // Remaining arguments are for the script itself
-            for (String arg : argv) arglist.add(arg);
+            arglist.addAll(Arrays.asList(argv));
             argv = arglist.toArray(new String[arglist.size()]);
         }
 
@@ -996,9 +997,7 @@ public class RubyInstanceConfig {
                 case 'I':
                     String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
                     String[] ls = s.split(java.io.File.pathSeparator);
-                    for (int i = 0; i < ls.length; i++) {
-                        loadPaths.add(ls[i]);
-                    }
+                    loadPaths.addAll(Arrays.asList(ls));
                     break FOR;
                 case 'K':
                     // FIXME: No argument seems to work for -K in MRI plus this should not
