@@ -1,6 +1,6 @@
 enabled=false
 # uncomment this to play with experimental mkmf support
-#enabled=true
+enabled=true
 
 # JRuby does not support mkmf yet, so we fail hard here with a useful message
 if !enabled
@@ -166,7 +166,21 @@ $extmk = File.expand_path($0)[0, extdir.size+1] == extdir+"/"
 if not $extmk and File.exist?(($hdrdir = Config::CONFIG["archdir"]) + "/ruby.h")
   $topdir = $hdrdir
 elsif File.exist?(($hdrdir = ($top_srcdir ||= topdir))  + "/ruby.h") and
-    File.exist?(($topdir ||= Config::CONFIG["topdir"]) + "/config.h")
+  File.exist?(($topdir ||= Config::CONFIG["topdir"]) + "/config.h")
+elsif File.exists?(($hdrdir = 
+  (File.expand_path(File.join($top_srcdir, "..", "..", "cext", "build")))) + "/ruby.h" )
+  # ruby.h is in jruby.home
+  if ($hdrdir =~ /jar!/)
+    File.open(File.expand_path(File.join($top_srcdir, "..", "..", "cext", "build")) + "/ruby.h", 'r') do |input|
+      File.open(File.expand_path(File.join($srcdir, "ruby.h")), 'w') do |out|
+        out << input.read
+      end
+    end
+    # file is within jar - copy!
+    ($topdir = ($hdrdir = $srcdir))
+  else
+    $topdir = $hdrdir
+  end
 else
   abort "mkmf.rb can't find header files for ruby at #{$hdrdir}/ruby.h"
 end
@@ -1706,7 +1720,7 @@ site-install-rb: install-rb
     mfile.print "$(OBJS): $(RUBY_EXTCONF_H)\n\n" if $extconf_h
     mfile.print depout
   else
-    headers = %w[ruby.h defines.h]
+    headers = ["ruby.h"] # "%w[ruby.h defines.h]"
     if RULE_SUBST
       headers.each {|h| h.sub!(/.*/) {|*m| RULE_SUBST % m}}
     end
