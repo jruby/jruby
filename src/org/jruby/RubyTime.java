@@ -733,8 +733,9 @@ public class RubyTime extends RubyObject {
             if (arg instanceof RubyFloat || arg instanceof RubyRational) {
                 double dbl = RubyNumeric.num2dbl(arg);
                 long micro = Math.round((dbl - seconds) * 1000000);
-                if(dbl < 0)
+                if (dbl < 0 && micro != 0) {
                     micro += 1000000;
+                }
                 millisecs = micro / 1000;
                 microsecs = micro % 1000;
             }
