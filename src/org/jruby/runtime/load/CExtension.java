@@ -16,7 +16,12 @@
 
 package org.jruby.runtime.load;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 
 import org.jruby.Ruby;
 import org.jruby.cext.ModuleLoader;
@@ -33,8 +38,43 @@ public class CExtension implements Library {
         this.resource = resource;
     }
 
+    /**
+     * Try loading the found c-extension. If the extension is contained in a Jar file,
+     * it will be extracted to the java.io.tmpdir
+     */
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        String file = resource.getAbsolutePath();
+        String file;
+        if (!resource.getURL().getProtocol().equals("jar")) {
+            file = resource.getAbsolutePath();
+        } else {
+            // The cext was wrapped in a jar
+            InputStream is = resource.getInputStream();
+            FileOutputStream os = null;
+            File dstFile = new File(System.getProperty("java.io.tmpdir") + File.pathSeparator + 
+                    resource.getName());
+            if (!dstFile.exists()) { // File doesn't exist yet. Extract it.
+                try {
+                    dstFile.deleteOnExit();
+                    os = new FileOutputStream(dstFile);
+                    ReadableByteChannel srcChannel = Channels.newChannel(is);
+
+                    for (long pos = 0; is.available() > 0; ) {
+                        pos += os.getChannel().transferFrom(srcChannel, pos, Math.max(4096, is.available()));
+                    }
+                } catch (IOException ex) {
+                    throw runtime.newLoadError("Error loading file -- " + resource.getName());
+                } finally {
+                    try {
+                        if (os != null) 
+                            os.close();
+                        is.close();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            }
+            file = dstFile.getAbsolutePath();
+        }
         new ModuleLoader().load(runtime, file);
     }
 
