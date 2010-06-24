@@ -854,7 +854,7 @@ public class RubyInstanceConfig {
                 home = f.getAbsolutePath();
             }
             if (!f.exists()) {
-                System.err.println("Warning: JRuby home \"" + f + "\" does not exist, using " + SafePropertyAccessor.getProperty("java.io.tmpdir"));
+                error.println("Warning: JRuby home \"" + f + "\" does not exist, using " + SafePropertyAccessor.getProperty("java.io.tmpdir"));
                 return System.getProperty("java.io.tmpdir");
             }
         }
@@ -998,6 +998,10 @@ public class RubyInstanceConfig {
                     String s = grabValue(getArgumentError("-I must be followed by a directory name to add to lib path"));
                     String[] ls = s.split(java.io.File.pathSeparator);
                     loadPaths.addAll(Arrays.asList(ls));
+                    break FOR;
+                case 'J':
+                    grabOptionalValue();
+                    error.println("warning: "+argument+" argument ignored (launched in same VM?)");
                     break FOR;
                 case 'K':
                     // FIXME: No argument seems to work for -K in MRI plus this should not
@@ -1242,15 +1246,15 @@ public class RubyInstanceConfig {
                     // ignore and do nothing
                 }
             } catch (IllegalArgumentException iae) {
-                if (debug) System.err.println("warning: could not resolve -S script on filesystem: " + scriptName);
+                if (debug) error.println("warning: could not resolve -S script on filesystem: " + scriptName);
             }
             return null;
         }
 
         private String grabValue(String errorMessage) {
-            characterIndex++;
-            if (characterIndex < arguments[argumentIndex].length()) {
-                return arguments[argumentIndex].substring(characterIndex);
+            String optValue = grabOptionalValue();
+            if (optValue != null) {
+                return optValue;
             }
             argumentIndex++;
             if (argumentIndex < arguments.length) {

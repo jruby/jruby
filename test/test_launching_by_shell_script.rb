@@ -178,4 +178,9 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
       assert_equal 0, $?.exitstatus
       assert_equal "hello", out.strip
   end
+
+  def test_launch_inproc_ignores_dash_J_with_warning
+    output = `jruby -J-Xmx256m -e "puts true"`
+    assert_equal "true\n", output
+  end
 end
