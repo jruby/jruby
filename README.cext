@@ -10,4 +10,11 @@ To run the one example that works currently, do:
   bin/jruby jruby-cext/example/RequireTest/RequireTest.rb
     or
   bin/jruby jruby-cext/example/Bench/Bench.rb
+  
+To see a simple extconf example, do:
+  bin/jruby jruby-cext/example/Extconf/extconf.rb
+Then go to jruby-cext/example/Extconf and run:
+  make
+And finally run
+  bin/jruby jruby-cext/example/Extconf/extconf_example.rb
 
