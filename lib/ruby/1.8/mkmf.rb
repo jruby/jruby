@@ -1,11 +1,5 @@
-enabled=false
-# uncomment this to play with experimental mkmf support
-enabled=true
-
-# JRuby does not support mkmf yet, so we fail hard here with a useful message
-if !enabled
-  warn "WARNING: JRuby does not support native extensions or the `mkmf' library.\n         Check http://kenai.com/projects/jruby/pages/Home for alternatives."
-else
+$stderr << "WARNING: JRuby does not support native extensions or the `mkmf' library very well.\n" +
+"Check http://kenai.com/projects/jruby/pages/Home for alternatives.\n"
 
 # We're missing this in our rbconfig
 module Config
@@ -160,30 +154,15 @@ def map_dir(dir, map = nil)
   map.inject(dir) {|dir, (orig, new)| dir.gsub(orig, new)}
 end
 
-topdir = File.dirname(libdir = File.dirname(__FILE__))
-extdir = File.expand_path("ext", topdir)
-$extmk = File.expand_path($0)[0, extdir.size+1] == extdir+"/"
-if not $extmk and File.exist?(($hdrdir = Config::CONFIG["archdir"]) + "/ruby.h")
-  $topdir = $hdrdir
-elsif File.exist?(($hdrdir = ($top_srcdir ||= topdir))  + "/ruby.h") and
-  File.exist?(($topdir ||= Config::CONFIG["topdir"]) + "/config.h")
-elsif File.exists?(($hdrdir = 
-  (File.expand_path(File.join($top_srcdir, "..", "..", "cext", "build")))) + "/ruby.h" )
-  # ruby.h is in jruby.home
-  if ($hdrdir =~ /jar!/)
-    File.open(File.expand_path(File.join($top_srcdir, "..", "..", "cext", "build")) + "/ruby.h", 'r') do |input|
-      File.open(File.expand_path(File.join($srcdir, "ruby.h")), 'w') do |out|
-        out << input.read
-      end
-    end
-    # file is within jar - copy!
-    ($topdir = ($hdrdir = $srcdir))
-  else
-    $topdir = $hdrdir
-  end
-else
+# ---------------------- Changed for JRuby ------------------------------------
+$topdir     = File.expand_path(File.join(__FILE__, "..", "..", "..", "native"))
+$top_srcdir = $topdir
+$hdrdir     = $topdir
+
+unless File.exists?($hdrdir + "/ruby.h")
   abort "mkmf.rb can't find header files for ruby at #{$hdrdir}/ruby.h"
 end
+# -----------------------------------------------------------------------------
 
 OUTFLAG = CONFIG['OUTFLAG']
 CPPOUTFILE = CONFIG['CPPOUTFILE']
@@ -339,7 +318,9 @@ end
 
 def create_tmpsrc(src)
   src = yield(src) if block_given?
-  src = src.gsub(/[ \t]+$/, '').gsub(/\A\n+|^\n+$/, '').sub(/[^\n]\z/, "\\&\n")
+  src.gsub!(/[ \t]+$/, '')
+  src.gsub!(/\A\n+|^\n+$/, '')
+  src.sub!(/[^\n]\z/, "\\&\n")
   open(CONFTEST_C, "wb") do |cfile|
     cfile.print src
   end
@@ -1317,11 +1298,7 @@ def configuration(srcdir)
 SHELL = /bin/sh
 
 #### Start of system configuration section. ####
-#{
-if $extmk
-  "top_srcdir = " + $top_srcdir.sub(%r"\A#{Regexp.quote($topdir)}/", "$(topdir)/")
-end
-}
+#{"top_srcdir = " + $top_srcdir.sub(%r"\A#{Regexp.quote($topdir)}/", "$(topdir)/") if $extmk}
 srcdir = #{srcdir.gsub(/\$\((srcdir)\)|\$\{(srcdir)\}/) {mkintpath(CONFIG[$1||$2])}.quote}
 topdir = #{mkintpath($extmk ? CONFIG["topdir"] : $topdir).quote}
 hdrdir = #{$extmk ? mkintpath(CONFIG["hdrdir"]).quote : '$(topdir)'}
@@ -1348,7 +1325,7 @@ VPATH = #{vpath.join(CONFIG['PATH_SEPARATOR'])}
   else
     sep = ""
   end
-  extconf_h = $extconf_h ? "-DRUBY_EXTCONF_H=\\\"$(RUBY_EXTCONF_H)\\\" " : $defs.join(" ")<<" "
+  extconf_h = $extconf_h ? "-DRUBY_EXTCONF_H=\\\"$(RUBY_EXTCONF_H)\\\" " : $defs.join(" ") << " "
   mk << %{
 CC = #{CONFIG['CC']}
 LIBRUBY = #{CONFIG['LIBRUBY']}
@@ -1406,6 +1383,8 @@ CLEANFILES = #{$cleanfiles.join(' ')}
 DISTCLEANFILES = #{$distcleanfiles.join(' ')}
 
 all install static install-so install-rb: Makefile
+.PHONY: all install static install-so install-rb
+.PHONY: clean clean-so clean-rb
 
 RULES
 end
@@ -1499,9 +1478,8 @@ def create_makefile(target, srcprefix = nil)
   for i in $objs
     i.sub!(/\.o\z/, ".#{$OBJEXT}")
   end
-  $objs = $objs.join(" ")
 
-  target = nil if $objs == ""
+  target = nil if $objs.empty?
 
   if target and EXPORT_PREFIX
     if File.exist?(File.join(srcdir, target + '.def'))
@@ -1534,13 +1512,13 @@ DEFFILE = #{deffile}
 CLEANFILES = #{$cleanfiles.join(' ')}
 DISTCLEANFILES = #{$distcleanfiles.join(' ')}
 
-extout = #{$extout}
+extout = #{$extout && $extout.quote}
 extout_prefix = #{$extout_prefix}
 target_prefix = #{target_prefix}
 LOCAL_LIBS = #{$LOCAL_LIBS}
 LIBS = #{$LIBRUBYARG} #{$libs} #{$LIBS}
 SRCS = #{srcs.collect(&File.method(:basename)).join(' ')}
-OBJS = #{$objs}
+OBJS = #{$objs.join(" ")}
 TARGET = #{target}
 DLLIB = #{dllib}
 EXTSTATIC = #{$static || ""}
@@ -1554,8 +1532,10 @@ TARGET_SO     = #{($extout ? '$(RUBYARCHDIR)/' : '')}$(DLLIB)
 CLEANLIBS     = #{n}#{CONFIG['DLEXT']} #{n}il? #{n}tds #{n}map
 CLEANOBJS     = *.#{$OBJEXT} *.#{$LIBEXT} *.s[ol] *.pdb *.exp *.bak
 
-all:		#{$extout ? "install" : target ? "$(DLLIB)" : "Makefile"}
-static:		$(STATIC_LIB)#{$extout ? " install-rb" : ""}
+all:    #{$extout ? "install" : target ? "$(DLLIB)" : "Makefile"}
+static: $(STATIC_LIB)#{$extout ? " install-rb" : ""}
+.PHONY: all install static install-so install-rb
+.PHONY: clean clean-so clean-rb
 "
   mfile.print CLEANINGS
   dirs = []
@@ -1879,4 +1859,3 @@ if not $extmk and /\A(extconf|makefile).rb\z/ =~ File.basename($0)
   END {mkmf_failed($0)}
 end
 
-end
