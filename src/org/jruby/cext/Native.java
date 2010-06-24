@@ -66,7 +66,9 @@ final class Native {
         shim = Library.openLibrary(System.mapLibraryName(libName), Library.NOW | Library.GLOBAL);
         if (shim == null) {
             File libFile = loadFromJrubyHome();
-            shim = Library.openLibrary(libFile.getAbsolutePath(), Library.NOW | Library.GLOBAL);
+            if (libFile != null) { // If the jruby-cext library is not available, we die in the next condition
+                shim = Library.openLibrary(libFile.getAbsolutePath(), Library.NOW | Library.GLOBAL);
+            }
             if (shim == null) {
                 throw new UnsatisfiedLinkError("failed to load shim library, error: " + Library.getLastError());
             }
@@ -85,15 +87,19 @@ final class Native {
     
     private File loadFromJrubyHome() {
         URL fileUrl = Native.class.getResource(getCextLibraryPath());
-        if (fileUrl.getProtocol().equals("jar")) {
-            return loadFromJar();
-        } else {
+        if (fileUrl == null) {
+            // the file is not in the classpath. use full path
+            return new File(jrubyHome + getCextLibraryPath());
+        } else if (fileUrl.getProtocol().equals("file")) {
             try {
                 return new File(fileUrl.toURI());
             } catch (URISyntaxException e) {
                 throw new UnsatisfiedLinkError(e.getLocalizedMessage());
             }
+        } else if (fileUrl.getProtocol().equals("jar")) {
+            return loadFromJar();
         }
+        return null;
     }
 
     private File loadFromJar() {
