@@ -53,15 +53,13 @@ rb_define_method(VALUE klass, const char* meth, VALUE(*fn)(ANYARGS), int arity)
 {
     JLocalEnv env;
     
-    jmethodID constructor = getMethodID(env, NativeMethod_class, "<init>", "(Lorg/jruby/RubyModule;IJ)V");
+    jmethodID JRuby_newMethod = getStaticMethodID(env, JRuby_class, "newMethod", "(Lorg/jruby/RubyModule;JI)Lorg/jruby/internal/runtime/methods/DynamicMethod;");
     jmethodID RubyModule_addMethod_method = getMethodID(env, RubyModule_class, "addMethod",
             "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");
 
     jobject module = valueToObject(env, klass);
-    jobject method = env->NewObject(NativeMethod_class, constructor, module, arity, fn);
-    checkExceptions(env);
-
-    env->CallVoidMethod(module, RubyModule_addMethod_method, env->NewStringUTF(meth), method);
+    env->CallVoidMethod(module, RubyModule_addMethod_method, env->NewStringUTF(meth),
+            env->CallStaticObjectMethod(JRuby_class, JRuby_newMethod, module, (jlong)(intptr_t) fn, arity));
     checkExceptions(env);
 }
 
@@ -70,16 +68,15 @@ rb_define_module_function(VALUE klass,const char* meth, VALUE(*fn)(ANYARGS),int 
 {
     JLocalEnv env;
 
-    jmethodID constructor = getMethodID(env, NativeMethod_class, "<init>", "(Lorg/jruby/RubyModule;IJ)V");
+    jmethodID JRuby_newMethod = getStaticMethodID(env, JRuby_class, "newMethod", "(Lorg/jruby/RubyModule;JI)Lorg/jruby/internal/runtime/methods/DynamicMethod;");
 
     jmethodID RubyModule_addModuleFunction_method = getMethodID(env, RubyModule_class, "addModuleFunction",
             "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");
 
     jobject module = valueToObject(env, klass);
-    jobject method = env->NewObject(NativeMethod_class, constructor, module, arity, fn);
-    checkExceptions(env);
-
-    env->CallVoidMethod(module, RubyModule_addModuleFunction_method, env->NewStringUTF(meth), method);
+    
+    env->CallVoidMethod(module, RubyModule_addModuleFunction_method, env->NewStringUTF(meth),
+            env->CallStaticObjectMethod(JRuby_class, JRuby_newMethod, module, (jlong)(intptr_t) fn, arity));
     checkExceptions(env);
 }
 

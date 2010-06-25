@@ -77,10 +77,10 @@ final class Native {
     }
 
     public final native IRubyObject callMethod(ThreadContext ctx, long fn, long recv, int arity, long[] args);
-    public final native IRubyObject callMethod0(ThreadContext ctx, long fn, long recv);
-    public final native IRubyObject callMethod1(ThreadContext ctx, long fn, long recv, long arg0);
-    public final native IRubyObject callMethod2(ThreadContext ctx, long fn, long recv, long arg0, long arg1);
-    public final native IRubyObject callMethod3(ThreadContext ctx, long fn, long recv, long arg0, long arg1, long arg2);
+    final native IRubyObject callMethod0(long fn, long recv);
+    final native IRubyObject callMethod1(long fn, long recv, long arg0);
+    final native IRubyObject callMethod2(long fn, long recv, long arg0, long arg1);
+    final native IRubyObject callMethod3(long fn, long recv, long arg0, long arg1, long arg2);
 
     public final native long newHandle(IRubyObject obj);
     public final native void freeHandle(long handle);

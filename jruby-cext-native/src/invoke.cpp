@@ -100,6 +100,95 @@ Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject 
     
 }
 
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    callMethod0
+ * Signature: (JJ)Lorg/jruby/runtime/builtin/IRubyObject;
+ */
+JNIEXPORT jobject JNICALL
+Java_org_jruby_cext_Native_callMethod0(JNIEnv* env, jobject self, jlong fn, jlong recv)
+{
+    try {
+
+        return valueToObject(env, ((VALUE (*)(VALUE)) fn)((VALUE) recv));
+
+    } catch (jruby::JavaException& ex) {
+        env->Throw(ex.getCause());
+        return NULL;
+
+    } catch (std::exception& ex) {
+        jruby::throwExceptionByName(env, jruby::RuntimeException, "C runtime exception occurred: ", ex.what());
+        return NULL;
+    }
+}
+
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    callMethod1
+ * Signature: (JJJ)Lorg/jruby/runtime/builtin/IRubyObject;
+ */
+JNIEXPORT jobject JNICALL
+Java_org_jruby_cext_Native_callMethod1(JNIEnv* env, jobject self, jlong fn, jlong recv, jlong arg1)
+{
+    try {
+
+        return valueToObject(env, ((VALUE (*)(VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1));
+
+    } catch (jruby::JavaException& ex) {
+        env->Throw(ex.getCause());
+        return NULL;
+
+    } catch (std::exception& ex) {
+        jruby::throwExceptionByName(env, jruby::RuntimeException, "C runtime exception occurred: ", ex.what());
+        return NULL;
+    }
+}
+
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    callMethod2
+ * Signature: (JJJJ)Lorg/jruby/runtime/builtin/IRubyObject;
+ */
+JNIEXPORT jobject JNICALL
+Java_org_jruby_cext_Native_callMethod2(JNIEnv* env, jobject self, jlong fn, jlong recv,
+        jlong arg1, jlong arg2)
+{
+    try {
+
+        return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2));
+
+    } catch (jruby::JavaException& ex) {
+        env->Throw(ex.getCause());
+        return NULL;
+
+    } catch (std::exception& ex) {
+        jruby::throwExceptionByName(env, jruby::RuntimeException, "C runtime exception occurred: ", ex.what());
+        return NULL;
+    }
+}
+
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    callMethod3
+ * Signature: (JJJJJ)Lorg/jruby/runtime/builtin/IRubyObject;
+ */
+JNIEXPORT jobject JNICALL
+Java_org_jruby_cext_Native_callMethod3(JNIEnv* env, jobject self, jlong fn, jlong recv,
+        jlong arg1, jlong arg2, jlong arg3)
+{
+    try {
+
+        return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2, (VALUE) arg3));
+
+    } catch (jruby::JavaException& ex) {
+        env->Throw(ex.getCause());
+        return NULL;
+
+    } catch (std::exception& ex) {
+        jruby::throwExceptionByName(env, jruby::RuntimeException, "C runtime exception occurred: ", ex.what());
+        return NULL;
+    }
+}
 
 
 static VALUE

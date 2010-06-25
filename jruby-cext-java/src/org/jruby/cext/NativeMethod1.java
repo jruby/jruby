@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Wayne Meissner
+ * Copyright (C) 2009, 2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -18,11 +18,23 @@
 package org.jruby.cext;
 
 import org.jruby.RubyModule;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
-public final class NativeMethod extends AbstractNativeMethod {
-    
-    public NativeMethod(RubyModule clazz, int arity, long function) {
+public final class NativeMethod1 extends AbstractNativeMethod {
+    public NativeMethod1(RubyModule clazz, int arity, long function) {
         super(clazz, arity, function);
     }
-    // generic call method is implemented in AbstractNativeMethod
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, Block block) {
+        ExecutionLock.lock(context);
+        try {
+            return Native.getInstance(context.getRuntime()).callMethod1(function,
+                    Handle.valueOf(self).getAddress(), Handle.valueOf(arg0).getAddress());
+        } finally {
+            ExecutionLock.unlock(context);
+        }
+    }
 }
