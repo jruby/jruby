@@ -64,6 +64,7 @@ namespace jruby {
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
     extern jmethodID JRuby_callMethod;
+    extern jmethodID JRuby_newString;
     extern jfieldID Handle_address_field;
     extern jobject runtime, nilRef, trueRef, falseRef;
     extern std::map<const char*, jobject> methodNameMap;

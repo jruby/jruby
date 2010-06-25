@@ -42,6 +42,7 @@ namespace jruby {
     jclass Symbol_class;
     jclass JRuby_class;
     jmethodID JRuby_callMethod;
+    jmethodID JRuby_newString;
     jmethodID ThreadContext_getRuntime_method;
     jmethodID Ruby_defineModule_method;
     jmethodID Ruby_getNil_method;
@@ -175,6 +176,8 @@ loadIds(JNIEnv* env)
             "newStringNoCopy", "(Lorg/jruby/Ruby;[B)Lorg/jruby/RubyString;");
     JRuby_callMethod = getStaticMethodID(env, JRuby_class, "callRubyMethod",
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    JRuby_newString = getStaticMethodID(env, JRuby_class, "newString",
+            "(Lorg/jruby/Ruby;[BZ)J");
 }
 
 static jobject

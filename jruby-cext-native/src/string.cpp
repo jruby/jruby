@@ -44,16 +44,10 @@ newString(const char* ptr, int len, int capacity = 0, bool tainted = false)
         checkExceptions(env);
     }
 
-    jobject result = env->CallStaticObjectMethod(RubyString_class, RubyString_newStringNoCopy, getRuntime(), bytes);
+    jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_newString, jruby::getRuntime(), bytes, (jboolean) tainted);
     checkExceptions(env);
 
-    if (tainted) {
-        jmethodID setTaint = getMethodID(env, IRubyObject_class, "setTaint", "(Z)V");
-        env->CallVoidMethod(result, setTaint, tainted);
-        checkExceptions(env);
-    }
-
-    return objectToValue(env, result);
+    return (VALUE) result;
 }
 
 extern "C" VALUE
