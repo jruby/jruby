@@ -16,8 +16,8 @@
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HANDLE_H
-#define	HANDLE_H
+#ifndef JRUBY_HANDLE_H
+#define	JRUBY_HANDLE_H
 
 #include <jni.h>
 
@@ -52,5 +52,5 @@ extern "C" {
 }
 #endif
 
-#endif	/* HANDLE_H */
+#endif	/* JRUBY_HANDLE_H */
 
