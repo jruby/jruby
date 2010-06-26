@@ -300,9 +300,9 @@ public class RbConfigLibrary implements Library {
         configModule.defineConstant("MAKEFILE_CONFIG", mkmfHash);
     }
 
-    private static void setConfig(RubyHash mkmfHash, String key, String value) {
-        Ruby runtime = mkmfHash.getRuntime();
-        mkmfHash.op_aset(runtime.getCurrentContext(), runtime.newString(key), runtime.newString(value));
+    private static void setConfig(RubyHash hash, String key, String value) {
+        Ruby runtime = hash.getRuntime();
+        hash.op_aset(runtime.getCurrentContext(), runtime.newString(key), runtime.newString(value));
     }
 
     public static String jrubyScript() {
