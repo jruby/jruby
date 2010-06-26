@@ -79,9 +79,9 @@ public final class Handle {
 
 
     public static final synchronized Handle valueOf(IRubyObject obj) {
-        Object h = GC.lookup(obj);
-        if (h instanceof Handle) {
-            return (Handle) h;
+        Handle h = GC.lookup(obj);
+        if (h != null) {
+            return h;
         }
 
         Handle handle = new Handle(obj.getRuntime(), Native.getInstance(obj.getRuntime()).newHandle(obj));

@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ReferenceReaper;
@@ -31,10 +32,12 @@ import org.jruby.util.WeakIdentityHashMap;
 
 
 public class GC {
+    private static final String NATIVE_REF_KEY = "cext-ref";
+
     private static final Map<IRubyObject, Boolean> permRefs = new IdentityHashMap<IRubyObject, Boolean>();
     
     @SuppressWarnings(value="unchecked")
-    private static final Map<IRubyObject, Handle> allRefs = new WeakIdentityHashMap();
+    private static final Map<Object, Handle> nonRubyRefs = new WeakIdentityHashMap();
     @SuppressWarnings(value="unchecked")
     private static final Map<RubyData, Handle> dataRefs = new WeakIdentityHashMap();
 
@@ -54,7 +57,12 @@ public class GC {
     }
 
     static final Handle lookup(IRubyObject obj) {
-        return allRefs.get(obj);
+        if (obj instanceof RubyBasicObject) {
+            return (Handle) ((RubyBasicObject) obj).fastGetInternalVariable(NATIVE_REF_KEY);
+        
+        } else {
+            return nonRubyRefs.get(obj);
+        }
     }
 
     /**
@@ -62,7 +70,12 @@ public class GC {
      * @param obj
      */
     static final void register(IRubyObject obj, Handle h) {
-        allRefs.put(obj, h);
+        if (obj instanceof RubyBasicObject) {
+            ((RubyBasicObject) obj).fastSetInternalVariable(NATIVE_REF_KEY, h);
+
+        } else {
+            nonRubyRefs.put(obj, h);
+        }
 
         if (obj instanceof RubyData) {
             dataRefs.put((RubyData) obj, h);
