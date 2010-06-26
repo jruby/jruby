@@ -315,7 +315,7 @@ size_t rb_str_capacity(VALUE);
  *
  * @note This is NOT an MRI C-API function.
  */
-char *rb_str_ptr(VALUE self);
+const char *rb_str_ptr(VALUE self);
 
 #define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_new_shared

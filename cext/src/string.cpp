@@ -163,3 +163,23 @@ rb_string_value(VALUE* ptr)
     return *ptr = callMethod(*ptr, "to_str", 0);
 }
 
+extern "C" const char*
+rb_str_ptr(VALUE obj)
+{
+    JLocalEnv env;
+    char* ctext;
+    printf("Get me a pointer from %p!\n", (void*)obj);
+    //valueToObject(env, obj);
+    //printf("valueToObject works\n");
+    jobject rubyString = valueToObject(env, obj);
+    printf("Got me rubyString object (%p)\n", (void*)rubyString);
+    jmethodID mid = getMethodID(env, RubyString_class, "setTaint", "(Z)V");
+    printf("Got me toString method (%p)\n", (void*)mid);
+    jstring javaString = (jstring)(env->CallObjectMethod(rubyString, mid));
+    printf("Got me java String (%p)\n", (void*)javaString);
+    env->GetStringUTFChars(javaString, NULL);
+    printf("Got me cstring\n");
+    return ctext;
+}
+
+
