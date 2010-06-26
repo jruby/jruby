@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008 - 2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -22,6 +22,8 @@
 
 using namespace jruby;
 
+#define CACHE_OFFSET (128)
+VALUE fixnumCache[2 * CACHE_OFFSET];
 
 extern "C" long
 rb_num2long(VALUE v)
@@ -106,15 +108,40 @@ newNumber(jmethodID method, long long v)
     return (VALUE) result;
 }
 
+
+static VALUE
+getCachedFixnum(int i)
+{
+    VALUE v = fixnumCache[i];
+    if (v != 0) {
+        return v;
+    }
+
+    fixnumCache[i] = v = newNumber(JRuby_ll2inum, i);
+    JLocalEnv env;
+    // FIXME hack to ensure the fixnum is never garbage collected
+    env->NewGlobalRef(valueToObject(env, v));
+
+    return v;
+}
+
 extern "C" VALUE
 rb_ll2inum(long long v)
 {
+    if (v >= (long long) -CACHE_OFFSET && v < (long long) CACHE_OFFSET) {
+        return getCachedFixnum((int) v);
+    }
+
     return newNumber(JRuby_ll2inum, v);
 }
 
 extern "C" VALUE
 rb_ull2inum(unsigned long long v)
 {
+    if (v < (unsigned long long) CACHE_OFFSET) {
+        return getCachedFixnum((int) v);
+    }
+
     return newNumber(JRuby_ull2inum, (long long) v);
 }
 
