@@ -41,7 +41,7 @@ public class GC {
     @SuppressWarnings(value="unchecked")
     private static final Map<RubyData, Handle> dataRefs = new WeakIdentityHashMap();
 
-    private static List<IRubyObject> tmpStrongRefs = new LinkedList<IRubyObject>();
+    private static Map<IRubyObject, Boolean> tmpStrongRefs = new IdentityHashMap<IRubyObject, Boolean>();
     private static List<IRubyObject> markedRefs = new LinkedList<IRubyObject>();
     private static volatile Reference<Object> reaper = null;
 
@@ -57,12 +57,15 @@ public class GC {
     }
 
     static final Handle lookup(IRubyObject obj) {
-        if (obj instanceof RubyBasicObject) {
-            return (Handle) ((RubyBasicObject) obj).fastGetInternalVariable(NATIVE_REF_KEY);
-        
-        } else {
-            return nonRubyRefs.get(obj);
+        Handle h = obj instanceof RubyBasicObject
+                ? (Handle) ((RubyBasicObject) obj).fastGetInternalVariable(NATIVE_REF_KEY)
+                : nonRubyRefs.get(obj);
+
+        if (h != null && !tmpStrongRefs.containsKey(obj)) {
+            tmpStrongRefs.put(obj, Boolean.TRUE);
         }
+
+        return h;
     }
 
     /**
@@ -81,7 +84,7 @@ public class GC {
             dataRefs.put((RubyData) obj, h);
         }
 
-        tmpStrongRefs.add(obj);
+        tmpStrongRefs.put(obj, Boolean.TRUE);
     }
 
     static final void cleanup(ThreadContext context) {
@@ -91,7 +94,7 @@ public class GC {
         
         // Avoid setting up the reaper at all if no data objects exist
         if (dataRefs.isEmpty()) {
-            tmpStrongRefs = new LinkedList<IRubyObject>();
+            tmpStrongRefs.clear();
             return;
         }
 
@@ -143,6 +146,6 @@ public class GC {
             markedRefs = null;
         }
 
-        tmpStrongRefs = new LinkedList<IRubyObject>();
+        tmpStrongRefs.clear();
     }
 }
