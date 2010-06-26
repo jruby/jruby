@@ -881,7 +881,9 @@ public class RubyProcess {
             // FIXME: It may be possible to killpg on systems which support it.  POSIX library
             // needs to tell whether a particular method works or not
             if (pid == 0) pid = runtime.getPosix().getpid();
-            posix.kill(processGroupKill ? -pid : pid, signal);            
+            if (posix.kill(processGroupKill ? -pid : pid, signal) < 0) {
+                throw runtime.newErrnoESRCHError();
+            }
         }
         
         return runtime.newFixnum(args.length - 1);

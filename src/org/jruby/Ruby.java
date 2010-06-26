@@ -3139,6 +3139,10 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("EADDRNOTAVAIL"), message);
     }
 
+    public RaiseException newErrnoESRCHError() {
+        return newRaiseException(getErrno().fastGetClass("ESRCH"), null);
+    }
+
     public RaiseException newIndexError(String message) {
         return newRaiseException(getIndexError(), message);
     }
