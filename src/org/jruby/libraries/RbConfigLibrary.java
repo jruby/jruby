@@ -219,26 +219,23 @@ public class RbConfigLibrary implements Library {
         String gempath = SafePropertyAccessor.getProperty("jruby.gem.path");
         if (gemhome != null) setConfig(configHash, "default_gem_home", gemhome);
         if (gempath != null) setConfig(configHash, "default_gem_path", gempath);
-        
-        RubyHash mkmfHash = RubyHash.newHash(runtime);
-        
 
-        setConfig(mkmfHash, "libdir", libdir);
-        setConfig(mkmfHash, "arch", "java");
-        setConfig(mkmfHash, "rubylibdir",     rubyLibDir);
-        setConfig(mkmfHash, "sitedir",        siteDir);
-        setConfig(mkmfHash, "sitelibdir",     siteLibDir);
-        setConfig(mkmfHash, "sitearch", "java");
-        setConfig(mkmfHash, "sitearchdir",    siteArchDir);
-        setConfig(mkmfHash, "archdir",    archDir);
-        setConfig(mkmfHash, "topdir",    archDir);
-        setConfig(mkmfHash, "configure_args", "");
-        setConfig(mkmfHash, "datadir", new NormalizedFile(normalizedHome, "share").getPath());
-        setConfig(mkmfHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
-        setConfig(mkmfHash, "sysconfdir", new NormalizedFile(normalizedHome, "etc").getPath());
-        setConfig(mkmfHash, "localstatedir", new NormalizedFile(normalizedHome, "var").getPath());
+        setConfig(configHash, "libdir", libdir);
+        setConfig(configHash, "arch", "java");
+        setConfig(configHash, "rubylibdir",     rubyLibDir);
+        setConfig(configHash, "sitedir",        siteDir);
+        setConfig(configHash, "sitelibdir",     siteLibDir);
+        setConfig(configHash, "sitearch", "java");
+        setConfig(configHash, "sitearchdir",    siteArchDir);
+        setConfig(configHash, "archdir",    archDir);
+        setConfig(configHash, "topdir",    archDir);
+        setConfig(configHash, "configure_args", "");
+        setConfig(configHash, "datadir", new NormalizedFile(normalizedHome, "share").getPath());
+        setConfig(configHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
+        setConfig(configHash, "sysconfdir", new NormalizedFile(normalizedHome, "etc").getPath());
+        setConfig(configHash, "localstatedir", new NormalizedFile(normalizedHome, "var").getPath());
         
-        setupMakefileConfig(configModule, mkmfHash);
+        setupMakefileConfig(configModule, configHash);
     }
     
     private static void setupMakefileConfig(RubyModule configModule, RubyHash mkmfHash) {
@@ -255,22 +252,19 @@ public class RbConfigLibrary implements Library {
         String soflags = true ? "" : " -shared -static-libgcc -mimpure-text -Wl,-O1 ";
         String ldflags = soflags;
         
-        
         String archflags = " -arch i386 -arch ppc -arch x86_64 ";
-        
-        cflags += archflags;
 
         // this set is only for darwin
-        cflags += " -isysroot /Developer/SDKs/MacOSX10.4u.sdk -DTARGET_RT_MAC_CFM=0 ";
-        cflags += " -arch i386 -arch ppc -arch x86_64 ";
-        ldflags += " -arch i386 -arch ppc -arch x86_64 -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 -undefined dynamic_lookup ";
+        cflags += " -DTARGET_RT_MAC_CFM=0 ";
+        ldflags += " -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 -undefined dynamic_lookup ";
         String libext = "a";
         String objext = "o";
         
         setConfig(mkmfHash, "configure_args", "");
         setConfig(mkmfHash, "CFLAGS", cflags);
         setConfig(mkmfHash, "CPPFLAGS", "");
-        setConfig(mkmfHash, "ARCH_FLAG", "");
+        setConfig(mkmfHash, "CPPOUTFILE", "conftest.i");
+        setConfig(mkmfHash, "ARCH_FLAG", archflags);
         setConfig(mkmfHash, "LDFLAGS", ldflags);
         setConfig(mkmfHash, "DLDFLAGS", "");
         setConfig(mkmfHash, "LIBEXT", libext);
@@ -287,6 +281,7 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "ruby_install_name", jrubyScript());
         setConfig(mkmfHash, "DLEXT", "bundle");
         setConfig(mkmfHash, "CC", "cc ");
+        setConfig(mkmfHash, "CPP", "cpp ");
         setConfig(mkmfHash, "LDSHARED", "cc ");
         setConfig(mkmfHash, "OUTFLAG", "-o ");
         setConfig(mkmfHash, "PATH_SEPARATOR", ":");
