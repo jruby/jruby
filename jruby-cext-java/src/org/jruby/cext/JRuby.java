@@ -42,6 +42,12 @@ public class JRuby {
             case 1:
                 return new NativeMethod1(module, arity, fn);
 
+            case 2:
+                return new NativeMethod2(module, arity, fn);
+
+            case 3:
+                return new NativeMethod3(module, arity, fn);
+
             default:
                 return new NativeMethod(module, arity, fn);
         }
