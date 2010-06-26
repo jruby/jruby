@@ -43,6 +43,11 @@ namespace jruby {
     jclass JRuby_class;
     jmethodID JRuby_callMethod;
     jmethodID JRuby_newString;
+    jmethodID JRuby_ll2inum;
+    jmethodID JRuby_ull2inum;
+    jmethodID JRuby_int2big;
+    jmethodID JRuby_uint2big;
+
     jmethodID ThreadContext_getRuntime_method;
     jmethodID Ruby_defineModule_method;
     jmethodID Ruby_getNil_method;
@@ -178,6 +183,14 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_newString = getStaticMethodID(env, JRuby_class, "newString",
             "(Lorg/jruby/Ruby;[BZ)J");
+    JRuby_ll2inum = getStaticMethodID(env, JRuby_class, "ll2inum",
+            "(Lorg/jruby/Ruby;J)J");
+    JRuby_ull2inum = getStaticMethodID(env, JRuby_class, "ull2inum",
+            "(Lorg/jruby/Ruby;J)J");
+    JRuby_int2big = getStaticMethodID(env, JRuby_class, "int2big",
+            "(Lorg/jruby/Ruby;J)J");
+    JRuby_uint2big = getStaticMethodID(env, JRuby_class, "uint2big",
+            "(Lorg/jruby/Ruby;J)J");
 }
 
 static jobject

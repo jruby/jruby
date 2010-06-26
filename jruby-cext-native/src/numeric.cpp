@@ -64,6 +64,7 @@ rb_num2ll(VALUE v)
 {
     JLocalEnv env;
     jvalue params[1];
+
     params[0].l = valueToObject(env, v);
 
     jlong result = env->CallStaticLongMethodA(RubyNumeric_class, RubyNumeric_num2long_method, params);
@@ -90,34 +91,42 @@ rb_uint2inum(unsigned long v)
     return rb_ull2inum(v);
 }
 
+static inline VALUE
+newNumber(jmethodID method, long long v)
+{
+    JLocalEnv env;
+    jvalue params[2];
+
+    params[0].l = getRuntime();
+    params[1].j = (jlong) v;
+
+    jlong result = env->CallStaticLongMethodA(JRuby_class, method, params);
+    checkExceptions(env);
+
+    return (VALUE) result;
+}
+
 extern "C" VALUE
 rb_ll2inum(long long v)
 {
-    JLocalEnv env;
-    jvalue params[1];
-    params[0].j = (jlong) v;
-
-    jobject result = env->CallObjectMethodA(getRuntime(), Ruby_newFixnum_method, params);
-    checkExceptions(env);
-
-    return objectToValue(env, result);
+    return newNumber(JRuby_ll2inum, v);
 }
 
 extern "C" VALUE
 rb_ull2inum(unsigned long long v)
 {
-    return rb_ll2inum(v);
+    return newNumber(JRuby_ull2inum, (long long) v);
 }
 
 extern "C" VALUE
 rb_int2big(long long v)
 {
-    return rb_ll2inum(v);
+    return newNumber(JRuby_int2big, v);
 }
 
 extern "C" VALUE
 rb_uint2big(unsigned long long v)
 {
-    return rb_ull2inum(v);
+    return newNumber(JRuby_uint2big, (long long) v);
 }
 

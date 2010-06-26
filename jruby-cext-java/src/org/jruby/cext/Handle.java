@@ -91,4 +91,8 @@ public final class Handle {
         return handle;
     }
 
+    public static long nativeHandle(IRubyObject obj) {
+        return Handle.valueOf(obj).getAddress();
+    }
+
 }

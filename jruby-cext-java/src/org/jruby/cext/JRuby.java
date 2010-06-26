@@ -4,7 +4,10 @@
 
 package org.jruby.cext;
 
+import java.math.BigInteger;
 import org.jruby.Ruby;
+import org.jruby.RubyBignum;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -19,7 +22,7 @@ public class JRuby {
         IRubyObject retval = recv.callMethod(recv.getRuntime().getCurrentContext(),
                 methodName.toString(), args);
 
-        return Handle.valueOf(retval).getAddress();
+        return Handle.nativeHandle(retval);
     }
 
     public static long newString(Ruby runtime, byte[] bytes, boolean tainted) {
@@ -28,7 +31,7 @@ public class JRuby {
             retval.setTaint(tainted);
         }
 
-        return Handle.valueOf(retval).getAddress();
+        return Handle.nativeHandle(retval);
     }
 
     public static DynamicMethod newMethod(RubyModule module, long fn, int arity) {
@@ -42,5 +45,31 @@ public class JRuby {
             default:
                 return new NativeMethod(module, arity, fn);
         }
+    }
+
+    public static long ll2inum(Ruby runtime, long l) {
+        return Handle.nativeHandle(RubyFixnum.newFixnum(runtime, l));
+    }
+
+    private static final BigInteger UINT64_BASE = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
+
+    public static long ull2inum(Ruby runtime, long l) {
+        IRubyObject retval = l < 0
+                    ? RubyBignum.newBignum(runtime, BigInteger.valueOf(l & 0x7fffffffffffffffL).add(UINT64_BASE))
+                    : runtime.newFixnum(l);
+
+        return Handle.nativeHandle(retval);
+    }
+
+    public static long int2big(Ruby runtime, long l) {
+        return Handle.nativeHandle(RubyBignum.newBignum(runtime, l));
+    }
+
+    public static long uint2big(Ruby runtime, long l) {
+        IRubyObject retval = l < 0
+                    ? RubyBignum.newBignum(runtime, BigInteger.valueOf(l & 0x7fffffffffffffffL).add(UINT64_BASE))
+                    : RubyBignum.newBignum(runtime, l);
+
+        return Handle.nativeHandle(retval);
     }
 }
