@@ -127,24 +127,6 @@ callObjectMethod(JNIEnv* env, jobject recv, jmethodID mid)
     return result;
 }
 
-jobject
-jruby::getNilRef(JNIEnv* env)
-{
-    return jruby::nilRef;
-}
-
-jobject
-jruby::getFalseRef(JNIEnv* env)
-{
-    return jruby::falseRef;
-}
-
-jobject
-jruby::getTrueRef(JNIEnv* env)
-{
-    return jruby::trueRef;
-}
-
 VALUE
 jruby::getSymbol(const char* name)
 {

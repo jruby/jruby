@@ -70,7 +70,7 @@ namespace jruby {
     extern jmethodID JRuby_int2big;
     extern jmethodID JRuby_uint2big;
     extern jfieldID Handle_address_field;
-    extern jobject runtime, nilRef, trueRef, falseRef;
+    extern jobject runtime;
     extern std::map<const char*, jobject> methodNameMap;
 
     void initRubyClasses(JNIEnv* env, jobject runtime);
@@ -101,10 +101,6 @@ namespace jruby {
     VALUE getModule(JNIEnv* env, const char* className);
     VALUE getClass(JNIEnv* env, const char* className);
     
-    jobject getNilRef(JNIEnv* env);
-    jobject getFalseRef(JNIEnv* env);
-    jobject getTrueRef(JNIEnv* env);
-
     jfieldID getFieldID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
     jmethodID getMethodID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
     jmethodID getStaticMethodID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);

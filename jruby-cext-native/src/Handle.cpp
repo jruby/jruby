@@ -28,6 +28,7 @@
 
 using namespace jruby;
 
+Handle* constHandles[3];
 
 Handle::Handle()
 {
@@ -68,15 +69,12 @@ Java_org_jruby_cext_Native_newFixnumHandle(JNIEnv* env, jobject self, jobject ob
 extern "C" JNIEXPORT void JNICALL
 Java_org_jruby_cext_Native_freeHandle(JNIEnv* env, jobject self, jlong address)
 {
-    if (IS_CONST(address)) {
-        return; // special constant, ignore
-    }
-
-    Handle* h = (Handle *) jruby::j2p(address);
-    if (h == NULL) {
+    if (address == 0LL) {
         jruby::throwExceptionByName(env, NullPointerException, "null handle");
         return;
     }
+    
+    Handle* h = Handle::valueOf((VALUE) address);
     
     if (h->finalize != NULL) {
         (*h->finalize)(h);
@@ -90,18 +88,13 @@ Java_org_jruby_cext_Native_freeHandle(JNIEnv* env, jobject self, jlong address)
 extern "C" JNIEXPORT void JNICALL
 Java_org_jruby_cext_Native_markHandle(JNIEnv* env, jobject self, jlong address)
 {
-    if (IS_CONST(address)) {
-        return; // special constant, ignore
-    }
-    
-    Handle* h = (Handle *) jruby::j2p(address);
-    if (h == NULL) {
+    if (address == 0LL) {
         jruby::throwExceptionByName(env, NullPointerException, "null handle");
         return;
     }
 
     // Mark this handle's children
-    h->mark();
+    Handle::valueOf((VALUE) address)->mark();
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -123,29 +116,14 @@ Java_org_jruby_cext_Native_unmarkHandle(JNIEnv* env, jobject self, jlong address
 jobject
 jruby::valueToObject(JNIEnv* env, VALUE v)
 {
-    if (IS_CONST(v)) {
-        switch (v) {
-            case Qnil:
-                return getNilRef(env);
-
-            case Qfalse:
-                return getFalseRef(env);
-
-            case Qtrue:
-                return getTrueRef(env);
-        }
-        rb_raise(rb_eRuntimeError, "invalid C ext constant");
-
-        return NULL;
-    } else {
-
-        jobject ref = env->NewLocalRef(((Handle *) v)->obj);
-        if (env->IsSameObject(ref, NULL)) {
-            throw JavaException(env, NullPointerException, "invalid RubyObject reference");
-        }
-
-        return ref;
+    Handle* h = Handle::valueOf(v);
+    
+    jobject ref = env->NewLocalRef(h->obj);
+    if (env->IsSameObject(ref, NULL)) {
+        throw JavaException(env, NullPointerException, "invalid RubyObject reference");
     }
+
+    return ref;
 }
 
 VALUE

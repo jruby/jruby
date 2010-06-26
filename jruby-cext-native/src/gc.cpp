@@ -39,7 +39,7 @@ rb_gc_mark(VALUE v)
         return;
     }
 
-    Handle* h = (Handle *)v;
+    Handle* h = Handle::valueOf(v);
     if ((h->flags & FL_MARK) == 0) {
         h->flags |= FL_MARK;
 

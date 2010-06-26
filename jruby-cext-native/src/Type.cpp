@@ -27,26 +27,7 @@ using namespace jruby;
 extern "C" int
 rb_type(VALUE val)
 {
-    if (IS_CONST(val)) {
-        switch (val) {
-            case Qnil:
-                return T_NIL;
-
-            case Qfalse:
-                return T_FALSE;
-
-            case Qtrue:
-                return T_TRUE;
-
-            case Qundef:
-                return T_UNDEF;
-
-            default:
-                rb_raise(rb_eTypeError, "invalid constant");
-        }
-    }
-
-    Handle* h = (Handle *) val;
+    Handle* h = Handle::valueOf(val);
     if (h->type != T_NONE) {
         return h->type;
     }

@@ -207,10 +207,19 @@ Java_org_jruby_cext_Native_initNative(JNIEnv* env, jobject self, jobject runtime
     try {
         loadIds(env);
         jruby::runtime = env->NewGlobalRef(runtime);
-        jruby::nilRef = env->NewGlobalRef(callObjectMethod(env, runtime, Ruby_getNil_method));
-        jruby::trueRef = env->NewGlobalRef(callObjectMethod(env, runtime, Ruby_getTrue_method));
-        jruby::falseRef = env->NewGlobalRef(callObjectMethod(env, runtime, Ruby_getFalse_method));
+        
+        constHandles[0] = new Handle;
+        constHandles[0]->obj = env->NewWeakGlobalRef(callObjectMethod(env, runtime, Ruby_getFalse_method));
+        constHandles[0]->type = T_FALSE;
 
+        constHandles[1] = new Handle;
+        constHandles[1]->obj = env->NewWeakGlobalRef(callObjectMethod(env, runtime, Ruby_getTrue_method));
+        constHandles[1]->type = T_TRUE;
+
+        constHandles[2] = new Handle;
+        constHandles[2]->obj = env->NewWeakGlobalRef(callObjectMethod(env, runtime, Ruby_getNil_method));
+        constHandles[2]->type = T_NIL;
+        
         initRubyClasses(env, runtime);
     } catch (JavaException& ex) {
         return;
