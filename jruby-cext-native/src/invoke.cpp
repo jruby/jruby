@@ -69,22 +69,16 @@ extern "C" JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject jThreadContext,
         jlong address, jlong recv, jint arity, jlongArray argArray)
 {
-    jobject runtime = env->CallObjectMethod(jThreadContext, jruby::ThreadContext_getRuntime_method);
-    if (!env->IsSameObject(runtime, jruby::runtime)) {
-        jruby::throwExceptionByName(env, jruby::RuntimeException, "invalid ruby runtime");
-        return 0;
-    }
-
-    int argCount = env->GetArrayLength(argArray);
-    jlong* largs = (jlong *) alloca(argCount * sizeof(jlong));
-    env->GetLongArrayRegion(argArray, 0, argCount, largs);
-
-    VALUE* values = (VALUE *) alloca(argCount * sizeof(VALUE));
-    for (int i = 0; i < argCount; ++i) {
-        values[i] = (VALUE) largs[i];
-    }
-
+    
     try {
+        int argCount = env->GetArrayLength(argArray);
+        jlong* largs = (jlong *) alloca(argCount * sizeof(jlong));
+        env->GetLongArrayRegion(argArray, 0, argCount, largs);
+
+        VALUE* values = (VALUE *) alloca(argCount * sizeof(VALUE));
+        for (int i = 0; i < argCount; ++i) {
+            values[i] = (VALUE) largs[i];
+        }
 
         VALUE v = dispatch((void *) address, arity, argCount, (VALUE) recv, values);
         return valueToObject(env, v);    

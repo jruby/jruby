@@ -35,11 +35,14 @@ Handle::Handle()
     flags = 0;
     type = T_NONE;
     finalize = NULL;
-    dmark = dfree = NULL;
-    data = NULL;
 }
 
 Handle::~Handle()
+{
+}
+
+void
+Handle::mark()
 {
 }
 
@@ -98,9 +101,7 @@ Java_org_jruby_cext_Native_markHandle(JNIEnv* env, jobject self, jlong address)
     }
 
     // Mark this handle's children
-    if (h->dmark != NULL) {
-        (*h->dmark)(h->data);
-    }
+    h->mark();
 }
 
 extern "C" JNIEXPORT void JNICALL

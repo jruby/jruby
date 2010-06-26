@@ -52,10 +52,6 @@ rb_gc_mark(VALUE v)
         }
 
         // Mark any children if this is a data object
-        if (h->dmark != NULL) {
-            if (h->dmark != NULL) {
-                h->dmark(h->data);
-            }
-        }
+        h->mark();
     }
 }

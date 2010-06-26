@@ -28,10 +28,20 @@
 using namespace jruby;
 static void rubydata_finalize(Handle *);
 
+class DataHandle: public Handle {
+public:
+    virtual ~DataHandle();
+    virtual void mark();
+
+    void (*dmark)(void *);
+    void (*dfree)(void *);
+    void* data;
+};
+
 extern "C" VALUE
 rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FUNC dfree)
 {
-    Handle* h = new Handle;
+    DataHandle* h = new DataHandle;
     JLocalEnv env;
     
     h->data = data;
@@ -40,14 +50,30 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
     h->finalize = rubydata_finalize;
     h->type = T_DATA;
 
-    jobject obj = env->CallStaticObjectMethod(RubyData_class, RubyData_newRubyData_method, getRuntime(), 
-            valueToObject(env, klass), (jlong) h);
+    jvalue params[3];
+    params[0].l = getRuntime();
+    params[1].l = valueToObject(env, klass);
+    params[2].j = p2j(h);
+
+    jobject obj = env->CallStaticObjectMethodA(RubyData_class, RubyData_newRubyData_method, params);
     checkExceptions(env);
+
     h->obj = env->NewWeakGlobalRef(obj);
     checkExceptions(env);
     
 
     return (VALUE) (uintptr_t) h;
+}
+
+DataHandle::~DataHandle()
+{
+}
+
+void DataHandle::mark()
+{
+    if (*dmark) {
+        (*dmark)(data);
+    }
 }
 
 extern "C" void*
@@ -58,15 +84,17 @@ jruby_data(VALUE v)
         return NULL;
     }
 
-    return ((Handle *) v)->data;
+    return ((DataHandle *) v)->data;
 }
 
 static void
 rubydata_finalize(Handle *h)
 {
-    if (h->dfree == (void *) -1) {
-        xfree(h->data);
-    } else if (h->dfree != NULL) {
-        (*h->dfree)(h->data);
+    DataHandle* dh = (DataHandle *) h;
+    
+    if (dh->dfree == (void *) -1) {
+        xfree(dh->data);
+    } else if (dh->dfree != NULL) {
+        (*dh->dfree)(dh->data);
     }
 }

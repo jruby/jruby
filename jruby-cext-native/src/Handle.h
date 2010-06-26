@@ -30,13 +30,11 @@ extern "C" {
     public:
         Handle();
         virtual ~Handle();
+        virtual void mark();
         jweak obj;
         int flags;
         int type;
         void (*finalize)(Handle *);
-        void (*dmark)(void *);
-        void (*dfree)(void *);
-        void* data;
     };
 
     class Fixnum: public Handle {
