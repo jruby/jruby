@@ -29,6 +29,7 @@ extern "C" {
     class Handle {
     public:
         Handle();
+        virtual ~Handle();
         jweak obj;
         int flags;
         int type;
@@ -38,6 +39,19 @@ extern "C" {
         void* data;
     };
 
+    class Fixnum: public Handle {
+    private:
+        jlong value;
+    public:
+        Fixnum(jlong value_) {
+            value = value_;
+        }
+
+        inline jlong longValue() {
+            return value;
+        }
+    };
+    
 // FIXME - no need to match ruby here, unless we fold type into flags
 #define FL_MARK      (1<<6)
 #define FL_FINALIZE  (1<<7)

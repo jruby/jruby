@@ -64,6 +64,13 @@ rb_fix2uint(VALUE v)
 extern "C" long long
 rb_num2ll(VALUE v)
 {
+    if (!IS_CONST(v)) {
+        Handle* h = (Handle *) v;
+        if (h->type == T_FIXNUM) {
+            return ((Fixnum *) h)->longValue();
+        }
+    }
+
     JLocalEnv env;
     jvalue params[1];
 

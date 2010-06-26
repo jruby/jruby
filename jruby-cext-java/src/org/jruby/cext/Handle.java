@@ -21,6 +21,7 @@ package org.jruby.cext;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class Handle {
@@ -84,8 +85,15 @@ public final class Handle {
             return h;
         }
 
-        Handle handle = new Handle(obj.getRuntime(), Native.getInstance(obj.getRuntime()).newHandle(obj));
-        
+        Ruby runtime = obj.getRuntime();
+        long nativeHandle;
+        if (obj instanceof RubyFixnum) {
+            nativeHandle = Native.getInstance(runtime).newFixnumHandle(obj, ((RubyFixnum) obj).getLongValue());
+        } else {
+            nativeHandle = Native.getInstance(runtime).newHandle(obj);
+        }
+        Handle handle = new Handle(runtime, nativeHandle);
+
         GC.register(obj, handle);
 
         return handle;

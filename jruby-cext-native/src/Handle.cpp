@@ -24,6 +24,7 @@
 #include "JLocalEnv.h"
 #include "org_jruby_cext_Native.h"
 #include "JavaException.h"
+#include "org_jruby_runtime_ClassIndex.h"
 
 using namespace jruby;
 
@@ -38,16 +39,25 @@ Handle::Handle()
     data = NULL;
 }
 
+Handle::~Handle()
+{
+}
+
 extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj)
 {
     Handle* h = new Handle();
     h->obj = env->NewWeakGlobalRef(obj);
-    h->flags = 0;
-    h->type = T_NONE;
-    h->finalize = NULL;
-    h->dmark = h->dfree = NULL;
-    h->data = NULL;
+    
+    return jruby::p2j(h);
+}
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_org_jruby_cext_Native_newFixnumHandle(JNIEnv* env, jobject self, jobject obj, jlong value)
+{
+    Fixnum* h = new Fixnum(value);
+    h->obj = env->NewWeakGlobalRef(obj);
+    h->type = T_FIXNUM;
 
     return jruby::p2j(h);
 }
