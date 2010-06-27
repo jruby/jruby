@@ -42,12 +42,14 @@ public final class Handle extends WeakReference<Object> {
 
     static Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
         Handle h = new Handle(runtime, rubyObject, nativeHandle);
-        
-        if (allHandles != null) {
-            h.next = allHandles;
-            allHandles.prev = h;
+
+        synchronized (Handle.class) {
+            if (allHandles != null) {
+                h.next = allHandles;
+                allHandles.prev = h;
+            }
+            allHandles = h;
         }
-        allHandles = h;
 
         return h;
     }
@@ -124,19 +126,20 @@ public final class Handle extends WeakReference<Object> {
                     try {
                         if (r instanceof Handle) {
                             final Handle h = (Handle) r;
-                            
-                            if (h.prev != null) {
-                                h.prev.next = h.next;
-                            }
-                            if (h.next != null) {
-                                h.next.prev = h.prev;
-                            }
-                            
-                            if (h == allHandles) {
+                            synchronized (Handle.class) {
+                                if (h.prev != null) {
+                                    h.prev.next = h.next;
+                                }
                                 if (h.next != null) {
-                                    allHandles = h.next;
-                                } else {
-                                    allHandles = h.prev;
+                                    h.next.prev = h.prev;
+                                }
+
+                                if (h == allHandles) {
+                                    if (h.next != null) {
+                                        allHandles = h.next;
+                                    } else {
+                                        allHandles = h.prev;
+                                    }
                                 }
                             }
                             h.prev = h.next = null;
