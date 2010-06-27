@@ -56,15 +56,9 @@ public class GC {
     }
 
     static final Handle lookup(IRubyObject obj) {
-        Handle h = obj instanceof RubyBasicObject
+        return obj instanceof RubyBasicObject
                 ? (Handle) ((RubyBasicObject) obj).fastGetInternalVariable(NATIVE_REF_KEY)
                 : nonRubyRefs.get(obj);
-
-        if (h != null) {
-            h.makeStrong();
-        }
-
-        return h;
     }
 
     /**
@@ -82,8 +76,6 @@ public class GC {
         if (obj instanceof RubyData) {
             dataRefs.put((RubyData) obj, h);
         }
-
-        h.makeStrong();
     }
 
     static final void cleanup(ThreadContext context) {

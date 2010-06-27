@@ -43,16 +43,15 @@ public final class Handle extends WeakReference<Object> {
     
     private List<IRubyObject> linkedObjects = null;
 
-    static Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
+    static synchronized Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
         Handle h = new Handle(runtime, rubyObject, nativeHandle);
-
-        synchronized (Handle.class) {
-            if (allHandles != null) {
-                h.next = allHandles;
-                allHandles.prev = h;
-            }
-            allHandles = h;
+        if (allHandles != null) {
+            h.next = allHandles;
+            allHandles.prev = h;
         }
+        allHandles = h;
+
+        h.makeStrong();
 
         return h;
     }
@@ -96,31 +95,28 @@ public final class Handle extends WeakReference<Object> {
         this.linkedObjects = new ArrayList<IRubyObject>(fields);
     }
 
-    final void makeStrong() {
+    private void makeStrong() {
         if (strongRef == null && (strongRef = get()) != null) {
-            synchronized (Handle.class) {
-                strongNext = strongRefs;
-                strongRefs = this;
-            }
+            strongNext = strongRefs;
+            strongRefs = this;
         }
     }
 
-    static void clearStrongReferences() {
-        synchronized (Handle.class) {
-            Handle h = strongRefs;
-            while (h != null) {
-                h.strongRef = null;
-                Handle n = h.strongNext;
-                h.strongNext = null;
-                h = n;
-            }
-            strongRefs = null;
+    static synchronized void clearStrongReferences() {
+        Handle h = strongRefs;
+        while (h != null) {
+            h.strongRef = null;
+            Handle n = h.strongNext;
+            h.strongNext = null;
+            h = n;
         }
+        strongRefs = null;
     }
 
     public static final synchronized Handle valueOf(IRubyObject obj) {
         Handle h = GC.lookup(obj);
         if (h != null) {
+            h.makeStrong();
             return h;
         }
 
