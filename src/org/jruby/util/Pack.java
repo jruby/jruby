@@ -49,6 +49,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Pack {
@@ -1984,7 +1985,23 @@ public class Pack {
         if(taintOutput) {
             output.taint(runtime.getCurrentContext());
         }
+        
         return output;
+    }
+
+    @SuppressWarnings("fallthrough")
+    public static RubyString pack19(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
+        RubyString pack = pack(runtime, list, formatString.getByteList());
+        pack = (RubyString) pack.infectBy(formatString);
+
+        for (IRubyObject element : list.toJavaArray()) {
+            if (element.isUntrusted()) {
+                pack = (RubyString) pack.untrust(context);
+                break;
+            }
+        }
+
+        return pack;
     }
 
     /**
