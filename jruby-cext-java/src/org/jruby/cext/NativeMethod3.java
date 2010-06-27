@@ -31,7 +31,7 @@ public final class NativeMethod3 extends AbstractNativeMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, 
             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        ExecutionLock.lock();
+        ExecutionLock.acquire();
         try {
             return Native.getInstance(context.getRuntime()).callMethod3(function,
                     Handle.nativeHandleLocked(self),
@@ -39,7 +39,7 @@ public final class NativeMethod3 extends AbstractNativeMethod {
                     Handle.nativeHandleLocked(arg1),
                     Handle.nativeHandleLocked(arg2));
         } finally {
-            ExecutionLock.unlock(context);
+            ExecutionLock.release(context);
         }
     }
 

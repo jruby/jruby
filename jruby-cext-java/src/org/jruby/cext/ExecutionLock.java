@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Wayne Meissner
+ * Copyright (C) 2009, 2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -15,21 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.jruby.cext;
 
 import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.runtime.ThreadContext;
 
+final class ExecutionLock {
 
-class ExecutionLock {
     private static final ReentrantLock lock = new ReentrantLock();
 
-    public static final void lock()  {
+    private ExecutionLock() {
+    }
+
+    public static void acquire() {
         lock.lock();
     }
 
-    public static final void unlock(ThreadContext context) {
+    public static void release(ThreadContext context) {
         try {
             if (lock.getHoldCount() == 1) {
                 GC.cleanup(context);
@@ -39,7 +41,7 @@ class ExecutionLock {
         }
     }
 
-    public static final void unlockNoCleanup() {
+    public static void releaseNoCleanup() {
         lock.unlock();
     }
 }

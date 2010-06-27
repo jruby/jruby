@@ -29,12 +29,12 @@ public final class NativeMethod1 extends AbstractNativeMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, Block block) {
-        ExecutionLock.lock();
+        ExecutionLock.acquire();
         try {
             return Native.getInstance(context.getRuntime()).callMethod1(function,
                     Handle.nativeHandleLocked(self), Handle.nativeHandleLocked(arg0));
         } finally {
-            ExecutionLock.unlock(context);
+            ExecutionLock.release(context);
         }
     }
 }

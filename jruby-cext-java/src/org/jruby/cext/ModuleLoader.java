@@ -33,7 +33,7 @@ public class ModuleLoader {
     public void load(IRubyObject recv, String name) {
         ThreadContext context = recv.getRuntime().getCurrentContext();
         
-        ExecutionLock.lock();
+        ExecutionLock.acquire();
         try {
             // Ensure the native code is initialized before we load the library
             Native n = Native.getInstance(context.getRuntime());
@@ -54,7 +54,7 @@ public class ModuleLoader {
             n.callInit(context, init);
             modules.add(lib);
         } finally {
-            ExecutionLock.unlock(context);
+            ExecutionLock.release(context);
         }
     }
 }
