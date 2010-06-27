@@ -1,2 +1,1 @@
-fails(Compatible with 1.8.7 - JRUBY-3747):String#gsub! with pattern and block raises a RuntimeError when self is frozen
 fails(JRUBY-4587):String#gsub with pattern and replacement respects $KCODE when the pattern collapses
