@@ -102,12 +102,12 @@ public class GC {
             public void run() {
                 //System.out.println("reaper running");
                 ThreadContext ctx = runtime.getCurrentContext();
-                ExecutionLock.acquire();
+                GIL.acquire();
                 reaper = null;
                 try {
                     runCleanup(ctx);
                 } finally {
-                    ExecutionLock.releaseNoCleanup();
+                    GIL.releaseNoCleanup();
                 }
             }  
         };

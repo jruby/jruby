@@ -20,11 +20,11 @@ package org.jruby.cext;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.runtime.ThreadContext;
 
-final class ExecutionLock {
+final class GIL {
 
     private static final ReentrantLock lock = new ReentrantLock();
 
-    private ExecutionLock() {
+    private GIL() {
     }
 
     public static void acquire() {

@@ -135,11 +135,11 @@ public final class Handle extends WeakReference<Object> {
     }
 
     public static synchronized Handle valueOf(IRubyObject obj) {
-        ExecutionLock.acquire();
+        GIL.acquire();
         try {
             return valueOfLocked(obj);
         } finally {
-            ExecutionLock.releaseNoCleanup();
+            GIL.releaseNoCleanup();
         }
     }
 
@@ -157,7 +157,7 @@ public final class Handle extends WeakReference<Object> {
             for ( ; ; ) {
                 try {
                     Reference<? extends Object> r = referenceQueue.remove();
-                    ExecutionLock.acquire();
+                    GIL.acquire();
                     try {
                         do {
                             try {
@@ -187,7 +187,7 @@ public final class Handle extends WeakReference<Object> {
                             }
                         } while ((r = referenceQueue.poll()) != null);
                     } finally {
-                        ExecutionLock.releaseNoCleanup();
+                        GIL.releaseNoCleanup();
                     }
                 } catch (InterruptedException ex) {
                     break;

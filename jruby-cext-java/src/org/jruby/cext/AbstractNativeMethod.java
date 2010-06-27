@@ -55,11 +55,11 @@ public abstract class AbstractNativeMethod extends DynamicMethod {
     public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
             String name, IRubyObject[] args, Block block) {
 
-        ExecutionLock.acquire();
+        GIL.acquire();
         try {
             return Native.getInstance(context.getRuntime()).callMethod(context, function, recv, arity.getValue(), args);
         } finally {
-            ExecutionLock.release(context);
+            GIL.release(context);
         }
     }
 
