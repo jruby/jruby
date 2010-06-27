@@ -3784,7 +3784,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             str = new RubyString(runtime, getMetaClass(), succCommon19(value));
             // TODO: rescan code range ?
         } else {
-            str = newEmptyString(runtime, value.getEncoding());
+            str = newEmptyString(runtime, getType(), value.getEncoding());
         }
         return str.infectBy(this);
     }

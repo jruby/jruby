@@ -1,1 +1,0 @@
-fails:String#succ returns subclass instances when called on a subclass
