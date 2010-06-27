@@ -90,6 +90,17 @@ public class Pack {
         return RubyNumeric.num2long(arg);
     }
 
+    private static long num2quad19(IRubyObject arg) {
+        if (arg == arg.getRuntime().getNil()) {
+            return 0L;
+        }
+        else if (arg instanceof RubyBignum) {
+            BigInteger big = ((RubyBignum)arg).getValue();
+            return big.longValue();
+        }
+        return RubyNumeric.num2long(arg);
+    }
+
     private static float obj2flt(Ruby runtime, IRubyObject o) {
         if(o instanceof RubyString) {
             String str = o.asJavaString();
@@ -207,29 +218,39 @@ public class Pack {
         converters['d'] = tmp; // double precision, native
 
         // signed short, little-endian
-        converters['v'] = new Converter(2) {
+        converters['v'] = new QuadConverter(2) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(
                         decodeShortUnsignedLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                int s = o == runtime.getNil() ? 0 : (int) (num2quad(o) & 0xffff);
-                   encodeShortLittleEndian(result, s);
+                int s = o == runtime.getNil() ? 0 : overflowQuad(num2quad(o));
+                encodeShortLittleEndian(result, s);
             }
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                int s = o == runtime.getNil() ? 0 : overflowQuad(num2quad19(o));
+                encodeShortLittleEndian(result, s);
+            }            
         };
         // signed short, big-endian
-        converters['n'] = new Converter(2) {
+        converters['n'] = new QuadConverter(2) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(
                         decodeShortUnsignedBigEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                int s = o == runtime.getNil() ? 0 : (int) (num2quad(o) & 0xffff);
-                   encodeShortBigEndian(result, s);
+                int s = o == runtime.getNil() ? 0 : overflowQuad(num2quad(o));
+                encodeShortBigEndian(result, s);
+            }
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                int s = o == runtime.getNil() ? 0 : overflowQuad(num2quad19(o));
+                encodeShortBigEndian(result, s);
             }
         };
         // signed short, native
-        converters['s'] = new Converter(2) {
+        converters['s'] = new QuadConverter(2) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
                     return runtime.newFixnum(decodeShortBigEndian(enc));
@@ -237,15 +258,17 @@ public class Pack {
                     return runtime.newFixnum(decodeShortLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                int s = o == runtime.getNil() ? 0 : (int)(num2quad(o) & 0xffff); // XXX: 0xffff0000 on BE?
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
-                    encodeShortBigEndian(result, s);
-                else
-                    encodeShortLittleEndian(result, s);
+                int s = o == runtime.getNil() ? 0 : overflowQuad(num2quad(o)); // XXX: 0xffff0000 on BE?
+                encodeShortByByteOrder(result, s);
+            }
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                int s = o == runtime.getNil() ? 0 : overflowQuad(num2quad19(o)); // XXX: 0xffff0000 on BE?
+                encodeShortByByteOrder(result, s);
             }
         };
         // unsigned short, native
-        converters['S'] = new Converter(2) {
+        converters['S'] = new QuadConverter(2) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
                     return runtime.newFixnum(decodeShortUnsignedBigEndian(enc));
@@ -253,12 +276,15 @@ public class Pack {
                     return runtime.newFixnum(decodeShortUnsignedLittleEndian(enc));
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                int s = o == runtime.getNil() ? 0 : (int) (num2quad(o) & 0xffff);
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
-                    encodeShortBigEndian(result, s);
-                else
-                    encodeShortLittleEndian(result, s);
+                int s = o == runtime.getNil() ? 0 : overflowQuad(num2quad(o));
+                encodeShortByByteOrder(result, s);
             }
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                int s = o == runtime.getNil() ? 0 : overflowQuad(num2quad19(o));
+                encodeShortByByteOrder(result, s);
+            }
+            
         };
 
         // signed char
@@ -345,7 +371,7 @@ public class Pack {
         converters['l'] = tmp; // long, native
 
         // 64-bit number, native (as bignum)
-        converters['Q'] = new Converter(8) {
+        converters['Q'] = new QuadConverter(8) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 long l;
                 if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
@@ -357,14 +383,16 @@ public class Pack {
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 long l = num2quad(o);
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
-                    encodeLongBigEndian(result, l);
-                else
-                    encodeLongLittleEndian(result, l);
+                encodeLongByByteOrder(result, l);
+            }
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                long l = num2quad19(o);
+                encodeLongByByteOrder(result, l);
             }
         };
         // 64-bit number, native (as fixnum)
-        converters['q'] = new Converter(8) {
+        converters['q'] = new QuadConverter(8) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
                     return runtime.newFixnum(decodeLongBigEndian(enc));
@@ -373,10 +401,12 @@ public class Pack {
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 long l = num2quad(o);
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
-                    encodeLongBigEndian(result, l);
-                else
-                    encodeLongLittleEndian(result, l);
+                encodeLongByByteOrder(result, l);
+            }
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                long l = num2quad19(o);
+                encodeLongByByteOrder(result, l);
             }
         };
     }
@@ -1336,7 +1366,7 @@ public class Pack {
     }
 
     public static int encode(Ruby runtime, int occurrences, ByteList result,
-            RubyArray list, int index, Converter converter) {
+            RubyArray list, int index, ConverterExecutor converter) {
         int listSize = list.size();
 
         while (occurrences-- > 0) {
@@ -1352,6 +1382,40 @@ public class Pack {
         return index;
     }
 
+    private abstract static class ConverterExecutor {
+        protected Converter converter;
+        public void setConverter(Converter converter) {
+            this.converter = converter;
+        }
+
+        public abstract IRubyObject decode(Ruby runtime, ByteBuffer format);
+        public abstract void encode(Ruby runtime, IRubyObject from, ByteList result);
+    }
+
+    private static ConverterExecutor executor18 = new ConverterExecutor() {
+        @Override
+        public IRubyObject decode(Ruby runtime, ByteBuffer format) {
+            return converter.decode(runtime, format);
+        }
+
+        @Override
+        public void encode(Ruby runtime, IRubyObject from, ByteList result) {
+            converter.encode(runtime, from, result);
+        }
+    };
+
+    private static ConverterExecutor executor19 = new ConverterExecutor() {
+        @Override
+        public IRubyObject decode(Ruby runtime, ByteBuffer format) {
+            return converter.decode19(runtime, format);
+        }
+
+        @Override
+        public void encode(Ruby runtime, IRubyObject from, ByteList result) {
+            converter.encode19(runtime, from, result);
+        }
+    };
+
     public abstract static class Converter {
         public int size;
 
@@ -1361,6 +1425,38 @@ public class Pack {
 
         public abstract IRubyObject decode(Ruby runtime, ByteBuffer format);
         public abstract void encode(Ruby runtime, IRubyObject from, ByteList result);
+
+        public IRubyObject decode19(Ruby runtime, ByteBuffer format) {
+            return decode(runtime, format);
+        }
+
+        public void encode19(Ruby runtime, IRubyObject from, ByteList result) {
+            encode(runtime, from, result);
+        }
+    }
+
+    private abstract static class QuadConverter extends Converter{
+        public QuadConverter(int size) {
+            super(size);
+        }
+
+        protected int overflowQuad(long quad) {
+            return (int) (quad & 0xffff);
+        }
+
+        protected void encodeShortByByteOrder(ByteList result, int s) {
+            if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                encodeShortBigEndian(result, s);
+            else
+                encodeShortLittleEndian(result, s);
+        }
+
+        protected void encodeLongByByteOrder(ByteList result, long l) {
+            if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                encodeLongBigEndian(result, l);
+            else
+                encodeLongLittleEndian(result, l);
+        }
     }
 
     /**
@@ -1576,6 +1672,26 @@ public class Pack {
      **/
     @SuppressWarnings("fallthrough")
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
+        
+        return packCommon(runtime, list, formatString, executor18);
+    }
+
+    @SuppressWarnings("fallthrough")
+    public static RubyString pack19(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
+        RubyString pack = packCommon(runtime, list, formatString.getByteList(), executor19);
+        pack = (RubyString) pack.infectBy(formatString);
+
+        for (IRubyObject element : list.toJavaArray()) {
+            if (element.isUntrusted()) {
+                pack = (RubyString) pack.untrust(context);
+                break;
+            }
+        }
+
+        return pack;
+    }
+
+    public static RubyString packCommon(Ruby runtime, RubyArray list, ByteList formatString, ConverterExecutor executor) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteList result = new ByteList();
         boolean taintOutput = false;
@@ -1596,10 +1712,10 @@ public class Pack {
                 type = next;
                 next = safeGet(format);
             }
-            
+
             // Skip embedded comments in pack format string
             if (type == '#') {
-                while (type != '\n') { 
+                while (type != '\n') {
                     if (next == 0) break mainLoop;
                     type = next;
                     next = safeGet(format);
@@ -1641,7 +1757,8 @@ public class Pack {
             Converter converter = converters[type];
 
             if (converter != null) {
-                idx = encode(runtime, occurrences, result, list, idx, converter);
+                executor.setConverter(converter);
+                idx = encode(runtime, occurrences, result, list, idx, executor);
                 continue;
             }
 
@@ -1683,7 +1800,7 @@ public class Pack {
                                     //string filled with a given char with a given length but I couldn't find it
                                     result.append(lCurElemString);
                                     occurrences -= lCurElemString.length();
-                                    
+
                                     switch (type) {
                                       case 'a':
                                       case 'Z':
@@ -1977,7 +2094,7 @@ public class Pack {
                             throw runtime.newArgumentError("can't compress negative numbers");
                         }
                     }
-                    
+
                     break;
             }
         }
@@ -1985,23 +2102,8 @@ public class Pack {
         if(taintOutput) {
             output.taint(runtime.getCurrentContext());
         }
-        
+
         return output;
-    }
-
-    @SuppressWarnings("fallthrough")
-    public static RubyString pack19(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
-        RubyString pack = pack(runtime, list, formatString.getByteList());
-        pack = (RubyString) pack.infectBy(formatString);
-
-        for (IRubyObject element : list.toJavaArray()) {
-            if (element.isUntrusted()) {
-                pack = (RubyString) pack.untrust(context);
-                break;
-            }
-        }
-
-        return pack;
     }
 
     /**

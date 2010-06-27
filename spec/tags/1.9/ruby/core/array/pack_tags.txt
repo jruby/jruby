@@ -2,34 +2,6 @@ fails:Array#pack with the empty format returns an empty String in US-ASCII
 fails:Array#pack with format 'A' cuts byte sequence even if it breaks a multibyte character
 fails:Array#pack with format 'a' cuts byte sequence even if it breaks a multibyte character
 fails:Array#pack with format 'Z' cuts byte sequence even if it breaks a multibyte character
-fails:Array#pack with format 'n' does not raise a RangeError even when a pack argument is >= 2**64
-fails:Array#pack with format 'n' does not raise a RangeError even when a pack argument is <= -2**64
-fails:Array#pack with format 'v' does not raise a RangeError even when a pack argument is >= 2**64
-fails:Array#pack with format 'v' does not raise a RangeError even when a pack argument is <= -2**64
-fails:Array#pack with format 's' does not raise a RangeError even when a pack argument is >= 2**64
-fails:Array#pack with format 's' does not raise a RangeError even when a pack argument is <= -2**64
-fails:Array#pack with format 'S' does not raise a RangeError even when a pack argument is >= 2**64
-fails:Array#pack with format 'S' does not raise a RangeError even when a pack argument is <= -2**64
-fails:Array#pack with format 'q' drops higher bytes when a pack argument is >= 2**64
-fails:Array#pack with format 'q' drops higher bytes when a pack argument is < -2**64
-fails:Array#pack with format 'Q' drops higher bytes when a pack argument is >= 2**64
-fails:Array#pack with format 'Q' drops higher bytes when a pack argument is < -2**64
-fails:Array#pack with format 's!' does not raise a RangeError even when a pack argument is >= 2**64
-fails:Array#pack with format 's!' does not raise a RangeError even when a pack argument is <= -2**64
-fails:Array#pack with format 's_' does not raise a RangeError even when a pack argument is >= 2**64
-fails:Array#pack with format 's_' does not raise a RangeError even when a pack argument is <= -2**64
-fails:Array#pack with format 'S!' does not raise a RangeError even when a pack argument is >= 2**64
-fails:Array#pack with format 'S!' does not raise a RangeError even when a pack argument is <= -2**64
-fails:Array#pack with format 'S_' does not raise a RangeError even when a pack argument is >= 2**64
-fails:Array#pack with format 'S_' does not raise a RangeError even when a pack argument is <= -2**64
-fails:Array#pack with format 'l!' drops higher bytes when a pack argument is >= 2**64
-fails:Array#pack with format 'l!' drops higher bytes when a pack argument is < -2**64
-fails:Array#pack with format 'l_' drops higher bytes when a pack argument is >= 2**64
-fails:Array#pack with format 'l_' drops higher bytes when a pack argument is < -2**64
-fails:Array#pack with format 'L!' drops higher bytes when a pack argument is >= 2**64
-fails:Array#pack with format 'L!' drops higher bytes when a pack argument is < -2**64
-fails:Array#pack with format 'L_' drops higher bytes when a pack argument is >= 2**64
-fails:Array#pack with format 'L_' drops higher bytes when a pack argument is < -2**64
 fails:Array#pack with format 'M' returns an US-ASCII string
 fails:Array#pack with format 'm' returns an US-ASCII string
 fails:Array#pack with format 'U' returns a UTF-8 string
