@@ -40,8 +40,7 @@ public class GC {
     private static final Map<Object, Handle> nonRubyRefs = new WeakIdentityHashMap();
     @SuppressWarnings(value="unchecked")
     private static final Map<RubyData, Handle> dataRefs = new WeakIdentityHashMap();
-
-    private static Map<IRubyObject, Boolean> tmpStrongRefs = new IdentityHashMap<IRubyObject, Boolean>();
+    
     private static List<IRubyObject> markedRefs = new LinkedList<IRubyObject>();
     private static volatile Reference<Object> reaper = null;
 
@@ -61,8 +60,8 @@ public class GC {
                 ? (Handle) ((RubyBasicObject) obj).fastGetInternalVariable(NATIVE_REF_KEY)
                 : nonRubyRefs.get(obj);
 
-        if (h != null && !tmpStrongRefs.containsKey(obj)) {
-            tmpStrongRefs.put(obj, Boolean.TRUE);
+        if (h != null) {
+            h.makeStrong();
         }
 
         return h;
@@ -84,7 +83,7 @@ public class GC {
             dataRefs.put((RubyData) obj, h);
         }
 
-        tmpStrongRefs.put(obj, Boolean.TRUE);
+        h.makeStrong();
     }
 
     static final void cleanup(ThreadContext context) {
@@ -94,7 +93,7 @@ public class GC {
         
         // Avoid setting up the reaper at all if no data objects exist
         if (dataRefs.isEmpty()) {
-            tmpStrongRefs.clear();
+            Handle.clearStrongReferences();
             return;
         }
 
@@ -146,6 +145,6 @@ public class GC {
             markedRefs = null;
         }
 
-        tmpStrongRefs.clear();
+        Handle.clearStrongReferences();
     }
 }

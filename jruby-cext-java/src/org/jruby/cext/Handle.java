@@ -31,11 +31,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class Handle extends WeakReference<Object> {
     private static final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<Object>();
     private static final Thread reaperThread;
-    private static volatile Handle allHandles = null;
+    private static Handle allHandles = null;
+    private static Handle strongRefs = null;
     
     private final Ruby runtime;
     private final long address;
     private Handle prev = null, next = null;
+    private Handle strongNext = null;
+    private Object strongRef = null;
 
     
     private List<IRubyObject> linkedObjects = null;
@@ -91,6 +94,28 @@ public final class Handle extends WeakReference<Object> {
 
     void link(List<IRubyObject> fields) {
         this.linkedObjects = new ArrayList<IRubyObject>(fields);
+    }
+
+    final void makeStrong() {
+        if (strongRef == null && (strongRef = get()) != null) {
+            synchronized (Handle.class) {
+                strongNext = strongRefs;
+                strongRefs = this;
+            }
+        }
+    }
+
+    static void clearStrongReferences() {
+        synchronized (Handle.class) {
+            Handle h = strongRefs;
+            while (h != null) {
+                h.strongRef = null;
+                Handle n = h.strongNext;
+                h.strongNext = null;
+                h = n;
+            }
+            strongRefs = null;
+        }
     }
 
     public static final synchronized Handle valueOf(IRubyObject obj) {
