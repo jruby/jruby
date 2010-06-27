@@ -312,11 +312,19 @@ public class RubyFileStat extends RubyObject {
 
     }
 
-    @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
         setup(fname.convertToString().toString(), false);
 
         return this;
+    }
+
+    @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(IRubyObject fname, Block unusedBlock) {
+        if (!(fname instanceof RubyString) && fname.respondsTo("to_path")) {
+            fname = fname.callMethod(getRuntime().getCurrentContext(), "to_path");
+        }
+        return initialize(fname, unusedBlock);
     }
     
     @JRubyMethod(name = "atime")

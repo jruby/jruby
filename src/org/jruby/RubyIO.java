@@ -361,6 +361,9 @@ public class RubyIO extends RubyObject {
     }
 
     protected void reopenPath(Ruby runtime, IRubyObject[] args) {
+        if (runtime.is1_9() && !(args[0] instanceof RubyString) && args[0].respondsTo("to_path")) {
+            args[0] = args[0].callMethod(runtime.getCurrentContext(), "to_path");
+        }
         IRubyObject pathString = args[0].convertToString();
 
         // TODO: check safe, taint on incoming string
