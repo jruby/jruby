@@ -1230,7 +1230,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1, compat = CompatVersion.RUBY1_9)
     public RubyString replace19(IRubyObject other) {
-        if (this == other) return this;
+        modifyCheck();
+        if (this == other) return this;        
         setCodeRange(replaceCommon(other).getCodeRange()); // encoding doesn't have to be copied.
         return this;
     }
@@ -1246,6 +1247,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "clear", compat = CompatVersion.RUBY1_9)
     public RubyString clear() {
+        modifyCheck();
         Encoding enc = value.getEncoding();
 
         EmptyByteListHolder holder = getEmptyByteList(enc); 
@@ -1274,7 +1276,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     @JRubyMethod(name = "reverse", compat = CompatVersion.RUBY1_9)
-    public IRubyObject reverse19(ThreadContext context) {
+    public IRubyObject reverse19(ThreadContext context) {        
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() <= 1) return strDup(context.getRuntime());
 
@@ -1335,6 +1337,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "reverse!", compat = CompatVersion.RUBY1_9)
     public RubyString reverse_bang19(ThreadContext context) {
+        modifyCheck();
         if (value.getRealSize() > 1) {
             modifyAndKeepCodeRange();
             byte[]bytes = value.getUnsafeBytes();
@@ -1382,15 +1385,26 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return newString;
     }
 
-    @JRubyMethod(frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject initialize() {
         return this;
     }
 
-    @JRubyMethod(frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize(IRubyObject arg0) {
         replace(arg0);
+        return this;
+    }
+
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19() {
+        return this;
+    }
+
+    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(IRubyObject arg0) {
+        replace19(arg0);
         return this;
     }
 
@@ -2769,6 +2783,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final Regex pattern, prepared;
         final RubyRegexp regexp;
         if (arg0 instanceof RubyRegexp) {
+            modifyCheck();
             regexp = (RubyRegexp)arg0;
             pattern = regexp.getPattern();
             prepared = regexp.preparePattern(this);
@@ -3997,6 +4012,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "setbyte", compat = CompatVersion.RUBY1_9)
     public IRubyObject setbyte(ThreadContext context, IRubyObject index, IRubyObject val) {
+        modifyCheck();
         int i = RubyNumeric.num2int(index);
         int b = RubyNumeric.num2int(val);
         value.getUnsafeBytes()[checkIndexForRef(i, value.getRealSize())] = (byte)b;
@@ -5073,6 +5089,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "chop!", compat = CompatVersion.RUBY1_9)
     public IRubyObject chop_bang19(ThreadContext context) {
+        modifyCheck();
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) return runtime.getNil();
         keepCodeRange();
@@ -5220,6 +5237,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "chomp!", compat = CompatVersion.RUBY1_9)
     public IRubyObject chomp_bang19(ThreadContext context, IRubyObject arg0) {
+        modifyCheck();
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) return runtime.getNil();
         return chompBangCommon19(runtime, arg0);
@@ -5330,6 +5348,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "lstrip!", compat = CompatVersion.RUBY1_9)
     public IRubyObject lstrip_bang19(ThreadContext context) {
+        modifyCheck();
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) {
             modifyCheck();
@@ -5398,6 +5417,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "rstrip!", compat = CompatVersion.RUBY1_9)
     public IRubyObject rstrip_bang19(ThreadContext context) {
+        modifyCheck();
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) {
             modifyCheck();
