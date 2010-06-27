@@ -33,13 +33,16 @@ public class Ruby1_9TestSuite extends TestUnitTestSuite {
         }
 
         @Override
-        protected String generateTestScript(String scriptName, String testClass) {
+        protected String generateTestScript(String scriptName, String testClass) {            
+            if (!scriptName.endsWith(".rb")) {
+                scriptName += ".rb";
+            }
+            
             StringBuffer script = new StringBuffer();
-            script.append("require 'minitest/unit'\n");
-            script.append("require '" + scriptName + "'\n");
-            script.append("unit = MiniTest::Unit.new\n");
-            script.append("unit.run_test_suites\n");
-            script.append("unit.report\n");
+            script.append("require 'test/minirunit'").append('\n');
+            script.append("$silentTests = true").append('\n');
+            script.append("test_load('").append(scriptName).append("')").append('\n');
+            script.append("$failed").append('\n');
             return script.toString();
         }
     }
