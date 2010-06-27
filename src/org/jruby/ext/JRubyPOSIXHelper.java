@@ -2,6 +2,7 @@ package org.jruby.ext;
 
 import com.kenai.constantine.platform.Errno;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.exceptions.RaiseException;
 
 public class JRubyPOSIXHelper {
@@ -21,7 +22,9 @@ public class JRubyPOSIXHelper {
             Errno errno = Errno.valueOf(runtime.getPosix().errno());
             String name = errno.name();
             String msg  = errno.toString();
-            throw new RaiseException(runtime, runtime.getErrno().fastGetClass(name), msg, true);
+            RubyClass errnoClass = runtime.getErrno().fastGetClass(name);
+            if (errnoClass != null)
+                throw new RaiseException(runtime, errnoClass, msg, true);
         }
     }
 
