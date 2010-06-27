@@ -32,7 +32,7 @@ public final class NativeMethod1 extends AbstractNativeMethod {
         ExecutionLock.lock();
         try {
             return Native.getInstance(context.getRuntime()).callMethod1(function,
-                    Handle.valueOf(self).getAddress(), Handle.valueOf(arg0).getAddress());
+                    Handle.nativeHandleLocked(self), Handle.nativeHandleLocked(arg0));
         } finally {
             ExecutionLock.unlock(context);
         }

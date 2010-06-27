@@ -30,7 +30,7 @@ final class Native {
 
     private final Ruby runtime;
 
-    synchronized static final Native getInstance(Ruby runtime) {
+    static Native getInstance(Ruby runtime) {
         if (INSTANCE == null) {
             INSTANCE = new Native(runtime);
             INSTANCE.load(runtime);
@@ -71,9 +71,9 @@ final class Native {
     public final IRubyObject callMethod(ThreadContext ctx, long fn, IRubyObject recv, int arity, IRubyObject[] args) {
         long[] largs = new long[args.length];
         for (int i = 0; i < largs.length; ++i) {
-            largs[i] = Handle.valueOf(args[i]).getAddress();
+            largs[i] = Handle.nativeHandleLocked(args[i]);
         }
-        return callMethod(ctx, fn, Handle.valueOf(recv).getAddress(), arity, largs);
+        return callMethod(ctx, fn, Handle.nativeHandleLocked(recv), arity, largs);
     }
 
     public final native IRubyObject callMethod(ThreadContext ctx, long fn, long recv, int arity, long[] args);

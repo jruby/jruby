@@ -131,7 +131,7 @@ public class GC {
 
             // clean the mark off any handles just marked
             for (IRubyObject obj : markedRefs) {
-                n.unmarkHandle(Handle.valueOf(obj).getAddress());
+                n.unmarkHandle(Handle.nativeHandleLocked(obj));
             }
 
             markedRefs = null;

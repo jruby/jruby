@@ -34,10 +34,10 @@ public final class NativeMethod3 extends AbstractNativeMethod {
         ExecutionLock.lock();
         try {
             return Native.getInstance(context.getRuntime()).callMethod3(function,
-                    Handle.valueOf(self).getAddress(),
-                    Handle.valueOf(arg0).getAddress(),
-                    Handle.valueOf(arg1).getAddress(),
-                    Handle.valueOf(arg2).getAddress());
+                    Handle.nativeHandleLocked(self),
+                    Handle.nativeHandleLocked(arg0),
+                    Handle.nativeHandleLocked(arg1),
+                    Handle.nativeHandleLocked(arg2));
         } finally {
             ExecutionLock.unlock(context);
         }

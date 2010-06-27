@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class Handle extends WeakReference<Object> {
@@ -43,7 +42,7 @@ public final class Handle extends WeakReference<Object> {
     
     private List<IRubyObject> linkedObjects = null;
 
-    static synchronized Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
+    static Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
         Handle h = new Handle(runtime, rubyObject, nativeHandle);
         if (allHandles != null) {
             h.next = allHandles;
@@ -112,8 +111,7 @@ public final class Handle extends WeakReference<Object> {
         }
         strongRefs = null;
     }
-
-    public static final synchronized Handle valueOf(IRubyObject obj) {
+    static Handle valueOfLocked(IRubyObject obj) {
         Handle h = GC.lookup(obj);
         if (h != null) {
             h.makeStrong();
@@ -122,11 +120,13 @@ public final class Handle extends WeakReference<Object> {
 
         Ruby runtime = obj.getRuntime();
         long nativeHandle;
+
         if (obj instanceof RubyFixnum) {
             nativeHandle = Native.getInstance(runtime).newFixnumHandle(obj, ((RubyFixnum) obj).getLongValue());
         } else {
             nativeHandle = Native.getInstance(runtime).newHandle(obj);
         }
+
         Handle handle = newHandle(runtime, obj, nativeHandle);
 
         GC.register(obj, handle);
@@ -134,8 +134,21 @@ public final class Handle extends WeakReference<Object> {
         return handle;
     }
 
+    public static synchronized Handle valueOf(IRubyObject obj) {
+        ExecutionLock.lock();
+        try {
+            return valueOfLocked(obj);
+        } finally {
+            ExecutionLock.unlockNoCleanup();
+        }
+    }
+
     public static long nativeHandle(IRubyObject obj) {
         return Handle.valueOf(obj).getAddress();
+    }
+
+    static long nativeHandleLocked(IRubyObject obj) {
+        return Handle.valueOfLocked(obj).getAddress();
     }
 
     private static final Runnable reaper = new Runnable() {
@@ -150,22 +163,21 @@ public final class Handle extends WeakReference<Object> {
                             try {
                                 if (r instanceof Handle) {
                                     final Handle h = (Handle) r;
-                                    synchronized (Handle.class) {
-                                        if (h.prev != null) {
-                                            h.prev.next = h.next;
-                                        }
-                                        if (h.next != null) {
-                                            h.next.prev = h.prev;
-                                        }
+                                    if (h.prev != null) {
+                                        h.prev.next = h.next;
+                                    }
+                                    if (h.next != null) {
+                                        h.next.prev = h.prev;
+                                    }
 
-                                        if (h == allHandles) {
-                                            if (h.next != null) {
-                                                allHandles = h.next;
-                                            } else {
-                                                allHandles = h.prev;
-                                            }
+                                    if (h == allHandles) {
+                                        if (h.next != null) {
+                                            allHandles = h.next;
+                                        } else {
+                                            allHandles = h.prev;
                                         }
                                     }
+
                                     h.prev = h.next = null;
 
                                     Native.getInstance(h.runtime).freeHandle(h.address);

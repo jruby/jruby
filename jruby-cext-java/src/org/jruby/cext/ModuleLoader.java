@@ -32,24 +32,24 @@ public class ModuleLoader {
     
     public void load(IRubyObject recv, String name) {
         ThreadContext context = recv.getRuntime().getCurrentContext();
-
-        // Ensure the native code is initialized before we load the library
-        Native n = Native.getInstance(context.getRuntime());
-        
-        Library lib = Library.openLibrary(name + "." + libext, Library.LAZY | Library.GLOBAL);
-        if (lib == null) {
-            throw new UnsatisfiedLinkError(Library.getLastError());
-        }
-
-        String initName = new File(name).getName();
-        long init = lib.getSymbolAddress("Init_" + initName);
-        
-        if (init == 0) {
-            throw new UnsatisfiedLinkError("Could not locate Init_" + initName + " module entry point");
-        }
         
         ExecutionLock.lock();
         try {
+            // Ensure the native code is initialized before we load the library
+            Native n = Native.getInstance(context.getRuntime());
+
+            Library lib = Library.openLibrary(name + "." + libext, Library.LAZY | Library.GLOBAL);
+            if (lib == null) {
+                throw new UnsatisfiedLinkError(Library.getLastError());
+            }
+
+            String initName = new File(name).getName();
+            long init = lib.getSymbolAddress("Init_" + initName);
+
+            if (init == 0) {
+                throw new UnsatisfiedLinkError("Could not locate Init_" + initName + " module entry point");
+            }
+            
             System.out.printf("calling init (%x)\n", init);
             n.callInit(context, init);
             modules.add(lib);

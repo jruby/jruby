@@ -35,7 +35,7 @@ public final class NativeObjectAllocator implements ObjectAllocator {
         ThreadContext context = runtime.getCurrentContext();
         ExecutionLock.lock();
         try {
-            return Native.getInstance(runtime).callMethod0(function, Handle.nativeHandle(klass));
+            return Native.getInstance(runtime).callMethod0(function, Handle.nativeHandleLocked(klass));
         } finally {
             ExecutionLock.unlock(context);
         }
