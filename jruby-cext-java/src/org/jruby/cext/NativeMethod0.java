@@ -29,7 +29,7 @@ public final class NativeMethod0 extends AbstractNativeMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
-        ExecutionLock.lock(context);
+        ExecutionLock.lock();
         try {
             return Native.getInstance(context.getRuntime()).callMethod0(function, Handle.valueOf(self).getAddress());
         } finally {

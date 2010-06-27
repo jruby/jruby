@@ -48,7 +48,7 @@ public class ModuleLoader {
             throw new UnsatisfiedLinkError("Could not locate Init_" + initName + " module entry point");
         }
         
-        ExecutionLock.lock(context);
+        ExecutionLock.lock();
         try {
             System.out.printf("calling init (%x)\n", init);
             n.callInit(context, init);

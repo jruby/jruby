@@ -33,7 +33,7 @@ public final class NativeObjectAllocator implements ObjectAllocator {
 
     public IRubyObject allocate(Ruby runtime, RubyClass klass) {
         ThreadContext context = runtime.getCurrentContext();
-        ExecutionLock.lock(context);
+        ExecutionLock.lock();
         try {
             return Native.getInstance(runtime).callMethod0(function, Handle.nativeHandle(klass));
         } finally {

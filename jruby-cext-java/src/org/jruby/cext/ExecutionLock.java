@@ -25,7 +25,7 @@ import org.jruby.runtime.ThreadContext;
 class ExecutionLock {
     private static final ReentrantLock lock = new ReentrantLock();
 
-    public static final void lock(ThreadContext context)  {
+    public static final void lock()  {
         lock.lock();
     }
 
@@ -39,7 +39,7 @@ class ExecutionLock {
         }
     }
 
-    public static final void unlockNoCleanup(ThreadContext context) {
+    public static final void unlockNoCleanup() {
         lock.unlock();
     }
 }

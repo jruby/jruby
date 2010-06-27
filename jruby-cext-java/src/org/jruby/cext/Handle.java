@@ -144,39 +144,38 @@ public final class Handle extends WeakReference<Object> {
             for ( ; ; ) {
                 try {
                     Reference<? extends Object> r = referenceQueue.remove();
+                    ExecutionLock.lock();
                     try {
-                        if (r instanceof Handle) {
-                            final Handle h = (Handle) r;
-                            synchronized (Handle.class) {
-                                if (h.prev != null) {
-                                    h.prev.next = h.next;
-                                }
-                                if (h.next != null) {
-                                    h.next.prev = h.prev;
-                                }
-
-                                if (h == allHandles) {
-                                    if (h.next != null) {
-                                        allHandles = h.next;
-                                    } else {
-                                        allHandles = h.prev;
-                                    }
-                                }
-                            }
-                            h.prev = h.next = null;
-                            
-                            ThreadContext context = h.runtime.getCurrentContext();
-                            ExecutionLock.lock(context);
+                        do {
                             try {
-                                Native.getInstance(h.runtime).freeHandle(h.address);
+                                if (r instanceof Handle) {
+                                    final Handle h = (Handle) r;
+                                    synchronized (Handle.class) {
+                                        if (h.prev != null) {
+                                            h.prev.next = h.next;
+                                        }
+                                        if (h.next != null) {
+                                            h.next.prev = h.prev;
+                                        }
+
+                                        if (h == allHandles) {
+                                            if (h.next != null) {
+                                                allHandles = h.next;
+                                            } else {
+                                                allHandles = h.prev;
+                                            }
+                                        }
+                                    }
+                                    h.prev = h.next = null;
+
+                                    Native.getInstance(h.runtime).freeHandle(h.address);
+                                }
                             } finally {
-                                ExecutionLock.unlockNoCleanup(context);
+                                r.clear();
                             }
-                            
-                            
-                        }
+                        } while ((r = referenceQueue.poll()) != null);
                     } finally {
-                        r.clear();
+                        ExecutionLock.unlockNoCleanup();
                     }
                 } catch (InterruptedException ex) {
                     break;
