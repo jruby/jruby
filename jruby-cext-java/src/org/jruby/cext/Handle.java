@@ -18,19 +18,42 @@
 
 package org.jruby.cext;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public final class Handle {
+public final class Handle extends WeakReference<Object> {
+    private static final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<Object>();
+    private static final Thread reaperThread;
+    private static volatile Handle allHandles = null;
+    
     private final Ruby runtime;
     private final long address;
+    private Handle prev = null, next = null;
 
+    
     private List<IRubyObject> linkedObjects = null;
 
-    Handle(Ruby runtime, long address) {
+    static Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
+        Handle h = new Handle(runtime, rubyObject, nativeHandle);
+        
+        if (allHandles != null) {
+            h.next = allHandles;
+            allHandles.prev = h;
+        }
+        allHandles = h;
+
+        return h;
+    }
+    
+    private Handle(Ruby runtime, Object rubyObject, long address) {
+        super(rubyObject, referenceQueue);
         this.runtime = runtime;
         this.address = address;
     }
@@ -68,17 +91,6 @@ public final class Handle {
         this.linkedObjects = new ArrayList<IRubyObject>(fields);
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            Native.getInstance(runtime).freeHandle(address);
-        } finally {
-            super.finalize();
-        }
-    }
-
-
-
     public static final synchronized Handle valueOf(IRubyObject obj) {
         Handle h = GC.lookup(obj);
         if (h != null) {
@@ -92,7 +104,7 @@ public final class Handle {
         } else {
             nativeHandle = Native.getInstance(runtime).newHandle(obj);
         }
-        Handle handle = new Handle(runtime, nativeHandle);
+        Handle handle = newHandle(runtime, obj, nativeHandle);
 
         GC.register(obj, handle);
 
@@ -101,6 +113,60 @@ public final class Handle {
 
     public static long nativeHandle(IRubyObject obj) {
         return Handle.valueOf(obj).getAddress();
+    }
+
+    private static final Runnable reaper = new Runnable() {
+
+        public void run() {
+            for ( ; ; ) {
+                try {
+                    Reference<? extends Object> r = referenceQueue.remove();
+                    try {
+                        if (r instanceof Handle) {
+                            final Handle h = (Handle) r;
+                            
+                            if (h.prev != null) {
+                                h.prev.next = h.next;
+                            }
+                            if (h.next != null) {
+                                h.next.prev = h.prev;
+                            }
+                            
+                            if (h == allHandles) {
+                                if (h.next != null) {
+                                    allHandles = h.next;
+                                } else {
+                                    allHandles = h.prev;
+                                }
+                            }
+                            h.prev = h.next = null;
+                            
+                            ThreadContext context = h.runtime.getCurrentContext();
+                            ExecutionLock.lock(context);
+                            try {
+                                Native.getInstance(h.runtime).freeHandle(h.address);
+                            } finally {
+                                ExecutionLock.unlockNoCleanup(context);
+                            }
+                            
+                            
+                        }
+                    } finally {
+                        r.clear();
+                    }
+                } catch (InterruptedException ex) {
+                    break;
+                } catch (Throwable t) {
+                    continue;
+                }
+            }
+        }
+    };
+    static {
+        reaperThread = new Thread(reaper, "Native Handle Reaper");
+        reaperThread.setDaemon(true);
+        reaperThread.setPriority(Thread.NORM_PRIORITY + 1);
+        reaperThread.start();
     }
 
 }

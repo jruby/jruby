@@ -31,7 +31,7 @@ public class RubyData extends RubyObject {
     public static final RubyData newRubyData(Ruby runtime, RubyClass klass, long handle) {
 
         RubyData d = new RubyData(runtime, klass);
-        GC.register(d, new Handle(runtime, handle));
+        GC.register(d, Handle.newHandle(runtime, d, handle));
 
         return d;
     }
