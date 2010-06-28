@@ -1,0 +1,14 @@
+This is just barely proof of concept for loading native modules under jruby.
+
+It is not in anyway meant to be a pretty, high-performance or in any way actually usable as a way of loading C extensions under JRuby. There is a lot of code that is written in the worst-possible way w.r.t. performance - on purpose.
+
+To run the one example that works currently, do:
+  LD_LIBRARY_PATH=example/MyTest:jruby-cext-native/build \
+  CLASSPATH=jruby-cext-java/build/classes \
+  ../jruby.git/bin/jruby -J-Djava.library.path=jruby-cext-native/build \
+  example/MyTest/MyTest.rb
+
+  LD_LIBRARY_PATH=example/DefineClass:jruby-cext-native/build \
+  CLASSPATH=jruby-cext-java/build/classes \
+  ../jruby.git/bin/jruby -J-Djava.library.path=jruby-cext-native/build \
+  example/DefineClass/DefineClass.rb

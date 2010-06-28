@@ -1,0 +1,207 @@
+/*
+ * Copyright (C) 2008, 2009 Wayne Meissner
+ *
+ * This file is part of jruby-cext.
+ *
+ * This code is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License version 3 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 3 for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package org.jruby.cext;
+
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
+import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
+import org.jruby.runtime.builtin.IRubyObject;
+
+public final class Handle extends WeakReference<Object> {
+    private static final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<Object>();
+    private static final Thread reaperThread;
+    private static Handle allHandles = null;
+    private static Handle strongRefs = null;
+    
+    private final Ruby runtime;
+    private final long address;
+    private Handle prev = null, next = null;
+    private Handle strongNext = null;
+    private Object strongRef = null;
+
+    
+    private List<IRubyObject> linkedObjects = null;
+
+    static Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
+        Handle h = new Handle(runtime, rubyObject, nativeHandle);
+        if (allHandles != null) {
+            h.next = allHandles;
+            allHandles.prev = h;
+        }
+        allHandles = h;
+
+        h.makeStrong();
+
+        return h;
+    }
+    
+    private Handle(Ruby runtime, Object rubyObject, long address) {
+        super(rubyObject, referenceQueue);
+        this.runtime = runtime;
+        this.address = address;
+    }
+    
+    public final long getAddress() {
+        return address;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Handle other = (Handle) obj;
+        return this.address == other.address;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 37 * hash + (int) (this.address ^ (this.address >>> 32));
+        return hash;
+    }
+
+    @Override
+    public String toString() {
+        return "Native ruby object " + Long.toString(address);
+    }
+
+
+    void link(List<IRubyObject> fields) {
+        this.linkedObjects = new ArrayList<IRubyObject>(fields);
+    }
+
+    private void makeStrong() {
+        if (strongRef == null && (strongRef = get()) != null) {
+            strongNext = strongRefs;
+            strongRefs = this;
+        }
+    }
+
+    static synchronized void clearStrongReferences() {
+        Handle h = strongRefs;
+        while (h != null) {
+            h.strongRef = null;
+            Handle n = h.strongNext;
+            h.strongNext = null;
+            h = n;
+        }
+        strongRefs = null;
+    }
+    static Handle valueOfLocked(IRubyObject obj) {
+        Handle h = GC.lookup(obj);
+        if (h != null) {
+            h.makeStrong();
+            return h;
+        }
+
+        Ruby runtime = obj.getRuntime();
+        long nativeHandle;
+
+        if (obj instanceof RubyFixnum) {
+            nativeHandle = Native.getInstance(runtime).newFixnumHandle(obj, ((RubyFixnum) obj).getLongValue());
+        } else {
+            nativeHandle = Native.getInstance(runtime).newHandle(obj);
+        }
+
+        Handle handle = newHandle(runtime, obj, nativeHandle);
+
+        GC.register(obj, handle);
+
+        return handle;
+    }
+
+    public static synchronized Handle valueOf(IRubyObject obj) {
+        ExecutionLock.lock();
+        try {
+            return valueOfLocked(obj);
+        } finally {
+            ExecutionLock.unlockNoCleanup();
+        }
+    }
+
+    public static long nativeHandle(IRubyObject obj) {
+        return Handle.valueOf(obj).getAddress();
+    }
+
+    static long nativeHandleLocked(IRubyObject obj) {
+        return Handle.valueOfLocked(obj).getAddress();
+    }
+
+    private static final Runnable reaper = new Runnable() {
+
+        public void run() {
+            for ( ; ; ) {
+                try {
+                    Reference<? extends Object> r = referenceQueue.remove();
+                    ExecutionLock.lock();
+                    try {
+                        do {
+                            try {
+                                if (r instanceof Handle) {
+                                    final Handle h = (Handle) r;
+                                    if (h.prev != null) {
+                                        h.prev.next = h.next;
+                                    }
+                                    if (h.next != null) {
+                                        h.next.prev = h.prev;
+                                    }
+
+                                    if (h == allHandles) {
+                                        if (h.next != null) {
+                                            allHandles = h.next;
+                                        } else {
+                                            allHandles = h.prev;
+                                        }
+                                    }
+
+                                    h.prev = h.next = null;
+
+                                    Native.getInstance(h.runtime).freeHandle(h.address);
+                                }
+                            } finally {
+                                r.clear();
+                            }
+                        } while ((r = referenceQueue.poll()) != null);
+                    } finally {
+                        ExecutionLock.unlockNoCleanup();
+                    }
+                } catch (InterruptedException ex) {
+                    break;
+                } catch (Throwable t) {
+                    continue;
+                }
+            }
+        }
+    };
+    static {
+        reaperThread = new Thread(reaper, "Native Handle Reaper");
+        reaperThread.setDaemon(true);
+        reaperThread.setPriority(Thread.NORM_PRIORITY + 1);
+        reaperThread.start();
+    }
+
+}
