@@ -1,9 +1,7 @@
 # -*- makefile -*-
 
-JRUBY_DIR = ../../jruby
-JRUBY_JAR = $(JRUBY_DIR)/lib/jruby.jar
-CEXT_JAVA = ../jruby-cext-java
-CEXT_JAR = $(CEXT_JAVA)/dist/jruby-cext-java.jar
+JRUBY_BASEDIR = $(shell pwd)/../../
+JRUBY_CLASSES = $(JRUBY_BASEDIR)/build/classes/jruby/
 
 BUILD_OS := $(strip $(shell uname -s | tr '[:upper:]' '[:lower:]'))
 OS ?= $(BUILD_OS)
@@ -45,7 +43,7 @@ JNI_DIR ?= $(SRC_DIR)
 JRUBY_NATIVE_DIR ?= $(JRUBY_BASEDIR)/lib/native/
 BUILD_DIR ?= $(JRUBY_NATIVE_DIR)$(PLATFORM)
 HDR_DIR ?= $(JRUBY_NATIVE_DIR)
-RUBY_H ?= $(HDR_DIR)/ruby.h
+RUBY_H ?= $(JRUBY_NATIVE_DIR)/ruby.h
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst %.c, $(SRC_DIR)/%.o, $(notdir $(SRCS)))
@@ -210,7 +208,7 @@ ifneq ($(strip $(findstring $(OS), linux solaris)),)
 endif
 
 
-JAVA_HDRS = $(patsubst %.h, $(BUILD_DIR)/%.h, org_jruby_cext_JRuby.h org_jruby_cext_Native.h org_jruby_cext_GC.h  org_jruby_runtime_ClassIndex.h)
+JAVA_HDRS = $(patsubst %.h, $(SRC_DIR)/%.h, org_jruby_cext_JRuby.h org_jruby_cext_Native.h org_jruby_cext_GC.h  org_jruby_runtime_ClassIndex.h)
 
 all:	$(LIBCEXT)
 
@@ -245,13 +243,10 @@ $(RUBY_H): $(SRC_DIR)/ruby.h
 
 .SECONDARY: $(JAVA_HDRS)
 
-$(JAVA_HDRS):	$(JRUBY_JAR) $(CEXT_JAR)
+$(JAVA_HDRS):
 	@mkdir -p $(@D)
-	javah -classpath $(CEXT_JAR):$(JRUBY_JAR) -d $(@D) $(subst _,., $(basename $(@F)))
+	javah -classpath $(JRUBY_CLASSES) -d $(@D) $(subst _,., $(basename $(@F)))
 
-
-$(CEXT_JAR):	$(wildcard $(CEXT_JAVA)/src/org/jruby/cext/*.java)
-	cd $(CEXT_JAVA) && ant jar
 
 .PHONY: clean
 clean: dist-clean
