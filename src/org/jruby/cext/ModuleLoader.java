@@ -18,47 +18,38 @@
 
 package org.jruby.cext;
 
-import com.kenai.jffi.Library;
 import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.jruby.Ruby;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
+
+import com.kenai.jffi.Library;
 
 public class ModuleLoader {
     public static final String libext = Platform.IS_MAC ? "bundle" : "so";
     private static final Set<Library> modules = new HashSet<Library>();
     
-    public void load(IRubyObject recv, String name) {
-        ThreadContext context = recv.getRuntime().getCurrentContext();
-        
-        Library lib = null;
-        try {
-            URI uri = new URI(name);
-            if (uri.getScheme() != null && uri.getScheme().equals("classpath")) {
-                // This means, the native lib was found through direct require in the classpath
-                String localPath = uri.getPath().substring(1); // remove leading slash
-                lib = Library.openLibrary(new File(localPath).getCanonicalPath() + '.' + libext, Library.LAZY | Library.GLOBAL);
-                name = new File(uri.getPath()).getName();
-            }
-        } catch (URISyntaxException e) {
-        } catch (IOException e) {
-        } finally {
-            if (lib == null) {
-                // Try loading from system library path
-                lib = Library.openLibrary(name + "." + libext, Library.LAZY | Library.GLOBAL);
-            }
-        }
-        
+    public void load(Ruby runtime, String name) {
+        ThreadContext context = runtime.getCurrentContext();
+
+        // Ensure the native code is initialized before we load the library
+        Native n = Native.getInstance(runtime);
+
+        Library lib = Library.openLibrary(name, Library.LAZY | Library.GLOBAL);
         if (lib == null) {
             throw new UnsatisfiedLinkError(Library.getLastError());
         }
 
-        String initName = new File(name).getName();
+        String fileName = new File(name).getName();
+        String initName = fileName;
+        int dotPos;
+        if ((dotPos = fileName.lastIndexOf('.')) != -1) {
+            // Remove the extension, if needed
+            initName = fileName.substring(0, dotPos);
+        }
         long init = lib.getSymbolAddress("Init_" + initName);
         
         if (init == 0) {
