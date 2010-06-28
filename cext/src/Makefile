@@ -227,6 +227,7 @@ debug:
 	@echo "OBJS=$(OBJS)"
 
 $(LIBCEXT):  $(OBJS) $(CXXOBJS) $(RUBY_H)
+	@mkdir -p $(BUILD_DIR)
 	$(CXX) -o $@ $(LDFLAGS) $(SOFLAGS) $(OBJS) $(CXXOBJS) $(LIBS)
 	
 
@@ -239,6 +240,7 @@ $(SRC_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 	$(CCACHE) $(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(RUBY_H): $(SRC_DIR)/ruby.h
+	@mkdir -p $(JRUBY_NATIVE_DIR)
 	@cp $(SRC_DIR)/ruby.h $(RUBY_H)
 
 .SECONDARY: $(JAVA_HDRS)
