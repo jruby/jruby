@@ -1,8 +1,0 @@
-fails:Kernel#public_send invokes the named public method
-fails:Kernel#public_send invokes the named alias of a public method
-fails:Kernel#public_send invokes the named method
-fails:Kernel#public_send invokes a class method if called on a class
-fails:Kernel#public_send raises an ArgumentError if called with fewer arguments than required parameters
-fails:Kernel#public_send succeeds if passed an arbitrary number of arguments as a splat parameter
-fails:Kernel#public_send succeeds when passing 1 or more arguments as a required and a splat parameter
-fails:Kernel#public_send succeeds when passing 0 arguments to a method with one parameter with a default
