@@ -437,7 +437,12 @@
         <fileset dir="${basedir}">
           <patternset refid="dist.bindir.files"/>
           <patternset refid="dist.lib.files"/>
-          <patternset refid="dist.cext.files"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${build.dir}/jar-complete/cext">
+        <fileset dir="${lib.dir}/native">
+	  <patternset refid="dist.jruby-cext-native.files"/>
         </fileset>
       </copy>
 
@@ -528,7 +533,6 @@
         <fileset dir="${basedir}">
           <patternset refid="dist.bindir.files"/>
           <patternset refid="dist.lib.files"/>
-          <patternset refid="dist.cext.files"/>
         </fileset>
       </copy>
 
@@ -1215,10 +1219,6 @@
     <include name="lib/ruby/gems/1.8/gems/sources-0.0.1/**"/>
   </patternset>
 
-  <patternset id="dist.cext.files">
-    <include name="cext/**"/>
-  </patternset>
-
   <patternset id="dist.files">
     <include name="lib/*"/>
     <include name="samples/**"/>
@@ -1277,13 +1277,19 @@
     <include name="tool/nailgun/src/**"/>
   </patternset>
 
+  <patternset id="dist.jruby-cext-native.files">
+    <include name="**/libjruby-cext.so"/>
+    <include name="**/libjruby-cext.a"/>
+    <include name="**/libjruby-cext.jnilib"/>
+    <include name="**/jruby-cext.dll"/>
+  </patternset>
+
   <target name="dist-bin" depends="jar-dist">
     <mkdir dir="${dist.stage.bin.dir}"/>
     <copy todir="${dist.stage.bin.dir}">
       <fileset dir="${basedir}">
         <patternset refid="dist.bindir.files"/>
         <patternset refid="dist.lib.files"/>
-        <patternset refid="dist.cext.files"/>
       </fileset>
     </copy>
     <!-- dist-bin by default does not come w/ unix native launcher, so -->
@@ -1340,7 +1346,6 @@
       <fileset dir="${basedir}">
         <patternset refid="dist.bindir.files"/>
         <patternset refid="dist.lib.files"/>
-        <patternset refid="dist.cext.files"/>
       </fileset>
     </copy>
     <rake task="install_dist_gems"/>
