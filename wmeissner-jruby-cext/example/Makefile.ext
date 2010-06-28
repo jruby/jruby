@@ -1,5 +1,5 @@
-TOPDIR = ../..
-CFLAGS += -I$(TOPDIR)/jruby-cext-native/src
+TOPDIR = ../../../
+CFLAGS += -I$(TOPDIR)/lib/native/
 
 OS = $(shell uname -s | tr '[A-Z]' '[a-z]')
 CFLAGS += -fexceptions
