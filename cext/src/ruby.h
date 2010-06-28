@@ -14,8 +14,18 @@
 #ifndef JRUBY_RUBY_H
 #define	JRUBY_RUBY_H
 
-#include <sys/types.h>
 #include <stdint.h>
+#include <sys/types.h>  
+
+// A number of extensions expect these to be already included
+#include <stddef.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <stdio.h>
+#include <sys/select.h>
+#include <string.h>  
+#include <unistd.h>
+#include <fcntl.h>
 
 #ifdef	__cplusplus
 extern "C" {
@@ -26,17 +36,20 @@ extern "C" {
 #else
 # define ANYARGS
 #endif
+  
+#define LONG_LONG long long
 
 typedef uintptr_t ID;
 typedef uintptr_t VALUE;
 
-#define ID2SYM(id) (id)
-#define SYM2ID(value) (value)
-
+/** The false object. */
 #define Qfalse ((VALUE)0)
+/** The true object. */
 #define Qtrue  ((VALUE)2)
+/** The nil object. */
 #define Qnil   ((VALUE)4)
-#define Qundef ((VALUE)6)     /* undefined value for placeholder */
+/** The undef object. Value for placeholder */
+#define Qundef ((VALUE)6)
 
 typedef enum JRubyType {
     T_NONE,
@@ -68,13 +81,7 @@ typedef enum JRubyType {
     T_NODE,
 } JRubyType;
 
-#define T_MASK (0x1f)
-
-#define RTEST(v) (((v) & ~Qnil) != 0)
-#define NIL_P(v) ((v) == Qnil)
-#define FIXNUM_P(v) (rb_type((v)) == T_FIXNUM)
-#define SYMBOL_P(v) (rb_type((v)) == T_SYMBOL)
-#define TYPE(x) rb_type((VALUE)(x))
+#define T_MASK (0x1f)    
 
 int rb_type(VALUE);
 void rb_check_type(VALUE, int);
@@ -95,11 +102,80 @@ void *xrealloc(void*,size_t);
 void *xrealloc2(void*,size_t,size_t);
 void xfree(void*);
 
-#define ALLOC_N(type,n) (type*)xmalloc(sizeof(type)*(n))
+/* Interface macros */
+
+/** Allocate memory for type. Must NOT be used to allocate Ruby objects. */
 #define ALLOC(type) (type*)xmalloc(sizeof(type))
+
+/** Allocate memory for N of type. Must NOT be used to allocate Ruby objects. */
+#define ALLOC_N(type,n) (type*)xmalloc(sizeof(type)*(n))
+
+/** Reallocate memory allocated with ALLOC or ALLOC_N. */
 #define REALLOC_N(var,type,n) (var)=(type*)xrealloc((char*)(var),sizeof(type)*(n))
 
+/** Interrupt checking (no-op). */
+#define CHECK_INTS        /* No-op */
 
+/** True if the value is a Fixnum. */
+#define FIXNUM_P(v) (rb_type((v)) == T_FIXNUM)
+
+#define ID2SYM(id) (id)
+#define SYM2ID(value) (value)
+
+/** Test macros */
+#define RTEST(v) (((v) & ~Qnil) != 0)
+#define NIL_P(v) ((v) == Qnil)
+#define SYMBOL_P(v) (rb_type((v)) == T_SYMBOL)
+#define TYPE(x) rb_type((VALUE)(x))
+
+/** Convert a Fixnum into an int. */
+#define FIX2INT(x) ((int) rb_num2int(x))
+/** Convert a Fixnum into an unsigned int. */
+#define FIX2UINT(x) ((int) rb_num2uint(x))
+/** Convert a Fixnum into an int. */
+#define FIX2LONG(x)        ((long)FIX2INT(x))
+/** Convert a Fixnum into an unsigned int. */
+#define FIX2ULONG(x)       ((unsigned long)FIX2UINT(x))
+
+/** Convert a VALUE into a long int. */
+#define NUM2LONG(x) rb_num2long(x)
+/** Convert a VALUE into a long int. */
+#define NUM2ULONG(x) rb_num2ulong(x)
+/** Convert a VALUE into an int. */
+#define NUM2INT(x) ((int) rb_num2int(x))
+/** Convert a VALUE into a long int. */
+#define NUM2UINT(x) ((int) rb_num2uint(x))
+/** Convert a VALUE into a long long */
+#define NUM2LL(x) rb_num2ll(x)
+/** Convert a VALUE into an unsigned long long */
+#define NUM2ULL(x) rb_num2ull(x)
+
+/** Convert int to a Ruby Integer. */
+#define INT2FIX(x)   rb_int2inum(x)
+/** Convert unsigned int to a Ruby Integer. */
+#define UINT2FIX(x)  rb_uint2inum(x)
+/** Convert int to a Ruby Integer. */
+#define INT2NUM(x)   rb_int2inum(x)
+#define UINT2NUM(x)  rb_uint2inum(x)
+#define LONG2FIX(x)  rb_int2inum(x)
+#define LONG2NUM(x)  rb_int2inum(x)
+#define ULONG2NUM(x) rb_uint2inum(x)
+#define LL2NUM(x)    rb_ll2inum(x)
+#define ULL2NUM(x)   rb_ull2inum(x)
+
+/** The length of string str. */
+#define RSTRING_LEN(str)  rb_str_len(str)
+/** The pointer to the string str's data. */
+#define RSTRING_PTR(str)  rb_str_ptr(str)
+
+/** The length of the array. */
+#define RARRAY_LEN(ary)   rb_ary_size(ary)
+/** The pointer to the array's data. */
+#define RARRAY_PTR(ary)   rb_ary_ptr(ary)
+
+#define DATA_PTR(dta) (jruby_data((dta)))
+
+/* End of interface macros */
 
 void rb_raise(VALUE exc, const char *fmt, ...) __attribute__((noreturn));
 void rb_fatal(const char *fmt, ...) __attribute__((noreturn));
@@ -132,26 +208,6 @@ VALUE rb_int2big(long long);
 VALUE rb_uint2big(unsigned long long);
 
 
-#define NUM2LONG(x) rb_num2long(x)
-#define NUM2ULONG(x) rb_num2ulong(x)
-#define FIX2INT(x) ((int) rb_num2int(x))
-#define FIX2UINT(x) ((int) rb_num2uint(x))
-#define NUM2INT(x) ((int) rb_num2int(x))
-#define NUM2UINT(x) ((int) rb_num2uint(x))
-#define NUM2LL(x) rb_num2ll(x)
-#define NUM2ULL(x) rb_num2ull(x)
-
-#define INT2FIX(x)   rb_int2inum(x)
-#define UINT2FIX(x)  rb_uint2inum(x)
-#define INT2NUM(x)   rb_int2inum(x)
-#define UINT2NUM(x)  rb_uint2inum(x)
-#define LONG2FIX(x)  rb_int2inum(x)
-#define LONG2NUM(x)  rb_int2inum(x)
-#define ULONG2NUM(x) rb_uint2inum(x)
-#define LL2NUM(x)    rb_ll2inum(x)
-#define ULL2NUM(x)   rb_ull2inum(x)
-
-
 VALUE rb_funcall(VALUE obj, ID meth, int cnt, ...);
 VALUE rb_funcall2(VALUE obj, ID meth, int cnt, VALUE*);
 
@@ -167,10 +223,6 @@ void rb_define_global_function(const char*,VALUE(*)(ANYARGS),int);
 #define HAVE_RB_DEFINE_ALLOC_FUNC 1
 typedef VALUE (*rb_alloc_func_t)(VALUE);
 void rb_define_alloc_func(VALUE, rb_alloc_func_t);
-
-
-
-
 
 /* Array */
 VALUE rb_Array(VALUE val);
@@ -188,6 +240,14 @@ VALUE rb_ary_reverse(VALUE array);
 VALUE rb_ary_unshift(VALUE array, VALUE val);
 VALUE rb_ary_shift(VALUE array);
 void rb_ary_store(VALUE array, int offset, VALUE val);
+/** Returns a pointer to a persistent VALUE [] that mirrors the data in
+ * the ruby array. The pointer buffer is flushed to the ruby array when
+ * control returns to Ruby code. The buffer is updated with the array
+ * contents when control crosses to C code.
+ *
+ * @note This is NOT an MRI C-API function.
+ */
+VALUE *rb_ary_ptr(VALUE self);
 
 /* Hash */
 VALUE rb_hash_new(void);
@@ -198,14 +258,11 @@ VALUE rb_hash_delete(VALUE hash, VALUE key);
 /* String */
 VALUE rb_str_new(const char*, long);
 VALUE rb_str_new_cstr(const char*);
-
 VALUE rb_tainted_str_new_cstr(const char*);
 VALUE rb_tainted_str_new(const char*, long);
 VALUE rb_str_buf_new(long);
 VALUE rb_str_buf_new_cstr(const char*);
 VALUE rb_str_tmp_new(long);
-
-
 VALUE rb_str_buf_append(VALUE, VALUE);
 VALUE rb_str_buf_cat(VALUE, const char*, long);
 VALUE rb_str_buf_cat2(VALUE, const char*);
@@ -251,6 +308,15 @@ VALUE rb_str_length(VALUE);
 long rb_str_offset(VALUE, long);
 size_t rb_str_capacity(VALUE);
 
+/** Returns a pointer to a persistent char [] that contains the same data as
+ * that contained in the Ruby string. The buffer is flushed to the string
+ * when control returns to Ruby code. The buffer is updated with the string
+ * contents when control crosses to C code.
+ *
+ * @note This is NOT an MRI C-API function.
+ */
+char *rb_str_ptr(VALUE self);
+
 #define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_new_shared
 #define rb_str_new4 rb_str_new_frozen
@@ -260,8 +326,6 @@ size_t rb_str_capacity(VALUE);
 #define rb_usascii_str_new2 rb_usascii_str_new_cstr
 
 extern void* jruby_data(VALUE);
-
-#define DATA_PTR(dta) (jruby_data((dta)))
 
 typedef void (*RUBY_DATA_FUNC)(void*);
 
@@ -289,6 +353,10 @@ extern ID jruby_intern_nonconst(const char *);
 #define rb_intern(name) \
     (__builtin_constant_p(name) ? rb_intern_const(name) : jruby_intern_nonconst(name))
 
+/** Call block with given argument or raise error if no block given. */
+VALUE rb_yield(VALUE argument_handle);
+
+/* Global Module objects. */
 extern VALUE rb_mKernel;
 extern VALUE rb_mComparable;
 extern VALUE rb_mEnumerable;
@@ -298,7 +366,7 @@ extern VALUE rb_mGC;
 extern VALUE rb_mMath;
 extern VALUE rb_mProcess;
 
-
+/* Global Class objects */
 extern VALUE rb_cObject;
 extern VALUE rb_cArray;
 extern VALUE rb_cBignum;
@@ -327,7 +395,7 @@ extern VALUE rb_cThread;
 extern VALUE rb_cTime;
 extern VALUE rb_cTrueClass;
 
-
+/* Exception classes. */
 extern VALUE rb_eException;
 extern VALUE rb_eStandardError;
 extern VALUE rb_eSystemExit;
@@ -353,7 +421,6 @@ extern VALUE rb_eFloatDomainError;
 extern VALUE rb_eLocalJumpError;
 extern VALUE rb_eSysStackError;
 extern VALUE rb_eRegexpError;
-
 extern VALUE rb_eScriptError;
 extern VALUE rb_eNameError;
 extern VALUE rb_eSyntaxError;
@@ -368,5 +435,5 @@ struct RBasic {
 }
 #endif
 
-#endif	/* RUBY_H */
+#endif	/* JRUBY_RUBY_H */
 
