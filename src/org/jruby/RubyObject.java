@@ -965,15 +965,15 @@ public class RubyObject extends RubyBasicObject {
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
     @JRubyMethod(name = "singleton_methods", optional = 1, compat = CompatVersion.RUBY1_8)
     public RubyArray singleton_methods(ThreadContext context, IRubyObject[] args) {
-        return singletonMethods(context, args, false);
+        return singletonMethods(context, args, methodsCollector);
     }
 
     @JRubyMethod(name = "singleton_methods", optional = 1 , compat = CompatVersion.RUBY1_9)
     public RubyArray singleton_methods19(ThreadContext context, IRubyObject[] args) {
-        return singletonMethods(context, args, true);
+        return singletonMethods(context, args, methodsCollector19);
     }
 
-    public RubyArray singletonMethods(ThreadContext context, IRubyObject[] args, boolean asSymbols) {
+    public RubyArray singletonMethods(ThreadContext context, IRubyObject[] args, MethodsCollector collect) {
         boolean all = true;
         if(args.length == 1) {
             all = args[0].isTrue();
@@ -981,15 +981,13 @@ public class RubyObject extends RubyBasicObject {
 
         RubyArray singletonMethods;
         if (getMetaClass().isSingleton()) {
-            if (asSymbols) {
-                singletonMethods = getMetaClass().instance_methods19(new IRubyObject[]{context.getRuntime().getFalse()});
-            } else {
-                singletonMethods = getMetaClass().instance_methods(new IRubyObject[]{context.getRuntime().getFalse()});
-            }
+            IRubyObject[] methodsArgs = new IRubyObject[]{context.getRuntime().getFalse()};
+            singletonMethods = collect.instanceMethods(getMetaClass(), methodsArgs);
+            
             if (all) {
                 RubyClass superClass = getMetaClass().getSuperClass();
                 while (superClass.isSingleton() || superClass.isIncluded()) {
-                    singletonMethods.concat(superClass.instance_methods(new IRubyObject[] {context.getRuntime().getFalse()}));
+                    singletonMethods.concat(collect.instanceMethods(superClass, methodsArgs));
                     superClass = superClass.getSuperClass();
                 }
             }
@@ -999,6 +997,22 @@ public class RubyObject extends RubyBasicObject {
 
         return singletonMethods;
     }
+
+    private abstract static class MethodsCollector {
+        public abstract RubyArray instanceMethods(RubyClass rubyClass, IRubyObject[] args);
+    };
+
+    private static final MethodsCollector methodsCollector = new MethodsCollector() {
+        public RubyArray instanceMethods(RubyClass rubyClass, IRubyObject[] args) {
+            return rubyClass.instance_methods(args);
+        }
+    };
+
+    private static final MethodsCollector methodsCollector19 = new MethodsCollector() {
+        public RubyArray instanceMethods(RubyClass rubyClass, IRubyObject[] args) {
+            return rubyClass.instance_methods19(args);
+        }
+    };
 
     /** rb_obj_method
      *
