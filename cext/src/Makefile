@@ -40,14 +40,17 @@ JNIEXT = so
 export MACOSX_DEPLOYMENT_TARGET=10.4
 
 CCACHE := $(strip $(realpath $(shell which ccache 2> /dev/null)))
-SRC_DIR ?= $(shell pwd)/src
-JNI_DIR ?= $(shell pwd)/src
-BUILD_DIR ?= $(shell pwd)/build
+SRC_DIR ?= $(shell pwd)
+JNI_DIR ?= $(SRC_DIR)
+JRUBY_NATIVE_DIR ?= $(JRUBY_BASEDIR)/lib/native/
+BUILD_DIR ?= $(JRUBY_NATIVE_DIR)$(PLATFORM)
+HDR_DIR ?= $(JRUBY_NATIVE_DIR)
+RUBY_H ?= $(HDR_DIR)/ruby.h
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
-OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(notdir $(SRCS)))
+OBJS = $(patsubst %.c, $(SRC_DIR)/%.o, $(notdir $(SRCS)))
 
-CXXOBJS += $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(notdir $(wildcard $(SRC_DIR)/*.cpp)))
+CXXOBJS += $(patsubst %.cpp, $(SRC_DIR)/%.o, $(notdir $(wildcard $(SRC_DIR)/*.cpp)))
 
 vpath %.h $(SRC_DIR)
 
@@ -131,7 +134,7 @@ endif
 ifeq ($(OS), darwin)
   MACSDK = /Developer/SDKs/MacOSX10.5.sdk
   JDK_INCLUDES = -I$(MACSDK)/System/Library/Frameworks/JavaVM.framework/Headers
-  PLATFORM = darwin
+  PLATFORM = Darwin
   ARCHES = ppc
   ifneq ($(findstring $(CPU), i386 x86_64),)
     ARCHES= i386 x86_64
@@ -225,18 +228,20 @@ debug:
 	@echo "PLATFORM=$(PLATFORM)"
 	@echo "OBJS=$(OBJS)"
 
-$(LIBCEXT):  $(OBJS) $(CXXOBJS)
+$(LIBCEXT):  $(OBJS) $(CXXOBJS) $(RUBY_H)
 	$(CXX) -o $@ $(LDFLAGS) $(SOFLAGS) $(OBJS) $(CXXOBJS) $(LIBS)
 	
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
+$(SRC_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 	@mkdir -p $(@D)
 	$(CCACHE) $(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
+$(SRC_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 	@mkdir -p $(@D)
 	$(CCACHE) $(CXX) $(CXXFLAGS) -c $< -o $@
 
+$(RUBY_H): $(SRC_DIR)/ruby.h
+	@cp $(SRC_DIR)/ruby.h $(RUBY_H)
 
 .SECONDARY: $(JAVA_HDRS)
 
@@ -249,6 +254,8 @@ $(CEXT_JAR):	$(wildcard $(CEXT_JAVA)/src/org/jruby/cext/*.java)
 	cd $(CEXT_JAVA) && ant jar
 
 .PHONY: clean
-clean:
-	$(RM) -rf build
+clean: dist-clean
+	$(RM) $(LIBCEXT)
 
+dist-clean:
+	$(RM) $(OBJS) $(JAVA_HDRS) $(CXXOBJS) 
