@@ -7,14 +7,14 @@ It is not in anyway meant to be a pretty, high-performance or in any way actuall
 To run the one example that works currently, do:
   ant jar-complete
 
-  bin/jruby jruby-cext/example/RequireTest/RequireTest.rb
+  bin/jruby wmeissner-jruby-cext/example/RequireTest/RequireTest.rb
     or
-  bin/jruby jruby-cext/example/Bench/Bench.rb
+  bin/jruby wmeissner-jruby-cext/example/Bench/Bench.rb
   
 To see a simple extconf example, do:
-  bin/jruby jruby-cext/example/Extconf/extconf.rb
-Then go to jruby-cext/example/Extconf and run:
+  bin/jruby wmeissner-jruby-cext/example/Extconf/extconf.rb
+Then go to wmeissner-jruby-cext/example/Extconf and run:
   make
 And finally run
-  bin/jruby jruby-cext/example/Extconf/extconf_example.rb
+  bin/jruby wmeissner-jruby-cext/example/Extconf/extconf_example.rb
 
