@@ -689,7 +689,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     final void modifyCheck() {
-        if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("string");
+        frozenCheck();
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw getRuntime().newSecurityError("Insecure: can't modify string");
@@ -704,8 +704,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (value.getUnsafeBytes() != b || value.getRealSize() != len || value.getEncoding() != enc) throw getRuntime().newRuntimeError("string modified");
     }
 
-    private final void frozenCheck() {
-        if (isFrozen()) throw getRuntime().newRuntimeError("string frozen");
+    private void frozenCheck() {
+        if (isFrozen()) throw getRuntime().newFrozenError("string");
     }
 
     /** rb_str_modify
@@ -2391,9 +2391,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         DynamicScope scope = context.getCurrentScope();
         if (matcher.search(value.getBegin(), range, Option.NONE) >= 0) {
-            if (this.isFrozen()) {
-                throw context.getRuntime().newRuntimeError("string frozen");
-            }
+            frozenCheck();
             byte[] bytes = value.getUnsafeBytes();
             int size = value.getRealSize();
             RubyMatchData match = RubyRegexp.updateBackRef(context, this, scope, matcher, pattern);
@@ -2463,9 +2461,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "sub!", frame = true, reads = BACKREF, writes = BACKREF, compat = CompatVersion.RUBY1_9)
     public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
         Ruby runtime = context.getRuntime();
-        if (this.isFrozen()) {
-            throw runtime.newRuntimeError("can't modify frozen string");
-        }
+        frozenCheck();
 
         final Regex pattern, prepared;
         final RubyRegexp regexp;
@@ -2487,9 +2483,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.getRuntime();
         IRubyObject hash = TypeConverter.convertToTypeWithCheck(arg1, runtime.getHash(), "to_hash");
-        if (this.isFrozen()) {
-            throw runtime.newRuntimeError("can't modify frozen string");
-        }
+        frozenCheck();
 
         final Regex pattern, prepared;
         final RubyRegexp regexp;
