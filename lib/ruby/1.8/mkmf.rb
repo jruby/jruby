@@ -1,3 +1,4 @@
+# ---------------------- Changed for JRuby ------------------------------------
 $stderr << "WARNING: JRuby does not support native extensions or the `mkmf' library very well.\n" +
 "Check http://kenai.com/projects/jruby/pages/Home for alternatives.\n"
 
@@ -21,6 +22,19 @@ module Config
     val
   end
 end
+
+# JRuby RbConfig::CONFIG is not complete. 
+Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
+
+$topdir     = File.expand_path(File.join(__FILE__, "..", "..", "..", "native"))
+$top_srcdir = $topdir
+$hdrdir     = $topdir
+
+unless File.exists?($hdrdir + "/ruby.h")
+  abort "mkmf.rb can't find header files for ruby at #{$hdrdir}/ruby.h"
+end
+# -----------------------------------------------------------------------------
+
 
 # module to create Makefile for extension modules
 # invoke like: ruby -r mkmf extconf.rb
@@ -153,16 +167,6 @@ def map_dir(dir, map = nil)
   map ||= INSTALL_DIRS
   map.inject(dir) {|dir, (orig, new)| dir.gsub(orig, new)}
 end
-
-# ---------------------- Changed for JRuby ------------------------------------
-$topdir     = File.expand_path(File.join(__FILE__, "..", "..", "..", "native"))
-$top_srcdir = $topdir
-$hdrdir     = $topdir
-
-unless File.exists?($hdrdir + "/ruby.h")
-  abort "mkmf.rb can't find header files for ruby at #{$hdrdir}/ruby.h"
-end
-# -----------------------------------------------------------------------------
 
 OUTFLAG = CONFIG['OUTFLAG']
 CPPOUTFILE = CONFIG['CPPOUTFILE']
