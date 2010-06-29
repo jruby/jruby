@@ -1052,6 +1052,20 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return expandPathInternal(context, recv, args, false);
     }
 
+    @JRubyMethod(name = {"realdirpath"}, required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return expandPathInternal(context, recv, args, false);
+    }
+
+    @JRubyMethod(name = {"realpath"}, required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject realpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject file = expandPathInternal(context, recv, args, false);
+        if (!RubyFileTest.exist_p(recv, file).isTrue()) {
+            throw context.getRuntime().newErrnoENOENTError(file.toString());
+        }
+        return file;
+    }
+
     private static IRubyObject expandPathInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean expandUser) {
         Ruby runtime = context.getRuntime();
 
@@ -1563,11 +1577,23 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     // Can we produce IOError which bypasses a close?
-    @JRubyMethod(required = 2, meta = true)
-    public static IRubyObject truncate(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.getRuntime();
+    @JRubyMethod(required = 2, meta = true, compat = CompatVersion.RUBY1_8)
+    public static IRubyObject truncate(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {        
+        return truncateCommon(context, recv, arg1, arg2);
+    }
+
+    @JRubyMethod(name = "truncate", required = 2, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject truncate19(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
+        if (!(arg1 instanceof RubyString) && arg1.respondsTo("to_path")) {
+            arg1 = arg1.callMethod(context, "to_path");
+        }
+        return truncateCommon(context, recv, arg1, arg2);
+    }
+
+    private static IRubyObject truncateCommon(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         RubyString filename = arg1.convertToString(); // TODO: SafeStringValue here
-        RubyInteger newLength = arg2.convertToInteger(); 
+        Ruby runtime = context.getRuntime();
+        RubyInteger newLength = arg2.convertToInteger();
 
         File testFile ;
         File childFile = new File(filename.getUnicodeValue() );
@@ -1590,7 +1616,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyFile file = (RubyFile) open(context, recv, args, Block.NULL_BLOCK);
         file.truncate(context, newLength);
         file.close();
-        
+
         return RubyFixnum.zero(runtime);
     }
 

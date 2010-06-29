@@ -45,6 +45,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ShellLauncher;
 
+import static org.jruby.ext.JRubyPOSIXHelper.checkErrno;
+
 
 /**
  */
@@ -881,7 +883,7 @@ public class RubyProcess {
             // FIXME: It may be possible to killpg on systems which support it.  POSIX library
             // needs to tell whether a particular method works or not
             if (pid == 0) pid = runtime.getPosix().getpid();
-            posix.kill(processGroupKill ? -pid : pid, signal);            
+            checkErrno(runtime, posix.kill(processGroupKill ? -pid : pid, signal));
         }
         
         return runtime.newFixnum(args.length - 1);
