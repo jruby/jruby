@@ -1172,8 +1172,8 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    /** rb_ary_push_m
-     * FIXME: Whis is this named "push_m"?
+    /** rb_ary_push_m - instance method push
+     *
      */
     @JRubyMethod(name = "push", rest = true, compat = CompatVersion.RUBY1_8)
     public RubyArray push_m(IRubyObject[] items) {
