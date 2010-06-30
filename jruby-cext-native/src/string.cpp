@@ -46,6 +46,7 @@ newString(const char* ptr, int len, int capacity = 0, bool tainted = false)
 
     jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_newString, jruby::getRuntime(), bytes, (jboolean) tainted);
     checkExceptions(env);
+    Handle::valueOf((VALUE) result)->makeStrong(env);
 
     return (VALUE) result;
 }

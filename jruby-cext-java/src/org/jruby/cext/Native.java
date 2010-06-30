@@ -34,6 +34,7 @@ final class Native {
         if (INSTANCE == null) {
             INSTANCE = new Native(runtime);
             INSTANCE.load(runtime);
+            GC.init(INSTANCE);
         
         } else if (INSTANCE.runtime != runtime) {
             throw runtime.newRuntimeError("invalid runtime");
@@ -85,10 +86,12 @@ final class Native {
     public final native long newHandle(IRubyObject obj);
     public final native long newFixnumHandle(IRubyObject obj, long value);
     public final native void freeHandle(long handle);
-    public final native void markHandle(long handle);
-    public final native void unmarkHandle(long handle);
+    
+    public final native void gc();
 
     private final native int getNil();
     private final native int getTrue();
     private final native int getFalse();
+
+    
 }

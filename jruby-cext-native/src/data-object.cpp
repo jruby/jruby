@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Wayne Meissner
+ * Copyright (C) 2009, 2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -18,6 +18,8 @@
 
 #include <jni.h>
 
+#include "queue.h"
+
 #include "JUtil.h"
 #include "jruby.h"
 #include "JavaException.h"
@@ -26,24 +28,18 @@
 #include "Handle.h"
 
 using namespace jruby;
+DataHandleList jruby::dataHandles = TAILQ_HEAD_INITIALIZER(dataHandles);
+
 static void rubydata_finalize(Handle *);
-
-class DataHandle: public Handle {
-public:
-    virtual ~DataHandle();
-    virtual void mark();
-
-    void (*dmark)(void *);
-    void (*dfree)(void *);
-    void* data;
-};
 
 extern "C" VALUE
 rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FUNC dfree)
 {
-    DataHandle* h = new DataHandle;
     JLocalEnv env;
-    
+
+    DataHandle* h = new DataHandle;
+
+    TAILQ_INSERT_TAIL(&dataHandles, h, dataList);
     h->data = data;
     h->dmark = dmark;
     h->dfree = dfree;
@@ -59,14 +55,16 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
     checkExceptions(env);
 
     h->obj = env->NewWeakGlobalRef(obj);
+    h->makeStrong(env);
     checkExceptions(env);
     
-
+    
     return (VALUE) (uintptr_t) h;
 }
 
 DataHandle::~DataHandle()
 {
+    TAILQ_REMOVE(&dataHandles, this, dataList);
 }
 
 void DataHandle::mark()

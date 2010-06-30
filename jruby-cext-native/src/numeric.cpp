@@ -76,6 +76,7 @@ rb_num2ll(VALUE v)
 
     jlong result = env->CallStaticLongMethodA(RubyNumeric_class, RubyNumeric_num2long_method, params);
     checkExceptions(env);
+    Handle::valueOf((VALUE) result)->makeStrong(env);
     
     return (long long) result;
 }
@@ -109,6 +110,7 @@ newNumber(jmethodID method, long long v)
 
     jlong result = env->CallStaticLongMethodA(JRuby_class, method, params);
     checkExceptions(env);
+    Handle::valueOf((VALUE) result)->makeStrong(env);
 
     return (VALUE) result;
 }

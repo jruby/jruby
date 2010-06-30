@@ -34,7 +34,7 @@ final class GIL {
     public static void release(ThreadContext context) {
         try {
             if (lock.getHoldCount() == 1) {
-                GC.cleanup(context);
+                GC.cleanup();
             }
         } finally {
             lock.unlock();

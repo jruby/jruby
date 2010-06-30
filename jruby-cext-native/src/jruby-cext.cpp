@@ -66,7 +66,7 @@ namespace jruby {
     jmethodID IRubyObject_asJavaString_method;
     jmethodID Handle_valueOf;
     jmethodID Ruby_getCurrentContext_method;
-    jmethodID GC_mark;
+    jmethodID GC_trigger;
     jfieldID Handle_address_field;
     jobject runtime;
     jobject nilRef;
@@ -168,7 +168,7 @@ loadIds(JNIEnv* env)
     RubyNumeric_num2long_method = getStaticMethodID(env, RubyNumeric_class, "num2long",
             "(Lorg/jruby/runtime/builtin/IRubyObject;)J");
 
-    GC_mark = getStaticMethodID(env, GC_class, "mark", "(Lorg/jruby/runtime/builtin/IRubyObject;)V");
+    GC_trigger = getStaticMethodID(env, GC_class, "trigger", "()V");
     Handle_valueOf = getStaticMethodID(env, Handle_class, "valueOf", "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/cext/Handle;");
 
     IRubyObject_callMethod = getMethodID(env, IRubyObject_class, "callMethod",
