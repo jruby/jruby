@@ -1,3 +1,0 @@
-fails(JRUBY-2739):Socket::IPSocket#recvfrom reads data from the connection
-fails(JRUBY-2739):Socket::IPSocket#recvfrom reads up to len bytes
-fails(JRUBY-2739):Socket::IPSocket#recvfrom returns an array with the data and connection info
