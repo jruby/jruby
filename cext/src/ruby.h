@@ -53,11 +53,11 @@ typedef uintptr_t VALUE;
 
 typedef struct RStringFacade {
     char ptr;
-}
+} RStringFacade;
 
 typedef struct RArrayFacade {
     VALUE* ptr;
-}
+} RArrayFacade;
 
 typedef enum JRubyType {
     T_NONE,
@@ -265,7 +265,7 @@ VALUE *rb_ary_ptr(VALUE self);
  * which exposes an MRI-like API to the C code.
  *
  * @note This is NOT an MRI C-API function.
-/*
+ */
 struct RArrayFacade rb_ary_struct_readonly(VALUE ary);
 
 /* Hash */
@@ -339,7 +339,7 @@ const char *rb_str_ptr_readonly(VALUE self);
  * which exposes an MRI-like API to the C code.
  *
  * @note This is NOT an MRI C-API function.
-/*
+ */
 struct RStringFacade rb_str_struct_readonly(VALUE str);
 
 #define rb_str_new2 rb_str_new_cstr
@@ -368,7 +368,7 @@ VALUE rb_data_object_alloc(VALUE,void*,RUBY_DATA_FUNC,RUBY_DATA_FUNC);
 #define Data_Get_Struct(obj,type,sval) do {\
     Check_Type(obj, T_DATA); \
     sval = (type*)DATA_PTR(obj);\
-} while (0
+} while (0)
 
 void rb_gc_mark_locations(VALUE*, VALUE*);
 void rb_gc_mark(VALUE);
