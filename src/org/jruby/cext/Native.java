@@ -47,6 +47,7 @@ final class Native {
         if (INSTANCE == null) {
             INSTANCE = new Native(runtime);
             INSTANCE.load(runtime);
+            GC.init(INSTANCE);
         
         } else if (INSTANCE.runtime != runtime) {
             throw runtime.newRuntimeError("invalid runtime");

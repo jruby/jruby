@@ -60,7 +60,7 @@ namespace jruby {
     extern jmethodID RaiseException_constructor;
     extern jmethodID RubyNumeric_num2long_method;
     extern jmethodID RubyString_newStringNoCopy;
-    extern jmethodID GC_mark;
+    extern jmethodID GC_trigger;
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
     extern jmethodID JRuby_callMethod;

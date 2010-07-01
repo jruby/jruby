@@ -31,17 +31,11 @@ public final class Handle extends WeakReference<Object> {
     private static final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<Object>();
     private static final Thread reaperThread;
     private static Handle allHandles = null;
-    private static Handle strongRefs = null;
     
     private final Ruby runtime;
     private final long address;
     private Handle prev = null, next = null;
-    private Handle strongNext = null;
-    private Object strongRef = null;
-
     
-    private List<IRubyObject> linkedObjects = null;
-
     static Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
         Handle h = new Handle(runtime, rubyObject, nativeHandle);
         if (allHandles != null) {
@@ -49,8 +43,6 @@ public final class Handle extends WeakReference<Object> {
             allHandles.prev = h;
         }
         allHandles = h;
-
-        h.makeStrong();
 
         return h;
     }
@@ -91,30 +83,12 @@ public final class Handle extends WeakReference<Object> {
 
 
     void link(List<IRubyObject> fields) {
-        this.linkedObjects = new ArrayList<IRubyObject>(fields);
     }
 
-    private void makeStrong() {
-        if (strongRef == null && (strongRef = get()) != null) {
-            strongNext = strongRefs;
-            strongRefs = this;
-        }
-    }
-
-    static synchronized void clearStrongReferences() {
-        Handle h = strongRefs;
-        while (h != null) {
-            h.strongRef = null;
-            Handle n = h.strongNext;
-            h.strongNext = null;
-            h = n;
-        }
-        strongRefs = null;
-    }
+   
     static Handle valueOfLocked(IRubyObject obj) {
         Handle h = GC.lookup(obj);
         if (h != null) {
-            h.makeStrong();
             return h;
         }
 
@@ -135,11 +109,11 @@ public final class Handle extends WeakReference<Object> {
     }
 
     public static synchronized Handle valueOf(IRubyObject obj) {
-        ExecutionLock.lock();
+        GIL.acquire();
         try {
             return valueOfLocked(obj);
         } finally {
-            ExecutionLock.unlockNoCleanup();
+            GIL.releaseNoCleanup();
         }
     }
 
@@ -157,7 +131,7 @@ public final class Handle extends WeakReference<Object> {
             for ( ; ; ) {
                 try {
                     Reference<? extends Object> r = referenceQueue.remove();
-                    ExecutionLock.lock();
+                    GIL.acquire();
                     try {
                         do {
                             try {
@@ -187,7 +161,7 @@ public final class Handle extends WeakReference<Object> {
                             }
                         } while ((r = referenceQueue.poll()) != null);
                     } finally {
-                        ExecutionLock.unlockNoCleanup();
+                        GIL.releaseNoCleanup();
                     }
                 } catch (InterruptedException ex) {
                     break;

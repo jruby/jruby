@@ -56,13 +56,13 @@ public class ModuleLoader {
             throw new UnsatisfiedLinkError("Could not locate Init_" + initName + " module entry point");
         }
         
-        ExecutionLock.lock();
+        GIL.acquire();
         try {
             System.out.printf("calling init (%x)\n", init);
             n.callInit(context, init);
             modules.add(lib);
         } finally {
-            ExecutionLock.unlock(context);
+            GIL.release(context);
         }
     }
 }
