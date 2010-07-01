@@ -51,6 +51,14 @@ typedef uintptr_t VALUE;
 /** The undef object. Value for placeholder */
 #define Qundef ((VALUE)6)
 
+typedef struct RStringFacade {
+    char ptr;
+}
+
+typedef struct RArrayFacade {
+    VALUE* ptr;
+}
+
 typedef enum JRubyType {
     T_NONE,
     T_NIL,
@@ -166,12 +174,16 @@ void xfree(void*);
 /** The length of string str. */
 #define RSTRING_LEN(str)  rb_str_len(str)
 /** The pointer to the string str's data. */
-#define RSTRING_PTR(str)  rb_str_ptr(str)
+#define RSTRING_PTR(str)  rb_str_ptr_readonly(str)
+/** Pointer to the MRI string structure */
+#define RSTRING(str) rb_str_struct_readonly(str);
 
 /** The length of the array. */
 #define RARRAY_LEN(ary)   rb_ary_size(ary)
 /** The pointer to the array's data. */
 #define RARRAY_PTR(ary)   rb_ary_ptr(ary)
+/** Pointer to the MRI array structure */
+#define RARRAY(str) rb_ary_struct_readonly(str);
 
 #define DATA_PTR(dta) (jruby_data((dta)))
 
@@ -241,13 +253,20 @@ VALUE rb_ary_unshift(VALUE array, VALUE val);
 VALUE rb_ary_shift(VALUE array);
 void rb_ary_store(VALUE array, int offset, VALUE val);
 /** Returns a pointer to a persistent VALUE [] that mirrors the data in
- * the ruby array. The pointer buffer is flushed to the ruby array when
+ * the ruby array. 
+ * TODO: The pointer buffer is flushed to the ruby array when
  * control returns to Ruby code. The buffer is updated with the array
  * contents when control crosses to C code.
  *
  * @note This is NOT an MRI C-API function.
  */
 VALUE *rb_ary_ptr(VALUE self);
+/** Returns a pointer to the readonly RArrayFacade structure
+ * which exposes an MRI-like API to the C code.
+ *
+ * @note This is NOT an MRI C-API function.
+/*
+struct RArrayFacade rb_ary_struct_readonly(VALUE ary);
 
 /* Hash */
 VALUE rb_hash_new(void);
@@ -315,7 +334,13 @@ size_t rb_str_capacity(VALUE);
  *
  * @note This is NOT an MRI C-API function.
  */
-const char *rb_str_ptr(VALUE self);
+const char *rb_str_ptr_readonly(VALUE self);
+/** Returns a pointer to the readonly RStringFacade structure
+ * which exposes an MRI-like API to the C code.
+ *
+ * @note This is NOT an MRI C-API function.
+/*
+struct RStringFacade rb_str_struct_readonly(VALUE str);
 
 #define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_new_shared

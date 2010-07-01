@@ -164,7 +164,7 @@ rb_string_value(VALUE* ptr)
 }
 
 extern "C" const char*
-rb_str_ptr(VALUE obj)
+rb_str_ptr_readonly(VALUE obj)
 {
     JLocalEnv env;
     char* ctext;
