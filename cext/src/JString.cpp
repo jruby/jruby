@@ -31,6 +31,12 @@ JString::JString(JNIEnv* env, jstring jstr) {
     cstr_ = env->GetStringUTFChars(jstr, NULL);
 }
 
+JString::JString(JNIEnv* env, VALUE str) {
+    env_ = env;
+    jstr_ = (jstring)env->CallObjectMethod(valueToObject(env, str), IRubyObject_asJavaString_method);
+    cstr_ = env->GetStringUTFChars(jstr_, NULL);
+}
+
 JString::~JString() {
     env_->ReleaseStringUTFChars(jstr_, cstr_);
 }
@@ -38,6 +44,11 @@ JString::~JString() {
 const char*
 JString::c_str() const {
     return cstr_;
+}
+
+jstring
+JString::j_str() const {
+    return jstr_;
 }
 
 JString::operator std::string() {

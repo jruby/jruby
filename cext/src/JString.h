@@ -21,6 +21,7 @@
 
 #include <string>
 #include <jni.h>
+#include "jruby.h"
 
 namespace jruby {
     
@@ -28,8 +29,10 @@ namespace jruby {
 class JString {
 public:
 	JString(JNIEnv *, jstring);
+    JString(JNIEnv *, VALUE);
 	~JString();
 	const char* c_str() const;
+    jstring j_str() const;
 	operator bool() { return cstr_ != NULL; }
 	bool operator==(void *ptr) { return cstr_ == ptr; }
 	operator std::string();
