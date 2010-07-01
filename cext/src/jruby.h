@@ -72,6 +72,9 @@ namespace jruby {
     extern jmethodID JRuby_uint2big;
     extern jfieldID Handle_address_field;
     extern jobject runtime;
+    extern jobject nilRef;
+    extern jobject trueRef;
+    extern jobject falseRef;
     extern std::map<const char*, jobject> methodNameMap;
 
     void initRubyClasses(JNIEnv* env, jobject runtime);
@@ -97,6 +100,9 @@ namespace jruby {
     VALUE objectToValue(JNIEnv* env, jobject obj);
 
     inline jobject getRuntime() { return jruby::runtime; }
+    inline jobject getTrue() { return jruby::constHandles[0]->obj; }
+    inline jobject getFalse() { return jruby::constHandles[1]->obj; }
+    inline jobject getNil() { return jruby::constHandles[2]->obj; }
     void checkExceptions(JNIEnv* env);
 
     VALUE getModule(JNIEnv* env, const char* className);
