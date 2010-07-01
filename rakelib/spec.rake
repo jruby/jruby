@@ -50,6 +50,9 @@ namespace :spec do
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
   task :ci_latest => ['spec:fetch_latest_specs', 'spec:tagged_18']
 
+  desc "Run rubyspecs expected to pass (against latest rubyspec version)"
+  task :ci_latest_19 => ['spec:fetch_latest_specs', 'spec:tagged_19']
+
   # Note: For this point below it is your reponsibility to make sure specs
   # are checked out.
 
