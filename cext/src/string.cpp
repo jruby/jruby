@@ -164,6 +164,12 @@ rb_string_value(VALUE* ptr)
     return *ptr = callMethod(*ptr, "to_str", 0);
 }
 
+extern "C" VALUE 
+rb_str_freeze(VALUE str) {
+    return callMethodA(str, "freeze", 0, NULL);
+}
+
+
 extern "C" const char*
 rb_str_ptr_readonly(VALUE obj)
 {

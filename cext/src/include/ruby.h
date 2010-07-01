@@ -326,7 +326,8 @@ VALUE rb_sym_to_s(VALUE);
 VALUE rb_str_length(VALUE);
 long rb_str_offset(VALUE, long);
 size_t rb_str_capacity(VALUE);
-
+/** Deprecated alias for rb_obj_freeze */
+VALUE rb_str_freeze(VALUE str);
 /** Returns a pointer to a persistent char [] that contains the same data as
  * that contained in the Ruby string. The buffer is flushed to the string
  * when control returns to Ruby code. The buffer is updated with the string
@@ -380,6 +381,10 @@ extern ID jruby_intern_nonconst(const char *);
 
 /** Call block with given argument or raise error if no block given. */
 VALUE rb_yield(VALUE argument_handle);
+
+/** Freeze object and return it. */
+VALUE rb_obj_freeze(VALUE obj);
+#define OBJ_FREEZE(obj) (rb_obj_freeze(obj))
 
 /* Global Module objects. */
 extern VALUE rb_mKernel;
