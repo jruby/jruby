@@ -75,6 +75,7 @@ jruby_funcall(JNIEnv* env, VALUE recv, ID meth, jobjectArray argArray)
 
     jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
     checkExceptions(env);
-
+    Handle::valueOf((VALUE) ret)->makeStrong(env);
+    
     return (VALUE) ret;
 }

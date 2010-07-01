@@ -28,7 +28,10 @@
 
 using namespace jruby;
 
-Handle* constHandles[3];
+Handle* jruby::constHandles[3];
+HandleList jruby::allHandles = TAILQ_HEAD_INITIALIZER(allHandles);
+static int allocCount;
+static const int GC_THRESHOLD = 10000;
 
 Handle::Handle()
 {
@@ -36,10 +39,18 @@ Handle::Handle()
     flags = 0;
     type = T_NONE;
     finalize = NULL;
+    strongRef = NULL;
+    TAILQ_INSERT_TAIL(&allHandles, this, all);
+    
+    if (++allocCount > GC_THRESHOLD) {
+        allocCount = 0;
+        JLocalEnv()->CallStaticVoidMethod(GC_class, GC_trigger);
+    }
 }
 
 Handle::~Handle()
 {
+    TAILQ_REMOVE(&allHandles, this, all);
 }
 
 void
@@ -47,11 +58,13 @@ Handle::mark()
 {
 }
 
+
 extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj)
 {
     Handle* h = new Handle();
     h->obj = env->NewWeakGlobalRef(obj);
+    h->makeStrong(env);
     
     return jruby::p2j(h);
 }
@@ -61,6 +74,7 @@ Java_org_jruby_cext_Native_newFixnumHandle(JNIEnv* env, jobject self, jobject ob
 {
     Fixnum* h = new Fixnum(value);
     h->obj = env->NewWeakGlobalRef(obj);
+    h->makeStrong(env);
     h->type = T_FIXNUM;
 
     return jruby::p2j(h);
@@ -83,34 +97,6 @@ Java_org_jruby_cext_Native_freeHandle(JNIEnv* env, jobject self, jlong address)
     env->DeleteWeakGlobalRef(h->obj);
 
     delete h;
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_jruby_cext_Native_markHandle(JNIEnv* env, jobject self, jlong address)
-{
-    if (address == 0LL) {
-        jruby::throwExceptionByName(env, NullPointerException, "null handle");
-        return;
-    }
-
-    // Mark this handle's children
-    Handle::valueOf((VALUE) address)->mark();
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_jruby_cext_Native_unmarkHandle(JNIEnv* env, jobject self, jlong address)
-{
-    if (IS_CONST(address)) {
-        return; // special constant, ignore
-    }
-
-    Handle* h = (Handle *) jruby::j2p(address);
-    if (h == NULL) {
-        jruby::throwExceptionByName(env, NullPointerException, "null handle");
-        return;
-    }
-
-    h->flags &= ~FL_MARK;
 }
 
 jobject
@@ -140,6 +126,7 @@ jruby::objectToValue(JNIEnv* env, jobject obj)
 
     VALUE v = (VALUE) env->GetLongField(handleObject, Handle_address_field);
     checkExceptions(env);
+    Handle::valueOf(v)->makeStrong(env);
 
     env->DeleteLocalRef(handleObject);
 

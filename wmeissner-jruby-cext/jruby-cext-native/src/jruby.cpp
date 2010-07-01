@@ -49,6 +49,7 @@ callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE*
 
     jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
     checkExceptions(env);
+    Handle::valueOf((VALUE) ret)->makeStrong(env);
 
     return (VALUE) ret;
 }

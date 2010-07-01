@@ -20,6 +20,7 @@
 #define	JRUBY_HANDLE_H
 
 #include <jni.h>
+#include "queue.h"
 #include "ruby.h"
 
 #ifdef	__cplusplus
@@ -44,10 +45,26 @@ namespace jruby {
             return !IS_CONST(v) ? (Handle *) v : jruby::constHandles[(v & CONST_MASK) >> 1];
         }
 
+        inline void makeStrong(JNIEnv* env) {
+            if (strongRef == NULL) {
+                strongRef = env->NewGlobalRef(obj);
+            }
+        }
+
+        inline void makeWeak(JNIEnv* env) {
+            if (strongRef != NULL) {
+                env->DeleteGlobalRef(strongRef);
+                strongRef = NULL;
+            }
+        }
+
+
         jweak obj;
+        jobject strongRef;
         int flags;
         int type;
         void (*finalize)(Handle *);
+        TAILQ_ENTRY(Handle) all;
     };
 
     class Fixnum: public Handle {
@@ -62,6 +79,21 @@ namespace jruby {
             return value;
         }
     };
+
+    class DataHandle: public Handle {
+    public:
+        virtual ~DataHandle();
+        virtual void mark();
+        TAILQ_ENTRY(DataHandle) dataList;
+        void (*dmark)(void *);
+        void (*dfree)(void *);
+        void* data;
+    };
+
+    TAILQ_HEAD(HandleList, Handle);
+    TAILQ_HEAD(DataHandleList, DataHandle);
+    extern HandleList allHandles;
+    extern DataHandleList dataHandles;
 }
 // FIXME - no need to match ruby here, unless we fold type into flags
 #define FL_MARK      (1<<6)

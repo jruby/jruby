@@ -18,6 +18,7 @@
 
 #include "jruby.h"
 #include "ruby.h"
+#include "Handle.h"
 #include "JLocalEnv.h"
 
 using namespace jruby;
@@ -42,16 +43,37 @@ rb_gc_mark(VALUE v)
     Handle* h = Handle::valueOf(v);
     if ((h->flags & FL_MARK) == 0) {
         h->flags |= FL_MARK;
-
-        JLocalEnv env;
-        jobject obj = env->NewLocalRef(h->obj);
-
-        // Mark this object as strongly reachable
-        if (!env->IsSameObject(obj, NULL)) {
-            env->CallStaticVoidMethod(GC_class, GC_mark, obj);
-        }
-
         // Mark any children if this is a data object
         h->mark();
+    }
+}
+
+
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    gc
+ * Signature: ()V
+ */
+extern "C" JNIEXPORT void JNICALL
+Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
+{
+    DataHandle* dh;
+    Handle* h;
+
+    TAILQ_FOREACH(dh, &dataHandles, dataList) {
+        if ((dh->flags & FL_MARK) == 0 && dh->dmark != NULL) {
+            dh->flags |= FL_MARK;
+            (*dh->dmark)(dh->data);
+            dh->flags &= ~FL_MARK;
+        }
+    }
+
+    TAILQ_FOREACH(h, &allHandles, all) {
+        if ((h->flags & FL_MARK) != 0) {
+            h->flags &= ~FL_MARK;
+            h->makeStrong(env);
+        } else {
+            h->makeWeak(env);
+        }
     }
 }
