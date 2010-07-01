@@ -19,6 +19,7 @@
 #include "jruby.h"
 #include "ruby.h"
 #include "JLocalEnv.h"
+#include "JString.h"
 
 extern "C" {
 
@@ -107,6 +108,28 @@ void rb_define_global_const(const char* name, VALUE obj) {
     jmethodID mid = getMethodID(env, Ruby_class, "defineGlobalConstant", 
             "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");    
     env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(name), valueToObject(env, obj));
+}
+
+/**
+ * Define a global variable.
+ * @param Pointer to Ruby string
+ */
+extern "C"
+void rb_global_variable(VALUE* handle_address) {
+    using namespace jruby;
+    JLocalEnv env;
+    JString j_str(env, *handle_address);
+
+    jstring globalVariableName = j_str.j_str();
+
+    // GlobalVariable(Ruby runtime, String name, IRubyObject value)
+    jmethodID cid = env->GetMethodID(GlobalVariable_class, "<init>",
+            "(Lorg/jruby/Ruby;Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
+    jobject globalVariable = env->NewObject(GlobalVariable_class, cid, getRuntime(),
+            globalVariableName, getNil());
+    
+    jmethodID mid = env->GetMethodID(Ruby_class, "defineVariable", 
+            "(Lorg/jruby/runtime/GlobalVariable;)V");
 }
 
 #define M(x) rb_m##x = jruby::getModule(env, #x)
