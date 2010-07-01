@@ -18,6 +18,7 @@
 
 #include "jruby.h"
 #include "ruby.h"
+#include "JLocalEnv.h"
 
 extern "C" {
 
@@ -92,6 +93,21 @@ VALUE rb_eLoadError;
 
 }
 
+/**  
+ * Define a global constant. Uses the corresponding Java method on 
+ * the Ruby class.
+ * @param c string with the constant name
+ * @param Ruby object to define the variable on
+ */
+extern "C"
+void rb_define_global_const(const char* name, VALUE obj) {
+    using namespace jruby;
+    JLocalEnv env;
+
+    jmethodID mid = getMethodID(env, Ruby_class, "defineGlobalConstant", 
+            "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");    
+    env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(name), valueToObject(env, obj));
+}
 
 #define M(x) rb_m##x = jruby::getModule(env, #x)
 #define C(x) rb_c##x = jruby::getClass(env, #x)
