@@ -48,10 +48,10 @@ namespace :spec do
   task :ci_all_precompiled_18 => ['spec:fetch_stable_specs', 'spec:all_precompiled_18']
 
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
-  task :ci_latest => ['spec:fetch_latest_specs', 'spec:tagged_18']
+  task :ci_latest => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged_18']
 
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
-  task :ci_latest_19 => ['spec:fetch_latest_specs', 'spec:tagged_19']
+  task :ci_latest_19 => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged_19']
 
   # Note: For this point below it is your reponsibility to make sure specs
   # are checked out.
@@ -195,6 +195,11 @@ namespace :spec do
         entry :key => "mspec.current.revision", :value => MSPEC_REVISION
       end
     end
+  end
+  
+  task :fast_forward_to_rubyspec_head => :fetch_latest_specs do
+    puts "Rolling to rubyspec to latest version"
+    git_move_to_head_detached('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
   end
 
   desc "Retrieve latest tagged rubyspec git repository"
