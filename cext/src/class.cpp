@@ -48,7 +48,7 @@ rb_define_class_under(VALUE module, const char* name, VALUE parent)
     JLocalEnv env;
 
     jmethodID Ruby_defineClass_method = getMethodID(env, Ruby_class, "defineClassUnder",
-            "(Ljava/lang/String;Lorg/jruby/RubyClass;Lorg/jruby/runtime/ObjectAllocator;Lorg/jruby/RubyClass;)Lorg/jruby/RubyClass;");
+            "(Ljava/lang/String;Lorg/jruby/RubyClass;Lorg/jruby/runtime/ObjectAllocator;Lorg/jruby/RubyModule;)Lorg/jruby/RubyClass;");
 
     jobject result = env->CallObjectMethod(getRuntime(), Ruby_defineClass_method,
             env->NewStringUTF(name), valueToObject(env, parent), getDefaultAllocator(env, parent),
