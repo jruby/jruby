@@ -1704,7 +1704,7 @@ site-install-rb: install-rb
     mfile.print "$(OBJS): $(RUBY_EXTCONF_H)\n\n" if $extconf_h
     mfile.print depout
   else
-    headers = ["ruby.h"] # "%w[ruby.h defines.h]"
+    headers = %w[ruby.h defines.h]
     if RULE_SUBST
       headers.each {|h| h.sub!(/.*/) {|*m| RULE_SUBST % m}}
     end

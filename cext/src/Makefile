@@ -43,7 +43,7 @@ JNI_DIR ?= $(SRC_DIR)
 JRUBY_NATIVE_DIR ?= $(JRUBY_BASEDIR)/lib/native/
 BUILD_DIR ?= $(JRUBY_NATIVE_DIR)$(PLATFORM)
 HDR_DIR ?= $(JRUBY_NATIVE_DIR)
-RUBY_H ?= $(JRUBY_NATIVE_DIR)/ruby.h
+RUBY_HEADERS = defines.h dl.h intern.h re.h ruby.h
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst %.c, $(SRC_DIR)/%.o, $(notdir $(SRCS)))
@@ -73,7 +73,8 @@ STRIP = strip -S
 
 
 JDK_INCLUDES = -I"$(JDK_HOME)/include" -I"$(JDK_HOME)/include/$(OS)"
-IFLAGS = -I"$(BUILD_DIR)" -I"$(BUILD_DIR)"/jni -I$(SRC_DIR) -I"$(SRC_DIR)" -I"$(BUILD_DIR)"/include
+IFLAGS = -I"$(BUILD_DIR)" -I"$(BUILD_DIR)"/jni -I$(SRC_DIR)/include \
+	 -I"$(SRC_DIR)/include" -I$(SRC_DIR) -I"$(SRC_DIR)"
 CFLAGS = $(OFLAGS) $(WFLAGS) $(IFLAGS) $(PICFLAGS) $(JDK_INCLUDES)
 CFLAGS += -D_REENTRANT -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
 CXXFLAGS = $(CFLAGS)
@@ -226,7 +227,7 @@ debug:
 	@echo "PLATFORM=$(PLATFORM)"
 	@echo "OBJS=$(OBJS)"
 
-$(LIBCEXT):  $(OBJS) $(CXXOBJS) $(RUBY_H)
+$(LIBCEXT):  $(OBJS) $(CXXOBJS) $(RUBY_HEADERS)
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) -o $@ $(LDFLAGS) $(SOFLAGS) $(OBJS) $(CXXOBJS) $(LIBS)
 	
@@ -239,9 +240,9 @@ $(SRC_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 	@mkdir -p $(@D)
 	$(CCACHE) $(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(RUBY_H): $(SRC_DIR)/ruby.h
+$(RUBY_HEADERS): $(wildcard $(SRC_DIR)/include/*.h) 
 	@mkdir -p $(JRUBY_NATIVE_DIR)
-	@cp $(SRC_DIR)/ruby.h $(RUBY_H)
+	@cp $(SRC_DIR)/include/*.h $(JRUBY_NATIVE_DIR)/
 
 .SECONDARY: $(JAVA_HDRS)
 
