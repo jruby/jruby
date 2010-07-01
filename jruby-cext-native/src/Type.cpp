@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -34,12 +34,7 @@ rb_type(VALUE val)
 
     // Lazy lookup the type
     JLocalEnv env;
-    jobject obj = env->NewLocalRef(h->obj);
-    if (env->IsSameObject(obj, NULL)) {
-        rb_raise(rb_eRuntimeError, "failed to get type of NULL object");
-    }
-
-    return h->type = typeOf(env, obj);
+    return h->type = typeOf(env, h->obj);
 }
 
 static struct types {

@@ -68,12 +68,43 @@ Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
         }
     }
 
-    TAILQ_FOREACH(h, &allHandles, all) {
-        if ((h->flags & FL_MARK) != 0) {
+    for (h = TAILQ_FIRST(&liveHandles); h != TAILQ_END(&liveHandles); ) {
+        Handle* next = TAILQ_NEXT(h, all);
+
+        if ((h->flags & (FL_MARK | FL_CONST)) == 0) {
+            TAILQ_REMOVE(&liveHandles, h, all);
+            TAILQ_INSERT_TAIL(&deadHandles, h, all);
+
+        } else if ((h->flags & FL_MARK) != 0) {
             h->flags &= ~FL_MARK;
-            h->makeStrong(env);
-        } else {
-            h->makeWeak(env);
         }
+
+        h = next;
     }
 }
+
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    pollGC
+ * Signature: ()Ljava/lang/Object;
+ */
+extern "C" JNIEXPORT jobject JNICALL
+Java_org_jruby_cext_Native_pollGC(JNIEnv* env, jobject self)
+{
+    Handle* h = TAILQ_FIRST(&deadHandles);
+    if (h == TAILQ_END(&deadHandles)) {
+        return NULL;
+    }
+    TAILQ_REMOVE(&deadHandles, h, all);
+    
+    if (h->finalize != NULL) {
+        (*h->finalize)(h);
+    }
+
+    jobject obj = env->NewLocalRef(h->obj);
+    env->DeleteGlobalRef(h->obj);
+    delete h;
+
+    return obj;
+}
+

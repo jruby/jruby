@@ -76,7 +76,6 @@ rb_num2ll(VALUE v)
 
     jlong result = env->CallStaticLongMethodA(RubyNumeric_class, RubyNumeric_num2long_method, params);
     checkExceptions(env);
-    Handle::valueOf((VALUE) result)->makeStrong(env);
     
     return (long long) result;
 }
@@ -110,8 +109,7 @@ newNumber(jmethodID method, long long v)
 
     jlong result = env->CallStaticLongMethodA(JRuby_class, method, params);
     checkExceptions(env);
-    Handle::valueOf((VALUE) result)->makeStrong(env);
-
+    
     return (VALUE) result;
 }
 
@@ -125,10 +123,8 @@ getCachedFixnum(int i)
     }
 
     fixnumCache[i] = v = newNumber(JRuby_ll2inum, i);
-    JLocalEnv env;
-    // FIXME hack to ensure the fixnum is never garbage collected
-    env->NewGlobalRef(valueToObject(env, v));
-
+    Handle::valueOf(v)->flags |= FL_CONST;
+    
     return v;
 }
 

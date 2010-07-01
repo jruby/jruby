@@ -45,22 +45,7 @@ namespace jruby {
             return !IS_CONST(v) ? (Handle *) v : jruby::constHandles[(v & CONST_MASK) >> 1];
         }
 
-        inline void makeStrong(JNIEnv* env) {
-            if (strongRef == NULL) {
-                strongRef = env->NewGlobalRef(obj);
-            }
-        }
-
-        inline void makeWeak(JNIEnv* env) {
-            if (strongRef != NULL) {
-                env->DeleteGlobalRef(strongRef);
-                strongRef = NULL;
-            }
-        }
-
-
-        jweak obj;
-        jobject strongRef;
+        jobject obj;
         int flags;
         int type;
         void (*finalize)(Handle *);
@@ -92,7 +77,7 @@ namespace jruby {
 
     TAILQ_HEAD(HandleList, Handle);
     TAILQ_HEAD(DataHandleList, DataHandle);
-    extern HandleList allHandles;
+    extern HandleList liveHandles, deadHandles;
     extern DataHandleList dataHandles;
 }
 // FIXME - no need to match ruby here, unless we fold type into flags
@@ -101,6 +86,7 @@ namespace jruby {
 #define FL_TAINT     (1<<8)
 #define FL_EXIVAR    (1<<9)
 #define FL_FREEZE    (1<<10)
+#define FL_CONST     (1<<11)
 
     
 #ifdef	__cplusplus

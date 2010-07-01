@@ -55,6 +55,7 @@ jruby_intern_nonconst(const char* name)
     VALUE v = objectToValue(env, result);
     Handle* h = (Handle *) v;
     h->type = T_SYMBOL;
+    h->flags |= FL_CONST;
 
     return v;
 }

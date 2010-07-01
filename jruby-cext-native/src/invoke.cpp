@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -78,7 +78,6 @@ Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject 
         VALUE* values = (VALUE *) alloca(argCount * sizeof(VALUE));
         for (int i = 0; i < argCount; ++i) {
             values[i] = (VALUE) largs[i];
-            Handle::valueOf(values[i])->makeStrong(env);
         }
 
         VALUE v = dispatch((void *) address, arity, argCount, (VALUE) recv, values);
@@ -126,7 +125,6 @@ JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_callMethod1(JNIEnv* env, jobject self, jlong fn, jlong recv, jlong arg1)
 {
     try {
-        Handle::valueOf((VALUE) arg1)->makeStrong(env);
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1));
 
     } catch (jruby::JavaException& ex) {
@@ -149,8 +147,6 @@ Java_org_jruby_cext_Native_callMethod2(JNIEnv* env, jobject self, jlong fn, jlon
         jlong arg1, jlong arg2)
 {
     try {
-        Handle::valueOf((VALUE) arg1)->makeStrong(env);
-        Handle::valueOf((VALUE) arg2)->makeStrong(env);
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2));
 
     } catch (jruby::JavaException& ex) {
@@ -173,10 +169,6 @@ Java_org_jruby_cext_Native_callMethod3(JNIEnv* env, jobject self, jlong fn, jlon
         jlong arg1, jlong arg2, jlong arg3)
 {
     try {
-
-        Handle::valueOf((VALUE) arg1)->makeStrong(env);
-        Handle::valueOf((VALUE) arg2)->makeStrong(env);
-        Handle::valueOf((VALUE) arg3)->makeStrong(env);
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2, (VALUE) arg3));
 
     } catch (jruby::JavaException& ex) {

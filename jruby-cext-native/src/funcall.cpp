@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -75,7 +75,6 @@ jruby_funcall(JNIEnv* env, VALUE recv, ID meth, jobjectArray argArray)
 
     jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
     checkExceptions(env);
-    Handle::valueOf((VALUE) ret)->makeStrong(env);
-    
+
     return (VALUE) ret;
 }

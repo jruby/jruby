@@ -62,6 +62,14 @@ public class GC {
                 GIL.acquire();
                 try {
                     n.gc();
+                    Object obj;
+                    while ((obj = n.pollGC()) != null) {
+                        if (obj instanceof RubyBasicObject) {
+                            ((RubyBasicObject) obj).fastSetInternalVariable(NATIVE_REF_KEY, null);
+                        } else {
+                            nonRubyRefs.remove(obj);
+                        }
+                    }
                 } finally {
                     GIL.releaseNoCleanup();
                 }
