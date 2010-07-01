@@ -175,13 +175,7 @@ extern "C" const char*
 rb_str_ptr_readonly(VALUE obj)
 {
     JLocalEnv env;
-    
-    jobject rubyString = valueToObject(env, obj);    
-    jmethodID mid = getMethodID(env, RubyString_class, "toString", "()Ljava/lang/String;");    
-    jstring javaString = (jstring)env->CallObjectMethod(rubyString, mid);
-    
-    JString jString(env, javaString);
-    
+    JString jString(env, obj);
     return jString.c_str();
 }
 
