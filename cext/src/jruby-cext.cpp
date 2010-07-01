@@ -41,6 +41,7 @@ namespace jruby {
     jclass ThreadContext_class;
     jclass Symbol_class;
     jclass JRuby_class;
+    jclass GlobalVariable_class;
     jmethodID JRuby_callMethod;
     jmethodID JRuby_newString;
     jmethodID JRuby_ll2inum;
@@ -151,6 +152,7 @@ loadIds(JNIEnv* env)
     ThreadContext_class = loadClass(env, "org/jruby/runtime/ThreadContext");
     Symbol_class = loadClass(env, "org/jruby/RubySymbol");
     JRuby_class = loadClass(env, "org/jruby/cext/JRuby");
+    GlobalVariable_class = loadClass(env, "org/jruby/runtime/GlobalVariable");
 
     Handle_address_field = getFieldID(env, Handle_class, "address", "J");
     Ruby_defineModule_method = getMethodID(env, Ruby_class, "defineModule", "(Ljava/lang/String;)Lorg/jruby/RubyModule;");

@@ -43,6 +43,7 @@ namespace jruby {
     extern jclass ThreadContext_class;
     extern jclass Symbol_class;
     extern jclass JRuby_class;
+    extern jclass GlobalVariable_class;
 
     extern jmethodID IRubyObject_callMethod;
     extern jmethodID IRubyObject_asJavaString_method;
