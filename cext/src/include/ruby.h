@@ -52,11 +52,13 @@ typedef uintptr_t VALUE;
 #define Qundef ((VALUE)6)
 
 typedef struct RStringFacade {
-    char ptr;
+    char* ptr;
+    int len;
 } RStringFacade;
 
 typedef struct RArrayFacade {
     VALUE* ptr;
+    int len;
 } RArrayFacade;
 
 typedef enum JRubyType {

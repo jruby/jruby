@@ -24,6 +24,7 @@
 #include <jni.h>
 
 #include "JLocalEnv.h"
+#include "JString.h"
 #include "jruby.h"
 #include "JUtil.h"
 #include "ruby.h"
@@ -174,19 +175,14 @@ extern "C" const char*
 rb_str_ptr_readonly(VALUE obj)
 {
     JLocalEnv env;
-    char* ctext;
-    printf("Get me a pointer from %p!\n", (void*)obj);
-    //valueToObject(env, obj);
-    //printf("valueToObject works\n");
-    jobject rubyString = valueToObject(env, obj);
-    printf("Got me rubyString object (%p)\n", (void*)rubyString);
-    jmethodID mid = getMethodID(env, RubyString_class, "setTaint", "(Z)V");
-    printf("Got me toString method (%p)\n", (void*)mid);
-    jstring javaString = (jstring)(env->CallObjectMethod(rubyString, mid));
-    printf("Got me java String (%p)\n", (void*)javaString);
-    env->GetStringUTFChars(javaString, NULL);
-    printf("Got me cstring\n");
-    return ctext;
+    
+    jobject rubyString = valueToObject(env, obj);    
+    jmethodID mid = getMethodID(env, RubyString_class, "toString", "()Ljava/lang/String;");    
+    jstring javaString = (jstring)env->CallObjectMethod(rubyString, mid);
+    
+    JString jString(env, javaString);
+    
+    return jString.c_str();
 }
 
 
