@@ -11,6 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
+ * Copyright (C) 2007-2010 JRuby Team <team@jruby.org>
  * Copyright (C) 2007 Ola Bini <ola@ologix.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -141,4 +142,34 @@ public class RubyIPSocket extends RubyBasicSocket {
             throw sockerr(context.getRuntime(), "getaddress: name or service not known");
         }
     }
+
+    @JRubyMethod(required = 1, optional = 1)
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
+        IRubyObject result = recv(context, args);
+        InetSocketAddress sender = getRemoteSocket();
+
+        int port;
+        String hostName;
+        String hostAddress;
+
+        if (sender == null) {
+            port = 0;
+            hostName = hostAddress = "0.0.0.0";
+        } else {
+            port = sender.getPort();
+            hostName = sender.getHostName();
+            hostAddress = sender.getAddress().getHostAddress();
+        }
+
+        IRubyObject addressArray = context.getRuntime().newArray(
+                new IRubyObject[] {
+                        context.getRuntime().newString("AF_INET"),
+                        context.getRuntime().newFixnum(port),
+                        context.getRuntime().newString(hostName),
+                        context.getRuntime().newString(hostAddress)
+                });
+
+        return context.getRuntime().newArray(new IRubyObject[] { result, addressArray });
+    }
+
 }// RubyIPSocket

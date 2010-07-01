@@ -640,7 +640,7 @@ public class ParserSupport {
      * @param node to be checked.
      */
     public void checkUselessStatement(Node node) {
-        if (!warnings.isVerbose()) return;
+        if (!warnings.isVerbose() || (!configuration.isInlineSource() && configuration.isEvalParse())) return;
         
         uselessLoop: do {
             if (node == null) return;

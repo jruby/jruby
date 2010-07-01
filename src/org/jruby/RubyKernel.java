@@ -1665,4 +1665,10 @@ public class RubyKernel {
     public static IRubyObject singleton_class(IRubyObject recv) {
         return recv.getSingletonClass();
     }
+
+    @JRubyMethod(frame = true, rest = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject public_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        recv.getMetaClass().checkMethodBound(context, args, PUBLIC);
+        return ((RubyObject)recv).send19(context, args, Block.NULL_BLOCK);
+    }
 }

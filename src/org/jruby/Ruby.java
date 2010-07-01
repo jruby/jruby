@@ -2277,7 +2277,7 @@ public final class Ruby {
         
         if (parserStats != null) parserStats.addEvalParse();
         return parser.parse(file, bytes, scope,
-                new ParserConfiguration(getKCode(), lineNumber, false, false, true, config));
+                new ParserConfiguration(getKCode(), lineNumber, false, false, false, config));
     }
 
     @Deprecated
@@ -2291,7 +2291,7 @@ public final class Ruby {
     
     public Node parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
         if (parserStats != null) parserStats.addEvalParse();
-        return parser.parse(file, content, scope, new ParserConfiguration(getKCode(), lineNumber, false, false, true, config));
+        return parser.parse(file, content, scope, new ParserConfiguration(getKCode(), lineNumber, false, false, false, config));
     }
 
     public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber, 
@@ -3137,6 +3137,10 @@ public final class Ruby {
 
     public RaiseException newErrnoEADDRNOTAVAILError(String message) {
         return newRaiseException(getErrno().fastGetClass("EADDRNOTAVAIL"), message);
+    }
+
+    public RaiseException newErrnoESRCHError() {
+        return newRaiseException(getErrno().fastGetClass("ESRCH"), null);
     }
 
     public RaiseException newIndexError(String message) {

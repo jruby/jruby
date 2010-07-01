@@ -82,6 +82,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ObjectAllocator;
@@ -1248,6 +1249,22 @@ public class RubyModule extends RubyObject {
             return !(checkVisibility && method.getVisibility() == PRIVATE);
         }
         return false;
+    }
+
+    public void checkMethodBound(ThreadContext context, IRubyObject[] args, Visibility visibility) {
+        if (args.length == 0) {
+            throw context.getRuntime().newArgumentError("no method name given");
+        }
+        String name = args[0].asJavaString();
+
+        DynamicMethod method = searchMethod(name);
+        if (!method.isUndefined() && method.getVisibility() != visibility) {
+            Ruby runtime = context.getRuntime();
+            RubyNameError.RubyNameErrorMessage message = new RubyNameError.RubyNameErrorMessage(runtime, this,
+                    runtime.newString(name), method.getVisibility(), CallType.NORMAL);
+
+            throw runtime.newNoMethodError(message.to_str(context).asJavaString(), name, NEVER);
+        }
     }
 
     public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound, Visibility visibility) {

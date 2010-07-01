@@ -1172,8 +1172,8 @@ public class RubyArray extends RubyObject implements List {
         return this;
     }
 
-    /** rb_ary_push_m
-     * FIXME: Whis is this named "push_m"?
+    /** rb_ary_push_m - instance method push
+     *
      */
     @JRubyMethod(name = "push", rest = true, compat = CompatVersion.RUBY1_8)
     public RubyArray push_m(IRubyObject[] items) {
@@ -3872,10 +3872,16 @@ public class RubyArray extends RubyObject implements List {
     /**
      * @see org.jruby.util.Pack#pack
      */
-    @JRubyMethod(name = "pack", required = 1)
+    @JRubyMethod(name = "pack", required = 1, compat = CompatVersion.RUBY1_8)
     public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = RubyString.objAsString(context, obj);
         return Pack.pack(getRuntime(), this, iFmt.getByteList());
+    }
+
+    @JRubyMethod(name = "pack", required = 1, compat = CompatVersion.RUBY1_9)
+    public RubyString pack19(ThreadContext context, IRubyObject obj) {
+        RubyString iFmt = RubyString.objAsString(context, obj);
+        return Pack.pack19(context, context.getRuntime(), this, iFmt);
     }
 
     @Override

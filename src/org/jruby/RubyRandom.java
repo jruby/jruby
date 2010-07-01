@@ -132,7 +132,7 @@ public class RubyRandom extends RubyObject {
             }
 
             IRubyObject difference = last.callMethod(context, "-", first);
-            int max = new Long(RubyNumeric.num2long(difference)).intValue();
+            int max = (int) RubyNumeric.num2long(difference);
 
             int rand = random.nextInt(max);
 
