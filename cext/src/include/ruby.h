@@ -375,6 +375,11 @@ VALUE rb_data_object_alloc(VALUE,void*,RUBY_DATA_FUNC,RUBY_DATA_FUNC);
 
 void rb_gc_mark_locations(VALUE*, VALUE*);
 void rb_gc_mark(VALUE);
+/** Mark variable global */
+void rb_global_variable(VALUE* handle_address);
+void rb_gc_register_address(VALUE* address);
+/** Unmark variable as global */
+void rb_gc_unregister_address(VALUE* address);
 
 extern ID rb_intern_const(const char *);
 extern ID jruby_intern_nonconst(const char *);
