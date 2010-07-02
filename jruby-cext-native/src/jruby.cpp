@@ -164,5 +164,6 @@ jruby::getClass(JNIEnv* env, const char* className)
 VALUE
 jruby::getClass(const char* className)
 {
-    return getClass(JLocalEnv(), className);
+    JLocalEnv env;
+    return getClass(env, className);
 }
