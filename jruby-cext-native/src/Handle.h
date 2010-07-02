@@ -40,7 +40,7 @@ namespace jruby {
         void Init();
     public:
         Handle();
-        Handle(JNIEnv* env, jobject obj);
+        Handle(JNIEnv* env, jobject obj, int type_ = T_NONE);
         virtual ~Handle();
         
         static inline Handle* valueOf(VALUE v) {

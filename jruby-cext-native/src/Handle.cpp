@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -40,10 +40,11 @@ Handle::Handle()
     Init();
 }
 
-Handle::Handle(JNIEnv* env, jobject obj_)
+Handle::Handle(JNIEnv* env, jobject obj_, int type_)
 {
-    this->obj = env->NewGlobalRef(obj_);
     Init();
+    this->obj = env->NewGlobalRef(obj_);
+    this->type = type_;
 }
 
 Handle::~Handle()
@@ -74,11 +75,11 @@ Fixnum::Fixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_)
 extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jint type)
 {
-    Handle* h = new Handle(env, obj);
+    Handle* h;
     switch (type) {
 #define T(x) \
         case org_jruby_runtime_ClassIndex_##x: \
-            h->type = T_##x; \
+            h = new Handle(env, obj, T_##x); \
             break;
         T(FIXNUM);
         T(BIGNUM);
@@ -98,15 +99,15 @@ Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jin
         T(FILE);
 
         case org_jruby_runtime_ClassIndex_NO_INDEX:
-            h->type = T_NONE;
+            h = new Handle(env, obj, T_NONE);
             break;
 
         case org_jruby_runtime_ClassIndex_MATCHDATA:
-            h->type = T_MATCH;
+            h = new Handle(env, obj, T_MATCH);
             break;
 
         default:
-            h->type = T_OBJECT;
+            h = new Handle(env, obj, T_OBJECT);
             break;
     }
 
