@@ -77,21 +77,21 @@ final class Native {
         return callMethod(ctx, fn, Handle.nativeHandleLocked(recv), arity, largs);
     }
 
-    public final native IRubyObject callMethod(ThreadContext ctx, long fn, long recv, int arity, long[] args);
+    final native IRubyObject callMethod(ThreadContext ctx, long fn, long recv, int arity, long[] args);
     final native IRubyObject callMethod0(long fn, long recv);
     final native IRubyObject callMethod1(long fn, long recv, long arg0);
     final native IRubyObject callMethod2(long fn, long recv, long arg0, long arg1);
     final native IRubyObject callMethod3(long fn, long recv, long arg0, long arg1, long arg2);
 
-    public final native long newHandle(IRubyObject obj, int type);
-    public final native long newFixnumHandle(IRubyObject obj, long value);
+    final native long newHandle(IRubyObject obj, int type);
+    final native long newFixnumHandle(IRubyObject obj, long value);
     
-    public final native void gc();
-    public final native Object pollGC();
+    final native void gc();
+    final native Object pollGC();
 
-    private final native int getNil();
-    private final native int getTrue();
-    private final native int getFalse();
+    final native long getNil();
+    final native long getTrue();
+    final native long getFalse();
 
     
 }
