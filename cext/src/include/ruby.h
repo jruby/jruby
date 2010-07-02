@@ -297,6 +297,7 @@ VALUE rb_str_dup_frozen(VALUE);
 #define rb_str_dup_frozen rb_str_new_frozen
 VALUE rb_str_plus(VALUE, VALUE);
 VALUE rb_str_times(VALUE, VALUE);
+size_t rb_str_len(VALUE str);
 long rb_str_sublen(VALUE, long);
 VALUE rb_str_substr(VALUE, long, long);
 VALUE rb_str_subseq(VALUE, long, long);

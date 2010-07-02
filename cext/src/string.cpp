@@ -170,6 +170,10 @@ rb_str_freeze(VALUE str) {
     return callMethodA(str, "freeze", 0, NULL);
 }
 
+extern "C" size_t
+rb_str_len(VALUE str) {
+    return NUM2INT(callMethod(str, "length", 0, NULL));
+}
 
 extern "C" const char*
 rb_str_ptr_readonly(VALUE obj)

@@ -12,6 +12,7 @@ void Init_string(void)
 
 VALUE method_hello(VALUE self, VALUE str)
 {
+  printf("In C, this string has the length: %d\n", (int)rb_str_len(str));
   return rb_str_new2(RSTRING_PTR(str));
 }
 
