@@ -72,9 +72,45 @@ Fixnum::Fixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_)
 }
 
 extern "C" JNIEXPORT jlong JNICALL
-Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj)
+Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jint type)
 {
-    return jruby::p2j(new Handle(env, obj));
+    Handle* h = new Handle(env, obj);
+    switch (type) {
+#define T(x) \
+        case org_jruby_runtime_ClassIndex_##x: \
+            h->type = T_##x; \
+            break;
+        T(FIXNUM);
+        T(BIGNUM);
+        T(ARRAY);
+        T(STRING);
+        T(NIL);
+        T(TRUE);
+        T(FALSE);
+        T(SYMBOL);
+        T(REGEXP);
+        T(HASH);
+        T(FLOAT);
+        T(MODULE);
+        T(CLASS);
+        T(OBJECT);
+        T(STRUCT);
+        T(FILE);
+
+        case org_jruby_runtime_ClassIndex_NO_INDEX:
+            h->type = T_NONE;
+            break;
+
+        case org_jruby_runtime_ClassIndex_MATCHDATA:
+            h->type = T_MATCH;
+            break;
+
+        default:
+            h->type = T_OBJECT;
+            break;
+    }
+
+    return jruby::p2j(h);
 }
 
 extern "C" JNIEXPORT jlong JNICALL

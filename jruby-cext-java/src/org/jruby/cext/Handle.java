@@ -20,6 +20,8 @@ package org.jruby.cext;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyObject;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class Handle {
@@ -72,10 +74,19 @@ public final class Handle {
         Ruby runtime = obj.getRuntime();
         long nativeHandle;
 
-        if (obj instanceof RubyFixnum) {
-            nativeHandle = Native.getInstance(runtime).newFixnumHandle(obj, ((RubyFixnum) obj).getLongValue());
+
+        if (obj instanceof RubyObject) {
+            int type = ((RubyObject) obj).getNativeTypeIndex();
+            switch (type) {
+                case ClassIndex.FIXNUM:
+                    nativeHandle = Native.getInstance(runtime).newFixnumHandle(obj, ((RubyFixnum) obj).getLongValue());
+                    break;
+                default:
+                    nativeHandle = Native.getInstance(runtime).newHandle(obj, type);
+                    break;
+            }
         } else {
-            nativeHandle = Native.getInstance(runtime).newHandle(obj);
+            nativeHandle = Native.getInstance(runtime).newHandle(obj, ClassIndex.OBJECT);
         }
 
         Handle handle = newHandle(runtime, obj, nativeHandle);

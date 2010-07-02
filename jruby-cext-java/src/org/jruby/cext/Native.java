@@ -83,7 +83,7 @@ final class Native {
     final native IRubyObject callMethod2(long fn, long recv, long arg0, long arg1);
     final native IRubyObject callMethod3(long fn, long recv, long arg0, long arg1, long arg2);
 
-    public final native long newHandle(IRubyObject obj);
+    public final native long newHandle(IRubyObject obj, int type);
     public final native long newFixnumHandle(IRubyObject obj, long value);
     
     public final native void gc();
