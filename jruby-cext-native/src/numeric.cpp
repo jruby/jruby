@@ -66,7 +66,7 @@ rb_num2ll(VALUE v)
 {
     Handle* h = Handle::valueOf(v);
     if (h->type == T_FIXNUM) {
-        return ((Fixnum *) h)->longValue();
+        return ((RubyFixnum *) h)->longValue();
     }
 
     JLocalEnv env;

@@ -56,7 +56,6 @@ Handle::Init()
 {
     flags = 0;
     type = T_NONE;
-    finalize = NULL;
     TAILQ_INSERT_TAIL(&liveHandles, this, all);
 
     if (++allocCount > GC_THRESHOLD) {
@@ -66,10 +65,26 @@ Handle::Init()
     }
 }
 
-Fixnum::Fixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_)
+RubyFixnum::RubyFixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_, T_FIXNUM)
 {
     this->value = value_;
-    this->type = T_FIXNUM;
+}
+
+
+RubyString::RubyString(JNIEnv* env, jobject obj_): Handle(env, obj_, T_STRING)
+{
+}
+
+RubyString::~RubyString()
+{
+}
+
+RubyArray::RubyArray(JNIEnv* env, jobject obj_): Handle(env, obj_, T_ARRAY)
+{
+}
+
+RubyArray::~RubyArray()
+{
 }
 
 extern "C" JNIEXPORT jlong JNICALL
@@ -83,8 +98,6 @@ Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jin
             break;
         T(FIXNUM);
         T(BIGNUM);
-        T(ARRAY);
-        T(STRING);
         T(NIL);
         T(TRUE);
         T(FALSE);
@@ -106,6 +119,14 @@ Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jin
             h = new Handle(env, obj, T_MATCH);
             break;
 
+        case org_jruby_runtime_ClassIndex_STRING:
+            h = new RubyString(env, obj);
+            break;
+
+        case org_jruby_runtime_ClassIndex_ARRAY:
+            h = new RubyArray(env, obj);
+            break;
+
         default:
             h = new Handle(env, obj, T_OBJECT);
             break;
@@ -117,7 +138,7 @@ Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jin
 extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_newFixnumHandle(JNIEnv* env, jobject self, jobject obj, jlong value)
 {
-    return jruby::p2j(new Fixnum(env, obj, value));
+    return jruby::p2j(new RubyFixnum(env, obj, value));
 }
 
 jobject

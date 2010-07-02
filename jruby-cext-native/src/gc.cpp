@@ -55,7 +55,7 @@ rb_gc_mark(VALUE v)
 extern "C" JNIEXPORT void JNICALL
 Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
 {
-    DataHandle* dh;
+    RubyData* dh;
     Handle* h;
 
     TAILQ_FOREACH(dh, &dataHandles, dataList) {
@@ -94,10 +94,6 @@ Java_org_jruby_cext_Native_pollGC(JNIEnv* env, jobject self)
         return NULL;
     }
     TAILQ_REMOVE(&deadHandles, h, all);
-    
-    if (h->finalize != NULL) {
-        (*h->finalize)(h);
-    }
 
     jobject obj = env->NewLocalRef(h->obj);
     env->DeleteGlobalRef(h->obj);

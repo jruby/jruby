@@ -37,13 +37,12 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
 {
     JLocalEnv env;
 
-    DataHandle* h = new DataHandle;
+    RubyData* h = new RubyData;
 
     TAILQ_INSERT_TAIL(&dataHandles, h, dataList);
     h->data = data;
     h->dmark = dmark;
     h->dfree = dfree;
-    h->finalize = rubydata_finalize;
     h->type = T_DATA;
 
     jvalue params[3];
@@ -61,9 +60,16 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
     return (VALUE) (uintptr_t) h;
 }
 
-DataHandle::~DataHandle()
+RubyData::~RubyData()
 {
     TAILQ_REMOVE(&dataHandles, this, dataList);
+
+    if (dfree == (void *) -1) {
+        xfree(data);
+
+    } else if (dfree != NULL) {
+        (*dfree)(data);
+    }
 }
 
 extern "C" void*
@@ -74,13 +80,13 @@ jruby_data(VALUE v)
         return NULL;
     }
 
-    return ((DataHandle *) v)->data;
+    return ((RubyData *) v)->data;
 }
 
 static void
 rubydata_finalize(Handle *h)
 {
-    DataHandle* dh = (DataHandle *) h;
+    RubyData* dh = (RubyData *) h;
     
     if (dh->dfree == (void *) -1) {
         xfree(dh->data);

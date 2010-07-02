@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -50,33 +50,44 @@ namespace jruby {
         jobject obj;
         int flags;
         int type;
-        void (*finalize)(Handle *);
         TAILQ_ENTRY(Handle) all;
     };
 
-    class Fixnum: public Handle {
+    class RubyFixnum : public Handle {
     private:
         jlong value;
 
     public:
-        Fixnum(JNIEnv* env, jobject obj_, jlong value_);
+        RubyFixnum(JNIEnv* env, jobject obj_, jlong value_);
 
         inline jlong longValue() {
             return value;
         }
     };
 
-    class DataHandle: public Handle {
+    class RubyData : public Handle {
     public:
-        virtual ~DataHandle();
-        TAILQ_ENTRY(DataHandle) dataList;
+        virtual ~RubyData();
+        TAILQ_ENTRY(RubyData) dataList;
         void (*dmark)(void *);
         void (*dfree)(void *);
         void* data;
     };
 
+    class RubyString : public Handle {
+    public:
+        RubyString(JNIEnv* env, jobject obj);
+        virtual ~RubyString();
+    };
+
+    class RubyArray : public Handle {
+    public:
+        RubyArray(JNIEnv* env, jobject obj);
+        virtual ~RubyArray();
+    };
+
     TAILQ_HEAD(HandleList, Handle);
-    TAILQ_HEAD(DataHandleList, DataHandle);
+    TAILQ_HEAD(DataHandleList, RubyData);
     extern HandleList liveHandles, deadHandles;
     extern DataHandleList dataHandles;
 }
