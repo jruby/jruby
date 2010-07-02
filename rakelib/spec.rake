@@ -199,6 +199,7 @@ namespace :spec do
   
   task :fast_forward_to_rubyspec_head => :fetch_latest_specs do
     puts "Rolling to rubyspec to latest version"
+    git_checkout('rubyspec', 'origin/HEAD', RUBYSPEC_DIR)
     git_move_to_head_detached('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
   end
 
