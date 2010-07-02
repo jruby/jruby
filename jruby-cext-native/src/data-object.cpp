@@ -66,13 +66,6 @@ DataHandle::~DataHandle()
     TAILQ_REMOVE(&dataHandles, this, dataList);
 }
 
-void DataHandle::mark()
-{
-    if (*dmark) {
-        (*dmark)(data);
-    }
-}
-
 extern "C" void*
 jruby_data(VALUE v)
 {

@@ -36,11 +36,13 @@ namespace jruby {
     extern Handle* constHandles[3];
 
     class Handle {
+    private:
+        void Init();
     public:
         Handle();
+        Handle(JNIEnv* env, jobject obj);
         virtual ~Handle();
-        virtual void mark();
-
+        
         static inline Handle* valueOf(VALUE v) {
             return !IS_CONST(v) ? (Handle *) v : jruby::constHandles[(v & CONST_MASK) >> 1];
         }
@@ -55,10 +57,9 @@ namespace jruby {
     class Fixnum: public Handle {
     private:
         jlong value;
+
     public:
-        Fixnum(jlong value_) {
-            value = value_;
-        }
+        Fixnum(JNIEnv* env, jobject obj_, jlong value_);
 
         inline jlong longValue() {
             return value;
@@ -68,7 +69,6 @@ namespace jruby {
     class DataHandle: public Handle {
     public:
         virtual ~DataHandle();
-        virtual void mark();
         TAILQ_ENTRY(DataHandle) dataList;
         void (*dmark)(void *);
         void (*dfree)(void *);

@@ -37,15 +37,13 @@ static const int GC_THRESHOLD = 10000;
 Handle::Handle()
 {
     obj = NULL;
-    flags = 0;
-    type = T_NONE;
-    finalize = NULL;
-    TAILQ_INSERT_TAIL(&liveHandles, this, all);
-    
-    if (++allocCount > GC_THRESHOLD) {
-        allocCount = 0;
-        JLocalEnv()->CallStaticVoidMethod(GC_class, GC_trigger);
-    }
+    Init();
+}
+
+Handle::Handle(JNIEnv* env, jobject obj_)
+{
+    this->obj = env->NewGlobalRef(obj_);
+    Init();
 }
 
 Handle::~Handle()
@@ -53,47 +51,36 @@ Handle::~Handle()
 }
 
 void
-Handle::mark()
+Handle::Init()
 {
+    flags = 0;
+    type = T_NONE;
+    finalize = NULL;
+    TAILQ_INSERT_TAIL(&liveHandles, this, all);
+
+    if (++allocCount > GC_THRESHOLD) {
+        allocCount = 0;
+        JLocalEnv env;
+        env->CallStaticVoidMethod(GC_class, GC_trigger);
+    }
 }
 
+Fixnum::Fixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_)
+{
+    this->value = value_;
+    this->type = T_FIXNUM;
+}
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj)
 {
-    Handle* h = new Handle();
-    h->obj = env->NewGlobalRef(obj);
-    
-    return jruby::p2j(h);
+    return jruby::p2j(new Handle(env, obj));
 }
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_newFixnumHandle(JNIEnv* env, jobject self, jobject obj, jlong value)
 {
-    Fixnum* h = new Fixnum(value);
-    h->obj = env->NewGlobalRef(obj);
-    h->type = T_FIXNUM;
-
-    return jruby::p2j(h);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_org_jruby_cext_Native_freeHandle(JNIEnv* env, jobject self, jlong address)
-{
-    if (address == 0LL) {
-        jruby::throwExceptionByName(env, NullPointerException, "null handle");
-        return;
-    }
-    
-    Handle* h = Handle::valueOf((VALUE) address);
-    
-    if (h->finalize != NULL) {
-        (*h->finalize)(h);
-    }
-
-    env->DeleteGlobalRef(h->obj);
-
-    delete h;
+    return jruby::p2j(new Fixnum(env, obj, value));
 }
 
 jobject
