@@ -82,15 +82,3 @@ jruby_data(VALUE v)
 
     return ((RubyData *) v)->data;
 }
-
-static void
-rubydata_finalize(Handle *h)
-{
-    RubyData* dh = (RubyData *) h;
-    
-    if (dh->dfree == (void *) -1) {
-        xfree(dh->data);
-    } else if (dh->dfree != NULL) {
-        (*dh->dfree)(dh->data);
-    }
-}
