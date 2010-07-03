@@ -3942,8 +3942,21 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public boolean remove(Object element) {
-        IRubyObject deleted = delete(getRuntime().getCurrentContext(), JavaUtil.convertJavaToUsableRubyObject(getRuntime(), element), Block.NULL_BLOCK);
-        return deleted.isNil() ? false : true; // TODO: is this correct ?
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject item = JavaUtil.convertJavaToUsableRubyObject(runtime, element);
+        Boolean listchanged = false;
+
+        for (int i1 = 0; i1 < realLength; i1++) {
+            IRubyObject e = values[begin + i1];
+            if (equalInternal(context, e, item)) {
+                delete_at(i1);
+                listchanged = true;
+                break;
+            }
+        }
+
+        return listchanged;
     }
 
     public boolean containsAll(Collection c) {
@@ -3974,7 +3987,8 @@ public class RubyArray extends RubyObject implements List {
     public boolean removeAll(Collection c) {
         boolean listChanged = false;
         for (Iterator iter = c.iterator(); iter.hasNext();) {
-            if (remove(iter.next())) {
+            IRubyObject deleted = delete(getRuntime().getCurrentContext(), JavaUtil.convertJavaToUsableRubyObject(getRuntime(), iter.next()), Block.NULL_BLOCK);
+            if (!deleted.isNil()) {
                 listChanged = true;
             }
         }
