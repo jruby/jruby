@@ -110,7 +110,7 @@ namespace jruby {
         void jsync(JNIEnv* env);
         void nsync(JNIEnv* env);
     private:
-        RString rstring;
+        RString* rstring;
     };
 
     class RubyArray : public Handle {

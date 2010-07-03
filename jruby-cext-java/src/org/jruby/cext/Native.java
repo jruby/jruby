@@ -85,7 +85,7 @@ final class Native {
 
     final native long newHandle(IRubyObject obj, int type);
     final native long newFixnumHandle(IRubyObject obj, long value);
-    
+
     final native void gc();
     final native Object pollGC();
 
@@ -93,5 +93,7 @@ final class Native {
     final native long getTrue();
     final native long getFalse();
 
+    static native long newRString();
+    static native void freeRString(long address);
     
 }

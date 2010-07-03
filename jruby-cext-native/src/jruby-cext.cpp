@@ -50,6 +50,7 @@ namespace jruby {
     jmethodID JRuby_ull2inum;
     jmethodID JRuby_int2big;
     jmethodID JRuby_uint2big;
+    jmethodID JRuby_getRString;
 
     jmethodID ThreadContext_getRuntime_method;
     jmethodID Ruby_defineModule_method;
@@ -201,6 +202,7 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;J)J");
     JRuby_uint2big = getStaticMethodID(env, JRuby_class, "uint2big",
             "(Lorg/jruby/Ruby;J)J");
+    JRuby_getRString = getStaticMethodID(env, JRuby_class, "getRString", "(Lorg/jruby/RubyString;)J");
     RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
     ByteList_bytes_field = getFieldID(env, ByteList_class, "bytes", "[B");
     ByteList_begin_field = getFieldID(env, ByteList_class, "begin", "I");

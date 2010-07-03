@@ -86,8 +86,7 @@ RubyFixnum::RubyFixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj
 
 RubyString::RubyString(JNIEnv* env, jobject obj_): Handle(env, obj_, T_STRING)
 {
-    rstring.ptr = NULL;
-    rstring.length = -1;
+    rstring = NULL;
 }
 
 RubyString::~RubyString()
@@ -97,8 +96,8 @@ RubyString::~RubyString()
 RString*
 RubyString::toRString(bool readonly)
 {
-    if ((flags & FL_SYNC) != 0) {
-        return &rstring;
+    if (rstring != NULL) {
+        return rstring;
     }
     
     SIMPLEQ_INSERT_TAIL(&syncQueue, this, syncq);
@@ -106,20 +105,27 @@ RubyString::toRString(bool readonly)
 
     JLocalEnv env;
 
+    if (rstring == NULL) {
+        jvalue param;
+        param.l = obj;
+        rstring = (RString *) j2p(env->CallStaticLongMethodA(JRuby_class, JRuby_getRString, &param));
+        rstring->ptr = NULL;
+    }
+
     nsync(env);
 
-    return &rstring;
+    return rstring;
 }
 
 void
 RubyString::jsync(JNIEnv* env)
 {
-    if (rstring.ptr != NULL) {
+    if (rstring != NULL && rstring->ptr != NULL) {
         jobject byteList = env->GetObjectField(obj, RubyString_value_field);
         jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
         jint begin = env->GetIntField(byteList, ByteList_begin_field);
         
-        env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring.length, (jbyte *) rstring.ptr);
+        env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring->length, (jbyte *) rstring->ptr);
         
         env->DeleteLocalRef(byteList);
         env->DeleteLocalRef(bytes);
@@ -134,11 +140,11 @@ RubyString::nsync(JNIEnv* env)
     jint begin = env->GetIntField(byteList, ByteList_begin_field);
     jint length = env->GetIntField(byteList, ByteList_length_field);
 
-    rstring.ptr = (char *) realloc(rstring.ptr, length + 1);
-    rstring.length = length;
+    rstring->ptr = (char *) realloc(rstring->ptr, length + 1);
+    rstring->length = length;
     
-    env->GetByteArrayRegion((jbyteArray) bytes, begin, length, (jbyte *) rstring.ptr);
-    rstring.ptr[length] = 0;
+    env->GetByteArrayRegion((jbyteArray) bytes, begin, length, (jbyte *) rstring->ptr);
+    rstring->ptr[length] = 0;
 
     env->DeleteLocalRef(byteList);
     env->DeleteLocalRef(bytes);
@@ -255,3 +261,37 @@ jruby::nsync_(JNIEnv *env)
         }
     }
 }
+
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    newRString
+ * Signature: ()J
+ */
+extern "C" JNIEXPORT jlong JNICALL
+Java_org_jruby_cext_Native_newRString(JNIEnv* env, jclass self)
+{
+    RString* rstring = new RString;
+    rstring->ptr = NULL;
+    rstring->length = -1;
+
+    return p2j(rstring);
+}
+
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    freeRString
+ * Signature: (J)V
+ */
+extern "C" JNIEXPORT void JNICALL
+Java_org_jruby_cext_Native_freeRString(JNIEnv* env, jclass self, jlong address)
+{
+    RString* rstring = (RString *) j2p(address);
+
+    if (rstring->ptr != NULL) {
+        free(rstring->ptr);
+    }
+
+    delete rstring;
+}
+
+
