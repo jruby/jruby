@@ -260,10 +260,13 @@ public class RbConfigLibrary implements Library {
         
         cflags += archflags;
 
-        // this set is only for darwin
-        cflags += " -isysroot /Developer/SDKs/MacOSX10.4u.sdk -DTARGET_RT_MAC_CFM=0 ";
-        cflags += " -arch i386 -arch ppc -arch x86_64 ";
-        ldflags += " -arch i386 -arch ppc -arch x86_64 -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 -undefined dynamic_lookup ";
+        if (Platform.IS_MAC) {
+            // this set is only for darwin
+            cflags += " -isysroot /Developer/SDKs/MacOSX10.4u.sdk -DTARGET_RT_MAC_CFM=0 ";
+            cflags += " -arch i386 -arch ppc -arch x86_64 ";
+            ldflags += " -arch i386 -arch ppc -arch x86_64 -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 -undefined dynamic_lookup ";
+        }
+        
         String libext = "a";
         String objext = "o";
         
@@ -285,9 +288,19 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "LIBRUBYARG", "");
         setConfig(mkmfHash, "prefix", "");
         setConfig(mkmfHash, "ruby_install_name", jrubyScript());
-        setConfig(mkmfHash, "DLEXT", "bundle");
+        if (Platform.IS_WINDOWS) {
+            setConfig(mkmfHash, "DLEXT", "dll");
+        } else if (Platform.IS_MAC) {
+            setConfig(mkmfHash, "DLEXT", "bundle");
+        } else {
+            setConfig(mkmfHash, "DLEXT", "so");
+        }
         setConfig(mkmfHash, "CC", "cc ");
-        setConfig(mkmfHash, "LDSHARED", "cc ");
+        if (Platform.IS_MAC) {
+            setConfig(mkmfHash, "LDSHARED", "cc -dynamic -bundle -undefined suppress -flat_namespace ");
+        } else {
+            setConfig(mkmfHash, "LDSHARED", "cc -shared ");
+        }
         setConfig(mkmfHash, "OUTFLAG", "-o ");
         setConfig(mkmfHash, "PATH_SEPARATOR", ":");
         setConfig(mkmfHash, "INSTALL", "install -c ");
