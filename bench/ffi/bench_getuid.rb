@@ -5,6 +5,7 @@ iter = 100000
 
 module Posix
   extend FFI::Library
+  ffi_lib FFI::Platform::LIBC
   attach_function :getuid, [], :uid_t
 end
 

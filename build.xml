@@ -1096,6 +1096,7 @@
   </target>
   <target name="spec:ci_all" depends="install-gems"><rake task="spec:ci_all"/></target>
   <target name="spec:ci_latest" depends="install-gems"><rake task="spec:ci_latest"/></target>
+  <target name="spec:ci_latest_19" depends="install-gems"><rake task="spec:ci_latest_19"/></target>
 
   <!-- Old compatibility targets which call to newer Rake-based ones -->
   <target name="spec" depends="spec:ci_18"/>

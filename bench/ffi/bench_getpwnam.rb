@@ -9,6 +9,7 @@ iter = 100000
 
 module JPosix
   extend FFI::Library
+  ffi_lib FFI::Platform::LIBC
   attach_function :getpwnam, [ :string ], :pointer
 end
 

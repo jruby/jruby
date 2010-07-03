@@ -9,6 +9,7 @@ iter = 10_000
 
 module Posix
   extend FFI::Library
+  ffi_lib FFI::Platform::LIBC
   if FFI::Platform.linux?
     attach_function :__xstat, :__xstat64, [ :int, :string, :buffer_out ], :int
     STAT_VER = FFI::Platform::ADDRESS_SIZE == 32 ? 3 : 0
