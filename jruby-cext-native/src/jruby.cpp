@@ -25,6 +25,7 @@
 #include "JLocalEnv.h"
 #include "jruby.h"
 #include "ruby.h"
+#include "Handle.h"
 #include "JUtil.h"
 #include "JavaException.h"
 
@@ -33,6 +34,9 @@ using namespace jruby;
 static VALUE
 callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE* args)
 {
+
+    jsync(env);
+
     jobjectArray argArray;
 
     argArray = env->NewObjectArray(argCount, IRubyObject_class, NULL);
@@ -48,6 +52,9 @@ callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE*
     jparams[2].l = argArray;
 
     jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
+    checkExceptions(env);
+
+    nsync(env);
     checkExceptions(env);
 
     return (VALUE) ret;

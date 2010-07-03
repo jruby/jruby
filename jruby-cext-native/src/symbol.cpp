@@ -27,6 +27,7 @@
 
 #include "JLocalEnv.h"
 #include "jruby.h"
+#include "Handle.h"
 #include "JUtil.h"
 #include "ruby.h"
 

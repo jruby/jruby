@@ -31,6 +31,8 @@ using namespace jruby;
 Handle* jruby::constHandles[3];
 HandleList jruby::liveHandles = TAILQ_HEAD_INITIALIZER(liveHandles);
 HandleList jruby::deadHandles = TAILQ_HEAD_INITIALIZER(deadHandles);
+SyncQueue jruby::syncQueue = SIMPLEQ_HEAD_INITIALIZER(syncQueue);
+
 static int allocCount;
 static const int GC_THRESHOLD = 10000;
 
@@ -64,6 +66,17 @@ Handle::Init()
         env->CallStaticVoidMethod(GC_class, GC_trigger);
     }
 }
+
+void
+Handle::jsync(JNIEnv* env)
+{
+}
+
+void
+Handle::nsync(JNIEnv* env)
+{
+}
+
 
 RubyFixnum::RubyFixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_, T_FIXNUM)
 {
@@ -167,3 +180,26 @@ jruby::objectToValue(JNIEnv* env, jobject obj)
     return v;
 }
 
+void
+jruby::jsync_(JNIEnv *env)
+{
+    Handle* h;
+
+    SIMPLEQ_FOREACH(h, &syncQueue, syncq) {
+        if ((h->flags & FL_JSYNC) != 0) {
+            h->jsync(env);
+        }
+    }
+}
+
+void
+jruby::nsync_(JNIEnv *env)
+{
+    Handle* h;
+
+    SIMPLEQ_FOREACH(h, &syncQueue, syncq) {
+        if ((h->flags & FL_NSYNC) != 0) {
+            h->nsync(env);
+        }
+    }
+}

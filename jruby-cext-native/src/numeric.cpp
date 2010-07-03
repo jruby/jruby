@@ -18,6 +18,7 @@
 
 #include "jruby.h"
 #include "ruby.h"
+#include "Handle.h"
 #include "JLocalEnv.h"
 
 using namespace jruby;
@@ -70,6 +71,9 @@ rb_num2ll(VALUE v)
     }
 
     JLocalEnv env;
+
+    jsync(env);
+
     jvalue params[1];
 
     params[0].l = valueToObject(env, v);

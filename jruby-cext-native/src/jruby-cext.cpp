@@ -20,6 +20,7 @@
 #include <map>
 #include "JUtil.h"
 #include "jruby.h"
+#include "Handle.h"
 #include "JavaException.h"
 
 namespace jruby {
