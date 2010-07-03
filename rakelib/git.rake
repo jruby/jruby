@@ -34,3 +34,7 @@ end
 def git_checkout(label, tag, local_directory)
   git_simple_command("checkout -q #{tag}", label, local_directory)
 end
+
+def git_move_to_head_detached(label, tag, local_directory)
+  git_simple_command('checkout -q `git rev-parse HEAD`', label, local_directory)
+end

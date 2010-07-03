@@ -3,10 +3,11 @@ require 'ffi'
 require 'ffi/platform'
 
 iter = 10_000
-file = "README"
+file = "tempfile"
 
 module Posix
   extend FFI::Library
+  ffi_lib FFI::Platform::LIBC
   def self.chmod(mode, path)
     if self._chmod(path, mode) != 0
     end

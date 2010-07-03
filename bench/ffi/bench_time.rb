@@ -3,6 +3,7 @@ require 'ffi'
 
 module Posix
   extend FFI::Library
+  ffi_lib FFI::Platform::LIBC
   attach_function :time, [ :pointer ], :ulong
 end
 

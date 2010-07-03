@@ -29,13 +29,13 @@ namespace :spec do
   desc "Run rubyspecs expected to pass (version-frozen)"
   task :ci_19 => ['spec:fetch_stable_specs', 'spec:tagged_19']
 
-  desc "Run rubyspecs expexted to pass in interpreted mode (version-frozem)"
+  desc "Run rubyspecs expexted to pass in interpreted mode (version-frozen)"
   task :ci_interpreted_18 => ['spec:fetch_stable_specs', 'spec:interpreted_18']
 
-  desc "Run rubyspecs expexted to pass in interpreted mode (version-frozem)"
+  desc "Run rubyspecs expexted to pass in interpreted mode (version-frozen)"
   task :ci_interpreted_19 => ['spec:fetch_stable_specs', 'spec:interpreted_19']
 
-  desc "Run rubyspecs expexted to pass in interpreted mode (version-frozem)"
+  desc "Run rubyspecs expexted to pass in interpreted mode (version-frozen)"
   task :ci_interpreted_18_19 => ['spec:fetch_stable_specs', 'spec:interpreted_18', 'spec:interpreted_19']
 
   desc "Run all the specs including failures (version-frozen)"
@@ -44,11 +44,14 @@ namespace :spec do
   desc "Run all the specs including failures (version-frozen)"
   task :ci_all_19 => ['spec:fetch_stable_specs', 'spec:all_19']
 
-  desc "Run all the specs in precompiled mode (version-frozem)"
+  desc "Run all the specs in precompiled mode (version-frozen)"
   task :ci_all_precompiled_18 => ['spec:fetch_stable_specs', 'spec:all_precompiled_18']
 
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
-  task :ci_latest => ['spec:fetch_latest_specs', 'spec:tagged_18']
+  task :ci_latest => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged_18']
+
+  desc "Run rubyspecs expected to pass (against latest rubyspec version)"
+  task :ci_latest_19 => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged_19']
 
   # Note: For this point below it is your reponsibility to make sure specs
   # are checked out.
@@ -192,6 +195,12 @@ namespace :spec do
         entry :key => "mspec.current.revision", :value => MSPEC_REVISION
       end
     end
+  end
+  
+  task :fast_forward_to_rubyspec_head => :fetch_latest_specs do
+    puts "Rolling to rubyspec to latest version"
+    git_checkout('rubyspec', 'origin/HEAD', RUBYSPEC_DIR)
+    git_move_to_head_detached('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
   end
 
   desc "Retrieve latest tagged rubyspec git repository"

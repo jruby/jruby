@@ -5,6 +5,7 @@ str = "test"
 
 module LibC
   extend FFI::Library
+  ffi_lib FFI::Platform::LIBC
   attach_function :strlen, [ :string ], :int
 end
 
