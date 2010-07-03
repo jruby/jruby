@@ -1832,15 +1832,7 @@ states[439] = new ParserState() {
                      /* DStrNode: :"some text #{some expression}"*/
                      /* StrNode: :"some text"*/
                      /* EvStrNode :"#{some expression}"*/
-//                     if (((Node)yyVals[-1+yyTop]) == null) {
-//                       support.yyerror("empty symbol literal");
-//                     }
-                     /* FIXME: No node here seems to be an empty string
-                        instead of an error
-                        if (!($$ = $2)) {
-                        $$ = NEW_LIT(ID2SYM(rb_intern("")));
-                        }
-                     */
+                     /* Ruby 1.9 allows empty strings as symbols */
                      if (((Node)yyVals[-1+yyTop]) == null) {
                        yyVal = new SymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), "");
                      } else if (((Node)yyVals[-1+yyTop]) instanceof DStrNode) {
