@@ -404,6 +404,13 @@ class TestKernel < Test::Unit::TestCase
     assert_equal '4', Kernel.sprintf('%d', obj)
   end
 
+  # JRUBY-4802
+  def test_sprintf_float
+    assert_equal "0.00000", Kernel.sprintf("%.5f", 0.000004)
+    assert_equal "0.00001", Kernel.sprintf("%.5f", 0.000005)
+    assert_equal "0.00001", Kernel.sprintf("%.5f", 0.000006)
+  end
+
   def test_srand
     Kernel.srand
     Kernel.srand(0)

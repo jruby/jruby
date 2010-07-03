@@ -1019,14 +1019,14 @@ public class Sprintf {
                         intLength = intDigits + intZeroes;
                         decDigits = nDigits - intDigits;
                         decZeroes = Math.max(0,-(decDigits + exponent));
-                        decLength = decZeroes + decDigits;
-                        
+                        decLength = decZeroes + decDigits;                                     
+
                         if (precision < decLength) {
                             if (precision < decZeroes) {
                                 decDigits = 0;
                                 decZeroes = precision;
                             } else {
-                                int n = round(digits,nDigits,intDigits+precision-decZeroes-1,precision!=0);
+                                int n = round(digits, nDigits, intDigits+precision-decZeroes-1, false);
                                 if (n > nDigits) {
                                     // digits arr shifted, update all
                                     nDigits = n;
