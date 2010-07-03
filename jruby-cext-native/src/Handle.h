@@ -105,6 +105,12 @@ namespace jruby {
     public:
         RubyString(JNIEnv* env, jobject obj);
         virtual ~RubyString();
+
+        RString* toRString(bool readonly);
+        void jsync(JNIEnv* env);
+        void nsync(JNIEnv* env);
+    private:
+        RString rstring;
     };
 
     class RubyArray : public Handle {

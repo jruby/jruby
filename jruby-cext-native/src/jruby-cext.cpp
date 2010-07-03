@@ -42,6 +42,8 @@ namespace jruby {
     jclass ThreadContext_class;
     jclass Symbol_class;
     jclass JRuby_class;
+    jclass ByteList_class;
+
     jmethodID JRuby_callMethod;
     jmethodID JRuby_newString;
     jmethodID JRuby_ll2inum;
@@ -63,12 +65,16 @@ namespace jruby {
     jmethodID RubyObject_getNativeTypeIndex_method;
     jmethodID RubyNumeric_num2long_method;
     jmethodID RubyString_newStringNoCopy;
+    jmethodID RubyString_view;
     jmethodID IRubyObject_callMethod;
     jmethodID IRubyObject_asJavaString_method;
     jmethodID Handle_valueOf;
     jmethodID Ruby_getCurrentContext_method;
     jmethodID GC_trigger;
     jfieldID Handle_address_field;
+    jfieldID RubyString_value_field;
+    jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
+
     jobject runtime;
     jobject nilRef;
     jobject trueRef;
@@ -152,6 +158,7 @@ loadIds(JNIEnv* env)
     ThreadContext_class = loadClass(env, "org/jruby/runtime/ThreadContext");
     Symbol_class = loadClass(env, "org/jruby/RubySymbol");
     JRuby_class = loadClass(env, "org/jruby/cext/JRuby");
+    ByteList_class = loadClass(env, "org/jruby/util/ByteList");
 
     Handle_address_field = getFieldID(env, Handle_class, "address", "J");
     Ruby_defineModule_method = getMethodID(env, Ruby_class, "defineModule", "(Ljava/lang/String;)Lorg/jruby/RubyModule;");
@@ -180,6 +187,8 @@ loadIds(JNIEnv* env)
     RubyData_newRubyData_method = getStaticMethodID(env, RubyData_class, "newRubyData", "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;J)Lorg/jruby/cext/RubyData;");
     RubyString_newStringNoCopy = getStaticMethodID(env, RubyString_class,
             "newStringNoCopy", "(Lorg/jruby/Ruby;[B)Lorg/jruby/RubyString;");
+    RubyString_view = getMethodID(env, RubyString_class,
+            "view", "([B)V");
     JRuby_callMethod = getStaticMethodID(env, JRuby_class, "callRubyMethod",
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_newString = getStaticMethodID(env, JRuby_class, "newString",
@@ -192,6 +201,10 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;J)J");
     JRuby_uint2big = getStaticMethodID(env, JRuby_class, "uint2big",
             "(Lorg/jruby/Ruby;J)J");
+    RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
+    ByteList_bytes_field = getFieldID(env, ByteList_class, "bytes", "[B");
+    ByteList_begin_field = getFieldID(env, ByteList_class, "begin", "I");
+    ByteList_length_field = getFieldID(env, ByteList_class, "realSize", "I");
 }
 
 static jobject

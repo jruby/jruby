@@ -289,6 +289,18 @@ extern ID jruby_intern_nonconst(const char *);
 #define rb_intern(name) \
     (__builtin_constant_p(name) ? rb_intern_const(name) : jruby_intern_nonconst(name))
 
+struct RString {
+    char* ptr;
+    int length;
+};
+
+extern int jruby_str_length(VALUE v);
+extern char* jruby_str_ptr(VALUE v);
+extern char* rb_str_ptr_readonly(VALUE v);
+
+#define RSTRING_LEN(v) jruby_str_length((v))
+#define RSTRING_PTR(v) jruby_str_ptr((v))
+
 extern VALUE rb_mKernel;
 extern VALUE rb_mComparable;
 extern VALUE rb_mEnumerable;

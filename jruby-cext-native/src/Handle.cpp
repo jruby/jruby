@@ -86,10 +86,62 @@ RubyFixnum::RubyFixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj
 
 RubyString::RubyString(JNIEnv* env, jobject obj_): Handle(env, obj_, T_STRING)
 {
+    rstring.ptr = NULL;
+    rstring.length = -1;
 }
 
 RubyString::~RubyString()
 {
+}
+
+RString*
+RubyString::toRString(bool readonly)
+{
+    if ((flags & FL_SYNC) != 0) {
+        return &rstring;
+    }
+    
+    SIMPLEQ_INSERT_TAIL(&syncQueue, this, syncq);
+    flags |= FL_NSYNC | (!readonly ? FL_JSYNC : 0);
+
+    JLocalEnv env;
+
+    nsync(env);
+
+    return &rstring;
+}
+
+void
+RubyString::jsync(JNIEnv* env)
+{
+    if (rstring.ptr != NULL) {
+        jobject byteList = env->GetObjectField(obj, RubyString_value_field);
+        jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
+        jint begin = env->GetIntField(byteList, ByteList_begin_field);
+        
+        env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring.length, (jbyte *) rstring.ptr);
+        
+        env->DeleteLocalRef(byteList);
+        env->DeleteLocalRef(bytes);
+    }
+}
+
+void
+RubyString::nsync(JNIEnv* env)
+{
+    jobject byteList = env->GetObjectField(obj, RubyString_value_field);
+    jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
+    jint begin = env->GetIntField(byteList, ByteList_begin_field);
+    jint length = env->GetIntField(byteList, ByteList_length_field);
+
+    rstring.ptr = (char *) realloc(rstring.ptr, length + 1);
+    rstring.length = length;
+    
+    env->GetByteArrayRegion((jbyteArray) bytes, begin, length, (jbyte *) rstring.ptr);
+    rstring.ptr[length] = 0;
+
+    env->DeleteLocalRef(byteList);
+    env->DeleteLocalRef(bytes);
 }
 
 RubyArray::RubyArray(JNIEnv* env, jobject obj_): Handle(env, obj_, T_ARRAY)

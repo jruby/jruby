@@ -43,6 +43,7 @@ namespace jruby {
     extern jclass ThreadContext_class;
     extern jclass Symbol_class;
     extern jclass JRuby_class;
+    extern jclass ByteList_class;
 
     extern jmethodID IRubyObject_callMethod;
     extern jmethodID IRubyObject_asJavaString_method;
@@ -60,6 +61,7 @@ namespace jruby {
     extern jmethodID RaiseException_constructor;
     extern jmethodID RubyNumeric_num2long_method;
     extern jmethodID RubyString_newStringNoCopy;
+    extern jmethodID RubyString_view;
     extern jmethodID GC_trigger;
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
@@ -70,6 +72,9 @@ namespace jruby {
     extern jmethodID JRuby_int2big;
     extern jmethodID JRuby_uint2big;
     extern jfieldID Handle_address_field;
+    extern jfieldID RubyString_value_field;
+    extern jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
+
     extern jobject runtime;
     extern std::map<const char*, jobject> methodNameMap;
 

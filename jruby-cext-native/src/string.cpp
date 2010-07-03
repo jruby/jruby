@@ -27,6 +27,7 @@
 #include "jruby.h"
 #include "JUtil.h"
 #include "ruby.h"
+#include "Handle.h"
 
 using namespace jruby;
 
@@ -163,3 +164,50 @@ rb_string_value(VALUE* ptr)
     return *ptr = callMethod(*ptr, "to_str", 0);
 }
 
+extern "C" char*
+rb_str_ptr_readonly(VALUE v)
+{
+    Handle* h = Handle::valueOf(v);
+    if (h->type != T_STRING) {
+        rb_raise(rb_eTypeError, "wrong type (expected String)");
+    }
+
+    RubyString* s = (RubyString *) h;
+
+    return s->toRString(true)->ptr;
+}
+
+extern "C" char*
+jruby_str_ptr(VALUE v)
+{
+    Handle* h = Handle::valueOf(v);
+    if (h->type != T_STRING) {
+        rb_raise(rb_eTypeError, "wrong type (expected String)");
+    }
+
+    RubyString* s = (RubyString *) h;
+
+    return s->toRString(false)->ptr;
+}
+
+extern "C" int
+jruby_str_length(VALUE v)
+{
+    Handle* h = Handle::valueOf(v);
+    if (h->type != T_STRING) {
+        rb_raise(rb_eTypeError, "wrong type (expected String)");
+    }
+
+    RubyString* s = (RubyString *) h;
+
+    // If already synced with java, just return the cached length value
+    if ((s->flags & FL_SYNC) != 0) {
+        return s->toRString(true)->length;
+    }
+
+    JLocalEnv env;
+
+    jobject byteList = env->GetObjectField(s->obj, RubyString_value_field);
+
+    return env->GetIntField(byteList, ByteList_length_field);
+}
