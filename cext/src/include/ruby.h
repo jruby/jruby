@@ -13,6 +13,7 @@
 
 #ifndef JRUBY_RUBY_H
 #define	JRUBY_RUBY_H
+#define JRUBY
 
 #include <stdint.h>
 #include <sys/types.h>  
