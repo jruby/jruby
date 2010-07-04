@@ -115,14 +115,6 @@ namespace jruby {
 #define JRUBY_callRubyMethodA(recv, meth, argc, argv) \
             jruby::callMethod(recv, meth, argc, argv)
 
-#ifdef __GNUC__
-#  define likely(x) __builtin_expect((x), 1)
-#  define unlikely(x) __builtin_expect((x), 0)
-#else
-#  define likely(x) (x)
-#  define unlikely(x) (x)
-#endif
-
 
 #endif	/* JRUBY_H */
 

@@ -22,6 +22,7 @@
 #include <jni.h>
 #include <vector>
 #include "jruby.h"
+#include "util.h"
 #include "queue.h"
 #include "ruby.h"
 
