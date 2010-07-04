@@ -214,7 +214,7 @@ Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jin
         case org_jruby_runtime_ClassIndex_##x: \
             h = new Handle(env, obj, T_##x); \
             break;
-        T(FIXNUM);
+
         T(BIGNUM);
         T(NIL);
         T(TRUE);
@@ -222,7 +222,6 @@ Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jin
         T(SYMBOL);
         T(REGEXP);
         T(HASH);
-        T(FLOAT);
         T(MODULE);
         T(CLASS);
         T(OBJECT);
@@ -245,6 +244,10 @@ Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jin
             h = new RubyArray(env, obj);
             break;
 
+        case org_jruby_runtime_ClassIndex_FLOAT:
+            h = new RubyFloat(env, obj, env->GetDoubleField(obj, RubyFloat_value_field));
+            break;
+
         default:
             h = new Handle(env, obj, T_OBJECT);
             break;
@@ -258,6 +261,13 @@ Java_org_jruby_cext_Native_newFixnumHandle(JNIEnv* env, jobject self, jobject ob
 {
     return jruby::p2j(new RubyFixnum(env, obj, value));
 }
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_org_jruby_cext_Native_newFloatHandle(JNIEnv* env, jobject self, jobject obj, jdouble value)
+{
+    return jruby::p2j(new RubyFloat(env, obj, value));
+}
+
 
 jobject
 jruby::valueToObject(JNIEnv* env, VALUE v)

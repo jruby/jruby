@@ -31,7 +31,7 @@ import org.jruby.util.WeakIdentityHashMap;
 
 
 public class GC {
-    private static final String NATIVE_REF_KEY = "cext-ref";
+    static final String NATIVE_REF_KEY = "cext-ref";
 
     @SuppressWarnings(value="unchecked")
     private static final Map<Object, Handle> nonRubyRefs = new WeakIdentityHashMap();

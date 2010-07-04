@@ -68,6 +68,24 @@ namespace jruby {
         }
     };
 
+    class RubyFloat : public Handle {
+    private:
+        struct RFloat rfloat;
+
+    public:
+        RubyFloat(jdouble value_);
+        RubyFloat(JNIEnv* env, jobject obj_, jdouble value_);
+
+        inline jdouble doubleValue() {
+            return rfloat.value;
+        }
+
+        inline struct RFloat* toRFloat() {
+            return &rfloat;
+        }
+
+    };
+
     class RubyData : public Handle {
     public:
         virtual ~RubyData();

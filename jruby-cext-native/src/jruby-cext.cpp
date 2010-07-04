@@ -32,6 +32,7 @@ namespace jruby {
     jclass RubyBasicObject_class;
     jclass RubyClass_class;
     jclass RubyData_class;
+    jclass RubyFloat_class;
     jclass RubyModule_class;
     jclass RubyNumeric_class;
     jclass RubyString_class;
@@ -51,6 +52,7 @@ namespace jruby {
     jmethodID JRuby_int2big;
     jmethodID JRuby_uint2big;
     jmethodID JRuby_getRString;
+    jmethodID JRuby_newFloat;
 
     jmethodID ThreadContext_getRuntime_method;
     jmethodID Ruby_defineModule_method;
@@ -74,6 +76,7 @@ namespace jruby {
     jmethodID GC_trigger;
     jfieldID Handle_address_field;
     jfieldID RubyString_value_field;
+    jfieldID RubyFloat_value_field;
     jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
 
     jobject runtime;
@@ -147,6 +150,7 @@ loadIds(JNIEnv* env)
     RubyBasicObject_class = loadClass(env, "org/jruby/RubyBasicObject");
     RubyClass_class = loadClass(env, "org/jruby/RubyClass");
     RubyData_class = loadClass(env, "org/jruby/cext/RubyData");
+    RubyFloat_class = loadClass(env, "org/jruby/RubyFloat");
     RubyModule_class = loadClass(env, "org/jruby/RubyModule");
     RubyNumeric_class = loadClass(env, "org/jruby/RubyNumeric");
     RubyString_class = loadClass(env, "org/jruby/RubyString");
@@ -203,7 +207,9 @@ loadIds(JNIEnv* env)
     JRuby_uint2big = getStaticMethodID(env, JRuby_class, "uint2big",
             "(Lorg/jruby/Ruby;J)J");
     JRuby_getRString = getStaticMethodID(env, JRuby_class, "getRString", "(Lorg/jruby/RubyString;)J");
+    JRuby_newFloat = getStaticMethodID(env, JRuby_class, "newFloat", "(Lorg/jruby/Ruby;JD)Lorg/jruby/RubyFloat;");
     RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
+    RubyFloat_value_field = getFieldID(env, RubyFloat_class, "value", "D");
     ByteList_bytes_field = getFieldID(env, ByteList_class, "bytes", "[B");
     ByteList_begin_field = getFieldID(env, ByteList_class, "begin", "I");
     ByteList_length_field = getFieldID(env, ByteList_class, "realSize", "I");

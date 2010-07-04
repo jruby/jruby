@@ -22,6 +22,7 @@ import java.math.BigInteger;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -65,6 +66,13 @@ public class JRuby {
             default:
                 return new NativeMethod(module, arity, fn);
         }
+    }
+
+    public static RubyFloat newFloat(Ruby runtime, long handle, double value) {
+        final RubyFloat f = RubyFloat.newFloat(runtime, value);
+        f.fastSetInternalVariable(GC.NATIVE_REF_KEY, Handle.newHandle(runtime, f, handle));
+
+        return f;
     }
 
     public static long getRString(RubyString str) {

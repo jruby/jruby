@@ -77,6 +77,11 @@ typedef enum JRubyType {
 #define SYMBOL_P(v) (rb_type((v)) == T_SYMBOL)
 #define TYPE(x) rb_type((VALUE)(x))
 
+struct RBasic {
+    VALUE unused0;
+    VALUE unused1;
+};
+
 int rb_type(VALUE);
 void rb_check_type(VALUE, int);
 #define Check_Type(v,t) rb_check_type((VALUE)(v),t)
@@ -124,6 +129,7 @@ long rb_fix2int(VALUE);
 unsigned long rb_fix2uint(VALUE);
 long long rb_num2ll(VALUE);
 unsigned long long rb_num2ull(VALUE);
+double rb_num2dbl(VALUE);
 
 VALUE rb_int2inum(long);
 VALUE rb_uint2inum(unsigned long);
@@ -141,6 +147,7 @@ VALUE rb_uint2big(unsigned long long);
 #define NUM2UINT(x) ((int) rb_num2uint(x))
 #define NUM2LL(x) rb_num2ll(x)
 #define NUM2ULL(x) rb_num2ull(x)
+#define NUM2DBL(x) rb_num2dbl(x)
 
 #define INT2FIX(x)   rb_int2inum(x)
 #define UINT2FIX(x)  rb_uint2inum(x)
@@ -291,10 +298,7 @@ extern ID jruby_intern_nonconst(const char *);
     (__builtin_constant_p(name) ? rb_intern_const(name) : jruby_intern_nonconst(name))
 
 struct RString {
-    struct {
-        VALUE unused0;
-        VALUE unused1;
-    } basic;
+    struct RBasic basic;
     union {
         struct {
             long len;
@@ -313,6 +317,17 @@ extern char* rb_str_ptr_readonly(VALUE v);
 #define RSTRING(v) jruby_str_rstring((v))
 #define RSTRING_LEN(v) jruby_str_length((v))
 #define RSTRING_PTR(v) jruby_str_ptr((v))
+
+
+struct RFloat {
+    struct RBasic basic;
+    double value;
+};
+
+extern struct RFloat* jruby_rfloat(VALUE v);
+extern VALUE rb_float_new(double value);
+extern double jruby_float_value(VALUE v);
+#define RFLOAT_VALUE(v) jruby_float_value(v)
 
 extern VALUE rb_mKernel;
 extern VALUE rb_mComparable;

@@ -38,6 +38,7 @@ namespace jruby {
     extern jclass ObjectAllocator_class;
     extern jclass Ruby_class;
     extern jclass RubyData_class;
+    extern jclass RubyFloat_class;
     extern jclass RubyObject_class;
     extern jclass RubyBasicObject_class;
     extern jclass RubyClass_class;
@@ -75,6 +76,7 @@ namespace jruby {
     extern jmethodID RubyObject_getNativeTypeIndex_method;
     extern jmethodID JRuby_callMethod;
     extern jmethodID JRuby_newString;
+    extern jmethodID JRuby_newFloat;
     extern jmethodID JRuby_ll2inum;
     extern jmethodID JRuby_ull2inum;
     extern jmethodID JRuby_int2big;
@@ -83,6 +85,7 @@ namespace jruby {
     extern jfieldID Handle_address_field;
     extern jfieldID RubyString_value_field;
     extern jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
+    extern jfieldID RubyFloat_value_field;
 
     extern jobject runtime;
     extern std::map<const char*, jobject> methodNameMap;

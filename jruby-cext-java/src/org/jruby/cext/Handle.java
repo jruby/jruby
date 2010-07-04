@@ -20,6 +20,7 @@ package org.jruby.cext;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -81,6 +82,11 @@ public final class Handle {
                 case ClassIndex.FIXNUM:
                     nativeHandle = Native.getInstance(runtime).newFixnumHandle(obj, ((RubyFixnum) obj).getLongValue());
                     break;
+
+                case ClassIndex.FLOAT:
+                    nativeHandle = Native.getInstance(runtime).newFloatHandle(obj, ((RubyNumeric) obj).getDoubleValue());
+                    break;
+
                 default:
                     nativeHandle = Native.getInstance(runtime).newHandle(obj, type);
                     break;
