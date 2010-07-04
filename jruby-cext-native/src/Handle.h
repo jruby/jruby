@@ -60,20 +60,6 @@ namespace jruby {
             return !IS_CONST(v) ? (Handle *) v : jruby::constHandles[(v & CONST_MASK) >> 1];
         }
 
-        /**
-         * Sync up the java data with the native data
-         *
-         * @param env A pointer to a JNIEnv instance.
-         */
-        virtual void jsync(JNIEnv* env);
-
-        /**
-         * Sync up the native data with the java data
-         *
-         * @param env A pointer to a JNIEnv instance.
-         */
-        virtual void nsync(JNIEnv* env);
-
         jobject obj;
         int flags;
         int type;
@@ -107,16 +93,18 @@ namespace jruby {
         virtual ~RubyString();
 
         RString* toRString(bool readonly);
-        void jsync(JNIEnv* env);
-        void nsync(JNIEnv* env);
+        bool jsync(JNIEnv* env);
+        bool nsync(JNIEnv* env);
         int length();
     private:
         struct RWData {
-            RString rstring;
+            bool readonly;
+            RString* rstring;
             DataSync jsync;
             DataSync nsync;
+            DataSync rosync;
         };
-        RWData* rwdata;
+        RWData rwdata;
     };
 
     class RubyArray : public Handle {

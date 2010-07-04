@@ -49,12 +49,15 @@ public:
     ~InvocationSession() {
         --invokeLevel;
 
-        if (invokeLevel == 0) {
-            if (unlikely(!TAILQ_EMPTY(&jsyncq))) {
-                runSyncQueue(env, &jsyncq);
+        if (unlikely(!TAILQ_EMPTY(&jsyncq))) {
+            runSyncQueue(env, &jsyncq);
+            if (invokeLevel < 1) {
                 clearSyncQueue(&jsyncq);
             }
-            if (unlikely(!TAILQ_EMPTY(&nsyncq))) {
+        }
+
+        if (unlikely(!TAILQ_EMPTY(&nsyncq))) {
+            if (invokeLevel < 1) {
                 clearSyncQueue(&nsyncq);
             }
         }
