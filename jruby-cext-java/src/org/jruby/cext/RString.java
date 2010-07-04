@@ -35,7 +35,7 @@ public final class RString extends WeakReference<RubyString> {
     private RString prev, next;
 
     private RString(RubyString str, long address) {
-        super(str);
+        super(str, queue);
         this.address = address;
     }
 
