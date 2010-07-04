@@ -22,6 +22,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -85,6 +86,11 @@ public final class Handle {
 
                 case ClassIndex.FLOAT:
                     nativeHandle = Native.getInstance(runtime).newFloatHandle(obj, ((RubyNumeric) obj).getDoubleValue());
+                    break;
+
+                case ClassIndex.SYMBOL:
+                    Native.getInstance(runtime).newSymbolHandle((RubySymbol) obj);
+                    nativeHandle = ((long) ((RubySymbol) obj).getId() << 8) | 0xeL;
                     break;
 
                 default:

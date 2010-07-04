@@ -30,8 +30,14 @@ extern "C" {
 typedef uintptr_t ID;
 typedef uintptr_t VALUE;
 
-#define ID2SYM(id) (id)
-#define SYM2ID(value) (value)
+#ifndef RSHIFT
+# define RSHIFT(x,y) ((x)>>(int)y)
+#endif
+
+#define SYMBOL_FLAG 0x0e
+#define SYMBOL_P(x) (((VALUE)(x)&0xff)==SYMBOL_FLAG)
+#define ID2SYM(x) ((VALUE)(((long)(x))<<8|SYMBOL_FLAG))
+#define SYM2ID(x) RSHIFT((unsigned long)x,8)
 
 #define Qfalse ((VALUE)0)
 #define Qtrue  ((VALUE)2)
@@ -74,7 +80,6 @@ typedef enum JRubyType {
 #define RTEST(v) (((v) & ~Qnil) != 0)
 #define NIL_P(v) ((v) == Qnil)
 #define FIXNUM_P(v) (rb_type((v)) == T_FIXNUM)
-#define SYMBOL_P(v) (rb_type((v)) == T_SYMBOL)
 #define TYPE(x) rb_type((VALUE)(x))
 
 struct RBasic {

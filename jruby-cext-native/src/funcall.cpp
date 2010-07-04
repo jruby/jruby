@@ -73,7 +73,7 @@ jruby_funcall(JNIEnv* env, VALUE recv, ID meth, jobjectArray argArray)
     jvalue jparams[3];
 
     jparams[0].l = valueToObject(env, recv);
-    jparams[1].l = valueToObject(env, meth);
+    jparams[1].l = RubySymbol::valueOf(meth)->obj;
     jparams[2].l = argArray;
 
     jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);

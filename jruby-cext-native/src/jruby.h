@@ -86,6 +86,7 @@ namespace jruby {
     extern jfieldID RubyString_value_field;
     extern jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
     extern jfieldID RubyFloat_value_field;
+    extern jfieldID RubySymbol_id_field;
 
     extern jobject runtime;
     extern std::map<const char*, jobject> methodNameMap;

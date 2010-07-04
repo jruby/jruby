@@ -68,6 +68,12 @@ Handle::Init()
     }
 }
 
+Handle*
+Handle::specialHandle(VALUE v)
+{
+    return SYMBOL_P(v) ? RubySymbol::valueOf(SYM2ID(v)) : jruby::constHandles[(v & CONST_MASK) >> 1];
+}
+
 RubyFixnum::RubyFixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_, T_FIXNUM)
 {
     this->value = value_;

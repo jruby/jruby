@@ -36,7 +36,9 @@ extern "C" {
 namespace jruby {
 
     class Handle;
+    class RubySymbol;
     extern Handle* constHandles[3];
+    extern std::vector<RubySymbol *> symbols;
 
     class Handle {
     private:
@@ -47,8 +49,11 @@ namespace jruby {
         virtual ~Handle();
         
         static inline Handle* valueOf(VALUE v) {
-            return !IS_CONST(v) ? (Handle *) v : jruby::constHandles[(v & CONST_MASK) >> 1];
+            return likely(!IS_CONST(v))
+                    ? (Handle *) v : specialHandle(v);
         }
+
+        static Handle* specialHandle(VALUE v);
 
         jobject obj;
         int flags;
@@ -119,6 +124,18 @@ namespace jruby {
     public:
         RubyArray(JNIEnv* env, jobject obj);
         virtual ~RubyArray();
+    };
+
+    class RubySymbol : public Handle {
+    public:
+        RubySymbol(JNIEnv* env, jobject obj, int id): Handle(env, obj, T_SYMBOL), id(id) {
+            flags |= FL_CONST;
+        }
+
+        static RubySymbol* valueOf(ID id);
+
+    private:
+        int id;
     };
 
     TAILQ_HEAD(HandleList, Handle);

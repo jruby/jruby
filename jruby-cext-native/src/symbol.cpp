@@ -31,14 +31,39 @@
 #include "JUtil.h"
 #include "ruby.h"
 
-static std::map<const char*, VALUE> constSymbolMap;
+
 
 using namespace jruby;
+
+static std::map<const char*, ID> constSymbolMap;
+std::vector<RubySymbol *> jruby::symbols;
+
+static RubySymbol* lookup(ID id);
+static RubySymbol* addSymbol(JNIEnv* env, jobject obj, ID id);
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_org_jruby_cext_Native_newSymbolHandle(JNIEnv* env, jobject self, jobject obj)
+{
+    return p2j(addSymbol(env, obj, env->GetIntField(obj, RubySymbol_id_field)));
+}
+
+RubySymbol*
+RubySymbol::valueOf(ID id)
+{
+    RubySymbol* s;
+    if ((s = lookup(id)) != NULL) {
+        return s;
+    }
+
+    rb_raise(rb_eNameError, "could not locate symbol for id %ld", id);
+
+    return NULL;
+}
 
 extern "C" ID
 rb_intern_const(const char* name)
 {
-    std::map<const char*, VALUE>::iterator it = constSymbolMap.find(name);
+    std::map<const char*, ID>::iterator it = constSymbolMap.find(name);
     if (it != constSymbolMap.end()) {
         return it->second;
     }
@@ -53,10 +78,32 @@ jruby_intern_nonconst(const char* name)
     jobject result = env->CallObjectMethod(getRuntime(), Ruby_newSymbol_method, env->NewStringUTF(name));
     checkExceptions(env);
 
-    VALUE v = objectToValue(env, result);
-    Handle* h = (Handle *) v;
-    h->type = T_SYMBOL;
-    h->flags |= FL_CONST;
+    ID id = env->GetIntField(result, RubySymbol_id_field);
 
-    return v;
+    addSymbol(env, result, id);
+    
+    return id;
+}
+
+static RubySymbol*
+lookup(ID id)
+{
+    return id < symbols.size() ? symbols[id] : NULL;
+}
+
+static RubySymbol*
+addSymbol(JNIEnv* env, jobject obj, ID id)
+{
+    RubySymbol* s;
+    if ((s = lookup(id)) != NULL) {
+        return s;
+    }
+
+    s = new RubySymbol(env, obj, id);
+    if (symbols.size() <= id) {
+        symbols.resize(id + 1);
+    }
+    symbols[id] = s;
+
+    return s;
 }
