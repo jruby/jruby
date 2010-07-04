@@ -110,6 +110,7 @@ namespace jruby {
         RString* toRString(bool readonly);
         void jsync(JNIEnv* env);
         void nsync(JNIEnv* env);
+        int length();
     private:
         RString* rstring;
     };

@@ -198,16 +198,5 @@ jruby_str_length(VALUE v)
         rb_raise(rb_eTypeError, "wrong type (expected String)");
     }
 
-    RubyString* s = (RubyString *) h;
-
-    // If already synced with java, just return the cached length value
-    if ((s->flags & FL_SYNC) != 0) {
-        return s->toRString(true)->length;
-    }
-
-    JLocalEnv env;
-
-    jobject byteList = env->GetObjectField(s->obj, RubyString_value_field);
-
-    return env->GetIntField(byteList, ByteList_length_field);
+    return ((RubyString *) h)->length();
 }

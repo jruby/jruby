@@ -93,6 +93,21 @@ RubyString::~RubyString()
 {
 }
 
+int
+RubyString::length()
+{
+    // If already synced with java, just return the cached length value
+    if (rstring != NULL) {
+        return rstring->length;
+    }
+    
+    JLocalEnv env;
+
+    jobject byteList = env->GetObjectField(obj, RubyString_value_field);
+
+    return env->GetIntField(byteList, ByteList_length_field);
+}
+
 RString*
 RubyString::toRString(bool readonly)
 {
