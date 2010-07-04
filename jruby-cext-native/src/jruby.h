@@ -21,10 +21,18 @@
 
 #include <jni.h>
 #include <map>
+#include "queue.h"
 #include "ruby.h"
 
 namespace jruby {
     class Handle;
+
+    struct DataSync {
+        TAILQ_ENTRY(DataSync) syncq;
+        bool (*sync)(JNIEnv* env, DataSync* data);
+        void* data;
+    };
+
     extern jclass NativeMethod_class;
     extern jclass NativeObjectAllocator_class;
     extern jclass ObjectAllocator_class;
@@ -110,6 +118,9 @@ namespace jruby {
     jfieldID getFieldID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
     jmethodID getMethodID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
     jmethodID getStaticMethodID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
+
+    TAILQ_HEAD(DataSyncQueue, DataSync);
+    extern DataSyncQueue jsyncq, nsyncq;
 }
 
 #define JRUBY_callRubyMethodA(recv, meth, argc, argv) \

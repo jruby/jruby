@@ -78,7 +78,6 @@ namespace jruby {
         int flags;
         int type;
         TAILQ_ENTRY(Handle) all;
-        SIMPLEQ_ENTRY(Handle) syncq;
     };
 
     class RubyFixnum : public Handle {
@@ -112,7 +111,12 @@ namespace jruby {
         void nsync(JNIEnv* env);
         int length();
     private:
-        RString* rstring;
+        struct RWData {
+            RString rstring;
+            DataSync jsync;
+            DataSync nsync;
+        };
+        RWData* rwdata;
     };
 
     class RubyArray : public Handle {
@@ -126,20 +130,18 @@ namespace jruby {
     SIMPLEQ_HEAD(SyncQueue, Handle);
     extern HandleList liveHandles, deadHandles;
     extern DataHandleList dataHandles;
-    extern SyncQueue syncQueue;
 
-    extern void jsync_(JNIEnv *env);
-    extern void nsync_(JNIEnv *env);
+    extern void runSyncQueue(JNIEnv* env, DataSyncQueue* q);
     
     inline void jsync(JNIEnv* env) {
-        if (unlikely(!SIMPLEQ_EMPTY(&syncQueue))) {
-            jsync_(env);
+        if (unlikely(!TAILQ_EMPTY(&jsyncq))) {
+            runSyncQueue(env, &jsyncq);
         }
     }
 
     inline void nsync(JNIEnv* env) {
-        if (unlikely(!SIMPLEQ_EMPTY(&syncQueue))) {
-            nsync_(env);
+        if (unlikely(!TAILQ_EMPTY(&nsyncq))) {
+            runSyncQueue(env, &nsyncq);
         }
     }
 }

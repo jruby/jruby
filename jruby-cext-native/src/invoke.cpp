@@ -33,7 +33,7 @@ using namespace jruby;
 static VALUE dispatch(void* func, int arity, int argCount, VALUE recv, VALUE* v);
 static int invokeLevel = 0;
 
-static void clearSyncQueue();
+static void clearSyncQueue(DataSyncQueue* q);
 
 class InvocationSession {
 private:
@@ -49,10 +49,13 @@ public:
     ~InvocationSession() {
         --invokeLevel;
 
-        if (unlikely(SIMPLEQ_FIRST(&syncQueue) != NULL)) {
-            jsync_(env);
-            if (invokeLevel == 0) {
-                clearSyncQueue();
+        if (invokeLevel == 0) {
+            if (unlikely(!TAILQ_EMPTY(&jsyncq))) {
+                runSyncQueue(env, &jsyncq);
+                clearSyncQueue(&jsyncq);
+            }
+            if (unlikely(!TAILQ_EMPTY(&nsyncq))) {
+                clearSyncQueue(&nsyncq);
             }
         }
     }
@@ -247,11 +250,10 @@ dispatch(void* func, int arity, int argCount, VALUE recv, VALUE* v)
 }
 
 static void
-clearSyncQueue()
+clearSyncQueue(DataSyncQueue* q)
 {
-    Handle* h;
-    while ((h = SIMPLEQ_FIRST(&syncQueue))) {
-        h->flags &= ~FL_SYNC;
-        SIMPLEQ_REMOVE_HEAD(&syncQueue, syncq);
+    DataSync* d;
+    while ((d = TAILQ_FIRST(q))) {
+        TAILQ_REMOVE(q, d, syncq);
     }
 }

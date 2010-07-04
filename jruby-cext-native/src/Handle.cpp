@@ -31,7 +31,8 @@ using namespace jruby;
 Handle* jruby::constHandles[3];
 HandleList jruby::liveHandles = TAILQ_HEAD_INITIALIZER(liveHandles);
 HandleList jruby::deadHandles = TAILQ_HEAD_INITIALIZER(deadHandles);
-SyncQueue jruby::syncQueue = SIMPLEQ_HEAD_INITIALIZER(syncQueue);
+DataSyncQueue jruby::nsyncq = TAILQ_HEAD_INITIALIZER(nsyncq);
+DataSyncQueue jruby::jsyncq = TAILQ_HEAD_INITIALIZER(jsyncq);
 
 static int allocCount;
 static const int GC_THRESHOLD = 10000;
@@ -86,19 +87,22 @@ RubyFixnum::RubyFixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj
 
 RubyString::RubyString(JNIEnv* env, jobject obj_): Handle(env, obj_, T_STRING)
 {
-    rstring = NULL;
+    rwdata = NULL;
 }
 
 RubyString::~RubyString()
 {
+    if (rwdata != NULL) {
+        free(rwdata);
+    }
 }
 
 int
 RubyString::length()
 {
     // If already synced with java, just return the cached length value
-    if (rstring != NULL) {
-        return rstring->length;
+    if (rwdata != NULL) {
+        return rwdata->rstring.length;
     }
     
     JLocalEnv env;
@@ -108,39 +112,55 @@ RubyString::length()
     return env->GetIntField(byteList, ByteList_length_field);
 }
 
+static bool
+RubyString_jsync(JNIEnv* env, DataSync* data)
+{
+    ((RubyString *) data->data)->jsync(env);
+    return true;
+}
+
+static bool
+RubyString_nsync(JNIEnv* env, DataSync* data)
+{
+    ((RubyString *) data->data)->nsync(env);
+    return true;
+}
+
 RString*
 RubyString::toRString(bool readonly)
 {
-    if (rstring != NULL) {
-        return rstring;
+    if (rwdata != NULL) {
+        return &rwdata->rstring;
     }
     
-    SIMPLEQ_INSERT_TAIL(&syncQueue, this, syncq);
-    flags |= FL_NSYNC | (!readonly ? FL_JSYNC : 0);
-
-    JLocalEnv env;
-
-    if (rstring == NULL) {
-        jvalue param;
-        param.l = obj;
-        rstring = (RString *) j2p(env->CallStaticLongMethodA(JRuby_class, JRuby_getRString, &param));
-        rstring->ptr = NULL;
+    if (rwdata == NULL) {
+        rwdata = (RWData *) malloc(sizeof(*rwdata));
+        rwdata->jsync.data = this;
+        rwdata->jsync.sync = RubyString_jsync;
+        rwdata->nsync.data = this;
+        rwdata->nsync.sync = RubyString_nsync;
+        rwdata->rstring.ptr = NULL;
+        rwdata->rstring.length = -1;
+        TAILQ_INSERT_TAIL(&jruby::jsyncq, &rwdata->jsync, syncq);
+        TAILQ_INSERT_TAIL(&jruby::nsyncq, &rwdata->nsync, syncq);
     }
 
+    JLocalEnv env;
     nsync(env);
 
-    return rstring;
+    return &rwdata->rstring;
 }
 
 void
 RubyString::jsync(JNIEnv* env)
 {
-    if (rstring != NULL && rstring->ptr != NULL) {
+    if (rwdata != NULL && rwdata->rstring.ptr != NULL) {
         jobject byteList = env->GetObjectField(obj, RubyString_value_field);
         jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
         jint begin = env->GetIntField(byteList, ByteList_begin_field);
         
-        env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring->length, (jbyte *) rstring->ptr);
+        env->SetByteArrayRegion((jbyteArray) bytes, begin, rwdata->rstring.length,
+                (jbyte *) rwdata->rstring.ptr);
         
         env->DeleteLocalRef(byteList);
         env->DeleteLocalRef(bytes);
@@ -155,11 +175,12 @@ RubyString::nsync(JNIEnv* env)
     jint begin = env->GetIntField(byteList, ByteList_begin_field);
     jint length = env->GetIntField(byteList, ByteList_length_field);
 
-    rstring->ptr = (char *) realloc(rstring->ptr, length + 1);
-    rstring->length = length;
+    rwdata->rstring.ptr = (char *) realloc(rwdata->rstring.ptr, length + 1);
+    rwdata->rstring.length = length;
     
-    env->GetByteArrayRegion((jbyteArray) bytes, begin, length, (jbyte *) rstring->ptr);
-    rstring->ptr[length] = 0;
+    env->GetByteArrayRegion((jbyteArray) bytes, begin, length, 
+            (jbyte *) rwdata->rstring.ptr);
+    rwdata->rstring.ptr[length] = 0;
 
     env->DeleteLocalRef(byteList);
     env->DeleteLocalRef(bytes);
@@ -254,26 +275,18 @@ jruby::objectToValue(JNIEnv* env, jobject obj)
 }
 
 void
-jruby::jsync_(JNIEnv *env)
+jruby::runSyncQueue(JNIEnv *env, DataSyncQueue* q)
 {
-    Handle* h;
+    DataSync* d;
 
-    SIMPLEQ_FOREACH(h, &syncQueue, syncq) {
-        if ((h->flags & FL_JSYNC) != 0) {
-            h->jsync(env);
+    for (d = TAILQ_FIRST(q); d != TAILQ_END(q); ) {
+        DataSync* next = TAILQ_NEXT(d, syncq);
+
+        if (!(*d->sync)(env, d)) {
+            TAILQ_REMOVE(q, d, syncq);
         }
-    }
-}
 
-void
-jruby::nsync_(JNIEnv *env)
-{
-    Handle* h;
-
-    SIMPLEQ_FOREACH(h, &syncQueue, syncq) {
-        if ((h->flags & FL_NSYNC) != 0) {
-            h->nsync(env);
-        }
+        d = next;
     }
 }
 
