@@ -35,18 +35,18 @@ static int invokeLevel = 0;
 
 static void clearSyncQueue();
 
-class Sync {
+class InvocationSession {
 private:
     JNIEnv* env;
 public:
-    Sync(JNIEnv* env_) {
+    InvocationSession(JNIEnv* env_) {
         ++invokeLevel;
         this->env = env_;
 
         nsync(env);
     }
 
-    ~Sync() {
+    ~InvocationSession() {
         --invokeLevel;
 
         if (unlikely(SIMPLEQ_FIRST(&syncQueue) != NULL)) {
@@ -108,7 +108,7 @@ Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject 
             values[i] = (VALUE) largs[i];
         }
 
-        Sync sync(env);
+        InvocationSession session(env);
         VALUE v = dispatch((void *) address, arity, argCount, (VALUE) recv, values);
         return valueToObject(env, v);    
         
@@ -133,7 +133,7 @@ Java_org_jruby_cext_Native_callMethod0(JNIEnv* env, jobject self, jlong fn, jlon
 {
     try {
 
-        Sync sync(env);
+        InvocationSession session(env);
         return valueToObject(env, ((VALUE (*)(VALUE)) fn)((VALUE) recv));
 
     } catch (jruby::JavaException& ex) {
@@ -155,7 +155,7 @@ JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_callMethod1(JNIEnv* env, jobject self, jlong fn, jlong recv, jlong arg1)
 {
     try {
-        Sync sync(env);
+        InvocationSession session(env);
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1));
 
     } catch (jruby::JavaException& ex) {
@@ -178,7 +178,7 @@ Java_org_jruby_cext_Native_callMethod2(JNIEnv* env, jobject self, jlong fn, jlon
         jlong arg1, jlong arg2)
 {
     try {
-        Sync sync(env);
+        InvocationSession session(env);
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2));
 
     } catch (jruby::JavaException& ex) {
@@ -201,7 +201,7 @@ Java_org_jruby_cext_Native_callMethod3(JNIEnv* env, jobject self, jlong fn, jlon
         jlong arg1, jlong arg2, jlong arg3)
 {
     try {
-        Sync sync(env);
+        InvocationSession session(env);
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2, (VALUE) arg3));
 
     } catch (jruby::JavaException& ex) {
