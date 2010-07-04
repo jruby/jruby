@@ -52,15 +52,15 @@ typedef uintptr_t VALUE;
 /** The undef object. Value for placeholder */
 #define Qundef ((VALUE)6)
 
-typedef struct RStringFacade {
+struct RString {
     char* ptr;
     int len;
-} RStringFacade;
+};
 
-typedef struct RArrayFacade {
+struct RArray {
     VALUE* ptr;
     int len;
-} RArrayFacade;
+};
 
 typedef enum JRubyType {
     T_NONE,
@@ -264,12 +264,12 @@ void rb_ary_store(VALUE array, int offset, VALUE val);
  * @note This is NOT an MRI C-API function.
  */
 VALUE *rb_ary_ptr(VALUE self);
-/** Returns a pointer to the readonly RArrayFacade structure
+/** Returns a pointer to the readonly RArray structure
  * which exposes an MRI-like API to the C code.
  *
  * @note This is NOT an MRI C-API function.
  */
-struct RArrayFacade rb_ary_struct_readonly(VALUE ary);
+struct RArray rb_ary_struct_readonly(VALUE ary);
 
 /* Hash */
 VALUE rb_hash_new(void);
@@ -340,12 +340,12 @@ VALUE rb_str_freeze(VALUE str);
  * @note This is NOT an MRI C-API function.
  */
 const char *rb_str_ptr_readonly(VALUE self);
-/** Returns a pointer to the readonly RStringFacade structure
+/** Returns a pointer to the readonly RString structure
  * which exposes an MRI-like API to the C code.
  *
  * @note This is NOT an MRI C-API function.
  */
-struct RStringFacade rb_str_struct_readonly(VALUE str);
+struct RString rb_str_struct_readonly(VALUE str);
 
 #define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_new_shared
