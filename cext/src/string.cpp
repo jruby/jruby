@@ -162,7 +162,26 @@ rb_str_to_str(VALUE obj)
 extern "C" VALUE
 rb_string_value(VALUE* ptr)
 {
-    return *ptr = callMethod(*ptr, "to_str", 0);
+    return *ptr = callMethod(*ptr, "to_s", 0);
+}
+
+extern "C" char* 
+rb_string_value_ptr(VALUE* object_variable) {
+    VALUE str = rb_string_value(object_variable);    
+    return (char*)(RSTRING_PTR(str));
+}
+
+extern "C" char* 
+rb_string_value_cstr(VALUE* object_variable) {
+    VALUE str = rb_string_value(object_variable);
+    long long str_size = NUM2LL(callMethod(str, "length", 0));
+    char* cstr = (char*)(RSTRING_PTR(str));
+
+    if(str_size != strlen(cstr)) {
+      rb_raise(rb_eArgError, "string contains NULL byte");
+    }
+
+    return cstr;
 }
 
 extern "C" VALUE 

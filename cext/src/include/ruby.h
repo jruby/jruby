@@ -181,6 +181,11 @@ void xfree(void*);
 /** Pointer to the MRI string structure */
 #define RSTRING(str) rb_str_struct_readonly(str);
 
+/** Modifies the VALUE object in place by calling rb_obj_as_string(). */
+#define StringValue(v)        rb_string_value(&(v))
+#define StringValuePtr(v)     rb_string_value_ptr(&(v))
+#define StringValueCStr(str)  rb_string_value_cstr(&(str))
+
 /** The length of the array. */
 #define RARRAY_LEN(ary)   rb_ary_size(ary)
 /** The pointer to the array's data. */
@@ -346,6 +351,11 @@ const char *rb_str_ptr_readonly(VALUE self);
  * @note This is NOT an MRI C-API function.
  */
 struct RString rb_str_struct_readonly(VALUE str);
+/** Call #to_s on object pointed to and _replace_ it with the String. */
+VALUE rb_string_value(VALUE* object_variable);
+char* rb_string_value_ptr(VALUE* object_variable);
+/** As rb_string_value but also returns a C string of the new String. */
+char* rb_string_value_cstr(VALUE* object_variable);
 
 #define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_new_shared
