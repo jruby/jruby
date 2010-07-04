@@ -88,7 +88,7 @@ RubyString::length()
 {
     // If already synced with java, just return the cached length value
     if (rwdata.rstring != NULL) {
-        return rwdata.rstring->length;
+        return rwdata.rstring->as.heap.len;
     }
     
     JLocalEnv env;
@@ -154,14 +154,14 @@ RubyString::jsync(JNIEnv* env)
         return false;
     }
 
-    if (rwdata.rstring != NULL && rwdata.rstring->ptr != NULL) {
+    if (rwdata.rstring != NULL && rwdata.rstring->as.heap.ptr != NULL) {
         jobject byteList = env->GetObjectField(obj, RubyString_value_field);
         jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
         jint begin = env->GetIntField(byteList, ByteList_begin_field);
 
         RString* rstring = rwdata.rstring;
-        env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring->length,
-                (jbyte *) rstring->ptr);
+        env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring->as.heap.len,
+                (jbyte *) rstring->as.heap.ptr);
         
         env->DeleteLocalRef(byteList);
         env->DeleteLocalRef(bytes);
@@ -176,19 +176,20 @@ RubyString::nsync(JNIEnv* env)
     jobject byteList = env->GetObjectField(obj, RubyString_value_field);
     jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
     jint begin = env->GetIntField(byteList, ByteList_begin_field);
-    jint length = env->GetIntField(byteList, ByteList_length_field);
+    long length = env->GetIntField(byteList, ByteList_length_field);
 
     RString* rstring = rwdata.rstring;
 
-    if (length > rstring->length) {
-        rstring->ptr = (char *) realloc(rstring->ptr, length + 1);
+    if (length > rstring->as.heap.capa) {
+        rstring->as.heap.capa = env->GetArrayLength((jarray) bytes);
+        rstring->as.heap.ptr = (char *) realloc(rstring->as.heap.ptr, rstring->as.heap.capa + 1);
     }
-
-    rstring->length = length;
+    
+    rstring->as.heap.len = length;
     
     env->GetByteArrayRegion((jbyteArray) bytes, begin, length, 
-            (jbyte *) rstring->ptr);
-    rstring->ptr[length] = 0;
+            (jbyte *) rstring->as.heap.ptr);
+    rstring->as.heap.ptr[length] = 0;
 
     env->DeleteLocalRef(byteList);
     env->DeleteLocalRef(bytes);
@@ -308,11 +309,7 @@ jruby::runSyncQueue(JNIEnv *env, DataSyncQueue* q)
 extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_newRString(JNIEnv* env, jclass self)
 {
-    RString* rstring = new RString;
-    rstring->ptr = NULL;
-    rstring->length = -1;
-
-    return p2j(rstring);
+    return p2j(calloc(1, sizeof(struct RString)));
 }
 
 /*
@@ -324,12 +321,13 @@ extern "C" JNIEXPORT void JNICALL
 Java_org_jruby_cext_Native_freeRString(JNIEnv* env, jclass self, jlong address)
 {
     RString* rstring = (RString *) j2p(address);
+    if (rstring != NULL) {
+        if (rstring->as.heap.ptr != NULL) {
+            free(rstring->as.heap.ptr);
+        }
 
-    if (rstring->ptr != NULL) {
-        free(rstring->ptr);
+        free(rstring);
     }
-
-    delete rstring;
 }
 
 

@@ -178,13 +178,13 @@ jruby_str(VALUE v)
 extern "C" char*
 rb_str_ptr_readonly(VALUE v)
 {
-    return jruby_str(v)->toRString(true)->ptr;
+    return jruby_str(v)->toRString(true)->as.heap.ptr;
 }
 
 extern "C" char*
 jruby_str_ptr(VALUE v)
 {
-    return jruby_str_rstring(v)->ptr;
+    return jruby_str_rstring(v)->as.heap.ptr;
 }
 
 extern "C" int

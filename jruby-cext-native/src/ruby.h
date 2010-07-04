@@ -70,6 +70,7 @@ typedef enum JRubyType {
 
 #define T_MASK (0x1f)
 
+
 #define RTEST(v) (((v) & ~Qnil) != 0)
 #define NIL_P(v) ((v) == Qnil)
 #define FIXNUM_P(v) (rb_type((v)) == T_FIXNUM)
@@ -290,8 +291,18 @@ extern ID jruby_intern_nonconst(const char *);
     (__builtin_constant_p(name) ? rb_intern_const(name) : jruby_intern_nonconst(name))
 
 struct RString {
-    char* ptr;
-    int length;
+    struct {
+        VALUE unused0;
+        VALUE unused1;
+    } basic;
+    union {
+        struct {
+            long len;
+            char *ptr;
+            long capa;
+        } heap;
+        char unused[sizeof(VALUE) * 3];
+    } as;
 };
 
 extern struct RString* jruby_str_rstring(VALUE v);
@@ -373,10 +384,6 @@ extern VALUE rb_eNameError;
 extern VALUE rb_eSyntaxError;
 extern VALUE rb_eLoadError;
 
-
-struct RBasic {
-    int type;
-};
 
 #ifdef	__cplusplus
 }
