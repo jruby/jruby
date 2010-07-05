@@ -34,7 +34,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name) { 
         RubyClass klass = self.getMetaClass();
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
@@ -42,7 +42,13 @@ public class RespondToCallSite extends NormalCachingCallSite {
             if (strName.equals(tuple.name)) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, name);
+        IRubyObject respond = super.call(context, caller, self, name);
+
+        if (!respond.isTrue() && context.getRuntime().is1_9()) {
+            respond = self.callMethod(context, "respond_to_missing?", new IRubyObject[]{name, context.getRuntime().getFalse()});
+            respond = context.getRuntime().newBoolean(respond.isTrue());
+        }
+        return respond;
     }
 
     @Override
@@ -54,7 +60,13 @@ public class RespondToCallSite extends NormalCachingCallSite {
             if (strName.equals(tuple.name)) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, name, bool);
+        IRubyObject respond = super.call(context, caller, self, name, bool);
+
+        if (!respond.isTrue() && context.getRuntime().is1_9()) {
+            respond = self.callMethod(context, "respond_to_missing?", new IRubyObject[]{name, bool});
+            respond = context.getRuntime().newBoolean(respond.isTrue());
+        }
+        return respond;
     }
 
     @Override
