@@ -6,15 +6,7 @@ fails(JRUBY-4655):The defined? keyword for an expression with a dynamic String d
 fails(JRUBY-4655):The defined? keyword for an expression with a dynamic Regexp returns 'expression' when the Regexp contains a call to an undefined method
 fails(JRUBY-4655):The defined? keyword for an expression with a dynamic Regexp does not call the method in the Regexp
 fails(JRUBY-4655):The defined? keyword for variables returns 'local-variable' when called with the name of a block local
-fails(JRUBY-4655):The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $&
-fails(JRUBY-4655):The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $`
-fails(JRUBY-4655):The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $'
-fails(JRUBY-4655):The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $+
 fails(JRUBY-4655):The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for the capture references
-fails(JRUBY-4655):The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $&
-fails(JRUBY-4655):The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $`
-fails(JRUBY-4655):The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $'
-fails(JRUBY-4655):The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $+
 fails(JRUBY-4655):The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for the capture references
 fails:The defined? keyword for an expression with logical connectives returns 'expression' for an expression with '&&/and' and an undefined method
 fails:The defined? keyword for an expression with logical connectives returns 'expression' for an expression with '&&/and' and an unset class variable

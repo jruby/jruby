@@ -108,6 +108,11 @@ public class BackRefNode extends Node {
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
         
-        return backref instanceof RubyMatchData ? "$" + type : null;
+        String definition = backref instanceof RubyMatchData ? "$" + type : null;
+        if (context.getRuntime().is1_9() && definition != null) {
+            definition = "global-variable";
+        }
+
+        return definition;
     }
 }
