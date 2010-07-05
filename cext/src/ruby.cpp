@@ -111,25 +111,25 @@ void rb_define_global_const(const char* name, VALUE obj) {
 }
 
 /**
- * Define a global variable.
+ * Define a global reference. 
+ * TODO: Check with wmeissner to see if this is correct
  * @param Pointer to Ruby string
  */
-extern "C"
-void rb_global_variable(VALUE* handle_address) {
-    using namespace jruby;
-    JLocalEnv env;
-    JString j_str(env, *handle_address);
+extern "C" void
+rb_global_variable(VALUE* handle_address) {
+    rb_gc_register_address(handle_address);
+}
 
-    jstring globalVariableName = j_str.j_str();
+extern "C" void
+rb_gc_register_address(VALUE* address) {    
+    jruby::JLocalEnv env;
+    env->NewGlobalRef(jruby::valueToObject(env, *address));
+}
 
-    // GlobalVariable(Ruby runtime, String name, IRubyObject value)
-    jmethodID cid = env->GetMethodID(GlobalVariable_class, "<init>",
-            "(Lorg/jruby/Ruby;Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
-    jobject globalVariable = env->NewObject(GlobalVariable_class, cid, getRuntime(),
-            globalVariableName, getNil());
-    
-    jmethodID mid = env->GetMethodID(Ruby_class, "defineVariable", 
-            "(Lorg/jruby/runtime/GlobalVariable;)V");
+extern "C" void
+rb_gc_unregister_address(VALUE* address) {
+    jruby::JLocalEnv env;
+    env->DeleteGlobalRef(jruby::valueToObject(env, *address));
 }
 
 #define M(x) rb_m##x = jruby::getModule(env, #x)
