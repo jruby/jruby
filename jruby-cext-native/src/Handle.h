@@ -49,8 +49,7 @@ namespace jruby {
         virtual ~Handle();
         
         static inline Handle* valueOf(VALUE v) {
-            return likely(!IS_CONST(v))
-                    ? (Handle *) v : specialHandle(v);
+            return likely(!SPECIAL_CONST_P(v)) ? (Handle *) v : specialHandle(v);
         }
 
         static Handle* specialHandle(VALUE v);
@@ -157,6 +156,8 @@ namespace jruby {
             runSyncQueue(env, &nsyncq);
         }
     }
+
+    extern RubyFixnum* getCachedFixnum(int i);
 }
 
 #ifdef	__cplusplus

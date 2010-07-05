@@ -16,6 +16,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <limits.h>
 
 #ifdef	__cplusplus
 extern "C" {
@@ -29,11 +30,26 @@ extern "C" {
 
 typedef uintptr_t ID;
 typedef uintptr_t VALUE;
+typedef intptr_t SIGNED_VALUE;
 
 #ifndef RSHIFT
 # define RSHIFT(x,y) ((x)>>(int)y)
 #endif
 
+
+#define FIXNUM_MAX (LONG_MAX>>1)
+#define FIXNUM_MIN RSHIFT((long)LONG_MIN,1)
+
+#define FIXNUM_P(f) (((SIGNED_VALUE)(f))&FIXNUM_FLAG)
+#define POSFIXABLE(f) ((f) < FIXNUM_MAX+1)
+#define NEGFIXABLE(f) ((f) >= FIXNUM_MIN)
+#define FIXABLE(f) (POSFIXABLE(f) && NEGFIXABLE(f))
+
+#define IMMEDIATE_MASK 0x3
+#define IMMEDIATE_P(x) ((VALUE)(x) & IMMEDIATE_MASK)
+#define SPECIAL_CONST_P(x) (IMMEDIATE_P(x) || !RTEST(x))
+
+#define FIXNUM_FLAG 0x1
 #define SYMBOL_FLAG 0x0e
 #define SYMBOL_P(x) (((VALUE)(x)&0xff)==SYMBOL_FLAG)
 #define ID2SYM(x) ((VALUE)(((long)(x))<<8|SYMBOL_FLAG))
@@ -79,7 +95,6 @@ typedef enum JRubyType {
 
 #define RTEST(v) (((v) & ~Qnil) != 0)
 #define NIL_P(v) ((v) == Qnil)
-#define FIXNUM_P(v) (rb_type((v)) == T_FIXNUM)
 #define TYPE(x) rb_type((VALUE)(x))
 
 struct RBasic {
@@ -144,8 +159,16 @@ VALUE rb_int2big(long long);
 VALUE rb_uint2big(unsigned long long);
 
 
-#define NUM2LONG(x) rb_num2long(x)
-#define NUM2ULONG(x) rb_num2ulong(x)
+
+#define NUM2ULONG(x) rb_num2ulong((VALUE) x)
+#define FIX2LONG(x) RSHIFT((SIGNED_VALUE)x,1)
+#define FIX2ULONG(x) ((((VALUE)(x))>>1)&LONG_MAX)
+
+static inline long
+NUM2LONG(VALUE x)
+{
+    return FIXNUM_P(x) ? FIX2LONG(x) : rb_num2long(x);
+}
 #define FIX2INT(x) ((int) rb_num2int(x))
 #define FIX2UINT(x) ((int) rb_num2uint(x))
 #define NUM2INT(x) ((int) rb_num2int(x))

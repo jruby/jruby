@@ -17,6 +17,7 @@
  */
 
 #include "jruby.h"
+#include "JUtil.h"
 #include "ruby.h"
 #include "Handle.h"
 #include "JLocalEnv.h"
@@ -24,7 +25,7 @@
 using namespace jruby;
 
 #define CACHE_OFFSET (128)
-VALUE fixnumCache[2 * CACHE_OFFSET];
+RubyFixnum* fixnumCache[2 * CACHE_OFFSET];
 
 extern "C" long
 rb_num2long(VALUE v)
@@ -65,6 +66,10 @@ rb_fix2uint(VALUE v)
 extern "C" long long
 rb_num2ll(VALUE v)
 {
+    if (FIXNUM_P(v)) {
+        return FIX2LONG(v);
+    }
+
     Handle* h = Handle::valueOf(v);
     if (h->type == T_FIXNUM) {
         return ((RubyFixnum *) h)->longValue();
@@ -102,7 +107,7 @@ rb_uint2inum(unsigned long v)
     return rb_ull2inum(v);
 }
 
-static inline VALUE
+static inline RubyFixnum*
 newNumber(jmethodID method, long long v)
 {
     JLocalEnv env;
@@ -114,53 +119,65 @@ newNumber(jmethodID method, long long v)
     jlong result = env->CallStaticLongMethodA(JRuby_class, method, params);
     checkExceptions(env);
     
-    return (VALUE) result;
+    return (RubyFixnum *) j2p(result);
 }
 
 
-static VALUE
-getCachedFixnum(int i)
+RubyFixnum*
+jruby::getCachedFixnum(int i)
 {
-    VALUE v = fixnumCache[i];
-    if (v != 0) {
-        return v;
+    if (unlikely(i < -CACHE_OFFSET || i >= CACHE_OFFSET)) {
+        return NULL;
+    }
+    
+    RubyFixnum* n = fixnumCache[i + CACHE_OFFSET];
+    if (likely(n != NULL)) {
+        return n;
     }
 
-    fixnumCache[i] = v = newNumber(JRuby_ll2inum, i);
-    Handle::valueOf(v)->flags |= FL_CONST;
+    fixnumCache[i + CACHE_OFFSET] = n = newNumber(JRuby_ll2inum, i);
+    n->flags |= FL_CONST;
     
-    return v;
+    return n;
 }
 
 extern "C" VALUE
 rb_ll2inum(long long v)
 {
-    if (v >= (long long) -CACHE_OFFSET && v < (long long) CACHE_OFFSET) {
-        return getCachedFixnum((int) v);
+    if (v < FIXNUM_MAX && v >= FIXNUM_MIN) {
+        return ((VALUE)(((SIGNED_VALUE)(v))<<1 | FIXNUM_FLAG));
     }
 
-    return newNumber(JRuby_ll2inum, v);
+    if (v >= (long long) -CACHE_OFFSET && v < (long long) CACHE_OFFSET) {
+        return (VALUE) getCachedFixnum((int) v);
+    }
+
+    return (VALUE) newNumber(JRuby_ll2inum, v);
 }
 
 extern "C" VALUE
 rb_ull2inum(unsigned long long v)
 {
-    if (v < (unsigned long long) CACHE_OFFSET) {
-        return getCachedFixnum((int) v);
+    if (v < (unsigned long long) FIXNUM_MAX) {
+        return ((VALUE)(((SIGNED_VALUE)(v))<<1 | FIXNUM_FLAG));
     }
 
-    return newNumber(JRuby_ull2inum, (long long) v);
+    if (v < (unsigned long long) CACHE_OFFSET) {
+        return (VALUE) getCachedFixnum((int) v);
+    }
+    
+    return (VALUE) newNumber(JRuby_ull2inum, (long long) v);
 }
 
 extern "C" VALUE
 rb_int2big(long long v)
 {
-    return newNumber(JRuby_int2big, v);
+    return (VALUE) newNumber(JRuby_int2big, v);
 }
 
 extern "C" VALUE
 rb_uint2big(unsigned long long v)
 {
-    return newNumber(JRuby_uint2big, (long long) v);
+    return (VALUE) newNumber(JRuby_uint2big, (long long) v);
 }
 

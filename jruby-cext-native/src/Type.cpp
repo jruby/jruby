@@ -25,16 +25,21 @@
 using namespace jruby;
 
 extern "C" int
-rb_type(VALUE val)
+rb_type(VALUE obj)
 {
-    Handle* h = Handle::valueOf(val);
-    if (h->type != T_NONE) {
-        return h->type;
-    }
+    if (IMMEDIATE_P(obj)) {
+        if (FIXNUM_P(obj)) return T_FIXNUM;
+        if (obj == Qtrue) return T_TRUE;
+        if (SYMBOL_P(obj)) return T_SYMBOL;
+        if (obj == Qundef) return T_UNDEF;
 
-    // Lazy lookup the type
-    JLocalEnv env;
-    return h->type = typeOf(env, h->obj);
+    } else if (!RTEST(obj)) {
+        if (obj == Qnil) return T_NIL;
+        if (obj == Qfalse) return T_FALSE;
+
+    } else {
+        return Handle::valueOf(obj)->type;
+    }
 }
 
 static struct types {

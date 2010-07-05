@@ -69,6 +69,7 @@ namespace jruby {
     extern jmethodID RubyData_newRubyData_method;
     extern jmethodID RaiseException_constructor;
     extern jmethodID RubyNumeric_num2long_method;
+    extern jmethodID RubyNumeric_int2fix_method;
     extern jmethodID RubyString_newStringNoCopy;
     extern jmethodID RubyString_view;
     extern jmethodID GC_trigger;

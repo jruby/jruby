@@ -167,12 +167,11 @@ rb_string_value(VALUE* ptr)
 static RubyString*
 jruby_str(VALUE v)
 {
-    Handle* h = Handle::valueOf(v);
-    if (h->type != T_STRING) {
+    if (TYPE(v) != T_STRING) {
         rb_raise(rb_eTypeError, "wrong type (expected String)");
     }
 
-    return (RubyString *) h;
+    return (RubyString *) v;
 }
 
 extern "C" char*

@@ -19,6 +19,7 @@
 package org.jruby.cext;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
@@ -27,6 +28,11 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class Handle {
+    private static final long FIXNUM_MAX = Integer.getInteger("sun.arch.data.model") == 32
+            ? (Long.MAX_VALUE >> 1) : ((long) Integer.MAX_VALUE >> 1);
+    private static final long FIXNUM_MIN = Integer.getInteger("sun.arch.data.model") == 32
+            ? (Long.MIN_VALUE >> 1) : ((long) Integer.MIN_VALUE >> 1);
+
     private final Ruby runtime;
     private final long address;
     
@@ -80,8 +86,12 @@ public final class Handle {
         if (obj instanceof RubyObject) {
             int type = ((RubyObject) obj).getNativeTypeIndex();
             switch (type) {
-                case ClassIndex.FIXNUM:
-                    nativeHandle = Native.getInstance(runtime).newFixnumHandle(obj, ((RubyFixnum) obj).getLongValue());
+                case ClassIndex.FIXNUM: {
+                    final long val = ((RubyFixnum) obj).getLongValue();
+                    nativeHandle = (val < FIXNUM_MAX && val >= FIXNUM_MIN)
+                            ? ((val << 1) | 0x1)
+                            : Native.getInstance(runtime).newFixnumHandle(obj, val);
+                    }
                     break;
 
                 case ClassIndex.FLOAT:
@@ -117,11 +127,13 @@ public final class Handle {
         }
     }
 
-    public static long nativeHandle(IRubyObject obj) {
-        return Handle.valueOf(obj).getAddress();
-    }
-
     static long nativeHandleLocked(IRubyObject obj) {
+        if (obj.getClass() == RubyFixnum.class) {
+            final long val = ((RubyFixnum) obj).getLongValue();
+            if (val < FIXNUM_MAX && val >= FIXNUM_MIN) {
+                return ((val << 1) | 0x1);
+            }
+        }
         return Handle.valueOfLocked(obj).getAddress();
     }
 }

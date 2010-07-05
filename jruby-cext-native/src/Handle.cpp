@@ -71,7 +71,16 @@ Handle::Init()
 Handle*
 Handle::specialHandle(VALUE v)
 {
-    return SYMBOL_P(v) ? RubySymbol::valueOf(SYM2ID(v)) : jruby::constHandles[(v & CONST_MASK) >> 1];
+    if (likely((RSHIFT(v, 1) & ~3UL) == 0)) {
+        return jruby::constHandles[(v >> 1) & 0x3UL];
+
+    } else if (SYMBOL_P(v)) {
+        return RubySymbol::valueOf(SYM2ID(v));
+
+    }
+
+    rb_raise(rb_eTypeError, "%llx is not a valid handle", (unsigned long long) v);
+    return NULL;
 }
 
 RubyFixnum::RubyFixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_, T_FIXNUM)
@@ -278,6 +287,19 @@ Java_org_jruby_cext_Native_newFloatHandle(JNIEnv* env, jobject self, jobject obj
 jobject
 jruby::valueToObject(JNIEnv* env, VALUE v)
 {
+    if (FIXNUM_P(v)) {
+        RubyFixnum* n = getCachedFixnum(RSHIFT((SIGNED_VALUE) v,1));
+        if (n != NULL) {
+            return env->NewLocalRef(n->obj);
+        }
+
+        jvalue params[2];
+        params[0].l = jruby::getRuntime();
+        params[1].j = (jlong) v;
+        return env->CallStaticObjectMethodA(RubyNumeric_class, RubyNumeric_int2fix_method, params);
+
+    }
+
     return env->NewLocalRef(Handle::valueOf(v)->obj);
 }
 

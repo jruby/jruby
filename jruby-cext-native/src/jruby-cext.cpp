@@ -67,6 +67,7 @@ namespace jruby {
     jmethodID RubyData_newRubyData_method;
     jmethodID RubyObject_getNativeTypeIndex_method;
     jmethodID RubyNumeric_num2long_method;
+    jmethodID RubyNumeric_int2fix_method;
     jmethodID RubyString_newStringNoCopy;
     jmethodID RubyString_view;
     jmethodID IRubyObject_callMethod;
@@ -181,6 +182,8 @@ loadIds(JNIEnv* env)
     RubyObject_getNativeTypeIndex_method = getMethodID(env, RubyObject_class, "getNativeTypeIndex", "()I");
     RubyNumeric_num2long_method = getStaticMethodID(env, RubyNumeric_class, "num2long",
             "(Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    RubyNumeric_int2fix_method = getStaticMethodID(env, RubyNumeric_class, "int2fix",
+            "(Lorg/jruby/Ruby;J)Lorg/jruby/RubyNumeric;");
 
     GC_trigger = getStaticMethodID(env, GC_class, "trigger", "()V");
     Handle_valueOf = getStaticMethodID(env, Handle_class, "valueOf", "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/cext/Handle;");

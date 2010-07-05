@@ -24,6 +24,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -89,17 +90,33 @@ public class JRuby {
     }
 
     public static long ll2inum(Ruby runtime, long l) {
-        return Handle.nativeHandleLocked(RubyFixnum.newFixnum(runtime, l));
+        RubyFixnum n = RubyFixnum.newFixnum(runtime, l);
+        Object ref = n.fastGetInternalVariable(GC.NATIVE_REF_KEY);
+        if (ref instanceof Handle) {
+            return ((Handle) ref).getAddress();
+        }
+        Handle h = Handle.newHandle(runtime, n, Native.getInstance(runtime).newFixnumHandle(n, l));
+        n.fastSetInternalVariable(GC.NATIVE_REF_KEY, h);
+
+        return h.getAddress();
     }
 
     private static final BigInteger UINT64_BASE = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
 
     public static long ull2inum(Ruby runtime, long l) {
-        IRubyObject retval = l < 0
+        RubyObject n = l < 0
                     ? RubyBignum.newBignum(runtime, BigInteger.valueOf(l & 0x7fffffffffffffffL).add(UINT64_BASE))
                     : runtime.newFixnum(l);
 
-        return Handle.nativeHandleLocked(retval);
+        Object ref = n.fastGetInternalVariable(GC.NATIVE_REF_KEY);
+        if (ref instanceof Handle) {
+            return ((Handle) ref).getAddress();
+        }
+        // FIXME should create Bignum handle for Bignum values
+        Handle h = Handle.newHandle(runtime, n, Native.getInstance(runtime).newFixnumHandle(n, l));
+        n.fastSetInternalVariable(GC.NATIVE_REF_KEY, h);
+
+        return h.getAddress();
     }
 
     public static long int2big(Ruby runtime, long l) {

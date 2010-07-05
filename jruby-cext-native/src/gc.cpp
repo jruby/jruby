@@ -35,7 +35,7 @@ rb_gc_mark_locations(VALUE* first, VALUE* last)
 extern "C" void
 rb_gc_mark(VALUE v)
 {
-    if (IS_CONST(v)) {
+    if (SPECIAL_CONST_P(v)) {
         // special constant, ignore
         return;
     }
