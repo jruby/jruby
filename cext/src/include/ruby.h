@@ -245,14 +245,36 @@ VALUE rb_define_class(const char*,VALUE);
 VALUE rb_define_module(const char*);
 VALUE rb_define_class_under(VALUE, const char*, VALUE);
 VALUE rb_define_module_under(VALUE, const char*);
-
+/** Ruby's attr_* for given name. Nonzeros to toggle read/write. */
+void rb_define_attr(VALUE module_handle, const char* attr_name, int readable, int writable);
 void rb_define_method(VALUE,const char*,VALUE(*)(ANYARGS),int);
 void rb_define_module_function(VALUE,const char*,VALUE(*)(ANYARGS),int);
 void rb_define_global_function(const char*,VALUE(*)(ANYARGS),int);
-
 #define HAVE_RB_DEFINE_ALLOC_FUNC 1
 typedef VALUE (*rb_alloc_func_t)(VALUE);
 void rb_define_alloc_func(VALUE, rb_alloc_func_t);
+/** Set module's named class variable to given value. */
+void rb_define_class_variable(VALUE klass, const char* name, VALUE val);
+/** Returns module's named class variable.
+ * TODO: @@ should be optional. 
+ */
+VALUE rb_cv_get(VALUE module_handle, const char* name);
+/** Set module's named class variable to given value. Returns the value.
+ * TODO: @@ should be optional. 
+ */
+VALUE rb_cv_set(VALUE module_handle, const char* name, VALUE value);
+/** Returns a value evaluating true if module has named class var. 
+ * TODO: @@ should be optional. 
+ */
+VALUE rb_cvar_defined(VALUE module_handle, ID name);
+/** Returns class variable by (Symbol) name from module.
+ * TODO: @@ should be optional. 
+ */
+VALUE rb_cvar_get(VALUE module_handle, ID name);
+/** Set module's named class variable to given value. Returns the value. 
+ * TODO: @@ should be optional. 
+ */
+VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value, int unused);
 
 /* Array */
 VALUE rb_Array(VALUE val);

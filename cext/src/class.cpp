@@ -48,6 +48,36 @@ rb_class2name(VALUE class_handle) {
 }
 
 extern "C" VALUE
+rb_cvar_defined(VALUE module_handle, ID name) {
+    return rb_funcall(module_handle, rb_intern("class_variable_defined?"), 1, name);
+}
+
+extern "C" VALUE
+rb_cv_get(VALUE module_handle, const char* name) {
+    return rb_cvar_get(module_handle, rb_intern(name));
+}
+
+extern "C" VALUE
+rb_cv_set(VALUE module_handle, const char* name, VALUE value) {
+    return rb_cvar_set(module_handle, rb_intern(name), value, 0);
+}
+
+extern "C" VALUE
+rb_cvar_get(VALUE module_handle, ID name) {
+    return rb_funcall(module_handle, rb_intern("class_variable_get"), 1, name);
+}
+
+extern "C" VALUE
+rb_cvar_set(VALUE module_handle, ID name, VALUE value, int unused) {
+    return rb_funcall(module_handle, rb_intern("class_variable_set"), 2, name, value);
+}
+
+extern "C" void 
+rb_define_class_variable(VALUE klass, const char* name, VALUE val) {
+    rb_cvar_set(klass, rb_intern(name), val, 0);
+}
+
+extern "C" VALUE
 rb_define_class(const char* name, VALUE parent)
 {
     JLocalEnv env;

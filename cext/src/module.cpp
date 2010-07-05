@@ -23,6 +23,17 @@
 
 using namespace jruby;
 
+extern "C" void
+rb_define_attr(VALUE module_handle, const char* attr_name, int readable, int writable) {
+    if(readable) {
+        rb_funcall(module_handle, rb_intern("attr_reader"), 1, rb_intern(attr_name));
+    }
+    
+    if(writable) {
+        rb_funcall(module_handle, rb_intern("attr_writer"), 1, rb_intern(attr_name));
+    }
+  }
+
 extern "C" VALUE
 rb_define_module(const char* name)
 {
