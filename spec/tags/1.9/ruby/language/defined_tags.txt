@@ -4,6 +4,5 @@ fails(JRUBY-4655):The defined? keyword for an expression with a dynamic String r
 fails(JRUBY-4655):The defined? keyword for an expression with a dynamic String does not call the method in the String
 fails(JRUBY-4655):The defined? keyword for an expression with a dynamic Regexp returns 'expression' when the Regexp contains a call to an undefined method
 fails(JRUBY-4655):The defined? keyword for an expression with a dynamic Regexp does not call the method in the Regexp
-fails(JRUBY-4655):The defined? keyword for variables returns 'local-variable' when called with the name of a block local
 fails:The defined? keyword for an expression with logical connectives does not call a method in an '&&' expression and returns 'expression'
 fails:The defined? keyword for an expression with logical connectives does not call a method in an 'and' expression and returns 'expression'
