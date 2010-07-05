@@ -91,7 +91,6 @@ rb_define_class(const char* name, VALUE parent)
     return objectToValue(env, result);
 }
 
-
 extern "C" VALUE
 rb_define_class_under(VALUE module, const char* name, VALUE parent)
 {

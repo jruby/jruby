@@ -233,6 +233,10 @@ VALUE rb_uint2big(unsigned long long);
 VALUE rb_funcall(VALUE obj, ID meth, int cnt, ...);
 VALUE rb_funcall2(VALUE obj, ID meth, int cnt, VALUE*);
 
+/** Returns a new, anonymous class inheriting from super_handle.
+ *  TODO: Should NOT call inherited() on the superclass. 
+ */
+VALUE rb_class_new(VALUE super_handle);
 /** As Ruby's .new, with the given arguments. Returns the new object. */
 VALUE rb_class_new_instance(int arg_count, VALUE* args, VALUE class_handle);
 /** Returns the Class object this object is an instance of. */
