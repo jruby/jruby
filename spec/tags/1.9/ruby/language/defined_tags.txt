@@ -7,5 +7,3 @@ fails(JRUBY-4655):The defined? keyword for an expression with a dynamic Regexp d
 fails(JRUBY-4655):The defined? keyword for variables returns 'local-variable' when called with the name of a block local
 fails:The defined? keyword for an expression with logical connectives does not call a method in an '&&' expression and returns 'expression'
 fails:The defined? keyword for an expression with logical connectives does not call a method in an 'and' expression and returns 'expression'
-fails:The defined? keyword for an expression with logical connectives returns 'expression' for an expression with '||/or' and an undefined method
-fails:The defined? keyword for an expression with logical connectives returns 'expression' for an expression with '||/or' and an unset class variable
