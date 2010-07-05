@@ -40,7 +40,9 @@ extern "C" {
   
 #define LONG_LONG long long
 
+/** In MRI, ID represents an interned string, i.e. a Symbol. */    
 typedef uintptr_t ID;
+/** In MRI, VALUE represents an object. */
 typedef uintptr_t VALUE;
 
 /** The false object. */
