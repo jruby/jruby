@@ -231,6 +231,14 @@ VALUE rb_uint2big(unsigned long long);
 VALUE rb_funcall(VALUE obj, ID meth, int cnt, ...);
 VALUE rb_funcall2(VALUE obj, ID meth, int cnt, VALUE*);
 
+/** As Ruby's .new, with the given arguments. Returns the new object. */
+VALUE rb_class_new_instance(int arg_count, VALUE* args, VALUE class_handle);
+/** Returns the Class object this object is an instance of. */
+VALUE rb_class_of(VALUE object_handle);
+/** Returns String representation of the class' name. */
+VALUE rb_class_name(VALUE class_handle);
+/** C string representation of the class' name. You must free this string. */
+char* rb_class2name(VALUE class_handle);
 VALUE rb_define_class(const char*,VALUE);
 VALUE rb_define_module(const char*);
 VALUE rb_define_class_under(VALUE, const char*, VALUE);

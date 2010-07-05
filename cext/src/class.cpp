@@ -27,6 +27,26 @@ using namespace jruby;
 static jobject getNotAllocatableAllocator(JNIEnv* env);
 static jobject getDefaultAllocator(JNIEnv* env, VALUE parent);
 
+extern "C" VALUE 
+rb_class_new_instance(int arg_count, VALUE* args, VALUE class_handle) {
+    return callMethodA(class_handle, "new", arg_count, args);
+}
+
+extern "C" VALUE 
+rb_class_of(VALUE object_handle) {
+    return callMethodA(object_handle, "class", 0, NULL);
+}
+
+extern "C" VALUE 
+rb_class_name(VALUE class_handle) {
+    return callMethodA(class_handle, "name", 0, NULL);
+}
+
+extern "C" char* 
+rb_class2name(VALUE class_handle) {
+    return (char*)RSTRING_PTR(rb_class_name(class_handle));
+}
+
 extern "C" VALUE
 rb_define_class(const char* name, VALUE parent)
 {
