@@ -68,21 +68,27 @@ public final class CallNoArgNode extends CallNode {
     
     @Override
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-       if (getReceiverNode().definition(runtime, context, self, aBlock) != null) {
+        String definition = null;
+        if (getReceiverNode().definition(runtime, context, self, aBlock) != null) {
             try {
                 IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
                 RubyClass metaClass = receiver.getMetaClass();
                 DynamicMethod method = metaClass.searchMethod(getName());
                 Visibility visibility = method.getVisibility();
-                
+
                 if (visibility != Visibility.PRIVATE &&
-                        (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
-                    return !method.isUndefined() ? "method" : null;
+                        (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self)) && !method.isUndefined()) {
+                    definition = "method";
+                }
+
+                if (definition == null && context.getRuntime().is1_9() && receiver.callMethod(context, "respond_to_missing?",
+                    new IRubyObject[]{context.getRuntime().newSymbol(getName()), context.getRuntime().getFalse()}).isTrue()) {
+                    return "method";
                 }
             } catch (JumpException excptn) {
             }
         }
 
-        return null;    
+        return definition;
     }
 }

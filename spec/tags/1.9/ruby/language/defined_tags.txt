@@ -1,2 +1,0 @@
-fails:The defined? keyword returns 'local-variable' when defined? is called on a block var
-fails(JRUBY-4655):The defined? keyword when called with a method name having a local variable as receiver calls #respond_to_missing?
