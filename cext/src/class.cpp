@@ -29,17 +29,17 @@ static jobject getDefaultAllocator(JNIEnv* env, VALUE parent);
 
 extern "C" VALUE 
 rb_class_new_instance(int arg_count, VALUE* args, VALUE class_handle) {
-    return callMethodA(class_handle, "new", arg_count, args);
+    return rb_funcall2(class_handle, rb_intern("new"), arg_count, args);
 }
 
 extern "C" VALUE 
 rb_class_of(VALUE object_handle) {
-    return callMethodA(object_handle, "class", 0, NULL);
+    return rb_funcall(object_handle, rb_intern("class"), 0);
 }
 
 extern "C" VALUE 
 rb_class_name(VALUE class_handle) {
-    return callMethodA(class_handle, "name", 0, NULL);
+    return rb_funcall(class_handle, rb_intern("name"), 0);
 }
 
 extern "C" char* 
