@@ -380,7 +380,7 @@ VALUE rb_str_freeze(VALUE str);
  *
  * @note This is NOT an MRI C-API function.
  */
-const char *rb_str_ptr_readonly(VALUE self);
+char *rb_str_ptr_readonly(VALUE self);
 /** Returns a pointer to the readonly RString structure
  * which exposes an MRI-like API to the C code.
  *
@@ -400,6 +400,7 @@ char* rb_string_value_cstr(VALUE* object_variable);
 #define rb_tainted_str_new2 rb_tainted_str_new_cstr
 #define rb_str_buf_new2 rb_str_buf_new_cstr
 #define rb_usascii_str_new2 rb_usascii_str_new_cstr
+#define rb_str_ptr rb_str_ptr_readonly
 
 extern void* jruby_data(VALUE);
 

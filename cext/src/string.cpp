@@ -199,12 +199,12 @@ rb_str_len(VALUE str) {
     return NUM2INT(callMethod(str, "length", 0, NULL));
 }
 
-extern "C" const char*
+extern "C" char*
 rb_str_ptr_readonly(VALUE obj)
 {
     JLocalEnv env;
     JString jString(env, obj);
-    return jString.c_str();
+    return (char*)jString.c_str();
 }
 
 
