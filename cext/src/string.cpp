@@ -92,6 +92,11 @@ rb_str_cat(VALUE str, const char *ptr, long len)
 }
 
 extern "C" VALUE
+rb_str_cat2(VALUE self_handle, const char* other) {
+    return rb_str_cat(self_handle, other, std::strlen(other));
+}
+
+extern "C" VALUE
 rb_str_plus(VALUE str1, VALUE str2)
 {
     return callMethod(str1, "+", 1, str2);
