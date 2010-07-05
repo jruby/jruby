@@ -45,6 +45,11 @@ rb_intern_const(const char* name)
     return constSymbolMap[name] = jruby_intern_nonconst(name);
 }
 
+extern "C" const char*
+rb_id2name(ID sym) {
+    return RSTRING_PTR(callMethod((VALUE)sym, "to_s", 0, NULL));
+}
+
 extern "C" ID
 jruby_intern_nonconst(const char* name)
 {

@@ -403,9 +403,11 @@ void rb_gc_register_address(VALUE* address);
 /** Unmark variable as global */
 void rb_gc_unregister_address(VALUE* address);
 
+/** Returns the string associated with a symbol. */
+const char *rb_id2name(ID sym);
+
 /** Define a toplevel constant */
 void rb_define_global_const(const char* name, VALUE obj);
-
 extern ID rb_intern_const(const char *);
 extern ID jruby_intern_nonconst(const char *);
 #define rb_intern(name) \
