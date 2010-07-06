@@ -74,9 +74,6 @@ Handle::specialHandle(VALUE v)
     if (likely((RSHIFT(v, 1) & ~3UL) == 0)) {
         return jruby::constHandles[(v >> 1) & 0x3UL];
 
-    } else if (SYMBOL_P(v)) {
-        return RubySymbol::valueOf(SYM2ID(v));
-
     }
 
     rb_raise(rb_eTypeError, "%llx is not a valid handle", (unsigned long long) v);
@@ -328,6 +325,9 @@ jruby::valueToObject(JNIEnv* env, VALUE v)
         params[1].j = (jlong) v;
         return env->CallStaticObjectMethodA(RubyNumeric_class, RubyNumeric_int2fix_method, params);
 
+    
+    } else if (SYMBOL_P(v)) {
+        return idToObject(env, SYM2ID(v));
     }
 
     Handle* h = Handle::valueOf(v);

@@ -86,7 +86,6 @@ final class Native {
     final native long newHandle(IRubyObject obj, int type);
     final native long newFixnumHandle(IRubyObject obj, long value);
     final native long newFloatHandle(IRubyObject obj, double value);
-    final native long newSymbolHandle(IRubyObject obj);
 
     final native void gc();
     final native Object pollGC();

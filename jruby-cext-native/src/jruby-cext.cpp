@@ -70,6 +70,7 @@ namespace jruby {
     jmethodID RubyNumeric_int2fix_method;
     jmethodID RubyString_newStringNoCopy;
     jmethodID RubyString_view;
+    jmethodID RubySymbol_getSymbolLong;
     jmethodID IRubyObject_callMethod;
     jmethodID IRubyObject_asJavaString_method;
     jmethodID Handle_valueOf;
@@ -198,6 +199,8 @@ loadIds(JNIEnv* env)
             "newStringNoCopy", "(Lorg/jruby/Ruby;[B)Lorg/jruby/RubyString;");
     RubyString_view = getMethodID(env, RubyString_class,
             "view", "([B)V");
+    RubySymbol_getSymbolLong = getStaticMethodID(env, Symbol_class, "getSymbolLong",
+            "(Lorg/jruby/Ruby;J)Lorg/jruby/RubySymbol;");
     JRuby_callMethod = getStaticMethodID(env, JRuby_class, "callRubyMethod",
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_newString = getStaticMethodID(env, JRuby_class, "newString",

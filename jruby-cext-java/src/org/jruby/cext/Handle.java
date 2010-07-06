@@ -99,7 +99,6 @@ public final class Handle {
                     break;
 
                 case ClassIndex.SYMBOL:
-                    Native.getInstance(runtime).newSymbolHandle((RubySymbol) obj);
                     nativeHandle = ((long) ((RubySymbol) obj).getId() << 8) | 0xeL;
                     break;
 
@@ -124,7 +123,11 @@ public final class Handle {
             if (val < FIXNUM_MAX && val >= FIXNUM_MIN) {
                 return ((val << 1) | 0x1);
             }
+        
+        } else if (obj.getClass() == RubySymbol.class) {
+            return ((long) ((RubySymbol) obj).getId() << 8) | 0xeL;
         }
+
         return Handle.valueOf(obj).getAddress();
     }
 }

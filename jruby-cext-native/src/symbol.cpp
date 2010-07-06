@@ -36,28 +36,23 @@
 using namespace jruby;
 
 static std::map<const char*, ID> constSymbolMap;
-std::vector<RubySymbol *> jruby::symbols;
+std::vector<jobject> jruby::symbols;
 
-static RubySymbol* lookup(ID id);
-static RubySymbol* addSymbol(JNIEnv* env, jobject obj, ID id);
-
-extern "C" JNIEXPORT jlong JNICALL
-Java_org_jruby_cext_Native_newSymbolHandle(JNIEnv* env, jobject self, jobject obj)
+jobject
+jruby::resolveSymbolById(JNIEnv* env, ID id)
 {
-    return p2j(addSymbol(env, obj, env->GetIntField(obj, RubySymbol_id_field)));
-}
+    jobject obj = env->CallStaticObjectMethod(Symbol_class, RubySymbol_getSymbolLong,
+            jruby::getRuntime(), (jlong) id);
 
-RubySymbol*
-RubySymbol::valueOf(ID id)
-{
-    RubySymbol* s;
-    if ((s = lookup(id)) != NULL) {
-        return s;
+    if (env->IsSameObject(obj, NULL)) {
+        rb_raise(rb_eRuntimeError, "could not resolve symbol ID %lld", (long long) id);
     }
 
-    rb_raise(rb_eNameError, "could not locate symbol for id %ld", id);
-
-    return NULL;
+    if (symbols.size() <= id) {
+        symbols.resize(id + 1);
+    }
+    
+    return symbols[id] = env->NewGlobalRef(obj);
 }
 
 extern "C" ID
@@ -80,30 +75,11 @@ jruby_intern_nonconst(const char* name)
 
     ID id = env->GetIntField(result, RubySymbol_id_field);
 
-    addSymbol(env, result, id);
-    
-    return id;
-}
-
-static RubySymbol*
-lookup(ID id)
-{
-    return id < symbols.size() ? symbols[id] : NULL;
-}
-
-static RubySymbol*
-addSymbol(JNIEnv* env, jobject obj, ID id)
-{
-    RubySymbol* s;
-    if ((s = lookup(id)) != NULL) {
-        return s;
-    }
-
-    s = new RubySymbol(env, obj, id);
     if (symbols.size() <= id) {
         symbols.resize(id + 1);
     }
-    symbols[id] = s;
 
-    return s;
+    symbols[id] = env->NewGlobalRef(result);
+    
+    return id;
 }

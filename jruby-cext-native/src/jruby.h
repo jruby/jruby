@@ -72,6 +72,7 @@ namespace jruby {
     extern jmethodID RubyNumeric_int2fix_method;
     extern jmethodID RubyString_newStringNoCopy;
     extern jmethodID RubyString_view;
+    extern jmethodID RubySymbol_getSymbolLong;
     extern jmethodID GC_trigger;
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;

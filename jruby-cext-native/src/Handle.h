@@ -33,9 +33,15 @@ extern "C" {
 namespace jruby {
 
     class Handle;
-    class RubySymbol;
+    class RubyData;
     extern Handle* constHandles[3];
-    extern std::vector<RubySymbol *> symbols;
+    extern std::vector<jobject> symbols;
+    TAILQ_HEAD(HandleList, Handle);
+    TAILQ_HEAD(DataHandleList, RubyData);
+    SIMPLEQ_HEAD(SyncQueue, Handle);
+    extern HandleList liveHandles, deadHandles;
+    extern DataHandleList dataHandles;
+
 
     class Handle {
     private:
@@ -137,25 +143,7 @@ namespace jruby {
         RubyArray(JNIEnv* env, jobject obj);
         virtual ~RubyArray();
     };
-
-    class RubySymbol : public Handle {
-    public:
-        RubySymbol(JNIEnv* env, jobject obj, int id): Handle(env, obj, T_SYMBOL), id(id) {
-            flags |= FL_CONST;
-        }
-
-        static RubySymbol* valueOf(ID id);
-
-    private:
-        int id;
-    };
-
-    TAILQ_HEAD(HandleList, Handle);
-    TAILQ_HEAD(DataHandleList, RubyData);
-    SIMPLEQ_HEAD(SyncQueue, Handle);
-    extern HandleList liveHandles, deadHandles;
-    extern DataHandleList dataHandles;
-
+    
     extern void runSyncQueue(JNIEnv* env, DataSyncQueue* q);
     
     inline void jsync(JNIEnv* env) {
@@ -176,6 +164,16 @@ namespace jruby {
         }
 
         return v;
+    }
+
+    extern jobject resolveSymbolById(JNIEnv* env, ID id);
+    inline jobject idToObject(JNIEnv* env, ID id) {
+        jobject obj;
+        if (likely(id < symbols.size() && (obj  = symbols[id]) != NULL)) {
+            return obj;
+        }
+
+        return resolveSymbolById(env, id);
     }
 
     extern RubyFixnum* getCachedFixnum(int i);
