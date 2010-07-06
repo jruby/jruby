@@ -99,4 +99,13 @@ public class OrNode extends Node implements BinaryOperatorNode {
    
         return result;    
     }
+
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        if (!context.getRuntime().is1_9()) {
+            return super.definition(runtime, context, self, aBlock);
+        } else {
+            return "expression";
+        }
+    }
 }

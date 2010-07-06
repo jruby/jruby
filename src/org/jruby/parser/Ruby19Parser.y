@@ -1681,18 +1681,13 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      // DStrNode: :"some text #{some expression}"
                      // StrNode: :"some text"
                      // EvStrNode :"#{some expression}"
+                     // Ruby 1.9 allows empty strings as symbols
                      if ($2 == null) {
-                       support.yyerror("empty symbol literal");
-                     }
-                     /* FIXME: No node here seems to be an empty string
-                        instead of an error
-                        if (!($$ = $2)) {
-                        $$ = NEW_LIT(ID2SYM(rb_intern("")));
-                        }
-                     */
-
-                     if ($2 instanceof DStrNode) {
+                         $$ = new SymbolNode($1.getPosition(), "");
+                     } else if ($2 instanceof DStrNode) {
                          $$ = new DSymbolNode($1.getPosition(), $<DStrNode>2);
+                     } else if ($2 instanceof StrNode) {
+                         $$ = new SymbolNode($1.getPosition(), $<StrNode>2.getValue().toString().intern());
                      } else {
                          $$ = new DSymbolNode($1.getPosition());
                          $<DSymbolNode>$.add($2);

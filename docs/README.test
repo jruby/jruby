@@ -18,7 +18,7 @@
 
 2. If you'd like to contribute new tests, we'd prefer you write them via the
 rubyspecs project.  If the tests are very specific to JRuby (like Java
-Integration) we prefer writing rspecs under out specs directory.
+Integration) we prefer writing rspecs under our specs directory.
 
 3. We're also interested in running tests for other ruby software suites; if
 you want to grab your favorite ruby software and run its own tests under JRuby

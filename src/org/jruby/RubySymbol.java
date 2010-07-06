@@ -86,10 +86,12 @@ public class RubySymbol extends RubyObject {
 
         //        assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
-        int length = symbolBytes.getBegin() + symbolBytes.getRealSize();
-        for (int i = symbolBytes.getBegin(); i < length; i++) {
-            if (symbolBytes.getUnsafeBytes()[i] == 0) {
-                throw runtime.newSyntaxError("symbol cannot contain '\\0'");
+        if (!runtime.is1_9()) {
+            int length = symbolBytes.getBegin() + symbolBytes.getRealSize();
+            for (int i = symbolBytes.getBegin(); i < length; i++) {
+                if (symbolBytes.getUnsafeBytes()[i] == 0) {
+                    throw runtime.newSyntaxError("symbol cannot contain '\\0'");
+                }
             }
         }
 
@@ -238,10 +240,12 @@ public class RubySymbol extends RubyObject {
     public IRubyObject inspect19() {
         return inspect19(getRuntime());
     }
+
     @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
     public IRubyObject inspect19(ThreadContext context) {
         return inspect19(context.getRuntime());
     }
+
     private final IRubyObject inspect19(Ruby runtime) {
         
         ByteList result = new ByteList(symbolBytes.getRealSize() + 1);
@@ -250,7 +254,7 @@ public class RubySymbol extends RubyObject {
         result.append(symbolBytes);
 
         RubyString str = RubyString.newString(runtime, result); 
-        if (isPrintable() && isSymbolName(symbol)) { // TODO: 1.9 rb_enc_symname_p
+        if (isPrintable() && isSymbolName19(symbol)) { // TODO: 1.9 rb_enc_symname_p
             return str;
         } else {
             str = (RubyString)str.inspect19();
@@ -440,7 +444,7 @@ public class RubySymbol extends RubyObject {
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
                 RubyArray array = ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
-                if (array.size() == 0) {
+                if (array.isEmpty()) {
                     throw context.getRuntime().newArgumentError("no receiver given");
                 }
                 IRubyObject receiver = array.shift(context);
@@ -450,7 +454,7 @@ public class RubySymbol extends RubyObject {
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
                 RubyArray array = aValue ? (RubyArray)value : ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
-                if (array.size() == 0) {
+                if (array.isEmpty()) {
                     throw context.getRuntime().newArgumentError("no receiver given");
                 }
                 IRubyObject receiver = array.shift(context);
@@ -554,12 +558,31 @@ public class RubySymbol extends RubyObject {
         return true;
     }
 
+    private static boolean isSymbolName19(String s) {
+        if (s == null || s.length() < 1) return false;
+
+        int length = s.length();
+        char c = s.charAt(0);
+        if (isSymbolNameCommon(s, c, length)
+                || (c == '!' && (length == 1 ||
+                    (length == 2 && (s.charAt(1) == '~' || s.charAt(1) == '=')) ) )) {
+            return true;
+        }
+
+        return isSymbolLocal(s, c, length);
+    }
+
     private static boolean isSymbolName(String s) {
         if (s == null || s.length() < 1) return false;
 
         int length = s.length();
-
         char c = s.charAt(0);
+        if (isSymbolNameCommon(s, c, length)) return true;
+        
+        return isSymbolLocal(s, c, length);
+    }
+
+    private static boolean isSymbolNameCommon(String s, char c, int length) {        
         switch (c) {
         case '$':
             if (length > 1 && isSpecialGlobalName(s.substring(1))) {
@@ -574,12 +597,12 @@ public class RubySymbol extends RubyObject {
 
             return isIdentifier(s.substring(offset));
         case '<':
-            return (length == 1 || (length == 2 && (s.equals("<<") || s.equals("<="))) || 
+            return (length == 1 || (length == 2 && (s.equals("<<") || s.equals("<="))) ||
                     (length == 3 && s.equals("<=>")));
         case '>':
             return (length == 1) || (length == 2 && (s.equals(">>") || s.equals(">=")));
         case '=':
-            return ((length == 2 && (s.equals("==") || s.equals("=~"))) || 
+            return ((length == 2 && (s.equals("==") || s.equals("=~"))) ||
                     (length == 3 && s.equals("===")));
         case '*':
             return (length == 1 || (length == 2 && s.equals("**")));
@@ -592,28 +615,31 @@ public class RubySymbol extends RubyObject {
         case '[':
             return s.equals("[]") || s.equals("[]=");
         }
-        
+        return false;
+    }
+
+    private static boolean isSymbolLocal(String s, char c, int length) {
         if (!isIdentStart(c)) return false;
 
         boolean localID = (c >= 'a' && c <= 'z');
         int last = 1;
-        
+
         for (; last < length; last++) {
             char d = s.charAt(last);
-            
+
             if (!isIdentChar(d)) {
                 break;
             }
         }
-                    
+
         if (last == length) {
             return true;
         } else if (localID && last == length - 1) {
             char d = s.charAt(last);
-            
+
             return d == '!' || d == '?' || d == '=';
         }
-        
+
         return false;
     }
     

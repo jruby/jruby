@@ -86,7 +86,13 @@ public class NthRefNode extends Node {
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
         if (backref instanceof RubyMatchData) {
-            if (!((RubyMatchData) backref).group(matchNumber).isNil()) return "$" + matchNumber;
+            if (!((RubyMatchData) backref).group(matchNumber).isNil()) {
+                if (!context.getRuntime().is1_9()) {
+                    return "$" + matchNumber;
+                } else {
+                    return "global-variable";
+                }
+            }
         }
         
         return null;

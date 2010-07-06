@@ -1,2 +1,0 @@
-fails(Match 1.8.7 bugs):Numeric#angle returns NaN if self is NaN
-fails(Match 1.8.7 bugs):Numeric#angle returns Pi if -0.0

@@ -426,10 +426,21 @@ public class RubyObject extends RubyBasicObject {
      * in both the compiler and the interpreter, the performance
      * benefit is important for this method.
      */
-    @JRubyMethod(name = "respond_to?")
+    @JRubyMethod(name = "respond_to?", compat = CompatVersion.RUBY1_8)
     public RubyBoolean respond_to_p(IRubyObject mname) {
         String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, true));
+    }
+
+    @JRubyMethod(name = "respond_to?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject respond_to_p19(IRubyObject mname) {
+        String name = mname.asJavaString();
+        IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, true));
+        if (!respond.isTrue()) {
+            respond = callMethod("respond_to_missing?", mname, getRuntime().getFalse());
+            respond = getRuntime().newBoolean(respond.isTrue());
+        }
+        return respond;
     }
 
     /** obj_respond_to
@@ -449,10 +460,21 @@ public class RubyObject extends RubyBasicObject {
      * in both the compiler and the interpreter, the performance
      * benefit is important for this method.
      */
-    @JRubyMethod(name = "respond_to?")
+    @JRubyMethod(name = "respond_to?", compat = CompatVersion.RUBY1_8)
     public RubyBoolean respond_to_p(IRubyObject mname, IRubyObject includePrivate) {
         String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
+    }
+
+    @JRubyMethod(name = "respond_to?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject respond_to_p19(IRubyObject mname, IRubyObject includePrivate) {
+        String name = mname.asJavaString();
+        IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
+        if (!respond.isTrue()) {
+            respond = callMethod("respond_to_missing?", mname, includePrivate);
+            respond = getRuntime().newBoolean(respond.isTrue());
+        }
+        return respond;
     }
 
     /** rb_obj_id

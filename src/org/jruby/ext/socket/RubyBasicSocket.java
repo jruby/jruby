@@ -93,6 +93,7 @@ public class RubyBasicSocket extends RubyIO {
 
     public RubyBasicSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
+        doNotReverseLookup = runtime.is1_9();
     }
     
     protected void initSocket(Ruby runtime, ChannelDescriptor descriptor) {

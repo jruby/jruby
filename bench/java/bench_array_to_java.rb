@@ -8,6 +8,6 @@ TIMES.times do
     bm.report("control") {a = [1,2,3,4]; 100_000.times {a}}
     bm.report("ary.to_java") {a = [1,2,3,4]; 100_000.times {a.to_java}}
     bm.report("ary.to_java :object") {a = [1,2,3,4]; 100_000.times {a.to_java :object}}
-    bm.report("ary.to_java :string") {a = [1,2,3,4]; 100_000.times {a.to_java :string}}
+    bm.report("ary.to_java :string") {a = [1,2,3,4]; 100_000.times {a.to_s.to_java :string}}
   end
 end
