@@ -183,7 +183,7 @@ rb_str_ptr_readonly(VALUE v)
 extern "C" char*
 jruby_str_ptr(VALUE v)
 {
-    return jruby_str_rstring(v)->as.heap.ptr;
+    return jruby_rstring(v)->as.heap.ptr;
 }
 
 extern "C" int
@@ -192,8 +192,8 @@ jruby_str_length(VALUE v)
     return jruby_str(v)->length();
 }
 
-struct RString*
-jruby_str_rstring(VALUE v)
+extern "C" struct RString*
+jruby_rstring(VALUE v)
 {
     return jruby_str(v)->toRString(false);
 }

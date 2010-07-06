@@ -337,12 +337,12 @@ struct RString {
     } as;
 };
 
-extern struct RString* jruby_str_rstring(VALUE v);
+extern struct RString* jruby_rstring(VALUE v);
 extern int jruby_str_length(VALUE v);
 extern char* jruby_str_ptr(VALUE v);
 extern char* rb_str_ptr_readonly(VALUE v);
 
-#define RSTRING(v) jruby_str_rstring((v))
+#define RSTRING(v) jruby_rstring((v))
 #define RSTRING_LEN(v) jruby_str_length((v))
 #define RSTRING_PTR(v) jruby_str_ptr((v))
 
