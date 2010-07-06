@@ -38,7 +38,7 @@ rb_type(VALUE obj)
         if (obj == Qfalse) return T_FALSE;
 
     } else {
-        return Handle::valueOf(obj)->type;
+        return Handle::valueOf(obj)->getType();
     }
 }
 

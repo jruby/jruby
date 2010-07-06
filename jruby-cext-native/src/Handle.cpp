@@ -46,8 +46,8 @@ Handle::Handle()
 Handle::Handle(JNIEnv* env, jobject obj_, int type_)
 {
     Init();
+    setType(type_);
     this->obj = env->NewGlobalRef(obj_);
-    this->type = type_;
 }
 
 Handle::~Handle()
@@ -58,7 +58,7 @@ void
 Handle::Init()
 {
     flags = 0;
-    type = T_NONE;
+    setType(T_NONE);
     TAILQ_INSERT_TAIL(&liveHandles, this, all);
     
     if (++allocCount > GC_THRESHOLD) {

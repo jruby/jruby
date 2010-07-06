@@ -61,11 +61,18 @@ namespace jruby {
             }
         }
 
+        inline int getType() {
+            return flags & T_MASK;
+        }
+
+        inline void setType(int type_) {
+            this->flags |= (type_ & T_MASK);
+        }
+
         static Handle* specialHandle(VALUE v);
 
         jobject obj;
         int flags;
-        int type;
         TAILQ_ENTRY(Handle) all;
     };
 

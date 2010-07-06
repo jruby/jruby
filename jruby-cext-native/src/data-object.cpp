@@ -43,7 +43,7 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
     h->data = data;
     h->dmark = dmark;
     h->dfree = dfree;
-    h->type = T_DATA;
+    h->setType(T_DATA);
 
     jvalue params[3];
     params[0].l = getRuntime();

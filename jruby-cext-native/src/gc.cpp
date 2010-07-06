@@ -71,7 +71,7 @@ Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
 
         if ((h->flags & (FL_MARK | FL_CONST)) == 0) {
 
-            if (unlikely(h->type == T_DATA)) {
+            if (unlikely(h->getType() == T_DATA)) {
                 if ((h->flags & FL_WEAK) == 0) {
                     h->flags |= FL_WEAK;
                     jobject obj = env->NewWeakGlobalRef(h->obj);

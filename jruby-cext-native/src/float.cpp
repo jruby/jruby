@@ -8,7 +8,7 @@ using namespace jruby;
 
 RubyFloat::RubyFloat(double value)
 {
-    type = T_FLOAT;
+    setType(T_FLOAT);
     rfloat.value = value;
 }
 
@@ -21,7 +21,7 @@ extern "C" struct RFloat*
 jruby_rfloat(VALUE v)
 {
     Handle* h = Handle::valueOf(v);
-    if (h->type == T_FLOAT) {
+    if (h->getType() == T_FLOAT) {
         return ((RubyFloat *) h)->toRFloat();
     }
 
@@ -50,7 +50,7 @@ extern "C" double
 jruby_float_value(VALUE v)
 {
     Handle* h = Handle::valueOf(v);
-    if (h->type == T_FLOAT) {
+    if (h->getType() == T_FLOAT) {
         return ((RubyFloat *) h)->doubleValue();
     }
 
@@ -61,7 +61,7 @@ extern "C" double
 rb_num2dbl(VALUE v)
 {
     Handle* h = Handle::valueOf(v);
-    if (h->type == T_FLOAT) {
+    if (h->getType() == T_FLOAT) {
         return ((RubyFloat *) h)->doubleValue();
     }
 

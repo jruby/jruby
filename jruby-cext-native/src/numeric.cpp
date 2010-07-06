@@ -71,7 +71,7 @@ rb_num2ll(VALUE v)
     }
 
     Handle* h = Handle::valueOf(v);
-    if (h->type == T_FIXNUM) {
+    if (h->getType() == T_FIXNUM) {
         return ((RubyFixnum *) h)->longValue();
     }
 
