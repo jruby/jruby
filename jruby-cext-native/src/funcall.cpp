@@ -81,5 +81,5 @@ jruby_funcall(JNIEnv* env, VALUE recv, ID meth, jobjectArray argArray)
 
     nsync(env);
 
-    return (VALUE) ret;
+    return makeStrongRef(env, (VALUE) ret);
 }

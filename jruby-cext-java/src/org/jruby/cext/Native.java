@@ -95,6 +95,8 @@ final class Native {
     final native long getTrue();
     final native long getFalse();
 
+    static native void freeHandle(long handle);
+
     static native long newRString();
     static native void freeRString(long address);
     

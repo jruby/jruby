@@ -60,7 +60,7 @@ Handle::Init()
     flags = 0;
     type = T_NONE;
     TAILQ_INSERT_TAIL(&liveHandles, this, all);
-
+    
     if (++allocCount > GC_THRESHOLD) {
         allocCount = 0;
         JLocalEnv env;
@@ -81,6 +81,15 @@ Handle::specialHandle(VALUE v)
 
     rb_raise(rb_eTypeError, "%llx is not a valid handle", (unsigned long long) v);
     return NULL;
+}
+
+void
+Handle::makeStrong_(JNIEnv* env)
+{
+    flags |= FL_WEAK;
+    jobject tmp = env->NewGlobalRef(obj);
+    env->DeleteWeakGlobalRef(obj);
+    obj = tmp;
 }
 
 RubyFixnum::RubyFixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_, T_FIXNUM)
@@ -283,6 +292,27 @@ Java_org_jruby_cext_Native_newFloatHandle(JNIEnv* env, jobject self, jobject obj
     return jruby::p2j(new RubyFloat(env, obj, value));
 }
 
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    freeHandle
+ * Signature: (J)V
+ */
+extern "C" JNIEXPORT void
+JNICALL Java_org_jruby_cext_Native_freeHandle(JNIEnv* env, jclass self, jlong address)
+{
+    Handle* h = reinterpret_cast<Handle*>(address);
+
+    TAILQ_REMOVE(&liveHandles, h, all);
+
+    if ((h->flags & FL_WEAK) != 0) {
+        env->DeleteWeakGlobalRef(h->obj);
+    } else {
+        env->DeleteGlobalRef(h->obj);
+    }
+
+    delete h;
+}
+
 
 jobject
 jruby::valueToObject(JNIEnv* env, VALUE v)
@@ -300,7 +330,16 @@ jruby::valueToObject(JNIEnv* env, VALUE v)
 
     }
 
-    return env->NewLocalRef(Handle::valueOf(v)->obj);
+    Handle* h = Handle::valueOf(v);
+    jobject obj = env->NewLocalRef(h->obj);
+
+    if (unlikely((h->flags & FL_WEAK) != 0)) {
+        if (unlikely(env->IsSameObject(obj, NULL))) {
+            rb_raise(rb_eRuntimeError, "weak handle is null");
+        }
+    }
+
+    return obj;
 }
 
 VALUE

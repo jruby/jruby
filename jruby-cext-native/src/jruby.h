@@ -133,6 +133,8 @@ namespace jruby {
 
 // FIXME - no need to match ruby here, unless we fold type into flags
 #define FL_MARK      (1<<5)
+#define FL_LIVE      (1<<9)
+#define FL_WEAK      (1<<10)
 #define FL_CONST     (1<<11)
 
 #define FL_USHIFT    12

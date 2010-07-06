@@ -43,13 +43,22 @@ namespace jruby {
     class Handle {
     private:
         void Init();
+        void makeStrong_(JNIEnv* env);
+
+
     public:
         Handle();
         Handle(JNIEnv* env, jobject obj, int type_ = T_NONE);
         virtual ~Handle();
-        
+
         static inline Handle* valueOf(VALUE v) {
             return likely(!SPECIAL_CONST_P(v)) ? (Handle *) v : specialHandle(v);
+        }
+
+        inline void makeStrong(JNIEnv* env) {
+            if (unlikely((flags & FL_WEAK) != 0)) {
+                makeStrong_(env);
+            }
         }
 
         static Handle* specialHandle(VALUE v);
@@ -155,6 +164,14 @@ namespace jruby {
         if (unlikely(!TAILQ_EMPTY(&nsyncq))) {
             runSyncQueue(env, &nsyncq);
         }
+    }
+
+    inline VALUE makeStrongRef(JNIEnv* env, VALUE v) {
+        if (!SPECIAL_CONST_P(v)) {
+            Handle::valueOf(v)->makeStrong(env);
+        }
+
+        return v;
     }
 
     extern RubyFixnum* getCachedFixnum(int i);

@@ -70,8 +70,19 @@ Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
         Handle* next = TAILQ_NEXT(h, all);
 
         if ((h->flags & (FL_MARK | FL_CONST)) == 0) {
-            TAILQ_REMOVE(&liveHandles, h, all);
-            TAILQ_INSERT_TAIL(&deadHandles, h, all);
+
+            if (unlikely(h->type == T_DATA)) {
+                if ((h->flags & FL_WEAK) == 0) {
+                    h->flags |= FL_WEAK;
+                    jobject obj = env->NewWeakGlobalRef(h->obj);
+                    env->DeleteGlobalRef(h->obj);
+                    h->obj = obj;
+                }
+                
+            } else {
+                TAILQ_REMOVE(&liveHandles, h, all);
+                TAILQ_INSERT_TAIL(&deadHandles, h, all);
+            }
 
         } else if ((h->flags & FL_MARK) != 0) {
             h->flags &= ~FL_MARK;

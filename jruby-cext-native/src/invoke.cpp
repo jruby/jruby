@@ -111,10 +111,11 @@ Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject 
 
         VALUE* values = (VALUE *) alloca(argCount * sizeof(VALUE));
         for (int i = 0; i < argCount; ++i) {
-            values[i] = (VALUE) largs[i];
+            values[i] = makeStrongRef(env, (VALUE) largs[i]);
         }
 
         InvocationSession session(env);
+        makeStrongRef(env, (VALUE) recv);
         VALUE v = dispatch((void *) address, arity, argCount, (VALUE) recv, values);
         return valueToObject(env, v);    
         
@@ -140,6 +141,7 @@ Java_org_jruby_cext_Native_callMethod0(JNIEnv* env, jobject self, jlong fn, jlon
     try {
 
         InvocationSession session(env);
+        makeStrongRef(env, (VALUE) recv);
         return valueToObject(env, ((VALUE (*)(VALUE)) fn)((VALUE) recv));
 
     } catch (jruby::JavaException& ex) {
@@ -162,6 +164,8 @@ Java_org_jruby_cext_Native_callMethod1(JNIEnv* env, jobject self, jlong fn, jlon
 {
     try {
         InvocationSession session(env);
+        makeStrongRef(env, (VALUE) recv);
+        makeStrongRef(env, (VALUE) arg1);
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1));
 
     } catch (jruby::JavaException& ex) {
@@ -185,6 +189,9 @@ Java_org_jruby_cext_Native_callMethod2(JNIEnv* env, jobject self, jlong fn, jlon
 {
     try {
         InvocationSession session(env);
+        makeStrongRef(env, (VALUE) recv);
+        makeStrongRef(env, (VALUE) arg1);
+        makeStrongRef(env, (VALUE) arg2);
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2));
 
     } catch (jruby::JavaException& ex) {
@@ -208,6 +215,11 @@ Java_org_jruby_cext_Native_callMethod3(JNIEnv* env, jobject self, jlong fn, jlon
 {
     try {
         InvocationSession session(env);
+        makeStrongRef(env, (VALUE) recv);
+        makeStrongRef(env, (VALUE) arg1);
+        makeStrongRef(env, (VALUE) arg2);
+        makeStrongRef(env, (VALUE) arg3);
+        
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2, (VALUE) arg3));
 
     } catch (jruby::JavaException& ex) {
