@@ -29,6 +29,7 @@ package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
 import org.jruby.platform.Platform;
+import org.jruby.util.JRubyFile;
 
 public class LoadService19 extends LoadService {
     
@@ -43,5 +44,10 @@ public class LoadService19 extends LoadService {
             path = path.replace('\\', '/');
         }
         return path;
+    }
+
+    @Override
+    protected String getFileName(JRubyFile file, String nameWithSuffix) {
+        return file.getAbsolutePath();
     }
 }

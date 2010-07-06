@@ -825,11 +825,7 @@ public class LoadService {
                 debugLogTry("resourceFromCWD", file.toString());
                 if (file.isFile() && file.isAbsolute() && file.canRead()) {
                     boolean absolute = true;
-                    String s = namePlusSuffix;
-                    if(!namePlusSuffix.startsWith("./")) {
-                        s = "./" + s;
-                    }
-                    foundResource = new LoadServiceResource(file, s, absolute);
+                    foundResource = new LoadServiceResource(file, getFileName(file, namePlusSuffix), absolute);
                     debugLogFound(foundResource);
                     state.loadName = resolveLoadName(foundResource, namePlusSuffix);
                     break;
@@ -1259,5 +1255,13 @@ public class LoadService {
 
     protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
         return previousPath;
+    }
+
+    protected String getFileName(JRubyFile file, String namePlusSuffix) {
+        String s = namePlusSuffix;
+        if(!namePlusSuffix.startsWith("./")) {
+            s = "./" + s;
+        }
+        return s;
     }
 }
