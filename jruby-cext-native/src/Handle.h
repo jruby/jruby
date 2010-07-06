@@ -30,9 +30,6 @@
 extern "C" {
 #endif
 
-#define CONST_MASK (0x7UL)
-#define IS_CONST(x) (((x) & ~CONST_MASK) == 0L)
-
 namespace jruby {
 
     class Handle;

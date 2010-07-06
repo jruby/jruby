@@ -235,16 +235,13 @@ Java_org_jruby_cext_Native_initNative(JNIEnv* env, jobject self, jobject runtime
         loadIds(env);
         jruby::runtime = env->NewGlobalRef(runtime);
         
-        constHandles[0] = new Handle(env, callObjectMethod(env, runtime, Ruby_getFalse_method));
-        constHandles[0]->setType(T_FALSE);
+        constHandles[0] = new Handle(env, callObjectMethod(env, runtime, Ruby_getFalse_method), T_FALSE);
         constHandles[0]->flags |= FL_CONST;
 
-        constHandles[1] = new Handle(env, callObjectMethod(env, runtime, Ruby_getTrue_method));
-        constHandles[1]->setType(T_TRUE);
+        constHandles[1] = new Handle(env, callObjectMethod(env, runtime, Ruby_getTrue_method), T_TRUE);
         constHandles[1]->flags |= FL_CONST;
 
-        constHandles[2] = new Handle(env, callObjectMethod(env, runtime, Ruby_getNil_method));
-        constHandles[2]->setType(T_NIL);
+        constHandles[2] = new Handle(env, callObjectMethod(env, runtime, Ruby_getNil_method), T_NIL);
         constHandles[2]->flags |= FL_CONST;
         
         initRubyClasses(env, runtime);
