@@ -57,7 +57,7 @@ callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE*
     nsync(env);
     checkExceptions(env);
 
-    return (VALUE) ret;
+    return makeStrongRef(env, (VALUE) ret);
 }
 
 static jobject
