@@ -81,6 +81,24 @@ rb_num2ll(VALUE v)
     return (long long) result;
 }
 
+extern "C" char
+rb_num2chr(VALUE v)
+{
+    JLocalEnv env;
+    jbyte result = env->CallStaticByteMethod(RubyNumeric_class, RubyNumeric_num2chr_method, valueToObject(env, v));
+    checkExceptions(env);
+    return (char) result;
+}
+
+extern "C" double
+rb_num2dbl(VALUE v)
+{
+    JLocalEnv env;
+    jdouble result = env->CallStaticDoubleMethod(RubyNumeric_class, RubyNumeric_num2dbl_method, valueToObject(env, v));
+    checkExceptions(env);
+    return (double) result;
+}
+
 extern "C" unsigned long long
 rb_num2ull(VALUE v)
 {

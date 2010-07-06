@@ -156,6 +156,8 @@ void xfree(void*);
 #define NUM2ULONG(x) rb_num2ulong(x)
 /** Convert a VALUE into an int. */
 #define NUM2INT(x) ((int) rb_num2int(x))
+/** Convert a VALUE into a chr */
+#define NUM2CHR(x) rb_num2chr(x)
 /** Convert a VALUE into a long int. */
 #define NUM2UINT(x) ((int) rb_num2uint(x))
 /** Convert a VALUE into a long long */
@@ -217,6 +219,8 @@ long rb_num2long(VALUE);
 unsigned long rb_num2ulong(VALUE);
 long rb_num2int(VALUE);
 unsigned long rb_num2uint(VALUE);
+char rb_num2chr(VALUE);
+double rb_num2dbl(VALUE);
 long rb_fix2int(VALUE);
 unsigned long rb_fix2uint(VALUE);
 long long rb_num2ll(VALUE);

@@ -36,6 +36,7 @@ namespace jruby {
     extern jclass RaiseException_class;
     extern jclass RubyModule_class;
     extern jclass RubyNumeric_class;
+    extern jclass RubyFloat_class;
     extern jclass RubyString_class;
     extern jclass IRubyObject_class;
     extern jclass GC_class;
@@ -60,6 +61,8 @@ namespace jruby {
     extern jmethodID RubyData_newRubyData_method;
     extern jmethodID RaiseException_constructor;
     extern jmethodID RubyNumeric_num2long_method;
+    extern jmethodID RubyNumeric_num2chr_method;
+    extern jmethodID RubyNumeric_num2dbl_method;
     extern jmethodID RubyString_newStringNoCopy;
     extern jmethodID GC_trigger;
     extern jmethodID Handle_valueOf;

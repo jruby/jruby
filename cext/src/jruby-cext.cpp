@@ -33,6 +33,7 @@ namespace jruby {
     jclass RubyData_class;
     jclass RubyModule_class;
     jclass RubyNumeric_class;
+    jclass RubyFloat_class;
     jclass RubyString_class;
     jclass Handle_class;
     jclass GC_class;
@@ -62,6 +63,8 @@ namespace jruby {
     jmethodID RubyData_newRubyData_method;
     jmethodID RubyObject_getNativeTypeIndex_method;
     jmethodID RubyNumeric_num2long_method;
+    jmethodID RubyNumeric_num2chr_method;
+    jmethodID RubyNumeric_num2dbl_method;
     jmethodID RubyString_newStringNoCopy;
     jmethodID IRubyObject_callMethod;
     jmethodID IRubyObject_asJavaString_method;
@@ -130,7 +133,6 @@ jruby::getFieldID(JNIEnv* env, jclass klass, const char* fieldName, const char* 
     return fid;
 }
 
-
 static void
 loadIds(JNIEnv* env)
 {
@@ -142,6 +144,7 @@ loadIds(JNIEnv* env)
     RubyData_class = loadClass(env, "org/jruby/cext/RubyData");
     RubyModule_class = loadClass(env, "org/jruby/RubyModule");
     RubyNumeric_class = loadClass(env, "org/jruby/RubyNumeric");
+    RubyFloat_class = loadClass(env, "org/jruby/RubyFloat");
     RubyString_class = loadClass(env, "org/jruby/RubyString");
     IRubyObject_class = loadClass(env, "org/jruby/runtime/builtin/IRubyObject");
     Handle_class = loadClass(env, "org/jruby/cext/Handle");
@@ -167,8 +170,13 @@ loadIds(JNIEnv* env)
     RaiseException_constructor = getMethodID(env, RaiseException_class, "<init>",
             "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;Ljava/lang/String;Z)V");
     RubyObject_getNativeTypeIndex_method = getMethodID(env, RubyObject_class, "getNativeTypeIndex", "()I");
+    
     RubyNumeric_num2long_method = getStaticMethodID(env, RubyNumeric_class, "num2long",
             "(Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    RubyNumeric_num2chr_method = getStaticMethodID(env, RubyNumeric_class, "num2chr",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;)B");
+    RubyNumeric_num2dbl_method = getStaticMethodID(env, RubyNumeric_class, "num2dbl",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;)D");
 
     GC_trigger = getStaticMethodID(env, GC_class, "trigger", "()V");
     Handle_valueOf = getStaticMethodID(env, Handle_class, "valueOf", "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/cext/Handle;");
