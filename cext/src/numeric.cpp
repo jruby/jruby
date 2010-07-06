@@ -117,6 +117,11 @@ rb_uint2inum(unsigned long v)
     return rb_ull2inum(v);
 }
 
+extern "C" VALUE
+rb_Integer(VALUE object_handle) {
+    return rb_funcall(object_handle, rb_intern("to_i"), 0);
+}
+
 static inline VALUE
 newNumber(jmethodID method, long long v)
 {
