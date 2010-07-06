@@ -315,28 +315,20 @@ jobject
 jruby::valueToObject(JNIEnv* env, VALUE v)
 {
     if (FIXNUM_P(v)) {
-        RubyFixnum* n = getCachedFixnum(RSHIFT((SIGNED_VALUE) v,1));
-        if (n != NULL) {
-            return env->NewLocalRef(n->obj);
-        }
-
-        jvalue params[2];
-        params[0].l = jruby::getRuntime();
-        params[1].j = (jlong) v;
-        return env->CallStaticObjectMethodA(RubyNumeric_class, RubyNumeric_int2fix_method, params);
-
-    
+        return fixnumToObject(env, v);
+        
     } else if (SYMBOL_P(v)) {
         return idToObject(env, SYM2ID(v));
     }
 
     Handle* h = Handle::valueOf(v);
-    jobject obj = env->NewLocalRef(h->obj);
+    if (likely((h->flags & FL_WEAK) == 0)) {
+        return h->obj;
+    }
 
-    if (unlikely((h->flags & FL_WEAK) != 0)) {
-        if (unlikely(env->IsSameObject(obj, NULL))) {
-            rb_raise(rb_eRuntimeError, "weak handle is null");
-        }
+    jobject obj = env->NewLocalRef(h->obj);
+    if (unlikely(env->IsSameObject(obj, NULL))) {
+        rb_raise(rb_eRuntimeError, "weak handle is null");
     }
 
     return obj;

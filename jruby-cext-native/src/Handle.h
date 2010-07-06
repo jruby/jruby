@@ -176,7 +176,7 @@ namespace jruby {
         return resolveSymbolById(env, id);
     }
 
-    extern RubyFixnum* getCachedFixnum(int i);
+    extern jobject fixnumToObject(JNIEnv* env, VALUE v);
 }
 
 #ifdef	__cplusplus
