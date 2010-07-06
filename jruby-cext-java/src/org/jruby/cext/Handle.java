@@ -73,7 +73,7 @@ public final class Handle {
         return "Native ruby object " + Long.toString(address);
     }
 
-    static Handle valueOfLocked(IRubyObject obj) {
+    static Handle valueOf(IRubyObject obj) {
         Handle h = GC.lookup(obj);
         if (h != null) {
             return h;
@@ -118,22 +118,13 @@ public final class Handle {
         return handle;
     }
 
-    public static synchronized Handle valueOf(IRubyObject obj) {
-        GIL.acquire();
-        try {
-            return valueOfLocked(obj);
-        } finally {
-            GIL.releaseNoCleanup();
-        }
-    }
-
-    static long nativeHandleLocked(IRubyObject obj) {
+    static long nativeHandle(IRubyObject obj) {
         if (obj.getClass() == RubyFixnum.class) {
             final long val = ((RubyFixnum) obj).getLongValue();
             if (val < FIXNUM_MAX && val >= FIXNUM_MIN) {
                 return ((val << 1) | 0x1);
             }
         }
-        return Handle.valueOfLocked(obj).getAddress();
+        return Handle.valueOf(obj).getAddress();
     }
 }

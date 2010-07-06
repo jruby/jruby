@@ -38,7 +38,7 @@ public class JRuby {
         IRubyObject retval = recv.callMethod(recv.getRuntime().getCurrentContext(),
                 methodName.toString(), args);
 
-        return Handle.nativeHandleLocked(retval);
+        return Handle.nativeHandle(retval);
     }
 
     public static long newString(Ruby runtime, byte[] bytes, boolean tainted) {
@@ -47,7 +47,7 @@ public class JRuby {
             retval.setTaint(tainted);
         }
 
-        return Handle.nativeHandleLocked(retval);
+        return Handle.nativeHandle(retval);
     }
 
     public static DynamicMethod newMethod(RubyModule module, long fn, int arity) {
@@ -120,7 +120,7 @@ public class JRuby {
     }
 
     public static long int2big(Ruby runtime, long l) {
-        return Handle.nativeHandleLocked(RubyBignum.newBignum(runtime, l));
+        return Handle.nativeHandle(RubyBignum.newBignum(runtime, l));
     }
 
     public static long uint2big(Ruby runtime, long l) {
@@ -128,6 +128,6 @@ public class JRuby {
                     ? RubyBignum.newBignum(runtime, BigInteger.valueOf(l & 0x7fffffffffffffffL).add(UINT64_BASE))
                     : RubyBignum.newBignum(runtime, l);
 
-        return Handle.nativeHandleLocked(retval);
+        return Handle.nativeHandle(retval);
     }
 }

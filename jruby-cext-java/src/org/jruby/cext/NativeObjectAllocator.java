@@ -35,7 +35,7 @@ public final class NativeObjectAllocator implements ObjectAllocator {
         ThreadContext context = runtime.getCurrentContext();
         GIL.acquire();
         try {
-            return Native.getInstance(runtime).callMethod0(function, Handle.nativeHandleLocked(klass));
+            return Native.getInstance(runtime).callMethod0(function, Handle.nativeHandle(klass));
         } finally {
             GIL.release(context);
         }

@@ -72,9 +72,9 @@ final class Native {
     public final IRubyObject callMethod(ThreadContext ctx, long fn, IRubyObject recv, int arity, IRubyObject[] args) {
         long[] largs = new long[args.length];
         for (int i = 0; i < largs.length; ++i) {
-            largs[i] = Handle.nativeHandleLocked(args[i]);
+            largs[i] = Handle.nativeHandle(args[i]);
         }
-        return callMethod(ctx, fn, Handle.nativeHandleLocked(recv), arity, largs);
+        return callMethod(ctx, fn, Handle.nativeHandle(recv), arity, largs);
     }
 
     final native IRubyObject callMethod(ThreadContext ctx, long fn, long recv, int arity, long[] args);
