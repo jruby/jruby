@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -25,21 +25,21 @@
 using namespace jruby;
 
 extern "C" int
-rb_type(VALUE val)
+rb_type(VALUE obj)
 {
-    Handle* h = Handle::valueOf(val);
-    if (h->type != T_NONE) {
-        return h->type;
-    }
+    if (IMMEDIATE_P(obj)) {
+        if (FIXNUM_P(obj)) return T_FIXNUM;
+        if (obj == Qtrue) return T_TRUE;
+        if (SYMBOL_P(obj)) return T_SYMBOL;
+        if (obj == Qundef) return T_UNDEF;
 
-    // Lazy lookup the type
-    JLocalEnv env;
-    jobject obj = env->NewLocalRef(h->obj);
-    if (env->IsSameObject(obj, NULL)) {
-        rb_raise(rb_eRuntimeError, "failed to get type of NULL object");
-    }
+    } else if (!RTEST(obj)) {
+        if (obj == Qnil) return T_NIL;
+        if (obj == Qfalse) return T_FALSE;
 
-    return h->type = typeOf(env, obj);
+    } else {
+        return Handle::valueOf(obj)->getType();
+    }
 }
 
 static struct types {

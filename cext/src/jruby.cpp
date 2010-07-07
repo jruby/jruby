@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -25,6 +25,7 @@
 #include "JLocalEnv.h"
 #include "jruby.h"
 #include "ruby.h"
+#include "Handle.h"
 #include "JUtil.h"
 #include "JavaException.h"
 
@@ -33,6 +34,9 @@ using namespace jruby;
 static VALUE
 callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE* args)
 {
+
+    jsync(env);
+
     jobjectArray argArray;
 
     argArray = env->NewObjectArray(argCount, IRubyObject_class, NULL);
@@ -49,9 +53,11 @@ callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE*
 
     jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
     checkExceptions(env);
-    Handle::valueOf((VALUE) ret)->makeStrong(env);
 
-    return (VALUE) ret;
+    nsync(env);
+    checkExceptions(env);
+
+    return makeStrongRef(env, (VALUE) ret);
 }
 
 static jobject
@@ -165,5 +171,24 @@ jruby::getClass(JNIEnv* env, const char* className)
 VALUE
 jruby::getClass(const char* className)
 {
-    return getClass(JLocalEnv(), className);
+    JLocalEnv env;
+    return getClass(env, className);
+}
+
+jobject
+jruby::getFalse()
+{
+    return constHandles[0]->obj;
+}
+
+jobject
+jruby::getTrue()
+{
+    return constHandles[1]->obj;
+}
+
+jobject
+jruby::getNil()
+{
+    return constHandles[2]->obj;
 }

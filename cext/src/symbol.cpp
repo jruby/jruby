@@ -27,17 +27,38 @@
 
 #include "JLocalEnv.h"
 #include "jruby.h"
+#include "Handle.h"
 #include "JUtil.h"
 #include "ruby.h"
 
-static std::map<const char*, VALUE> constSymbolMap;
+
 
 using namespace jruby;
+
+static std::map<const char*, ID> constSymbolMap;
+std::vector<jobject> jruby::symbols;
+
+jobject
+jruby::resolveSymbolById(JNIEnv* env, ID id)
+{
+    jobject obj = env->CallStaticObjectMethod(Symbol_class, RubySymbol_getSymbolLong,
+            jruby::getRuntime(), (jlong) id);
+
+    if (env->IsSameObject(obj, NULL)) {
+        rb_raise(rb_eRuntimeError, "could not resolve symbol ID %lld", (long long) id);
+    }
+
+    if (symbols.size() <= id) {
+        symbols.resize(id + 1);
+    }
+    
+    return symbols[id] = env->NewGlobalRef(obj);
+}
 
 extern "C" ID
 rb_intern_const(const char* name)
 {
-    std::map<const char*, VALUE>::iterator it = constSymbolMap.find(name);
+    std::map<const char*, ID>::iterator it = constSymbolMap.find(name);
     if (it != constSymbolMap.end()) {
         return it->second;
     }
@@ -52,9 +73,13 @@ jruby_intern_nonconst(const char* name)
     jobject result = env->CallObjectMethod(getRuntime(), Ruby_newSymbol_method, env->NewStringUTF(name));
     checkExceptions(env);
 
-    VALUE v = objectToValue(env, result);
-    Handle* h = (Handle *) v;
-    h->type = T_SYMBOL;
+    ID id = env->GetIntField(result, RubySymbol_id_field);
 
-    return v;
+    if (symbols.size() <= id) {
+        symbols.resize(id + 1);
+    }
+
+    symbols[id] = env->NewGlobalRef(result);
+    
+    return id;
 }

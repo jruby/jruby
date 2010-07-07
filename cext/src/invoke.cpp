@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -23,6 +23,7 @@
 
 #include "ruby.h"
 #include "jruby.h"
+#include "Handle.h"
 #include "JUtil.h"
 #include "JavaException.h"
 #include "org_jruby_cext_Native.h"
@@ -30,6 +31,39 @@
 using namespace jruby;
 
 static VALUE dispatch(void* func, int arity, int argCount, VALUE recv, VALUE* v);
+static int invokeLevel = 0;
+
+static void clearSyncQueue(DataSyncQueue* q);
+
+class InvocationSession {
+private:
+    JNIEnv* env;
+public:
+    InvocationSession(JNIEnv* env_) {
+        ++invokeLevel;
+        this->env = env_;
+
+        nsync(env);
+    }
+
+    ~InvocationSession() {
+        --invokeLevel;
+
+        if (unlikely(!TAILQ_EMPTY(&jsyncq))) {
+            runSyncQueue(env, &jsyncq);
+            if (invokeLevel < 1) {
+                clearSyncQueue(&jsyncq);
+            }
+        }
+
+        if (unlikely(!TAILQ_EMPTY(&nsyncq))) {
+            if (invokeLevel < 1) {
+                clearSyncQueue(&nsyncq);
+            }
+        }
+    }
+};
+
 
 /*
  * Class:     org_jruby_cext_Native
@@ -77,10 +111,11 @@ Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject 
 
         VALUE* values = (VALUE *) alloca(argCount * sizeof(VALUE));
         for (int i = 0; i < argCount; ++i) {
-            values[i] = (VALUE) largs[i];
-            Handle::valueOf(values[i])->makeStrong(env);
+            values[i] = makeStrongRef(env, (VALUE) largs[i]);
         }
 
+        InvocationSession session(env);
+        makeStrongRef(env, (VALUE) recv);
         VALUE v = dispatch((void *) address, arity, argCount, (VALUE) recv, values);
         return valueToObject(env, v);    
         
@@ -105,6 +140,8 @@ Java_org_jruby_cext_Native_callMethod0(JNIEnv* env, jobject self, jlong fn, jlon
 {
     try {
 
+        InvocationSession session(env);
+        makeStrongRef(env, (VALUE) recv);
         return valueToObject(env, ((VALUE (*)(VALUE)) fn)((VALUE) recv));
 
     } catch (jruby::JavaException& ex) {
@@ -126,7 +163,9 @@ JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_callMethod1(JNIEnv* env, jobject self, jlong fn, jlong recv, jlong arg1)
 {
     try {
-        Handle::valueOf((VALUE) arg1)->makeStrong(env);
+        InvocationSession session(env);
+        makeStrongRef(env, (VALUE) recv);
+        makeStrongRef(env, (VALUE) arg1);
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1));
 
     } catch (jruby::JavaException& ex) {
@@ -149,8 +188,10 @@ Java_org_jruby_cext_Native_callMethod2(JNIEnv* env, jobject self, jlong fn, jlon
         jlong arg1, jlong arg2)
 {
     try {
-        Handle::valueOf((VALUE) arg1)->makeStrong(env);
-        Handle::valueOf((VALUE) arg2)->makeStrong(env);
+        InvocationSession session(env);
+        makeStrongRef(env, (VALUE) recv);
+        makeStrongRef(env, (VALUE) arg1);
+        makeStrongRef(env, (VALUE) arg2);
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2));
 
     } catch (jruby::JavaException& ex) {
@@ -173,10 +214,12 @@ Java_org_jruby_cext_Native_callMethod3(JNIEnv* env, jobject self, jlong fn, jlon
         jlong arg1, jlong arg2, jlong arg3)
 {
     try {
-
-        Handle::valueOf((VALUE) arg1)->makeStrong(env);
-        Handle::valueOf((VALUE) arg2)->makeStrong(env);
-        Handle::valueOf((VALUE) arg3)->makeStrong(env);
+        InvocationSession session(env);
+        makeStrongRef(env, (VALUE) recv);
+        makeStrongRef(env, (VALUE) arg1);
+        makeStrongRef(env, (VALUE) arg2);
+        makeStrongRef(env, (VALUE) arg3);
+        
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2, (VALUE) arg3));
 
     } catch (jruby::JavaException& ex) {
@@ -221,3 +264,11 @@ dispatch(void* func, int arity, int argCount, VALUE recv, VALUE* v)
     }
 }
 
+static void
+clearSyncQueue(DataSyncQueue* q)
+{
+    DataSync* d;
+    while ((d = TAILQ_FIRST(q))) {
+        TAILQ_REMOVE(q, d, syncq);
+    }
+}

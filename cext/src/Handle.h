@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -20,6 +20,9 @@
 #define	JRUBY_HANDLE_H
 
 #include <jni.h>
+#include <vector>
+#include "jruby.h"
+#include "util.h"
 #include "queue.h"
 #include "ruby.h"
 
@@ -27,82 +30,155 @@
 extern "C" {
 #endif
 
-#define CONST_MASK (0x7UL)
-#define IS_CONST(x) (((x) & ~CONST_MASK) == 0L)
-
 namespace jruby {
 
     class Handle;
+    class RubyData;
     extern Handle* constHandles[3];
+    extern std::vector<jobject> symbols;
+    TAILQ_HEAD(HandleList, Handle);
+    TAILQ_HEAD(DataHandleList, RubyData);
+    SIMPLEQ_HEAD(SyncQueue, Handle);
+    extern HandleList liveHandles, deadHandles;
+    extern DataHandleList dataHandles;
+
 
     class Handle {
+    private:
+        void Init();
+        void makeStrong_(JNIEnv* env);
+
+
     public:
         Handle();
+        Handle(JNIEnv* env, jobject obj, int type_ = T_NONE);
         virtual ~Handle();
-        virtual void mark();
 
         static inline Handle* valueOf(VALUE v) {
-            return !IS_CONST(v) ? (Handle *) v : jruby::constHandles[(v & CONST_MASK) >> 1];
+            return likely(!SPECIAL_CONST_P(v)) ? (Handle *) v : specialHandle(v);
         }
 
         inline void makeStrong(JNIEnv* env) {
-            if (strongRef == NULL) {
-                strongRef = env->NewGlobalRef(obj);
+            if (unlikely((flags & FL_WEAK) != 0)) {
+                makeStrong_(env);
             }
         }
 
-        inline void makeWeak(JNIEnv* env) {
-            if (strongRef != NULL) {
-                env->DeleteGlobalRef(strongRef);
-                strongRef = NULL;
-            }
+        inline int getType() {
+            return flags & T_MASK;
         }
 
+        inline void setType(int type_) {
+            this->flags |= (type_ & T_MASK);
+        }
 
-        jweak obj;
-        jobject strongRef;
+        static Handle* specialHandle(VALUE v);
+
+        jobject obj;
         int flags;
-        int type;
-        void (*finalize)(Handle *);
         TAILQ_ENTRY(Handle) all;
     };
 
-    class Fixnum: public Handle {
+    class RubyFixnum : public Handle {
     private:
         jlong value;
+
     public:
-        Fixnum(jlong value_) {
-            value = value_;
-        }
+        RubyFixnum(JNIEnv* env, jobject obj_, jlong value_);
 
         inline jlong longValue() {
             return value;
         }
     };
 
-    class DataHandle: public Handle {
+    class RubyFloat : public Handle {
+    private:
+        struct RFloat rfloat;
+
     public:
-        virtual ~DataHandle();
-        virtual void mark();
-        TAILQ_ENTRY(DataHandle) dataList;
+        RubyFloat(jdouble value_);
+        RubyFloat(JNIEnv* env, jobject obj_, jdouble value_);
+
+        inline jdouble doubleValue() {
+            return rfloat.value;
+        }
+
+        inline struct RFloat* toRFloat() {
+            return &rfloat;
+        }
+
+    };
+
+    class RubyData : public Handle {
+    public:
+        virtual ~RubyData();
+        TAILQ_ENTRY(RubyData) dataList;
         void (*dmark)(void *);
         void (*dfree)(void *);
         void* data;
     };
 
-    TAILQ_HEAD(HandleList, Handle);
-    TAILQ_HEAD(DataHandleList, DataHandle);
-    extern HandleList allHandles;
-    extern DataHandleList dataHandles;
-}
-// FIXME - no need to match ruby here, unless we fold type into flags
-#define FL_MARK      (1<<6)
-#define FL_FINALIZE  (1<<7)
-#define FL_TAINT     (1<<8)
-#define FL_EXIVAR    (1<<9)
-#define FL_FREEZE    (1<<10)
+    class RubyString : public Handle {
+    public:
+        RubyString(JNIEnv* env, jobject obj);
+        virtual ~RubyString();
 
+        RString* toRString(bool readonly);
+        bool jsync(JNIEnv* env);
+        bool nsync(JNIEnv* env);
+        int length();
+    private:
+        struct RWData {
+            bool readonly;
+            RString* rstring;
+            DataSync jsync;
+            DataSync nsync;
+            DataSync rosync;
+        };
+        RWData rwdata;
+    };
+
+    class RubyArray : public Handle {
+    public:
+        RubyArray(JNIEnv* env, jobject obj);
+        virtual ~RubyArray();
+    };
     
+    extern void runSyncQueue(JNIEnv* env, DataSyncQueue* q);
+    
+    inline void jsync(JNIEnv* env) {
+        if (unlikely(!TAILQ_EMPTY(&jsyncq))) {
+            runSyncQueue(env, &jsyncq);
+        }
+    }
+
+    inline void nsync(JNIEnv* env) {
+        if (unlikely(!TAILQ_EMPTY(&nsyncq))) {
+            runSyncQueue(env, &nsyncq);
+        }
+    }
+
+    inline VALUE makeStrongRef(JNIEnv* env, VALUE v) {
+        if (!SPECIAL_CONST_P(v)) {
+            Handle::valueOf(v)->makeStrong(env);
+        }
+
+        return v;
+    }
+
+    extern jobject resolveSymbolById(JNIEnv* env, ID id);
+    inline jobject idToObject(JNIEnv* env, ID id) {
+        jobject obj;
+        if (likely(id < symbols.size() && (obj  = symbols[id]) != NULL)) {
+            return obj;
+        }
+
+        return resolveSymbolById(env, id);
+    }
+
+    extern jobject fixnumToObject(JNIEnv* env, VALUE v);
+}
+
 #ifdef	__cplusplus
 }
 #endif

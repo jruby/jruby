@@ -17,13 +17,15 @@
  */
 
 #include "jruby.h"
+#include "JUtil.h"
 #include "ruby.h"
+#include "Handle.h"
 #include "JLocalEnv.h"
 
 using namespace jruby;
 
-#define CACHE_OFFSET (128)
-VALUE fixnumCache[2 * CACHE_OFFSET];
+#define CACHE_OFFSET (128L)
+static jobject fixnumCache[2 * CACHE_OFFSET];
 
 extern "C" long
 rb_num2long(VALUE v)
@@ -64,19 +66,25 @@ rb_fix2uint(VALUE v)
 extern "C" long long
 rb_num2ll(VALUE v)
 {
+    if (FIXNUM_P(v)) {
+        return FIX2LONG(v);
+    }
+
     Handle* h = Handle::valueOf(v);
-    if (h->type == T_FIXNUM) {
-        return ((Fixnum *) h)->longValue();
+    if (h->getType() == T_FIXNUM) {
+        return ((RubyFixnum *) h)->longValue();
     }
 
     JLocalEnv env;
+
+    jsync(env);
+
     jvalue params[1];
 
     params[0].l = valueToObject(env, v);
 
     jlong result = env->CallStaticLongMethodA(RubyNumeric_class, RubyNumeric_num2long_method, params);
     checkExceptions(env);
-    Handle::valueOf((VALUE) result)->makeStrong(env);
     
     return (long long) result;
 }
@@ -99,7 +107,7 @@ rb_uint2inum(unsigned long v)
     return rb_ull2inum(v);
 }
 
-static inline VALUE
+static inline RubyFixnum*
 newNumber(jmethodID method, long long v)
 {
     JLocalEnv env;
@@ -110,57 +118,64 @@ newNumber(jmethodID method, long long v)
 
     jlong result = env->CallStaticLongMethodA(JRuby_class, method, params);
     checkExceptions(env);
-    Handle::valueOf((VALUE) result)->makeStrong(env);
-
-    return (VALUE) result;
+    
+    return (RubyFixnum *) j2p(result);
 }
 
 
-static VALUE
-getCachedFixnum(int i)
+jobject
+jruby::fixnumToObject(JNIEnv* env, VALUE v)
 {
-    VALUE v = fixnumCache[i];
-    if (v != 0) {
-        return v;
+    SIGNED_VALUE i  = RSHIFT((SIGNED_VALUE) v, 1);
+    jobject obj;
+
+    if (likely(i >= -CACHE_OFFSET && i < CACHE_OFFSET && (obj = fixnumCache[i + CACHE_OFFSET]) != NULL)) {
+        return obj;
+    }
+    
+    jvalue params[2];
+
+    params[0].l = getRuntime();
+    params[1].j = i;
+
+    obj = env->CallStaticObjectMethodA(RubyNumeric_class, RubyNumeric_int2fix_method, params);
+
+    if (unlikely(i >= -CACHE_OFFSET && i < CACHE_OFFSET)) {
+        fixnumCache[i + CACHE_OFFSET] = env->NewGlobalRef(obj);
     }
 
-    fixnumCache[i] = v = newNumber(JRuby_ll2inum, i);
-    JLocalEnv env;
-    // FIXME hack to ensure the fixnum is never garbage collected
-    env->NewGlobalRef(valueToObject(env, v));
-
-    return v;
+    return obj;
 }
 
 extern "C" VALUE
 rb_ll2inum(long long v)
 {
-    if (v >= (long long) -CACHE_OFFSET && v < (long long) CACHE_OFFSET) {
-        return getCachedFixnum((int) v);
+    if (v < FIXNUM_MAX && v >= FIXNUM_MIN) {
+        return ((VALUE)(((SIGNED_VALUE)(v))<<1 | FIXNUM_FLAG));
     }
 
-    return newNumber(JRuby_ll2inum, v);
+    return (VALUE) newNumber(JRuby_ll2inum, v);
 }
 
 extern "C" VALUE
 rb_ull2inum(unsigned long long v)
 {
-    if (v < (unsigned long long) CACHE_OFFSET) {
-        return getCachedFixnum((int) v);
+    if (v < (unsigned long long) FIXNUM_MAX) {
+        return ((VALUE)(((SIGNED_VALUE)(v))<<1 | FIXNUM_FLAG));
     }
 
-    return newNumber(JRuby_ull2inum, (long long) v);
+    return (VALUE) newNumber(JRuby_ull2inum, (long long) v);
 }
 
 extern "C" VALUE
 rb_int2big(long long v)
 {
-    return newNumber(JRuby_int2big, v);
+    return (VALUE) newNumber(JRuby_int2big, v);
 }
 
 extern "C" VALUE
 rb_uint2big(unsigned long long v)
 {
-    return newNumber(JRuby_uint2big, (long long) v);
+    return (VALUE) newNumber(JRuby_uint2big, (long long) v);
 }
 

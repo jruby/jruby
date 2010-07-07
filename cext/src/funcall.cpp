@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -18,6 +18,7 @@
 
 #include <jni.h>
 #include "JLocalEnv.h"
+#include "Handle.h"
 #include "jruby.h"
 #include "ruby.h"
 
@@ -67,15 +68,18 @@ rb_funcall2(VALUE recv, ID meth, int argCount, VALUE* args)
 static VALUE
 jruby_funcall(JNIEnv* env, VALUE recv, ID meth, jobjectArray argArray)
 {
+    jsync(env);
+
     jvalue jparams[3];
 
     jparams[0].l = valueToObject(env, recv);
-    jparams[1].l = valueToObject(env, meth);
+    jparams[1].l = idToObject(env, meth);
     jparams[2].l = argArray;
 
     jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
     checkExceptions(env);
-    Handle::valueOf((VALUE) ret)->makeStrong(env);
-    
-    return (VALUE) ret;
+
+    nsync(env);
+
+    return makeStrongRef(env, (VALUE) ret);
 }

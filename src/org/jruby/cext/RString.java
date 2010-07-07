@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009, 2010 Wayne Meissner
+ * Copyright (C) 2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -15,25 +15,36 @@
  * You should have received a copy of the GNU General Public License
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 package org.jruby.cext;
 
-import org.jruby.RubyModule;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.RubyString;
 
-public final class NativeMethod0 extends AbstractNativeMethod {
-    public NativeMethod0(RubyModule clazz, int arity, long function) {
-        super(clazz, arity, function);
+/**
+ *
+ */
+final class RString extends Cleaner {
+    private final long address;
+    
+    private RString(RubyString str, long address) {
+        super(str);
+        this.address = address;
+    }
+
+    static RString newRString(RubyString str, long address) {
+        RString rstring = new RString(str, address);
+        Cleaner.register(rstring);
+
+        return rstring;
+    }
+
+    final long address() {
+        return address;
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
-        GIL.acquire();
-        try {
-            return Native.getInstance(context.getRuntime()).callMethod0(function, Handle.nativeHandle(self));
-        } finally {
-            GIL.release(context);
-        }
+    void dispose() {
+        Native.freeRString(address);
     }
 }

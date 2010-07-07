@@ -31,7 +31,7 @@ import org.jruby.util.WeakIdentityHashMap;
 
 
 public class GC {
-    private static final String NATIVE_REF_KEY = "cext-ref";
+    static final String NATIVE_REF_KEY = "cext-ref";
 
     @SuppressWarnings(value="unchecked")
     private static final Map<Object, Handle> nonRubyRefs = new WeakIdentityHashMap();
@@ -62,6 +62,14 @@ public class GC {
                 GIL.acquire();
                 try {
                     n.gc();
+                    Object obj;
+                    while ((obj = n.pollGC()) != null) {
+                        if (obj instanceof RubyBasicObject) {
+                            ((RubyBasicObject) obj).fastSetInternalVariable(NATIVE_REF_KEY, null);
+                        } else {
+                            nonRubyRefs.remove(obj);
+                        }
+                    }
                 } finally {
                     GIL.releaseNoCleanup();
                 }

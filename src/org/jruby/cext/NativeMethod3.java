@@ -34,10 +34,10 @@ public final class NativeMethod3 extends AbstractNativeMethod {
         GIL.acquire();
         try {
             return Native.getInstance(context.getRuntime()).callMethod3(function,
-                    Handle.nativeHandleLocked(self),
-                    Handle.nativeHandleLocked(arg0),
-                    Handle.nativeHandleLocked(arg1),
-                    Handle.nativeHandleLocked(arg2));
+                    Handle.nativeHandle(self),
+                    Handle.nativeHandle(arg0),
+                    Handle.nativeHandle(arg1),
+                    Handle.nativeHandle(arg2));
         } finally {
             GIL.release(context);
         }

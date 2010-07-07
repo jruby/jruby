@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -16,6 +16,7 @@
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Handle.h"
 #include "jruby.h"
 #include "ruby.h"
 #include "JLocalEnv.h"
@@ -93,6 +94,8 @@ VALUE rb_eSyntaxError;
 VALUE rb_eLoadError;
 
 }
+static VALUE getConstClass(JNIEnv* env, const char* name);
+static VALUE getConstModule(JNIEnv* env, const char* name);
 
 /**  
  * Define a global constant. Uses the corresponding Java method on 
@@ -132,9 +135,9 @@ void rb_global_variable(VALUE* handle_address) {
             "(Lorg/jruby/runtime/GlobalVariable;)V");
 }
 
-#define M(x) rb_m##x = jruby::getModule(env, #x)
-#define C(x) rb_c##x = jruby::getClass(env, #x)
-#define E(x) rb_e##x = jruby::getClass(env, #x)
+#define M(x) rb_m##x = getConstModule(env, #x)
+#define C(x) rb_c##x = getConstClass(env, #x)
+#define E(x) rb_e##x = getConstClass(env, #x)
 
 void
 jruby::initRubyClasses(JNIEnv* env, jobject runtime)
@@ -179,9 +182,9 @@ jruby::initRubyClasses(JNIEnv* env, jobject runtime)
     E(StandardError);
     E(SystemExit);
     E(Interrupt);
-    rb_eSignal = getClass(env, "SignalException");
+    rb_eSignal = getConstClass(env, "SignalException");
     E(Fatal);
-    rb_eArgError = getClass(env, "ArgumentError");
+    rb_eArgError = getConstClass(env, "ArgumentError");
     E(EOFError);
     E(IndexError);
     E(StopIteration);
@@ -192,13 +195,13 @@ jruby::initRubyClasses(JNIEnv* env, jobject runtime)
     E(SystemCallError);
     E(ThreadError);
     E(TypeError);
-    rb_eZeroDivError = getClass(env, "ZeroDivisionError");
-    rb_eNotImpError = getClass(env, "NotImplementedError");
-    rb_eNoMemError = getClass(env, "NoMemoryError");
+    rb_eZeroDivError = getConstClass(env, "ZeroDivisionError");
+    rb_eNotImpError = getConstClass(env, "NotImplementedError");
+    rb_eNoMemError = getConstClass(env, "NoMemoryError");
     E(NoMethodError);
     E(FloatDomainError);
     E(LocalJumpError);
-    rb_eSysStackError = getClass(env, "SystemStackError");
+    rb_eSysStackError = getConstClass(env, "SystemStackError");
     E(RegexpError);
 
 
@@ -207,3 +210,21 @@ jruby::initRubyClasses(JNIEnv* env, jobject runtime)
     E(SyntaxError);
     E(LoadError);
 }
+
+static VALUE
+getConstClass(JNIEnv* env, const char* name)
+{
+    VALUE v = jruby::getClass(env, name);
+    jruby::Handle::valueOf(v)->flags |= FL_CONST;
+    return v;
+}
+
+static VALUE
+getConstModule(JNIEnv* env, const char* name)
+{
+    VALUE v = jruby::getModule(env, name);
+    jruby::Handle::valueOf(v)->flags |= FL_CONST;
+    return v;
+}
+
+
