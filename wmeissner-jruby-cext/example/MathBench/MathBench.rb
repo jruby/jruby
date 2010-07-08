@@ -2,10 +2,9 @@
 # To change this template, choose Tools | Templates
 # and open the template in the editor.
  
-require 'java'
 
-m = org.jruby.cext.ModuleLoader.new
-m.load(self, "mathbench")
+$LOAD_PATH.unshift(File.expand_path(File.join(__FILE__, "..")))
+require 'mathbench.so'
 
 b = MathBench.new
 puts "MathBench.new returned #{b.inspect}"
@@ -32,7 +31,8 @@ require 'benchmark'
 iter = 1000_000
 10.times do
  Benchmark.bmbm do |bm|
-   bm.report("addi2 C") { iter.times { b.addi2(1, 2) } }
+   bm.report("addi2 C (sml)") { iter.times { b.addi2(1, 2) } }
+   bm.report("addi2 C (med)") { iter.times { b.addi2(1111, 2222) } }
    bm.report("addf2 C") { iter.times { b.addf2(1.1, 2.2) } }
    bm.report("addi2 FFI") { iter.times { Foreign.addi2(1, 2) } }
    bm.report("addf2 FFI") { iter.times { Foreign.addi2(1.1, 2.2) } }
