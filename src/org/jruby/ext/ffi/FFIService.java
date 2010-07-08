@@ -11,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ * Copyright (C) 2010 JRuby project
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -25,18 +25,30 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.libraries;
+
+package org.jruby.ext.ffi;
 
 import java.io.IOException;
-
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
 import org.jruby.runtime.load.Library;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
-public class DigestLibrary implements Library {
+public class FFIService implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        org.jruby.RubyDigest.createDigest(runtime);
+        if (!RubyInstanceConfig.nativeEnabled) {
+            throw runtime.newLoadError("Native API access is disabled");
+        }
+        if (!Platform.getPlatform().isSupported()) {
+            throw runtime.newLoadError("Unsupported platform: " + Platform.getPlatform().getName());
+        }
+
+        RubyModule ffi = runtime.defineModule("FFI");
+        try {
+            Factory.getInstance().init(runtime, ffi);
+        } catch (Exception e) {
+            throw runtime.newLoadError("Could not load FFI Provider: " + e.getLocalizedMessage()
+                    + " See http://jira.codehaus.org/browse/JRUBY-4583");
+        }
     }
-}// DigestLibrary
+}

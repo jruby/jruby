@@ -223,20 +223,4 @@ public class FiberLibrary implements Library {
             return fiber.result;
         }
     }
-
-    /** These methods get loaded when you require 'fiber'. */
-    public static class ExtLibrary implements Library {
-        @SuppressWarnings("deprecation")
-        public void load(final Ruby runtime, boolean wrap) {
-            RubyClass cFiber = runtime.getClass("Fiber");
-            cFiber.defineAnnotatedMethods(FiberExtMeta.class);
-        }
-
-        public static class FiberExtMeta {
-            @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
-            public static IRubyObject current(ThreadContext context, IRubyObject recv) {
-                return context.getRuntime().getCurrentContext().getFiber();
-            }
-        }
-    }
 }

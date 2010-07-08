@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -11,8 +12,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ * Copyright (C) 2010 Charles Oliver Nutter <headius@headius.com>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,15 +29,12 @@
 package org.jruby.libraries;
 
 import java.io.IOException;
-
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
-public class DigestLibrary implements Library {
+public class RMD160 implements Library {
+
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        org.jruby.RubyDigest.createDigest(runtime);
+        org.jruby.RubyDigest.createDigestRMD160(runtime);
     }
-}// DigestLibrary
+}

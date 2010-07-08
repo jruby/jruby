@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -11,8 +12,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ * Copyright (C) 2010 Charles Oliver Nutter <headius@headius.com>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -25,18 +26,37 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.libraries;
+package org.jruby.ext.jruby;
 
 import java.io.IOException;
-
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.TypeConverter;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
-public class DigestLibrary implements Library {
-    public void load(final Ruby runtime, boolean wrap) throws IOException {
-        org.jruby.RubyDigest.createDigest(runtime);
+public class JRubyTypeLibrary implements Library {
+
+    public void load(Ruby runtime, boolean wrap) throws IOException {
+        RubyModule jrubyType = runtime.defineModule("Type");
+        jrubyType.defineAnnotatedMethods(JRubyTypeLibrary.class);
     }
-}// DigestLibrary
+
+    @JRubyMethod(module = true)
+    public static IRubyObject coerce_to(ThreadContext context, IRubyObject self, IRubyObject object, IRubyObject clazz, IRubyObject method) {
+        Ruby ruby = object.getRuntime();
+        if (!(clazz instanceof RubyClass)) {
+            throw ruby.newTypeError(clazz, ruby.getClassClass());
+        }
+        if (!(method instanceof RubySymbol)) {
+            throw ruby.newTypeError(method, ruby.getSymbol());
+        }
+        RubyClass rubyClass = (RubyClass) clazz;
+        RubySymbol methodSym = (RubySymbol) method;
+        return TypeConverter.convertToTypeOrRaise(object, rubyClass, methodSym.asJavaString());
+    }
+}

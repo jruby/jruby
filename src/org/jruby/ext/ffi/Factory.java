@@ -28,15 +28,11 @@
 
 package org.jruby.ext.ffi;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.io.FileDescriptorIO;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.Library;
 
 /**
  * A factory that can create a FFI Provider
@@ -80,26 +76,6 @@ public abstract class Factory {
     }
 
     protected Factory() {
-    }
-
-    public static class Service implements Library {
-
-        public void load(final Ruby runtime, boolean wrap) throws IOException {
-            if (!RubyInstanceConfig.nativeEnabled) {
-                throw runtime.newLoadError("Native API access is disabled");
-            }
-            if (!Platform.getPlatform().isSupported()) {
-                throw runtime.newLoadError("Unsupported platform: " + Platform.getPlatform().getName());
-            }
-
-            RubyModule ffi = runtime.defineModule("FFI");
-            try {
-                Factory.getInstance().init(runtime, ffi);
-            } catch (Exception e) {
-                throw runtime.newLoadError("Could not load FFI Provider: " + e.getLocalizedMessage()
-                        + " See http://jira.codehaus.org/browse/JRUBY-4583");
-            }
-        }
     }
 
     /**

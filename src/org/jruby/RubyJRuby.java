@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.ext.jruby.JRubyUtilLibrary;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -86,7 +87,7 @@ public class RubyJRuby {
         RubyModule jrubyModule = runtime.defineModule("JRuby");
 
         jrubyModule.defineAnnotatedMethods(RubyJRuby.class);
-        jrubyModule.defineAnnotatedMethods(UtilLibrary.class);
+        jrubyModule.defineAnnotatedMethods(JRubyUtilLibrary.class);
 
         RubyClass compiledScriptClass = jrubyModule.defineClassUnder("CompiledScript",runtime.getObject(), runtime.getObject().getAllocator());
 
@@ -141,118 +142,6 @@ public class RubyJRuby {
             }
             // should never happen
             throw self.getRuntime().newTypeError("JRuby::Singleton.extend_object called against " + self);
-        }
-    }
-
-    public static class ExtLibrary implements Library {
-        public void load(Ruby runtime, boolean wrap) throws IOException {
-            RubyJRuby.createJRubyExt(runtime);
-            
-            runtime.getMethod().defineAnnotatedMethods(MethodExtensions.class);
-        }
-    }
-
-    public static class CoreExtLibrary implements Library {
-        public void load(Ruby runtime, boolean wrap) throws IOException {
-            RubyJRuby.createJRubyCoreExt(runtime);
-        }
-    }
-
-    public static class SynchronizedLibrary implements Library {
-        public void load(Ruby runtime, boolean wrap) throws IOException {
-            RubyModule syncModule = runtime.getOrCreateModule("JRuby").defineModuleUnder("Synchronized");
-            syncModule.getSingletonClass().defineAnnotatedMethods(JRubySynchronizedMeta.class);
-
-            // make Synchronized itself be synchronized, so subclasses created later pick that up
-            syncModule.becomeSynchronized();
-        }
-    }
-    
-    public static class TypeLibrary implements Library {
-        public void load(Ruby runtime, boolean wrap) throws IOException {
-            RubyModule jrubyType = runtime.defineModule("Type");
-            jrubyType.defineAnnotatedMethods(TypeLibrary.class);
-        }
-        
-        @JRubyMethod(module = true)
-        public static IRubyObject coerce_to(ThreadContext context, IRubyObject self, IRubyObject object, IRubyObject clazz, IRubyObject method) {
-            Ruby ruby = object.getRuntime();
-            
-            if (!(clazz instanceof RubyClass)) {
-                throw ruby.newTypeError(clazz, ruby.getClassClass());
-            }
-            if (!(method instanceof RubySymbol)) {
-                throw ruby.newTypeError(method, ruby.getSymbol());
-            }
-            
-            RubyClass rubyClass = (RubyClass)clazz;
-            RubySymbol methodSym = (RubySymbol)method;
-            
-            return TypeConverter.convertToTypeOrRaise(object, rubyClass, methodSym.asJavaString());
-        }
-    }
-
-    /**
-     * Utilities library for all those methods that don't need the full 'java' library
-     * to be loaded. This is done mostly for performance reasons. For example, for those
-     * who only need to enable the object space, not loading 'java' might save 200-300ms
-     * of startup time, like in case of jirb.
-     */
-    public static class UtilLibrary implements Library {
-        public void load(Ruby runtime, boolean wrap) throws IOException {
-            RubyModule mJRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
-            mJRubyUtil.defineAnnotatedMethods(UtilLibrary.class);
-        }
-        @JRubyMethod(module = true)
-        public static void gc(IRubyObject recv) {
-            System.gc();
-        }
-        @JRubyMethod(name = "objectspace", module = true)
-        public static IRubyObject getObjectSpaceEnabled(IRubyObject recv) {
-            Ruby runtime = recv.getRuntime();
-            return RubyBoolean.newBoolean(
-                    runtime, runtime.isObjectSpaceEnabled());
-        }
-        @JRubyMethod(name = "objectspace=", module = true)
-        public static IRubyObject setObjectSpaceEnabled(
-                IRubyObject recv, IRubyObject arg) {
-            Ruby runtime = recv.getRuntime();
-            runtime.setObjectSpaceEnabled(arg.isTrue());
-            return runtime.getNil();
-        }
-        @SuppressWarnings("deprecation")
-        @JRubyMethod(name = "classloader_resources", module = true)
-        public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject arg) {
-            Ruby runtime = recv.getRuntime();
-            String resource = arg.convertToString().toString();
-            final List<RubyString> urlStrings = new ArrayList<RubyString>();
-
-            try {
-                Enumeration<URL> urls = runtime.getJRubyClassLoader().getResources(resource);
-                while (urls.hasMoreElements()) {
-                    URL url = urls.nextElement();
-
-                    String urlString;
-                    if ("jar".equals(url.getProtocol()) && url.getFile().startsWith("file:/")) {
-                        try {
-                            urlString = url.toURI().getSchemeSpecificPart();
-                        } catch (java.net.URISyntaxException urise) {
-                            if (runtime.getInstanceConfig().isDebug()) {
-                                runtime.getErr().println("URISyntaxException trying to parse " + url + ", stack trace follows:");
-                                urise.printStackTrace(runtime.getErr());
-                            }
-                            urlString = null;
-                        }
-                    } else {
-                        urlString = url.getFile();
-                    }
-                    urlStrings.add(runtime.newString(urlString));
-                }
-                return RubyArray.newArrayNoCopy(runtime,
-                        urlStrings.toArray(new IRubyObject[urlStrings.size()]));
-            } catch (IOException ignore) {}
-
-            return runtime.newEmptyArray();
         }
     }
 

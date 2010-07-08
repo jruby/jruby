@@ -11,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ * Copyright (C) 2007 Charles O Nutter <headius@headius.com>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,16 +27,29 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.libraries;
 
-import java.io.IOException;
-
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 
 /**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
+ * These methods get loaded when you require 'fiber'.
  */
-public class DigestLibrary implements Library {
-    public void load(final Ruby runtime, boolean wrap) throws IOException {
-        org.jruby.RubyDigest.createDigest(runtime);
+public class FiberExtLibrary implements Library {
+    @SuppressWarnings(value = "deprecation")
+    public void load(final Ruby runtime, boolean wrap) {
+        RubyClass cFiber = runtime.getClass("Fiber");
+        cFiber.defineAnnotatedMethods(FiberExtMeta.class);
     }
-}// DigestLibrary
+
+    public static class FiberExtMeta {
+
+        @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
+        public static IRubyObject current(ThreadContext context, IRubyObject recv) {
+            return context.getRuntime().getCurrentContext().getFiber();
+        }
+    }
+}
