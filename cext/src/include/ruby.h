@@ -162,13 +162,12 @@ void xfree(void*);
 #define TYPE(x) rb_type((VALUE)(x))
 
 /** Convert a Fixnum into an int. */
-#define FIX2INT(x) ((int) rb_num2int(x))
+#define FIX2INT(x) ((int) RSHIFT((SIGNED_VALUE)x,1))
 /** Convert a Fixnum into an unsigned int. */
-#define FIX2UINT(x) ((int) rb_num2uint(x))
-/** Convert a Fixnum into an int. */
-#define FIX2LONG(x)        ((long)FIX2INT(x))
-/** Convert a Fixnum into an unsigned int. */
-#define FIX2ULONG(x)       ((unsigned long)FIX2UINT(x))
+#define FIX2UINT(x) ((unsigned int) ((((VALUE)(x))>>1)&LONG_MAX))
+
+#define FIX2LONG(x) RSHIFT((SIGNED_VALUE)x,1)
+#define FIX2ULONG(x) ((((VALUE)(x))>>1)&LONG_MAX)
 
 /** Convert a VALUE into a long int. */
 #define NUM2LONG(x) rb_num2long(x)
@@ -182,6 +181,7 @@ void xfree(void*);
 #define NUM2LL(x) rb_num2ll(x)
 /** Convert a VALUE into an unsigned long long */
 #define NUM2ULL(x) rb_num2ull(x)
+#define NUM2DBL(x) rb_num2dbl(x)
 
 /** Convert int to a Ruby Integer. */
 #define INT2FIX(x)   rb_int2inum(x)

@@ -67,7 +67,7 @@ extern "C" long long
 rb_num2ll(VALUE v)
 {
     if (FIXNUM_P(v)) {
-        return FIX2LONG(v);
+        return RSHIFT((SIGNED_VALUE) v, 1);
     }
 
     Handle* h = Handle::valueOf(v);
