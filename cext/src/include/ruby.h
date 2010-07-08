@@ -169,12 +169,7 @@ void xfree(void*);
 #define FIX2LONG(x) RSHIFT((SIGNED_VALUE)x,1)
 #define FIX2ULONG(x) ((((VALUE)(x))>>1)&LONG_MAX)
 
-/** Convert a VALUE into a long int. */
-#define NUM2LONG(x) rb_num2long(x)
-/** Convert a VALUE into a long int. */
-#define NUM2ULONG(x) rb_num2ulong(x)
-/** Convert a VALUE into an int. */
-#define NUM2INT(x) ((int) rb_num2int(x))
+
 /** Convert a VALUE into a long int. */
 #define NUM2UINT(x) ((int) rb_num2uint(x))
 /** Convert a VALUE into a long long */
@@ -184,13 +179,12 @@ void xfree(void*);
 #define NUM2DBL(x) rb_num2dbl(x)
 
 /** Convert int to a Ruby Integer. */
-#define INT2FIX(x)   rb_int2inum(x)
+#define INT2FIX(i)   ((int)(((SIGNED_VALUE)(i))<<1 | FIXNUM_FLAG))
 /** Convert unsigned int to a Ruby Integer. */
 #define UINT2FIX(x)  rb_uint2inum(x)
 /** Convert int to a Ruby Integer. */
-#define INT2NUM(x)   rb_int2inum(x)
-#define UINT2NUM(x)  rb_uint2inum(x)
-#define LONG2FIX(x)  rb_int2inum(x)
+
+#define LONG2FIX(x)  INT2FIX(x)
 #define LONG2NUM(x)  rb_int2inum(x)
 #define ULONG2NUM(x) rb_uint2inum(x)
 #define LL2NUM(x)    rb_ll2inum(x)
@@ -244,6 +238,43 @@ VALUE rb_ll2inum(long long);
 VALUE rb_ull2inum(unsigned long long);
 VALUE rb_int2big(long long);
 VALUE rb_uint2big(unsigned long long);
+
+/** Convert a VALUE into a long int. */
+static inline long
+NUM2LONG(VALUE x)
+{
+    return __builtin_expect(FIXNUM_P(x), 1) ? FIX2LONG(x) : rb_num2long(x);
+}
+
+/** Convert a VALUE into a long int. */
+#define NUM2ULONG(x) rb_num2ulong(x)
+
+/** Convert a VALUE into an int. */
+static inline int
+NUM2INT(VALUE x)
+{
+    return __builtin_expect(FIXNUM_P(x), 1) ? FIX2INT(x) : rb_num2int(x);
+}
+
+static inline VALUE
+INT2NUM(long v)
+{
+    if (__builtin_expect(FIXABLE(v), 1)) {
+        return INT2FIX(v);
+    }
+
+    return rb_int2inum(v);
+}
+
+static inline VALUE
+UINT2NUM(unsigned long v)
+{
+    if (__builtin_expect(POSFIXABLE(v), 1)) {
+        LONG2FIX(v);
+    }
+
+    return rb_uint2inum(v);
+}
 
 
 VALUE rb_funcall(VALUE obj, ID meth, int cnt, ...);
