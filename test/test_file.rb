@@ -988,4 +988,25 @@ class TestFile < Test::Unit::TestCase
   ensure
     Dir.rmdir("dir_tmp")
   end
+
+  # JRUBY-4927
+  def test_chmod_when_chdir
+    pwd = Dir.getwd
+    path = Tempfile.new("somewhere").path
+    FileUtils.rm_rf path
+    FileUtils.mkpath path
+    FileUtils.mkpath File.join(path, "src")
+    Dir.chdir path
+
+    1.upto(4) do |i|
+      File.open("src/file#{i}", "w+") {|f| f.write "file#{i} raw"}
+    end
+    Dir['src/*'].each do |file|
+      File.chmod(0o755, file)
+      assert_equal 0o755, (File.stat(file).mode & 0o755)
+    end
+  ensure
+    FileUtils.rm_rf(path)
+    Dir.chdir(pwd)
+  end
 end

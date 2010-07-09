@@ -735,6 +735,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return obj.convertToString();
     }
 
+    /**
+     * Get the fully-qualified JRubyFile object for the path, taking into
+     * account the runtime's current directory.
+     */
+    public static JRubyFile file(IRubyObject pathOrFile) {
+        Ruby runtime = pathOrFile.getRuntime();
+
+        if (pathOrFile instanceof RubyFile) {
+            return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyFile) pathOrFile).getPath());
+        } else {
+            RubyString path = get_path(runtime.getCurrentContext(), pathOrFile);
+            return JRubyFile.create(runtime.getCurrentDirectory(), path.getUnicodeValue());
+        }
+    }
+
     @JRubyMethod(name = {"path", "to_path"})
     public RubyString path(ThreadContext context) {
         return context.getRuntime().newString(path);
@@ -875,13 +890,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
         for (int i = 1; i < args.length; i++) {
-            RubyString filename = get_path(context, args[i]);
+            JRubyFile filename = file(args[i]);
             
-            if (!RubyFileTest.exist_p(filename, filename).isTrue()) {
+            if (!filename.exists()) {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
             
-            boolean result = 0 == runtime.getPosix().chmod(filename.getUnicodeValue(), (int)mode.getLongValue());
+            boolean result = 0 == runtime.getPosix().chmod(filename.getAbsolutePath(), (int)mode.getLongValue());
             if (result) {
                 count++;
             }
@@ -905,13 +920,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             group = RubyNumeric.num2int(args[1]);
         }
         for (int i = 2; i < args.length; i++) {
-            RubyString filename = get_path(context, args[i]);
+            JRubyFile filename = file(args[i]);
 
-            if (!RubyFileTest.exist_p(filename, filename).isTrue()) {
+            if (!filename.exists()) {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
             
-            boolean result = 0 == runtime.getPosix().chown(filename.getUnicodeValue(), owner, group);
+            boolean result = 0 == runtime.getPosix().chown(filename.getAbsolutePath(), owner, group);
             if (result) {
                 count++;
             }
