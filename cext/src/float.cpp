@@ -74,6 +74,11 @@ jruby_float_value(VALUE v)
     rb_raise(rb_eTypeError, "wrong type (expected Float)");
 }
 
+extern "C" VALUE
+rb_Float(VALUE object_handle) {
+    return rb_convert_type(object_handle, 0, "Float", "to_f");
+}
+
 extern "C" double
 rb_num2dbl(VALUE v)
 {

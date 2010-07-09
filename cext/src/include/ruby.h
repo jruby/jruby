@@ -535,6 +535,7 @@ extern ID jruby_intern_nonconst(const char *);
 extern struct RFloat* jruby_rfloat(VALUE v);
 extern VALUE rb_float_new(double value);
 extern double jruby_float_value(VALUE v);
+VALUE rb_Float(VALUE object_handle);
 
 /** Call block with given argument or raise error if no block given. */
 VALUE rb_yield(VALUE argument_handle);
