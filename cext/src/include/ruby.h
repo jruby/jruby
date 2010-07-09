@@ -219,7 +219,7 @@ void xfree(void*);
 #define RSTRING_PTR(str)  jruby_str_ptr((str))
 /** Pointer to the MRI string structure */
 #define RSTRING(str) jruby_rstring((str))
-
+#define STR2CSTR(str)         rb_str2cstr((VALUE)(str), 0)
 /** Modifies the VALUE object in place by calling rb_obj_as_string(). */
 #define StringValue(v)        rb_string_value(&(v))
 #define StringValuePtr(v)     rb_string_value_ptr(&(v))
@@ -445,7 +445,11 @@ VALUE rb_sym_to_s(VALUE);
 VALUE rb_str_length(VALUE);
 long rb_str_offset(VALUE, long);
 size_t rb_str_capacity(VALUE);
-
+/**
+ * Returns a pointer to the String, the length is returned
+ * in len parameter, which can be NULL.
+ */
+char* rb_str2cstr(VALUE str_handle, long *len);
 /** Deprecated alias for rb_obj_freeze */
 VALUE rb_str_freeze(VALUE str);
 /** Returns a pointer to a persistent char [] that contains the same data as
