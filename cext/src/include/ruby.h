@@ -256,6 +256,40 @@ void xfree(void*);
 
 /* End of interface macros */
 
+/**
+ *  Process arguments using a template rather than manually.
+ *
+ *  The first two arguments are simple: the number of arguments given
+ *  and an array of the args. Usually you get these as parameters to
+ *  your function.
+ *
+ *  The spec works like this: it must have one (or more) of the following
+ *  specifiers, and the specifiers that are given must always appear
+ *  in the order given here. If the first character is a digit (0-9),
+ *  it is the number of required parameters. If there is a second digit
+ *  (0-9), it is the number of optional parameters. The next character
+ *  may be "*", indicating a "splat" i.e. it consumes all remaining
+ *  parameters. Finally, the last character may be "&", signifying
+ *  that the block given (or Qnil) should be stored.
+ *
+ *  The remaining arguments are pointers to the variables in which
+ *  the aforementioned format assigns the scanned parameters. For
+ *  example in some imaginary function:
+ *
+ *    VALUE required1, required2, optional, splat, block
+ *    rb_scan_args(argc, argv, "21*&", &required1, &required2,
+ *                                     &optional,
+ *                                     &splat,
+ *                                     &block);
+ *
+ *  The required parameters must naturally always be exact. The
+ *  optional parameters are set to nil when parameters run out.
+ *  The splat is always an Array, but may be empty if there were
+ *  no parameters that were not consumed by required or optional.
+ *  Lastly, the block may be nil.
+ */
+int rb_scan_args(int argc, const VALUE* argv, const char* spec, ...);
+
 void rb_raise(VALUE exc, const char *fmt, ...) __attribute__((noreturn));
 void rb_fatal(const char *fmt, ...) __attribute__((noreturn));
 void rb_sys_fail(const char *msg) __attribute__((noreturn));
