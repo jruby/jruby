@@ -232,6 +232,9 @@ void xfree(void*);
 /** Pointer to the MRI array structure */
 #define RARRAY(str) rb_ary_struct_readonly(str);
 
+#define RFLOAT(d) jruby_rfloat(VALUE v)
+#define RFLOAT_VALUE(v) jruby_float_value(v)
+
 #define DATA_PTR(dta) (jruby_data((dta)))
 
 /* End of interface macros */
@@ -525,7 +528,6 @@ extern ID jruby_intern_nonconst(const char *);
 extern struct RFloat* jruby_rfloat(VALUE v);
 extern VALUE rb_float_new(double value);
 extern double jruby_float_value(VALUE v);
-#define RFLOAT_VALUE(v) jruby_float_value(v)
 
 /** Call block with given argument or raise error if no block given. */
 VALUE rb_yield(VALUE argument_handle);
