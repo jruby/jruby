@@ -475,6 +475,9 @@ extern char* jruby_str_ptr(VALUE v);
 #define rb_usascii_str_new2 rb_usascii_str_new_cstr
 #define rb_str_ptr rb_str_ptr_readonly
 
+/** Returns the string associated with a symbol. */
+const char *rb_id2name(ID sym);
+
 extern void* jruby_data(VALUE);
 
 typedef void (*RUBY_DATA_FUNC)(void*);
@@ -503,8 +506,6 @@ void rb_gc_register_address(VALUE* address);
 /** Unmark variable as global */
 void rb_gc_unregister_address(VALUE* address);
 
-/** Returns the string associated with a symbol. */
-const char *rb_id2name(ID sym);
 /** Print a warning if $VERBOSE is not nil. */
 void rb_warn(const char *fmt, ...);
 /** Print a warning if $VERBOSE is true. */
