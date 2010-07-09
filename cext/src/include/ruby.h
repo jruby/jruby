@@ -505,6 +505,10 @@ void rb_gc_unregister_address(VALUE* address);
 
 /** Returns the string associated with a symbol. */
 const char *rb_id2name(ID sym);
+/** Print a warning if $VERBOSE is not nil. */
+void rb_warn(const char *fmt, ...);
+/** Print a warning if $VERBOSE is true. */
+void rb_warning(const char *fmt, ...);
 
 /** Define a toplevel constant */
 void rb_define_global_const(const char* name, VALUE obj);
