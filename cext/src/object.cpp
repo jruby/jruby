@@ -26,3 +26,9 @@ extern "C" VALUE
 rb_obj_freeze(VALUE obj) {    
     return callMethodA(obj, "freeze", 0, NULL);
 }
+
+extern "C" char*
+rb_obj_classname(VALUE obj) {
+    return rb_class2name(rb_class_of(obj));
+}
+

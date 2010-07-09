@@ -536,6 +536,8 @@ VALUE rb_yield(VALUE argument_handle);
 
 /** Freeze object and return it. */
 VALUE rb_obj_freeze(VALUE obj);
+/** String representation of the object's class' name. You must free this string. */
+char* rb_obj_classname(VALUE object_handle);
 
 /* Global Module objects. */
 extern VALUE rb_mKernel;
