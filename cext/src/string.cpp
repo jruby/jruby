@@ -225,6 +225,7 @@ rb_str2cstr(VALUE str, long* len) {
     return cstr;
 }
 
+extern "C" char*
 jruby_str_ptr(VALUE v)
 {
     return jruby_rstring(v)->as.heap.ptr;
