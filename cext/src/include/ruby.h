@@ -333,6 +333,7 @@ void rb_define_attr(VALUE module_handle, const char* attr_name, int readable, in
 void rb_define_method(VALUE,const char*,VALUE(*)(ANYARGS),int);
 void rb_define_module_function(VALUE,const char*,VALUE(*)(ANYARGS),int);
 void rb_define_global_function(const char*,VALUE(*)(ANYARGS),int);
+void rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYARGS), int arity);
 #define HAVE_RB_DEFINE_ALLOC_FUNC 1
 typedef VALUE (*rb_alloc_func_t)(VALUE);
 void rb_define_alloc_func(VALUE, rb_alloc_func_t);

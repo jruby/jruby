@@ -91,6 +91,25 @@ rb_define_module_function(VALUE klass,const char* meth, VALUE(*fn)(ANYARGS),int 
     checkExceptions(env);
 }
 
+extern "C" void
+rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYARGS), int arity)
+{
+    JLocalEnv env;
+
+    jmethodID IRubyObject_getSingletonClass_method = getMethodID(env, IRubyObject_class, "getSingletonClass",
+            "()Lorg/jruby/RubyClass;");
+    jobject singleton = env->CallObjectMethod(valueToObject(env, object), IRubyObject_getSingletonClass_method);
+
+    jmethodID JRuby_newMethod = getStaticMethodID(env, JRuby_class, "newMethod", 
+            "(Lorg/jruby/RubyModule;JI)Lorg/jruby/internal/runtime/methods/DynamicMethod;");
+    jmethodID RubyModule_addMethod_method = getMethodID(env, RubyModule_class, "addMethod",
+            "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");
+
+    env->CallVoidMethod(singleton, RubyModule_addMethod_method, env->NewStringUTF(meth),
+            env->CallStaticObjectMethod(JRuby_class, JRuby_newMethod, singleton, (jlong)(intptr_t) fn, arity));
+    checkExceptions(env);
+}
+
 #ifdef notyet
 void rb_define_global_function(const char*,VALUE(*)(ANYARGS),int);
 #endif
