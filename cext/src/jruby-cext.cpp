@@ -75,6 +75,7 @@ namespace jruby {
     jmethodID RubySymbol_getSymbolLong;
     jmethodID IRubyObject_callMethod;
     jmethodID IRubyObject_asJavaString_method;
+    jmethodID IRubyObject_respondsTo_method;
     jmethodID Handle_valueOf;
     jmethodID Ruby_getCurrentContext_method;
     jmethodID GC_trigger;
@@ -200,6 +201,7 @@ loadIds(JNIEnv* env)
     IRubyObject_callMethod = getMethodID(env, IRubyObject_class, "callMethod",
             "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
     IRubyObject_asJavaString_method = getMethodID(env, IRubyObject_class, "asJavaString", "()Ljava/lang/String;");
+    IRubyObject_respondsTo_method = getMethodID(env, IRubyObject_class, "respondsTo", "(Ljava/lang/String;)Z");
 
     ThreadContext_getRuntime_method = getMethodID(env, ThreadContext_class, "getRuntime", "()Lorg/jruby/Ruby;");
     RubyData_newRubyData_method = getStaticMethodID(env, RubyData_class, "newRubyData", "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;J)Lorg/jruby/cext/RubyData;");

@@ -58,6 +58,7 @@ namespace jruby {
 
     extern jmethodID IRubyObject_callMethod;
     extern jmethodID IRubyObject_asJavaString_method;
+    extern jmethodID IRubyObject_respondsTo_method;
     extern jmethodID ThreadContext_getRuntime_method;
     extern jmethodID Ruby_defineModule_method;
     extern jmethodID Ruby_getNil_method;

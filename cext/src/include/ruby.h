@@ -520,6 +520,9 @@ void rb_warn(const char *fmt, ...);
 /** Print a warning if $VERBOSE is true. */
 void rb_warning(const char *fmt, ...);
 
+/** 1 if obj.respond_to? method_name evaluates true, 0 otherwise. */
+int rb_respond_to(VALUE obj_handle, ID method_name);
+
 /** Define a toplevel constant */
 void rb_define_global_const(const char* name, VALUE obj);
 extern ID rb_intern_const(const char *);
