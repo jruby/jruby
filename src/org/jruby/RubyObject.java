@@ -175,6 +175,20 @@ public class RubyObject extends RubyBasicObject {
         }
     };
 
+    public static final ObjectAllocator REIFYING_OBJECT_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            reifyAncestors(klass);
+            return klass.allocate();
+        }
+
+        public void reifyAncestors(RubyClass klass) {
+            if (klass.getAllocator() == this) {
+                reifyAncestors(klass.getSuperClass().getRealClass());
+                klass.reify();
+            }
+        }
+    };
+
     /**
      * Will make sure that this object is added to the current object
      * space.
