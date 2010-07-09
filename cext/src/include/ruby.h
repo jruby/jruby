@@ -25,9 +25,10 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <sys/select.h>
-#include <string.h>  
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 #ifdef	__cplusplus
 extern "C" {
@@ -161,6 +162,20 @@ void *xcalloc(size_t,size_t);
 void *xrealloc(void*,size_t);
 void *xrealloc2(void*,size_t,size_t);
 void xfree(void*);
+
+/* need to include <ctype.h> to use these macros */
+#ifndef ISPRINT
+#define ISASCII(c) isascii((int)(unsigned char)(c))
+#undef ISPRINT
+#define ISPRINT(c) (ISASCII(c) && isprint((int)(unsigned char)(c)))
+#define ISSPACE(c) (ISASCII(c) && isspace((int)(unsigned char)(c)))
+#define ISUPPER(c) (ISASCII(c) && isupper((int)(unsigned char)(c)))
+#define ISLOWER(c) (ISASCII(c) && islower((int)(unsigned char)(c)))
+#define ISALNUM(c) (ISASCII(c) && isalnum((int)(unsigned char)(c)))
+#define ISALPHA(c) (ISASCII(c) && isalpha((int)(unsigned char)(c)))
+#define ISDIGIT(c) (ISASCII(c) && isdigit((int)(unsigned char)(c)))
+#define ISXDIGIT(c) (ISASCII(c) && isxdigit((int)(unsigned char)(c)))
+#endif
 
 /* Interface macros */
 
