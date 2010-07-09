@@ -2631,7 +2631,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (block.isGiven()) {
             return gsubCommon(context, bang, getQuotedPattern(arg0), block, null, 0);
         } else {
-            throw context.getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
+            String method = "gsub";
+            if (bang) {
+                method += "!";
+            }
+            return enumeratorize(context.getRuntime(), this, method, arg0);
         }
     }
 
