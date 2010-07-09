@@ -255,25 +255,22 @@ public class RbConfigLibrary implements Library {
         String soflags = true ? "" : " -shared -static-libgcc -mimpure-text -Wl,-O1 ";
         String ldflags = soflags;
         
-        
+
         String archflags = " -arch i386 -arch ppc -arch x86_64 ";
-        
-        cflags += archflags;
 
         if (Platform.IS_MAC) {
             // this set is only for darwin
-            cflags += " -isysroot /Developer/SDKs/MacOSX10.4u.sdk -DTARGET_RT_MAC_CFM=0 ";
-            cflags += " -arch i386 -arch ppc -arch x86_64 ";
-            ldflags += " -arch i386 -arch ppc -arch x86_64 -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 -undefined dynamic_lookup ";
+            cflags += " -DTARGET_RT_MAC_CFM=0 ";
+            ldflags += " -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 -undefined dynamic_lookup ";
         }
-        
+
         String libext = "a";
         String objext = "o";
         
         setConfig(mkmfHash, "configure_args", "");
         setConfig(mkmfHash, "CFLAGS", cflags);
         setConfig(mkmfHash, "CPPFLAGS", "");
-        setConfig(mkmfHash, "ARCH_FLAG", "");
+        setConfig(mkmfHash, "ARCH_FLAG", archflags);
         setConfig(mkmfHash, "LDFLAGS", ldflags);
         setConfig(mkmfHash, "DLDFLAGS", "");
         setConfig(mkmfHash, "LIBEXT", libext);
@@ -296,6 +293,7 @@ public class RbConfigLibrary implements Library {
             setConfig(mkmfHash, "DLEXT", "so");
         }
         setConfig(mkmfHash, "CC", "cc ");
+        setConfig(mkmfHash, "CPP", "cpp ");
         if (Platform.IS_MAC) {
             setConfig(mkmfHash, "LDSHARED", "cc -dynamic -bundle -undefined suppress -flat_namespace ");
         } else {
