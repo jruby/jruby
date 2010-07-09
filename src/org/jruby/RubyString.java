@@ -2658,6 +2658,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (beg < 0) {
             scope.setBackRef(runtime.getNil());
             return bang ? runtime.getNil() : strDup(runtime); /* bang: true, no match, no substitution */
+        } else if (repl == null && bang && isFrozen()) {
+            throw getRuntime().newRuntimeError("can't modify frozen string");
         }
 
         int blen = slen + 30; /* len + margin */
