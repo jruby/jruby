@@ -237,6 +237,8 @@ void xfree(void*);
 
 #define DATA_PTR(dta) (jruby_data((dta)))
 
+#define OBJ_FREEZE(obj) (rb_obj_freeze(obj))
+
 /* End of interface macros */
 
 void rb_raise(VALUE exc, const char *fmt, ...) __attribute__((noreturn));
@@ -534,7 +536,6 @@ VALUE rb_yield(VALUE argument_handle);
 
 /** Freeze object and return it. */
 VALUE rb_obj_freeze(VALUE obj);
-#define OBJ_FREEZE(obj) (rb_obj_freeze(obj))
 
 /* Global Module objects. */
 extern VALUE rb_mKernel;
