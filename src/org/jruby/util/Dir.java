@@ -545,6 +545,16 @@ public class Dir {
         }
     }
 
+    private static final class DirGlobber {
+        public final ByteList link;
+        public final JarEntry jarEntry;
+
+        public DirGlobber(ByteList link, JarEntry jarEntry) {
+            this.link = link;
+            this.jarEntry = jarEntry;
+        }
+    }
+
     private static int glob_helper(String cwd, byte[] bytes, int begin, int end, int sub, int flags, GlobFunc func, GlobArgs arg) {
         int p,m;
         int status = 0;
@@ -599,7 +609,7 @@ public class Dir {
         }
         
         ByteList buf = new ByteList(20);
-        List<ByteList> link = new ArrayList<ByteList>();
+        List<DirGlobber> link = new ArrayList<DirGlobber>();
         mainLoop: while(p != -1 && status == 0) {
             if (bytes[p] == '/') p++;
 
@@ -646,6 +656,9 @@ public class Dir {
                             buf.length(0);
                             buf.append(base);
                             buf.append(bytes, (base.length > 0 ? m : m + 1), end - (base.length > 0 ? m : m + 1));
+                            if (jf != null) {
+                                buf = fixBytesForJarInUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize());
+                            }
                             status = glob_helper(cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), n, flags, func, arg);
                             if(status != 0) {
                                 break finalize;
@@ -698,7 +711,7 @@ public class Dir {
                                     }
                                     continue;
                                 }
-                                link.add(buf);
+                                link.add(new DirGlobber(buf, null));
                                 buf = new ByteList(20);
                             }
                         }
@@ -737,6 +750,9 @@ public class Dir {
                                         buf.append(SLASH);
                                         buf.append(DOUBLE_STAR);
                                         buf.append(bytes, m, end - m);
+
+                                        buf = fixBytesForJarInUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize());
+
                                         status = glob_helper(cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), t, flags, func, arg);
                                         if(status != 0) {
                                             break;
@@ -750,6 +766,8 @@ public class Dir {
                                     buf.append(base, 0, base.length - jar.length());
                                     buf.append( BASE(base) ? SLASH : EMPTY );
                                     buf.append(bs, 0, len);
+
+                                    buf = fixBytesForJarInUTF8(buf.getUnsafeBytes(), 0, buf.getRealSize());
                                     if(m == -1) {
                                         status = func.call(buf.getUnsafeBytes(),0, buf.getRealSize(),arg);
                                         if(status != 0) {
@@ -757,7 +775,7 @@ public class Dir {
                                         }
                                         continue;
                                     }
-                                    link.add(buf);
+                                    link.add(new DirGlobber(buf, je));
                                     buf = new ByteList(20);
                                 }
                             }
@@ -766,19 +784,23 @@ public class Dir {
                 } while(false);
 
                 if (link.size() > 0) {
-                    for (ByteList b : link) {
+                    for (DirGlobber globber : link) {
+                        ByteList b = globber.link;
                         if (status == 0) {
                             if(b.getUnsafeBytes()[0] == '/'  || (DOSISH && 2<b.getRealSize() && b.getUnsafeBytes()[1] == ':' && isdirsep(b.getUnsafeBytes()[2]))) {
                                 st = new JavaSecuredFile(newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
                             } else {
                                 st = new JavaSecuredFile(cwd, newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
                             }
-
-                            if(st.isDirectory()) {
+                            if(st.isDirectory() || (globber.jarEntry != null && globber.jarEntry.isDirectory()) ) {
                                 int len = b.getRealSize();
                                 buf.length(0);
                                 buf.append(b);
                                 buf.append(bytes, m, end - m);
+
+                                if (globber.jarEntry != null) {
+                                    buf = fixBytesForJarInUTF8(buf.getUnsafeBytes(), 0, buf.getRealSize());
+                                }
                                 status = glob_helper(cwd, buf.getUnsafeBytes(),0, buf.getRealSize(),len,flags,func,arg);
                             }
                         }
@@ -789,6 +811,12 @@ public class Dir {
             p = m;
         }
         return status;
+    }
+
+    private static ByteList fixBytesForJarInUTF8(byte[] buf, int offset, int len) {
+        String path = newStringFromUTF8(buf, offset, len);
+        path = path.replace(".jar/", ".jar!");
+        return new ByteList(path.getBytes());
     }
 
     private static byte[] getBytesInUTF8(String s) {
