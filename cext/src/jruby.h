@@ -21,15 +21,24 @@
 
 #include <jni.h>
 #include <map>
-#include "Handle.h"
+#include "queue.h"
 #include "ruby.h"
 
 namespace jruby {
+    class Handle;
+
+    struct DataSync {
+        TAILQ_ENTRY(DataSync) syncq;
+        bool (*sync)(JNIEnv* env, DataSync* data);
+        void* data;
+    };
+
     extern jclass NativeMethod_class;
     extern jclass NativeObjectAllocator_class;
     extern jclass ObjectAllocator_class;
     extern jclass Ruby_class;
     extern jclass RubyData_class;
+    extern jclass RubyFloat_class;
     extern jclass RubyObject_class;
     extern jclass RubyBasicObject_class;
     extern jclass RubyClass_class;
@@ -44,6 +53,7 @@ namespace jruby {
     extern jclass ThreadContext_class;
     extern jclass Symbol_class;
     extern jclass JRuby_class;
+    extern jclass ByteList_class;
     extern jclass GlobalVariable_class;
 
     extern jmethodID IRubyObject_callMethod;
@@ -62,18 +72,28 @@ namespace jruby {
     extern jmethodID RaiseException_constructor;
     extern jmethodID RubyNumeric_num2long_method;
     extern jmethodID RubyNumeric_num2chr_method;
-    extern jmethodID RubyNumeric_num2dbl_method;
+    extern jmethodID RubyNumeric_num2dbl_method;    
+    extern jmethodID RubyNumeric_int2fix_method;
     extern jmethodID RubyString_newStringNoCopy;
+    extern jmethodID RubyString_view;
+    extern jmethodID RubySymbol_getSymbolLong;
     extern jmethodID GC_trigger;
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
     extern jmethodID JRuby_callMethod;
     extern jmethodID JRuby_newString;
+    extern jmethodID JRuby_newFloat;
     extern jmethodID JRuby_ll2inum;
     extern jmethodID JRuby_ull2inum;
     extern jmethodID JRuby_int2big;
     extern jmethodID JRuby_uint2big;
+    extern jmethodID JRuby_getRString;
     extern jfieldID Handle_address_field;
+    extern jfieldID RubyString_value_field;
+    extern jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
+    extern jfieldID RubyFloat_value_field;
+    extern jfieldID RubySymbol_id_field;
+
     extern jobject runtime;
     extern jobject nilRef;
     extern jobject trueRef;
@@ -103,9 +123,9 @@ namespace jruby {
     VALUE objectToValue(JNIEnv* env, jobject obj);
 
     inline jobject getRuntime() { return jruby::runtime; }
-    inline jobject getTrue() { return jruby::constHandles[0]->obj; }
-    inline jobject getFalse() { return jruby::constHandles[1]->obj; }
-    inline jobject getNil() { return jruby::constHandles[2]->obj; }
+    jobject getTrue();
+    jobject getFalse();
+    jobject getNil();
     void checkExceptions(JNIEnv* env);
 
     VALUE getModule(JNIEnv* env, const char* className);
@@ -114,12 +134,42 @@ namespace jruby {
     jfieldID getFieldID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
     jmethodID getMethodID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
     jmethodID getStaticMethodID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
+
+    TAILQ_HEAD(DataSyncQueue, DataSync);
+    extern DataSyncQueue jsyncq, nsyncq;
 }
 
 #define JRUBY_callRubyMethodA(recv, meth, argc, argv) \
             jruby::callMethod(recv, meth, argc, argv)
 
+// FIXME - no need to match ruby here, unless we fold type into flags
+#define FL_MARK      (1<<5)
+#define FL_LIVE      (1<<9)
+#define FL_WEAK      (1<<10)
+#define FL_CONST     (1<<11)
 
+#define FL_USHIFT    12
+
+#define FL_USER0     (((VALUE)1)<<(FL_USHIFT+0))
+#define FL_USER1     (((VALUE)1)<<(FL_USHIFT+1))
+#define FL_USER2     (((VALUE)1)<<(FL_USHIFT+2))
+#define FL_USER3     (((VALUE)1)<<(FL_USHIFT+3))
+#define FL_USER4     (((VALUE)1)<<(FL_USHIFT+4))
+#define FL_USER5     (((VALUE)1)<<(FL_USHIFT+5))
+#define FL_USER6     (((VALUE)1)<<(FL_USHIFT+6))
+#define FL_USER7     (((VALUE)1)<<(FL_USHIFT+7))
+#define FL_USER8     (((VALUE)1)<<(FL_USHIFT+8))
+#define FL_USER9     (((VALUE)1)<<(FL_USHIFT+9))
+#define FL_USER10    (((VALUE)1)<<(FL_USHIFT+10))
+#define FL_USER11    (((VALUE)1)<<(FL_USHIFT+11))
+#define FL_USER12    (((VALUE)1)<<(FL_USHIFT+12))
+#define FL_USER13    (((VALUE)1)<<(FL_USHIFT+13))
+#define FL_USER14    (((VALUE)1)<<(FL_USHIFT+14))
+#define FL_USER15    (((VALUE)1)<<(FL_USHIFT+15))
+#define FL_USER16    (((VALUE)1)<<(FL_USHIFT+16))
+#define FL_USER17    (((VALUE)1)<<(FL_USHIFT+17))
+#define FL_USER18    (((VALUE)1)<<(FL_USHIFT+18))
+#define FL_USER19    (((VALUE)1)<<(FL_USHIFT+19))
 
 #endif	/* JRUBY_H */
 

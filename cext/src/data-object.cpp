@@ -37,14 +37,13 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
 {
     JLocalEnv env;
 
-    DataHandle* h = new DataHandle;
+    RubyData* h = new RubyData;
 
     TAILQ_INSERT_TAIL(&dataHandles, h, dataList);
     h->data = data;
     h->dmark = dmark;
     h->dfree = dfree;
-    h->finalize = rubydata_finalize;
-    h->type = T_DATA;
+    h->setType(T_DATA);
 
     jvalue params[3];
     params[0].l = getRuntime();
@@ -54,23 +53,22 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
     jobject obj = env->CallStaticObjectMethodA(RubyData_class, RubyData_newRubyData_method, params);
     checkExceptions(env);
 
-    h->obj = env->NewWeakGlobalRef(obj);
-    h->makeStrong(env);
+    h->obj = env->NewGlobalRef(obj);
     checkExceptions(env);
     
     
     return (VALUE) (uintptr_t) h;
 }
 
-DataHandle::~DataHandle()
+RubyData::~RubyData()
 {
     TAILQ_REMOVE(&dataHandles, this, dataList);
-}
 
-void DataHandle::mark()
-{
-    if (*dmark) {
-        (*dmark)(data);
+    if (dfree == (void *) -1) {
+        xfree(data);
+
+    } else if (dfree != NULL) {
+        (*dfree)(data);
     }
 }
 
@@ -82,17 +80,5 @@ jruby_data(VALUE v)
         return NULL;
     }
 
-    return ((DataHandle *) v)->data;
-}
-
-static void
-rubydata_finalize(Handle *h)
-{
-    DataHandle* dh = (DataHandle *) h;
-    
-    if (dh->dfree == (void *) -1) {
-        xfree(dh->data);
-    } else if (dh->dfree != NULL) {
-        (*dh->dfree)(dh->data);
-    }
+    return ((RubyData *) v)->data;
 }

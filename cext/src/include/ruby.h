@@ -15,8 +15,9 @@
 #define	JRUBY_RUBY_H
 #define JRUBY
 
+#include <sys/types.h>
 #include <stdint.h>
-#include <sys/types.h>  
+#include <limits.h>
 
 // A number of extensions expect these to be already included
 #include <stddef.h>
@@ -44,6 +45,30 @@ extern "C" {
 typedef uintptr_t ID;
 /** In MRI, VALUE represents an object. */
 typedef uintptr_t VALUE;
+typedef intptr_t SIGNED_VALUE;
+
+#ifndef RSHIFT
+# define RSHIFT(x,y) ((x)>>(int)y)
+#endif
+
+
+#define FIXNUM_MAX (LONG_MAX>>1)
+#define FIXNUM_MIN RSHIFT((long)LONG_MIN,1)
+
+#define FIXNUM_P(f) (((SIGNED_VALUE)(f))&FIXNUM_FLAG)
+#define POSFIXABLE(f) ((f) < FIXNUM_MAX+1)
+#define NEGFIXABLE(f) ((f) >= FIXNUM_MIN)
+#define FIXABLE(f) (POSFIXABLE(f) && NEGFIXABLE(f))
+
+#define IMMEDIATE_MASK 0x3
+#define IMMEDIATE_P(x) ((VALUE)(x) & IMMEDIATE_MASK)
+#define SPECIAL_CONST_P(x) (IMMEDIATE_P(x) || !RTEST(x))
+
+#define FIXNUM_FLAG 0x1
+#define SYMBOL_FLAG 0x0e
+#define SYMBOL_P(x) (((VALUE)(x)&0xff)==SYMBOL_FLAG)
+#define ID2SYM(x) ((VALUE)(((long)(x))<<8|SYMBOL_FLAG))
+#define SYM2ID(x) RSHIFT((unsigned long)x,8)
 
 /** The false object. */
 #define Qfalse ((VALUE)0)
@@ -54,14 +79,31 @@ typedef uintptr_t VALUE;
 /** The undef object. Value for placeholder */
 #define Qundef ((VALUE)6)
 
+struct RBasic {
+    VALUE unused0;
+    VALUE unused1;
+};
+
 struct RString {
-    char* ptr;
-    int len;
+    struct RBasic basic;
+    union {
+        struct {
+            long len;
+            char *ptr;
+            long capa;
+        } heap;
+        char unused[sizeof(VALUE) * 3];
+    } as;
 };
 
 struct RArray {
     VALUE* ptr;
     int len;
+};
+
+struct RFloat {
+    struct RBasic basic;
+    double value;
 };
 
 typedef enum JRubyType {
@@ -96,6 +138,11 @@ typedef enum JRubyType {
 
 #define T_MASK (0x1f)    
 
+
+#define RTEST(v) (((v) & ~Qnil) != 0)
+#define NIL_P(v) ((v) == Qnil)
+#define TYPE(x) rb_type((VALUE)(x))
+
 int rb_type(VALUE);
 void rb_check_type(VALUE, int);
 #define Check_Type(v,t) rb_check_type((VALUE)(v),t)
@@ -129,33 +176,21 @@ void xfree(void*);
 /** Interrupt checking (no-op). */
 #define CHECK_INTS        /* No-op */
 
-/** True if the value is a Fixnum. */
-#define FIXNUM_P(v) (rb_type((v)) == T_FIXNUM)
-
-#define ID2SYM(id) (id)
-#define SYM2ID(value) (value)
-
 /** Test macros */
 #define RTEST(v) (((v) & ~Qnil) != 0)
 #define NIL_P(v) ((v) == Qnil)
-#define SYMBOL_P(v) (rb_type((v)) == T_SYMBOL)
 #define TYPE(x) rb_type((VALUE)(x))
 
 /** Convert a Fixnum into an int. */
-#define FIX2INT(x) ((int) rb_num2int(x))
+#define FIX2INT(x) ((int) RSHIFT((SIGNED_VALUE)x,1))
 /** Convert a Fixnum into an unsigned int. */
-#define FIX2UINT(x) ((int) rb_num2uint(x))
-/** Convert a Fixnum into an int. */
-#define FIX2LONG(x)        ((long)FIX2INT(x))
-/** Convert a Fixnum into an unsigned int. */
-#define FIX2ULONG(x)       ((unsigned long)FIX2UINT(x))
+#define FIX2UINT(x) ((unsigned int) ((((VALUE)(x))>>1)&LONG_MAX))
+
+#define FIX2LONG(x) RSHIFT((SIGNED_VALUE)x,1)
+#define FIX2ULONG(x) ((((VALUE)(x))>>1)&LONG_MAX)
 
 /** Convert a VALUE into a long int. */
-#define NUM2LONG(x) rb_num2long(x)
-/** Convert a VALUE into a long int. */
 #define NUM2ULONG(x) rb_num2ulong(x)
-/** Convert a VALUE into an int. */
-#define NUM2INT(x) ((int) rb_num2int(x))
 /** Convert a VALUE into a chr */
 #define NUM2CHR(x) rb_num2chr(x)
 /** Convert a VALUE into a long int. */
@@ -164,26 +199,26 @@ void xfree(void*);
 #define NUM2LL(x) rb_num2ll(x)
 /** Convert a VALUE into an unsigned long long */
 #define NUM2ULL(x) rb_num2ull(x)
+#define NUM2DBL(x) rb_num2dbl(x)
 
 /** Convert int to a Ruby Integer. */
-#define INT2FIX(x)   rb_int2inum(x)
+#define INT2FIX(i)   ((int)(((SIGNED_VALUE)(i))<<1 | FIXNUM_FLAG))
 /** Convert unsigned int to a Ruby Integer. */
 #define UINT2FIX(x)  rb_uint2inum(x)
 /** Convert int to a Ruby Integer. */
-#define INT2NUM(x)   rb_int2inum(x)
-#define UINT2NUM(x)  rb_uint2inum(x)
-#define LONG2FIX(x)  rb_int2inum(x)
+
+#define LONG2FIX(x)  INT2FIX(x)
 #define LONG2NUM(x)  rb_int2inum(x)
 #define ULONG2NUM(x) rb_uint2inum(x)
 #define LL2NUM(x)    rb_ll2inum(x)
 #define ULL2NUM(x)   rb_ull2inum(x)
 
 /** The length of string str. */
-#define RSTRING_LEN(str)  rb_str_len(str)
+#define RSTRING_LEN(str)  jruby_str_length((str))
 /** The pointer to the string str's data. */
-#define RSTRING_PTR(str)  rb_str_ptr_readonly(str)
+#define RSTRING_PTR(str)  jruby_str_ptr((str))
 /** Pointer to the MRI string structure */
-#define RSTRING(str) rb_str_struct_readonly(str);
+#define RSTRING(str) jruby_rstring((str))
 
 /** Modifies the VALUE object in place by calling rb_obj_as_string(). */
 #define StringValue(v)        rb_string_value(&(v))
@@ -225,6 +260,7 @@ long rb_fix2int(VALUE);
 unsigned long rb_fix2uint(VALUE);
 long long rb_num2ll(VALUE);
 unsigned long long rb_num2ull(VALUE);
+double rb_num2dbl(VALUE);
 
 VALUE rb_int2inum(long);
 VALUE rb_uint2inum(unsigned long);
@@ -232,6 +268,40 @@ VALUE rb_ll2inum(long long);
 VALUE rb_ull2inum(unsigned long long);
 VALUE rb_int2big(long long);
 VALUE rb_uint2big(unsigned long long);
+
+/** Convert a VALUE into a long int. */
+static inline long
+NUM2LONG(VALUE x)
+{
+    return __builtin_expect(FIXNUM_P(x), 1) ? FIX2LONG(x) : rb_num2long(x);
+}
+
+/** Convert a VALUE into an int. */
+static inline int
+NUM2INT(VALUE x)
+{
+    return __builtin_expect(FIXNUM_P(x), 1) ? FIX2INT(x) : rb_num2int(x);
+}
+
+static inline VALUE
+INT2NUM(long v)
+{
+    if (__builtin_expect(FIXABLE(v), 1)) {
+        return INT2FIX(v);
+    }
+
+    return rb_int2inum(v);
+}
+
+static inline VALUE
+UINT2NUM(unsigned long v)
+{
+    if (__builtin_expect(POSFIXABLE(v), 1)) {
+        LONG2FIX(v);
+    }
+
+    return rb_uint2inum(v);
+}
 
 
 VALUE rb_funcall(VALUE obj, ID meth, int cnt, ...);
@@ -375,6 +445,7 @@ VALUE rb_sym_to_s(VALUE);
 VALUE rb_str_length(VALUE);
 long rb_str_offset(VALUE, long);
 size_t rb_str_capacity(VALUE);
+
 /** Deprecated alias for rb_obj_freeze */
 VALUE rb_str_freeze(VALUE str);
 /** Returns a pointer to a persistent char [] that contains the same data as
@@ -384,18 +455,16 @@ VALUE rb_str_freeze(VALUE str);
  *
  * @note This is NOT an MRI C-API function.
  */
-char *rb_str_ptr_readonly(VALUE self);
-/** Returns a pointer to the readonly RString structure
- * which exposes an MRI-like API to the C code.
- *
- * @note This is NOT an MRI C-API function.
- */
-struct RString rb_str_struct_readonly(VALUE str);
+extern char* rb_str_ptr_readonly(VALUE v);
 /** Call #to_s on object pointed to and _replace_ it with the String. */
 VALUE rb_string_value(VALUE* object_variable);
 char* rb_string_value_ptr(VALUE* object_variable);
 /** As rb_string_value but also returns a C string of the new String. */
 char* rb_string_value_cstr(VALUE* object_variable);
+
+extern struct RString* jruby_rstring(VALUE v);
+extern int jruby_str_length(VALUE v);
+extern char* jruby_str_ptr(VALUE v);
 
 #define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_dup
@@ -443,6 +512,11 @@ extern ID rb_intern_const(const char *);
 extern ID jruby_intern_nonconst(const char *);
 #define rb_intern(name) \
     (__builtin_constant_p(name) ? rb_intern_const(name) : jruby_intern_nonconst(name))
+
+extern struct RFloat* jruby_rfloat(VALUE v);
+extern VALUE rb_float_new(double value);
+extern double jruby_float_value(VALUE v);
+#define RFLOAT_VALUE(v) jruby_float_value(v)
 
 /** Call block with given argument or raise error if no block given. */
 VALUE rb_yield(VALUE argument_handle);
@@ -521,10 +595,6 @@ extern VALUE rb_eNameError;
 extern VALUE rb_eSyntaxError;
 extern VALUE rb_eLoadError;
 
-
-struct RBasic {
-    int type;
-};
 
 #ifdef	__cplusplus
 }

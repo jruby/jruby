@@ -24,7 +24,7 @@ ifneq ($(findstring cygwin, $(BUILD_OS)),)
   OS = win32
 endif
 
-LIBCEXT = $(BUILD_DIR)/$(PREFIX)$(LIBNAME).$(JNIEXT)
+LIBCEXT = $(JRUBY_NATIVE_DIR)/$(PLATFORM)/$(PREFIX)$(LIBNAME).$(JNIEXT)
 
 CPU ?= $(shell uname -m | sed -e 's/i[345678]86/i386/')
 MODEL = 32 # Default to 32bit compiles
@@ -41,14 +41,14 @@ CCACHE := $(strip $(realpath $(shell which ccache 2> /dev/null)))
 SRC_DIR ?= $(shell pwd)
 JNI_DIR ?= $(SRC_DIR)
 JRUBY_NATIVE_DIR ?= $(JRUBY_BASEDIR)/lib/native/
-BUILD_DIR ?= $(JRUBY_NATIVE_DIR)$(PLATFORM)
+BUILD_DIR ?= $(JRUBY_BASEDIR)/build
 HDR_DIR ?= $(JRUBY_NATIVE_DIR)
 RUBY_HEADERS = defines.h dl.h intern.h re.h ruby.h
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
-OBJS = $(patsubst %.c, $(SRC_DIR)/%.o, $(notdir $(SRCS)))
+OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(notdir $(SRCS)))
 
-CXXOBJS += $(patsubst %.cpp, $(SRC_DIR)/%.o, $(notdir $(wildcard $(SRC_DIR)/*.cpp)))
+CXXOBJS += $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(notdir $(wildcard $(SRC_DIR)/*.cpp)))
 
 vpath %.h $(SRC_DIR)
 
@@ -73,8 +73,8 @@ STRIP = strip -S
 
 
 JDK_INCLUDES = -I"$(JDK_HOME)/include" -I"$(JDK_HOME)/include/$(OS)"
-IFLAGS = -I"$(BUILD_DIR)" -I"$(BUILD_DIR)"/jni -I$(SRC_DIR)/include \
-	 -I"$(SRC_DIR)/include" -I$(SRC_DIR) -I"$(SRC_DIR)"
+IFLAGS = -I"$(BUILD_DIR)" -I"$(SRC_DIR)" -I"$(BUILD_DIR)"/jni \
+  -I"$(SRC_DIR)"/include
 CFLAGS = $(OFLAGS) $(WFLAGS) $(IFLAGS) $(PICFLAGS) $(JDK_INCLUDES)
 CFLAGS += -D_REENTRANT -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
 CXXFLAGS = $(CFLAGS)
@@ -209,7 +209,7 @@ ifneq ($(strip $(findstring $(OS), linux solaris)),)
 endif
 
 
-JAVA_HDRS = $(patsubst %.h, $(SRC_DIR)/%.h, org_jruby_cext_JRuby.h org_jruby_cext_Native.h org_jruby_cext_GC.h  org_jruby_runtime_ClassIndex.h)
+JAVA_HDRS = $(patsubst %.h, $(BUILD_DIR)/%.h, org_jruby_cext_JRuby.h org_jruby_cext_Native.h org_jruby_cext_GC.h  org_jruby_runtime_ClassIndex.h)
 
 all:	$(LIBCEXT)
 
@@ -232,11 +232,11 @@ $(LIBCEXT):  $(OBJS) $(CXXOBJS) $(RUBY_HEADERS)
 	$(CXX) -o $@ $(LDFLAGS) $(SOFLAGS) $(OBJS) $(CXXOBJS) $(LIBS)
 	
 
-$(SRC_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 	@mkdir -p $(@D)
 	$(CCACHE) $(CC) $(CFLAGS) -c $< -o $@
 
-$(SRC_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 	@mkdir -p $(@D)
 	$(CCACHE) $(CXX) $(CXXFLAGS) -c $< -o $@
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -24,10 +24,10 @@
 #include <jni.h>
 
 #include "JLocalEnv.h"
-#include "JString.h"
 #include "jruby.h"
 #include "JUtil.h"
 #include "ruby.h"
+#include "Handle.h"
 
 using namespace jruby;
 
@@ -47,7 +47,6 @@ newString(const char* ptr, int len, int capacity = 0, bool tainted = false)
 
     jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_newString, jruby::getRuntime(), bytes, (jboolean) tainted);
     checkExceptions(env);
-    Handle::valueOf((VALUE) result)->makeStrong(env);
 
     return (VALUE) result;
 }
@@ -199,12 +198,36 @@ rb_str_len(VALUE str) {
     return NUM2INT(callMethod(str, "length", 0, NULL));
 }
 
-extern "C" char*
-rb_str_ptr_readonly(VALUE obj)
+static RubyString*
+jruby_str(VALUE v)
 {
-    JLocalEnv env;
-    JString jString(env, obj);
-    return (char*)jString.c_str();
+    if (TYPE(v) != T_STRING) {
+        rb_raise(rb_eTypeError, "wrong type (expected String)");
+    }
+
+    return (RubyString *) v;
 }
 
+extern "C" char*
+rb_str_ptr_readonly(VALUE v)
+{
+    return jruby_str(v)->toRString(true)->as.heap.ptr;    
+}
 
+extern "C" char*
+jruby_str_ptr(VALUE v)
+{
+    return jruby_rstring(v)->as.heap.ptr;
+}
+
+extern "C" int
+jruby_str_length(VALUE v)
+{
+    return jruby_str(v)->length();
+}
+
+extern "C" struct RString*
+jruby_rstring(VALUE v)
+{
+    return jruby_str(v)->toRString(false);
+}

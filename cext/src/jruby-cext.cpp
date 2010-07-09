@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -20,6 +20,7 @@
 #include <map>
 #include "JUtil.h"
 #include "jruby.h"
+#include "Handle.h"
 #include "JavaException.h"
 
 namespace jruby {
@@ -30,7 +31,7 @@ namespace jruby {
     jclass RubyObject_class;
     jclass RubyBasicObject_class;
     jclass RubyClass_class;
-    jclass RubyData_class;
+    jclass RubyData_class;    
     jclass RubyModule_class;
     jclass RubyNumeric_class;
     jclass RubyFloat_class;
@@ -42,6 +43,7 @@ namespace jruby {
     jclass ThreadContext_class;
     jclass Symbol_class;
     jclass JRuby_class;
+    jclass ByteList_class;
     jclass GlobalVariable_class;
     jmethodID JRuby_callMethod;
     jmethodID JRuby_newString;
@@ -49,6 +51,8 @@ namespace jruby {
     jmethodID JRuby_ull2inum;
     jmethodID JRuby_int2big;
     jmethodID JRuby_uint2big;
+    jmethodID JRuby_getRString;
+    jmethodID JRuby_newFloat;
 
     jmethodID ThreadContext_getRuntime_method;
     jmethodID Ruby_defineModule_method;
@@ -64,14 +68,22 @@ namespace jruby {
     jmethodID RubyObject_getNativeTypeIndex_method;
     jmethodID RubyNumeric_num2long_method;
     jmethodID RubyNumeric_num2chr_method;
-    jmethodID RubyNumeric_num2dbl_method;
+    jmethodID RubyNumeric_num2dbl_method;    
+    jmethodID RubyNumeric_int2fix_method;    
     jmethodID RubyString_newStringNoCopy;
+    jmethodID RubyString_view;
+    jmethodID RubySymbol_getSymbolLong;
     jmethodID IRubyObject_callMethod;
     jmethodID IRubyObject_asJavaString_method;
     jmethodID Handle_valueOf;
     jmethodID Ruby_getCurrentContext_method;
     jmethodID GC_trigger;
     jfieldID Handle_address_field;
+    jfieldID RubyString_value_field;
+    jfieldID RubyFloat_value_field;
+    jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
+    jfieldID RubySymbol_id_field;
+
     jobject runtime;
     jobject nilRef;
     jobject trueRef;
@@ -142,6 +154,7 @@ loadIds(JNIEnv* env)
     RubyBasicObject_class = loadClass(env, "org/jruby/RubyBasicObject");
     RubyClass_class = loadClass(env, "org/jruby/RubyClass");
     RubyData_class = loadClass(env, "org/jruby/cext/RubyData");
+    RubyFloat_class = loadClass(env, "org/jruby/RubyFloat");
     RubyModule_class = loadClass(env, "org/jruby/RubyModule");
     RubyNumeric_class = loadClass(env, "org/jruby/RubyNumeric");
     RubyFloat_class = loadClass(env, "org/jruby/RubyFloat");
@@ -155,6 +168,7 @@ loadIds(JNIEnv* env)
     ThreadContext_class = loadClass(env, "org/jruby/runtime/ThreadContext");
     Symbol_class = loadClass(env, "org/jruby/RubySymbol");
     JRuby_class = loadClass(env, "org/jruby/cext/JRuby");
+    ByteList_class = loadClass(env, "org/jruby/util/ByteList");
     GlobalVariable_class = loadClass(env, "org/jruby/runtime/GlobalVariable");
 
     Handle_address_field = getFieldID(env, Handle_class, "address", "J");
@@ -177,6 +191,8 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/runtime/builtin/IRubyObject;)B");
     RubyNumeric_num2dbl_method = getStaticMethodID(env, RubyNumeric_class, "num2dbl",
             "(Lorg/jruby/runtime/builtin/IRubyObject;)D");
+    RubyNumeric_int2fix_method = getStaticMethodID(env, RubyNumeric_class, "int2fix",
+            "(Lorg/jruby/Ruby;J)Lorg/jruby/RubyNumeric;");
 
     GC_trigger = getStaticMethodID(env, GC_class, "trigger", "()V");
     Handle_valueOf = getStaticMethodID(env, Handle_class, "valueOf", "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/cext/Handle;");
@@ -189,6 +205,10 @@ loadIds(JNIEnv* env)
     RubyData_newRubyData_method = getStaticMethodID(env, RubyData_class, "newRubyData", "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;J)Lorg/jruby/cext/RubyData;");
     RubyString_newStringNoCopy = getStaticMethodID(env, RubyString_class,
             "newStringNoCopy", "(Lorg/jruby/Ruby;[B)Lorg/jruby/RubyString;");
+    RubyString_view = getMethodID(env, RubyString_class,
+            "view", "([B)V");
+    RubySymbol_getSymbolLong = getStaticMethodID(env, Symbol_class, "getSymbolLong",
+            "(Lorg/jruby/Ruby;J)Lorg/jruby/RubySymbol;");
     JRuby_callMethod = getStaticMethodID(env, JRuby_class, "callRubyMethod",
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_newString = getStaticMethodID(env, JRuby_class, "newString",
@@ -201,6 +221,14 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;J)J");
     JRuby_uint2big = getStaticMethodID(env, JRuby_class, "uint2big",
             "(Lorg/jruby/Ruby;J)J");
+    JRuby_getRString = getStaticMethodID(env, JRuby_class, "getRString", "(Lorg/jruby/RubyString;)J");
+    JRuby_newFloat = getStaticMethodID(env, JRuby_class, "newFloat", "(Lorg/jruby/Ruby;JD)Lorg/jruby/RubyFloat;");
+    RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
+    RubyFloat_value_field = getFieldID(env, RubyFloat_class, "value", "D");
+    ByteList_bytes_field = getFieldID(env, ByteList_class, "bytes", "[B");
+    ByteList_begin_field = getFieldID(env, ByteList_class, "begin", "I");
+    ByteList_length_field = getFieldID(env, ByteList_class, "realSize", "I");
+    RubySymbol_id_field = getFieldID(env, Symbol_class, "id", "I");
 }
 
 static jobject
@@ -218,17 +246,14 @@ Java_org_jruby_cext_Native_initNative(JNIEnv* env, jobject self, jobject runtime
         loadIds(env);
         jruby::runtime = env->NewGlobalRef(runtime);
         
-        constHandles[0] = new Handle;
-        constHandles[0]->obj = env->NewWeakGlobalRef(callObjectMethod(env, runtime, Ruby_getFalse_method));
-        constHandles[0]->type = T_FALSE;
+        constHandles[0] = new Handle(env, callObjectMethod(env, runtime, Ruby_getFalse_method), T_FALSE);
+        constHandles[0]->flags |= FL_CONST;
 
-        constHandles[1] = new Handle;
-        constHandles[1]->obj = env->NewWeakGlobalRef(callObjectMethod(env, runtime, Ruby_getTrue_method));
-        constHandles[1]->type = T_TRUE;
+        constHandles[1] = new Handle(env, callObjectMethod(env, runtime, Ruby_getTrue_method), T_TRUE);
+        constHandles[1]->flags |= FL_CONST;
 
-        constHandles[2] = new Handle;
-        constHandles[2]->obj = env->NewWeakGlobalRef(callObjectMethod(env, runtime, Ruby_getNil_method));
-        constHandles[2]->type = T_NIL;
+        constHandles[2] = new Handle(env, callObjectMethod(env, runtime, Ruby_getNil_method), T_NIL);
+        constHandles[2]->flags |= FL_CONST;
         
         initRubyClasses(env, runtime);
     } catch (JavaException& ex) {
@@ -237,19 +262,19 @@ Java_org_jruby_cext_Native_initNative(JNIEnv* env, jobject self, jobject runtime
 }
 
 
-extern "C" JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_getNil(JNIEnv* env, jobject self)
 {
     return Qnil;
 }
 
-extern "C" JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_getTrue(JNIEnv* env, jobject self)
 {
     return Qtrue;
 }
 
-extern "C" JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_getFalse(JNIEnv* env, jobject self)
 {
     return Qfalse;

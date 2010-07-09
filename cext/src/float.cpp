@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Tim Felgentreff
+ * Copyright (C) 2010 Wayne Meissner, Tim Felgentreff
  *
  * This file is part of jruby-cext.
  *
@@ -17,18 +17,70 @@
  */
 
 #include "jruby.h"
-#include "ruby.h"
+#include "Handle.h"
 #include "JLocalEnv.h"
+#include "JUtil.h"
 
 using namespace jruby;
 
+RubyFloat::RubyFloat(double value)
+{
+    setType(T_FLOAT);
+    rfloat.value = value;
+}
+
+RubyFloat::RubyFloat(JNIEnv* env, jobject obj_, jdouble value_): Handle(env, obj_, T_FLOAT)
+{
+    rfloat.value = value_;
+}
+
+extern "C" struct RFloat*
+jruby_rfloat(VALUE v)
+{
+    Handle* h = Handle::valueOf(v);
+    if (h->getType() == T_FLOAT) {
+        return ((RubyFloat *) h)->toRFloat();
+    }
+
+    rb_raise(rb_eTypeError, "wrong type (expected Float)");
+}
+
 extern "C" VALUE
-rb_float_new(double val) {
+rb_float_new(double value)
+{
     JLocalEnv env;
-    VALUE _float;
-    jobject rb_float = env->CallStaticObjectMethod(RubyFloat_class,
-            getStaticMethodID(env, RubyFloat_class, "newFloat", "(Lorg/jruby/Ruby;D)Lorg/jruby/RubyFloat;"),
-            getRuntime(), (jdouble)val);
-    _float = objectToValue(env, rb_float);
-    return _float;
+
+    //env->CallStaticObjectMethod();
+    RubyFloat* f = new RubyFloat(value);
+    jvalue params[3];
+    params[0].l = jruby::getRuntime();
+    params[1].j = p2j(f);
+    params[2].d = value;
+    
+    jobject rubyFloat = env->CallStaticObjectMethodA(JRuby_class, JRuby_newFloat, params);
+    f->obj = env->NewGlobalRef(rubyFloat);
+
+    return (VALUE) f;
+}
+
+extern "C" double
+jruby_float_value(VALUE v)
+{
+    Handle* h = Handle::valueOf(v);
+    if (h->getType() == T_FLOAT) {
+        return ((RubyFloat *) h)->doubleValue();
+    }
+
+    rb_raise(rb_eTypeError, "wrong type (expected Float)");
+}
+
+extern "C" double
+rb_num2dbl(VALUE v)
+{
+    Handle* h = Handle::valueOf(v);
+    if (h->getType() == T_FLOAT) {
+        return ((RubyFloat *) h)->doubleValue();
+    }
+
+    rb_raise(rb_eTypeError, "wrong type (expected Float)");
 }

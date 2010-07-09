@@ -18,37 +18,29 @@
 
 package org.jruby.cext;
 
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
+import org.jruby.RubySymbol;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public final class Handle extends WeakReference<Object> {
-    private static final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<Object>();
-    private static final Thread reaperThread;
-    private static Handle allHandles = null;
-    
+public final class Handle {
+    private static final long FIXNUM_MAX = Integer.getInteger("sun.arch.data.model") == 32
+            ? (Long.MAX_VALUE >> 1) : ((long) Integer.MAX_VALUE >> 1);
+    private static final long FIXNUM_MIN = Integer.getInteger("sun.arch.data.model") == 32
+            ? (Long.MIN_VALUE >> 1) : ((long) Integer.MIN_VALUE >> 1);
+
     private final Ruby runtime;
     private final long address;
-    private Handle prev = null, next = null;
     
     static Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
-        Handle h = new Handle(runtime, rubyObject, nativeHandle);
-        if (allHandles != null) {
-            h.next = allHandles;
-            allHandles.prev = h;
-        }
-        allHandles = h;
-
-        return h;
+        return new Handle(runtime, nativeHandle);
     }
     
-    private Handle(Ruby runtime, Object rubyObject, long address) {
-        super(rubyObject, referenceQueue);
+    private Handle(Ruby runtime, long address) {
         this.runtime = runtime;
         this.address = address;
     }
@@ -81,12 +73,7 @@ public final class Handle extends WeakReference<Object> {
         return "Native ruby object " + Long.toString(address);
     }
 
-
-    void link(List<IRubyObject> fields) {
-    }
-
-   
-    static Handle valueOfLocked(IRubyObject obj) {
+    static Handle valueOf(IRubyObject obj) {
         Handle h = GC.lookup(obj);
         if (h != null) {
             return h;
@@ -95,10 +82,32 @@ public final class Handle extends WeakReference<Object> {
         Ruby runtime = obj.getRuntime();
         long nativeHandle;
 
-        if (obj instanceof RubyFixnum) {
-            nativeHandle = Native.getInstance(runtime).newFixnumHandle(obj, ((RubyFixnum) obj).getLongValue());
+
+        if (obj instanceof RubyObject) {
+            int type = ((RubyObject) obj).getNativeTypeIndex();
+            switch (type) {
+                case ClassIndex.FIXNUM: {
+                    final long val = ((RubyFixnum) obj).getLongValue();
+                    nativeHandle = (val < FIXNUM_MAX && val >= FIXNUM_MIN)
+                            ? ((val << 1) | 0x1)
+                            : Native.getInstance(runtime).newFixnumHandle(obj, val);
+                    }
+                    break;
+
+                case ClassIndex.FLOAT:
+                    nativeHandle = Native.getInstance(runtime).newFloatHandle(obj, ((RubyNumeric) obj).getDoubleValue());
+                    break;
+
+                case ClassIndex.SYMBOL:
+                    nativeHandle = ((long) ((RubySymbol) obj).getId() << 8) | 0xeL;
+                    break;
+
+                default:
+                    nativeHandle = Native.getInstance(runtime).newHandle(obj, type);
+                    break;
+            }
         } else {
-            nativeHandle = Native.getInstance(runtime).newHandle(obj);
+            nativeHandle = Native.getInstance(runtime).newHandle(obj, ClassIndex.OBJECT);
         }
 
         Handle handle = newHandle(runtime, obj, nativeHandle);
@@ -108,74 +117,17 @@ public final class Handle extends WeakReference<Object> {
         return handle;
     }
 
-    public static synchronized Handle valueOf(IRubyObject obj) {
-        GIL.acquire();
-        try {
-            return valueOfLocked(obj);
-        } finally {
-            GIL.releaseNoCleanup();
+    static long nativeHandle(IRubyObject obj) {
+        if (obj.getClass() == RubyFixnum.class) {
+            final long val = ((RubyFixnum) obj).getLongValue();
+            if (val < FIXNUM_MAX && val >= FIXNUM_MIN) {
+                return ((val << 1) | 0x1);
+            }
+        
+        } else if (obj.getClass() == RubySymbol.class) {
+            return ((long) ((RubySymbol) obj).getId() << 8) | 0xeL;
         }
-    }
 
-    public static long nativeHandle(IRubyObject obj) {
         return Handle.valueOf(obj).getAddress();
     }
-
-    static long nativeHandleLocked(IRubyObject obj) {
-        return Handle.valueOfLocked(obj).getAddress();
-    }
-
-    private static final Runnable reaper = new Runnable() {
-
-        public void run() {
-            for ( ; ; ) {
-                try {
-                    Reference<? extends Object> r = referenceQueue.remove();
-                    GIL.acquire();
-                    try {
-                        do {
-                            try {
-                                if (r instanceof Handle) {
-                                    final Handle h = (Handle) r;
-                                    if (h.prev != null) {
-                                        h.prev.next = h.next;
-                                    }
-                                    if (h.next != null) {
-                                        h.next.prev = h.prev;
-                                    }
-
-                                    if (h == allHandles) {
-                                        if (h.next != null) {
-                                            allHandles = h.next;
-                                        } else {
-                                            allHandles = h.prev;
-                                        }
-                                    }
-
-                                    h.prev = h.next = null;
-
-                                    Native.getInstance(h.runtime).freeHandle(h.address);
-                                }
-                            } finally {
-                                r.clear();
-                            }
-                        } while ((r = referenceQueue.poll()) != null);
-                    } finally {
-                        GIL.releaseNoCleanup();
-                    }
-                } catch (InterruptedException ex) {
-                    break;
-                } catch (Throwable t) {
-                    continue;
-                }
-            }
-        }
-    };
-    static {
-        reaperThread = new Thread(reaper, "Native Handle Reaper");
-        reaperThread.setDaemon(true);
-        reaperThread.setPriority(Thread.NORM_PRIORITY + 1);
-        reaperThread.start();
-    }
-
 }
