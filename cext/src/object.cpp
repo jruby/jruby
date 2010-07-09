@@ -22,6 +22,25 @@
 
 using namespace jruby;
 
+static VALUE
+convert_type(VALUE val, const char* type_name, const char* method, int raise)
+{
+    ID m = rb_intern(method);
+    if (!rb_respond_to(val, m)) {
+        if (raise) {
+            rb_raise(rb_eTypeError, "can't convert %s into %s",
+                    NIL_P(val) ? "nil" :
+                    val == Qtrue ? "true" :
+                    val == Qfalse ? "false" :
+                    rb_obj_classname(val), 
+                    type_name);
+        } else {
+            return Qnil;
+        }
+    }
+    return rb_funcall(val, m, 0);
+}
+
 extern "C" VALUE 
 rb_obj_freeze(VALUE obj) {    
     return callMethodA(obj, "freeze", 0, NULL);
@@ -38,3 +57,17 @@ int rb_respond_to(VALUE obj_handle, ID method_name) {
     return (int)env->CallBooleanMethod(valueToObject(env, obj_handle), IRubyObject_respondsTo_method);
 }
 
+extern "C" VALUE
+rb_convert_type(VALUE val, int type, const char* type_name, const char* method)
+{
+    VALUE v;
+    if (TYPE(val) == type) return val;
+
+    v = convert_type(val, type_name, method, Qtrue);
+
+    if (TYPE(v) != type) {
+        rb_raise(rb_eTypeError, "%s#%s should return %s",
+        rb_obj_classname(val), method, type_name);
+    }
+    return v;
+}

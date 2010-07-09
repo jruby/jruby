@@ -522,6 +522,8 @@ void rb_warning(const char *fmt, ...);
 
 /** 1 if obj.respond_to? method_name evaluates true, 0 otherwise. */
 int rb_respond_to(VALUE obj_handle, ID method_name);
+/** Returns object returned by invoking method on object if right type, or raises error. */
+VALUE rb_convert_type(VALUE object_handle, int type, const char* type_name, const char* method_name);
 
 /** Define a toplevel constant */
 void rb_define_global_const(const char* name, VALUE obj);
