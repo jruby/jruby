@@ -27,24 +27,28 @@ using namespace jruby;
 static jobject getNotAllocatableAllocator(JNIEnv* env);
 static jobject getDefaultAllocator(JNIEnv* env, VALUE parent);
 
-extern "C" VALUE 
-rb_class_new_instance(int arg_count, VALUE* args, VALUE class_handle) {
-    return rb_funcall2(class_handle, rb_intern("new"), arg_count, args);
+extern "C" VALUE
+rb_class_new_instance(int argc, VALUE* argv, VALUE klass)
+{
+    return callMethodA(klass, "new", argc, argv);
 }
 
-extern "C" VALUE 
-rb_class_of(VALUE object_handle) {
-    return rb_funcall(object_handle, rb_intern("class"), 0);
+extern "C" VALUE
+rb_class_of(VALUE obj)
+{
+    return callMethodA(obj, "class", 0, NULL);
 }
 
-extern "C" VALUE 
-rb_class_name(VALUE class_handle) {
-    return rb_funcall(class_handle, rb_intern("name"), 0);
+extern "C" VALUE
+rb_class_name(VALUE klass)
+{
+    return callMethodA(klass, "name", 0, NULL);
 }
 
 extern "C" char* 
-rb_class2name(VALUE class_handle) {
-    return (char*)RSTRING_PTR(rb_class_name(class_handle));
+rb_class2name(VALUE class_handle)
+{
+    return (char *) RSTRING_PTR(rb_class_name(class_handle));
 }
 
 extern "C" VALUE
