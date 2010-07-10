@@ -16,6 +16,8 @@
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <vector>
+#include <list>
 #include "jruby.h"
 #include "ruby.h"
 #include "Handle.h"
@@ -23,6 +25,7 @@
 
 using namespace jruby;
 
+static std::list<VALUE*> globalVariables;
 
 extern "C" void
 rb_gc_mark_locations(VALUE* first, VALUE* last)
@@ -46,6 +49,23 @@ rb_gc_mark(VALUE v)
     }
 }
 
+extern "C" void
+rb_gc_register_address(VALUE *addr)
+{
+    globalVariables.push_back(addr);
+}
+
+extern "C" void
+rb_gc_unregister_address(VALUE *addr)
+{
+    globalVariables.remove(addr);
+}
+
+extern "C" void
+rb_global_variable(VALUE *var)
+{
+    rb_gc_register_address(var);
+}
 
 /*
  * Class:     org_jruby_cext_Native
@@ -63,6 +83,16 @@ Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
             dh->flags |= FL_MARK;
             (*dh->dmark)(dh->data);
             dh->flags &= ~FL_MARK;
+        }
+    }
+
+    /*
+     * Set the mark flag on all global vars, so they don't get pruned out
+     */
+    for (std::list<VALUE*>::iterator it = globalVariables.begin(); it != globalVariables.end(); ++it) {
+        VALUE* vp = *it;
+        if (vp != NULL && !SPECIAL_CONST_P(*vp)) {
+            reinterpret_cast<Handle*>(*vp)->flags |= FL_MARK;
         }
     }
 

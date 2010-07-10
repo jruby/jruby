@@ -113,28 +113,6 @@ void rb_define_global_const(const char* name, VALUE obj) {
     env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(name), valueToObject(env, obj));
 }
 
-/**
- * Define a global reference. 
- * TODO: Check with wmeissner to see if this is correct
- * @param Pointer to Ruby string
- */
-extern "C" void
-rb_global_variable(VALUE* handle_address) {
-    rb_gc_register_address(handle_address);
-}
-
-extern "C" void
-rb_gc_register_address(VALUE* address) {    
-    jruby::JLocalEnv env;
-    env->NewGlobalRef(jruby::valueToObject(env, *address));
-}
-
-extern "C" void
-rb_gc_unregister_address(VALUE* address) {
-    jruby::JLocalEnv env;
-    env->DeleteGlobalRef(jruby::valueToObject(env, *address));
-}
-
 #define M(x) rb_m##x = getConstModule(env, #x)
 #define C(x) rb_c##x = getConstClass(env, #x)
 #define E(x) rb_e##x = getConstClass(env, #x)
