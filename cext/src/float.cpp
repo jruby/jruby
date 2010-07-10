@@ -75,7 +75,8 @@ jruby_float_value(VALUE v)
 }
 
 extern "C" VALUE
-rb_Float(VALUE object_handle) {
+rb_Float(VALUE object_handle)
+{
     return rb_convert_type(object_handle, 0, "Float", "to_f");
 }
 
