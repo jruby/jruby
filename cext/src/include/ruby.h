@@ -231,7 +231,7 @@ void xfree(void*);
 /** The length of string str. */
 #define RSTRING_LEN(str)  jruby_str_length((str))
 /** The pointer to the string str's data. */
-#define RSTRING_PTR(str)  jruby_str_ptr((str))
+#define RSTRING_PTR(str)  jruby_str_cstr((str))
 /** Pointer to the MRI string structure */
 #define RSTRING(str) jruby_rstring((str))
 #define STR2CSTR(str)         rb_str2cstr((VALUE)(str), 0)
@@ -507,14 +507,7 @@ size_t rb_str_capacity(VALUE);
 char* rb_str2cstr(VALUE str_handle, long *len);
 /** Deprecated alias for rb_obj_freeze */
 VALUE rb_str_freeze(VALUE str);
-/** Returns a pointer to a persistent char [] that contains the same data as
- * that contained in the Ruby string. The buffer is flushed to the string
- * when control returns to Ruby code. The buffer is updated with the string
- * contents when control crosses to C code.
- *
- * @note This is NOT an MRI C-API function.
- */
-extern char* rb_str_ptr_readonly(VALUE v);
+
 /** Call #to_s on object pointed to and _replace_ it with the String. */
 VALUE rb_string_value(VALUE* object_variable);
 char* rb_string_value_ptr(VALUE* object_variable);
@@ -523,7 +516,10 @@ char* rb_string_value_cstr(VALUE* object_variable);
 
 extern struct RString* jruby_rstring(VALUE v);
 extern int jruby_str_length(VALUE v);
-extern char* jruby_str_ptr(VALUE v);
+char* jruby_str_cstr(VALUE v);
+char* jruby_str_cstr_readonly(VALUE v);
+
+#define rb_str_ptr_readonly(v) jruby_str_cstr_readonly((v))
 
 #define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_dup
@@ -532,7 +528,6 @@ extern char* jruby_str_ptr(VALUE v);
 #define rb_tainted_str_new2 rb_tainted_str_new_cstr
 #define rb_str_buf_new2 rb_str_buf_new_cstr
 #define rb_usascii_str_new2 rb_usascii_str_new_cstr
-#define rb_str_ptr rb_str_ptr_readonly
 
 /** Returns the string associated with a symbol. */
 const char *rb_id2name(ID sym);

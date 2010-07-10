@@ -209,27 +209,17 @@ jruby_str(VALUE v)
     return (RubyString *) v;
 }
 
+
 extern "C" char*
-rb_str_ptr_readonly(VALUE v)
+jruby_str_cstr(VALUE v)
+{
+    return jruby_str(v)->toRString(false)->as.heap.ptr;
+}
+
+extern "C" char*
+jruby_str_cstr_readonly(VALUE v)
 {
     return jruby_str(v)->toRString(true)->as.heap.ptr;    
-}
-
-extern "C" char*
-rb_str2cstr(VALUE str, long* len) {
-    char* cstr = RSTRING_PTR(str);
-    if (len) {
-        *len = RSTRING_LEN(str);
-    } else if(*len != strlen(cstr)) {
-        rb_warn("string contains \\0 character");
-    }
-    return cstr;
-}
-
-extern "C" char*
-jruby_str_ptr(VALUE v)
-{
-    return jruby_rstring(v)->as.heap.ptr;
 }
 
 extern "C" int
@@ -242,4 +232,16 @@ extern "C" struct RString*
 jruby_rstring(VALUE v)
 {
     return jruby_str(v)->toRString(false);
+}
+
+
+extern "C" char*
+rb_str2cstr(VALUE str, long* len) {
+    char* cstr = RSTRING_PTR(str);
+    if (len) {
+        *len = RSTRING_LEN(str);
+    } else if(*len != strlen(cstr)) {
+        rb_warn("string contains \\0 character");
+    }
+    return cstr;
 }
