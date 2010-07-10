@@ -247,7 +247,7 @@ void xfree(void*);
 /** Pointer to the MRI array structure */
 #define RARRAY(str) rb_ary_struct_readonly(str);
 
-#define RFLOAT(d) jruby_rfloat(VALUE v)
+#define RFLOAT(v) jruby_rfloat(v)
 #define RFLOAT_VALUE(v) jruby_float_value(v)
 
 #define DATA_PTR(dta) (jruby_data((dta)))
