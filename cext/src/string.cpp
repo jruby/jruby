@@ -1,5 +1,8 @@
 /*
  * Copyright (C) 2008-2010 Wayne Meissner
+ * Copyright (C) 1993-2007 Yukihiro Matsumoto
+ * Copyright (C) 2000  Network Applied Communication Laboratory, Inc.
+ * Copyright (C) 2000  Information-technology Promotion Agency, Japan
  *
  * This file is part of jruby-cext.
  *
@@ -91,8 +94,9 @@ rb_str_cat(VALUE str, const char *ptr, long len)
 }
 
 extern "C" VALUE
-rb_str_cat2(VALUE self_handle, const char* other) {
-    return rb_str_cat(self_handle, other, std::strlen(other));
+rb_str_cat2(VALUE str, const char *ptr)
+{
+    return rb_str_cat(str, ptr, strlen(ptr));
 }
 
 extern "C" VALUE
@@ -104,8 +108,20 @@ rb_str_plus(VALUE str1, VALUE str2)
 extern "C" VALUE
 rb_str_buf_cat(VALUE str, const char *ptr, long len)
 {
+    if (len == 0) return str;
+    if (len < 0) {
+        rb_raise(rb_eArgError, "negative string size (or size too big)");
+    }
+
     return callMethod(str, "concat", 1, rb_str_new(ptr, len));
 }
+
+VALUE
+rb_str_buf_cat2(VALUE str, const char *ptr)
+{
+    return rb_str_buf_cat(str, ptr, strlen(ptr));
+}
+
 
 extern "C" int
 rb_str_cmp(VALUE str1, VALUE str2)
