@@ -90,7 +90,6 @@ namespace jruby {
     jobject nilRef;
     jobject trueRef;
     jobject falseRef;
-    std::map<const char*, jobject> methodNameMap;
 };
 
 using namespace jruby;

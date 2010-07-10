@@ -37,7 +37,16 @@ using namespace jruby;
 
 static Symbol* addSymbol(JNIEnv* env, ID id, jobject obj);
 
+
+struct StringCompare: public std::binary_function<const char*, const char*, bool> {
+    inline bool operator()(const char* k1, const char* k2) const {
+        return strcmp(k1, k2) < 0;
+    }
+};
+
 static std::map<const char*, ID> constSymbolMap;
+static std::map<const char*, ID, StringCompare> nonConstSymbolMap;
+
 std::vector<Symbol*> jruby::symbols;
 
 Symbol*
@@ -63,7 +72,11 @@ rb_intern_const(const char* name)
         return it->second;
     }
 
-    return constSymbolMap[name] = jruby_intern_nonconst(name);
+    ID id = jruby_intern_nonconst(name);
+
+    constSymbolMap.insert(std::map<const char*, ID>::value_type(name, id));
+
+    return id;
 }
 
 extern "C" const char*
@@ -75,6 +88,11 @@ rb_id2name(ID sym)
 extern "C" ID
 jruby_intern_nonconst(const char* name)
 {
+    std::map<const char*, ID>::iterator it = nonConstSymbolMap.find(name);
+    if (it != nonConstSymbolMap.end()) {
+        return it->second;
+    }
+
     JLocalEnv env;
     jobject result = env->CallObjectMethod(getRuntime(), Ruby_newSymbol_method, env->NewStringUTF(name));
     checkExceptions(env);
@@ -105,6 +123,8 @@ addSymbol(JNIEnv* env, ID id, jobject obj)
     sym->cstr = (char *) calloc(len + 1, sizeof(char));
     env->GetStringUTFRegion(str, 0, len, sym->cstr);
     checkExceptions(env);
+
+    nonConstSymbolMap.insert(std::map<const char*, ID>::value_type(sym->cstr, sym->id));
 
     return symbols[id] = sym;
 }

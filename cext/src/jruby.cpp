@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <ctype.h>
 #include <vector>
@@ -30,6 +31,16 @@
 #include "JavaException.h"
 
 using namespace jruby;
+
+
+struct StringCompare: public std::binary_function<const char*, const char*, bool> {
+    inline bool operator()(const char* k1, const char* k2) const {
+        return strcmp(k1, k2) < 0;
+    }
+};
+
+static std::map<const char*, jobject> constMethodNameMap;
+static std::map<const char*, jobject, StringCompare> nonConstMethodNameMap;
 
 static VALUE
 callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE* args)
@@ -60,15 +71,37 @@ callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE*
     return makeStrongRef(env, (VALUE) ret);
 }
 
-static jobject
-getCachedMethodNameInstance(JNIEnv* env, const char* methodName)
+static inline jobject
+getNonConstMethodNameInstance(JNIEnv* env, const char* methodName)
 {
-    jobject jMethodObject = methodNameMap[methodName];
-    if (jMethodObject == NULL) {
-        jMethodObject = methodNameMap[methodName] = env->NewGlobalRef(env->NewStringUTF(methodName));
+    std::map<const char*, jobject>::iterator it = nonConstMethodNameMap.find(methodName);
+    if (likely(it != nonConstMethodNameMap.end())) {
+        return it->second;
     }
-    
-    return jMethodObject;
+
+    jobject obj = env->NewGlobalRef(env->NewStringUTF(methodName));
+
+    nonConstMethodNameMap.insert(std::map<const char*, jobject>::value_type(strdup(methodName), obj));
+
+    return obj;
+}
+
+
+static inline jobject
+getConstMethodNameInstance(JNIEnv* env, const char* methodName)
+{
+    std::map<const char*, jobject>::iterator it = constMethodNameMap.find(methodName);
+    if (likely(it != constMethodNameMap.end())) {
+        return it->second;
+    }
+
+    jobject obj = getNonConstMethodNameInstance(env, methodName);
+
+    constMethodNameMap.insert(std::map<const char*, jobject>::value_type(methodName, obj));
+
+    return obj;
+
+    return constMethodNameMap[methodName] = getNonConstMethodNameInstance(env, methodName);
 }
 
 VALUE
@@ -76,7 +109,7 @@ jruby::callMethodA(VALUE recv, const char* method, int argCount, VALUE* args)
 {
     JLocalEnv env;
 
-    return callRubyMethod(env, recv, env->NewStringUTF(method), argCount, args);
+    return callRubyMethod(env, recv, getNonConstMethodNameInstance(env, method), argCount, args);
 }
 
 VALUE
@@ -84,7 +117,7 @@ jruby::callMethodAConst(VALUE recv, const char* method, int argCount, VALUE* arg
 {
     JLocalEnv env;
     
-    return callRubyMethod(env, recv, getCachedMethodNameInstance(env, method), argCount, args);
+    return callRubyMethod(env, recv, getConstMethodNameInstance(env, method), argCount, args);
 }
 
 
@@ -103,7 +136,7 @@ jruby::callMethodV(VALUE recv, const char* method, int argCount, ...)
     va_end(ap);
 
     JLocalEnv env;
-    return callRubyMethod(env, recv, env->NewStringUTF(method), argCount, args);
+    return callRubyMethod(env, recv, getNonConstMethodNameInstance(env, method), argCount, args);
 }
 
 VALUE
@@ -122,7 +155,7 @@ jruby::callMethodVConst(VALUE recv, const char* method, int argCount, ...)
 
     
     JLocalEnv env;
-    return callRubyMethod(env, recv, getCachedMethodNameInstance(env, method), argCount, args);
+    return callRubyMethod(env, recv, getConstMethodNameInstance(env, method), argCount, args);
 }
 
 
