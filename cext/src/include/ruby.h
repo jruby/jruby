@@ -604,6 +604,17 @@ VALUE rb_obj_freeze(VALUE obj);
 /** String representation of the object's class' name. You must free this string. */
 char* rb_obj_classname(VALUE object_handle);
 
+VALUE rb_exc_new(VALUE, const char*, long);
+VALUE rb_exc_new2(VALUE, const char*);
+VALUE rb_exc_new3(VALUE, VALUE);
+
+#define rb_exc_new2(klass, ptr) __extension__ ( \
+{                                               \
+    (__builtin_constant_p(ptr)) ?               \
+        rb_exc_new(klass, ptr, (long)strlen(ptr)) : \
+        rb_exc_new2(klass, ptr);                \
+})
+
 /* Global Module objects. */
 extern VALUE rb_mKernel;
 extern VALUE rb_mComparable;
