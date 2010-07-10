@@ -84,6 +84,7 @@ namespace jruby {
     jfieldID RubyFloat_value_field;
     jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
     jfieldID RubySymbol_id_field;
+    jfieldID RubySymbol_symbol_field;
 
     jobject runtime;
     jobject nilRef;
@@ -231,6 +232,7 @@ loadIds(JNIEnv* env)
     ByteList_begin_field = getFieldID(env, ByteList_class, "begin", "I");
     ByteList_length_field = getFieldID(env, ByteList_class, "realSize", "I");
     RubySymbol_id_field = getFieldID(env, Symbol_class, "id", "I");
+    RubySymbol_symbol_field = getFieldID(env, Symbol_class, "symbol", "Ljava/lang/String;");
 }
 
 static jobject

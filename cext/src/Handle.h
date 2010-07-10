@@ -34,8 +34,9 @@ namespace jruby {
 
     class Handle;
     class RubyData;
+    struct Symbol;
     extern Handle* constHandles[3];
-    extern std::vector<jobject> symbols;
+    extern std::vector<Symbol*> symbols;
     TAILQ_HEAD(HandleList, Handle);
     TAILQ_HEAD(DataHandleList, RubyData);
     SIMPLEQ_HEAD(SyncQueue, Handle);
@@ -166,14 +167,24 @@ namespace jruby {
         return v;
     }
 
-    extern jobject resolveSymbolById(JNIEnv* env, ID id);
-    inline jobject idToObject(JNIEnv* env, ID id) {
+    struct Symbol {
+        ID id;
+        char* cstr;
         jobject obj;
-        if (likely(id < symbols.size() && (obj  = symbols[id]) != NULL)) {
-            return obj;
-        }
+    };
 
-        return resolveSymbolById(env, id);
+    extern Symbol* resolveSymbolById(ID id);
+    
+    inline Symbol* lookupSymbolById(ID id) {
+        Symbol* sym;
+        if (likely(id < symbols.size() && (sym  = symbols[id]) != NULL)) {
+            return sym;
+        }
+        return resolveSymbolById(id);
+    }
+    
+    inline jobject idToObject(JNIEnv* env, ID id) {
+        return lookupSymbolById(id)->obj;
     }
 
     extern jobject fixnumToObject(JNIEnv* env, VALUE v);

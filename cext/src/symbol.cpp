@@ -35,12 +35,16 @@
 
 using namespace jruby;
 
-static std::map<const char*, ID> constSymbolMap;
-std::vector<jobject> jruby::symbols;
+static Symbol* addSymbol(JNIEnv* env, ID id, jobject obj);
 
-jobject
-jruby::resolveSymbolById(JNIEnv* env, ID id)
+static std::map<const char*, ID> constSymbolMap;
+std::vector<Symbol*> jruby::symbols;
+
+Symbol*
+jruby::resolveSymbolById(ID id)
 {
+    JLocalEnv env;
+
     jobject obj = env->CallStaticObjectMethod(Symbol_class, RubySymbol_getSymbolLong,
             jruby::getRuntime(), (jlong) id);
 
@@ -48,11 +52,7 @@ jruby::resolveSymbolById(JNIEnv* env, ID id)
         rb_raise(rb_eRuntimeError, "could not resolve symbol ID %lld", (long long) id);
     }
 
-    if (symbols.size() <= id) {
-        symbols.resize(id + 1);
-    }
-    
-    return symbols[id] = env->NewGlobalRef(obj);
+    return addSymbol(env, id, obj);
 }
 
 extern "C" ID
@@ -67,8 +67,9 @@ rb_intern_const(const char* name)
 }
 
 extern "C" const char*
-rb_id2name(ID sym) {
-    return RSTRING_PTR(callMethod((VALUE)sym, "to_s", 0, NULL));
+rb_id2name(ID sym)
+{
+    return lookupSymbolById(sym)->cstr;
 }
 
 extern "C" ID
@@ -78,13 +79,32 @@ jruby_intern_nonconst(const char* name)
     jobject result = env->CallObjectMethod(getRuntime(), Ruby_newSymbol_method, env->NewStringUTF(name));
     checkExceptions(env);
 
-    ID id = env->GetIntField(result, RubySymbol_id_field);
+    return addSymbol(env, env->GetIntField(result, RubySymbol_id_field), result)->id;
+}
 
+static Symbol*
+addSymbol(JNIEnv* env, ID id, jobject obj)
+{
     if (symbols.size() <= id) {
         symbols.resize(id + 1);
     }
+    if (symbols[id] != NULL) {
+        return symbols[id];
+    }
 
-    symbols[id] = env->NewGlobalRef(result);
-    
-    return id;
+    Symbol* sym = new Symbol;
+    sym->obj = env->NewGlobalRef(obj);
+    sym->id = id;
+
+    jstring str = (jstring) env->GetObjectField(obj, RubySymbol_symbol_field);
+    checkExceptions(env);
+
+    jint len = env->GetStringLength(str);
+    checkExceptions(env);
+
+    sym->cstr = (char *) malloc(len + 1);
+    env->GetStringUTFRegion(str, 0, len, sym->cstr);
+    checkExceptions(env);
+
+    return symbols[id] = sym;
 }

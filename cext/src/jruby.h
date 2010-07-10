@@ -94,6 +94,7 @@ namespace jruby {
     extern jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
     extern jfieldID RubyFloat_value_field;
     extern jfieldID RubySymbol_id_field;
+    extern jfieldID RubySymbol_symbol_field;
 
     extern jobject runtime;
     extern jobject nilRef;
