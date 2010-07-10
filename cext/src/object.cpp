@@ -58,7 +58,7 @@ rb_obj_classname(VALUE obj) {
 extern "C"
 int rb_respond_to(VALUE obj_handle, ID method_name) {
     JLocalEnv env;
-    return (int)env->CallBooleanMethod(valueToObject(env, obj_handle), IRubyObject_respondsTo_method);
+    return (int)(env->CallBooleanMethod(valueToObject(env, obj_handle), IRubyObject_respondsTo_method));
 }
 
 extern "C" VALUE
