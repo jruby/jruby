@@ -1,4 +1,7 @@
 /*
+ * Copyright (C) 1993-2003 Yukihiro Matsumoto
+ * Copyright (C) 2000 Network Applied Communication Laboratory, Inc.
+ * Copyright (C) 2000 Information-technology Promotion Agency, Japan
  * Copyright (C) 2010 Tim Felgentreff
  *
  * This file is part of jruby-cext.
@@ -16,6 +19,7 @@
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include "jruby.h"
 #include "ruby.h"
 #include "JLocalEnv.h"
@@ -32,7 +36,7 @@ convert_type(VALUE val, const char* type_name, const char* method, int raise)
                     NIL_P(val) ? "nil" :
                     val == Qtrue ? "true" :
                     val == Qfalse ? "false" :
-                    rb_obj_classname(val), 
+                    rb_obj_classname(val),
                     type_name);
         } else {
             return Qnil;
