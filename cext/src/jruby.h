@@ -111,23 +111,35 @@ namespace jruby {
 
     Handle* newHandle(JNIEnv* env);
 
+    VALUE callMethod(VALUE recv, jobject methodName, int argCount, ...);
+    VALUE callMethodA(VALUE recv, jobject methodName, int argCount, VALUE* args);
     VALUE callMethodConst(VALUE recv, const char* methodName, int argCount, ...);
     VALUE callMethodNonConst(VALUE recv, const char* methodName, int argCount, ...);
     VALUE callMethodAConst(VALUE recv, const char* methodName, int argCount, VALUE* args);
     VALUE callMethodANonConst(VALUE recv, const char* methodName, int argCount, VALUE* args);
-
     VALUE callRubyMethod(JNIEnv* env, VALUE recv, jobject obj, int argCount, ...);
     VALUE callRubyMethodA(JNIEnv* env, VALUE recv, jobject obj, int argCount, VALUE* args);
     VALUE callRubyMethodV(JNIEnv* env, VALUE recv, jobject obj, int argCount, va_list ap);
 
+    jobject getConstMethodNameInstance(const char* methodName);
+    jobject getConstMethodNameInstance(JNIEnv* env, const char* methodName);
+
+    
+#define CONST_METHOD_NAME_CACHE(name) __extension__({          \
+        static jobject mid_;                             \
+        if (__builtin_expect(!mid_, 0))                  \
+            mid_ = getConstMethodNameInstance(name);      \
+        mid_;                                            \
+    })
+
 #define callMethod(recv, method, argCount, a...) \
     (likely(__builtin_constant_p(method)) \
-        ? jruby::callMethodConst(recv, method, argCount, ##a) \
+        ? jruby::callMethod(recv, CONST_METHOD_NAME_CACHE(method), argCount, ##a) \
         : jruby::callMethodNonConst(recv, method, argCount, ##a))
 
 #define callMethodA(recv, method, argc, argv) __extension__ \
     (likely(__builtin_constant_p(method)) \
-        ? jruby::callMethodAConst(recv, method, argc, argv) \
+        ? jruby::callMethodA(recv, CONST_METHOD_NAME_CACHE(method), argc, argv) \
         : jruby::callMethodANonConst(recv, method, argc, argv))
 
     VALUE getClass(const char* className);

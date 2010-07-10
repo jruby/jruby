@@ -98,6 +98,25 @@ jruby::callRubyMethodA(JNIEnv* env, VALUE recv, jobject methodName, int argCount
     return makeStrongRef(env, (VALUE) ret);
 }
 
+#undef callMethod
+VALUE
+jruby::callMethod(VALUE recv, jobject methodName, int argCount, ...)
+{
+    VALUE args[argCount];
+
+    va_list ap;
+    va_start(ap, argCount);
+
+    for (int i = 0; i < argCount; ++i) {
+        args[i] = va_arg(ap, VALUE);
+    }
+
+    va_end(ap);
+
+    JLocalEnv env;
+    return callRubyMethodA(env, recv, methodName, argCount, args);
+}
+
 static inline jobject
 getNonConstMethodNameInstance(JNIEnv* env, const char* methodName)
 {
@@ -113,9 +132,8 @@ getNonConstMethodNameInstance(JNIEnv* env, const char* methodName)
     return obj;
 }
 
-
-static inline jobject
-getConstMethodNameInstance(JNIEnv* env, const char* methodName)
+jobject
+jruby::getConstMethodNameInstance(JNIEnv* env, const char* methodName)
 {
     std::map<const char*, jobject>::iterator it = constMethodNameMap.find(methodName);
     if (likely(it != constMethodNameMap.end())) {
@@ -131,6 +149,19 @@ getConstMethodNameInstance(JNIEnv* env, const char* methodName)
     return constMethodNameMap[methodName] = getNonConstMethodNameInstance(env, methodName);
 }
 
+jobject
+jruby::getConstMethodNameInstance(const char* methodName)
+{
+    std::map<const char*, jobject>::iterator it = constMethodNameMap.find(methodName);
+    if (likely(it != constMethodNameMap.end())) {
+        return it->second;
+    }
+
+    JLocalEnv env;
+    return getConstMethodNameInstance(env, methodName);
+}
+
+
 VALUE
 jruby::callMethodANonConst(VALUE recv, const char* method, int argCount, VALUE* args)
 {
@@ -145,6 +176,15 @@ jruby::callMethodAConst(VALUE recv, const char* method, int argCount, VALUE* arg
     JLocalEnv env;
     
     return callRubyMethodA(env, recv, getConstMethodNameInstance(env, method), argCount, args);
+}
+
+#undef callMethodA
+VALUE
+jruby::callMethodA(VALUE recv, jobject method, int argc, VALUE* argv)
+{
+    JLocalEnv env;
+
+    return callRubyMethodA(env, recv, method, argc, argv);
 }
 
 
