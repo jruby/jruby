@@ -108,8 +108,8 @@ void rb_define_global_const(const char* name, VALUE obj) {
     using namespace jruby;
     JLocalEnv env;
 
-    jmethodID mid = getMethodID(env, Ruby_class, "defineGlobalConstant", 
-            "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");    
+    jmethodID mid = getMethodID(env, Ruby_class, "defineGlobalConstant",
+            "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
     env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(name), valueToObject(env, obj));
 }
 
