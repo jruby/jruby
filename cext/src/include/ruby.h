@@ -583,6 +583,8 @@ int rb_respond_to(VALUE obj_handle, ID method_name);
 /** Returns object returned by invoking method on object if right type, or raises error. */
 VALUE rb_convert_type(VALUE object_handle, int type, const char* type_name, const char* method_name);
 
+/** Define a constant in given Module's namespace. */
+void rb_define_const(VALUE module, const char* name, VALUE obj);
 /** Define a toplevel constant */
 void rb_define_global_const(const char* name, VALUE obj);
 extern ID rb_intern_const(const char *);
