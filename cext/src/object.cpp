@@ -75,3 +75,34 @@ rb_convert_type(VALUE val, int type, const char* type_name, const char* method)
     }
     return v;
 }
+
+extern "C" VALUE
+rb_iv_get(VALUE obj, const char* name) {
+    JLocalEnv env;
+    jmethodID mid = getMethodID(env, RubyBasicObject_class, "getInstanceVariable",
+            "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    jobject retval = env->CallObjectMethod(valueToObject(env, obj), mid, env->NewStringUTF(name));
+    checkExceptions(env);
+    return objectToValue(env, retval);
+}
+
+extern "C" VALUE
+rb_iv_set(VALUE obj, const char* name, VALUE value) {
+    JLocalEnv env;
+    jmethodID mid = getMethodID(env, RubyBasicObject_class, "setInstanceVariable",
+            "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    jobject retval = env->CallObjectMethod(valueToObject(env, obj), mid, env->NewStringUTF(name),
+            valueToObject(env, value));
+    checkExceptions(env);
+    return objectToValue(env, retval);
+}
+
+extern "C" VALUE
+rb_ivar_get(VALUE obj, ID ivar_name) {
+    rb_iv_get(obj, rb_id2name(ivar_name));
+}
+
+extern "C" VALUE
+rb_ivar_set(VALUE obj, ID ivar_name, VALUE value) {
+    rb_iv_set(obj, rb_id2name(ivar_name), value);
+}

@@ -408,6 +408,14 @@ VALUE rb_cvar_get(VALUE module_handle, ID name);
  * TODO: @@ should be optional. 
  */
 VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value, int unused);
+/** Return object's instance variable by name. @ optional. */
+VALUE rb_iv_get(VALUE obj, const char* name);
+/** Set instance variable by name to given value. Returns the value. @ optional. */
+VALUE rb_iv_set(VALUE obj, const char* name, VALUE value);
+/** Get object's instance variable. */
+VALUE rb_ivar_get(VALUE obj, ID ivar_name);
+/** Set object's instance variable to given value. */
+VALUE rb_ivar_set(VALUE obj, ID ivar_name, VALUE value);
 
 /* Array */
 VALUE rb_Array(VALUE val);
