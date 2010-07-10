@@ -102,7 +102,7 @@ addSymbol(JNIEnv* env, ID id, jobject obj)
     jint len = env->GetStringLength(str);
     checkExceptions(env);
 
-    sym->cstr = (char *) malloc(len + 1);
+    sym->cstr = (char *) calloc(len + 1, sizeof(char));
     env->GetStringUTFRegion(str, 0, len, sym->cstr);
     checkExceptions(env);
 
