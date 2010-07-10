@@ -32,6 +32,7 @@ public final class NativeMethod3 extends AbstractNativeMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, 
             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         GIL.acquire();
+        storeBlock(context, block);
         try {
             return Native.getInstance(context.getRuntime()).callMethod3(function,
                     Handle.nativeHandle(self),
@@ -39,6 +40,7 @@ public final class NativeMethod3 extends AbstractNativeMethod {
                     Handle.nativeHandle(arg1),
                     Handle.nativeHandle(arg2));
         } finally {
+            releaseBlock(context);
             GIL.release(context);
         }
     }

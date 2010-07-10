@@ -27,12 +27,13 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
-import com.kenai.jffi.Library;
-import com.kenai.jffi.Platform;
-
 import org.jruby.Ruby;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import com.kenai.jffi.Library;
+import com.kenai.jffi.Platform;
 
 
 final class Native {
@@ -42,6 +43,7 @@ final class Native {
     private static final String jrubyHome = Ruby.getGlobalRuntime().getJRubyHome();
 
     private final Ruby runtime;
+    private ThreadLocal<Block> block;
 
     static Native getInstance(Ruby runtime) {
         if (INSTANCE == null) {
@@ -58,6 +60,7 @@ final class Native {
 
     private Native(Ruby runtime) {
         this.runtime = runtime;
+        this.block = new ThreadLocal<Block>();
     }
 
     private void load(Ruby runtime) {
@@ -166,8 +169,16 @@ final class Native {
         return prefix + System.mapLibraryName(libName);
     }
 
+    public Block getBlock() {
+        return block.get();
+    }
+
+    public void setBlock(Block block) {
+        this.block.set(block);
+    }
+
     private final native void initNative(Ruby runtime);
-    
+
     public final native long callInit(ThreadContext ctx, long init);
 
 

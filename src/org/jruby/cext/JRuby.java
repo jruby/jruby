@@ -94,18 +94,19 @@ public class JRuby {
     
     /** rb_yield */
     public static IRubyObject yield(Ruby runtime, IRubyObject args) {
-        return runtime.getCurrentContext().getCurrentFrame().getBlock().call(runtime.getCurrentContext(), args);
+        return Native.getInstance(runtime).getBlock().call(runtime.getCurrentContext(), args);
     }
-    
+
     /** rb_block_given_p */
     public static int blockGiven(Ruby runtime) {
-        return (runtime.getCurrentContext().getCurrentFrame().getBlock() == Block.NULL_BLOCK) ? 0 : 1;
+        return Native.getInstance(runtime).getBlock().isGiven() ? 1 : 0;
     }
-    
+
     /** rb_block_proc */
     public static RubyProc getBlockProc(Ruby runtime) {
-        Block block = runtime.getCurrentContext().getCurrentFrame().getBlock();
-        return block.getProcObject();
+        Block block = Native.getInstance(runtime).getBlock();
+        RubyProc p = RubyProc.newProc(runtime, block, block.type);
+        return p;
     }
 
     public static long ll2inum(Ruby runtime, long l) {

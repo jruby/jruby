@@ -7,9 +7,10 @@ include MyTest
 puts test1
 block_given
 
-def foo
-  if block_given
-    rb_yield
+def foo(&block)
+  if block_given &block
+    p rb_block_proc &block
+    rb_yield &block
   end
 end
 
