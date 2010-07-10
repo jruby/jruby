@@ -79,9 +79,14 @@ rb_convert_type(VALUE val, int type, const char* type_name, const char* method)
 extern "C" VALUE
 rb_iv_get(VALUE obj, const char* name) {
     JLocalEnv env;
+
+    char var_name[strlen(name) + 1];
+    (name[0] != '@') ? strcpy(var_name, "@")[0] : var_name[0] = '\0';
+    strcat(var_name, name);
+
     jmethodID mid = getMethodID(env, RubyBasicObject_class, "getInstanceVariable",
             "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
-    jobject retval = env->CallObjectMethod(valueToObject(env, obj), mid, env->NewStringUTF(name));
+    jobject retval = env->CallObjectMethod(valueToObject(env, obj), mid, env->NewStringUTF(var_name));
     checkExceptions(env);
     return objectToValue(env, retval);
 }
@@ -89,9 +94,14 @@ rb_iv_get(VALUE obj, const char* name) {
 extern "C" VALUE
 rb_iv_set(VALUE obj, const char* name, VALUE value) {
     JLocalEnv env;
+
+    char var_name[strlen(name) + 1];
+    (name[0] != '@') ? strcpy(var_name, "@")[0] : var_name[0] = '\0';
+    strcat(var_name, name);
+
     jmethodID mid = getMethodID(env, RubyBasicObject_class, "setInstanceVariable",
             "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
-    jobject retval = env->CallObjectMethod(valueToObject(env, obj), mid, env->NewStringUTF(name),
+    jobject retval = env->CallObjectMethod(valueToObject(env, obj), mid, env->NewStringUTF(var_name),
             valueToObject(env, value));
     checkExceptions(env);
     return objectToValue(env, retval);
