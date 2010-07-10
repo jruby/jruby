@@ -19,6 +19,7 @@
 #include "jruby.h"
 #include "ruby.h"
 #include "JLocalEnv.h"
+#include "Handle.h"
 
 using namespace jruby;
 
@@ -42,32 +43,41 @@ convert_type(VALUE val, const char* type_name, const char* method, int raise)
 }
 
 extern "C" VALUE 
-rb_obj_freeze(VALUE obj) {    
+rb_obj_freeze(VALUE obj)
+{    
     return callMethodA(obj, "freeze", 0, NULL);
 }
 
 extern "C" char*
-rb_obj_classname(VALUE obj) {
+rb_obj_classname(VALUE obj)
+{
     return rb_class2name(rb_class_of(obj));
 }
 
-extern "C"
-int rb_respond_to(VALUE obj_handle, ID method_name) {
+extern "C" int
+rb_respond_to(VALUE obj, ID id)
+{
     JLocalEnv env;
-    return (int)env->CallBooleanMethod(valueToObject(env, obj_handle), IRubyObject_respondsTo_method);
+
+    return env->CallBooleanMethod(valueToObject(env, obj),
+            IRubyObject_respondsTo_method, idToObject(env, id)) != JNI_FALSE;
 }
 
 extern "C" VALUE
 rb_convert_type(VALUE val, int type, const char* type_name, const char* method)
 {
     VALUE v;
-    if (TYPE(val) == type) return val;
+
+    if (TYPE(val) == type) {
+        return val;
+    }
 
     v = convert_type(val, type_name, method, Qtrue);
 
     if (TYPE(v) != type) {
         rb_raise(rb_eTypeError, "%s#%s should return %s",
-        rb_obj_classname(val), method, type_name);
+            rb_obj_classname(val), method, type_name);
     }
+
     return v;
 }
