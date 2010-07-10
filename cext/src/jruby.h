@@ -54,7 +54,6 @@ namespace jruby {
     extern jclass Symbol_class;
     extern jclass JRuby_class;
     extern jclass ByteList_class;
-    extern jclass GlobalVariable_class;
 
     extern jmethodID IRubyObject_callMethod;
     extern jmethodID IRubyObject_asJavaString_method;

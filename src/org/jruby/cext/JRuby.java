@@ -150,4 +150,14 @@ public class JRuby {
 
         return Handle.nativeHandle(retval);
     }
+
+    /** rb_gv_set */
+    public static long gv_set(Ruby runtime, String name, IRubyObject value) {
+        return Handle.nativeHandle(runtime.getGlobalVariables().set(name, value));
+    }
+
+    /** rb_gv_get */
+    public static long gv_get(Ruby runtime, String name) {
+        return Handle.nativeHandle(runtime.getGlobalVariables().get(name));
+    }
 }

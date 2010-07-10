@@ -574,6 +574,12 @@ void rb_global_variable(VALUE* handle_address);
 void rb_gc_register_address(VALUE* address);
 /** Unmark variable as global */
 void rb_gc_unregister_address(VALUE* address);
+/** Return the global variable. $ optional */
+VALUE rb_gv_get(const char* name);
+/** Set named global to given value, returning the value. $ optional. */
+VALUE rb_gv_set(const char* name, VALUE value);
+/** Return an array containing the names of all global variables */
+VALUE rb_f_global_variables();
 
 /** Print a warning if $VERBOSE is not nil. */
 void rb_warn(const char *fmt, ...);
