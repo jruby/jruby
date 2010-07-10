@@ -373,6 +373,8 @@ VALUE rb_class_of(VALUE object_handle);
 VALUE rb_class_name(VALUE class_handle);
 /** C string representation of the class' name. You must free this string. */
 char* rb_class2name(VALUE class_handle);
+/** Convert a path string to a class */
+VALUE rb_path2class(const char* path);
 VALUE rb_define_class(const char*,VALUE);
 VALUE rb_define_module(const char*);
 VALUE rb_define_class_under(VALUE, const char*, VALUE);
