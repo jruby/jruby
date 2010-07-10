@@ -27,6 +27,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -40,6 +41,37 @@ public class JRuby {
 
         return Handle.nativeHandle(retval);
     }
+
+    public static long callRubyMethod0(IRubyObject recv, Object methodName) {
+        IRubyObject retval = RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(),
+                recv, methodName.toString());
+
+        return Handle.nativeHandle(retval);
+    }
+
+    public static long callRubyMethod1(IRubyObject recv, Object methodName, IRubyObject arg1) {
+        IRubyObject retval = RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(),
+                recv, methodName.toString(), arg1);
+
+        return Handle.nativeHandle(retval);
+    }
+
+    public static long callRubyMethod2(IRubyObject recv, Object methodName, IRubyObject arg1, IRubyObject arg2) {
+        IRubyObject retval = RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(),
+                recv, methodName.toString(), arg1, arg2);
+
+        return Handle.nativeHandle(retval);
+    }
+
+    public static long callRubyMethod3(IRubyObject recv, Object methodName, IRubyObject arg1,
+            IRubyObject arg2, IRubyObject arg3) {
+        IRubyObject retval = RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(),
+                recv, methodName.toString(), arg1, arg2, arg3);
+
+        return Handle.nativeHandle(retval);
+    }
+
+
 
     public static long newString(Ruby runtime, byte[] bytes, boolean tainted) {
         IRubyObject retval = RubyString.newStringNoCopy(runtime, bytes);

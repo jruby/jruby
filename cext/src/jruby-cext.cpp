@@ -46,6 +46,10 @@ namespace jruby {
     jclass ByteList_class;
     jclass GlobalVariable_class;
     jmethodID JRuby_callMethod;
+    jmethodID JRuby_callMethod0;
+    jmethodID JRuby_callMethod1;
+    jmethodID JRuby_callMethod2;
+    jmethodID JRuby_callMethod3;
     jmethodID JRuby_newString;
     jmethodID JRuby_ll2inum;
     jmethodID JRuby_ull2inum;
@@ -213,6 +217,14 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;J)Lorg/jruby/RubySymbol;");
     JRuby_callMethod = getStaticMethodID(env, JRuby_class, "callRubyMethod",
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    JRuby_callMethod0 = getStaticMethodID(env, JRuby_class, "callRubyMethod0",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;)J");
+    JRuby_callMethod1 = getStaticMethodID(env, JRuby_class, "callRubyMethod1",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    JRuby_callMethod2 = getStaticMethodID(env, JRuby_class, "callRubyMethod2",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    JRuby_callMethod3 = getStaticMethodID(env, JRuby_class, "callRubyMethod3",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_newString = getStaticMethodID(env, JRuby_class, "newString",
             "(Lorg/jruby/Ruby;[BZ)J");
     JRuby_ll2inum = getStaticMethodID(env, JRuby_class, "ll2inum",

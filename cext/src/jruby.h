@@ -83,6 +83,10 @@ namespace jruby {
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
     extern jmethodID JRuby_callMethod;
+    extern jmethodID JRuby_callMethod0;
+    extern jmethodID JRuby_callMethod1;
+    extern jmethodID JRuby_callMethod2;
+    extern jmethodID JRuby_callMethod3;
     extern jmethodID JRuby_newString;
     extern jmethodID JRuby_newFloat;
     extern jmethodID JRuby_ll2inum;

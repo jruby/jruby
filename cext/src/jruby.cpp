@@ -50,19 +50,46 @@ jruby::callRubyMethodA(JNIEnv* env, VALUE recv, jobject methodName, int argCount
 
     jobjectArray argArray;
 
-    argArray = env->NewObjectArray(argCount, IRubyObject_class, NULL);
-    checkExceptions(env);
-    for (int i = 0; i < argCount; ++i) {
-        env->SetObjectArrayElement(argArray, i, valueToObject(env, args[i]));
-        checkExceptions(env);
-    }
-    
-    jvalue jparams[3];
+    jvalue jparams[5];
     jparams[0].l = valueToObject(env, recv);
     jparams[1].l = methodName;
-    jparams[2].l = argArray;
+    jmethodID mid = JRuby_callMethod;
+    switch (argCount) {
+        case 0:
+            mid = JRuby_callMethod0;
+            break;
 
-    jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
+        case 1:
+            mid = JRuby_callMethod1;
+            jparams[2].l = valueToObject(env, args[0]);
+            break;
+
+        case 2:
+            mid = JRuby_callMethod2;
+            jparams[2].l = valueToObject(env, args[0]);
+            jparams[3].l = valueToObject(env, args[1]);
+            break;
+
+        case 3:
+            mid = JRuby_callMethod3;
+            jparams[2].l = valueToObject(env, args[0]);
+            jparams[3].l = valueToObject(env, args[1]);
+            jparams[4].l = valueToObject(env, args[2]);
+            break;
+
+        default:
+            mid = JRuby_callMethod;
+            jparams[2].l = argArray = env->NewObjectArray(argCount, IRubyObject_class, NULL);
+            checkExceptions(env);
+            for (int i = 0; i < argCount; ++i) {
+                env->SetObjectArrayElement(argArray, i, valueToObject(env, args[i]));
+                checkExceptions(env);
+            }
+
+            break;
+    }
+
+    jlong ret = env->CallStaticLongMethodA(JRuby_class, mid, jparams);
     checkExceptions(env);
 
     nsync(env);
