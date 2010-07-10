@@ -193,9 +193,10 @@ rb_str_freeze(VALUE str) {
     return callMethodA(str, "freeze", 0, NULL);
 }
 
-extern "C" size_t
-rb_str_len(VALUE str) {
-    return NUM2INT(callMethod(str, "length", 0, NULL));
+extern "C" VALUE
+rb_str_length(VALUE str)
+{
+    return INT2NUM(jruby_str_length(str));
 }
 
 static RubyString*
