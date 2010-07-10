@@ -566,10 +566,25 @@ VALUE rb_convert_type(VALUE object_handle, int type, const char* type_name, cons
 
 /** Define a toplevel constant */
 void rb_define_global_const(const char* name, VALUE obj);
-extern ID rb_intern_const(const char *);
-extern ID jruby_intern_nonconst(const char *);
-#define rb_intern(name) \
-    (__builtin_constant_p(name) ? rb_intern_const(name) : jruby_intern_nonconst(name))
+ID rb_intern(const char*);
+ID rb_intern2(const char*, long);
+ID rb_intern_const(const char*);
+
+#define CONST_ID_CACHE(result, str)                     \
+    {                                                   \
+        static ID rb_intern_id_cache;                   \
+        if (__builtin_expect(!rb_intern_id_cache, 0))           \
+            rb_intern_id_cache = rb_intern2(str, strlen(str));  \
+        result rb_intern_id_cache;                      \
+    }
+
+#define rb_intern(str) \
+    (__builtin_constant_p(str) \
+        ? __extension__ (CONST_ID_CACHE(/**/, str)) : rb_intern(str))
+
+#define rb_intern_const(str) \
+    (__builtin_constant_p(str) \
+        ? __extension__ (rb_intern2(str, strlen(str))) : rb_intern(str))
 
 extern struct RFloat* jruby_rfloat(VALUE v);
 extern VALUE rb_float_new(double value);
