@@ -26,6 +26,7 @@ int rb_scan_args(int argc, const VALUE* argv, const char* spec, ...) {
     int n, i = 0;
     const char *p = spec;
     VALUE *var;
+    JLocalEnv env;
     va_list vargs;
 
     va_start(vargs, spec);

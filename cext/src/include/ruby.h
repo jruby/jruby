@@ -608,6 +608,8 @@ int rb_big_bytes_used(VALUE obj);
 VALUE rb_yield(VALUE argument);
 /** Return 1 if block given, 0 if not */
 int rb_block_given_p();
+/** Return the Proc for the implicit block */
+VALUE rb_block_proc();
 
 /** Freeze object and return it. */
 VALUE rb_obj_freeze(VALUE obj);

@@ -66,3 +66,11 @@ rb_block_given_p() {
     JLocalEnv env;
     return (int)(env->CallStaticIntMethod(JRuby_class, JRuby_blockGiven, getRuntime()));
 }
+
+extern "C" VALUE
+rb_block_proc() {
+    JLocalEnv env;
+    jobject proc = env->CallStaticObjectMethod(JRuby_class, JRuby_getBlockProc, getRuntime());
+    checkExceptions(env);
+    return objectToValue(env, proc);
+}

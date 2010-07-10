@@ -26,6 +26,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
@@ -99,6 +100,12 @@ public class JRuby {
     /** rb_block_given_p */
     public static int blockGiven(Ruby runtime) {
         return (runtime.getCurrentContext().getCurrentFrame().getBlock() == Block.NULL_BLOCK) ? 0 : 1;
+    }
+    
+    /** rb_block_proc */
+    public static RubyProc getBlockProc(Ruby runtime) {
+        Block block = runtime.getCurrentContext().getCurrentFrame().getBlock();
+        return block.getProcObject();
     }
 
     public static long ll2inum(Ruby runtime, long l) {
