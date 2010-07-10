@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -22,6 +22,7 @@
 #include <jni.h>
 #include <map>
 #include "queue.h"
+#include "util.h"
 #include "ruby.h"
 
 namespace jruby {
@@ -106,15 +107,25 @@ namespace jruby {
 
     Handle* newHandle(JNIEnv* env);
 
-#define callMethod(recv, method, argCount, a...) \
-    (__builtin_constant_p(method) \
-        ? jruby::callMethodVConst(recv, method, argCount, ##a) \
-        : jruby::callMethodV(recv, method, argCount, ##a))
-
-    VALUE callMethodV(VALUE recv, const char* methodName, int argCount, ...);
-    VALUE callMethodA(VALUE recv, const char* methodName, int argCount, VALUE* args);
-    VALUE callMethodVConst(VALUE recv, const char* methodName, int argCount, ...);
+    VALUE callMethodConst(VALUE recv, const char* methodName, int argCount, ...);
+    VALUE callMethodNonConst(VALUE recv, const char* methodName, int argCount, ...);
     VALUE callMethodAConst(VALUE recv, const char* methodName, int argCount, VALUE* args);
+    VALUE callMethodANonConst(VALUE recv, const char* methodName, int argCount, VALUE* args);
+
+    VALUE callRubyMethod(JNIEnv* env, VALUE recv, jobject obj, int argCount, ...);
+    VALUE callRubyMethodA(JNIEnv* env, VALUE recv, jobject obj, int argCount, VALUE* args);
+    VALUE callRubyMethodV(JNIEnv* env, VALUE recv, jobject obj, int argCount, va_list ap);
+
+#define callMethod(recv, method, argCount, a...) \
+    (likely(__builtin_constant_p(method)) \
+        ? jruby::callMethodConst(recv, method, argCount, ##a) \
+        : jruby::callMethodNonConst(recv, method, argCount, ##a))
+
+#define callMethodA(recv, method, argc, argv) __extension__ \
+    (likely(__builtin_constant_p(method)) \
+        ? jruby::callMethodAConst(recv, method, argc, argv) \
+        : jruby::callMethodANonConst(recv, method, argc, argv))
+
     VALUE getClass(const char* className);
     VALUE getModule(const char* className);
     VALUE getSymbol(const char* name);
@@ -140,9 +151,6 @@ namespace jruby {
     TAILQ_HEAD(DataSyncQueue, DataSync);
     extern DataSyncQueue jsyncq, nsyncq;
 }
-
-#define JRUBY_callRubyMethodA(recv, meth, argc, argv) \
-            jruby::callMethod(recv, meth, argc, argv)
 
 // FIXME - no need to match ruby here, unless we fold type into flags
 #define FL_MARK      (1<<5)

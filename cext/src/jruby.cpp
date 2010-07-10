@@ -42,8 +42,8 @@ struct StringCompare: public std::binary_function<const char*, const char*, bool
 static std::map<const char*, jobject> constMethodNameMap;
 static std::map<const char*, jobject, StringCompare> nonConstMethodNameMap;
 
-static VALUE
-callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE* args)
+VALUE
+jruby::callRubyMethodA(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE* args)
 {
 
     jsync(env);
@@ -105,11 +105,11 @@ getConstMethodNameInstance(JNIEnv* env, const char* methodName)
 }
 
 VALUE
-jruby::callMethodA(VALUE recv, const char* method, int argCount, VALUE* args)
+jruby::callMethodANonConst(VALUE recv, const char* method, int argCount, VALUE* args)
 {
     JLocalEnv env;
 
-    return callRubyMethod(env, recv, getNonConstMethodNameInstance(env, method), argCount, args);
+    return callRubyMethodA(env, recv, getNonConstMethodNameInstance(env, method), argCount, args);
 }
 
 VALUE
@@ -117,12 +117,12 @@ jruby::callMethodAConst(VALUE recv, const char* method, int argCount, VALUE* arg
 {
     JLocalEnv env;
     
-    return callRubyMethod(env, recv, getConstMethodNameInstance(env, method), argCount, args);
+    return callRubyMethodA(env, recv, getConstMethodNameInstance(env, method), argCount, args);
 }
 
 
 VALUE
-jruby::callMethodV(VALUE recv, const char* method, int argCount, ...)
+jruby::callMethodNonConst(VALUE recv, const char* method, int argCount, ...)
 {
     VALUE args[argCount];
 
@@ -136,11 +136,11 @@ jruby::callMethodV(VALUE recv, const char* method, int argCount, ...)
     va_end(ap);
 
     JLocalEnv env;
-    return callRubyMethod(env, recv, getNonConstMethodNameInstance(env, method), argCount, args);
+    return callRubyMethodA(env, recv, getNonConstMethodNameInstance(env, method), argCount, args);
 }
 
 VALUE
-jruby::callMethodVConst(VALUE recv, const char* method, int argCount, ...)
+jruby::callMethodConst(VALUE recv, const char* method, int argCount, ...)
 {
     VALUE args[argCount];
 
@@ -155,7 +155,7 @@ jruby::callMethodVConst(VALUE recv, const char* method, int argCount, ...)
 
     
     JLocalEnv env;
-    return callRubyMethod(env, recv, getConstMethodNameInstance(env, method), argCount, args);
+    return callRubyMethodA(env, recv, getConstMethodNameInstance(env, method), argCount, args);
 }
 
 

@@ -24,62 +24,28 @@
 
 using namespace jruby;
 
-static VALUE jruby_funcall(JNIEnv* env, VALUE recv, ID meth, jobjectArray argArray);
-
 extern "C" VALUE
 rb_funcall(VALUE recv, ID meth, int argCount, ...)
 {
-    JLocalEnv env;
-    jobjectArray argArray;
-
-    argArray = env->NewObjectArray(argCount, IRubyObject_class, NULL);
-    checkExceptions(env);
-
+    VALUE argv[argCount];
     va_list ap;
     va_start(ap, argCount);
+
     for (int i = 0; i < argCount; i++) {
-        env->SetObjectArrayElement(argArray, i, valueToObject(env, va_arg(ap, VALUE)));
-        checkExceptions(env);
+        argv[i] = va_arg(ap, VALUE);
     }
 
     va_end(ap);
 
-    return jruby_funcall(env, recv, meth, argArray);
+    JLocalEnv env;
+
+    return callRubyMethodA(env, recv, idToObject(env, meth), argCount, argv);
 }
 
 extern "C" VALUE
 rb_funcall2(VALUE recv, ID meth, int argCount, VALUE* args)
 {
     JLocalEnv env;
-    jobjectArray argArray;
-    int i;
 
-    argArray = env->NewObjectArray(argCount, IRubyObject_class, NULL);
-    checkExceptions(env);
-    for (i = 0; i < argCount; i++) {
-        env->SetObjectArrayElement(argArray, i, valueToObject(env, args[i]));
-        checkExceptions(env);
-    }
-
-    return jruby_funcall(env, recv, meth, argArray);
-}
-
-
-static VALUE
-jruby_funcall(JNIEnv* env, VALUE recv, ID meth, jobjectArray argArray)
-{
-    jsync(env);
-
-    jvalue jparams[3];
-
-    jparams[0].l = valueToObject(env, recv);
-    jparams[1].l = idToObject(env, meth);
-    jparams[2].l = argArray;
-
-    jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
-    checkExceptions(env);
-
-    nsync(env);
-
-    return makeStrongRef(env, (VALUE) ret);
+    return callRubyMethodA(env, recv, idToObject(env, meth), argCount, args);
 }
