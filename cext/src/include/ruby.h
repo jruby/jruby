@@ -386,16 +386,10 @@ void rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYAR
 #define HAVE_RB_DEFINE_ALLOC_FUNC 1
 typedef VALUE (*rb_alloc_func_t)(VALUE);
 void rb_define_alloc_func(VALUE, rb_alloc_func_t);
-/** Set module's named class variable to given value. */
-void rb_define_class_variable(VALUE klass, const char* name, VALUE val);
-/** Returns module's named class variable.
- * TODO: @@ should be optional. 
- */
-VALUE rb_cv_get(VALUE module_handle, const char* name);
-/** Set module's named class variable to given value. Returns the value.
- * TODO: @@ should be optional. 
- */
-VALUE rb_cv_set(VALUE module_handle, const char* name, VALUE value);
+
+#define rb_define_class_variable(klass, name, val) rb_cvar_set(klass, rb_intern(name), val)
+#define rb_cv_get(klass, name) rb_cvar_get(klass, rb_intern(name))
+#define rb_cv_set(klass, name, value) rb_cvar_set(klass, rb_intern(name), value)
 /** Returns a value evaluating true if module has named class var. 
  * TODO: @@ should be optional. 
  */
@@ -407,7 +401,7 @@ VALUE rb_cvar_get(VALUE module_handle, ID name);
 /** Set module's named class variable to given value. Returns the value. 
  * TODO: @@ should be optional. 
  */
-VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value, int unused);
+VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value);
 
 /* Array */
 VALUE rb_Array(VALUE val);
