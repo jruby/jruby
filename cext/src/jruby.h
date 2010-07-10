@@ -89,6 +89,8 @@ namespace jruby {
     extern jmethodID JRuby_int2big;
     extern jmethodID JRuby_uint2big;
     extern jmethodID JRuby_getRString;
+    extern jmethodID JRuby_yield;
+    extern jmethodID JRuby_blockGiven;
     extern jfieldID Handle_address_field;
     extern jfieldID RubyString_value_field;
     extern jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;

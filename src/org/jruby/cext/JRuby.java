@@ -19,6 +19,7 @@
 package org.jruby.cext;
 
 import java.math.BigInteger;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
@@ -27,6 +28,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -87,6 +89,16 @@ public class JRuby {
         str.fastSetInternalVariable("rstring-cext", rstring);
 
         return address;
+    }
+    
+    /** rb_yield */
+    public static IRubyObject yield(Ruby runtime, IRubyObject args) {
+        return runtime.getCurrentContext().getCurrentFrame().getBlock().call(runtime.getCurrentContext(), args);
+    }
+    
+    /** rb_block_given_p */
+    public static int blockGiven(Ruby runtime) {
+        return (runtime.getCurrentContext().getCurrentFrame().getBlock() == Block.NULL_BLOCK) ? 0 : 1;
     }
 
     public static long ll2inum(Ruby runtime, long l) {

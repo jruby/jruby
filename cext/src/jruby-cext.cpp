@@ -53,6 +53,8 @@ namespace jruby {
     jmethodID JRuby_uint2big;
     jmethodID JRuby_getRString;
     jmethodID JRuby_newFloat;
+    jmethodID JRuby_yield;
+    jmethodID JRuby_blockGiven;
 
     jmethodID ThreadContext_getRuntime_method;
     jmethodID Ruby_defineModule_method;
@@ -225,6 +227,10 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;J)J");
     JRuby_getRString = getStaticMethodID(env, JRuby_class, "getRString", "(Lorg/jruby/RubyString;)J");
     JRuby_newFloat = getStaticMethodID(env, JRuby_class, "newFloat", "(Lorg/jruby/Ruby;JD)Lorg/jruby/RubyFloat;");
+    JRuby_yield = getStaticMethodID(env, JRuby_class, "yield",
+            "(Lorg/jruby/Ruby;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    JRuby_blockGiven = getStaticMethodID(env, JRuby_class, "blockGiven", "(Lorg/jruby/Ruby;)I");
+    
     RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
     RubyFloat_value_field = getFieldID(env, RubyFloat_class, "value", "D");
     ByteList_bytes_field = getFieldID(env, ByteList_class, "bytes", "[B");

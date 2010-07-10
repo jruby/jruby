@@ -601,7 +601,9 @@ int rb_big_bytes_used(VALUE obj);
 #define SIZEOF_BDIGITS 1
 
 /** Call block with given argument or raise error if no block given. */
-VALUE rb_yield(VALUE argument_handle);
+VALUE rb_yield(VALUE argument);
+/** Return 1 if block given, 0 if not */
+int rb_block_given_p();
 
 /** Freeze object and return it. */
 VALUE rb_obj_freeze(VALUE obj);
