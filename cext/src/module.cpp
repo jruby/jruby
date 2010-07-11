@@ -34,6 +34,16 @@ rb_define_attr(VALUE module_handle, const char* attr_name, int readable, int wri
     }
   }
 
+
+extern "C"
+void rb_define_const(VALUE module, const char* name, VALUE obj) {
+    JLocalEnv env;
+    jmethodID mid = getMethodID(env, RubyModule_class, "defineConstant",
+            "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
+    env->CallVoidMethod(valueToObject(env, module), mid, env->NewStringUTF(name), valueToObject(env, obj));
+    checkExceptions(env);
+}
+
 extern "C" VALUE
 rb_define_module(const char* name)
 {

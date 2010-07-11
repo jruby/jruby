@@ -247,7 +247,7 @@ void xfree(void*);
 /** Pointer to the MRI array structure */
 #define RARRAY(str) rb_ary_struct_readonly(str);
 
-#define RFLOAT(d) jruby_rfloat(VALUE v)
+#define RFLOAT(v) jruby_rfloat(v)
 #define RFLOAT_VALUE(v) jruby_float_value(v)
 
 #define DATA_PTR(dta) (jruby_data((dta)))
@@ -373,6 +373,8 @@ VALUE rb_class_of(VALUE object_handle);
 VALUE rb_class_name(VALUE class_handle);
 /** C string representation of the class' name. You must free this string. */
 char* rb_class2name(VALUE class_handle);
+/** Convert a path string to a class */
+VALUE rb_path2class(const char* path);
 VALUE rb_define_class(const char*,VALUE);
 VALUE rb_define_module(const char*);
 VALUE rb_define_class_under(VALUE, const char*, VALUE);
@@ -402,6 +404,14 @@ VALUE rb_cvar_get(VALUE module_handle, ID name);
  * TODO: @@ should be optional. 
  */
 VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value);
+/** Return object's instance variable by name. @ optional. */
+VALUE rb_iv_get(VALUE obj, const char* name);
+/** Set instance variable by name to given value. Returns the value. @ optional. */
+VALUE rb_iv_set(VALUE obj, const char* name, VALUE value);
+/** Get object's instance variable. */
+VALUE rb_ivar_get(VALUE obj, ID ivar_name);
+/** Set object's instance variable to given value. */
+VALUE rb_ivar_set(VALUE obj, ID ivar_name, VALUE value);
 
 /* Array */
 VALUE rb_Array(VALUE val);
@@ -585,6 +595,12 @@ void rb_global_variable(VALUE* handle_address);
 void rb_gc_register_address(VALUE* address);
 /** Unmark variable as global */
 void rb_gc_unregister_address(VALUE* address);
+/** Return the global variable. $ optional */
+VALUE rb_gv_get(const char* name);
+/** Set named global to given value, returning the value. $ optional. */
+VALUE rb_gv_set(const char* name, VALUE value);
+/** Return an array containing the names of all global variables */
+VALUE rb_f_global_variables();
 
 /** Print a warning if $VERBOSE is not nil. */
 void rb_warn(const char *fmt, ...);
@@ -596,6 +612,8 @@ int rb_respond_to(VALUE obj_handle, ID method_name);
 /** Returns object returned by invoking method on object if right type, or raises error. */
 VALUE rb_convert_type(VALUE object_handle, int type, const char* type_name, const char* method_name);
 
+/** Define a constant in given Module's namespace. */
+void rb_define_const(VALUE module, const char* name, VALUE obj);
 /** Define a toplevel constant */
 void rb_define_global_const(const char* name, VALUE obj);
 ID rb_intern(const char*);
@@ -629,7 +647,11 @@ int rb_big_bytes_used(VALUE obj);
 #define SIZEOF_BDIGITS 1
 
 /** Call block with given argument or raise error if no block given. */
-VALUE rb_yield(VALUE argument_handle);
+VALUE rb_yield(VALUE argument);
+/** Return 1 if block given, 0 if not */
+int rb_block_given_p();
+/** Return the Proc for the implicit block */
+VALUE rb_block_proc();
 
 /** Freeze object and return it. */
 VALUE rb_obj_freeze(VALUE obj);

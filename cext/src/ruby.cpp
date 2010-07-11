@@ -97,20 +97,59 @@ VALUE rb_eLoadError;
 static VALUE getConstClass(JNIEnv* env, const char* name);
 static VALUE getConstModule(JNIEnv* env, const char* name);
 
-/**  
- * Define a global constant. Uses the corresponding Java method on 
+using namespace jruby;
+
+jstring getGlobalVariableName(JNIEnv* env, const char* name) {
+    char var_name[strlen(name) + 1];
+    (name[0] != '$') ? strcpy(var_name, "$")[0] : var_name[0] = '\0';
+    strcat(var_name, name);
+    return env->NewStringUTF(var_name);
+}
+
+/**
+ * Define a global constant. Uses the corresponding Java method on
  * the Ruby class.
  * @param c string with the constant name
  * @param Ruby object to define the variable on
  */
 extern "C"
 void rb_define_global_const(const char* name, VALUE obj) {
-    using namespace jruby;
     JLocalEnv env;
 
-    jmethodID mid = getMethodID(env, Ruby_class, "defineGlobalConstant", 
-            "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");    
+    jmethodID mid = getMethodID(env, Ruby_class, "defineGlobalConstant",
+            "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
     env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(name), valueToObject(env, obj));
+}
+
+extern "C" VALUE
+rb_gv_get(const char* name) {
+    JLocalEnv env;
+
+    jmethodID mid = getStaticMethodID(env, JRuby_class, "gv_get",
+            "(Lorg/jruby/Ruby;Ljava/lang/String;)J");
+    jlong result = env->CallStaticLongMethod(JRuby_class, mid, getRuntime(),
+            getGlobalVariableName(env, name));
+    checkExceptions(env);
+
+    return (VALUE)result;
+}
+
+extern "C" VALUE
+rb_gv_set(const char* name, VALUE value) {
+    JLocalEnv env;
+
+    jmethodID mid = getStaticMethodID(env, JRuby_class, "gv_set",
+            "(Lorg/jruby/Ruby;Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    jlong result = env->CallStaticLongMethod(JRuby_class, mid, getRuntime(),
+            getGlobalVariableName(env, name), valueToObject(env, value));
+    checkExceptions(env);
+
+    return (VALUE)result;
+}
+
+extern "C" VALUE
+rb_f_global_variables() {
+    return callMethod(rb_mKernel, "global_variables", 0);
 }
 
 #define M(x) rb_m##x = getConstModule(env, #x)

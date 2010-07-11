@@ -44,7 +44,6 @@ namespace jruby {
     jclass Symbol_class;
     jclass JRuby_class;
     jclass ByteList_class;
-    jclass GlobalVariable_class;
     jmethodID JRuby_callMethod;
     jmethodID JRuby_callMethod0;
     jmethodID JRuby_callMethod1;
@@ -57,6 +56,9 @@ namespace jruby {
     jmethodID JRuby_uint2big;
     jmethodID JRuby_getRString;
     jmethodID JRuby_newFloat;
+    jmethodID JRuby_yield;
+    jmethodID JRuby_blockGiven;
+    jmethodID JRuby_getBlockProc;
 
     jmethodID ThreadContext_getRuntime_method;
     jmethodID Ruby_defineModule_method;
@@ -174,7 +176,6 @@ loadIds(JNIEnv* env)
     Symbol_class = loadClass(env, "org/jruby/RubySymbol");
     JRuby_class = loadClass(env, "org/jruby/cext/JRuby");
     ByteList_class = loadClass(env, "org/jruby/util/ByteList");
-    GlobalVariable_class = loadClass(env, "org/jruby/runtime/GlobalVariable");
 
     Handle_address_field = getFieldID(env, Handle_class, "address", "J");
     Ruby_defineModule_method = getMethodID(env, Ruby_class, "defineModule", "(Ljava/lang/String;)Lorg/jruby/RubyModule;");
@@ -237,6 +238,11 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;J)J");
     JRuby_getRString = getStaticMethodID(env, JRuby_class, "getRString", "(Lorg/jruby/RubyString;)J");
     JRuby_newFloat = getStaticMethodID(env, JRuby_class, "newFloat", "(Lorg/jruby/Ruby;JD)Lorg/jruby/RubyFloat;");
+    JRuby_yield = getStaticMethodID(env, JRuby_class, "yield",
+            "(Lorg/jruby/Ruby;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    JRuby_blockGiven = getStaticMethodID(env, JRuby_class, "blockGiven", "(Lorg/jruby/Ruby;)I");
+    JRuby_getBlockProc = getStaticMethodID(env, JRuby_class, "getBlockProc", "(Lorg/jruby/Ruby;)Lorg/jruby/RubyProc;");
+    
     RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
     RubyFloat_value_field = getFieldID(env, RubyFloat_class, "value", "D");
     ByteList_bytes_field = getFieldID(env, ByteList_class, "bytes", "[B");

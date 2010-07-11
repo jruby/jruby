@@ -19,15 +19,18 @@
 package org.jruby.cext;
 
 import java.math.BigInteger;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -120,6 +123,23 @@ public class JRuby {
 
         return address;
     }
+    
+    /** rb_yield */
+    public static IRubyObject yield(Ruby runtime, IRubyObject args) {
+        return Native.getInstance(runtime).getBlock().call(runtime.getCurrentContext(), args);
+    }
+
+    /** rb_block_given_p */
+    public static int blockGiven(Ruby runtime) {
+        return Native.getInstance(runtime).getBlock().isGiven() ? 1 : 0;
+    }
+
+    /** rb_block_proc */
+    public static RubyProc getBlockProc(Ruby runtime) {
+        Block block = Native.getInstance(runtime).getBlock();
+        RubyProc p = RubyProc.newProc(runtime, block, block.type);
+        return p;
+    }
 
     public static long ll2inum(Ruby runtime, long l) {
         RubyFixnum n = RubyFixnum.newFixnum(runtime, l);
@@ -161,5 +181,15 @@ public class JRuby {
                     : RubyBignum.newBignum(runtime, l);
 
         return Handle.nativeHandle(retval);
+    }
+
+    /** rb_gv_set */
+    public static long gv_set(Ruby runtime, String name, IRubyObject value) {
+        return Handle.nativeHandle(runtime.getGlobalVariables().set(name, value));
+    }
+
+    /** rb_gv_get */
+    public static long gv_get(Ruby runtime, String name) {
+        return Handle.nativeHandle(runtime.getGlobalVariables().get(name));
     }
 }

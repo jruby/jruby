@@ -116,6 +116,14 @@ rb_define_alloc_func(VALUE klass, VALUE (*fn)(VALUE))
     env->CallVoidMethod(valueToObject(env, klass), RubyClass_setAllocator_method, allocator);
 }
 
+extern "C" VALUE
+rb_path2class(const char* path) {
+    JLocalEnv env;
+    jmethodID mid = getMethodID(env, Ruby_class, "getClassFromPath", "(Ljava/lang/String;)Lorg/jruby/RubyModule;");
+    jobject klass = env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(path));
+    checkExceptions(env);
+    return objectToValue(env, klass);
+}
 
 static jobject
 getNotAllocatableAllocator(JNIEnv* env)
