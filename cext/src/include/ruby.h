@@ -241,11 +241,16 @@ void xfree(void*);
 #define StringValueCStr(str)  rb_string_value_cstr(&(str))
 
 /** The length of the array. */
-#define RARRAY_LEN(ary)   rb_ary_size(ary)
-/** The pointer to the array's data. */
-#define RARRAY_PTR(ary)   rb_ary_ptr(ary)
+#define RARRAY_LEN(ary) RARRAY(ary)->len
+/** Returns a pointer to a VALUE[] that mirrors the data in
+ * the ruby array.
+ * TODO: The pointer buffer should be flushed to the ruby array when
+ * control returns to Ruby code and be updated with the array
+ * contents when control crosses to C code.
+ */
+#define RARRAY_PTR(ary) RARRAY(ary)->ptr
 /** Pointer to the MRI array structure */
-#define RARRAY(str) rb_ary_struct_readonly(str);
+#define RARRAY(ary) jruby_rarray(ary)
 
 #define RFLOAT(v) jruby_rfloat(v)
 #define RFLOAT_VALUE(v) jruby_float_value(v)
@@ -435,21 +440,10 @@ VALUE rb_ary_reverse(VALUE array);
 VALUE rb_ary_unshift(VALUE array, VALUE val);
 VALUE rb_ary_shift(VALUE array);
 void rb_ary_store(VALUE array, int offset, VALUE val);
-/** Returns a pointer to a persistent VALUE [] that mirrors the data in
- * the ruby array. 
- * TODO: The pointer buffer is flushed to the ruby array when
- * control returns to Ruby code. The buffer is updated with the array
- * contents when control crosses to C code.
- *
- * @note This is NOT an MRI C-API function.
- */
-VALUE *rb_ary_ptr(VALUE self);
 /** Returns a pointer to the readonly RArray structure
  * which exposes an MRI-like API to the C code.
- *
- * @note This is NOT an MRI C-API function.
  */
-struct RArray rb_ary_struct_readonly(VALUE ary);
+struct RArray* jruby_rarray(VALUE ary);
 
 /* Hash */
 VALUE rb_hash_new(void);

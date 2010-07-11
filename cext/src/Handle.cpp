@@ -220,10 +220,14 @@ RubyString::nsync(JNIEnv* env)
 
 RubyArray::RubyArray(JNIEnv* env, jobject obj_): Handle(env, obj_, T_ARRAY)
 {
+    rarray.ptr = NULL;
 }
 
 RubyArray::~RubyArray()
 {
+    if (rarray.ptr) {
+        free(rarray.ptr);
+    }
 }
 
 extern "C" JNIEXPORT jlong JNICALL

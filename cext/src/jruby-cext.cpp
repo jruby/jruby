@@ -35,6 +35,7 @@ namespace jruby {
     jclass RubyModule_class;
     jclass RubyNumeric_class;
     jclass RubyFloat_class;
+    jclass RubyArray_class;
     jclass RubyString_class;
     jclass Handle_class;
     jclass GC_class;
@@ -161,6 +162,7 @@ loadIds(JNIEnv* env)
     RubyModule_class = loadClass(env, "org/jruby/RubyModule");
     RubyNumeric_class = loadClass(env, "org/jruby/RubyNumeric");
     RubyFloat_class = loadClass(env, "org/jruby/RubyFloat");
+    RubyArray_class = loadClass(env, "org/jruby/RubyArray");
     RubyString_class = loadClass(env, "org/jruby/RubyString");
     IRubyObject_class = loadClass(env, "org/jruby/runtime/builtin/IRubyObject");
     Handle_class = loadClass(env, "org/jruby/cext/Handle");

@@ -139,13 +139,17 @@ namespace jruby {
     };
 
     class RubyArray : public Handle {
+    private:
+        struct RArray rarray;
     public:
         RubyArray(JNIEnv* env, jobject obj);
         virtual ~RubyArray();
+
+        struct RArray* toRArray();
     };
-    
+
     extern void runSyncQueue(JNIEnv* env, DataSyncQueue* q);
-    
+
     inline void jsync(JNIEnv* env) {
         if (unlikely(!TAILQ_EMPTY(&jsyncq))) {
             runSyncQueue(env, &jsyncq);

@@ -22,6 +22,8 @@
 #include <jni.h>
 #include "jruby.h"
 #include "ruby.h"
+#include "Handle.h"
+#include "JLocalEnv.h"
 
 /* Array */
 /* The same value as 1.8.x */
@@ -29,8 +31,45 @@
 
 using namespace jruby;
 
-extern "C" VALUE 
-rb_Array(VALUE val) 
+struct RArray*
+RubyArray::toRArray() {
+    JLocalEnv env;
+    int length;
+    jobjectArray elements;
+
+    jfieldID RubyArray_length_field = getFieldID(env, RubyArray_class, "realLength", "I");
+    jmethodID RubyArray_toJavaArray_method = getMethodID(env, RubyArray_class, "toJavaArray",
+            "()[Lorg/jruby/runtime/builtin/IRubyObject;");
+    length = (int)(env->GetIntField(obj, RubyArray_length_field));
+    elements = (jobjectArray)(env->CallObjectMethod(obj, RubyArray_toJavaArray_method));
+
+    if (length > 0) {
+        int i;
+        VALUE* ptr = (VALUE*)xmalloc(sizeof(VALUE) * length);
+        for (i = 0; i < length; i++) {
+            ptr[i] = objectToValue(env, env->GetObjectArrayElement(elements, i));
+        }
+        rarray.ptr = ptr;
+    } else {
+        rarray.ptr = NULL;
+    }
+    rarray.len = length;
+    return &rarray;
+}
+
+struct RArray*
+jruby_rarray(VALUE v)
+{
+    Handle* h = Handle::valueOf(v);
+    if (h->getType() == T_ARRAY) {
+        return ((RubyArray *) h)->toRArray();
+    }
+
+    rb_raise(rb_eTypeError, "wrong type (expected Array)");
+}
+
+extern "C" VALUE
+rb_Array(VALUE val)
 {
     return callMethod(rb_cArray, "new", 1, val);
 }

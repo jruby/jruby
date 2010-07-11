@@ -46,6 +46,7 @@ namespace jruby {
     extern jclass RubyModule_class;
     extern jclass RubyNumeric_class;
     extern jclass RubyFloat_class;
+    extern jclass RubyArray_class;
     extern jclass RubyString_class;
     extern jclass IRubyObject_class;
     extern jclass GC_class;
