@@ -60,6 +60,7 @@ rb_str_new(const char *ptr, long len)
     return newString(ptr, len);
 }
 
+#undef rb_str_new_cstr
 extern "C" VALUE
 rb_str_new_cstr(const char *ptr)
 {
@@ -93,6 +94,7 @@ rb_str_cat(VALUE str, const char *ptr, long len)
     return callMethod(str, "concat", 1, rb_str_new(ptr, len));
 }
 
+#undef rb_str_cat2
 extern "C" VALUE
 rb_str_cat2(VALUE str, const char *ptr)
 {
@@ -116,6 +118,7 @@ rb_str_buf_cat(VALUE str, const char *ptr, long len)
     return callMethod(str, "concat", 1, rb_str_new(ptr, len));
 }
 
+#undef rb_str_buf_cat2
 VALUE
 rb_str_buf_cat2(VALUE str, const char *ptr)
 {
@@ -153,17 +156,19 @@ rb_str_substr(VALUE str, long beg, long len)
     return callMethod(str, "substr", 2, LONG2NUM(beg), LONG2NUM(len));
 }
 
-extern "C" VALUE
-rb_tainted_str_cstr(const char *ptr)
-{
-    int len = strlen(ptr);
-
-    return newString(ptr, len, len, true);
-}
 
 extern "C" VALUE
 rb_tainted_str_new(const char* ptr, long len)
 {
+    return newString(ptr, len, len, true);
+}
+
+#undef rb_tainted_str_new_cstr
+extern "C" VALUE
+rb_tainted_str_new_cstr(const char *ptr)
+{
+    int len = strlen(ptr);
+
     return newString(ptr, len, len, true);
 }
 
