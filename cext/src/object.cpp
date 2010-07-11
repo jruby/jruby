@@ -125,3 +125,8 @@ extern "C" VALUE
 rb_ivar_set(VALUE obj, ID ivar_name, VALUE value) {
     rb_iv_set(obj, rb_id2name(ivar_name), value);
 }
+
+extern "C" void
+rb_obj_call_init(VALUE recv, int arg_count, VALUE* args) {
+    callMethodANonConst(recv, "initialize", arg_count, args);
+}
