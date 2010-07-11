@@ -1159,6 +1159,7 @@ public class RubyInstanceConfig {
                         break;
                     } else if (argument.equals("--version")) {
                         setShowVersion(true);
+                        shouldRunInterpreter = false;
                         break FOR;
                     } else if (argument.equals("--bytecode")) {
                         setShowBytecode(true);
@@ -1293,9 +1294,6 @@ public class RubyInstanceConfig {
     }
 
     public boolean shouldRunInterpreter() {
-        if(isShowVersion() && (hasInlineScript || scriptFileName != null)) {
-            return true;
-        }
         return isShouldRunInterpreter();
     }
 
