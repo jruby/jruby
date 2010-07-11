@@ -1,5 +1,8 @@
 /*
  * Copyright (C) 2008-2010 Wayne Meissner
+ * Copyright (C) 1993-2007 Yukihiro Matsumoto
+ * Copyright (C) 2000  Network Applied Communication Laboratory, Inc.
+ * Copyright (C) 2000  Information-technology Promotion Agency, Japan
  *
  * This file is part of jruby-cext.
  *
@@ -57,6 +60,7 @@ rb_str_new(const char *ptr, long len)
     return newString(ptr, len);
 }
 
+#undef rb_str_new_cstr
 extern "C" VALUE
 rb_str_new_cstr(const char *ptr)
 {
@@ -90,9 +94,11 @@ rb_str_cat(VALUE str, const char *ptr, long len)
     return callMethod(str, "concat", 1, rb_str_new(ptr, len));
 }
 
+#undef rb_str_cat2
 extern "C" VALUE
-rb_str_cat2(VALUE self_handle, const char* other) {
-    return rb_str_cat(self_handle, other, std::strlen(other));
+rb_str_cat2(VALUE str, const char *ptr)
+{
+    return rb_str_cat(str, ptr, strlen(ptr));
 }
 
 extern "C" VALUE
@@ -104,8 +110,21 @@ rb_str_plus(VALUE str1, VALUE str2)
 extern "C" VALUE
 rb_str_buf_cat(VALUE str, const char *ptr, long len)
 {
+    if (len == 0) return str;
+    if (len < 0) {
+        rb_raise(rb_eArgError, "negative string size (or size too big)");
+    }
+
     return callMethod(str, "concat", 1, rb_str_new(ptr, len));
 }
+
+#undef rb_str_buf_cat2
+VALUE
+rb_str_buf_cat2(VALUE str, const char *ptr)
+{
+    return rb_str_buf_cat(str, ptr, strlen(ptr));
+}
+
 
 extern "C" int
 rb_str_cmp(VALUE str1, VALUE str2)
@@ -137,17 +156,19 @@ rb_str_substr(VALUE str, long beg, long len)
     return callMethod(str, "substr", 2, LONG2NUM(beg), LONG2NUM(len));
 }
 
-extern "C" VALUE
-rb_tainted_str_cstr(const char *ptr)
-{
-    int len = strlen(ptr);
-
-    return newString(ptr, len, len, true);
-}
 
 extern "C" VALUE
 rb_tainted_str_new(const char* ptr, long len)
 {
+    return newString(ptr, len, len, true);
+}
+
+#undef rb_tainted_str_new_cstr
+extern "C" VALUE
+rb_tainted_str_new_cstr(const char *ptr)
+{
+    int len = strlen(ptr);
+
     return newString(ptr, len, len, true);
 }
 
@@ -193,9 +214,10 @@ rb_str_freeze(VALUE str) {
     return callMethodA(str, "freeze", 0, NULL);
 }
 
-extern "C" size_t
-rb_str_len(VALUE str) {
-    return NUM2INT(callMethod(str, "length", 0, NULL));
+extern "C" VALUE
+rb_str_length(VALUE str)
+{
+    return INT2NUM(jruby_str_length(str));
 }
 
 static RubyString*
@@ -208,27 +230,17 @@ jruby_str(VALUE v)
     return (RubyString *) v;
 }
 
+
 extern "C" char*
-rb_str_ptr_readonly(VALUE v)
+jruby_str_cstr(VALUE v)
+{
+    return jruby_str(v)->toRString(false)->as.heap.ptr;
+}
+
+extern "C" char*
+jruby_str_cstr_readonly(VALUE v)
 {
     return jruby_str(v)->toRString(true)->as.heap.ptr;    
-}
-
-extern "C" char*
-rb_str2cstr(VALUE str, long* len) {
-    char* cstr = RSTRING_PTR(str);
-    if (len) {
-        *len = RSTRING_LEN(str);
-    } else if(*len != strlen(cstr)) {
-        rb_warn("string contains \\0 character");
-    }
-    return cstr;
-}
-
-extern "C" char*
-jruby_str_ptr(VALUE v)
-{
-    return jruby_rstring(v)->as.heap.ptr;
 }
 
 extern "C" int
@@ -241,4 +253,16 @@ extern "C" struct RString*
 jruby_rstring(VALUE v)
 {
     return jruby_str(v)->toRString(false);
+}
+
+
+extern "C" char*
+rb_str2cstr(VALUE str, long* len) {
+    char* cstr = RSTRING_PTR(str);
+    if (len) {
+        *len = RSTRING_LEN(str);
+    } else if(*len != strlen(cstr)) {
+        rb_warn("string contains \\0 character");
+    }
+    return cstr;
 }

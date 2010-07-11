@@ -35,12 +35,37 @@
 
 using namespace jruby;
 
-static std::map<const char*, ID> constSymbolMap;
-std::vector<jobject> jruby::symbols;
+static Symbol* addSymbol(JNIEnv* env, ID id, jobject obj);
 
-jobject
-jruby::resolveSymbolById(JNIEnv* env, ID id)
+struct StringKey {
+    StringKey(): str(NULL), len(0) { }
+    StringKey(const char* s, long l): str(s), len(l) {}
+    const char* str;
+    long len;
+};
+
+struct StringKeyCompare: public std::binary_function<StringKey, StringKey, bool> {
+    inline bool operator()(const StringKey& k1, const StringKey& k2) const {
+        return k1.len < k2.len || strncmp(k1.str, k2.str, k2.len) < 0;
+    }
+};
+
+struct StringCompare: public std::binary_function<const char*, const char*, bool> {
+    inline bool operator()(const char* k1, const char* k2) const {
+        return strcmp(k1, k2) < 0;
+    }
+};
+
+static std::map<const char*, ID> constSymbolMap;
+static std::map<StringKey, ID, StringKeyCompare> nonConstSymbolMap;
+
+std::vector<Symbol*> jruby::symbols;
+
+Symbol*
+jruby::resolveSymbolById(ID id)
 {
+    JLocalEnv env;
+
     jobject obj = env->CallStaticObjectMethod(Symbol_class, RubySymbol_getSymbolLong,
             jruby::getRuntime(), (jlong) id);
 
@@ -48,13 +73,10 @@ jruby::resolveSymbolById(JNIEnv* env, ID id)
         rb_raise(rb_eRuntimeError, "could not resolve symbol ID %lld", (long long) id);
     }
 
-    if (symbols.size() <= id) {
-        symbols.resize(id + 1);
-    }
-    
-    return symbols[id] = env->NewGlobalRef(obj);
+    return addSymbol(env, id, obj);
 }
 
+#undef rb_intern_const
 extern "C" ID
 rb_intern_const(const char* name)
 {
@@ -63,28 +85,67 @@ rb_intern_const(const char* name)
         return it->second;
     }
 
-    return constSymbolMap[name] = jruby_intern_nonconst(name);
+    ID id = rb_intern2(name, strlen(name));
+
+    constSymbolMap.insert(std::map<const char*, ID>::value_type(name, id));
+
+    return id;
 }
 
-extern "C" const char*
-rb_id2name(ID sym) {
-    return RSTRING_PTR(callMethod((VALUE)sym, "to_s", 0, NULL));
+#undef rb_intern
+extern "C" ID
+rb_intern(const char* name)
+{
+    return rb_intern2(name, strlen(name));
 }
 
 extern "C" ID
-jruby_intern_nonconst(const char* name)
+rb_intern2(const char* name, long len)
 {
+    std::map<StringKey, ID>::iterator it = nonConstSymbolMap.find(StringKey(name, len));
+    if (it != nonConstSymbolMap.end()) {
+        return it->second;
+    }
+
     JLocalEnv env;
     jobject result = env->CallObjectMethod(getRuntime(), Ruby_newSymbol_method, env->NewStringUTF(name));
     checkExceptions(env);
 
-    ID id = env->GetIntField(result, RubySymbol_id_field);
+    Symbol* sym = addSymbol(env, env->GetIntField(result, RubySymbol_id_field), result);
+    nonConstSymbolMap.insert(std::map<StringKey, ID>::value_type(StringKey(sym->cstr, (long) len), sym->id));
+    
+    return sym->id;
+}
 
+extern "C" const char*
+rb_id2name(ID sym)
+{
+    return lookupSymbolById(sym)->cstr;
+}
+
+static Symbol*
+addSymbol(JNIEnv* env, ID id, jobject obj)
+{
     if (symbols.size() <= id) {
         symbols.resize(id + 1);
     }
+    if (symbols[id] != NULL) {
+        return symbols[id];
+    }
 
-    symbols[id] = env->NewGlobalRef(result);
-    
-    return id;
+    Symbol* sym = new Symbol;
+    sym->obj = env->NewGlobalRef(obj);
+    sym->id = id;
+
+    jstring str = (jstring) env->GetObjectField(obj, RubySymbol_symbol_field);
+    checkExceptions(env);
+
+    jint len = env->GetStringLength(str);
+    checkExceptions(env);
+
+    sym->cstr = (char *) calloc(len + 1, sizeof(char));
+    env->GetStringUTFRegion(str, 0, len, sym->cstr);
+    checkExceptions(env);
+
+    return symbols[id] = sym;
 }

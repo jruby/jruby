@@ -106,7 +106,8 @@ rb_ary_push(VALUE array, VALUE val)
 }
 
 extern "C" VALUE 
-rb_ary_pop(VALUE array) {
+rb_ary_pop(VALUE array)
+{
     return callMethod(array, "pop", 0);
 }
 

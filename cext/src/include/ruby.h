@@ -231,7 +231,7 @@ void xfree(void*);
 /** The length of string str. */
 #define RSTRING_LEN(str)  jruby_str_length((str))
 /** The pointer to the string str's data. */
-#define RSTRING_PTR(str)  jruby_str_ptr((str))
+#define RSTRING_PTR(str)  jruby_str_cstr((str))
 /** Pointer to the MRI string structure */
 #define RSTRING(str) jruby_rstring((str))
 #define STR2CSTR(str)         rb_str2cstr((VALUE)(str), 0)
@@ -393,16 +393,10 @@ void rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYAR
 #define HAVE_RB_DEFINE_ALLOC_FUNC 1
 typedef VALUE (*rb_alloc_func_t)(VALUE);
 void rb_define_alloc_func(VALUE, rb_alloc_func_t);
-/** Set module's named class variable to given value. */
-void rb_define_class_variable(VALUE klass, const char* name, VALUE val);
-/** Returns module's named class variable.
- * TODO: @@ should be optional. 
- */
-VALUE rb_cv_get(VALUE module_handle, const char* name);
-/** Set module's named class variable to given value. Returns the value.
- * TODO: @@ should be optional. 
- */
-VALUE rb_cv_set(VALUE module_handle, const char* name, VALUE value);
+
+#define rb_define_class_variable(klass, name, val) rb_cvar_set(klass, rb_intern(name), val)
+#define rb_cv_get(klass, name) rb_cvar_get(klass, rb_intern(name))
+#define rb_cv_set(klass, name, value) rb_cvar_set(klass, rb_intern(name), value)
 /** Returns a value evaluating true if module has named class var. 
  * TODO: @@ should be optional. 
  */
@@ -414,7 +408,7 @@ VALUE rb_cvar_get(VALUE module_handle, ID name);
 /** Set module's named class variable to given value. Returns the value. 
  * TODO: @@ should be optional. 
  */
-VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value, int unused);
+VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value);
 /** Return object's instance variable by name. @ optional. */
 VALUE rb_iv_get(VALUE obj, const char* name);
 /** Set instance variable by name to given value. Returns the value. @ optional. */
@@ -472,7 +466,7 @@ VALUE rb_str_dup_frozen(VALUE);
 #define rb_str_dup_frozen rb_str_new_frozen
 VALUE rb_str_plus(VALUE, VALUE);
 VALUE rb_str_times(VALUE, VALUE);
-size_t rb_str_len(VALUE str);
+VALUE rb_str_length(VALUE str);
 long rb_str_sublen(VALUE, long);
 VALUE rb_str_substr(VALUE, long, long);
 VALUE rb_str_subseq(VALUE, long, long);
@@ -511,14 +505,7 @@ size_t rb_str_capacity(VALUE);
 char* rb_str2cstr(VALUE str_handle, long *len);
 /** Deprecated alias for rb_obj_freeze */
 VALUE rb_str_freeze(VALUE str);
-/** Returns a pointer to a persistent char [] that contains the same data as
- * that contained in the Ruby string. The buffer is flushed to the string
- * when control returns to Ruby code. The buffer is updated with the string
- * contents when control crosses to C code.
- *
- * @note This is NOT an MRI C-API function.
- */
-extern char* rb_str_ptr_readonly(VALUE v);
+
 /** Call #to_s on object pointed to and _replace_ it with the String. */
 VALUE rb_string_value(VALUE* object_variable);
 char* rb_string_value_ptr(VALUE* object_variable);
@@ -527,7 +514,42 @@ char* rb_string_value_cstr(VALUE* object_variable);
 
 extern struct RString* jruby_rstring(VALUE v);
 extern int jruby_str_length(VALUE v);
-extern char* jruby_str_ptr(VALUE v);
+char* jruby_str_cstr(VALUE v);
+char* jruby_str_cstr_readonly(VALUE v);
+
+#define rb_str_ptr_readonly(v) jruby_str_cstr_readonly((v))
+
+#define rb_str_new_cstr(str) __extension__ (    \
+{                                               \
+    (__builtin_constant_p(str)) ?               \
+        rb_str_new(str, (long)strlen(str)) :    \
+        rb_str_new_cstr(str);                   \
+})
+#define rb_tainted_str_new_cstr(str) __extension__ ( \
+{                                              \
+    (__builtin_constant_p(str)) ?              \
+        rb_tainted_str_new(str, (long)strlen(str)) : \
+        rb_tainted_str_new_cstr(str);          \
+})
+#define rb_str_buf_new_cstr(str) __extension__ ( \
+{                                               \
+    (__builtin_constant_p(str)) ?               \
+        rb_str_buf_cat(rb_str_buf_new((long)strlen(str)), \
+                       str, (long)strlen(str)) : \
+        rb_str_buf_new_cstr(str);               \
+})
+#define rb_str_buf_cat2(str, ptr) __extension__ ( \
+{                                               \
+    (__builtin_constant_p(ptr)) ?               \
+        rb_str_buf_cat(str, ptr, (long)strlen(ptr)) : \
+        rb_str_buf_cat2(str, ptr);              \
+})
+#define rb_str_cat2(str, ptr) __extension__ (   \
+{                                               \
+    (__builtin_constant_p(ptr)) ?               \
+        rb_str_cat(str, ptr, (long)strlen(ptr)) : \
+        rb_str_cat2(str, ptr);                  \
+})
 
 #define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_dup
@@ -536,7 +558,6 @@ extern char* jruby_str_ptr(VALUE v);
 #define rb_tainted_str_new2 rb_tainted_str_new_cstr
 #define rb_str_buf_new2 rb_str_buf_new_cstr
 #define rb_usascii_str_new2 rb_usascii_str_new_cstr
-#define rb_str_ptr rb_str_ptr_readonly
 
 /** Returns the string associated with a symbol. */
 const char *rb_id2name(ID sym);
@@ -589,10 +610,25 @@ VALUE rb_convert_type(VALUE object_handle, int type, const char* type_name, cons
 void rb_define_const(VALUE module, const char* name, VALUE obj);
 /** Define a toplevel constant */
 void rb_define_global_const(const char* name, VALUE obj);
-extern ID rb_intern_const(const char *);
-extern ID jruby_intern_nonconst(const char *);
-#define rb_intern(name) \
-    (__builtin_constant_p(name) ? rb_intern_const(name) : jruby_intern_nonconst(name))
+ID rb_intern(const char*);
+ID rb_intern2(const char*, long);
+ID rb_intern_const(const char*);
+
+#define CONST_ID_CACHE(result, str)                     \
+    {                                                   \
+        static ID rb_intern_id_cache;                   \
+        if (__builtin_expect(!rb_intern_id_cache, 0))           \
+            rb_intern_id_cache = rb_intern2(str, strlen(str));  \
+        result rb_intern_id_cache;                      \
+    }
+
+#define rb_intern(str) \
+    (__builtin_constant_p(str) \
+        ? __extension__ (CONST_ID_CACHE(/**/, str)) : rb_intern(str))
+
+#define rb_intern_const(str) \
+    (__builtin_constant_p(str) \
+        ? __extension__ (rb_intern2(str, strlen(str))) : rb_intern(str))
 
 extern struct RFloat* jruby_rfloat(VALUE v);
 extern VALUE rb_float_new(double value);
@@ -615,6 +651,17 @@ VALUE rb_block_proc();
 VALUE rb_obj_freeze(VALUE obj);
 /** String representation of the object's class' name. You must free this string. */
 char* rb_obj_classname(VALUE object_handle);
+
+VALUE rb_exc_new(VALUE, const char*, long);
+VALUE rb_exc_new2(VALUE, const char*);
+VALUE rb_exc_new3(VALUE, VALUE);
+
+#define rb_exc_new2(klass, ptr) __extension__ ( \
+{                                               \
+    (__builtin_constant_p(ptr)) ?               \
+        rb_exc_new(klass, ptr, (long)strlen(ptr)) : \
+        rb_exc_new2(klass, ptr);                \
+})
 
 /* Global Module objects. */
 extern VALUE rb_mKernel;

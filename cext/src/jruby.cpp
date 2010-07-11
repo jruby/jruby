@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <ctype.h>
 #include <vector>
@@ -31,27 +32,64 @@
 
 using namespace jruby;
 
-static VALUE
-callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE* args)
+
+struct StringCompare: public std::binary_function<const char*, const char*, bool> {
+    inline bool operator()(const char* k1, const char* k2) const {
+        return strcmp(k1, k2) < 0;
+    }
+};
+
+static std::map<const char*, jobject> constMethodNameMap;
+static std::map<const char*, jobject, StringCompare> nonConstMethodNameMap;
+
+VALUE
+jruby::callRubyMethodA(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE* args)
 {
 
     jsync(env);
 
     jobjectArray argArray;
 
-    argArray = env->NewObjectArray(argCount, IRubyObject_class, NULL);
-    checkExceptions(env);
-    for (int i = 0; i < argCount; ++i) {
-        env->SetObjectArrayElement(argArray, i, valueToObject(env, args[i]));
-        checkExceptions(env);
-    }
-    
-    jvalue jparams[3];
+    jvalue jparams[5];
     jparams[0].l = valueToObject(env, recv);
     jparams[1].l = methodName;
-    jparams[2].l = argArray;
+    jmethodID mid = JRuby_callMethod;
+    switch (argCount) {
+        case 0:
+            mid = JRuby_callMethod0;
+            break;
 
-    jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethod, jparams);
+        case 1:
+            mid = JRuby_callMethod1;
+            jparams[2].l = valueToObject(env, args[0]);
+            break;
+
+        case 2:
+            mid = JRuby_callMethod2;
+            jparams[2].l = valueToObject(env, args[0]);
+            jparams[3].l = valueToObject(env, args[1]);
+            break;
+
+        case 3:
+            mid = JRuby_callMethod3;
+            jparams[2].l = valueToObject(env, args[0]);
+            jparams[3].l = valueToObject(env, args[1]);
+            jparams[4].l = valueToObject(env, args[2]);
+            break;
+
+        default:
+            mid = JRuby_callMethod;
+            jparams[2].l = argArray = env->NewObjectArray(argCount, IRubyObject_class, NULL);
+            checkExceptions(env);
+            for (int i = 0; i < argCount; ++i) {
+                env->SetObjectArrayElement(argArray, i, valueToObject(env, args[i]));
+                checkExceptions(env);
+            }
+
+            break;
+    }
+
+    jlong ret = env->CallStaticLongMethodA(JRuby_class, mid, jparams);
     checkExceptions(env);
 
     nsync(env);
@@ -60,23 +98,76 @@ callRubyMethod(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE*
     return makeStrongRef(env, (VALUE) ret);
 }
 
-static jobject
-getCachedMethodNameInstance(JNIEnv* env, const char* methodName)
+#undef callMethod
+VALUE
+jruby::callMethod(VALUE recv, jobject methodName, int argCount, ...)
 {
-    jobject jMethodObject = methodNameMap[methodName];
-    if (jMethodObject == NULL) {
-        jMethodObject = methodNameMap[methodName] = env->NewGlobalRef(env->NewStringUTF(methodName));
+    VALUE args[argCount];
+
+    va_list ap;
+    va_start(ap, argCount);
+
+    for (int i = 0; i < argCount; ++i) {
+        args[i] = va_arg(ap, VALUE);
     }
-    
-    return jMethodObject;
+
+    va_end(ap);
+
+    JLocalEnv env;
+    return callRubyMethodA(env, recv, methodName, argCount, args);
 }
 
+static inline jobject
+getNonConstMethodNameInstance(JNIEnv* env, const char* methodName)
+{
+    std::map<const char*, jobject>::iterator it = nonConstMethodNameMap.find(methodName);
+    if (likely(it != nonConstMethodNameMap.end())) {
+        return it->second;
+    }
+
+    jobject obj = env->NewGlobalRef(env->NewStringUTF(methodName));
+
+    nonConstMethodNameMap.insert(std::map<const char*, jobject>::value_type(strdup(methodName), obj));
+
+    return obj;
+}
+
+jobject
+jruby::getConstMethodNameInstance(JNIEnv* env, const char* methodName)
+{
+    std::map<const char*, jobject>::iterator it = constMethodNameMap.find(methodName);
+    if (likely(it != constMethodNameMap.end())) {
+        return it->second;
+    }
+
+    jobject obj = getNonConstMethodNameInstance(env, methodName);
+
+    constMethodNameMap.insert(std::map<const char*, jobject>::value_type(methodName, obj));
+
+    return obj;
+
+    return constMethodNameMap[methodName] = getNonConstMethodNameInstance(env, methodName);
+}
+
+jobject
+jruby::getConstMethodNameInstance(const char* methodName)
+{
+    std::map<const char*, jobject>::iterator it = constMethodNameMap.find(methodName);
+    if (likely(it != constMethodNameMap.end())) {
+        return it->second;
+    }
+
+    JLocalEnv env;
+    return getConstMethodNameInstance(env, methodName);
+}
+
+
 VALUE
-jruby::callMethodA(VALUE recv, const char* method, int argCount, VALUE* args)
+jruby::callMethodANonConst(VALUE recv, const char* method, int argCount, VALUE* args)
 {
     JLocalEnv env;
 
-    return callRubyMethod(env, recv, env->NewStringUTF(method), argCount, args);
+    return callRubyMethodA(env, recv, getNonConstMethodNameInstance(env, method), argCount, args);
 }
 
 VALUE
@@ -84,12 +175,21 @@ jruby::callMethodAConst(VALUE recv, const char* method, int argCount, VALUE* arg
 {
     JLocalEnv env;
     
-    return callRubyMethod(env, recv, getCachedMethodNameInstance(env, method), argCount, args);
+    return callRubyMethodA(env, recv, getConstMethodNameInstance(env, method), argCount, args);
+}
+
+#undef callMethodA
+VALUE
+jruby::callMethodA(VALUE recv, jobject method, int argc, VALUE* argv)
+{
+    JLocalEnv env;
+
+    return callRubyMethodA(env, recv, method, argc, argv);
 }
 
 
 VALUE
-jruby::callMethodV(VALUE recv, const char* method, int argCount, ...)
+jruby::callMethodNonConst(VALUE recv, const char* method, int argCount, ...)
 {
     VALUE args[argCount];
 
@@ -103,11 +203,11 @@ jruby::callMethodV(VALUE recv, const char* method, int argCount, ...)
     va_end(ap);
 
     JLocalEnv env;
-    return callRubyMethod(env, recv, env->NewStringUTF(method), argCount, args);
+    return callRubyMethodA(env, recv, getNonConstMethodNameInstance(env, method), argCount, args);
 }
 
 VALUE
-jruby::callMethodVConst(VALUE recv, const char* method, int argCount, ...)
+jruby::callMethodConst(VALUE recv, const char* method, int argCount, ...)
 {
     VALUE args[argCount];
 
@@ -122,7 +222,7 @@ jruby::callMethodVConst(VALUE recv, const char* method, int argCount, ...)
 
     
     JLocalEnv env;
-    return callRubyMethod(env, recv, getCachedMethodNameInstance(env, method), argCount, args);
+    return callRubyMethodA(env, recv, getConstMethodNameInstance(env, method), argCount, args);
 }
 
 

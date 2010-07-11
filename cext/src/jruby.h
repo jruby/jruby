@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -22,6 +22,7 @@
 #include <jni.h>
 #include <map>
 #include "queue.h"
+#include "util.h"
 #include "ruby.h"
 
 namespace jruby {
@@ -82,6 +83,10 @@ namespace jruby {
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
     extern jmethodID JRuby_callMethod;
+    extern jmethodID JRuby_callMethod0;
+    extern jmethodID JRuby_callMethod1;
+    extern jmethodID JRuby_callMethod2;
+    extern jmethodID JRuby_callMethod3;
     extern jmethodID JRuby_newString;
     extern jmethodID JRuby_newFloat;
     extern jmethodID JRuby_ll2inum;
@@ -97,6 +102,7 @@ namespace jruby {
     extern jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
     extern jfieldID RubyFloat_value_field;
     extern jfieldID RubySymbol_id_field;
+    extern jfieldID RubySymbol_symbol_field;
 
     extern jobject runtime;
     extern jobject nilRef;
@@ -108,15 +114,37 @@ namespace jruby {
 
     Handle* newHandle(JNIEnv* env);
 
-#define callMethod(recv, method, argCount, a...) \
-    (__builtin_constant_p(method) \
-        ? jruby::callMethodVConst(recv, method, argCount, ##a) \
-        : jruby::callMethodV(recv, method, argCount, ##a))
-
-    VALUE callMethodV(VALUE recv, const char* methodName, int argCount, ...);
-    VALUE callMethodA(VALUE recv, const char* methodName, int argCount, VALUE* args);
-    VALUE callMethodVConst(VALUE recv, const char* methodName, int argCount, ...);
+    VALUE callMethod(VALUE recv, jobject methodName, int argCount, ...);
+    VALUE callMethodA(VALUE recv, jobject methodName, int argCount, VALUE* args);
+    VALUE callMethodConst(VALUE recv, const char* methodName, int argCount, ...);
+    VALUE callMethodNonConst(VALUE recv, const char* methodName, int argCount, ...);
     VALUE callMethodAConst(VALUE recv, const char* methodName, int argCount, VALUE* args);
+    VALUE callMethodANonConst(VALUE recv, const char* methodName, int argCount, VALUE* args);
+    VALUE callRubyMethod(JNIEnv* env, VALUE recv, jobject obj, int argCount, ...);
+    VALUE callRubyMethodA(JNIEnv* env, VALUE recv, jobject obj, int argCount, VALUE* args);
+    VALUE callRubyMethodV(JNIEnv* env, VALUE recv, jobject obj, int argCount, va_list ap);
+
+    jobject getConstMethodNameInstance(const char* methodName);
+    jobject getConstMethodNameInstance(JNIEnv* env, const char* methodName);
+
+    
+#define CONST_METHOD_NAME_CACHE(name) __extension__({          \
+        static jobject mid_;                             \
+        if (__builtin_expect(!mid_, 0))                  \
+            mid_ = getConstMethodNameInstance(name);      \
+        mid_;                                            \
+    })
+
+#define callMethod(recv, method, argCount, a...) \
+    (likely(__builtin_constant_p(method)) \
+        ? jruby::callMethod(recv, CONST_METHOD_NAME_CACHE(method), argCount, ##a) \
+        : jruby::callMethodNonConst(recv, method, argCount, ##a))
+
+#define callMethodA(recv, method, argc, argv) __extension__ \
+    (likely(__builtin_constant_p(method)) \
+        ? jruby::callMethodA(recv, CONST_METHOD_NAME_CACHE(method), argc, argv) \
+        : jruby::callMethodANonConst(recv, method, argc, argv))
+
     VALUE getClass(const char* className);
     VALUE getModule(const char* className);
     VALUE getSymbol(const char* name);
@@ -142,9 +170,6 @@ namespace jruby {
     TAILQ_HEAD(DataSyncQueue, DataSync);
     extern DataSyncQueue jsyncq, nsyncq;
 }
-
-#define JRUBY_callRubyMethodA(recv, meth, argc, argv) \
-            jruby::callMethod(recv, meth, argc, argv)
 
 // FIXME - no need to match ruby here, unless we fold type into flags
 #define FL_MARK      (1<<5)

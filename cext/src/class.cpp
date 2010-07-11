@@ -27,54 +27,46 @@ using namespace jruby;
 static jobject getNotAllocatableAllocator(JNIEnv* env);
 static jobject getDefaultAllocator(JNIEnv* env, VALUE parent);
 
-extern "C" VALUE 
-rb_class_new_instance(int arg_count, VALUE* args, VALUE class_handle) {
-    return rb_funcall2(class_handle, rb_intern("new"), arg_count, args);
+extern "C" VALUE
+rb_class_new_instance(int argc, VALUE* argv, VALUE klass)
+{
+    return callMethodA(klass, "new", argc, argv);
 }
 
-extern "C" VALUE 
-rb_class_of(VALUE object_handle) {
-    return rb_funcall(object_handle, rb_intern("class"), 0);
+extern "C" VALUE
+rb_class_of(VALUE obj)
+{
+    return callMethodA(obj, "class", 0, NULL);
 }
 
-extern "C" VALUE 
-rb_class_name(VALUE class_handle) {
-    return rb_funcall(class_handle, rb_intern("name"), 0);
+extern "C" VALUE
+rb_class_name(VALUE klass)
+{
+    return callMethodA(klass, "name", 0, NULL);
 }
 
 extern "C" char* 
-rb_class2name(VALUE class_handle) {
-    return (char*)RSTRING_PTR(rb_class_name(class_handle));
+rb_class2name(VALUE class_handle)
+{
+    return (char *) RSTRING_PTR(rb_class_name(class_handle));
 }
 
 extern "C" VALUE
-rb_cvar_defined(VALUE module_handle, ID name) {
-    return rb_funcall(module_handle, rb_intern("class_variable_defined?"), 1, name);
+rb_cvar_defined(VALUE klass, ID name)
+{
+    return callMethod(klass, "class_variable_defined?", 1, ID2SYM(name));
 }
 
 extern "C" VALUE
-rb_cv_get(VALUE module_handle, const char* name) {
-    return rb_cvar_get(module_handle, rb_intern(name));
+rb_cvar_get(VALUE klass, ID name)
+{
+    return callMethod(klass, "class_variable_get", 1, ID2SYM(name));
 }
 
 extern "C" VALUE
-rb_cv_set(VALUE module_handle, const char* name, VALUE value) {
-    return rb_cvar_set(module_handle, rb_intern(name), value, 0);
-}
-
-extern "C" VALUE
-rb_cvar_get(VALUE module_handle, ID name) {
-    return rb_funcall(module_handle, rb_intern("class_variable_get"), 1, name);
-}
-
-extern "C" VALUE
-rb_cvar_set(VALUE module_handle, ID name, VALUE value, int unused) {
-    return rb_funcall(module_handle, rb_intern("class_variable_set"), 2, name, value);
-}
-
-extern "C" void 
-rb_define_class_variable(VALUE klass, const char* name, VALUE val) {
-    rb_cvar_set(klass, rb_intern(name), val, 0);
+rb_cvar_set(VALUE klass, ID name, VALUE value)
+{
+    return callMethod(klass, "class_variable_set", 2, ID2SYM(name), value);
 }
 
 extern "C" VALUE

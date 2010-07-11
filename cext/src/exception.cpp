@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2010 Wayne Meissner
+ * Copyright (C) 1993-2007 Yukihiro Matsumoto
  *
  * This file is part of jruby-cext.
  *
@@ -15,37 +15,26 @@
  * You should have received a copy of the GNU General Public License
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include <jni.h>
-#include "JLocalEnv.h"
-#include "Handle.h"
-#include "jruby.h"
 #include "ruby.h"
 
-using namespace jruby;
+extern "C" VALUE
+rb_exc_new(VALUE etype, const char *ptr, long len)
+{
+    return rb_funcall(etype, rb_intern("new"), 1, rb_str_new(ptr, len));
+}
+
+#undef rb_exc_new2
 
 extern "C" VALUE
-rb_funcall(VALUE recv, ID meth, int argCount, ...)
+rb_exc_new2(VALUE etype, const char *s)
 {
-    VALUE argv[argCount];
-    va_list ap;
-    va_start(ap, argCount);
-
-    for (int i = 0; i < argCount; i++) {
-        argv[i] = va_arg(ap, VALUE);
-    }
-
-    va_end(ap);
-
-    JLocalEnv env;
-
-    return callRubyMethodA(env, recv, idToObject(env, meth), argCount, argv);
+    return rb_exc_new(etype, s, strlen(s));
 }
 
 extern "C" VALUE
-rb_funcall2(VALUE recv, ID meth, int argCount, VALUE* args)
+rb_exc_new3(VALUE etype, VALUE str)
 {
-    JLocalEnv env;
-
-    return callRubyMethodA(env, recv, idToObject(env, meth), argCount, args);
+    StringValue(str);
+    return rb_funcall(etype, rb_intern("new"), 1, str);
 }
+

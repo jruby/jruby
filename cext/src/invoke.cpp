@@ -135,7 +135,7 @@ Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject 
  * Method:    callMethod0
  * Signature: (JJ)Lorg/jruby/runtime/builtin/IRubyObject;
  */
-JNIEXPORT jobject JNICALL
+extern "C" JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_callMethod0(JNIEnv* env, jobject self, jlong fn, jlong recv)
 {
     try {
@@ -159,7 +159,7 @@ Java_org_jruby_cext_Native_callMethod0(JNIEnv* env, jobject self, jlong fn, jlon
  * Method:    callMethod1
  * Signature: (JJJ)Lorg/jruby/runtime/builtin/IRubyObject;
  */
-JNIEXPORT jobject JNICALL
+extern "C" JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_callMethod1(JNIEnv* env, jobject self, jlong fn, jlong recv, jlong arg1)
 {
     try {
@@ -183,7 +183,7 @@ Java_org_jruby_cext_Native_callMethod1(JNIEnv* env, jobject self, jlong fn, jlon
  * Method:    callMethod2
  * Signature: (JJJJ)Lorg/jruby/runtime/builtin/IRubyObject;
  */
-JNIEXPORT jobject JNICALL
+extern "C" JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_callMethod2(JNIEnv* env, jobject self, jlong fn, jlong recv,
         jlong arg1, jlong arg2)
 {
@@ -209,7 +209,7 @@ Java_org_jruby_cext_Native_callMethod2(JNIEnv* env, jobject self, jlong fn, jlon
  * Method:    callMethod3
  * Signature: (JJJJJ)Lorg/jruby/runtime/builtin/IRubyObject;
  */
-JNIEXPORT jobject JNICALL
+extern "C" JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_callMethod3(JNIEnv* env, jobject self, jlong fn, jlong recv,
         jlong arg1, jlong arg2, jlong arg3)
 {
