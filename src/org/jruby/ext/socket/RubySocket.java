@@ -704,7 +704,8 @@ public class RubySocket extends RubyBasicSocket {
             if (len < 3 || len > 4) {
                 throw runtime.newArgumentError("array size should be 3 or 4, "+len+" given");
             }
-            host = list.get(2).toString();
+            // if array has 4 elements, third element is ignored
+            host = list.size() == 3 ? list.get(2).toString() : list.get(3).toString();
             port = list.get(1).toString();
         } else if (arg0 instanceof RubyString) {
             String arg = ((RubyString)arg0).toString();
