@@ -297,6 +297,8 @@ void xfree(void*);
  *  Lastly, the block may be nil.
  */
 int rb_scan_args(int argc, const VALUE* argv, const char* spec, ...);
+/** Returns true on first load, false if already loaded or raises. */
+VALUE rb_require(const char* name);
 
 void rb_raise(VALUE exc, const char *fmt, ...) __attribute__((noreturn));
 void rb_fatal(const char *fmt, ...) __attribute__((noreturn));

@@ -75,3 +75,8 @@ rb_block_proc() {
     checkExceptions(env);
     return objectToValue(env, proc);
 }
+
+extern "C" VALUE
+rb_require(const char* name) {
+    return callMethod(rb_mKernel, "require", 1, rb_str_new_cstr(name));
+}
