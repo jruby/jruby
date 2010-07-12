@@ -52,6 +52,14 @@ typedef intptr_t SIGNED_VALUE;
 # define RSHIFT(x,y) ((x)>>(int)y)
 #endif
 
+/** Zero out N elements of type starting at given pointer. */
+#define MEMZERO(p,type,n) memset((p), 0, (sizeof(type) * (n)))
+/** Copies n objects of type from p2 to p1. Behavior is undefined if objects overlap. */
+#define MEMCPY(p1,p2,type,n) memcpy((p1), (p2), sizeof(type)*(n))
+/** Copies n objects of type from p2 to p1. Objects may overlap. */
+#define MEMMOVE(p1,p2,type,n) memmove((p1), (p2), sizeof(type)*(n))
+/** Compares n objects of type. */
+#define MEMCMP(p1,p2,type,n) memcmp((p1), (p2), sizeof(type)*(n))
 
 #define FIXNUM_MAX (LONG_MAX>>1)
 #define FIXNUM_MIN RSHIFT((long)LONG_MIN,1)
