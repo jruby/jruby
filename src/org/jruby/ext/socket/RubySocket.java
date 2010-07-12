@@ -704,7 +704,6 @@ public class RubySocket extends RubyBasicSocket {
             if (len < 3 || len > 4) {
                 throw runtime.newArgumentError("array size should be 3 or 4, "+len+" given");
             }
-            // TODO: validate port as numeric
             host = list.get(2).toString();
             port = list.get(1).toString();
         } else if (arg0 instanceof RubyString) {
@@ -743,9 +742,11 @@ public class RubySocket extends RubyBasicSocket {
         } else {
             host = addr.getHostAddress();
         }
-        if ((flags & NI_NUMERICSERV.value()) == 0) {
-            jnr.netdb.Service serv = jnr.netdb.Service.getServiceByPort(Integer.parseInt(port), null);
-            if (serv != null) {
+        jnr.netdb.Service serv = jnr.netdb.Service.getServiceByPort(Integer.parseInt(port), null);
+        if (serv != null) {
+            if ((flags & NI_NUMERICSERV.value()) == 0) {
+                port = serv.getName();
+            } else {
                 port = Integer.toString(serv.getPort());
             }
         }
