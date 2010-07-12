@@ -56,8 +56,8 @@ public class TestRubyInstanceConfig extends TestRubyBase {
         assertEquals(RubyInstanceConfig.LoadServiceCreator.DEFAULT, config.getLoadServiceCreator());
         assertFalse(config.isInlineScript());
         assertNull(config.getScriptFileName());
-        assertEquals(new ArrayList<String>(), config.loadPaths());
-        assertEquals(new ArrayList<String>(), config.requiredLibraries());
+        assertTrue(config.loadPaths().isEmpty());
+        assertTrue(config.requiredLibraries().isEmpty());
     }
 
     protected final static class NullLoadService extends LoadService {
