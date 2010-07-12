@@ -56,8 +56,13 @@ public:
             }
         }
 
-        if (unlikely(!TAILQ_EMPTY(&nsyncq))) {
-            if (invokeLevel < 1) {
+        if (likely(invokeLevel < 1)) {
+            if (unlikely(!TAILQ_EMPTY(&cleanq))) {
+                runSyncQueue(env, &cleanq);
+                clearSyncQueue(&cleanq);
+            }
+
+            if (unlikely(!TAILQ_EMPTY(&nsyncq))) {
                 clearSyncQueue(&nsyncq);
             }
         }

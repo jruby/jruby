@@ -127,6 +127,7 @@ namespace jruby {
         RString* toRString(bool readonly);
         bool jsync(JNIEnv* env);
         bool nsync(JNIEnv* env);
+        bool clean(JNIEnv* env);
         int length();
     private:
         struct RWData {
@@ -134,6 +135,7 @@ namespace jruby {
             RString* rstring;
             DataSync jsync;
             DataSync nsync;
+            DataSync clean;
             DataSync rosync;
         };
         RWData rwdata;

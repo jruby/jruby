@@ -33,6 +33,7 @@ HandleList jruby::liveHandles = TAILQ_HEAD_INITIALIZER(liveHandles);
 HandleList jruby::deadHandles = TAILQ_HEAD_INITIALIZER(deadHandles);
 DataSyncQueue jruby::nsyncq = TAILQ_HEAD_INITIALIZER(nsyncq);
 DataSyncQueue jruby::jsyncq = TAILQ_HEAD_INITIALIZER(jsyncq);
+DataSyncQueue jruby::cleanq = TAILQ_HEAD_INITIALIZER(cleanq);
 
 static int allocCount;
 static const int GC_THRESHOLD = 10000;
@@ -131,6 +132,12 @@ RubyString_nsync(JNIEnv* env, DataSync* data)
     return ((RubyString *) data->data)->nsync(env);
 }
 
+static bool
+RubyString_clean(JNIEnv* env, DataSync* data)
+{
+    return ((RubyString *) data->data)->clean(env);
+}
+
 RString*
 RubyString::toRString(bool readonly)
 {
@@ -153,9 +160,12 @@ RubyString::toRString(bool readonly)
     rwdata.jsync.sync = RubyString_jsync;
     rwdata.nsync.data = this;
     rwdata.nsync.sync = RubyString_nsync;
+    rwdata.clean.data = this;
+    rwdata.clean.sync = RubyString_clean;
     rwdata.rstring = (RString *) j2p(env->CallStaticLongMethod(JRuby_class, JRuby_getRString, obj));
     rwdata.readonly = readonly;
 
+    TAILQ_INSERT_TAIL(&jruby::cleanq, &rwdata.clean, syncq);
     TAILQ_INSERT_TAIL(&jruby::jsyncq, &rwdata.jsync, syncq);
     if (!readonly) {
         TAILQ_INSERT_TAIL(&jruby::nsyncq, &rwdata.nsync, syncq);
@@ -166,12 +176,23 @@ RubyString::toRString(bool readonly)
 }
 
 bool
+RubyString::clean(JNIEnv* env)
+{
+    // Clear the cached data
+    rwdata.readonly = false;
+    rwdata.rstring = NULL;
+
+    return false;
+}
+
+bool
 RubyString::jsync(JNIEnv* env)
 {
     if (rwdata.readonly && rwdata.rstring != NULL) {
         // Don't sync anything, just clear the cached data
         rwdata.rstring = NULL;
         rwdata.readonly = false;
+
         return false;
     }
 
@@ -179,12 +200,13 @@ RubyString::jsync(JNIEnv* env)
         jobject byteList = env->GetObjectField(obj, RubyString_value_field);
         jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
         jint begin = env->GetIntField(byteList, ByteList_begin_field);
+        
+        env->DeleteLocalRef(byteList);
 
         RString* rstring = rwdata.rstring;
         env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring->as.heap.len,
                 (jbyte *) rstring->as.heap.ptr);
         
-        env->DeleteLocalRef(byteList);
         env->DeleteLocalRef(bytes);
     }
 
@@ -198,22 +220,21 @@ RubyString::nsync(JNIEnv* env)
     jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
     jint begin = env->GetIntField(byteList, ByteList_begin_field);
     long length = env->GetIntField(byteList, ByteList_length_field);
+    env->DeleteLocalRef(byteList);
 
     RString* rstring = rwdata.rstring;
 
-    if (length > rstring->as.heap.capa) {
-        rstring->as.heap.capa = env->GetArrayLength((jarray) bytes);
+    jint capacity = env->GetArrayLength((jarray) bytes);
+    if (capacity > rstring->as.heap.capa) {
+        rstring->as.heap.capa = capacity;
         rstring->as.heap.ptr = (char *) realloc(rstring->as.heap.ptr, rstring->as.heap.capa + 1);
     }
     
-    rstring->as.heap.len = length;
-    
     env->GetByteArrayRegion((jbyteArray) bytes, begin, length, 
             (jbyte *) rstring->as.heap.ptr);
-    rstring->as.heap.ptr[length] = 0;
-
-    env->DeleteLocalRef(byteList);
     env->DeleteLocalRef(bytes);
+
+    rstring->as.heap.ptr[rstring->as.heap.len = length] = 0;
 
     return true;
 }

@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jruby.anno.JRubyMethod;
+import org.jruby.cext.Handle;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -70,6 +71,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     // zeroed by jvm
     protected int flags;
+
+    private Handle cextHandle;
 
     // variable table, lazily allocated as needed (if needed)
     private volatile Object[] varTable = NULL_OBJECT_ARRAY;
@@ -572,6 +575,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public RubyClass getType() {
         return getMetaClass().getRealClass();
+    }
+
+    public final Handle getNativeHandle() {
+        return cextHandle;
+    }
+
+    public final void setNativeHandle(Handle h) {
+        cextHandle = h;
     }
 
     /**

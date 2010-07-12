@@ -31,7 +31,6 @@ import org.jruby.util.WeakIdentityHashMap;
 
 
 public class GC {
-    static final String NATIVE_REF_KEY = "cext-ref";
 
     @SuppressWarnings(value="unchecked")
     private static final Map<Object, Handle> nonRubyRefs = new WeakIdentityHashMap();
@@ -65,7 +64,7 @@ public class GC {
                     Object obj;
                     while ((obj = n.pollGC()) != null) {
                         if (obj instanceof RubyBasicObject) {
-                            ((RubyBasicObject) obj).fastSetInternalVariable(NATIVE_REF_KEY, null);
+                            ((RubyBasicObject) obj).setNativeHandle(null);
                         } else {
                             nonRubyRefs.remove(obj);
                         }
@@ -79,7 +78,7 @@ public class GC {
 
     static final Handle lookup(IRubyObject obj) {
         return obj instanceof RubyBasicObject
-                ? (Handle) ((RubyBasicObject) obj).fastGetInternalVariable(NATIVE_REF_KEY)
+                ? (Handle) ((RubyBasicObject) obj).getNativeHandle()
                 : nonRubyRefs.get(obj);
     }
 
@@ -89,7 +88,7 @@ public class GC {
      */
     static final void register(IRubyObject obj, Handle h) {
         if (obj instanceof RubyBasicObject) {
-            ((RubyBasicObject) obj).fastSetInternalVariable(NATIVE_REF_KEY, h);
+            ((RubyBasicObject) obj).setNativeHandle(h);
 
         } else {
             nonRubyRefs.put(obj, h);

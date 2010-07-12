@@ -168,7 +168,7 @@ namespace jruby {
     jmethodID getStaticMethodID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
 
     TAILQ_HEAD(DataSyncQueue, DataSync);
-    extern DataSyncQueue jsyncq, nsyncq;
+    extern DataSyncQueue jsyncq, nsyncq, cleanq;
 }
 
 // FIXME - no need to match ruby here, unless we fold type into flags

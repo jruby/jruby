@@ -19,12 +19,15 @@
 
 package org.jruby.cext;
 
+import java.util.Map;
 import org.jruby.RubyString;
+import org.jruby.util.WeakIdentityHashMap;
 
 /**
  *
  */
-final class RString extends Cleaner {
+public final class RString extends Cleaner {
+    
     private final long address;
     
     private RString(RubyString str, long address) {
@@ -35,6 +38,16 @@ final class RString extends Cleaner {
     static RString newRString(RubyString str, long address) {
         RString rstring = new RString(str, address);
         Cleaner.register(rstring);
+
+        return rstring;
+    }
+
+    static RString valueOf(RubyString str) {
+        RString rstring = str.getRString();
+        if (rstring != null) {
+            return rstring;
+        }
+        str.setRString(rstring = RString.newRString(str, Native.newRString()));
 
         return rstring;
     }

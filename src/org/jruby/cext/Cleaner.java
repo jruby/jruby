@@ -89,6 +89,7 @@ abstract class Cleaner extends WeakReference<IRubyObject> {
 
     static {
         Thread t = new Thread(reaper);
+        t.setPriority(Thread.MAX_PRIORITY);
         t.setDaemon(true);
         t.start();
     }

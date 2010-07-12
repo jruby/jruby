@@ -106,22 +106,13 @@ public class JRuby {
 
     public static RubyFloat newFloat(Ruby runtime, long handle, double value) {
         final RubyFloat f = RubyFloat.newFloat(runtime, value);
-        f.fastSetInternalVariable(GC.NATIVE_REF_KEY, Handle.newHandle(runtime, f, handle));
+        f.setNativeHandle(Handle.newHandle(runtime, f, handle));
 
         return f;
     }
 
     public static long getRString(RubyString str) {
-        Object ivar = str.fastGetInternalVariable("rstring-cext");
-        if (ivar instanceof RString) {
-            return ((RString) ivar).address();
-        }
-        
-        long address = Native.newRString();
-        RString rstring = RString.newRString(str, address);
-        str.fastSetInternalVariable("rstring-cext", rstring);
-
-        return address;
+        return RString.valueOf(str).address();
     }
     
     /** rb_yield */
@@ -143,12 +134,12 @@ public class JRuby {
 
     public static long ll2inum(Ruby runtime, long l) {
         RubyFixnum n = RubyFixnum.newFixnum(runtime, l);
-        Object ref = n.fastGetInternalVariable(GC.NATIVE_REF_KEY);
-        if (ref instanceof Handle) {
-            return ((Handle) ref).getAddress();
+        Handle h = n.getNativeHandle();
+        if (h != null) {
+            return h.getAddress();
         }
-        Handle h = Handle.newHandle(runtime, n, Native.getInstance(runtime).newFixnumHandle(n, l));
-        n.fastSetInternalVariable(GC.NATIVE_REF_KEY, h);
+        h = Handle.newHandle(runtime, n, Native.getInstance(runtime).newFixnumHandle(n, l));
+        n.setNativeHandle(h);
 
         return h.getAddress();
     }
@@ -160,13 +151,13 @@ public class JRuby {
                     ? RubyBignum.newBignum(runtime, BigInteger.valueOf(l & 0x7fffffffffffffffL).add(UINT64_BASE))
                     : runtime.newFixnum(l);
 
-        Object ref = n.fastGetInternalVariable(GC.NATIVE_REF_KEY);
-        if (ref instanceof Handle) {
-            return ((Handle) ref).getAddress();
+        Handle h = n.getNativeHandle();
+        if (h != null) {
+            return h.getAddress();
         }
         // FIXME should create Bignum handle for Bignum values
-        Handle h = Handle.newHandle(runtime, n, Native.getInstance(runtime).newFixnumHandle(n, l));
-        n.fastSetInternalVariable(GC.NATIVE_REF_KEY, h);
+        h = Handle.newHandle(runtime, n, Native.getInstance(runtime).newFixnumHandle(n, l));
+        n.setNativeHandle(h);
 
         return h.getAddress();
     }

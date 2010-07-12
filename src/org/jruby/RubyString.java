@@ -78,6 +78,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.cext.RString;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -121,6 +122,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private volatile int shareLevel = SHARE_LEVEL_NONE;
 
     private ByteList value;
+
+    private RString rstring;
 
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
@@ -180,6 +183,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public final void setCodeRange(int codeRange) {
         flags |= codeRange & CR_MASK;
+    }
+
+    public final RString getRString() {
+        return rstring;
+    }
+
+    public final void setRString(RString rstring) {
+        this.rstring = rstring;
     }
 
     public final void clearCodeRange() {
