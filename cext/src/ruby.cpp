@@ -112,8 +112,8 @@ jstring getGlobalVariableName(JNIEnv* env, const char* name) {
  * @param c string with the constant name
  * @param Ruby object to define the variable on
  */
-extern "C"
-void rb_define_global_const(const char* name, VALUE obj) {
+extern "C" void
+rb_define_global_const(const char* name, VALUE obj) {
     JLocalEnv env;
 
     jmethodID mid = getMethodID(env, Ruby_class, "defineGlobalConstant",
