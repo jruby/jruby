@@ -30,6 +30,21 @@ public final class NativeMethod3 extends AbstractNativeMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, 
+            IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        GIL.acquire();
+        try {
+            return Native.getInstance(context.getRuntime()).callMethod3(function,
+                    Handle.nativeHandle(self),
+                    Handle.nativeHandle(arg0),
+                    Handle.nativeHandle(arg1),
+                    Handle.nativeHandle(arg2));
+        } finally {
+            GIL.release(context);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         GIL.acquire();
         storeBlock(context, block);

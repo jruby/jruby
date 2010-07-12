@@ -61,6 +61,18 @@ public abstract class AbstractNativeMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
+            String name, IRubyObject[] args) {
+
+        GIL.acquire();
+        try {
+            return Native.getInstance(context.getRuntime()).callMethod(context, function, recv, arity.getValue(), args);
+        } finally {
+            GIL.release(context);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
             String name, IRubyObject[] args, Block block) {
 
         GIL.acquire();
