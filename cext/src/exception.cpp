@@ -15,7 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "jruby.h"
 #include "ruby.h"
+#include "JLocalEnv.h"
+#include "JavaException.h"
 
 extern "C" VALUE
 rb_exc_new(VALUE etype, const char *ptr, long len)
@@ -36,5 +39,16 @@ rb_exc_new3(VALUE etype, VALUE str)
 {
     StringValue(str);
     return rb_funcall(etype, rb_intern("new"), 1, str);
+}
+
+extern "C" VALUE
+rb_exc_raise(VALUE exc) {
+    using namespace jruby;
+    JLocalEnv env;
+    
+    jmethodID ctor = getMethodID(env, RaiseException_class, "<init>", "(Lorg/jruby/RubyException;)V");
+    jthrowable jException = (jthrowable) env->NewObject(RaiseException_class, ctor, valueToObject(env, exc));
+    checkExceptions(env);
+    throw JavaException(env, jException);
 }
 
