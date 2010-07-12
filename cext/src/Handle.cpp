@@ -110,7 +110,7 @@ RubyString::length()
 {
     // If already synced with java, just return the cached length value
     if (rwdata.rstring != NULL) {
-        return rwdata.rstring->as.heap.len;
+        return rwdata.rstring->len;
     }
     
     JLocalEnv env;
@@ -196,7 +196,7 @@ RubyString::jsync(JNIEnv* env)
         return false;
     }
 
-    if (rwdata.rstring != NULL && rwdata.rstring->as.heap.ptr != NULL) {
+    if (rwdata.rstring != NULL && rwdata.rstring->ptr != NULL) {
         jobject byteList = env->GetObjectField(obj, RubyString_value_field);
         jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
         jint begin = env->GetIntField(byteList, ByteList_begin_field);
@@ -204,8 +204,8 @@ RubyString::jsync(JNIEnv* env)
         env->DeleteLocalRef(byteList);
 
         RString* rstring = rwdata.rstring;
-        env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring->as.heap.len,
-                (jbyte *) rstring->as.heap.ptr);
+        env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring->len,
+                (jbyte *) rstring->ptr);
         
         env->DeleteLocalRef(bytes);
     }
@@ -225,16 +225,16 @@ RubyString::nsync(JNIEnv* env)
     RString* rstring = rwdata.rstring;
 
     jint capacity = env->GetArrayLength((jarray) bytes);
-    if (capacity > rstring->as.heap.capa) {
-        rstring->as.heap.capa = capacity;
-        rstring->as.heap.ptr = (char *) realloc(rstring->as.heap.ptr, rstring->as.heap.capa + 1);
+    if (capacity > rstring->capa) {
+        rstring->capa = capacity;
+        rstring->ptr = (char *) realloc(rstring->ptr, rstring->capa + 1);
     }
     
     env->GetByteArrayRegion((jbyteArray) bytes, begin, length, 
-            (jbyte *) rstring->as.heap.ptr);
+            (jbyte *) rstring->ptr);
     env->DeleteLocalRef(bytes);
 
-    rstring->as.heap.ptr[rstring->as.heap.len = length] = 0;
+    rstring->ptr[rstring->len = length] = 0;
 
     return true;
 }
@@ -416,8 +416,8 @@ Java_org_jruby_cext_Native_freeRString(JNIEnv* env, jclass self, jlong address)
 {
     RString* rstring = (RString *) j2p(address);
     if (rstring != NULL) {
-        if (rstring->as.heap.ptr != NULL) {
-            free(rstring->as.heap.ptr);
+        if (rstring->ptr != NULL) {
+            free(rstring->ptr);
         }
 
         free(rstring);

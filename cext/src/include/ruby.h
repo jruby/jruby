@@ -95,14 +95,9 @@ struct RBasic {
 
 struct RString {
     struct RBasic basic;
-    union {
-        struct {
-            long len;
-            char *ptr;
-            long capa;
-        } heap;
-        char unused[sizeof(VALUE) * 3];
-    } as;
+    long len;
+    char *ptr;
+    long capa;
 };
 
 struct RArray {
