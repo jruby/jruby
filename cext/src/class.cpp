@@ -73,11 +73,12 @@ extern "C" VALUE
 rb_define_class(const char* name, VALUE parent)
 {
     JLocalEnv env;
+    VALUE super = parent ? parent : rb_cObject;
     
     jmethodID defineClass = getMethodID(env, Ruby_class, "defineClass",
             "(Ljava/lang/String;Lorg/jruby/RubyClass;Lorg/jruby/runtime/ObjectAllocator;)Lorg/jruby/RubyClass;");
     jobject result = env->CallObjectMethod(getRuntime(), defineClass,
-            env->NewStringUTF(name), valueToObject(env, parent), getDefaultAllocator(env, parent));
+            env->NewStringUTF(name), valueToObject(env, super), getDefaultAllocator(env, super));
     checkExceptions(env);
     
     return objectToValue(env, result);
@@ -87,12 +88,13 @@ extern "C" VALUE
 rb_define_class_under(VALUE module, const char* name, VALUE parent)
 {
     JLocalEnv env;
+    VALUE super = parent ? parent : rb_cObject;
 
     jmethodID Ruby_defineClass_method = getMethodID(env, Ruby_class, "defineClassUnder",
             "(Ljava/lang/String;Lorg/jruby/RubyClass;Lorg/jruby/runtime/ObjectAllocator;Lorg/jruby/RubyModule;)Lorg/jruby/RubyClass;");
 
     jobject result = env->CallObjectMethod(getRuntime(), Ruby_defineClass_method,
-            env->NewStringUTF(name), valueToObject(env, parent), getDefaultAllocator(env, parent),
+            env->NewStringUTF(name), valueToObject(env, super), getDefaultAllocator(env, super),
             valueToObject(env, module));
     checkExceptions(env);
 
