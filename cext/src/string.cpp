@@ -167,7 +167,7 @@ rb_cstr2inum(const char* str, int base)
 extern "C" VALUE
 rb_str_substr(VALUE str, long beg, long len)
 {
-    return callMethod(str, "substr", 2, LONG2NUM(beg), LONG2NUM(len));
+    return callMethod(str, "[]", 2, LONG2NUM(beg), LONG2NUM(len));
 }
 
 
