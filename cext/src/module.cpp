@@ -124,14 +124,14 @@ extern "C" int
 rb_const_defined(VALUE module, ID symbol) {
     VALUE ret = rb_const_defined_at(module, symbol);
     if (!RTEST(ret)) {
-        ret = callMethod(rb_cObject, "const_defined?", 1, (VALUE)symbol);
+        ret = callMethod(rb_cObject, "const_defined?", 1, ID2SYM(symbol));
     }
     return (int)ret;
 }
 
 extern "C" int
 rb_const_defined_at(VALUE module, ID symbol) {
-    return (int)(callMethod(module, "const_defined?", 1, (VALUE)symbol));
+    return (int)(callMethod(module, "const_defined?", 1, ID2SYM(symbol)));
 }
 
 extern "C" VALUE
