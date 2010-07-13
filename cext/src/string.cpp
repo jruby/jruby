@@ -201,7 +201,10 @@ rb_str_to_str(VALUE obj)
 extern "C" VALUE
 rb_string_value(VALUE* ptr)
 {
-    return *ptr = callMethod(*ptr, "to_s", 0);
+    if (!(rb_obj_is_kind_of(*ptr, rb_cString))) {
+        *ptr = rb_str_to_str(*ptr);
+    }
+    return *ptr;
 }
 
 extern "C" char* 
