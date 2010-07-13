@@ -225,7 +225,7 @@ RubyString::nsync(JNIEnv* env)
     RString* rstring = rwdata.rstring;
 
     jint capacity = env->GetArrayLength((jarray) bytes);
-    if (capacity > rstring->capa) {
+    if ((capacity > rstring->capa) || (rstring->capa == 0)) {
         rstring->capa = capacity;
         rstring->ptr = (char *) realloc(rstring->ptr, rstring->capa + 1);
     }
