@@ -400,9 +400,9 @@ void rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYAR
 typedef VALUE (*rb_alloc_func_t)(VALUE);
 void rb_define_alloc_func(VALUE, rb_alloc_func_t);
 
-#define rb_define_class_variable(klass, name, val) rb_cvar_set(klass, rb_intern(name), val)
+#define rb_define_class_variable(klass, name, val) rb_cvar_set(klass, rb_intern(name), val, 0)
 #define rb_cv_get(klass, name) rb_cvar_get(klass, rb_intern(name))
-#define rb_cv_set(klass, name, value) rb_cvar_set(klass, rb_intern(name), value)
+#define rb_cv_set(klass, name, value) rb_cvar_set(klass, rb_intern(name), value, 0)
 /** Returns a value evaluating true if module has named class var. 
  * TODO: @@ should be optional. 
  */
@@ -414,7 +414,7 @@ VALUE rb_cvar_get(VALUE module_handle, ID name);
 /** Set module's named class variable to given value. Returns the value. 
  * TODO: @@ should be optional. 
  */
-VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value);
+VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value, int unused);
 /** Return object's instance variable by name. @ optional. */
 VALUE rb_iv_get(VALUE obj, const char* name);
 /** Set instance variable by name to given value. Returns the value. @ optional. */

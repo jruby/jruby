@@ -64,7 +64,7 @@ rb_cvar_get(VALUE klass, ID name)
 }
 
 extern "C" VALUE
-rb_cvar_set(VALUE klass, ID name, VALUE value)
+rb_cvar_set(VALUE klass, ID name, VALUE value, int unused)
 {
     return callMethod(klass, "class_variable_set", 2, ID2SYM(name), value);
 }
