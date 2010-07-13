@@ -1,1 +1,1 @@
-fail:ENV.each uses the locale encoding
+fails:ENV.each uses the locale encoding

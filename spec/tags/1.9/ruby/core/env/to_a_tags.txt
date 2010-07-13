@@ -1,1 +1,1 @@
-fail:ENV.to_a returns the entries in the locale encoding
+fails:ENV.to_a returns the entries in the locale encoding

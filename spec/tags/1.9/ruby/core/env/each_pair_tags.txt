@@ -1,1 +1,1 @@
-fail:ENV.each_pair uses the locale encoding
+fails:ENV.each_pair uses the locale encoding
