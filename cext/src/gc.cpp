@@ -50,6 +50,11 @@ rb_gc_mark(VALUE v)
 }
 
 extern "C" void
+rb_gc_mark_maybe(VALUE v) {
+    rb_gc_mark(v);
+}
+
+extern "C" void
 rb_gc_register_address(VALUE *addr)
 {
     globalVariables.push_back(addr);
