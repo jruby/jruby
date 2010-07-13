@@ -85,13 +85,13 @@ rb_str_dup(VALUE str)
 extern "C" VALUE
 rb_str_append(VALUE str, VALUE str2)
 {
-    return callMethod(str, "append", 1, str2);
+    return callMethod(str, "<<", 1, str2);
 }
 
 extern "C" VALUE
 rb_str_cat(VALUE str, const char *ptr, long len)
 {
-    return callMethod(str, "concat", 1, rb_str_new(ptr, len));
+    return rb_str_concat(str, rb_str_new(ptr, len));
 }
 
 #undef rb_str_cat2
@@ -99,6 +99,11 @@ extern "C" VALUE
 rb_str_cat2(VALUE str, const char *ptr)
 {
     return rb_str_cat(str, ptr, strlen(ptr));
+}
+
+extern "C" VALUE
+rb_str_concat(VALUE str, VALUE other) {
+    return callMethod(str, "concat", 1, other);
 }
 
 extern "C" VALUE
