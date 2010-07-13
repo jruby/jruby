@@ -195,7 +195,7 @@ rb_obj_as_string(VALUE obj)
 extern "C" VALUE
 rb_str_to_str(VALUE obj)
 {
-    return callMethod(obj, "to_str", 0);
+    return rb_convert_type(obj, 0, "String", "to_str");
 }
 
 extern "C" VALUE
