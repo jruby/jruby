@@ -347,6 +347,7 @@ jruby::valueToObject(JNIEnv* env, VALUE v)
     }
 
     Handle* h = Handle::valueOf(v);
+    // FIXME: Sometimes h will not be a pointer here, and segfault on the next line
     if (likely((h->flags & FL_WEAK) == 0)) {
         return h->obj;
     }
