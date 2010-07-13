@@ -537,7 +537,7 @@ char* jruby_str_cstr(VALUE v);
 char* jruby_str_cstr_readonly(VALUE v);
 
 #define rb_str_ptr_readonly(v) jruby_str_cstr_readonly((v))
-
+#define rb_str_ptr(v) jruby_str_cstr((v))
 #define rb_str_new_cstr(str) __extension__ (    \
 {                                               \
     (__builtin_constant_p(str)) ?               \
