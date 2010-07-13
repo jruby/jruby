@@ -19,7 +19,7 @@
 #include "jruby.h"
 #include "ruby.h"
 #include "JLocalEnv.h"
-
+#include "Handle.h"
 
 using namespace jruby;
 
@@ -35,8 +35,8 @@ rb_define_attr(VALUE module_handle, const char* attr_name, int readable, int wri
   }
 
 
-extern "C"
-void rb_define_const(VALUE module, const char* name, VALUE obj) {
+extern "C" void
+rb_define_const(VALUE module, const char* name, VALUE obj) {
     JLocalEnv env;
     jmethodID mid = getMethodID(env, RubyModule_class, "defineConstant",
             "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
@@ -117,6 +117,62 @@ rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYARGS), 
 
     env->CallVoidMethod(singleton, RubyModule_addMethod_method, env->NewStringUTF(meth),
             env->CallStaticObjectMethod(JRuby_class, JRuby_newMethod, singleton, (jlong)(intptr_t) fn, arity));
+    checkExceptions(env);
+}
+
+extern "C" int
+rb_const_defined(VALUE module, ID symbol) {
+    VALUE ret = rb_const_defined_at(module, symbol);
+    if (!RTEST(ret)) {
+        ret = callMethod(rb_cObject, "const_defined?", 1, (VALUE)symbol);
+    }
+    return (int)ret;
+}
+
+extern "C" int
+rb_const_defined_at(VALUE module, ID symbol) {
+    return (int)(callMethod(module, "const_defined?", 1, (VALUE)symbol));
+}
+
+extern "C" VALUE
+rb_const_get(VALUE module, ID symbol) {
+    JLocalEnv env;
+    jmethodID mid = getMethodID(env, RubyModule_class, "getConstant",
+            "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    jobject c = env->CallObjectMethod(valueToObject(env, module), mid, idToObject(env, symbol));
+    checkExceptions(env);
+
+    return objectToValue(env, c);
+}
+
+extern "C" VALUE
+rb_const_get_at(VALUE module, ID symbol) {
+    JLocalEnv env;
+    jmethodID mid = getMethodID(env, RubyModule_class, "getConstantAt",
+            "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    jobject c = env->CallObjectMethod(valueToObject(env, module), mid, idToObject(env, symbol));
+    checkExceptions(env);
+
+    return objectToValue(env, c);
+}
+
+extern "C" VALUE
+rb_const_get_from(VALUE module, ID symbol) {
+    JLocalEnv env;
+    jmethodID mid = getMethodID(env, RubyModule_class, "getConstantFrom",
+            "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    jobject c = env->CallObjectMethod(valueToObject(env, module), mid, idToObject(env, symbol));
+    checkExceptions(env);
+
+    return objectToValue(env, c);
+}
+
+extern "C" void
+rb_const_set(VALUE parent, ID name, VALUE object){
+    JLocalEnv env;
+    jmethodID mid = getMethodID(env, RubyModule_class, "setConstant",
+            "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    env->CallObjectMethod(valueToObject(env, parent), mid, idToObject(env, name), valueToObject(env, object));
     checkExceptions(env);
 }
 

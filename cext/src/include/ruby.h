@@ -424,6 +424,19 @@ VALUE rb_ivar_get(VALUE obj, ID ivar_name);
 /** Set object's instance variable to given value. */
 VALUE rb_ivar_set(VALUE obj, ID ivar_name, VALUE value);
 
+/** Nonzero if constant corresponding to Symbol exists in the Module. */
+int rb_const_defined(VALUE, ID);
+/** Returns non-zero if the constant is defined in the Module, not searching outside */
+int rb_const_defined_at(VALUE, ID);
+/** Retrieve constant from given module. */
+VALUE rb_const_get(VALUE, ID);
+/** Returns a constant defined in module only. */
+VALUE rb_const_get_at(VALUE, ID);
+/** Retrieve constant from given module. */
+VALUE rb_const_get_from(VALUE, ID);
+/** Set constant on the given module */
+void rb_const_set(VALUE, ID, VALUE);
+
 /* Array */
 VALUE rb_Array(VALUE val);
 VALUE rb_ary_new(void);
