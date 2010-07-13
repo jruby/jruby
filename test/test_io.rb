@@ -469,6 +469,12 @@ class TestIO < Test::Unit::TestCase
     assert_nil $!
   end
 
+  # JRUBY-4932
+  def test_popen4_read_error
+    p, i, o, e = IO.popen4(__FILE__)
+    assert_raise(IOError) { i.read }
+  end
+
   private
   def ensure_files(*files)
     files.each {|f| File.open(f, "w") {|g| g << " " } }
