@@ -31,6 +31,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
 import java.util.Iterator;
@@ -126,6 +128,7 @@ public class RubyObjectSpace {
         final int[] count = {0};
         if (rubyClass == runtime.getClassClass() ||
                 rubyClass == runtime.getModule()) {
+            final Collection<IRubyObject> modules = new ArrayList<IRubyObject>();
             runtime.eachModule(new Function1<Object, IRubyObject>() {
                 public Object apply(IRubyObject arg1) {
                     if (rubyClass.isInstance(arg1)) {
@@ -134,12 +137,16 @@ public class RubyObjectSpace {
                             // do nothing for included wrappers or singleton classes
                         } else {
                             count[0]++;
-                            block.yield(context, arg1);
+                            modules.add(arg1); // store the module to avoid concurrent modification exceptions
                         }
                     }
                     return null;
                 }
             });
+
+            for (IRubyObject arg : modules) {
+                block.yield(context, arg);
+            }
         } else {
             if (!runtime.isObjectSpaceEnabled()) {
                 throw runtime.newRuntimeError("ObjectSpace is disabled; each_object will only work with Class, pass -X+O to enable");
