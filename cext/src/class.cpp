@@ -125,6 +125,17 @@ rb_path2class(const char* path) {
     return objectToValue(env, klass);
 }
 
+extern "C" VALUE
+rb_obj_alloc(VALUE klass) {
+    JLocalEnv env;
+    jobject allocator = getDefaultAllocator(env, klass);
+    jmethodID mid = getMethodID(env, ObjectAllocator_class, "allocate",
+            "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    jobject instance = env->CallObjectMethod(allocator, mid, getRuntime(), valueToObject(env, klass));
+    checkExceptions(env);
+    return objectToValue(env, instance);
+}
+
 static jobject
 getNotAllocatableAllocator(JNIEnv* env)
 {

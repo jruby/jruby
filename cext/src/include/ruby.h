@@ -655,6 +655,8 @@ VALUE rb_block_proc();
 
 /** Freeze object and return it. */
 VALUE rb_obj_freeze(VALUE obj);
+/** Allocate uninitialised instance of given class. */
+VALUE rb_obj_alloc(VALUE klass);
 /** Call initialize */
 void rb_obj_call_init(VALUE recv, int arg_count, VALUE* args);
 /** String representation of the object's class' name. You must free this string. */
