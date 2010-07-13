@@ -678,6 +678,8 @@ VALUE rb_obj_alloc(VALUE klass);
 void rb_obj_call_init(VALUE recv, int arg_count, VALUE* args);
 /** String representation of the object's class' name. You must free this string. */
 char* rb_obj_classname(VALUE object_handle);
+/** Returns true-ish if module is object's class or other ancestor. */
+VALUE rb_obj_is_kind_of(VALUE, VALUE);
 
 VALUE rb_exc_new(VALUE, const char*, long);
 VALUE rb_exc_new2(VALUE, const char*);

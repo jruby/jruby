@@ -130,3 +130,8 @@ extern "C" void
 rb_obj_call_init(VALUE recv, int arg_count, VALUE* args) {
     callMethodANonConst(recv, "initialize", arg_count, args);
 }
+
+extern "C" VALUE
+rb_obj_is_kind_of(VALUE obj, VALUE module) {
+    return callMethod(obj, "kind_of?", 1, module);
+}
