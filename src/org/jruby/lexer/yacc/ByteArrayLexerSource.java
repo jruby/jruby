@@ -163,9 +163,16 @@ public class ByteArrayLexerSource extends LexerSource {
                     line++;
                     break;
                 case '\r':
+                    // We are peeking ahead.  but we need to make sure we uncapture after this read.  Otherwise
+                    // we double report \n 
                     if ((c = read()) != '\n') {
                         unread(c);
                         c = '\n';
+                    } else {
+                      if (captureSource){
+                        uncaptureFeature(c);
+                        captureFeature('\r');
+                      }
                     }
                     break;
             }

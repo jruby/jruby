@@ -1562,6 +1562,11 @@ public class RubyKernel {
         int resultCode;
 
         try {
+            if (! Platform.IS_WINDOWS && args[args.length -1].asJavaString().matches(".*[^&]&\\s*")) {
+                // looks like we need to send process to the background
+                ShellLauncher.runWithoutWait(runtime, args);
+                return runtime.newBoolean(true);
+            }
             resultCode = ShellLauncher.runAndWait(runtime, args);
         } catch (Exception e) {
             resultCode = 127;

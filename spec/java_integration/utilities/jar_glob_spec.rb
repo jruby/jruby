@@ -124,3 +124,37 @@ CODE
   end
 end
 
+describe "Dir.glob and Dir[] with multiple magic modifiers" do
+  before :all do
+    FileUtils.mkpath("jruby-4396/top/builtin/A")
+    FileUtils.mkpath("jruby-4396/top/builtin/B")
+    FileUtils.mkpath("jruby-4396/top/builtin/C")
+    FileUtils.mkpath("jruby-4396/top/dir2/dir2a")
+    `touch            jruby-4396/top/dir2/dir2a/1`
+    `touch            jruby-4396/top/dir2/dir2a/2`
+    `touch            jruby-4396/top/dir2/dir2a/3`
+    FileUtils.mkpath("jruby-4396/top/dir2/dir2b")
+    `touch            jruby-4396/top/dir2/dir2b/4`
+    `touch            jruby-4396/top/dir2/dir2b/5`
+    FileUtils.mkpath("jruby-4396/top/dir2/dir2c")
+    `touch            jruby-4396/top/dir2/dir2c/6`
+    FileUtils.cd('jruby-4396') { `jar -cvf top.jar top` }
+  end
+
+  after :all do
+    #FileUtils.rm_rf("jruby-4396")
+  end
+
+  it "returns directories when the magic modifier is an star" do
+    FileUtils.cd('jruby-4396') do
+      Dir["file:#{File.expand_path(Dir.pwd)}/top.jar!top/builtin/*/"].size.should == 3
+    end
+  end
+
+  it "iterates over directories when there are more than one magic modifier" do
+    FileUtils.cd('jruby-4396') do      
+      Dir.glob("file:#{File.expand_path(Dir.pwd)}/top.jar!top/dir2/**/*/**").size.should == 6
+    end
+  end
+end
+

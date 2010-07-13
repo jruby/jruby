@@ -46,6 +46,7 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -2783,22 +2784,26 @@ public class RubyIO extends RubyObject {
             openFile.checkClosed(runtime);
         }
         
-        ByteList newBuffer = openFile.getMainStream().readall();
+        try {
+            ByteList newBuffer = openFile.getMainStream().readall();
 
-        // TODO same zero-length checks as file above
+            // TODO same zero-length checks as file above
 
-        if (str == null) {
-            if (newBuffer == null) {
-                str = RubyString.newEmptyString(runtime);
+            if (str == null) {
+                if (newBuffer == null) {
+                    str = RubyString.newEmptyString(runtime);
+                } else {
+                    str = RubyString.newString(runtime, newBuffer);
+                }
             } else {
-                str = RubyString.newString(runtime, newBuffer);
+                if (newBuffer == null) {
+                    str.empty();
+                } else {
+                    str.setValue(newBuffer);
+                }
             }
-        } else {
-            if (newBuffer == null) {
-                str.empty();
-            } else {
-                str.setValue(newBuffer);
-            }
+        } catch (NonReadableChannelException ex) {
+            throw runtime.newIOError("not opened for reading");
         }
 
         str.taint(runtime.getCurrentContext());

@@ -31,6 +31,7 @@
 package org.jruby;
 
 import static org.jruby.RubyFile.get_path;
+import static org.jruby.RubyFile.file;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -378,17 +379,6 @@ public class RubyFileTest {
             }
         } else {
             return runtime.getFalse();
-        }
-    }
-
-    private static JRubyFile file(IRubyObject pathOrFile) {
-        Ruby runtime = pathOrFile.getRuntime();
-
-        if (pathOrFile instanceof RubyFile) {
-            return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyFile) pathOrFile).getPath());
-        } else {
-            RubyString path = get_path(runtime.getCurrentContext(), pathOrFile);
-            return JRubyFile.create(runtime.getCurrentDirectory(), path.getUnicodeValue());
         }
     }
 

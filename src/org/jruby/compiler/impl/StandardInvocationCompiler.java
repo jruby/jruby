@@ -465,13 +465,15 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         final int tmp = methodCompiler.getVariableCompiler().grabTempLocal();
         method.astore(tmp);
         
-        method.aload(tmp);
-        method.ldc(moduleGeneration);
-        methodCompiler.invokeUtilityMethod("isGenerationEqual", sig(boolean.class, IRubyObject.class, int.class));
-
         Label slow = new Label();
         Label after = new Label();
-        method.ifne(slow);
+        if (!RubyInstanceConfig.NOGUARDS_COMPILE_ENABLED) {
+            method.aload(tmp);
+            method.ldc(moduleGeneration);
+            methodCompiler.invokeUtilityMethod("isGenerationEqual", sig(boolean.class, IRubyObject.class, int.class));
+
+            method.ifne(slow);
+        }
 
         method.aload(tmp);
         method.checkcast(p(RubyFloat.class));
@@ -480,16 +482,19 @@ public class StandardInvocationCompiler implements InvocationCompiler {
 
         method.invokevirtual(p(RubyFloat.class), methodName, sig(IRubyObject.class, ThreadContext.class, double.class));
 
-        method.go_to(after);
-        method.label(slow);
+        if (!RubyInstanceConfig.NOGUARDS_COMPILE_ENABLED) {
+            method.go_to(after);
+            method.label(slow);
 
-        invokeBinaryFloatRHS(rubyName, new CompilerCallback() {
-            public void call(BodyCompiler context) {
-                method.aload(tmp);
-            }
-        }, flote);
+            invokeBinaryFloatRHS(rubyName, new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    method.aload(tmp);
+                }
+            }, flote);
 
-        method.label(after);
+            method.label(after);
+        }
+        methodCompiler.getVariableCompiler().releaseTempLocal();
     }
 
     public void invokeRecursive(String name, int moduleGeneration, ArgumentsCallback argsCallback, CompilerCallback closure, CallType callType, boolean iterator) {

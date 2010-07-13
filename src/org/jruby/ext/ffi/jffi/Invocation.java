@@ -9,10 +9,22 @@ import org.jruby.runtime.ThreadContext;
  */
 final class Invocation {
     private final ThreadContext context;
+    private final int postInvokeCount;
+    private final int referenceCount;
     private ArrayList<Runnable> postInvokeList;
-    Invocation(ThreadContext context) {
-        this.context = context;
+    private ArrayList<Object> references;
+
+    public Invocation(ThreadContext context) {
+        this(context, 0, 0);
     }
+
+    
+    Invocation(ThreadContext context, int postInvokeCount, int referenceCount) {
+        this.context = context;
+        this.postInvokeCount = postInvokeCount;
+        this.referenceCount = referenceCount;
+    }
+
     void finish() {
         if (postInvokeList != null) {
             for (Runnable r : postInvokeList) {
@@ -23,12 +35,20 @@ final class Invocation {
 
     void addPostInvoke(Runnable postInvoke) {
         if (postInvokeList == null) {
-             postInvokeList = new ArrayList<Runnable>();
+             postInvokeList = new ArrayList<Runnable>(postInvokeCount);
         }
         postInvokeList.add(postInvoke);
     }
 
     ThreadContext getThreadContext() {
         return context;
+    }
+
+    void addReference(Object ref) {
+        if (references == null) {
+             references = new ArrayList<Object>(referenceCount);
+        }
+        references.add(ref);
+
     }
 }

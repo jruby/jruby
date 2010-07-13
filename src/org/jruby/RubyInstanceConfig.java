@@ -41,8 +41,10 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -177,7 +179,7 @@ public class RubyInstanceConfig {
     private StringBuffer inlineScript = new StringBuffer();
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
-    private List<String> requiredLibraries = new ArrayList<String>();
+    private Collection<String> requiredLibraries = new LinkedHashSet<String>();
     private boolean benchmarking = false;
     private boolean argvGlobalsOn = false;
     private boolean assumeLoop = false;
@@ -629,10 +631,10 @@ public class RubyInstanceConfig {
 
     public void processArguments(String[] arguments) {
         new ArgumentProcessor(arguments).processArguments();
-        tryProcessArgumentsWithRubyopts(arguments);
+        tryProcessArgumentsWithRubyopts();
     }
 
-    private void tryProcessArgumentsWithRubyopts(String[] arguments) {
+    public void tryProcessArgumentsWithRubyopts() {
         try {
             String rubyopt = System.getenv("RUBYOPT");
             if (rubyopt == null && environment != null && environment.containsKey("RUBYOPT")) {
@@ -640,12 +642,7 @@ public class RubyInstanceConfig {
             }
             if (rubyopt != null) {
                 String[] rubyoptArgs = rubyopt.split("\\s+");
-                for (int i = 0; i < rubyoptArgs.length; i++) {
-                    if (!rubyoptArgs[i].startsWith("-")) {
-                        rubyoptArgs[i] = "-" + rubyoptArgs[i];
-                    }
-                }
-                new ArgumentProcessor(rubyoptArgs, false).processArguments();
+                new ArgumentProcessor(rubyoptArgs, false, true).processArguments();
             }
         } catch (SecurityException se) {
             // ignore and do nothing
@@ -861,29 +858,43 @@ public class RubyInstanceConfig {
         return home;
     }
 
+    private final class Argument {
+        public final String originalValue;
+        public final String dashedValue;
+        public Argument(String value, boolean dashed) {
+            this.originalValue = value;
+            this.dashedValue = dashed && !value.startsWith("-") ? "-" + value : value;
+        }
+    }
+
     private class ArgumentProcessor {
-        private String[] arguments;
+        private List<Argument> arguments;
         private int argumentIndex = 0;
         private boolean processArgv;
 
         public ArgumentProcessor(String[] arguments) {
-            this(arguments, true);
+            this(arguments, true, false);
         }
 
-        public ArgumentProcessor(String[] arguments, boolean processArgv) {
-            this.arguments = arguments;
+        public ArgumentProcessor(String[] arguments, boolean processArgv, boolean dashed) {
+            this.arguments = new ArrayList<Argument>();
+            if (arguments != null && arguments.length > 0) {
+                for (String argument : arguments) {
+                    this.arguments.add(new Argument(argument, dashed));
+                }
+            }
             this.processArgv = processArgv;
         }
 
         public void processArguments() {
-            while (argumentIndex < arguments.length && isInterpreterArgument(arguments[argumentIndex])) {
+            while (argumentIndex < arguments.size() && isInterpreterArgument(arguments.get(argumentIndex).originalValue)) {
                 processArgument();
                 argumentIndex++;
             }
 
             if (!hasInlineScript && scriptFileName == null) {
-                if (argumentIndex < arguments.length) {
-                    setScriptFileName(arguments[argumentIndex]); //consume the file name
+                if (argumentIndex < arguments.size()) {
+                    setScriptFileName(arguments.get(argumentIndex).originalValue); //consume the file name
                     argumentIndex++;
                 }
             }
@@ -893,8 +904,8 @@ public class RubyInstanceConfig {
 
         private void processArgv() {
             List<String> arglist = new ArrayList<String>();
-            for (; argumentIndex < arguments.length; argumentIndex++) {
-                String arg = arguments[argumentIndex];
+            for (; argumentIndex < arguments.size(); argumentIndex++) {
+                String arg = arguments.get(argumentIndex).originalValue;
                 if (argvGlobalsOn && arg.startsWith("-")) {
                     arg = arg.substring(1);
                     if (arg.indexOf('=') > 0) {
@@ -923,7 +934,7 @@ public class RubyInstanceConfig {
         }
 
         private void processArgument() {
-            String argument = arguments[argumentIndex];
+            String argument = arguments.get(argumentIndex).dashedValue;
             FOR : for (characterIndex = 1; characterIndex < argument.length(); characterIndex++) {
                 switch (argument.charAt(characterIndex)) {
                 case '0': {
@@ -1159,6 +1170,7 @@ public class RubyInstanceConfig {
                         break;
                     } else if (argument.equals("--version")) {
                         setShowVersion(true);
+                        shouldRunInterpreter = false;
                         break FOR;
                     } else if (argument.equals("--bytecode")) {
                         setShowBytecode(true);
@@ -1257,8 +1269,8 @@ public class RubyInstanceConfig {
                 return optValue;
             }
             argumentIndex++;
-            if (argumentIndex < arguments.length) {
-                return arguments[argumentIndex];
+            if (argumentIndex < arguments.size()) {
+                return arguments.get(argumentIndex).originalValue;
             }
 
             MainExitException mee = new MainExitException(1, errorMessage);
@@ -1269,8 +1281,9 @@ public class RubyInstanceConfig {
 
         private String grabOptionalValue() {
             characterIndex++;
-            if (characterIndex < arguments[argumentIndex].length()) {
-                return arguments[argumentIndex].substring(characterIndex);
+            String argValue = arguments.get(argumentIndex).originalValue;
+            if (characterIndex < argValue.length()) {
+                return argValue.substring(characterIndex);
             }
             return null;
         }
@@ -1280,7 +1293,7 @@ public class RubyInstanceConfig {
         return inlineScript.toString().getBytes();
     }
 
-    public List<String> requiredLibraries() {
+    public Collection<String> requiredLibraries() {
         return requiredLibraries;
     }
 
@@ -1293,9 +1306,6 @@ public class RubyInstanceConfig {
     }
 
     public boolean shouldRunInterpreter() {
-        if(isShowVersion() && (hasInlineScript || scriptFileName != null)) {
-            return true;
-        }
         return isShouldRunInterpreter();
     }
 

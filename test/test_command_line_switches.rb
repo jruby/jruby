@@ -314,4 +314,15 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       assert_match /java/, version
     end
   end
+
+  # JRUBY-4783
+  def test_rubyopts_with_require
+    rubyopt_org = ENV['RUBYOPT']
+    ENV['RUBYOPT'] = '-r rubygems'
+    
+    args = "-e 'p 0'"
+    assert_nothing_raised { jruby(args) }
+  ensure
+    ENV['RUBYOPT'] = rubyopt_org
+  end
 end
