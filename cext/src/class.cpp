@@ -28,6 +28,23 @@ static jobject getNotAllocatableAllocator(JNIEnv* env);
 static jobject getDefaultAllocator(JNIEnv* env, VALUE parent);
 
 extern "C" VALUE
+rb_class_new(VALUE klass)
+{
+    JLocalEnv env;
+    jmethodID mid = getStaticMethodID(env, RubyClass_class, "newClass",
+            "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;)Lorg/jruby/RubyClass;");
+    jobject jklass = env->CallStaticObjectMethod(RubyClass_class, mid, getRuntime(), valueToObject(env, klass));
+    checkExceptions(env);
+    return objectToValue(env, jklass);
+}
+
+extern "C" VALUE
+rb_class_inherited(VALUE super, VALUE klass) {
+    VALUE parent = (super ? super : rb_cObject);
+    return callMethod(parent, "inherited", 1, klass);
+}
+
+extern "C" VALUE
 rb_class_new_instance(int argc, VALUE* argv, VALUE klass)
 {
     return callMethodA(klass, "new", argc, argv);
@@ -136,6 +153,11 @@ rb_obj_alloc(VALUE klass) {
     jobject instance = env->CallObjectMethod(allocator, mid, getRuntime(), valueToObject(env, klass));
     checkExceptions(env);
     return objectToValue(env, instance);
+}
+
+extern "C" void
+rb_include_module(VALUE self, VALUE module) {
+    callMethod(self, "include", 1, module);
 }
 
 static jobject

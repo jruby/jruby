@@ -372,10 +372,10 @@ UINT2NUM(unsigned long v)
 VALUE rb_funcall(VALUE obj, ID meth, int cnt, ...);
 VALUE rb_funcall2(VALUE obj, ID meth, int cnt, VALUE*);
 
-/** Returns a new, anonymous class inheriting from super_handle.
- *  TODO: Should NOT call inherited() on the superclass. 
- */
-VALUE rb_class_new(VALUE super_handle);
+/** Returns a new, anonymous class inheriting from super_handle. */
+VALUE rb_class_new(VALUE);
+/** Calls the class method 'inherited' on super passing the class. */
+VALUE rb_class_inherited(VALUE super, VALUE klass);
 /** As Ruby's .new, with the given arguments. Returns the new object. */
 VALUE rb_class_new_instance(int arg_count, VALUE* args, VALUE class_handle);
 /** Returns the Class object this object is an instance of. */
@@ -386,6 +386,10 @@ VALUE rb_class_name(VALUE class_handle);
 char* rb_class2name(VALUE class_handle);
 /** Convert a path string to a class */
 VALUE rb_path2class(const char* path);
+/** Include Module in another Module, just as Ruby's Module#include. */
+void rb_include_module(VALUE self, VALUE module);
+
+
 VALUE rb_define_class(const char*,VALUE);
 VALUE rb_define_module(const char*);
 VALUE rb_define_class_under(VALUE, const char*, VALUE);
