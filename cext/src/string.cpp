@@ -215,6 +215,11 @@ rb_str_freeze(VALUE str) {
 }
 
 extern "C" VALUE
+rb_str_intern(VALUE str) {
+    return callMethodA(str, "to_sym", 0, NULL);
+}
+
+extern "C" VALUE
 rb_str_length(VALUE str)
 {
     return INT2NUM(jruby_str_length(str));
