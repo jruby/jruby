@@ -538,36 +538,40 @@ char* jruby_str_cstr_readonly(VALUE v);
 
 #define rb_str_ptr_readonly(v) jruby_str_cstr_readonly((v))
 #define rb_str_ptr(v) jruby_str_cstr((v))
-#define rb_str_new_cstr(str) __extension__ (    \
-{                                               \
-    (__builtin_constant_p(str)) ?               \
-        rb_str_new(str, (long)strlen(str)) :    \
-        rb_str_new_cstr(str);                   \
+#define rb_str_new_cstr(str) __extension__ (            \
+{                                                       \
+    long len = (long)(str ? strlen(str) : 0);           \
+    (__builtin_constant_p(str)) ?                       \
+        rb_str_new(str, len) :                          \
+        rb_str_new_cstr(str);                           \
 })
-#define rb_tainted_str_new_cstr(str) __extension__ ( \
-{                                              \
-    (__builtin_constant_p(str)) ?              \
-        rb_tainted_str_new(str, (long)strlen(str)) : \
-        rb_tainted_str_new_cstr(str);          \
+#define rb_tainted_str_new_cstr(str) __extension__ (    \
+{                                                       \
+    long len = (long)(str ? strlen(str) : 0);           \
+    (__builtin_constant_p(str)) ?                       \
+        rb_tainted_str_new(str, len) :                  \
+        rb_tainted_str_new_cstr(str);                   \
 })
-#define rb_str_buf_new_cstr(str) __extension__ ( \
-{                                               \
-    (__builtin_constant_p(str)) ?               \
-        rb_str_buf_cat(rb_str_buf_new((long)strlen(str)), \
-                       str, (long)strlen(str)) : \
-        rb_str_buf_new_cstr(str);               \
+#define rb_str_buf_new_cstr(str) __extension__ (        \
+{                                                       \
+    long len = (long)(str ? strlen(str) : 0);           \
+    (__builtin_constant_p(str)) ?                       \
+        rb_str_buf_cat(rb_str_buf_new(len), str, len) : \
+        rb_str_buf_new_cstr(str);                       \
 })
-#define rb_str_buf_cat2(str, ptr) __extension__ ( \
-{                                               \
-    (__builtin_constant_p(ptr)) ?               \
-        rb_str_buf_cat(str, ptr, (long)strlen(ptr)) : \
-        rb_str_buf_cat2(str, ptr);              \
+#define rb_str_buf_cat2(str, ptr) __extension__ (       \
+{                                                       \
+    long len = (long)(ptr ? strlen(ptr) : 0);           \
+    (__builtin_constant_p(ptr)) ?                       \
+        rb_str_buf_cat(str, ptr, len) :                 \
+        rb_str_buf_cat2(str, ptr);                      \
 })
-#define rb_str_cat2(str, ptr) __extension__ (   \
-{                                               \
-    (__builtin_constant_p(ptr)) ?               \
-        rb_str_cat(str, ptr, (long)strlen(ptr)) : \
-        rb_str_cat2(str, ptr);                  \
+#define rb_str_cat2(str, ptr) __extension__ (           \
+{                                                       \
+    long len = (long)(ptr ? strlen(ptr) : 0);           \
+    (__builtin_constant_p(ptr)) ?                       \
+        rb_str_cat(str, ptr, len) :                     \
+        rb_str_cat2(str, ptr);                          \
 })
 
 #define rb_str_new2 rb_str_new_cstr
