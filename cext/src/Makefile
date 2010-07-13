@@ -57,8 +57,9 @@ LIBNAME = jruby-cext
 #
 # Compiler/linker flags from:
 #   http://weblogs.java.net/blog/kellyohair/archive/2006/01/compilation_of_1.html
-JFLAGS = -fno-omit-frame-pointer -fno-strict-aliasing -DNDEBUG
-OFLAGS = -O2 $(JFLAGS)
+JFLAGS = -fno-omit-frame-pointer -fno-strict-aliasing
+DBG_FLAGS = -DNDEBUG -O2
+OFLAGS = $(DBG_FLAGS) $(JFLAGS)
 
 # MacOS headers aren't completely warning free, so turn them off
 ifneq ($(OS),darwin)
@@ -215,7 +216,9 @@ all:	$(LIBCEXT)
 
 compile:	all
 
-debug:
+debug : DBG_FLAGS=-DDEBUG -g -O0
+
+debug: all
 	@echo OS="$(OS)"
 	@echo BUILD_OS="$(BUILD_OS)"
 	@echo BUILD_DIR="$(BUILD_DIR)"
