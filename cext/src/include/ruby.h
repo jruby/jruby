@@ -579,6 +579,7 @@ char* jruby_str_cstr_readonly(VALUE v);
         rb_str_cat2(str, ptr);                          \
 })
 
+#define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_dup
 #define rb_str_new4 rb_str_new_frozen
 #define rb_str_new5 rb_str_new_with_class

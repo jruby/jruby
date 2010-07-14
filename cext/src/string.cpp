@@ -60,19 +60,14 @@ rb_str_new(const char *ptr, long len)
     return newString(ptr, len);
 }
 
-extern "C" VALUE
-rb_str_new2(const char *ptr)
-{
-    if (!ptr) {
-        rb_raise(rb_eArgError, "NULL passed as string");
-    }
-    return rb_str_new_cstr(ptr);
-}
-
 #undef rb_str_new_cstr
 extern "C" VALUE
 rb_str_new_cstr(const char *ptr)
 {
+    if (!ptr) {
+        rb_raise(rb_eArgError, "NULL pointer given");
+    }
+    
     return newString(ptr, ptr ? strlen(ptr) : 0);
 }
 
