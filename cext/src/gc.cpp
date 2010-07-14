@@ -50,8 +50,19 @@ rb_gc_mark(VALUE v)
 }
 
 extern "C" void
-rb_gc_mark_maybe(VALUE v) {
-    rb_gc_mark(v);
+rb_gc_mark_maybe(VALUE v)
+{
+    if (SPECIAL_CONST_P(v)) {
+        return;
+    }
+
+    Handle* h;
+    TAILQ_FOREACH(h, &liveHandles, all) {
+        if ((VALUE) h == v) {
+            rb_gc_mark(v);
+            break;
+        }
+    }
 }
 
 extern "C" void
