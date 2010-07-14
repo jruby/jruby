@@ -177,6 +177,7 @@ namespace jruby {
         ID id;
         char* cstr;
         jobject obj;
+        jobject jstr;
     };
 
     extern Symbol* resolveSymbolById(ID id);
@@ -191,6 +192,10 @@ namespace jruby {
     
     inline jobject idToObject(JNIEnv* env, ID id) {
         return lookupSymbolById(id)->obj;
+    }
+
+    inline jobject idToString(JNIEnv* env, ID id) {
+        return lookupSymbolById(id)->jstr;
     }
 
     extern jobject fixnumToObject(JNIEnv* env, VALUE v);

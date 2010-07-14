@@ -139,7 +139,7 @@ rb_const_get(VALUE module, ID symbol) {
     JLocalEnv env;
     jmethodID mid = getMethodID(env, RubyModule_class, "getConstant",
             "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
-    jobject c = env->CallObjectMethod(valueToObject(env, module), mid, env->NewStringUTF(rb_id2name(symbol)));
+    jobject c = env->CallObjectMethod(valueToObject(env, module), mid, idToString(env, symbol));
     checkExceptions(env);
 
     return objectToValue(env, c);
@@ -150,7 +150,7 @@ rb_const_get_at(VALUE module, ID symbol) {
     JLocalEnv env;
     jmethodID mid = getMethodID(env, RubyModule_class, "getConstantAt",
             "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
-    jobject c = env->CallObjectMethod(valueToObject(env, module), mid, env->NewStringUTF(rb_id2name(symbol)));
+    jobject c = env->CallObjectMethod(valueToObject(env, module), mid, idToString(env, symbol));
     checkExceptions(env);
 
     return objectToValue(env, c);
@@ -161,7 +161,7 @@ rb_const_get_from(VALUE module, ID symbol) {
     JLocalEnv env;
     jmethodID mid = getMethodID(env, RubyModule_class, "getConstantFrom",
             "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
-    jobject c = env->CallObjectMethod(valueToObject(env, module), mid, env->NewStringUTF(rb_id2name(symbol)));
+    jobject c = env->CallObjectMethod(valueToObject(env, module), mid, idToString(env, symbol));
     checkExceptions(env);
 
     return objectToValue(env, c);
@@ -172,7 +172,7 @@ rb_const_set(VALUE parent, ID name, VALUE object){
     JLocalEnv env;
     jmethodID mid = getMethodID(env, RubyModule_class, "setConstant",
             "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
-    env->CallObjectMethod(valueToObject(env, parent), mid, env->NewStringUTF(rb_id2name(name)),
+    env->CallObjectMethod(valueToObject(env, parent), mid, idToString(env, name),
             valueToObject(env, object));
     checkExceptions(env);
 }

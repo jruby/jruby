@@ -138,6 +138,7 @@ addSymbol(JNIEnv* env, ID id, jobject obj)
     sym->id = id;
 
     jstring str = (jstring) env->GetObjectField(obj, RubySymbol_symbol_field);
+    sym->jstr = env->NewGlobalRef(str);
     checkExceptions(env);
 
     jint len = env->GetStringLength(str);
