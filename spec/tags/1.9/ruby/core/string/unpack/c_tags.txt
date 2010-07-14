@@ -1,0 +1,2 @@
+fails:String#unpack with format 'C' ignores NULL bytes between directives
+fails:String#unpack with format 'c' ignores NULL bytes between directives
