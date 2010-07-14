@@ -61,6 +61,9 @@ public class Pack {
      **/
     private static final String NATIVE_CODES = "sSiIlL";
     private static final String MAPPED_CODES = "sSiIqQ";
+    private static final String UNPACK_IGNORE_NULL_CODES = "cC";
+    private static final String PACK_IGNORE_NULL_CODES = "cCiIlLnNqQsSvV";
+    private static final String PACK_IGNORE_NULL_CODES_WITH_MODIFIERS = "lLsS";
     private static final String sTooFew = "too few arguments";
     private static final byte[] hex_table;
     private static final byte[] uu_table;
@@ -772,6 +775,10 @@ public class Pack {
         while (next != 0) {
             type = next;
             next = safeGet(format);
+            if (UNPACK_IGNORE_NULL_CODES.indexOf(type) != -1 && next == 0) {
+                next = safeGetIgnoreNull(format);
+            }
+
             // Next indicates to decode using native encoding format
             if (next == '_' || next == '!') {
                 int index = NATIVE_CODES.indexOf(type);
@@ -1344,6 +1351,14 @@ public class Pack {
         return encode.hasRemaining() ? encode.get() & 0xff : 0;
     }
 
+    private static int safeGetIgnoreNull(ByteBuffer encode) {
+        int next = 0;
+        while (encode.hasRemaining() && next == 0) {
+            next = safeGet(encode);
+        }
+        return next;
+    }
+
     public static void decode(Ruby runtime, ByteBuffer encode, int occurrences,
             RubyArray result, Converter converter) {
         int lPadLength = 0;
@@ -1672,7 +1687,6 @@ public class Pack {
      **/
     @SuppressWarnings("fallthrough")
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
-        
         return packCommon(runtime, list, formatString, executor18);
     }
 
@@ -1691,7 +1705,7 @@ public class Pack {
         return pack;
     }
 
-    public static RubyString packCommon(Ruby runtime, RubyArray list, ByteList formatString, ConverterExecutor executor) {
+    private static RubyString packCommon(Ruby runtime, RubyArray list, ByteList formatString, ConverterExecutor executor) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteList result = new ByteList();
         boolean taintOutput = false;
@@ -1705,6 +1719,9 @@ public class Pack {
         mainLoop: while (next != 0) {
             type = next;
             next = safeGet(format);
+            if (PACK_IGNORE_NULL_CODES.indexOf(type) != -1 && next == 0) {
+                next = safeGetIgnoreNull(format);
+            }
 
             // Skip all whitespace in pack format string
             while (ASCII.isSpace(type)) {
@@ -1728,9 +1745,13 @@ public class Pack {
                     throw runtime.newArgumentError("'" + next +
                             "' allowed only after types " + NATIVE_CODES);
                 }
+                int typeBeforeMap = type;
                 type = MAPPED_CODES.charAt(index);
 
                 next = safeGet(format);
+                if (PACK_IGNORE_NULL_CODES_WITH_MODIFIERS.indexOf(typeBeforeMap) != -1 && next == 0) {
+                    next = safeGetIgnoreNull(format);
+                }
             }
 
             // Determine how many of type are needed (default: 1)
