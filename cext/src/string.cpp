@@ -38,6 +38,10 @@ using namespace jruby;
 static VALUE
 newString(const char* ptr, int len, int capacity = 0, bool tainted = false)
 {
+    if (len < 0) {
+        rb_raise(rb_eArgError, "negative string size (or size too big)");
+    }
+
     JLocalEnv env;
 
     jbyteArray bytes = env->NewByteArray(capacity > len ? capacity : len);
@@ -95,6 +99,10 @@ rb_str_append(VALUE str, VALUE str2)
 extern "C" VALUE
 rb_str_cat(VALUE str, const char *ptr, long len)
 {
+    if (len < 0) {
+        rb_raise(rb_eArgError, "negative string size (or size too big)");
+    }
+
     return rb_str_concat(str, rb_str_new(ptr, len));
 }
 
@@ -102,11 +110,12 @@ rb_str_cat(VALUE str, const char *ptr, long len)
 extern "C" VALUE
 rb_str_cat2(VALUE str, const char *ptr)
 {
-    return rb_str_cat(str, ptr, strlen(ptr));
+    return rb_str_cat(str, ptr, ptr ? strlen(ptr) : 0);
 }
 
 extern "C" VALUE
-rb_str_concat(VALUE str, VALUE other) {
+rb_str_concat(VALUE str, VALUE other)
+{
     return callMethod(str, "concat", 1, other);
 }
 
@@ -124,6 +133,10 @@ rb_str_buf_cat(VALUE str, const char *ptr, long len)
         rb_raise(rb_eArgError, "negative string size (or size too big)");
     }
 
+    if (!ptr) {
+        rb_raise(rb_eArgError, "NULL pointer given");
+    }
+
     return callMethod(str, "concat", 1, rb_str_new(ptr, len));
 }
 
@@ -131,7 +144,11 @@ rb_str_buf_cat(VALUE str, const char *ptr, long len)
 VALUE
 rb_str_buf_cat2(VALUE str, const char *ptr)
 {
-    return rb_str_buf_cat(str, ptr, strlen(ptr));
+    if (!ptr) {
+        rb_raise(rb_eArgError, "NULL pointer given");
+    }
+
+    return rb_str_buf_cat(str, ptr, ptr ? strlen(ptr) : 0);
 }
 
 
@@ -176,7 +193,13 @@ rb_tainted_str_new(const char* ptr, long len)
 extern "C" VALUE
 rb_tainted_str_new_cstr(const char *ptr)
 {
-    int len = strlen(ptr);
+    int len;
+
+    if (!ptr) {
+        rb_raise(rb_eArgError, "NULL pointer given");
+    }
+
+    len = strlen(ptr);
 
     return newString(ptr, len, len, true);
 }
