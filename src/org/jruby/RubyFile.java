@@ -1093,17 +1093,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         boolean isAbsoluteWithFilePrefix = relativePath.startsWith("file:");
 
         String cwd = null;
-        
+
         // Handle ~user paths 
         if (expandUser) {
             relativePath = expandUserPath(context, relativePath);
         }
-        
+
         // If there's a second argument, it's the path to which the first 
         // argument is relative.
         if (args.length == 2 && !args[1].isNil()) {
-            
+
             cwd = get_path(context, args[1]).getUnicodeValue();
+
+            if (!isAbsoluteWithFilePrefix) {
+                isAbsoluteWithFilePrefix = cwd.startsWith("file:");
+            }
 
             // Handle ~user paths.
             if (expandUser) {
