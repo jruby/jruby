@@ -63,7 +63,7 @@ rb_respond_to(VALUE obj, ID id)
 {
     JLocalEnv env;
     return env->CallBooleanMethod(valueToObject(env, obj),
-            IRubyObject_respondsTo_method, idToObject(env, id)) != JNI_FALSE;
+            IRubyObject_respondsTo_method, idToString(env, id)) != JNI_FALSE;
 }
 
 extern "C" VALUE
