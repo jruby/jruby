@@ -529,6 +529,10 @@ size_t rb_str_capacity(VALUE);
 char* rb_str2cstr(VALUE str_handle, long *len);
 /** Deprecated alias for rb_obj_freeze */
 VALUE rb_str_freeze(VALUE str);
+/** Return Integer obtained from String#to_i using given base. */
+VALUE rb_str2inum(VALUE str, int base);
+#define rb_cstr2inum(str, base) rb_str2inum(rb_str_new_cstr(str), base)
+#define rb_cstr_to_inum(str, base, badcheck) rb_cstr2inum(str, base)
 
 /** Call #to_s on object pointed to and _replace_ it with the String. */
 VALUE rb_string_value(VALUE* object_variable);

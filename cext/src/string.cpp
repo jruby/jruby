@@ -171,12 +171,6 @@ rb_str2inum(VALUE str, int base)
 }
 
 extern "C" VALUE
-rb_cstr2inum(const char* str, int base)
-{
-    return callMethod(rb_str_new2(str), "to_i", 1, INT2NUM(base));
-}
-
-extern "C" VALUE
 rb_str_substr(VALUE str, long beg, long len)
 {
     return callMethod(str, "[]", 2, LONG2NUM(beg), LONG2NUM(len));
