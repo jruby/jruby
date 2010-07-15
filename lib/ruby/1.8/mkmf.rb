@@ -2,6 +2,8 @@
 $stderr << "WARNING: JRuby does not support native extensions or the `mkmf' library very well.\n" +
 "Check http://kenai.com/projects/jruby/pages/Home for alternatives.\n"
 
+require 'rbconfig'
+
 # We're missing this in our rbconfig
 module Config
   def Config::expand(val, config = CONFIG)
