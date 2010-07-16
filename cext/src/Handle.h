@@ -94,20 +94,24 @@ namespace jruby {
 
     class RubyFloat : public Handle {
     private:
-        struct RFloat rfloat;
+        bool registered_;
+        struct RFloat rfloat_;
+        DataSync jsync_;
+        DataSync nsync_;
+        DataSync clean_;
 
     public:
         RubyFloat(jdouble value_);
         RubyFloat(JNIEnv* env, jobject obj_, jdouble value_);
 
         inline jdouble doubleValue() {
-            return rfloat.value;
+            return rfloat_.value;
         }
 
-        inline struct RFloat* toRFloat() {
-            return &rfloat;
-        }
-
+        struct RFloat* toRFloat();
+        bool jsync(JNIEnv* env);
+        bool nsync(JNIEnv* env);
+        bool clean(JNIEnv* env);
     };
 
     class RubyIO : public Handle {

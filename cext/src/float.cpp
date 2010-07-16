@@ -23,15 +23,74 @@
 
 using namespace jruby;
 
-RubyFloat::RubyFloat(double value)
+RubyFloat::RubyFloat(double value): registered_(false)
 {
     setType(T_FLOAT);
-    rfloat.value = value;
+    rfloat_.value = value;
 }
 
 RubyFloat::RubyFloat(JNIEnv* env, jobject obj_, jdouble value_): Handle(env, obj_, T_FLOAT)
 {
-    rfloat.value = value_;
+    rfloat_.value = value_;
+}
+
+
+static bool
+RubyFloat_jsync(JNIEnv* env, DataSync* data)
+{
+    return ((RubyFloat *) data->data)->jsync(env);
+}
+
+static bool
+RubyFloat_nsync(JNIEnv* env, DataSync* data)
+{
+    return ((RubyFloat *) data->data)->nsync(env);
+}
+
+static bool
+RubyFloat_clean(JNIEnv* env, DataSync* data)
+{
+    return ((RubyFloat *) data->data)->clean(env);
+}
+
+struct RFloat*
+RubyFloat::toRFloat()
+{
+    if (!registered_) {
+        jsync_.data = this;
+        jsync_.sync = RubyFloat_jsync;
+        nsync_.data = this;
+        nsync_.sync = RubyFloat_nsync;
+        clean_.data = this;
+        clean_.sync = RubyFloat_clean;
+        TAILQ_INSERT_TAIL(&jruby::cleanq, &clean_, syncq);
+        TAILQ_INSERT_TAIL(&jruby::jsyncq, &jsync_, syncq);
+        TAILQ_INSERT_TAIL(&jruby::nsyncq, &nsync_, syncq);
+        registered_ = true;
+    }
+    
+    return &rfloat_;
+}
+
+bool
+RubyFloat::jsync(JNIEnv* env)
+{
+    env->SetDoubleField(obj, RubyFloat_value_field, rfloat_.value);
+    return true;
+}
+
+bool
+RubyFloat::nsync(JNIEnv* env)
+{
+    rfloat_.value = env->GetDoubleField(obj, RubyFloat_value_field);
+    return true;
+}
+
+bool
+RubyFloat::clean(JNIEnv* env)
+{
+    registered_ = false;
+    return true;
 }
 
 extern "C" struct RFloat*
