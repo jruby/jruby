@@ -286,7 +286,7 @@ void xfree(void*);
 #define RFLOAT(v) jruby_rfloat(v)
 #define RFLOAT_VALUE(v) jruby_float_value(v)
 
-#define DATA_PTR(dta) jruby_data((dta))
+#define DATA_PTR(dta) (RDATA(dta)->data)
 #define RDATA(dta) jruby_rdata((dta))
 
 #define OBJ_FREEZE(obj) (rb_obj_freeze(obj))
