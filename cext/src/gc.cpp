@@ -95,9 +95,10 @@ Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
     Handle* h;
 
     TAILQ_FOREACH(dh, &dataHandles, dataList) {
-        if ((dh->flags & FL_MARK) == 0 && dh->dmark != NULL) {
+        RData* rdata = dh->toRData();
+        if ((dh->flags & FL_MARK) == 0 && rdata->dmark != NULL) {
             dh->flags |= FL_MARK;
-            (*dh->dmark)(dh->data);
+            (*rdata->dmark)(rdata->data);
             dh->flags &= ~FL_MARK;
         }
     }

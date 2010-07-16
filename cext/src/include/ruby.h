@@ -110,6 +110,12 @@ struct RFloat {
     double value;
 };
 
+struct RData {
+    void (*dmark)(void *);
+    void (*dfree)(void *);
+    void* data;
+};
+
 typedef enum JRubyType {
     T_NONE,
     T_NIL,
@@ -270,7 +276,8 @@ void xfree(void*);
 #define RFLOAT(v) jruby_rfloat(v)
 #define RFLOAT_VALUE(v) jruby_float_value(v)
 
-#define DATA_PTR(dta) (jruby_data((dta)))
+#define DATA_PTR(dta) jruby_data((dta))
+#define RDATA(dta) jruby_rdata((dta))
 
 #define OBJ_FREEZE(obj) (rb_obj_freeze(obj))
 
@@ -610,7 +617,8 @@ char* jruby_str_cstr_readonly(VALUE v);
 /** Returns the string associated with a symbol. */
 const char *rb_id2name(ID sym);
 
-extern void* jruby_data(VALUE);
+void* jruby_data(VALUE);
+struct RData* jruby_rdata(VALUE);
 
 typedef void (*RUBY_DATA_FUNC)(void*);
 

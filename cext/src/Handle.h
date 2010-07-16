@@ -113,10 +113,15 @@ namespace jruby {
     class RubyData : public Handle {
     public:
         virtual ~RubyData();
+        
+        inline struct RData* toRData() {
+            return &rdata;
+        }
+
         TAILQ_ENTRY(RubyData) dataList;
-        void (*dmark)(void *);
-        void (*dfree)(void *);
-        void* data;
+
+    private:
+        RData rdata;
     };
 
     class RubyString : public Handle {
