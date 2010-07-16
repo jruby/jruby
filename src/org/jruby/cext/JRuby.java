@@ -31,6 +31,7 @@ import org.jruby.RubyString;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -71,6 +72,12 @@ public class JRuby {
         IRubyObject retval = RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(),
                 recv, methodName.toString(), arg1, arg2, arg3);
 
+        return Handle.nativeHandle(retval);
+    }
+
+    public static long callSuperMethod(Ruby runtime, IRubyObject[] args) {
+        ThreadContext currentContext = runtime.getCurrentContext();
+        IRubyObject retval = RuntimeHelpers.invokeSuper(currentContext, runtime.getCurrentContext().getFrameSelf(), args, Block.NULL_BLOCK);
         return Handle.nativeHandle(retval);
     }
 
@@ -117,17 +124,17 @@ public class JRuby {
     
     /** rb_yield */
     public static IRubyObject yield(Ruby runtime, IRubyObject args) {
-        return Native.getInstance(runtime).getBlock().call(runtime.getCurrentContext(), args);
+        return runtime.getCurrentContext().getFrameBlock().call(runtime.getCurrentContext(), args);
     }
 
     /** rb_block_given_p */
     public static int blockGiven(Ruby runtime) {
-        return Native.getInstance(runtime).getBlock().isGiven() ? 1 : 0;
+        return runtime.getCurrentContext().getFrameBlock().isGiven() ? 1 : 0;
     }
 
     /** rb_block_proc */
     public static RubyProc getBlockProc(Ruby runtime) {
-        Block block = Native.getInstance(runtime).getBlock();
+        Block block = runtime.getCurrentContext().getFrameBlock();
         RubyProc p = RubyProc.newProc(runtime, block, block.type);
         return p;
     }

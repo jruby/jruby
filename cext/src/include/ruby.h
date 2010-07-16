@@ -400,6 +400,8 @@ UINT2NUM(unsigned long v)
 
 VALUE rb_funcall(VALUE obj, ID meth, int cnt, ...);
 VALUE rb_funcall2(VALUE obj, ID meth, int cnt, VALUE*);
+/** Starts the lookup in the superclass to call a method on the current self */
+VALUE rb_call_super(int argc, const VALUE *argv);
 
 /** Returns a new, anonymous class inheriting from super_handle. */
 VALUE rb_class_new(VALUE);
@@ -417,7 +419,6 @@ char* rb_class2name(VALUE class_handle);
 VALUE rb_path2class(const char* path);
 /** Include Module in another Module, just as Ruby's Module#include. */
 void rb_include_module(VALUE self, VALUE module);
-
 
 VALUE rb_define_class(const char*,VALUE);
 VALUE rb_define_module(const char*);

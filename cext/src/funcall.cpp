@@ -49,3 +49,17 @@ rb_funcall2(VALUE recv, ID meth, int argCount, VALUE* args)
 
     return callRubyMethodA(env, recv, idToObject(env, meth), argCount, args);
 }
+
+extern "C" VALUE
+rb_call_super(int argc, const VALUE *argv) {
+    JLocalEnv env;
+    jobjectArray params = env->NewObjectArray((jsize)argc, IRubyObject_class, NULL);
+    int i;
+    for (i = 0; i < argc; i++) {
+        env->SetObjectArrayElement(params, (jsize)i, valueToObject(env, argv[i]));
+    }
+    checkExceptions(env);
+
+    jobject result = env->CallObjectMethod(JRuby_class, JRuby_callSuperMethod, getRuntime(), params);
+    return objectToValue(env, result);
+}

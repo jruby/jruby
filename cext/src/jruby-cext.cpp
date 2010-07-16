@@ -50,6 +50,7 @@ namespace jruby {
     jmethodID JRuby_callMethod1;
     jmethodID JRuby_callMethod2;
     jmethodID JRuby_callMethod3;
+    jmethodID JRuby_callSuperMethod;
     jmethodID JRuby_newString;
     jmethodID JRuby_ll2inum;
     jmethodID JRuby_ull2inum;
@@ -209,8 +210,8 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
     IRubyObject_asJavaString_method = getMethodID(env, IRubyObject_class, "asJavaString", "()Ljava/lang/String;");
     IRubyObject_respondsTo_method = getMethodID(env, IRubyObject_class, "respondsTo", "(Ljava/lang/String;)Z");
-
     ThreadContext_getRuntime_method = getMethodID(env, ThreadContext_class, "getRuntime", "()Lorg/jruby/Ruby;");
+
     RubyData_newRubyData_method = getStaticMethodID(env, RubyData_class, "newRubyData", "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;J)Lorg/jruby/cext/RubyData;");
     RubyString_newStringNoCopy = getStaticMethodID(env, RubyString_class,
             "newStringNoCopy", "(Lorg/jruby/Ruby;[B)Lorg/jruby/RubyString;");
@@ -228,6 +229,8 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_callMethod3 = getStaticMethodID(env, JRuby_class, "callRubyMethod3",
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    JRuby_callSuperMethod = getStaticMethodID(env, JRuby_class, "callSuperMethod",
+            "(Lorg/jruby/Ruby;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_newString = getStaticMethodID(env, JRuby_class, "newString",
             "(Lorg/jruby/Ruby;[BZ)J");
     JRuby_ll2inum = getStaticMethodID(env, JRuby_class, "ll2inum",

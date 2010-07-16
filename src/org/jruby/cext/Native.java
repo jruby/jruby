@@ -44,7 +44,6 @@ final class Native {
     private static final String jrubyHome = Ruby.getGlobalRuntime().getJRubyHome();
 
     private final Ruby runtime;
-    private ThreadLocal<Block> block;
 
     static Native getInstance(Ruby runtime) {
         if (INSTANCE == null) {
@@ -61,7 +60,6 @@ final class Native {
 
     private Native(Ruby runtime) {
         this.runtime = runtime;
-        this.block = new ThreadLocal<Block>();
     }
 
     private void load(Ruby runtime) {
@@ -168,14 +166,6 @@ final class Native {
             prefix = "/lib/native/" + prefix;
         }
         return prefix + System.mapLibraryName(libName);
-    }
-
-    public Block getBlock() {
-        return block.get();
-    }
-
-    public void setBlock(Block block) {
-        this.block.set(block);
     }
 
     private final native void initNative(Ruby runtime);
