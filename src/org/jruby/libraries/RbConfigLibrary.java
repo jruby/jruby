@@ -255,8 +255,7 @@ public class RbConfigLibrary implements Library {
         String soflags = true ? "" : " -shared -static-libgcc -mimpure-text -Wl,-O1 ";
         String ldflags = soflags;
         
-
-        String archflags = " -arch i386 -arch ppc -arch x86_64 ";
+        String archflags = " -arch " + Platform.ARCH;
 
         if (Platform.IS_MAC) {
             // this set is only for darwin
@@ -283,7 +282,7 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "LIBRUBY", "");
         setConfig(mkmfHash, "LIBRUBY_A", "");
         setConfig(mkmfHash, "LIBRUBYARG", "");
-        setConfig(mkmfHash, "prefix", "");
+        setConfig(mkmfHash, "prefix", " "); // This must not be empty for some extconf.rb's to work
         setConfig(mkmfHash, "ruby_install_name", jrubyScript());
         if (Platform.IS_WINDOWS) {
             setConfig(mkmfHash, "DLEXT", "dll");
@@ -293,7 +292,7 @@ public class RbConfigLibrary implements Library {
             setConfig(mkmfHash, "DLEXT", "so");
         }
         setConfig(mkmfHash, "CC", "cc ");
-        setConfig(mkmfHash, "CPP", "cpp ");
+        setConfig(mkmfHash, "CPP", "cc -E ");
         if (Platform.IS_MAC) {
             setConfig(mkmfHash, "LDSHARED", "cc -dynamic -bundle -undefined suppress -flat_namespace ");
         } else {
