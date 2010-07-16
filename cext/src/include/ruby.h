@@ -719,6 +719,8 @@ VALUE rb_exc_new3(VALUE, VALUE);
         rb_exc_new2(klass, ptr);                \
 })
 
+VALUE rb_range_new(VALUE, VALUE, int);
+
 /* Global Module objects. */
 extern VALUE rb_mKernel;
 extern VALUE rb_mComparable;
