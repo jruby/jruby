@@ -111,6 +111,9 @@ namespace jruby {
     };
 
     class RubyData : public Handle {
+    private:
+        RData rdata;
+
     public:
         virtual ~RubyData();
         
@@ -120,20 +123,9 @@ namespace jruby {
 
         TAILQ_ENTRY(RubyData) dataList;
 
-    private:
-        RData rdata;
     };
 
     class RubyString : public Handle {
-    public:
-        RubyString(JNIEnv* env, jobject obj);
-        virtual ~RubyString();
-
-        RString* toRString(bool readonly);
-        bool jsync(JNIEnv* env);
-        bool nsync(JNIEnv* env);
-        bool clean(JNIEnv* env);
-        int length();
     private:
         struct RWData {
             bool readonly;
@@ -144,11 +136,23 @@ namespace jruby {
             DataSync rosync;
         };
         RWData rwdata;
+
+    public:
+        RubyString(JNIEnv* env, jobject obj);
+        virtual ~RubyString();
+
+        RString* toRString(bool readonly);
+        bool jsync(JNIEnv* env);
+        bool nsync(JNIEnv* env);
+        bool clean(JNIEnv* env);
+        int length();
+    
     };
 
     class RubyArray : public Handle {
     private:
         struct RArray rarray;
+
     public:
         RubyArray(JNIEnv* env, jobject obj);
         virtual ~RubyArray();
