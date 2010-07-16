@@ -147,6 +147,18 @@ typedef enum JRubyType {
 #define NIL_P(v) ((v) == Qnil)
 #define TYPE(x) rb_type((VALUE)(x))
 
+#ifdef __GNUC__
+#define rb_special_const_p(obj) \
+    __extension__ ({VALUE special_const_obj = (obj); (int)(SPECIAL_CONST_P(special_const_obj) ? Qtrue : Qfalse);})
+#else
+static inline int
+rb_special_const_p(VALUE obj)
+{
+    if (SPECIAL_CONST_P(obj)) return (int)Qtrue;
+    return (int)Qfalse;
+}
+#endif
+
 int rb_type(VALUE);
 void rb_check_type(VALUE, int);
 #define Check_Type(v,t) rb_check_type((VALUE)(v),t)
