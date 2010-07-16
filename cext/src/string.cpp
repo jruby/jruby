@@ -254,6 +254,11 @@ rb_str_length(VALUE str)
     return INT2NUM(jruby_str_length(str));
 }
 
+extern "C" VALUE
+rb_String(VALUE obj) {
+    return rb_convert_type(obj, 0, "String", "to_s");
+}
+
 static RubyString*
 jruby_str(VALUE v)
 {

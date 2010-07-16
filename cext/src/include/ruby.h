@@ -570,7 +570,10 @@ VALUE rb_str_freeze(VALUE str);
 VALUE rb_str2inum(VALUE str, int base);
 #define rb_cstr2inum(str, base) rb_str2inum(rb_str_new_cstr(str), base)
 #define rb_cstr_to_inum(str, base, badcheck) rb_cstr2inum(str, base)
-
+/** Return a String using #to_str. Error raised if invalid conversion. */
+VALUE rb_str_to_str(VALUE);
+/** Return a String using #to_s. Error raised if invalid conversion. */
+VALUE rb_String(VALUE);
 /** Call #to_s on object pointed to and _replace_ it with the String. */
 VALUE rb_string_value(VALUE* object_variable);
 char* rb_string_value_ptr(VALUE* object_variable);
