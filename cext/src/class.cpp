@@ -80,8 +80,10 @@ rb_cvar_get(VALUE klass, ID name)
     return callMethod(klass, "class_variable_get", 1, ID2SYM(name));
 }
 
+#undef rb_cvar_set
+
 extern "C" VALUE
-rb_cvar_set(VALUE klass, ID name, VALUE value, int unused)
+rb_cvar_set(VALUE klass, ID name, VALUE value)
 {
     return callMethod(klass, "class_variable_set", 2, ID2SYM(name), value);
 }

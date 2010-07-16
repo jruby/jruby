@@ -430,7 +430,9 @@ VALUE rb_cvar_get(VALUE module_handle, ID name);
 /** Set module's named class variable to given value. Returns the value. 
  * TODO: @@ should be optional. 
  */
-VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value, int unused);
+VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value);
+#define rb_cvar_set(klass, name, value, ...) __extension__(rb_cvar_set(klass, name, value))
+
 /** Return object's instance variable by name. @ optional. */
 VALUE rb_iv_get(VALUE obj, const char* name);
 /** Set instance variable by name to given value. Returns the value. @ optional. */
