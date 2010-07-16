@@ -179,7 +179,6 @@ int rb_type(VALUE);
 void rb_check_type(VALUE, int);
 #define Check_Type(v,t) rb_check_type((VALUE)(v),t)
 
-
 #define xmalloc ruby_xmalloc
 #define xmalloc2 ruby_xmalloc2
 #define xcalloc ruby_xcalloc
@@ -362,6 +361,9 @@ VALUE rb_ll2inum(long long);
 VALUE rb_ull2inum(unsigned long long);
 VALUE rb_int2big(long long);
 VALUE rb_uint2big(unsigned long long);
+VALUE rb_Integer(VALUE);
+/** Converts an object to an Integer by calling #to_int. */
+#define rb_to_int(value) rb_Integer(value)
 
 /** Convert a VALUE into a long int. */
 static inline long
