@@ -123,6 +123,11 @@ rb_id2name(ID sym)
     return lookupSymbolById(sym)->cstr;
 }
 
+extern "C" ID
+rb_to_id(VALUE obj) {
+    return SYM2ID(callMethod(obj, "to_sym", 0));
+}
+
 static Symbol*
 addSymbol(JNIEnv* env, ID id, jobject obj)
 {
