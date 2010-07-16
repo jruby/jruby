@@ -314,6 +314,12 @@ Java_org_jruby_cext_Native_newFloatHandle(JNIEnv* env, jobject self, jobject obj
     return jruby::p2j(new RubyFloat(env, obj, value));
 }
 
+extern "C" JNIEXPORT jlong JNICALL
+Java_org_jruby_cext_Native_newIOHandle(JNIEnv* env, jobject self, jobject obj, jobject fd, jstring mode)
+{
+    return jruby::p2j(new RubyIO(env, obj, fd, mode));
+}
+
 /*
  * Class:     org_jruby_cext_Native
  * Method:    freeHandle

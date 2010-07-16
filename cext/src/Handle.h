@@ -110,6 +110,24 @@ namespace jruby {
 
     };
 
+    class RubyIO : public Handle {
+    private:
+        jclass FileDescriptor_class;
+        jfieldID FileDescriptor_fd_field;
+        struct RIO rio;
+        jobject FileDescriptor_object;
+        char mode[5]; // "brw+\0" is the maximum mode string length
+
+        void cache_java_handles(JNIEnv *env);
+
+    public:
+        RubyIO(FILE* native_file, int native_fd, const char* native_mode);
+        RubyIO(JNIEnv* env, jobject obj_, jobject fd_, jstring mode_);
+        virtual ~RubyIO();
+
+        struct RIO* toRIO();
+    };
+
     class RubyData : public Handle {
     public:
         virtual ~RubyData();

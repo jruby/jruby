@@ -105,6 +105,15 @@ struct RArray {
     int len;
 };
 
+struct RIO {
+    int fd;
+    FILE* f;
+};
+
+typedef struct RIO rb_io_t;
+typedef struct RIO OpenFile; // 1.8 compat
+#define HAVE_RB_IO_T 1
+
 struct RFloat {
     struct RBasic basic;
     double value;
@@ -698,6 +707,14 @@ VALUE rb_exc_new3(VALUE, VALUE);
         rb_exc_new(klass, ptr, (long)strlen(ptr)) : \
         rb_exc_new2(klass, ptr);                \
 })
+
+VALUE rb_io_write(VALUE io, VALUE str);
+int rb_io_fd(VALUE io);
+#define HAVE_RB_IO_FD 1
+// Writes the OpenFile struct pointer of val into ptr
+#define GetOpenFile(val, ptr) (ptr = jruby_io_struct(val))
+#define GetReadFile(ptr) (ptr->f)
+#define GetWriteFile(ptr) (ptr->f)
 
 /* Global Module objects. */
 extern VALUE rb_mKernel;

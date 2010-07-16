@@ -19,6 +19,7 @@
 package org.jruby.cext;
 
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -199,7 +200,8 @@ final class Native {
     final native long newHandle(IRubyObject obj, int type);
     final native long newFixnumHandle(IRubyObject obj, long value);
     final native long newFloatHandle(IRubyObject obj, double value);
-    
+    final native long newIOHandle(IRubyObject obj, FileDescriptor fileDescriptor, String mode);
+
     final native void gc();
     final native Object pollGC();
 

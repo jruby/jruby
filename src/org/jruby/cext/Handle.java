@@ -21,6 +21,7 @@ package org.jruby.cext;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
@@ -100,6 +101,12 @@ public final class Handle {
 
                 case ClassIndex.SYMBOL:
                     nativeHandle = ((long) ((RubySymbol) obj).getId() << 8) | 0xeL;
+                    break;
+
+                case ClassIndex.FILE: // RubyIO uses FILE as type index, matching MRI's T_FILE
+                    nativeHandle = Native.getInstance(runtime).newIOHandle(obj,
+                            ((RubyIO) obj).getOpenFile().getMainStream().getDescriptor().getFileDescriptor(),
+                            ((RubyIO) obj).getOpenFile().getModeAsString(runtime));
                     break;
 
                 default:
