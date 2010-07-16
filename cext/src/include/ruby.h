@@ -111,6 +111,7 @@ struct RFloat {
 };
 
 struct RData {
+    struct RBasic basic;
     void (*dmark)(void *);
     void (*dfree)(void *);
     void* data;
