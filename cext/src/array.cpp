@@ -157,3 +157,27 @@ rb_ary_store(VALUE array, long offset, VALUE val)
 {
     callMethod(array, "[]=", 2, LONG2NUM(offset), val);
 }
+
+extern "C" VALUE
+rb_ary_includes(VALUE ary, VALUE item)
+{
+    return callMethodA(ary, "include?", 1, &item);
+}
+
+extern "C" VALUE
+rb_ary_delete(VALUE ary, VALUE item)
+{
+    return callMethodA(ary, "delete", 1, &item);
+}
+
+extern "C" VALUE
+rb_ary_delete_at(VALUE ary, long pos)
+{
+    return callMethod(ary, "delete_at", 1, LONG2NUM(pos));
+}
+
+extern "C" VALUE
+rb_ary_aref(int argc, VALUE* argv, VALUE ary)
+{
+    return callMethodA(ary, "slice", argc, argv);
+}

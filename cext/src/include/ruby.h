@@ -469,6 +469,12 @@ VALUE rb_ary_reverse(VALUE array);
 VALUE rb_ary_unshift(VALUE array, VALUE val);
 VALUE rb_ary_shift(VALUE array);
 void rb_ary_store(VALUE array, long offset, VALUE val);
+VALUE rb_ary_includes(VALUE, VALUE);
+VALUE rb_ary_delete(VALUE, VALUE);
+VALUE rb_ary_delete_at(VALUE, long);
+VALUE rb_ary_aref(int, VALUE*, VALUE);
+
+
 /** Returns a pointer to the readonly RArray structure
  * which exposes an MRI-like API to the C code.
  */
