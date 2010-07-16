@@ -80,3 +80,14 @@ extern "C" VALUE
 rb_require(const char* name) {
     return callMethod(rb_mKernel, "require", 1, rb_str_new_cstr(name));
 }
+
+extern "C" void
+rb_define_alias(VALUE klass, const char* new_name, const char* old_name) {
+    JLocalEnv env;
+    jmethodID mid = getMethodID(env, RubyModule_class, "defineAlias",
+            "(Ljava/lang/String;Ljava/lang/String;)V");
+    env->CallVoidMethod(valueToObject(env, klass), mid, env->NewStringUTF(new_name),
+            env->NewStringUTF(old_name));
+    checkExceptions(env);
+}
+

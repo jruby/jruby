@@ -472,6 +472,9 @@ VALUE rb_const_get_from(VALUE, ID);
 /** Set constant on the given module */
 void rb_const_set(VALUE, ID, VALUE);
 
+/** Alias method by old name as new name. */
+void rb_define_alias(VALUE klass, const char *new_name, const char *old_name);
+
 /* Array */
 VALUE rb_Array(VALUE val);
 VALUE rb_ary_new(void);
