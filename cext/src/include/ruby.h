@@ -461,14 +461,14 @@ VALUE rb_ary_new4(long n, const VALUE *);
 int rb_ary_size(VALUE self);
 VALUE rb_ary_push(VALUE array, VALUE val);
 VALUE rb_ary_pop(VALUE array);
-VALUE rb_ary_entry(VALUE array, int offset);
+VALUE rb_ary_entry(VALUE array, long offset);
 VALUE rb_ary_clear(VALUE array);
 VALUE rb_ary_dup(VALUE array);
 VALUE rb_ary_join(VALUE array1, VALUE array2);
 VALUE rb_ary_reverse(VALUE array);
 VALUE rb_ary_unshift(VALUE array, VALUE val);
 VALUE rb_ary_shift(VALUE array);
-void rb_ary_store(VALUE array, int offset, VALUE val);
+void rb_ary_store(VALUE array, long offset, VALUE val);
 /** Returns a pointer to the readonly RArray structure
  * which exposes an MRI-like API to the C code.
  */
