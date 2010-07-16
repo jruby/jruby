@@ -119,6 +119,13 @@ struct RFloat {
     double value;
 };
 
+struct RData {
+    struct RBasic basic;
+    void (*dmark)(void *);
+    void (*dfree)(void *);
+    void* data;
+};
+
 typedef enum JRubyType {
     T_NONE,
     T_NIL,
@@ -155,6 +162,18 @@ typedef enum JRubyType {
 #define RTEST(v) (((v) & ~Qnil) != 0)
 #define NIL_P(v) ((v) == Qnil)
 #define TYPE(x) rb_type((VALUE)(x))
+
+#ifdef __GNUC__
+#define rb_special_const_p(obj) \
+    __extension__ ({VALUE special_const_obj = (obj); (int)(SPECIAL_CONST_P(special_const_obj) ? Qtrue : Qfalse);})
+#else
+static inline int
+rb_special_const_p(VALUE obj)
+{
+    if (SPECIAL_CONST_P(obj)) return (int)Qtrue;
+    return (int)Qfalse;
+}
+#endif
 
 int rb_type(VALUE);
 void rb_check_type(VALUE, int);
@@ -267,7 +286,8 @@ void xfree(void*);
 #define RFLOAT(v) jruby_rfloat(v)
 #define RFLOAT_VALUE(v) jruby_float_value(v)
 
-#define DATA_PTR(dta) (jruby_data((dta)))
+#define DATA_PTR(dta) jruby_data((dta))
+#define RDATA(dta) jruby_rdata((dta))
 
 #define OBJ_FREEZE(obj) (rb_obj_freeze(obj))
 
@@ -427,7 +447,9 @@ VALUE rb_cvar_get(VALUE module_handle, ID name);
 /** Set module's named class variable to given value. Returns the value. 
  * TODO: @@ should be optional. 
  */
-VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value, int unused);
+VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value);
+#define rb_cvar_set(klass, name, value, ...) __extension__(rb_cvar_set(klass, name, value))
+
 /** Return object's instance variable by name. @ optional. */
 VALUE rb_iv_get(VALUE obj, const char* name);
 /** Set instance variable by name to given value. Returns the value. @ optional. */
@@ -458,14 +480,20 @@ VALUE rb_ary_new4(long n, const VALUE *);
 int rb_ary_size(VALUE self);
 VALUE rb_ary_push(VALUE array, VALUE val);
 VALUE rb_ary_pop(VALUE array);
-VALUE rb_ary_entry(VALUE array, int offset);
+VALUE rb_ary_entry(VALUE array, long offset);
 VALUE rb_ary_clear(VALUE array);
 VALUE rb_ary_dup(VALUE array);
 VALUE rb_ary_join(VALUE array1, VALUE array2);
 VALUE rb_ary_reverse(VALUE array);
 VALUE rb_ary_unshift(VALUE array, VALUE val);
 VALUE rb_ary_shift(VALUE array);
-void rb_ary_store(VALUE array, int offset, VALUE val);
+void rb_ary_store(VALUE array, long offset, VALUE val);
+VALUE rb_ary_includes(VALUE, VALUE);
+VALUE rb_ary_delete(VALUE, VALUE);
+VALUE rb_ary_delete_at(VALUE, long);
+VALUE rb_ary_aref(int, VALUE*, VALUE);
+
+
 /** Returns a pointer to the readonly RArray structure
  * which exposes an MRI-like API to the C code.
  */
@@ -599,7 +627,8 @@ char* jruby_str_cstr_readonly(VALUE v);
 /** Returns the string associated with a symbol. */
 const char *rb_id2name(ID sym);
 
-extern void* jruby_data(VALUE);
+void* jruby_data(VALUE);
+struct RData* jruby_rdata(VALUE);
 
 typedef void (*RUBY_DATA_FUNC)(void*);
 
@@ -707,7 +736,7 @@ VALUE rb_exc_new3(VALUE, VALUE);
         rb_exc_new(klass, ptr, (long)strlen(ptr)) : \
         rb_exc_new2(klass, ptr);                \
 })
-
+    
 VALUE rb_io_write(VALUE io, VALUE str);
 int rb_io_fd(VALUE io);
 #define HAVE_RB_IO_FD 1
@@ -715,6 +744,9 @@ int rb_io_fd(VALUE io);
 #define GetOpenFile(val, ptr) (ptr = jruby_io_struct(val))
 #define GetReadFile(ptr) (ptr->f)
 #define GetWriteFile(ptr) (ptr->f)
+
+VALUE rb_range_new(VALUE, VALUE, int);
+
 
 /* Global Module objects. */
 extern VALUE rb_mKernel;

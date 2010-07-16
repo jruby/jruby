@@ -131,7 +131,7 @@ namespace jruby {
 #define CONST_METHOD_NAME_CACHE(name) __extension__({          \
         static jobject mid_;                             \
         if (__builtin_expect(!mid_, 0))                  \
-            mid_ = getConstMethodNameInstance(name);      \
+            mid_ = jruby::getConstMethodNameInstance(name);      \
         mid_;                                            \
     })
 

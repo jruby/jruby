@@ -40,9 +40,9 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
     RubyData* h = new RubyData;
 
     TAILQ_INSERT_TAIL(&dataHandles, h, dataList);
-    h->data = data;
-    h->dmark = dmark;
-    h->dfree = dfree;
+    h->toRData()->data = data;
+    h->toRData()->dmark = dmark;
+    h->toRData()->dfree = dfree;
     h->setType(T_DATA);
 
     jvalue params[3];
@@ -64,11 +64,11 @@ RubyData::~RubyData()
 {
     TAILQ_REMOVE(&dataHandles, this, dataList);
 
-    if (dfree == (void *) -1) {
-        xfree(data);
+    if (rdata.dfree == (void *) -1) {
+        xfree(rdata.data);
 
-    } else if (dfree != NULL) {
-        (*dfree)(data);
+    } else if (rdata.dfree != NULL) {
+        (*rdata.dfree)(rdata.data);
     }
 }
 
@@ -80,5 +80,18 @@ jruby_data(VALUE v)
         return NULL;
     }
 
-    return ((RubyData *) v)->data;
+    return ((RubyData *) v)->toRData()->data;
+}
+
+extern "C" struct RData*
+jruby_rdata(VALUE v)
+{
+    if (TYPE(v) != T_DATA) {
+        rb_raise(rb_eTypeError, "not a data object");
+        return NULL;
+    }
+
+    RubyData* d = dynamic_cast<RubyData*>(Handle::valueOf(v));
+    
+    return d->toRData();
 }

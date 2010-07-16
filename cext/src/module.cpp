@@ -24,14 +24,16 @@
 using namespace jruby;
 
 extern "C" void
-rb_define_attr(VALUE module_handle, const char* attr_name, int readable, int writable)
+rb_define_attr(VALUE klass, const char* attr_name, int readable, int writable)
 {
+    VALUE rbName = ID2SYM(rb_intern(attr_name));
+
     if (readable) {
-        rb_funcall(module_handle, rb_intern("attr_reader"), 1, rb_intern(attr_name));
+        callMethodA(klass, "attr_reader", 1, &rbName);
     }
     
     if (writable) {
-        rb_funcall(module_handle, rb_intern("attr_writer"), 1, rb_intern(attr_name));
+        callMethodA(klass, "attr_writer", 1, &rbName);
     }
   }
 

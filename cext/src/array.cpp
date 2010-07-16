@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2008-2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -77,8 +77,7 @@ rb_Array(VALUE val)
 extern "C" VALUE 
 rb_ary_new2(long length) 
 {
-    VALUE num = INT2NUM(length);
-    return callMethod(rb_cArray, "new", 1, num);
+    return callMethod(rb_cArray, "new", 0);
 }
 
 extern "C" VALUE
@@ -112,9 +111,9 @@ rb_ary_pop(VALUE array)
 }
 
 extern "C" VALUE 
-rb_ary_entry(VALUE array, int offset) 
+rb_ary_entry(VALUE array, long offset)
 {
-    return callMethod(array, "[]", 1, INT2NUM(offset));
+    return callMethod(array, "[]", 1, LONG2NUM(offset));
 }
 
 extern "C" VALUE 
@@ -151,4 +150,34 @@ extern "C" VALUE
 rb_ary_shift(VALUE array) 
 {
     return callMethod(array, "shift", 0);
+}
+
+extern "C" void
+rb_ary_store(VALUE array, long offset, VALUE val)
+{
+    callMethod(array, "[]=", 2, LONG2NUM(offset), val);
+}
+
+extern "C" VALUE
+rb_ary_includes(VALUE ary, VALUE item)
+{
+    return callMethodA(ary, "include?", 1, &item);
+}
+
+extern "C" VALUE
+rb_ary_delete(VALUE ary, VALUE item)
+{
+    return callMethodA(ary, "delete", 1, &item);
+}
+
+extern "C" VALUE
+rb_ary_delete_at(VALUE ary, long pos)
+{
+    return callMethod(ary, "delete_at", 1, LONG2NUM(pos));
+}
+
+extern "C" VALUE
+rb_ary_aref(int argc, VALUE* argv, VALUE ary)
+{
+    return callMethodA(ary, "slice", argc, argv);
 }
