@@ -100,7 +100,10 @@ int rb_scan_args(int argc, const VALUE* argv, const char* spec, ...) {
 
     if (*p == '&') {
         var = va_arg(vargs, VALUE*);
-        *var = rb_block_proc();
+        if (rb_block_given_p()) {
+            *var = rb_block_proc();
+        }
+        if (var) *var = Qnil;
         p++;
     }
     va_end(vargs);
