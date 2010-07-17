@@ -112,7 +112,11 @@ jruby::checkExceptions(JNIEnv* env)
 {
     jthrowable ex = env->ExceptionOccurred();
     if (ex) {
-        throw JavaException(env, ex);
+        env->ExceptionClear();
+        JavaException jex(env, ex);
+        env->DeleteLocalRef(ex);
+
+        throw jex;
     }
 }
 

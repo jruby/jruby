@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010 Wayne Meissner
  * Copyright (C) 1993-2007 Yukihiro Matsumoto
  *
  * This file is part of jruby-cext.
@@ -52,3 +53,46 @@ rb_exc_raise(VALUE exc) {
     throw JavaException(env, jException);
 }
 
+class Finalizer {
+private:
+    VALUE (*fn_)(ANYARGS);
+    VALUE data_;
+    bool finalize_;
+public:
+    Finalizer(VALUE (*fn)(ANYARGS), VALUE data): finalize_(true), fn_(fn), data_(data) {
+    }
+    
+    ~Finalizer() {
+        if (unlikely(finalize_ && fn_ != NULL)) {
+            try {
+                (*fn_)(data_);
+            } catch (jruby::JavaException& ex) {}
+        }
+    }
+    
+    void disable() {
+        finalize_ = false;
+    }
+
+};
+
+VALUE
+rb_ensure(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*e_proc)(ANYARGS), VALUE data2)
+{
+    bool b_returned = false;
+    VALUE result;
+    try {
+        result = (*b_proc)(data1);
+        b_returned = true;
+        (*e_proc)(data2);
+
+        return result;
+
+    } catch (jruby::JavaException& ex) {
+        if (!b_returned) {
+            (*e_proc)(data2);
+        }
+
+        throw;
+    }
+}

@@ -330,6 +330,8 @@ int rb_scan_args(int argc, const VALUE* argv, const char* spec, ...);
 VALUE rb_require(const char* name);
 
 void rb_raise(VALUE exc, const char *fmt, ...) __attribute__((noreturn));
+VALUE rb_ensure(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE);
+
 void rb_fatal(const char *fmt, ...) __attribute__((noreturn));
 void rb_sys_fail(const char *msg) __attribute__((noreturn));
 void rb_bug(const char*, ...) __attribute__((noreturn));

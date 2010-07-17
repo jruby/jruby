@@ -244,14 +244,14 @@ public class RbConfigLibrary implements Library {
     private static void setupMakefileConfig(RubyModule configModule, RubyHash mkmfHash) {
         Ruby ruby = configModule.getRuntime();
         
-        String jflags = " -fno-omit-frame-pointer -fno-strict-aliasing -DNDEBUG ";
-        String oflags = " -O2 " + jflags;
+        String jflags = " -fno-omit-frame-pointer -fno-strict-aliasing ";
+        String oflags = " -O2  -DNDEBUG";
         String wflags = " -W -Werror -Wall -Wno-unused -Wno-parentheses ";
         String picflags = true ? "" : " -fPIC -pthread ";
         
         String iflags = " -I\"$(JDK_HOME)/include\" -I\"$(JDK_HOME)/include/$(OS)\" -I\"$(BUILD_DIR)\" ";
         
-        String cflags = "";
+        String cflags = jflags + " -fexceptions" + picflags;
         String soflags = true ? "" : " -shared -static-libgcc -mimpure-text -Wl,-O1 ";
         String ldflags = soflags;
         
