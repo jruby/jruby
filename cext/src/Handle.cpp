@@ -163,6 +163,7 @@ RubyString::toRString(bool readonly)
     rwdata.clean.data = this;
     rwdata.clean.sync = RubyString_clean;
     rwdata.rstring = (RString *) j2p(env->CallStaticLongMethod(JRuby_class, JRuby_getRString, obj));
+    checkExceptions(env);
     rwdata.readonly = readonly;
 
     TAILQ_INSERT_TAIL(&jruby::cleanq, &rwdata.clean, syncq);
@@ -200,12 +201,14 @@ RubyString::jsync(JNIEnv* env)
         jobject byteList = env->GetObjectField(obj, RubyString_value_field);
         jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
         jint begin = env->GetIntField(byteList, ByteList_begin_field);
-        
+        checkExceptions(env);
+
         env->DeleteLocalRef(byteList);
 
         RString* rstring = rwdata.rstring;
         env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring->len,
                 (jbyte *) rstring->ptr);
+        checkExceptions(env);
         
         env->DeleteLocalRef(bytes);
     }
@@ -217,9 +220,13 @@ bool
 RubyString::nsync(JNIEnv* env)
 {
     jobject byteList = env->GetObjectField(obj, RubyString_value_field);
+    checkExceptions(env);
     jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
+    checkExceptions(env);
     jint begin = env->GetIntField(byteList, ByteList_begin_field);
+    checkExceptions(env);
     long length = env->GetIntField(byteList, ByteList_length_field);
+    checkExceptions(env);
     env->DeleteLocalRef(byteList);
 
     RString* rstring = rwdata.rstring;
@@ -232,6 +239,7 @@ RubyString::nsync(JNIEnv* env)
     
     env->GetByteArrayRegion((jbyteArray) bytes, begin, length, 
             (jbyte *) rstring->ptr);
+    checkExceptions(env);
     env->DeleteLocalRef(bytes);
 
     rstring->ptr[rstring->len = length] = 0;
