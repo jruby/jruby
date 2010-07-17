@@ -104,7 +104,7 @@ rb_io_write(VALUE io, VALUE str) {
 
 extern "C" int
 rb_io_fd(VALUE io) {
-    jruby_io_struct(io)->fd;
+    return jruby_io_struct(io)->fd;
 }
 
 #ifdef NOT_YET_DONE
