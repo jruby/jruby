@@ -30,6 +30,13 @@ CPU ?= $(shell uname -m | sed -e 's/i[345678]86/i386/')
 MODEL = 32 # Default to 32bit compiles
 PLATFORM = $(CPU)-$(OS)
 
+# Try to determine JAVA_HOME if not set
+ifndef JAVA_HOME
+  JAVAC := $(shell which javac)
+  ifdef JAVAC
+    JAVA_HOME := $(shell readlink -f $(JAVAC) | xargs dirname | xargs dirname )
+  endif
+endif
 JDK_HOME=$(shell if [ -d "$(JAVA_HOME)"/include ];then echo "$(JAVA_HOME)"; else echo "$(JAVA_HOME)"/..; fi)
 # Set defaults to unix (linux/solaris/bsd)
 PREFIX = lib
