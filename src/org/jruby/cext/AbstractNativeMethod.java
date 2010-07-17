@@ -29,11 +29,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class AbstractNativeMethod extends DynamicMethod {
     protected final Arity arity;
     protected final long function;
+    private final Native nativeInstance;
 
     public AbstractNativeMethod(RubyModule clazz, int arity, long function) {
         super(clazz, Visibility.PUBLIC, CallConfiguration.FrameBacktraceScopeFull);
         this.arity = Arity.createArity(arity);
         this.function = function;
+        this.nativeInstance = Native.getInstance(clazz.getRuntime());
     }
 
     @Override
@@ -51,28 +53,33 @@ public abstract class AbstractNativeMethod extends DynamicMethod {
         return true;
     }
 
-    protected static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+    static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
         context.preMethodFrameOnly(self.getType(), name, self, Block.NULL_BLOCK);
         GIL.acquire();
     }
 
-    protected static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+    static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
         context.preMethodFrameOnly(self.getType(), name, self, block);
         GIL.acquire();
     }
 
 
-    protected void post(ThreadContext context) {
+    static void post(ThreadContext context) {
         GIL.release(context);
         context.postMethodFrameOnly();
     }
+
+    final Native getNativeInstance() {
+        return nativeInstance;
+    }
+
     
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
             String name, IRubyObject[] args) {
         pre(context, recv, clazz, name);
         try {
-            return Native.getInstance(context.getRuntime()).callMethod(context, function, recv, arity.getValue(), args);
+            return getNativeInstance().callMethod(context, function, recv, arity.getValue(), args);
         } finally {
             post(context);
         }
@@ -84,7 +91,7 @@ public abstract class AbstractNativeMethod extends DynamicMethod {
 
         pre(context, recv, clazz, name, block);
         try {
-            return Native.getInstance(context.getRuntime()).callMethod(context, function, recv, arity.getValue(), args);
+            return getNativeInstance().callMethod(context, function, recv, arity.getValue(), args);
         } finally {
             post(context);
         }
