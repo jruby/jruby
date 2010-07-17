@@ -93,7 +93,7 @@ jruby_io_struct(VALUE io) {
     if (h->getType() != T_FILE) {
         rb_raise(rb_eArgError, "Invalid type. Expected an object of type IO");
     }
-    ((RubyIO*) h)->toRIO();
+    return ((RubyIO*) h)->toRIO();
 }
 
 /** Send #write to io passing str. */
