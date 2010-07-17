@@ -53,30 +53,8 @@ rb_exc_raise(VALUE exc) {
     throw JavaException(env, jException);
 }
 
-class Finalizer {
-private:
-    VALUE (*fn_)(ANYARGS);
-    VALUE data_;
-    bool finalize_;
-public:
-    Finalizer(VALUE (*fn)(ANYARGS), VALUE data): finalize_(true), fn_(fn), data_(data) {
-    }
-    
-    ~Finalizer() {
-        if (unlikely(finalize_ && fn_ != NULL)) {
-            try {
-                (*fn_)(data_);
-            } catch (jruby::JavaException& ex) {}
-        }
-    }
-    
-    void disable() {
-        finalize_ = false;
-    }
 
-};
-
-VALUE
+extern "C" VALUE
 rb_ensure(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*e_proc)(ANYARGS), VALUE data2)
 {
     bool b_returned = false;
@@ -96,3 +74,19 @@ rb_ensure(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*e_proc)(ANYARGS), VALUE
         throw;
     }
 }
+
+#ifdef notyet /* does not quite work */
+
+extern "C" VALUE
+rb_rescue(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*r_proc)(ANYARGS), VALUE data2)
+{
+    try {
+        return (*b_proc)(data1);
+
+    } catch (jruby::JavaException& ex) {
+
+        return (*r_proc)(data2);
+    }
+}
+
+#endif
