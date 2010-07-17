@@ -51,23 +51,30 @@ public abstract class AbstractNativeMethod extends DynamicMethod {
         return true;
     }
 
-    protected void storeContext(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+    protected void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
         context.preMethodFrameOnly(self.getType(), name, self, Block.NULL_BLOCK);
+        GIL.acquire();
     }
 
-    protected void storeContext(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
-        context.preMethodFrameOnly(klazz, name, self, block);
+    protected void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+        context.preMethodFrameOnly(self.getType(), name, self, block);
+        GIL.acquire();
     }
 
+
+    protected void post(ThreadContext context) {
+        GIL.release(context);
+        context.postMethodFrameOnly();
+    }
+    
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
             String name, IRubyObject[] args) {
-        GIL.acquire();
-        storeContext(context, recv, clazz, name);
+        pre(context, recv, clazz, name);
         try {
             return Native.getInstance(context.getRuntime()).callMethod(context, function, recv, arity.getValue(), args);
         } finally {
-            GIL.release(context);
+            post(context);
         }
     }
 
@@ -75,12 +82,11 @@ public abstract class AbstractNativeMethod extends DynamicMethod {
     public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
             String name, IRubyObject[] args, Block block) {
 
-        GIL.acquire();
-        storeContext(context, recv, clazz, name);
+        pre(context, recv, clazz, name);
         try {
             return Native.getInstance(context.getRuntime()).callMethod(context, function, recv, arity.getValue(), args);
         } finally {
-            GIL.release(context);
+            post(context);
         }
     }
 
