@@ -28,7 +28,6 @@ LIBCEXT = $(JRUBY_NATIVE_DIR)/$(PLATFORM)/$(PREFIX)$(LIBNAME).$(JNIEXT)
 
 CPU ?= $(shell uname -m | sed -e 's/i[345678]86/i386/')
 MODEL = 32 # Default to 32bit compiles
-PLATFORM = $(CPU)-$(OS)
 
 # Try to determine JAVA_HOME if not set
 ifndef JAVA_HOME
@@ -68,9 +67,10 @@ JFLAGS = -fno-omit-frame-pointer -fno-strict-aliasing
 DBG_FLAGS = -DNDEBUG -O2
 OFLAGS = $(DBG_FLAGS) $(JFLAGS)
 
-# MacOS headers aren't completely warning free, so turn them off
+WFLAGS = -W -Wall -Wno-unused -Wno-parentheses -Werror
+# MacOS headers have some undefined macros, so don't warn on these on darwin
 ifneq ($(OS),darwin)
-  WFLAGS = -W -Werror -Wall -Wno-unused -Wno-parentheses -Wundef
+  WFLAGS += -Wundef
 endif
 
 PICFLAGS = -fPIC
@@ -88,6 +88,7 @@ CFLAGS += -D_REENTRANT -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
 CXXFLAGS = $(CFLAGS)
 
 ifeq ($(OS), win64)
+  PLATFORM = x86_64-Windows
   override CPU = x86_64
   JDK_INCLUDES=-I$(JNI_DIR)/win32/include -I$(JNI_DIR)/win32/include/win32
   CC = x86_64-w64-mingw32-gcc -m64
@@ -126,6 +127,7 @@ ifneq ($(findstring cygwin,$(BUILD_OS)),)
 endif
 
 ifeq ($(OS), win32)
+  PLATFORM = i386-Windows
   ifneq ($(findstring cygwin, $(BUILD_OS)),)
     CC += -mno-cygwin
     LDFLAGS += -mno-cygwin
@@ -139,9 +141,9 @@ ifeq ($(OS), win32)
 endif
 
 ifeq ($(OS), darwin)
+  PLATFORM = Darwin
   MACSDK = /Developer/SDKs/MacOSX10.5.sdk
   JDK_INCLUDES = -I$(MACSDK)/System/Library/Frameworks/JavaVM.framework/Headers
-  PLATFORM = Darwin
   ARCHES = ppc
   ifneq ($(findstring $(CPU), i386 x86_64),)
     ARCHES= i386 x86_64
@@ -158,11 +160,13 @@ ifeq ($(OS), darwin)
 endif
 
 ifeq ($(OS), linux)
+  PLATFORM = $(CPU)-Linux
   SOFLAGS = -shared -mimpure-text -static-libgcc -Wl,-soname,$(@F) -Wl,-O1
   CFLAGS += -pthread
 endif
 
 ifeq ($(OS), solaris)
+  PLATFORM = $(CPU)-SunOS
   CC = gcc
   CFLAGS += -D__EXTENSIONS__ -std=c99
   LD = /usr/ccs/bin/ld
@@ -171,6 +175,7 @@ ifeq ($(OS), solaris)
 endif
 
 ifeq ($(OS), aix)
+  PLATFORM = $(CPU)-AIX
   SOFLAGS = -shared -static-libgcc
   CFLAGS += -pthread
   LDFLAGS += -pthread
@@ -179,6 +184,7 @@ ifeq ($(OS), aix)
 endif
 
 ifneq ($(findstring bsd, $(OS)),)
+  PLATFORM = $(CPU)-FreeBSD
   SOFLAGS = -shared -static-libgcc
   CFLAGS += -pthread
   LDFLAGS += -pthread

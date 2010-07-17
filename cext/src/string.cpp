@@ -231,7 +231,7 @@ rb_string_value_cstr(VALUE* object_variable) {
     long long str_size = NUM2LL(callMethod(str, "length", 0));
     char* cstr = (char*)(RSTRING_PTR(str));
 
-    if(str_size != strlen(cstr)) {
+    if((unsigned int)str_size != strlen(cstr)) {
       rb_raise(rb_eArgError, "string contains NULL byte");
     }
 
@@ -299,7 +299,7 @@ rb_str2cstr(VALUE str, long* len) {
     char* cstr = RSTRING_PTR(str);
     if (len) {
         *len = RSTRING_LEN(str);
-    } else if(RSTRING_LEN(str) != strlen(cstr)) {
+    } else if((unsigned int)RSTRING_LEN(str) != strlen(cstr)) {
         rb_warn("string contains \\0 character");
     }
     return cstr;

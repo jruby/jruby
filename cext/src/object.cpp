@@ -118,12 +118,12 @@ rb_iv_set(VALUE obj, const char* name, VALUE value) {
 
 extern "C" VALUE
 rb_ivar_get(VALUE obj, ID ivar_name) {
-    rb_iv_get(obj, rb_id2name(ivar_name));
+    return rb_iv_get(obj, rb_id2name(ivar_name));
 }
 
 extern "C" VALUE
 rb_ivar_set(VALUE obj, ID ivar_name, VALUE value) {
-    rb_iv_set(obj, rb_id2name(ivar_name), value);
+    return rb_iv_set(obj, rb_id2name(ivar_name), value);
 }
 
 extern "C" void
