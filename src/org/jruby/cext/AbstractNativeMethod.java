@@ -51,12 +51,12 @@ public abstract class AbstractNativeMethod extends DynamicMethod {
         return true;
     }
 
-    protected void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+    protected static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
         context.preMethodFrameOnly(self.getType(), name, self, Block.NULL_BLOCK);
         GIL.acquire();
     }
 
-    protected void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+    protected static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
         context.preMethodFrameOnly(self.getType(), name, self, block);
         GIL.acquire();
     }
@@ -82,7 +82,7 @@ public abstract class AbstractNativeMethod extends DynamicMethod {
     public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
             String name, IRubyObject[] args, Block block) {
 
-        pre(context, recv, clazz, name);
+        pre(context, recv, clazz, name, block);
         try {
             return Native.getInstance(context.getRuntime()).callMethod(context, function, recv, arity.getValue(), args);
         } finally {
