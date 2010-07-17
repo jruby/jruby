@@ -53,6 +53,12 @@ namespace :spec do
   desc "Run rubyspecs expected to pass (against latest rubyspec version)"
   task :ci_latest_19 => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged_19']
 
+  desc "Run optional C API rubyspecs"
+  task :ci_cext => ['spec:fast_forward_to_rubyspec_head'] do
+    mspec :spec_config => CEXT_MSPEC_FILE
+    fail "One or more Ruby spec runs have failed" if spec_run_error
+  end
+
   # Note: For this point below it is your reponsibility to make sure specs
   # are checked out.
 
