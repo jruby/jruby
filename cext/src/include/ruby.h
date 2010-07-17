@@ -225,6 +225,7 @@ void xfree(void*);
 #define RTEST(v) (((v) & ~Qnil) != 0)
 #define NIL_P(v) ((v) == Qnil)
 #define TYPE(x) rb_type((VALUE)(x))
+#define CLASS_OF(x) rb_class_of((VALUE)(x))
 
 /** Convert a Fixnum into an int. */
 #define FIX2INT(x) ((int) RSHIFT((SIGNED_VALUE)x,1))
