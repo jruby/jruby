@@ -37,6 +37,7 @@ namespace jruby {
     jclass RubyFloat_class;
     jclass RubyArray_class;
     jclass RubyString_class;
+    jclass RubyStruct_class;
     jclass Handle_class;
     jclass GC_class;
     jclass NativeMethod_class;
@@ -45,6 +46,7 @@ namespace jruby {
     jclass Symbol_class;
     jclass JRuby_class;
     jclass ByteList_class;
+    jclass Block_class;
     jmethodID JRuby_callMethod;
     jmethodID JRuby_callMethod0;
     jmethodID JRuby_callMethod1;
@@ -81,6 +83,7 @@ namespace jruby {
     jmethodID RubyString_newStringNoCopy;
     jmethodID RubyString_view;
     jmethodID RubySymbol_getSymbolLong;
+    jmethodID RubyStruct_newInstance;
     jmethodID IRubyObject_callMethod;
     jmethodID IRubyObject_asJavaString_method;
     jmethodID IRubyObject_respondsTo_method;
@@ -93,8 +96,10 @@ namespace jruby {
     jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
     jfieldID RubySymbol_id_field;
     jfieldID RubySymbol_symbol_field;
+    jfieldID Block_null_block_field;
 
     jobject runtime;
+    jobject nullBlock;
     jobject nilRef;
     jobject trueRef;
     jobject falseRef;
@@ -169,6 +174,7 @@ loadIds(JNIEnv* env)
     RubyFloat_class = loadClass(env, "org/jruby/RubyFloat");
     RubyArray_class = loadClass(env, "org/jruby/RubyArray");
     RubyString_class = loadClass(env, "org/jruby/RubyString");
+    RubyStruct_class = loadClass(env, "org/jruby/RubyStruct");
     IRubyObject_class = loadClass(env, "org/jruby/runtime/builtin/IRubyObject");
     Handle_class = loadClass(env, "org/jruby/cext/Handle");
     GC_class = loadClass(env, "org/jruby/cext/GC");
@@ -179,6 +185,7 @@ loadIds(JNIEnv* env)
     Symbol_class = loadClass(env, "org/jruby/RubySymbol");
     JRuby_class = loadClass(env, "org/jruby/cext/JRuby");
     ByteList_class = loadClass(env, "org/jruby/util/ByteList");
+    Block_class = loadClass(env, "org/jruby/runtime/Block");
 
     Handle_address_field = getFieldID(env, Handle_class, "address", "J");
     Ruby_defineModule_method = getMethodID(env, Ruby_class, "defineModule", "(Ljava/lang/String;)Lorg/jruby/RubyModule;");
@@ -219,6 +226,8 @@ loadIds(JNIEnv* env)
             "view", "([B)V");
     RubySymbol_getSymbolLong = getStaticMethodID(env, Symbol_class, "getSymbolLong",
             "(Lorg/jruby/Ruby;J)Lorg/jruby/RubySymbol;");
+    RubyStruct_newInstance = getStaticMethodID(env, RubyStruct_class, "newInstance",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/Block;)Lorg/jruby/RubyClass;");
     JRuby_callMethod = getStaticMethodID(env, JRuby_class, "callRubyMethod",
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_callMethod0 = getStaticMethodID(env, JRuby_class, "callRubyMethod0",
@@ -255,6 +264,7 @@ loadIds(JNIEnv* env)
     ByteList_length_field = getFieldID(env, ByteList_class, "realSize", "I");
     RubySymbol_id_field = getFieldID(env, Symbol_class, "id", "I");
     RubySymbol_symbol_field = getFieldID(env, Symbol_class, "symbol", "Ljava/lang/String;");
+    Block_null_block_field = env->GetStaticFieldID(Block_class, "NULL_BLOCK", "Lorg/jruby/runtime/Block;");
 }
 
 static jobject
@@ -271,7 +281,8 @@ Java_org_jruby_cext_Native_initNative(JNIEnv* env, jobject self, jobject runtime
     try {
         loadIds(env);
         jruby::runtime = env->NewGlobalRef(runtime);
-        
+        jruby::nullBlock = env->NewGlobalRef(env->GetStaticObjectField(Block_class, Block_null_block_field));
+
         constHandles[0] = new Handle(env, callObjectMethod(env, runtime, Ruby_getFalse_method), T_FALSE);
         constHandles[0]->flags |= FL_CONST;
 

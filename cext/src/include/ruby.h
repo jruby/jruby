@@ -639,6 +639,9 @@ const char *rb_id2name(ID sym);
 /** Call #to_sym on object. */
 ID rb_to_id(VALUE);
 
+/** Returns a Struct with the specified fields. */
+VALUE rb_struct_define(const char *name, ...);
+
 void* jruby_data(VALUE);
 struct RData* jruby_rdata(VALUE);
 

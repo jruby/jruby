@@ -49,6 +49,7 @@ namespace jruby {
     extern jclass RubyFloat_class;
     extern jclass RubyArray_class;
     extern jclass RubyString_class;
+    extern jclass RubyStruct_class;
     extern jclass IRubyObject_class;
     extern jclass GC_class;
     extern jclass Handle_class;
@@ -79,6 +80,7 @@ namespace jruby {
     extern jmethodID RubyString_newStringNoCopy;
     extern jmethodID RubyString_view;
     extern jmethodID RubySymbol_getSymbolLong;
+    extern jmethodID RubyStruct_newInstance;
     extern jmethodID GC_trigger;
     extern jmethodID Handle_valueOf;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
@@ -106,6 +108,7 @@ namespace jruby {
     extern jfieldID RubySymbol_symbol_field;
 
     extern jobject runtime;
+    extern jobject nullBlock;
     extern jobject nilRef;
     extern jobject trueRef;
     extern jobject falseRef;
@@ -156,6 +159,7 @@ namespace jruby {
     VALUE objectToValue(JNIEnv* env, jobject obj);
 
     inline jobject getRuntime() { return jruby::runtime; }
+    inline jobject getNullBlock() { return jruby::nullBlock; }
     jobject getTrue();
     jobject getFalse();
     jobject getNil();
