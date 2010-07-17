@@ -51,15 +51,21 @@ rb_funcall2(VALUE recv, ID meth, int argCount, VALUE* args)
 }
 
 extern "C" VALUE
-rb_call_super(int argc, const VALUE *argv) {
+rb_call_super(int argc, const VALUE *argv)
+{
     JLocalEnv env;
-    jobjectArray params = env->NewObjectArray((jsize)argc, IRubyObject_class, NULL);
-    int i;
-    for (i = 0; i < argc; i++) {
-        env->SetObjectArrayElement(params, (jsize)i, valueToObject(env, argv[i]));
-    }
+
+    jobjectArray argArray = env->NewObjectArray(argc, IRubyObject_class, NULL);
     checkExceptions(env);
 
-    jobject result = env->CallObjectMethod(JRuby_class, JRuby_callSuperMethod, getRuntime(), params);
-    return objectToValue(env, result);
+    for (int i = 0; i < argc; i++) {
+        env->SetObjectArrayElement(argArray, i, valueToObject(env, argv[i]));
+        checkExceptions(env);
+    }
+    
+
+    jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_callSuperMethod, getRuntime(), argArray);
+    checkExceptions(env);
+    
+    return (VALUE) result;
 }

@@ -29,29 +29,27 @@ public final class NativeMethod2 extends AbstractNativeMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        GIL.acquire();
-        storeContext(context, self, klazz, name);
+        pre(context, self, klazz, name);
         try {
             return Native.getInstance(context.getRuntime()).callMethod2(function,
                     Handle.nativeHandle(self),
                     Handle.nativeHandle(arg0),
                     Handle.nativeHandle(arg1));
         } finally {
-            GIL.release(context);
+            post(context);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        GIL.acquire();
-        storeContext(context, self, klazz, name, block);
+        pre(context, self, klazz, name, block);
         try {
             return Native.getInstance(context.getRuntime()).callMethod2(function,
                     Handle.nativeHandle(self),
                     Handle.nativeHandle(arg0),
                     Handle.nativeHandle(arg1));
         } finally {
-            GIL.release(context);
+            post(context);
         }
     }
 

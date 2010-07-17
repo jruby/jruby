@@ -77,7 +77,9 @@ public class JRuby {
 
     public static long callSuperMethod(Ruby runtime, IRubyObject[] args) {
         ThreadContext currentContext = runtime.getCurrentContext();
-        IRubyObject retval = RuntimeHelpers.invokeSuper(currentContext, runtime.getCurrentContext().getFrameSelf(), args, Block.NULL_BLOCK);
+        IRubyObject retval = RuntimeHelpers.invokeSuper(currentContext, 
+                runtime.getCurrentContext().getFrameSelf(), args, Block.NULL_BLOCK);
+
         return Handle.nativeHandle(retval);
     }
 
