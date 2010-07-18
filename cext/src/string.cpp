@@ -254,6 +254,11 @@ rb_String(VALUE obj) {
     return rb_convert_type(obj, T_STRING, "String", "to_s");
 }
 
+extern "C" VALUE
+rb_check_string_type(VALUE val) {
+    return rb_check_convert_type(val, 0, "String", "to_str");
+}
+
 static RubyString*
 jruby_str(VALUE v)
 {

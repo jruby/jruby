@@ -181,3 +181,8 @@ rb_ary_aref(int argc, VALUE* argv, VALUE ary)
 {
     return callMethodA(ary, "slice", argc, argv);
 }
+
+extern "C" VALUE
+rb_check_array_type(VALUE val) {
+    return rb_check_convert_type(val, 0, "Array", "to_ary");
+}

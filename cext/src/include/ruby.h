@@ -701,6 +701,10 @@ void rb_warning(const char *fmt, ...);
 int rb_respond_to(VALUE obj_handle, ID method_name);
 /** Returns object returned by invoking method on object if right type, or raises error. */
 VALUE rb_convert_type(VALUE object_handle, int type, const char* type_name, const char* method_name);
+/** Returns object returned by invoking method on object or nil */
+VALUE rb_check_convert_type(VALUE val, int type, const char* type_name, const char* method);
+VALUE rb_check_array_type(VALUE val);
+VALUE rb_check_string_type(VALUE val);
 
 /** Define a constant in given Module's namespace. */
 void rb_define_const(VALUE module, const char* name, VALUE obj);

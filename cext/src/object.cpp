@@ -86,6 +86,16 @@ rb_convert_type(VALUE val, int type, const char* type_name, const char* method)
 }
 
 extern "C" VALUE
+rb_check_convert_type(VALUE val, int type, const char* type_name, const char* method)
+{
+    if (TYPE(val) == type) {
+        return val;
+    }
+
+    return convert_type(val, type_name, method, 0);
+}
+
+extern "C" VALUE
 rb_iv_get(VALUE obj, const char* name) {
     JLocalEnv env;
 
