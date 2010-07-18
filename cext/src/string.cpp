@@ -202,7 +202,7 @@ rb_tainted_str_new_cstr(const char *ptr)
 extern "C" VALUE
 rb_str_to_str(VALUE obj)
 {
-    return rb_convert_type(obj, 0, "String", "to_str");
+    return rb_convert_type(obj, T_STRING, "String", "to_str");
 }
 
 extern "C" VALUE
@@ -251,7 +251,7 @@ rb_str_length(VALUE str)
 
 extern "C" VALUE
 rb_String(VALUE obj) {
-    return rb_convert_type(obj, 0, "String", "to_s");
+    return rb_convert_type(obj, T_STRING, "String", "to_s");
 }
 
 static RubyString*
