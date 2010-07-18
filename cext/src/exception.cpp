@@ -75,7 +75,6 @@ rb_ensure(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*e_proc)(ANYARGS), VALUE
     }
 }
 
-#ifdef notyet /* does not quite work */
 
 extern "C" VALUE
 rb_rescue(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*r_proc)(ANYARGS), VALUE data2)
@@ -89,4 +88,3 @@ rb_rescue(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*r_proc)(ANYARGS), VALUE
     }
 }
 
-#endif
