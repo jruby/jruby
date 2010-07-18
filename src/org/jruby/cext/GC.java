@@ -19,6 +19,7 @@
 package org.jruby.cext;
 
 import java.lang.ref.Reference;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -33,7 +34,7 @@ import org.jruby.util.WeakIdentityHashMap;
 public class GC {
 
     @SuppressWarnings(value="unchecked")
-    private static final Map<Object, Handle> nonRubyRefs = new WeakIdentityHashMap();
+    private static final Map<Object, Handle> nativeHandles = new IdentityHashMap<Object, Handle>();
     private static final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory());
     private static volatile Reference<Object> reaper = null;
     private static Runnable gcTask;
@@ -63,11 +64,7 @@ public class GC {
                     n.gc();
                     Object obj;
                     while ((obj = n.pollGC()) != null) {
-                        if (obj instanceof RubyBasicObject) {
-                            ((RubyBasicObject) obj).setNativeHandle(null);
-                        } else {
-                            nonRubyRefs.remove(obj);
-                        }
+                        nativeHandles.remove(obj);
                     }
                 } finally {
                     GIL.releaseNoCleanup();
@@ -77,9 +74,7 @@ public class GC {
     }
 
     static final Handle lookup(IRubyObject obj) {
-        return obj instanceof RubyBasicObject
-                ? (Handle) ((RubyBasicObject) obj).getNativeHandle()
-                : nonRubyRefs.get(obj);
+        return nativeHandles.get(obj);
     }
 
     /**
@@ -87,12 +82,7 @@ public class GC {
      * @param obj
      */
     static final void register(IRubyObject obj, Handle h) {
-        if (obj instanceof RubyBasicObject) {
-            ((RubyBasicObject) obj).setNativeHandle(h);
-
-        } else {
-            nonRubyRefs.put(obj, h);
-        }
+        nativeHandles.put(obj, h);
     }
 
     static final void cleanup() {

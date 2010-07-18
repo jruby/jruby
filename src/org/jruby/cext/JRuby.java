@@ -115,7 +115,7 @@ public class JRuby {
 
     public static RubyFloat newFloat(Ruby runtime, long handle, double value) {
         final RubyFloat f = RubyFloat.newFloat(runtime, value);
-        f.setNativeHandle(Handle.newHandle(runtime, f, handle));
+        GC.register(f, Handle.newHandle(runtime, f, handle));
 
         return f;
     }
@@ -143,12 +143,12 @@ public class JRuby {
 
     public static long ll2inum(Ruby runtime, long l) {
         RubyFixnum n = RubyFixnum.newFixnum(runtime, l);
-        Handle h = n.getNativeHandle();
+        Handle h = GC.lookup(n);
         if (h != null) {
             return h.getAddress();
         }
         h = Handle.newHandle(runtime, n, Native.getInstance(runtime).newFixnumHandle(n, l));
-        n.setNativeHandle(h);
+        GC.register(n, h);
 
         return h.getAddress();
     }
@@ -160,13 +160,13 @@ public class JRuby {
                     ? RubyBignum.newBignum(runtime, BigInteger.valueOf(l & 0x7fffffffffffffffL).add(UINT64_BASE))
                     : runtime.newFixnum(l);
 
-        Handle h = n.getNativeHandle();
+        Handle h = GC.lookup(n);
         if (h != null) {
             return h.getAddress();
         }
         // FIXME should create Bignum handle for Bignum values
         h = Handle.newHandle(runtime, n, Native.getInstance(runtime).newFixnumHandle(n, l));
-        n.setNativeHandle(h);
+        GC.register(n, h);
 
         return h.getAddress();
     }
