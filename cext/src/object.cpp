@@ -145,6 +145,26 @@ rb_ivar_set(VALUE obj, ID ivar_name, VALUE value) {
     return rb_iv_set(obj, rb_id2name(ivar_name), value);
 }
 
+extern "C" VALUE
+rb_ivar_defined(VALUE obj, ID ivar, VALUE value) {
+    JLocalEnv env;
+    const char* name = rb_id2name(ivar);
+
+    char var_name[strlen(name) + 1];
+    (name[0] != '@') ? strcpy(var_name, "@")[0] : var_name[0] = '\0';
+    strcat(var_name, name);
+
+    jmethodID mid = getMethodID(env, RubyBasicObject_class, "hasInstanceVariable", "(Ljava/lang/String;)Z");
+    jboolean retval = env->CallBooleanMethod(valueToObject(env, obj), mid, env->NewStringUTF(var_name));
+    checkExceptions(env);
+
+    if (retval == JNI_TRUE) {
+        return Qtrue;
+    } else {
+        return Qfalse;
+    }
+}
+
 extern "C" void
 rb_obj_call_init(VALUE recv, int arg_count, VALUE* args) {
     callMethodANonConst(recv, "initialize", arg_count, args);
