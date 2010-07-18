@@ -168,7 +168,6 @@ rb_str_substr(VALUE str, long beg, long len)
     return callMethod(str, "[]", 2, LONG2NUM(beg), LONG2NUM(len));
 }
 
-
 extern "C" VALUE
 rb_tainted_str_new(const char* ptr, long len)
 {

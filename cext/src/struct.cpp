@@ -35,8 +35,8 @@ rb_struct_define(const char* name_cstr, ...)
     while (args[argc] = va_arg(varargs, char*)) {
         argc++;
         if (argc >= capa) {
-            args = (char**)realloc(args, sizeof(char) * capa * 2);
-            capa = capa * 2;
+            capa = capa * 2; // Double the size
+            args = (char**)realloc(args, sizeof(char) * capa);
         }
     }
     va_end(varargs);
@@ -55,6 +55,7 @@ rb_struct_define(const char* name_cstr, ...)
         env->SetObjectArrayElement(argArray, i + 1, valueToObject(env, rb_str_new_cstr(args[i])));
         checkExceptions(env);
     }
+    free(args);
 
     jmethodID mid = getMethodID(env, Ruby_class, "getStructClass", "()Lorg/jruby/RubyClass;");
     jobject structClass = env->CallObjectMethod(getRuntime(), mid);
