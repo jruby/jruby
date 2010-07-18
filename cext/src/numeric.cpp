@@ -117,8 +117,15 @@ rb_uint2inum(unsigned long v)
 }
 
 extern "C" VALUE
-rb_Integer(VALUE obj) {
-    return callMethod(obj, "to_i", 0);
+rb_Integer(VALUE val)
+{
+    return rb_to_integer(val, "to_i");
+}
+
+extern "C" VALUE
+rb_to_int(VALUE val)
+{
+    return rb_to_integer(val, "to_int");
 }
 
 static inline RubyFixnum*

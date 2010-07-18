@@ -377,7 +377,9 @@ VALUE rb_uint2big(unsigned long long);
 VALUE rb_Integer(VALUE);
 
 /** Converts an object to an Integer by calling #to_int. */
-#define rb_to_int(value) rb_Integer(value)
+VALUE rb_to_int(VALUE);
+/** Converts an object to an Integer using the specified method */
+VALUE rb_to_integer(VALUE, const char*);
 
 /** Convert a VALUE into a long int. */
 static inline long

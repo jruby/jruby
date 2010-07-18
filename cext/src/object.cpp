@@ -176,6 +176,22 @@ rb_obj_as_string(VALUE obj)
 }
 
 extern "C" VALUE
+rb_to_integer(VALUE val, const char *method)
+{
+    VALUE v;
+
+    if (FIXNUM_P(val)) return val;
+    if (TYPE(val) == T_BIGNUM) return val;
+    v = convert_type(val, "Integer", method, 1);
+    if (!rb_obj_is_kind_of(v, rb_cInteger)) {
+	const char *cname = rb_obj_classname(val);
+	rb_raise(rb_eTypeError, "can't convert %s to Integer (%s#%s gives %s)",
+		 cname, cname, method, rb_obj_classname(v));
+    }
+    return v;
+}
+
+extern "C" VALUE
 rb_inspect(VALUE obj)
 {
     return rb_obj_as_string(callMethodA(obj, "inspect", 0, 0));
