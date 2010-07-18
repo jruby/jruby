@@ -1,0 +1,1 @@
+fails:ENV.each_pair uses the locale encoding
