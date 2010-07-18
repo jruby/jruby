@@ -38,6 +38,7 @@ namespace jruby {
     extern jclass NativeObjectAllocator_class;
     extern jclass ObjectAllocator_class;
     extern jclass Ruby_class;
+    extern jclass RubyBignum_class;
     extern jclass RubyData_class;
     extern jclass RubyFloat_class;
     extern jclass RubyObject_class;
@@ -73,6 +74,8 @@ namespace jruby {
     extern jmethodID Ruby_newFixnum_method;
     extern jmethodID RubyData_newRubyData_method;
     extern jmethodID RaiseException_constructor;
+    extern jmethodID RubyBignum_big2long_method;
+    extern jmethodID RubyBignum_big2dbl_method;
     extern jmethodID RubyNumeric_num2long_method;
     extern jmethodID RubyNumeric_num2chr_method;
     extern jmethodID RubyNumeric_num2dbl_method;    

@@ -359,6 +359,14 @@ unsigned long rb_fix2uint(VALUE);
 long long rb_num2ll(VALUE);
 unsigned long long rb_num2ull(VALUE);
 double rb_num2dbl(VALUE);
+SIGNED_VALUE rb_big2long(VALUE);
+#define rb_big2int(x) rb_big2long(x)
+VALUE rb_big2ulong(VALUE);
+#define rb_big2uint(x) rb_big2ulong(x)
+long long rb_big2ll(VALUE);
+double rb_big2dbl(VALUE);
+VALUE rb_big2str(VALUE, int);
+
 
 VALUE rb_int2inum(long);
 VALUE rb_uint2inum(unsigned long);
@@ -367,6 +375,7 @@ VALUE rb_ull2inum(unsigned long long);
 VALUE rb_int2big(long long);
 VALUE rb_uint2big(unsigned long long);
 VALUE rb_Integer(VALUE);
+
 /** Converts an object to an Integer by calling #to_int. */
 #define rb_to_int(value) rb_Integer(value)
 

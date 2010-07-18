@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 Tim Felgentreff
+ * Copyright (C) 2010 Wayne Meissner
  *
  * This file is part of jruby-cext.
  *
@@ -22,7 +23,53 @@
 
 using namespace jruby;
 
+// FIXME rb_big_bytes_used() is not a ruby function
 extern "C" int
-rb_big_bytes_used(VALUE obj) {
-    return rb_funcall(obj, rb_intern("size"), 0);
+rb_big_bytes_used(VALUE obj)
+{
+    return NUM2INT(callMethod(obj, "size", 0));
+}
+
+extern "C" long long
+rb_big2ll(VALUE obj)
+{
+    JLocalEnv env;
+    jvalue params[1];
+
+    params[0].l = valueToObject(env, obj);
+    jlong result = env->CallStaticLongMethodA(RubyNumeric_class, RubyNumeric_num2long_method, params);
+    checkExceptions(env);
+
+    return (long long) result;
+}
+
+extern "C" long
+rb_big2long(VALUE obj)
+{
+    return (long) rb_big2ll(obj);
+}
+
+extern "C" unsigned long
+rb_big2ulong(VALUE obj)
+{
+    return (long) rb_big2ll(obj);
+}
+
+extern "C" double
+rb_big2dbl(VALUE obj)
+{
+    JLocalEnv env;
+    jvalue params[1];
+
+    params[0].l = valueToObject(env, obj);
+    jdouble result = env->CallStaticDoubleMethodA(RubyBignum_class, RubyBignum_big2dbl_method, params);
+    checkExceptions(env);
+
+    return result;
+}
+
+extern "C" VALUE
+rb_big2str(VALUE obj, int radix)
+{
+    return callMethod(obj, "to_s", 1, INT2FIX(radix));
 }

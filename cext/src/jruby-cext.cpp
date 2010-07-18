@@ -30,6 +30,7 @@ namespace jruby {
     jclass Ruby_class;
     jclass RubyObject_class;
     jclass RubyBasicObject_class;
+    jclass RubyBignum_class;
     jclass RubyClass_class;
     jclass RubyData_class;    
     jclass RubyModule_class;
@@ -77,6 +78,8 @@ namespace jruby {
     jmethodID RaiseException_constructor;
     jmethodID RubyData_newRubyData_method;
     jmethodID RubyObject_getNativeTypeIndex_method;
+    jmethodID RubyBignum_big2dbl_method;
+    jmethodID RubyBignum_big2long_method;
     jmethodID RubyNumeric_num2long_method;
     jmethodID RubyNumeric_num2chr_method;
     jmethodID RubyNumeric_num2dbl_method;    
@@ -169,6 +172,7 @@ loadIds(JNIEnv* env)
     RaiseException_class = loadClass(env, "org/jruby/exceptions/RaiseException");
     RubyObject_class = loadClass(env, "org/jruby/RubyObject");
     RubyBasicObject_class = loadClass(env, "org/jruby/RubyBasicObject");
+    RubyBignum_class = loadClass(env, "org/jruby/RubyBignum");
     RubyClass_class = loadClass(env, "org/jruby/RubyClass");
     RubyData_class = loadClass(env, "org/jruby/cext/RubyData");
     RubyFloat_class = loadClass(env, "org/jruby/RubyFloat");
@@ -203,7 +207,13 @@ loadIds(JNIEnv* env)
     RaiseException_constructor = getMethodID(env, RaiseException_class, "<init>",
             "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;Ljava/lang/String;Z)V");
     RubyObject_getNativeTypeIndex_method = getMethodID(env, RubyObject_class, "getNativeTypeIndex", "()I");
-    
+
+    RubyBignum_big2dbl_method = getStaticMethodID(env, RubyBignum_class, "big2dbl",
+            "(Lorg/jruby/RubyBignum;)D");
+
+    RubyBignum_big2long_method = getStaticMethodID(env, RubyBignum_class, "big2long",
+            "(Lorg/jruby/RubyBignum;)J");
+
     RubyNumeric_num2long_method = getStaticMethodID(env, RubyNumeric_class, "num2long",
             "(Lorg/jruby/runtime/builtin/IRubyObject;)J");
     RubyNumeric_num2chr_method = getStaticMethodID(env, RubyNumeric_class, "num2chr",
