@@ -761,6 +761,8 @@ VALUE rb_obj_tainted(VALUE);
 #define OBJ_TAINT(obj) rb_obj_taint((obj))
 #define OBJ_TAINTED(obj) rb_obj_tainted((obj))
 
+VALUE rb_attr_get(VALUE obj, ID id);
+
 VALUE rb_exc_new(VALUE, const char*, long);
 VALUE rb_exc_new2(VALUE, const char*);
 VALUE rb_exc_new3(VALUE, VALUE);

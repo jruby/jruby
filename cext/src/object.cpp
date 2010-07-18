@@ -153,3 +153,9 @@ rb_obj_tainted(VALUE obj)
 {
     return callMethodA(obj, "tainted?", 0, NULL);
 }
+
+extern "C" VALUE
+rb_attr_get(VALUE obj, ID id)
+{
+    return callMethod(obj, "instance_variable_get", 1, ID2SYM(id));
+}
