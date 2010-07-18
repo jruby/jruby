@@ -33,6 +33,7 @@ public:
     ~JavaException() throw();
     
     jthrowable getCause() const;
+    jthrowable getCause(JNIEnv* env) const;
     const char* what() const throw();
 };
 

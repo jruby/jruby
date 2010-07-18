@@ -21,6 +21,8 @@
 #include "JLocalEnv.h"
 #include "JavaException.h"
 
+using namespace jruby;
+
 extern "C" VALUE
 rb_exc_new(VALUE etype, const char *ptr, long len)
 {
@@ -83,8 +85,25 @@ rb_rescue(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*r_proc)(ANYARGS), VALUE
         return (*b_proc)(data1);
 
     } catch (jruby::JavaException& ex) {
+        JLocalEnv env;
 
-        return (*r_proc)(data2);
+        jthrowable t = ex.getCause(env);
+        if (!env->IsInstanceOf(t, RaiseException_class)) {
+            // Not a ruby exception, just propagate
+            throw;
+        }
+
+        jobject rubyException = env->GetObjectField(t, RaiseException_exception_field);
+        checkExceptions(env);
+
+        VALUE exc = objectToValue(env, rubyException);
+        if (rb_obj_is_kind_of(exc, rb_eStandardError)) {
+            return (*r_proc)(data2);
+        }
+
+        rb_raise(rb_eException, "wrong exception raised (expected StandardError subclass)");
+
+        return Qnil;
     }
 }
 

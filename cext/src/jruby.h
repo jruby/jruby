@@ -106,6 +106,7 @@ namespace jruby {
     extern jfieldID RubyFloat_value_field;
     extern jfieldID RubySymbol_id_field;
     extern jfieldID RubySymbol_symbol_field;
+    extern jfieldID RaiseException_exception_field;
 
     extern jobject runtime;
     extern jobject nullBlock;

@@ -97,6 +97,7 @@ namespace jruby {
     jfieldID RubySymbol_id_field;
     jfieldID RubySymbol_symbol_field;
     jfieldID Block_null_block_field;
+    jfieldID RaiseException_exception_field;
 
     jobject runtime;
     jobject nullBlock;
@@ -266,6 +267,7 @@ loadIds(JNIEnv* env)
     RubySymbol_id_field = getFieldID(env, Symbol_class, "id", "I");
     RubySymbol_symbol_field = getFieldID(env, Symbol_class, "symbol", "Ljava/lang/String;");
     Block_null_block_field = env->GetStaticFieldID(Block_class, "NULL_BLOCK", "Lorg/jruby/runtime/Block;");
+    RaiseException_exception_field = getFieldID(env, RaiseException_class, "exception", "Lorg/jruby/RubyException;");
 }
 
 static jobject

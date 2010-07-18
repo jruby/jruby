@@ -44,15 +44,24 @@ jruby::JavaException::JavaException(JNIEnv* env, const char* exceptionName, cons
     va_end(ap);
 }
 
-jruby::JavaException::~JavaException() throw() {
+jruby::JavaException::~JavaException() throw()
+{
     try {
         JLocalEnv env(false);
         env->DeleteGlobalRef(jException);
     } catch(...) {}
 }
 
-jthrowable jruby::JavaException::getCause() const {
+jthrowable
+jruby::JavaException::getCause() const
+{
     JLocalEnv env(false);
+    return (jthrowable) env->NewLocalRef(this->jException);
+}
+
+jthrowable
+jruby::JavaException::getCause(JNIEnv* env) const
+{
     return (jthrowable) env->NewLocalRef(this->jException);
 }
 
