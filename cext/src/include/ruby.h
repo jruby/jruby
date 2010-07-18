@@ -79,6 +79,8 @@ typedef intptr_t SIGNED_VALUE;
 #define ID2SYM(x) ((VALUE)(((long)(x))<<8|SYMBOL_FLAG))
 #define SYM2ID(x) RSHIFT((unsigned long)x,8)
 
+#define OBJ_FROZEN(x) jruby_obj_frozen(x)
+
 /** The false object. */
 #define Qfalse ((VALUE)0)
 /** The true object. */
@@ -749,6 +751,8 @@ VALUE rb_block_proc();
 
 /** Freeze object and return it. */
 VALUE rb_obj_freeze(VALUE obj);
+/** Raise an error if the object is frozen */
+void rb_check_frozen(VALUE obj);
 /** Allocate uninitialised instance of given class. */
 VALUE rb_obj_alloc(VALUE klass);
 /** Call initialize */

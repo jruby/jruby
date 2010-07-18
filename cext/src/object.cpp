@@ -27,6 +27,11 @@
 
 using namespace jruby;
 
+static bool
+jruby_obj_frozen(VALUE obj) {
+    return (callMethod(obj, "frozen?", 0) == Qtrue);
+}
+
 static VALUE
 convert_type(VALUE val, const char* type_name, const char* method, int raise)
 {
@@ -215,4 +220,12 @@ rb_any_to_s(VALUE obj)
     asprintf(&buf, "#<%s:%p>", rb_obj_classname(obj), (void *) obj);
     
     return rb_str_new_cstr(buf);
+}
+
+extern "C" void
+rb_check_frozen(VALUE obj)
+{
+    if (OBJ_FROZEN(obj)) {
+        rb_raise(rb_eRuntimeError, "can't modify frozen %s", rb_obj_classname(obj));
+    }
 }
