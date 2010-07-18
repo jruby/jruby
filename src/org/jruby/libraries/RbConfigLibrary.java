@@ -254,13 +254,20 @@ public class RbConfigLibrary implements Library {
         String cflags = jflags + " -fexceptions" + picflags;
         String soflags = true ? "" : " -shared -static-libgcc -mimpure-text -Wl,-O1 ";
         String ldflags = soflags;
+        String ldshared = "cc -shared ";
         
         String archflags = " -arch " + Platform.ARCH;
 
-        if (Platform.IS_MAC) {
-            // this set is only for darwin
+        // A few platform specific values
+        if (Platform.IS_WINDOWS) {
+            setConfig(mkmfHash, "DLEXT", "dll");
+        } else if (Platform.IS_MAC) {
+            setConfig(mkmfHash, "DLEXT", "bundle");
+            ldshared = "cc -dynamic -bundle -undefined suppress -flat_namespace ";
             cflags += " -DTARGET_RT_MAC_CFM=0 ";
             ldflags += " -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 -undefined dynamic_lookup ";
+        } else {
+            setConfig(mkmfHash, "DLEXT", "so");
         }
 
         String libext = "a";
@@ -284,20 +291,10 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "LIBRUBYARG", "");
         setConfig(mkmfHash, "prefix", " "); // This must not be empty for some extconf.rb's to work
         setConfig(mkmfHash, "ruby_install_name", jrubyScript());
-        if (Platform.IS_WINDOWS) {
-            setConfig(mkmfHash, "DLEXT", "dll");
-        } else if (Platform.IS_MAC) {
-            setConfig(mkmfHash, "DLEXT", "bundle");
-        } else {
-            setConfig(mkmfHash, "DLEXT", "so");
-        }
+        setConfig(mkmfHash, "LDSHARED", ldshared);
+        setConfig(mkmfHash, "RUBY_PLATFORM", getOSName());
         setConfig(mkmfHash, "CC", "cc ");
         setConfig(mkmfHash, "CPP", "cc -E ");
-        if (Platform.IS_MAC) {
-            setConfig(mkmfHash, "LDSHARED", "cc -dynamic -bundle -undefined suppress -flat_namespace ");
-        } else {
-            setConfig(mkmfHash, "LDSHARED", "cc -shared ");
-        }
         setConfig(mkmfHash, "OUTFLAG", "-o ");
         setConfig(mkmfHash, "PATH_SEPARATOR", ":");
         setConfig(mkmfHash, "INSTALL", "install -c ");

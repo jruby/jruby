@@ -27,6 +27,7 @@ end
 
 # JRuby RbConfig::CONFIG is not complete. 
 Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
+RUBY_PLATFORM = Config::MAKEFILE_CONFIG['RUBY_PLATFORM']
 
 $topdir     = File.expand_path(File.join(__FILE__, "..", "..", "..", "native"))
 $top_srcdir = $topdir
