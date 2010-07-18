@@ -39,7 +39,7 @@ rb_warn(const char *fmt, ...) {
     vsnprintf(msg, RB_EXC_BUFSIZE, fmt, args);
     va_end(args);
 
-    callMethod(rb_mKernel, "warn", 1, rb_str_new2(msg));
+    callMethod(rb_mKernel, "warn", 1, rb_str_new_cstr(msg));
 }
 
 extern "C" void
@@ -51,7 +51,7 @@ rb_warning(const char *fmt, ...) {
     vsnprintf(msg, RB_EXC_BUFSIZE, fmt, args);
     va_end(args);
 
-    callMethod(rb_mKernel, "warning", 1, rb_str_new2(msg));
+    callMethod(rb_mKernel, "warning", 1, rb_str_new_cstr(msg));
 }
 
 extern "C" VALUE
