@@ -331,6 +331,7 @@ VALUE rb_require(const char* name);
 
 void rb_raise(VALUE exc, const char *fmt, ...) __attribute__((noreturn));
 VALUE rb_rescue(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE);
+VALUE rb_rescue2(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE,...);
 VALUE rb_ensure(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE);
 
 void rb_fatal(const char *fmt, ...) __attribute__((noreturn));

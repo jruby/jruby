@@ -101,7 +101,50 @@ rb_rescue(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*r_proc)(ANYARGS), VALUE
             return (*r_proc)(data2);
         }
 
-        rb_raise(rb_eException, "wrong exception raised (expected StandardError subclass)");
+        rb_raise(rb_eTypeError, "wrong exception type raised (expected StandardError subclass)");
+
+        return Qnil;
+    }
+}
+
+extern "C" VALUE
+rb_rescue2(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*r_proc)(ANYARGS), VALUE data2, ...)
+{
+    try {
+        return (*b_proc)(data1);
+
+    } catch (jruby::JavaException& ex) {
+        JLocalEnv env;
+
+        jthrowable t = ex.getCause(env);
+        if (!env->IsInstanceOf(t, RaiseException_class)) {
+            // Not a ruby exception, just propagate
+            throw;
+        }
+
+        jobject rubyException = env->GetObjectField(t, RaiseException_exception_field);
+        checkExceptions(env);
+
+        VALUE exc = objectToValue(env, rubyException);
+
+        va_list ap;
+        va_start(ap, data2);
+        VALUE eclass = 0;
+
+        bool handle = false;
+        while ((eclass = va_arg(ap, VALUE)) != 0) {
+            if (rb_obj_is_kind_of(exc, eclass)) {
+                handle = true;
+                break;
+            }
+        }
+        va_end(ap);
+
+        if (handle) {
+            return (*r_proc)(data2);
+        }
+
+        rb_raise(rb_eTypeError, "wrong exception type raised");
 
         return Qnil;
     }
