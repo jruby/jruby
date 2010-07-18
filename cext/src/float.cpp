@@ -136,17 +136,28 @@ jruby_float_value(VALUE v)
 extern "C" VALUE
 rb_Float(VALUE obj)
 {
-    if (TYPE(obj) == T_FLOAT) return obj;
-    return callMethod(obj, "to_f", 0);
+    return likely(TYPE(obj) == T_FLOAT) ? obj : callMethodA(obj, "to_f", 0, NULL);
 }
 
 extern "C" double
-rb_num2dbl(VALUE v)
+rb_num2dbl(VALUE val)
 {
-    Handle* h = Handle::valueOf(v);
-    if (h->getType() == T_FLOAT) {
-        return ((RubyFloat *) h)->doubleValue();
+    switch (TYPE(val)) {
+      case T_FLOAT:
+        return RFLOAT_VALUE(val);
+
+      case T_STRING:
+        rb_raise(rb_eTypeError, "no implicit conversion to float from string");
+        break;
+
+      case T_NIL:
+        rb_raise(rb_eTypeError, "no implicit conversion to float from nil");
+        break;
+
+      default:
+        break;
     }
 
-    rb_raise(rb_eTypeError, "wrong type (expected Float)");
+    return RFLOAT_VALUE(rb_Float(val));
 }
+
