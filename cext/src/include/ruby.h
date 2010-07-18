@@ -757,6 +757,9 @@ VALUE rb_obj_is_instance_of(VALUE, VALUE);
 
 VALUE rb_obj_taint(VALUE);
 VALUE rb_obj_tainted(VALUE);
+VALUE rb_any_to_s(VALUE obj);
+VALUE rb_inspect(VALUE obj);
+VALUE rb_obj_as_string(VALUE obj);
 
 #define OBJ_TAINT(obj) rb_obj_taint((obj))
 #define OBJ_TAINTED(obj) rb_obj_tainted((obj))

@@ -159,3 +159,34 @@ rb_attr_get(VALUE obj, ID id)
 {
     return callMethod(obj, "instance_variable_get", 1, ID2SYM(id));
 }
+
+extern "C" VALUE
+rb_obj_as_string(VALUE obj)
+{
+    VALUE str;
+
+    if (TYPE(obj) == T_STRING) {
+        return obj;
+    }
+    str = callMethodA(obj, "to_s", 0, NULL);
+    if (TYPE(str) != T_STRING)
+        return rb_any_to_s(obj);
+    if (OBJ_TAINTED(obj)) OBJ_TAINT(str);
+    return str;
+}
+
+extern "C" VALUE
+rb_inspect(VALUE obj)
+{
+    return rb_obj_as_string(callMethodA(obj, "inspect", 0, 0));
+}
+
+extern "C" VALUE
+rb_any_to_s(VALUE obj)
+{
+    char* buf;
+
+    asprintf(&buf, "#<%s:%p>", rb_obj_classname(obj), (void *) obj);
+    
+    return rb_str_new_cstr(buf);
+}

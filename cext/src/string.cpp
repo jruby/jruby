@@ -198,11 +198,6 @@ rb_tainted_str_new_cstr(const char *ptr)
     return newString(ptr, len, len, true);
 }
 
-extern "C" VALUE
-rb_obj_as_string(VALUE obj)
-{
-    return callMethod(obj, "to_s", 0);
-}
 
 extern "C" VALUE
 rb_str_to_str(VALUE obj)
