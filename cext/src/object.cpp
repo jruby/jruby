@@ -221,8 +221,11 @@ rb_any_to_s(VALUE obj)
 {
     char* buf;
 
-    asprintf(&buf, "#<%s:%p>", rb_obj_classname(obj), (void *) obj);
-    
+    if (asprintf(&buf, "#<%s:%p>", rb_obj_classname(obj), (void *) obj) == -1) {
+        // Could not allocate
+        return rb_str_new("", 0);
+    }
+
     return rb_str_new_cstr(buf);
 }
 
