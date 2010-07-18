@@ -135,3 +135,21 @@ extern "C" VALUE
 rb_obj_is_kind_of(VALUE obj, VALUE module) {
     return callMethod(obj, "kind_of?", 1, module);
 }
+
+extern "C" VALUE
+rb_obj_is_instance_of(VALUE obj, VALUE klass)
+{
+    return callMethodA(obj, "instance_of?", 1, &klass);
+}
+
+extern "C" VALUE
+rb_obj_taint(VALUE obj)
+{
+    return callMethodA(obj, "taint", 0, NULL);
+}
+
+extern "C" VALUE
+rb_obj_tainted(VALUE obj)
+{
+    return callMethodA(obj, "tainted?", 0, NULL);
+}
