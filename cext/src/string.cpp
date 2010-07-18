@@ -133,10 +133,6 @@ rb_str_buf_cat(VALUE str, const char *ptr, long len)
         rb_raise(rb_eArgError, "negative string size (or size too big)");
     }
 
-    if (!ptr) {
-        rb_raise(rb_eArgError, "NULL pointer given");
-    }
-
     return callMethod(str, "concat", 1, rb_str_new(ptr, len));
 }
 
@@ -144,10 +140,6 @@ rb_str_buf_cat(VALUE str, const char *ptr, long len)
 VALUE
 rb_str_buf_cat2(VALUE str, const char *ptr)
 {
-    if (!ptr) {
-        rb_raise(rb_eArgError, "NULL pointer given");
-    }
-
     return rb_str_buf_cat(str, ptr, ptr ? strlen(ptr) : 0);
 }
 
