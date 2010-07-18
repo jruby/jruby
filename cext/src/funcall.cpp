@@ -69,3 +69,22 @@ rb_call_super(int argc, const VALUE *argv)
     
     return (VALUE) result;
 }
+
+extern "C" VALUE
+rb_obj_instance_eval(int argc, VALUE* argv, VALUE self) {
+    JLocalEnv env;
+
+    jobjectArray argArray = env->NewObjectArray(argc, IRubyObject_class, NULL);
+    checkExceptions(env);
+
+    for (int i = 0; i < argc; i++) {
+        env->SetObjectArrayElement(argArray, i, valueToObject(env, argv[i]));
+        checkExceptions(env);
+    }
+
+    jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_instanceEval, getRuntime(), self, argArray);
+    checkExceptions(env);
+
+    return (VALUE) result;
+}
+

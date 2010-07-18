@@ -83,6 +83,12 @@ public class JRuby {
         return Handle.nativeHandle(retval);
     }
 
+    public static long instanceEval(Ruby runtime, IRubyObject self, IRubyObject[] args) {
+        ThreadContext currentContext = runtime.getCurrentContext();
+        Block block = currentContext.getFrameBlock();
+        IRubyObject retval = self.callMethod(currentContext, "instance_eval", args, block);
+        return Handle.nativeHandle(retval);
+    }
 
 
     public static long newString(Ruby runtime, byte[] bytes, boolean tainted) {
