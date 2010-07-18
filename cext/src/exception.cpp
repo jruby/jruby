@@ -98,7 +98,11 @@ rb_rescue(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*r_proc)(ANYARGS), VALUE
 
         VALUE exc = objectToValue(env, rubyException);
         if (rb_obj_is_kind_of(exc, rb_eStandardError)) {
-            return (*r_proc)(data2);
+
+            VALUE result = (*r_proc)(data2);
+            env->CallStaticVoidMethod(JRuby_class, JRuby_clearErrorInfo, jruby::getRuntime());
+
+            return result;
         }
 
         rb_raise(rb_eTypeError, "wrong exception type raised (expected StandardError subclass)");
@@ -141,7 +145,11 @@ rb_rescue2(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*r_proc)(ANYARGS), VALU
         va_end(ap);
 
         if (handle) {
-            return (*r_proc)(data2);
+
+            VALUE result = (*r_proc)(data2);
+            env->CallStaticVoidMethod(JRuby_class, JRuby_clearErrorInfo, jruby::getRuntime());
+
+            return result;
         }
 
         rb_raise(rb_eTypeError, "wrong exception type raised");

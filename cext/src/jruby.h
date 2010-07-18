@@ -90,6 +90,7 @@ namespace jruby {
     extern jmethodID JRuby_callMethod2;
     extern jmethodID JRuby_callMethod3;
     extern jmethodID JRuby_callSuperMethod;
+    extern jmethodID JRuby_clearErrorInfo;
     extern jmethodID JRuby_newString;
     extern jmethodID JRuby_newFloat;
     extern jmethodID JRuby_ll2inum;

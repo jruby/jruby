@@ -192,4 +192,8 @@ public class JRuby {
     public static long gv_get(Ruby runtime, String name) {
         return Handle.nativeHandle(runtime.getGlobalVariables().get(name));
     }
+
+    public static void clearErrorInfo(Ruby runtime) {
+        runtime.getCurrentContext().setErrorInfo(runtime.getNil());
+    }
 }

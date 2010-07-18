@@ -53,6 +53,7 @@ namespace jruby {
     jmethodID JRuby_callMethod2;
     jmethodID JRuby_callMethod3;
     jmethodID JRuby_callSuperMethod;
+    jmethodID JRuby_clearErrorInfo;
     jmethodID JRuby_newString;
     jmethodID JRuby_ll2inum;
     jmethodID JRuby_ull2inum;
@@ -242,6 +243,8 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_callSuperMethod = getStaticMethodID(env, JRuby_class, "callSuperMethod",
             "(Lorg/jruby/Ruby;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    JRuby_clearErrorInfo = getStaticMethodID(env, JRuby_class, "clearErrorInfo",
+            "(Lorg/jruby/Ruby;)V");
     JRuby_newString = getStaticMethodID(env, JRuby_class, "newString",
             "(Lorg/jruby/Ruby;[BZ)J");
     JRuby_ll2inum = getStaticMethodID(env, JRuby_class, "ll2inum",
