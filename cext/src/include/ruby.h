@@ -765,6 +765,7 @@ VALUE rb_obj_is_instance_of(VALUE, VALUE);
 /** Returns the Class object this object is an instance of. */
 #define rb_obj_class(object) rb_class_of((object))
 
+void rb_extend_object(VALUE, VALUE);
 VALUE rb_obj_taint(VALUE);
 VALUE rb_obj_tainted(VALUE);
 VALUE rb_any_to_s(VALUE obj);
