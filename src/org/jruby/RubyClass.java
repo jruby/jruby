@@ -260,11 +260,17 @@ public class RubyClass extends RubyModule {
         return variableAccessors;
     }
     
-    private volatile int accessorCount = 0;
     private volatile VariableAccessor objectIdAccessor = VariableAccessor.DUMMY_ACCESSOR;
 
     private synchronized final VariableAccessor allocateVariableAccessor(String name) {
-        return new VariableAccessor(name, accessorCount++, this.id);
+        String[] myVariableNames = variableNames;
+        int newIndex = myVariableNames.length;
+        String[] newVariableNames = new String[newIndex + 1];
+        VariableAccessor newVariableAccessor = new VariableAccessor(name, newIndex, this.id);
+        System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);
+        newVariableNames[newIndex] = name;
+        variableNames = newVariableNames;
+        return newVariableAccessor;
     }
 
     public VariableAccessor getVariableAccessorForWrite(String name) {
@@ -272,8 +278,6 @@ public class RubyClass extends RubyModule {
         if (ivarAccessor == null) {
             synchronized (this) {
                 Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
-                String[] myVariableNames = variableNames;
-                
                 ivarAccessor = myVariableAccessors.get(name);
 
                 if (ivarAccessor == null) {
@@ -283,12 +287,6 @@ public class RubyClass extends RubyModule {
                     newVariableAccessors.putAll(myVariableAccessors);
                     newVariableAccessors.put(name, ivarAccessor);
                     variableAccessors = newVariableAccessors;
-
-                    assert ivarAccessor.getIndex() == variableNames.length;
-                    String[] newVariableNames = new String[variableNames.length + 1];
-                    System.arraycopy(myVariableNames, 0, newVariableNames, 0, myVariableNames.length);
-                    newVariableNames[ivarAccessor.getIndex()] = ivarAccessor.getName();
-                    variableNames = newVariableNames;
                 }
             }
         }
@@ -1435,7 +1433,7 @@ public class RubyClass extends RubyModule {
     @SuppressWarnings("unchecked")
     private static String[] EMPTY_STRING_ARRAY = new String[0];
     private Map<String, VariableAccessor> variableAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
-    private String[] variableNames = EMPTY_STRING_ARRAY;
+    private volatile String[] variableNames = EMPTY_STRING_ARRAY;
 
     private volatile boolean hasObjectID = false;
     public boolean hasObjectID() {
