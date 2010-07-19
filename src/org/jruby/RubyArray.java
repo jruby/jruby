@@ -3497,7 +3497,47 @@ public class RubyArray extends RubyObject implements List {
         }
         return this;
     }
-    
+
+    @JRubyMethod(name = "repeated_combination", compat = CompatVersion.RUBY1_9)
+    public IRubyObject repeatedCombination(ThreadContext context, IRubyObject num, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, "repeated_combination", num);
+
+        int n = RubyNumeric.num2int(num);
+
+        if (n == 0) {
+            block.yield(context, newEmptyArray(runtime));
+        } else if (n == 1) {
+            for (int i = 0; i < realLength; i++) {
+                block.yield(context, newArray(runtime, values[begin + i]));
+            }
+        } else if (n >= 0 && realLength >= n) {
+            int[] stack = new int[n];
+            repeatCombination(context, runtime, stack, 0, realLength - 1, block);
+        }
+        return this;
+    }
+
+    private void repeatCombination(ThreadContext context, Ruby runtime, int[] stack, int index, int max, Block block) {
+        if (index == stack.length) {
+            IRubyObject[] obj = new IRubyObject[stack.length];
+            for (int i = 0; i < obj.length; i++) {
+                int idx = stack[i];
+                obj[i] = values[begin + idx];
+            }
+            block.yield(context, newArray(runtime, obj));
+        } else {
+            int minValue = 0;
+            if (index > 0) {
+                minValue = stack[index - 1];
+            }
+            for (int i = minValue; i <= max; i++) {
+                stack[index] = i;
+                repeatCombination(context, runtime, stack, index + 1, max, block);
+            }
+        }
+    }
+
     private void permute(ThreadContext context, int n, int r, int[]p, int index, boolean[]used, boolean repeat, RubyArray values, Block block) {
         for (int i = 0; i < n; i++) {
             if (repeat || !used[i]) {
