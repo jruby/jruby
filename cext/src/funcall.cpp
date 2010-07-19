@@ -82,7 +82,7 @@ rb_obj_instance_eval(int argc, VALUE* argv, VALUE self) {
         checkExceptions(env);
     }
 
-    jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_instanceEval, getRuntime(), self, argArray);
+    jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_instanceEval, self, argArray);
     checkExceptions(env);
 
     return (VALUE) result;

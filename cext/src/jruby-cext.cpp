@@ -253,9 +253,9 @@ loadIds(JNIEnv* env)
     JRuby_callMethod3 = getStaticMethodID(env, JRuby_class, "callRubyMethod3",
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_callSuperMethod = getStaticMethodID(env, JRuby_class, "callSuperMethod",
-            "(Lorg/jruby/Ruby;Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
-    JRuby_instanceEval = getStaticMethodID(env, JRuby_class, "instanceEval",
             "(Lorg/jruby/Ruby;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    JRuby_instanceEval = getStaticMethodID(env, JRuby_class, "instanceEval",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_clearErrorInfo = getStaticMethodID(env, JRuby_class, "clearErrorInfo",
             "(Lorg/jruby/Ruby;)V");
     JRuby_newString = getStaticMethodID(env, JRuby_class, "newString",
