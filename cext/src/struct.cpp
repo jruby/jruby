@@ -45,7 +45,7 @@ rb_struct_define(const char* name_cstr, ...)
     checkExceptions(env);
 
     if (!name_cstr) {
-        env->SetObjectArrayElement(argArray, 0, valueToObject(env, Qnil));
+        env->SetObjectArrayElement(argArray, 0, getNil());
     } else {
         env->SetObjectArrayElement(argArray, 0, valueToObject(env, rb_str_new_cstr(name_cstr)));
     }
