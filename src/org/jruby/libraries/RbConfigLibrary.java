@@ -188,6 +188,7 @@ public class RbConfigLibrary implements Library {
         String siteArchDir = new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getPath();
         String archDir = new NormalizedFile(libdir, "ruby/1.8/java").getPath();
         String shareDir = new NormalizedFile(normalizedHome, "share").getPath();
+        String includeDir = new NormalizedFile(normalizedHome, "lib/native/" + getOSName()).getPath();
 
         setConfig(configHash, "libdir", libdir);
         if (runtime.is1_9()) setConfig(configHash, "rubylibprefix",     libdir + "/ruby");
@@ -197,6 +198,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "sitearchdir",    siteArchDir);
         setConfig(configHash, "archdir",   archDir);
         setConfig(configHash, "topdir",   archDir);
+        setConfig(configHash, "includedir",   includeDir);
         setConfig(configHash, "configure_args", "");
         setConfig(configHash, "datadir", shareDir);
         setConfig(configHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
