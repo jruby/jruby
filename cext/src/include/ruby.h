@@ -287,6 +287,7 @@ void xfree(void*);
 #define ULONG2NUM(x) rb_uint2inum(x)
 #define LL2NUM(x)    rb_ll2inum(x)
 #define ULL2NUM(x)   rb_ull2inum(x)
+#define rb_int_new(v) rb_int2inum(v)
 
 /** The length of string str. */
 #define RSTRING_LEN(str)  jruby_str_length((str))
