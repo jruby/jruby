@@ -50,6 +50,7 @@ JRUBY_NATIVE_DIR ?= $(JRUBY_BASEDIR)/lib/native/
 BUILD_DIR ?= $(JRUBY_BASEDIR)/build
 HDR_DIR ?= $(JRUBY_NATIVE_DIR)
 RUBY_HEADERS = defines.h dl.h intern.h re.h ruby.h
+CONFIG_H = $(BUILD_DIR)/config.h
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(notdir $(SRCS)))
@@ -83,7 +84,7 @@ STRIP = strip -S
 JDK_INCLUDES = -I"$(JDK_HOME)/include" -I"$(JDK_HOME)/include/$(OS)"
 IFLAGS = -I"$(BUILD_DIR)" -I"$(SRC_DIR)" -I"$(BUILD_DIR)"/jni \
   -I"$(SRC_DIR)"/include
-CFLAGS = $(OFLAGS) $(WFLAGS) $(IFLAGS) $(PICFLAGS) $(JDK_INCLUDES)
+CFLAGS = $(OFLAGS) $(WFLAGS) $(IFLAGS) $(PICFLAGS) $(JDK_INCLUDES) $(ARCHFLAGS)
 CFLAGS += -D_REENTRANT -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
 CXXFLAGS = $(CFLAGS)
 
@@ -148,9 +149,9 @@ ifeq ($(OS), darwin)
   ifneq ($(findstring $(CPU), i386 x86_64),)
     ARCHES= i386 x86_64
   endif
-  
+
   CFLAGS += -isysroot $(MACSDK) -DTARGET_RT_MAC_CFM=0
-  CFLAGS += $(foreach arch, $(ARCHES),-arch $(arch))
+  ARCHFLAGS = $(foreach arch, $(ARCHES),-arch $(arch))
   LDFLAGS = $(foreach arch, $(ARCHES),-arch $(arch)) -dynamiclib -framework JavaVM \
 	-Wl,-syslibroot,$(MACSDK) -mmacosx-version-min=10.5
   JNIEXT = jnilib
@@ -222,7 +223,6 @@ ifneq ($(strip $(findstring $(OS), linux solaris)),)
   LD += -m$(MODEL)
 endif
 
-
 JAVA_HDRS = $(patsubst %.h, $(BUILD_DIR)/%.h, org_jruby_cext_JRuby.h org_jruby_cext_Native.h org_jruby_cext_GC.h  org_jruby_runtime_ClassIndex.h)
 
 all:	$(LIBCEXT)
@@ -246,10 +246,36 @@ debug: all
 $(LIBCEXT):  $(OBJS) $(CXXOBJS) $(RUBY_HEADERS)
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) -o $@ $(LDFLAGS) $(SOFLAGS) $(OBJS) $(CXXOBJS) $(LIBS)
-	
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
+## The ST library must be built twice on MacOS X with x86 processor to support universial builds.
+## This means that, for each x86 architecture (i386 and x86_64 atm) the configure script must run
+## and finally we have to manually link with lipo.
+## XXX: This is very nasty and should be a separate automake-using workflow
+ifeq ($(OS), darwin)
+  ifneq ($(findstring $(CPU), i386 x86_64),)
+$(BUILD_DIR)/st.o: $(SRC_DIR)/st.c $(wildcard $(SRC_DIR)/st.h)
 	@mkdir -p $(@D)
+
+	$(RM) $(wildcard $(SRC_DIR)/config.*) $(BUILD_DIR)/config.h $(SRC_DIR)/configure
+	CFLAGS="-arch i386" sh autoconf.sh
+	@cp $(SRC_DIR)/config.h $(CONFIG_H)
+	$(CCACHE) $(CC) -arch i386 $(OFLAGS) $(IFLAGS) $(PICFLAGS) -c $< -o $@.i386
+
+	$(RM) $(wildcard $(SRC_DIR)/config.*) $(BUILD_DIR)/config.h $(SRC_DIR)/configure
+	CFLAGS="-arch x86_64" sh autoconf.sh
+	@cp $(SRC_DIR)/config.h $(CONFIG_H)
+	$(CCACHE) $(CC) -arch x86_64 $(OFLAGS) $(IFLAGS) $(PICFLAGS) -c $< -o $@.x86_64
+
+	@lipo -arch i386 $@.i386 -arch x86_64 $@.x86_64 -output $@ -create
+  endif
+endif
+
+$(CONFIG_H):
+	@mkdir -p $(@D)
+	CFLAGS="-m$(MODEL)" sh autoconf.sh
+	@cp $(SRC_DIR)/config.h $(CONFIG_H)
+
+$(BUILD_DIR)/%.o: $(CONFIG_H) $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 	$(CCACHE) $(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
@@ -266,10 +292,14 @@ $(JAVA_HDRS):
 	@mkdir -p $(@D)
 	javah -classpath $(JRUBY_CLASSES) -d $(@D) $(subst _,., $(basename $(@F)))
 
-
-.PHONY: clean
+.PHONY: clean $(CONFIG_H)
 clean: dist-clean
 	$(RM) $(LIBCEXT)
+	$(RM) $(CONFIG_H)
+	$(RM) $(wildcard config.*)
+	$(RM) $(wildcard configure)
+	$(RM) -R autom4te.cache
+
 
 dist-clean:
-	$(RM) $(OBJS) $(JAVA_HDRS) $(CXXOBJS) 
+	$(RM) $(OBJS) $(JAVA_HDRS) $(CXXOBJS)

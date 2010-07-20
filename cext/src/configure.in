@@ -1,0 +1,7 @@
+AC_INIT("jruby-cext", 0.1, "tim.felgentreff@gmail.com")
+AC_CHECK_SIZEOF([void*])
+AC_CHECK_SIZEOF([long])
+AC_CHECK_SIZEOF([long long])
+AC_CONFIG_FILES([configure])
+AC_CONFIG_HEADERS([config.h])
+AC_OUTPUT
