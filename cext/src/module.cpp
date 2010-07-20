@@ -89,6 +89,20 @@ rb_define_method(VALUE klass, const char* meth, VALUE(*fn)(ANYARGS), int arity)
 }
 
 extern "C" void
+rb_define_private_method(VALUE klass, const char* meth, VALUE(*fn)(ANYARGS), int arity)
+{
+    // FIXME: This should actually create a private method
+    rb_define_method(klass, meth, fn, arity);
+}
+
+extern "C" void
+rb_define_protected_method(VALUE klass, const char* meth, VALUE(*fn)(ANYARGS), int arity)
+{
+    // FIXME: This should actually create a protected method
+    rb_define_method(klass, meth, fn, arity);
+}
+
+extern "C" void
 rb_define_module_function(VALUE klass,const char* meth, VALUE(*fn)(ANYARGS),int arity)
 {
     JLocalEnv env;

@@ -447,6 +447,8 @@ VALUE rb_define_module_under(VALUE, const char*);
 /** Ruby's attr_* for given name. Nonzeros to toggle read/write. */
 void rb_define_attr(VALUE module_handle, const char* attr_name, int readable, int writable);
 void rb_define_method(VALUE,const char*,VALUE(*)(ANYARGS),int);
+void rb_define_private_method(VALUE,const char*,VALUE(*)(ANYARGS),int);
+void rb_define_protected_method(VALUE,const char*,VALUE(*)(ANYARGS),int);
 void rb_define_module_function(VALUE,const char*,VALUE(*)(ANYARGS),int);
 void rb_define_global_function(const char*,VALUE(*)(ANYARGS),int);
 void rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYARGS), int arity);
