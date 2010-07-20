@@ -324,6 +324,9 @@ void xfree(void*);
 
 #define OBJ_FREEZE(obj) (rb_obj_freeze(obj))
 
+#define RREGEXP_SRC(reg) rb_reg_source(reg)
+#define RREGEXP_OPTIONS(reg) rb_reg_options(reg)
+
 /* End of interface macros */
 
 /**
@@ -840,6 +843,9 @@ int rb_io_fd(VALUE io);
 
 VALUE rb_range_new(VALUE, VALUE, int);
 
+VALUE rb_reg_source(VALUE);
+int rb_reg_options(VALUE);
+VALUE rb_reg_regcomp(VALUE);
 
 /* Global Module objects. */
 extern VALUE rb_mKernel;
