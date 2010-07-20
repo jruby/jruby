@@ -256,3 +256,14 @@ rb_check_frozen(VALUE obj)
         rb_raise(rb_eRuntimeError, "can't modify frozen %s", rb_obj_classname(obj));
     }
 }
+
+extern "C" VALUE
+rb_singleton_class(VALUE obj) {
+    JLocalEnv env;
+
+    jmethodID IRubyObject_getSingletonClass_method = getMethodID(env, IRubyObject_class, "getSingletonClass",
+            "()Lorg/jruby/RubyClass;");
+    jobject singleton = env->CallObjectMethod(valueToObject(env, obj), IRubyObject_getSingletonClass_method);
+    checkExceptions(env);
+    return objectToValue(env, singleton);
+}

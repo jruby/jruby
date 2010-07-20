@@ -467,6 +467,8 @@ char* rb_class2name(VALUE class_handle);
 VALUE rb_path2class(const char* path);
 /** Include Module in another Module, just as Ruby's Module#include. */
 void rb_include_module(VALUE self, VALUE module);
+/** Return the object's singleton class */
+VALUE rb_singleton_class(VALUE obj);
 
 VALUE rb_define_class(const char*,VALUE);
 VALUE rb_define_module(const char*);
