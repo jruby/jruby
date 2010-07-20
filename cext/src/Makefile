@@ -275,7 +275,7 @@ $(CONFIG_H):
 	CFLAGS="-m$(MODEL)" sh autoconf.sh
 	@cp $(SRC_DIR)/config.h $(CONFIG_H)
 
-$(BUILD_DIR)/%.o: $(CONFIG_H) $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS) $(CONFIG_H)
 	$(CCACHE) $(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
