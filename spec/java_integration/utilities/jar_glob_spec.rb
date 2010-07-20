@@ -151,7 +151,7 @@ describe "Dir.glob and Dir[] with multiple magic modifiers" do
   end
 
   after :all do
-    #FileUtils.rm_rf("jruby-4396")
+    FileUtils.rm_rf("jruby-4396")
   end
 
   it "returns directories when the magic modifier is an star" do
