@@ -186,3 +186,9 @@ extern "C" VALUE
 rb_check_array_type(VALUE val) {
     return rb_check_convert_type(val, 0, "Array", "to_ary");
 }
+
+extern "C" int
+rb_ary_size(VALUE ary) {
+    return jruby_rarray(ary)->len;
+}
+
