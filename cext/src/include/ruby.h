@@ -313,6 +313,9 @@ void xfree(void*);
 /** Pointer to the MRI array structure */
 #define RARRAY(ary) jruby_rarray(ary)
 
+#define RHASH_SIZE(h) FIX2INT(rb_hash_size(h))
+#define RHASH_LEN(h) FIX2INT(rb_hash_size(h))
+
 #define RFLOAT(v) jruby_rfloat(v)
 #define RFLOAT_VALUE(v) jruby_float_value(v)
 
@@ -560,6 +563,7 @@ VALUE rb_hash_new(void);
 VALUE rb_hash_aref(VALUE hash, VALUE key);
 VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE val);
 VALUE rb_hash_delete(VALUE hash, VALUE key);
+VALUE rb_hash_size(VALUE hash);
 
 /* String */
 VALUE rb_str_new(const char*, long);

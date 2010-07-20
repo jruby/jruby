@@ -44,3 +44,9 @@ rb_hash_delete(VALUE hash, VALUE key)
 {
     return callMethod(hash, "delete", 1, key);
 }
+
+extern "C" VALUE
+rb_hash_size(VALUE hash) {
+    return callMethod(hash, "size", 0);
+}
+
