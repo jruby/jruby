@@ -63,3 +63,18 @@ class TestRespondToConcurrency < Test::Unit::TestCase
     end
   end
 end
+
+# JRUBY-4954
+class TestRespondToCallSite < Test::Unit::TestCase
+  class CallSite
+    @obj = Object.new
+    def self.respond_to?(name, include_priv = false)
+      @obj.respond_to?(name, include_priv)
+    end
+  end
+
+  def test_respond_to_call_site_caches_visibility_check
+    assert !CallSite.respond_to?(:method_missing)
+    assert CallSite.respond_to?(:method_missing, true)
+  end
+end

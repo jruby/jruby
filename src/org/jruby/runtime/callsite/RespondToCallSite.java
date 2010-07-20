@@ -11,14 +11,16 @@ public class RespondToCallSite extends NormalCachingCallSite {
     private volatile RespondToTuple respondToTuple = RespondToTuple.NULL_CACHE;
 
     private static class RespondToTuple {
-        static final RespondToTuple NULL_CACHE = new RespondToTuple("", CacheEntry.NULL_CACHE, CacheEntry.NULL_CACHE, null);
+        static final RespondToTuple NULL_CACHE = new RespondToTuple("", true, CacheEntry.NULL_CACHE, CacheEntry.NULL_CACHE, null);
         public final String name;
+        public final boolean checkVisibility;
         public final CacheEntry respondToMethod;
         public final CacheEntry entry;
         public final IRubyObject respondsTo;
         
-        public RespondToTuple(String name, CacheEntry respondToMethod, CacheEntry entry, IRubyObject respondsTo) {
+        public RespondToTuple(String name, boolean checkVisibility, CacheEntry respondToMethod, CacheEntry entry, IRubyObject respondsTo) {
             this.name = name;
+            this.checkVisibility = checkVisibility;
             this.respondToMethod = respondToMethod;
             this.entry = entry;
             this.respondsTo = respondsTo;
@@ -39,7 +41,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = name.asJavaString();
-            if (strName.equals(tuple.name)) return tuple.respondsTo;
+            if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         IRubyObject respond = super.call(context, caller, self, name);
@@ -57,7 +59,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = name.asJavaString();
-            if (strName.equals(tuple.name)) return tuple.respondsTo;
+            if (strName.equals(tuple.name) && !bool.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
         IRubyObject respond = super.call(context, caller, self, name, bool);
@@ -120,7 +122,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         } else {
             respondsTo = runtime.getFalse();
         }
-        return new RespondToTuple(newString, respondToMethod, respondToLookupResult, respondsTo);
+        return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, respondsTo);
     }
 
     private static IRubyObject checkVisibilityAndCache(CacheEntry respondEntry, boolean checkVisibility, Ruby runtime) {
