@@ -555,6 +555,8 @@ VALUE rb_ary_delete(VALUE, VALUE);
 VALUE rb_ary_delete_at(VALUE, long);
 VALUE rb_ary_aref(int, VALUE*, VALUE);
 
+VALUE rb_each(VALUE);
+VALUE rb_iterate(VALUE (*ifunc)(VALUE), VALUE ary, VALUE(*cb)(ANYARGS), VALUE cb_data);
 
 /** Returns a pointer to the readonly RArray structure
  * which exposes an MRI-like API to the C code.
@@ -567,6 +569,7 @@ VALUE rb_hash_aref(VALUE hash, VALUE key);
 VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE val);
 VALUE rb_hash_delete(VALUE hash, VALUE key);
 VALUE rb_hash_size(VALUE hash);
+void rb_hash_foreach(VALUE hash, int (*func)(ANYARGS), VALUE arg);
 
 /* String */
 VALUE rb_str_new(const char*, long);

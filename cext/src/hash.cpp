@@ -50,3 +50,23 @@ rb_hash_size(VALUE hash) {
     return callMethod(hash, "size", 0);
 }
 
+extern "C" void
+rb_hash_foreach(VALUE hash, int (*func)(ANYARGS), VALUE arg) {
+    VALUE iterator = callMethod(hash, "to_iter", 0);
+    VALUE entry = Qnil;
+
+    while (RTEST(entry = callMethod(iterator, "next", 1, entry))) {
+        VALUE key = callMethod(entry, "key", 0);
+        VALUE value = callMethod(entry, "value", 0);
+
+        int ret = (*func)(key, value, arg);
+        switch(ret) {
+        case 0: // ST_CONTINUE:
+            continue;
+        case 1: // ST_STOP:
+            return;
+        default:
+            rb_raise(rb_eArgError, "unsupported hash_foreach value");
+        }
+    }
+}

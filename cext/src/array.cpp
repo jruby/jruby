@@ -192,3 +192,25 @@ rb_ary_size(VALUE ary) {
     return jruby_rarray(ary)->len;
 }
 
+// Copyied from Rbx
+// Really just used as a placeholder/sentinal value to half implement
+// rb_iterate
+extern "C" VALUE
+rb_each(VALUE ary) {
+    rb_raise(rb_eArgError, "rb_each not fully supported", 0);
+    return Qnil;
+}
+
+extern "C" VALUE
+rb_iterate(VALUE(*ifunc)(VALUE), VALUE ary, VALUE(*cb)(ANYARGS), VALUE cb_data) {
+    if(ifunc != rb_each || !rb_obj_is_kind_of(ary, rb_cArray)) {
+        rb_raise(rb_eArgError, "rb_iterate only supported with rb_each and an Array");
+        return Qnil;
+    }
+
+    for(int i = 0; i < rb_ary_size(ary); i++) {
+        (*cb)(rb_ary_entry(ary, i), cb_data, Qnil);
+    }
+
+    return ary;
+}
