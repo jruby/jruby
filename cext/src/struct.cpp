@@ -19,6 +19,7 @@
 #include "ruby.h"
 #include "jruby.h"
 #include "JLocalEnv.h"
+#include <vector>
 
 using namespace jruby;
 
@@ -27,21 +28,16 @@ rb_struct_define(const char* name_cstr, ...)
 {
     JLocalEnv env;
     va_list varargs;
-    int capa = 4;
-    int argc = 0;
-    char** args = (char**)malloc(sizeof(char) * capa);
+    std::vector<char*> args;
 
     va_start(varargs, name_cstr);
-    while (args[argc] = va_arg(varargs, char*)) {
-        argc++;
-        if (argc >= capa) {
-            capa = capa * 2; // Double the size
-            args = (char**)realloc(args, sizeof(char) * capa);
-        }
+    char* cp;
+    while ((cp = va_arg(varargs, char* )) != NULL) {
+        args.push_back(cp);
     }
     va_end(varargs);
 
-    jobjectArray argArray = env->NewObjectArray(argc + 1, IRubyObject_class, NULL);
+    jobjectArray argArray = env->NewObjectArray(args.size() + 1, IRubyObject_class, NULL);
     checkExceptions(env);
 
     if (!name_cstr) {
@@ -51,11 +47,10 @@ rb_struct_define(const char* name_cstr, ...)
     }
     checkExceptions(env);
 
-    for (int i = 0; i < argc; i++) {
+    for (unsigned int i = 0; i < args.size(); i++) {
         env->SetObjectArrayElement(argArray, i + 1, valueToObject(env, rb_str_new_cstr(args[i])));
         checkExceptions(env);
     }
-    free(args);
 
     jmethodID mid = getMethodID(env, Ruby_class, "getStructClass", "()Lorg/jruby/RubyClass;");
     jobject structClass = env->CallObjectMethod(getRuntime(), mid);
