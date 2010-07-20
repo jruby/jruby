@@ -84,7 +84,8 @@ public class JRuby {
     }
 
     public static long instanceEval(IRubyObject self, IRubyObject[] args) {
-        ThreadContext ctxt = self.getRuntime().getCurrentContext();
+        Ruby runtime = self.getRuntime();
+        ThreadContext ctxt = runtime.getCurrentContext();
         Block block = ctxt.getFrameBlock();
         IRubyObject retval = self.callMethod(ctxt, "instance_eval", args, block);
         return Handle.nativeHandle(retval);
