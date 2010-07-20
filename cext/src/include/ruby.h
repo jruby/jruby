@@ -411,7 +411,7 @@ static inline VALUE
 UINT2NUM(unsigned long v)
 {
     if (__builtin_expect(POSFIXABLE(v), 1)) {
-        LONG2FIX(v);
+        return LONG2FIX(v);
     }
 
     return rb_uint2inum(v);
