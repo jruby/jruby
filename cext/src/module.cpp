@@ -138,6 +138,22 @@ rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYARGS), 
     checkExceptions(env);
 }
 
+extern "C" void
+rb_undef_method(VALUE klass, const char* method) {
+    JLocalEnv env;
+    jmethodID undef = getMethodID(env, RubyModule_class, "undef",
+            "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;)V");
+    jobject ctxt = env->CallObjectMethod(getRuntime(), Ruby_getCurrentContext_method);
+    checkExceptions(env);
+    env->CallObjectMethod(valueToObject(env, klass), undef, ctxt, env->NewStringUTF(method));
+    checkExceptions(env);
+}
+
+extern "C" void
+rb_undef(VALUE klass, ID method) {
+    rb_undef_method(klass, rb_id2name(method));
+}
+
 extern "C" int
 rb_const_defined(VALUE module, ID symbol)
 {

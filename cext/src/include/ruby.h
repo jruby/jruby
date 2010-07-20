@@ -489,10 +489,13 @@ void rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYAR
 typedef VALUE (*rb_alloc_func_t)(VALUE);
 void rb_define_alloc_func(VALUE, rb_alloc_func_t);
 
+void rb_undef_method(VALUE, const char*);
+void rb_undef(VALUE, ID);
+
 #define rb_define_class_variable(klass, name, val) rb_cvar_set(klass, rb_intern(name), val, 0)
 #define rb_cv_get(klass, name) rb_cvar_get(klass, rb_intern(name))
 #define rb_cv_set(klass, name, value) rb_cvar_set(klass, rb_intern(name), value, 0)
-/** Returns a value evaluating true if module has named class var. 
+/** Returns a value evaluating true if module has named class var.
  * TODO: @@ should be optional. 
  */
 VALUE rb_cvar_defined(VALUE module_handle, ID name);
