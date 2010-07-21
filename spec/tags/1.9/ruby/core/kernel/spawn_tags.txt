@@ -18,3 +18,8 @@ fails:Kernel.spawn redirects both STDERR and STDOUT to the given file descriptio
 fails:Kernel.spawn generates a process of a command based on the given set of strings, regarding the first as the command and the others as the arguments
 fails:Kernel.spawn joins the current process group by default
 fails:Kernel.spawn uses the current working directory as its working directory
+fails:Kernel.spawn executes the given command as a new process
+fails:Kernel.spawn redirects STDERR to the given file descriptor if :err => IO
+fails:Kernel.spawn redirects both STDERR and STDOUT to the given file descriptior
+fails:Kernel.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
+fails:Kernel.spawn redirects both STDERR and STDOUT to the given IO

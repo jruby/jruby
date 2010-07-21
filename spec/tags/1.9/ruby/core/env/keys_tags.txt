@@ -1,1 +1,0 @@
-fail:ENV.keys returns the keys in the locale encoding

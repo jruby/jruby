@@ -104,6 +104,11 @@ public class RubyGlobal {
             return super.op_aset(context, RuntimeHelpers.invoke(context, actualKey, "to_str"),
                     value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, "to_str"));
         }
+
+        @Override
+        public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
+            return op_aset(context, key, value);
+        }
         
         @JRubyMethod
         @Override

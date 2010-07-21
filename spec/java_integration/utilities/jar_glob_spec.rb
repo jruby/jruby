@@ -122,6 +122,15 @@ CODE
     require 'spaces_file'
     $foo_dir.should_not match(/%20/)
   end
+
+  it "expands the path relative to the jar" do
+    current = "file:/Users/foo/dev/ruby/jruby/lib/jruby-complete.jar!/META-INF/jruby.home/lib/ruby/site_ruby/1.8"
+    expected = "file:/Users/foo/dev/ruby/jruby/lib/jruby-complete.jar!/META-INF/jruby.home/lib/ruby/site_ruby"
+
+    File.expand_path(File.join(current, "..")).should == expected
+
+    File.expand_path("..", current).should == expected
+  end
 end
 
 describe "Dir.glob and Dir[] with multiple magic modifiers" do
@@ -142,7 +151,7 @@ describe "Dir.glob and Dir[] with multiple magic modifiers" do
   end
 
   after :all do
-    #FileUtils.rm_rf("jruby-4396")
+    FileUtils.rm_rf("jruby-4396")
   end
 
   it "returns directories when the magic modifier is an star" do

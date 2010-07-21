@@ -1,1 +1,0 @@
-fail:ENV.each_value uses the locale encoding

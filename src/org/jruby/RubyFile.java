@@ -94,6 +94,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static final int FNM_CASEFOLD = 8;
     private static final int FNM_SYSCASE;
 
+    private static int _cachedUmask = 0;
+    private static final Object _umaskLock = new Object();
+
     static {
         if (Platform.IS_WINDOWS) {
             FNM_SYSCASE = FNM_CASEFOLD;
@@ -519,7 +522,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
-        int umask = getRuntime().getPosix().umask(0);
+
+        int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
         
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
@@ -1089,17 +1093,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         boolean isAbsoluteWithFilePrefix = relativePath.startsWith("file:");
 
         String cwd = null;
-        
+
         // Handle ~user paths 
         if (expandUser) {
             relativePath = expandUserPath(context, relativePath);
         }
-        
+
         // If there's a second argument, it's the path to which the first 
         // argument is relative.
         if (args.length == 2 && !args[1].isNil()) {
-            
+
             cwd = get_path(context, args[1]).getUnicodeValue();
+
+            if (!isAbsoluteWithFilePrefix) {
+                isAbsoluteWithFilePrefix = cwd.startsWith("file:");
+            }
 
             // Handle ~user paths.
             if (expandUser) {
@@ -1640,10 +1648,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.getRuntime();
         int oldMask = 0;
         if (args.length == 0) {
-            oldMask = runtime.getPosix().umask(0);
-            runtime.getPosix().umask(oldMask);
+            oldMask = getUmaskSafe( runtime );
         } else if (args.length == 1) {
-            oldMask = runtime.getPosix().umask((int) args[0].convertToInteger().getLongValue()); 
+            int newMask = (int) args[0].convertToInteger().getLongValue();
+            synchronized (_umaskLock) {
+                oldMask = runtime.getPosix().umask(newMask);
+                _cachedUmask = newMask;
+            }
         } else {
             runtime.newArgumentError("wrong number of arguments");
         }
@@ -1745,6 +1756,25 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
         return entry;
+    }
+
+    /**
+     * Joy of POSIX, only way to get the umask is to set the umask,
+     * then set it back. That's unsafe in a threaded program. We
+     * minimize but may not totally remove this race by caching the
+     * obtained or previously set (see umask() above) umask and using
+     * that as the initial set value which, cross fingers, is a
+     * no-op. The cache access is then synchronized. TODO: Better?
+     */
+    private static int getUmaskSafe( Ruby runtime ) {
+        synchronized (_umaskLock) {
+            final int umask = runtime.getPosix().umask(_cachedUmask);
+            if (_cachedUmask != umask ) {
+                runtime.getPosix().umask(umask);
+                _cachedUmask = umask;
+            }
+            return umask;
+        }
     }
 
     /**

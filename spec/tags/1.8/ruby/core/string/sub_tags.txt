@@ -1,0 +1,1 @@
+fails:String#sub! with pattern and block raises a RuntimeError when self is frozen

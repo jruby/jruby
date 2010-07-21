@@ -1,1 +1,0 @@
-fail:ENV.values uses the locale encoding

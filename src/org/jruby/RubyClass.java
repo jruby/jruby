@@ -230,11 +230,13 @@ public class RubyClass extends RubyModule {
     }
 
     public static class VariableAccessor {
+        private String name;
         private int index;
         private final int classId;
-        public VariableAccessor(int index, int classId) {
+        public VariableAccessor(String name, int index, int classId) {
             this.index = index;
             this.classId = classId;
+            this.name = name;
         }
         public int getClassId() {
             return classId;
@@ -242,24 +244,33 @@ public class RubyClass extends RubyModule {
         public int getIndex() {
             return index;
         }
+        public String getName() {
+            return name;
+        }
         public Object get(Object object) {
             return ((IRubyObject)object).getVariable(index);
         }
         public void set(Object object, Object value) {
             ((IRubyObject)object).setVariable(index, value);
         }
-        public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(-1, -1);
+        public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(null, -1, -1);
     }
 
     public Map<String, VariableAccessor> getVariableAccessorsForRead() {
         return variableAccessors;
     }
     
-    private volatile int accessorCount = 0;
     private volatile VariableAccessor objectIdAccessor = VariableAccessor.DUMMY_ACCESSOR;
 
-    private synchronized final VariableAccessor allocateVariableAccessor() {
-        return new VariableAccessor(accessorCount++, this.id);
+    private synchronized final VariableAccessor allocateVariableAccessor(String name) {
+        String[] myVariableNames = variableNames;
+        int newIndex = myVariableNames.length;
+        String[] newVariableNames = new String[newIndex + 1];
+        VariableAccessor newVariableAccessor = new VariableAccessor(name, newIndex, this.id);
+        System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);
+        newVariableNames[newIndex] = name;
+        variableNames = newVariableNames;
+        return newVariableAccessor;
     }
 
     public VariableAccessor getVariableAccessorForWrite(String name) {
@@ -268,9 +279,10 @@ public class RubyClass extends RubyModule {
             synchronized (this) {
                 Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
                 ivarAccessor = myVariableAccessors.get(name);
+
                 if (ivarAccessor == null) {
                     // allocate a new accessor and populate a new table
-                    ivarAccessor = allocateVariableAccessor();
+                    ivarAccessor = allocateVariableAccessor(name);
                     Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
                     newVariableAccessors.putAll(myVariableAccessors);
                     newVariableAccessors.put(name, ivarAccessor);
@@ -288,7 +300,7 @@ public class RubyClass extends RubyModule {
     }
 
     public synchronized VariableAccessor getObjectIdAccessorForWrite() {
-        if (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR) objectIdAccessor = allocateVariableAccessor();
+        if (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR) objectIdAccessor = allocateVariableAccessor("object_id");
         return objectIdAccessor;
     }
 
@@ -306,6 +318,20 @@ public class RubyClass extends RubyModule {
 
     public Map<String, VariableAccessor> getVariableTableCopy() {
         return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
+    }
+
+    /**
+     * Get an array of all the known instance variable names. The offset into
+     * the array indicates the offset of the variable's value in the per-object
+     * variable array.
+     *
+     * @return a copy of the array of known instance variable names
+     */
+    public String[] getVariableNames() {
+        String[] original = variableNames;
+        String[] copy = new String[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
+        return copy;
     }
 
     @Override
@@ -1037,6 +1063,17 @@ public class RubyClass extends RubyModule {
         return superClazz != null ? superClazz : runtime.getNil();
     }
 
+    @JRubyMethod(optional = 1)
+    public IRubyObject __subclasses__(ThreadContext context, IRubyObject[] args) {
+        boolean recursive = false;
+        if (args.length > 0) {
+            recursive = args[0].isTrue();
+        }
+
+        return RubyArray.newArray(context.getRuntime(), subclasses(recursive)).freeze(context);
+    }
+
+
     private void checkNotInitialized() {
         if (superClass != null || (runtime.is1_9() && this == runtime.getBasicObject())) {
             throw runtime.newTypeError("already initialized class");
@@ -1394,7 +1431,9 @@ public class RubyClass extends RubyModule {
     private Class reifiedClass;
 
     @SuppressWarnings("unchecked")
+    private static String[] EMPTY_STRING_ARRAY = new String[0];
     private Map<String, VariableAccessor> variableAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
+    private volatile String[] variableNames = EMPTY_STRING_ARRAY;
 
     private volatile boolean hasObjectID = false;
     public boolean hasObjectID() {

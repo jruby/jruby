@@ -1,0 +1,1 @@
+fails:Delegator#taint taints the delegated object

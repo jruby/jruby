@@ -472,16 +472,7 @@ public class RubyJRuby {
                 throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
             }
 
-            boolean recursive = false;
-            if (args.length == 1) {
-                if (args[0] instanceof RubyBoolean) {
-                    recursive = args[0].isTrue();
-                } else {
-                    context.getRuntime().newTypeError(args[0], context.getRuntime().fastGetClass("Boolean"));
-                }
-            }
-
-            return RubyArray.newArray(context.getRuntime(), clazz.subclasses(recursive)).freeze(context);
+            return clazz.__subclasses__(context, args);
         }
 
         @JRubyMethod(name = "become_java!", optional = 1)

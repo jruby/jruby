@@ -2269,7 +2269,7 @@ public class RubyIO extends RubyObject {
             ByteList line;
 
             if (args[i].isNil()) {
-                line = NIL_BYTELIST;
+                line = getNilByteList(runtime);
             } else if (runtime.isInspecting(args[i])) {
                 line = RECURSIVE_BYTELIST;
             } else if (args[i] instanceof RubyArray) {
@@ -3665,6 +3665,10 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "try_convert", meta = true, backtrace = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject tryConvert(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return arg.respondsTo("to_io") ? convertToIO(context, arg) : context.getRuntime().getNil();
+    }
+
+    private static ByteList getNilByteList(Ruby runtime) {
+        return runtime.is1_9() ? ByteList.EMPTY_BYTELIST : NIL_BYTELIST;
     }
     
     /**

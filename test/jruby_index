@@ -75,7 +75,7 @@ test_parsing
 test_random
 test_rbconfig
 test_require_once
-test_respond_to_concurrency
+test_respond_to
 test_ri
 test_socket
 test_string_java_bytes
