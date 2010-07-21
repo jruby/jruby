@@ -1,1 +1,0 @@
-fails:IO#eof? should not consume the data from the stream
