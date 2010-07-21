@@ -2346,9 +2346,8 @@ public class RubyIO extends RubyObject {
             
             readCheck(stream);
             stream.clearerr();
-
+        
             int c = myOpenFile.getMainStream().fgetc();
-            char chr = (char) c; // for returning a one-char string in 1.9 mode
             
             if (c == -1) {
                 // TODO: check for ferror, clear it, and try once more up above readCheck
@@ -2361,7 +2360,7 @@ public class RubyIO extends RubyObject {
                 return getRuntime().getNil();
             }
         
-            return getRuntime().is1_9() ? getRuntime().newString(String.valueOf(chr)) : getRuntime().newFixnum(c);
+            return getRuntime().newFixnum(c);
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
