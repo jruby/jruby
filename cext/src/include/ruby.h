@@ -30,6 +30,10 @@
 #include <fcntl.h>
 #include <ctype.h>
 
+#ifdef RUBY_EXTCONF_H
+#include RUBY_EXTCONF_H
+#endif
+
 #ifdef	__cplusplus
 extern "C" {
 #endif
