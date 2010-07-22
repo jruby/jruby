@@ -851,6 +851,23 @@ VALUE rb_reg_source(VALUE);
 int rb_reg_options(VALUE);
 VALUE rb_reg_regcomp(VALUE);
 
+/** Release the GIL and let func run in a parallel */
+typedef VALUE rb_blocking_function_t(void *);
+typedef void rb_unblock_function_t(void *);
+VALUE rb_thread_blocking_region(rb_blocking_function_t func, void* data, rb_unblock_function_t, void*);
+/** Block other threads and wait until the system select returns */
+int rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct timeval *timeout);
+
+/** The currently executing thread */
+VALUE rb_thread_current(void);
+/** Calls pass on the Ruby thread class */
+void rb_thread_schedule();
+/** Fake placeholder. Always returns 0 */
+int rb_thread_alone();
+/** Get and set thread locals */
+VALUE rb_thread_local_aset(VALUE thread, ID id, VALUE value);
+VALUE rb_thread_local_aref(VALUE thread, ID id);
+
 /* Global Module objects. */
 extern VALUE rb_mKernel;
 extern VALUE rb_mComparable;
