@@ -45,13 +45,15 @@ rb_exc_new3(VALUE etype, VALUE str)
 }
 
 extern "C" VALUE
-rb_exc_raise(VALUE exc) {
+rb_exc_raise(VALUE exc)
+{
     using namespace jruby;
     JLocalEnv env;
     
     jmethodID ctor = getMethodID(env, RaiseException_class, "<init>", "(Lorg/jruby/RubyException;)V");
     jthrowable jException = (jthrowable) env->NewObject(RaiseException_class, ctor, valueToObject(env, exc));
     checkExceptions(env);
+    
     throw JavaException(env, jException);
 }
 

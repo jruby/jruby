@@ -27,6 +27,7 @@ rb_hash_new(void)
 {
     return callMethod(rb_cHash, "new", 0);
 }
+
 extern "C" VALUE 
 rb_hash_aref(VALUE hash, VALUE key) 
 {
@@ -46,12 +47,14 @@ rb_hash_delete(VALUE hash, VALUE key)
 }
 
 extern "C" VALUE
-rb_hash_size(VALUE hash) {
+rb_hash_size(VALUE hash)
+{
     return callMethod(hash, "size", 0);
 }
 
 extern "C" void
-rb_hash_foreach(VALUE hash, int (*func)(ANYARGS), VALUE arg) {
+rb_hash_foreach(VALUE hash, int (*func)(ANYARGS), VALUE arg)
+{
     VALUE iterator = callMethod(hash, "to_iter", 0);
     VALUE entry = Qnil;
 
@@ -60,11 +63,14 @@ rb_hash_foreach(VALUE hash, int (*func)(ANYARGS), VALUE arg) {
         VALUE value = callMethod(entry, "value", 0);
 
         int ret = (*func)(key, value, arg);
-        switch(ret) {
+        switch (ret) {
+
         case 0: // ST_CONTINUE:
             continue;
+
         case 1: // ST_STOP:
             return;
+
         default:
             rb_raise(rb_eArgError, "unsupported hash_foreach value");
         }

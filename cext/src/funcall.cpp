@@ -71,7 +71,8 @@ rb_call_super(int argc, const VALUE *argv)
 }
 
 extern "C" VALUE
-rb_obj_instance_eval(int argc, VALUE* argv, VALUE self) {
+rb_obj_instance_eval(int argc, VALUE* argv, VALUE self)
+{
     JLocalEnv env;
 
     jobjectArray argArray = env->NewObjectArray(argc, IRubyObject_class, NULL);

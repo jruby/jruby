@@ -27,7 +27,8 @@
 using namespace jruby;
 
 void
-RubyIO::cache_java_handles(JNIEnv *env) {
+RubyIO::cache_java_handles(JNIEnv *env)
+{
     if (!FileDescriptor_class) {
         // Cache the java file descriptor statics
         jclass tmp = env->FindClass("java/io/FileDescriptor");
@@ -38,7 +39,8 @@ RubyIO::cache_java_handles(JNIEnv *env) {
 }
 
 struct RIO*
-RubyIO::toRIO() {
+RubyIO::toRIO()
+{
     JLocalEnv env;
 
     if (!rio.f && FileDescriptor_object) {
@@ -62,7 +64,8 @@ RubyIO::toRIO() {
     return &rio;
 }
 
-RubyIO::RubyIO(FILE* native_file, int native_fd, const char* native_mode) {
+RubyIO::RubyIO(FILE* native_file, int native_fd, const char* native_mode)
+{
     JLocalEnv env;
     setType(T_FILE);
     rio.fd = native_fd;
@@ -88,7 +91,8 @@ RubyIO::~RubyIO() {
 }
 
 extern "C" rb_io_t*
-jruby_io_struct(VALUE io) {
+jruby_io_struct(VALUE io)
+{
     Handle* h = Handle::valueOf(io);
     if (h->getType() != T_FILE) {
         rb_raise(rb_eArgError, "Invalid type. Expected an object of type IO");
@@ -98,12 +102,14 @@ jruby_io_struct(VALUE io) {
 
 /** Send #write to io passing str. */
 extern "C" VALUE
-rb_io_write(VALUE io, VALUE str) {
+rb_io_write(VALUE io, VALUE str)
+{
     return callMethod(io, "write", 1, str);
 }
 
 extern "C" int
-rb_io_fd(VALUE io) {
+rb_io_fd(VALUE io)
+{
     return jruby_io_struct(io)->fd;
 }
 

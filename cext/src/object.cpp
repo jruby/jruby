@@ -28,8 +28,9 @@
 using namespace jruby;
 
 static bool
-jruby_obj_frozen(VALUE obj) {
-    return (callMethod(obj, "frozen?", 0) == Qtrue);
+jruby_obj_frozen(VALUE obj)
+{
+    return callMethod(obj, "frozen?", 0) == Qtrue;
 }
 
 static VALUE
@@ -63,7 +64,8 @@ rb_obj_classname(VALUE obj)
     return rb_class2name(rb_class_of(obj));
 }
 
-extern "C" void rb_extend_object(VALUE object, VALUE module) {
+extern "C" void rb_extend_object(VALUE object, VALUE module)
+{
     callMethod(object, "extend", 1, module);
 }
 
@@ -106,7 +108,8 @@ rb_check_convert_type(VALUE val, int type, const char* type_name, const char* me
 }
 
 extern "C" VALUE
-rb_iv_get(VALUE obj, const char* name) {
+rb_iv_get(VALUE obj, const char* name)
+{
     JLocalEnv env;
 
     char var_name[strlen(name) + 1];
@@ -117,11 +120,13 @@ rb_iv_get(VALUE obj, const char* name) {
             "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
     jobject retval = env->CallObjectMethod(valueToObject(env, obj), mid, env->NewStringUTF(var_name));
     checkExceptions(env);
+
     return objectToValue(env, retval);
 }
 
 extern "C" VALUE
-rb_iv_set(VALUE obj, const char* name, VALUE value) {
+rb_iv_set(VALUE obj, const char* name, VALUE value)
+{
     JLocalEnv env;
 
     char var_name[strlen(name) + 1];
@@ -137,17 +142,20 @@ rb_iv_set(VALUE obj, const char* name, VALUE value) {
 }
 
 extern "C" VALUE
-rb_ivar_get(VALUE obj, ID ivar_name) {
+rb_ivar_get(VALUE obj, ID ivar_name)
+{
     return rb_iv_get(obj, rb_id2name(ivar_name));
 }
 
 extern "C" VALUE
-rb_ivar_set(VALUE obj, ID ivar_name, VALUE value) {
+rb_ivar_set(VALUE obj, ID ivar_name, VALUE value)
+{
     return rb_iv_set(obj, rb_id2name(ivar_name), value);
 }
 
 extern "C" VALUE
-rb_ivar_defined(VALUE obj, ID ivar, VALUE value) {
+rb_ivar_defined(VALUE obj, ID ivar, VALUE value)
+{
     JLocalEnv env;
     const char* name = rb_id2name(ivar);
 
@@ -167,12 +175,14 @@ rb_ivar_defined(VALUE obj, ID ivar, VALUE value) {
 }
 
 extern "C" void
-rb_obj_call_init(VALUE recv, int arg_count, VALUE* args) {
+rb_obj_call_init(VALUE recv, int arg_count, VALUE* args)
+{
     callMethodANonConst(recv, "initialize", arg_count, args);
 }
 
 extern "C" VALUE
-rb_obj_is_kind_of(VALUE obj, VALUE module) {
+rb_obj_is_kind_of(VALUE obj, VALUE module)
+{
     return callMethod(obj, "kind_of?", 1, module);
 }
 
@@ -208,10 +218,16 @@ rb_obj_as_string(VALUE obj)
     if (TYPE(obj) == T_STRING) {
         return obj;
     }
+
     str = callMethodA(obj, "to_s", 0, NULL);
-    if (TYPE(str) != T_STRING)
+    if (TYPE(str) != T_STRING) {
         return rb_any_to_s(obj);
-    if (OBJ_TAINTED(obj)) OBJ_TAINT(str);
+    }
+
+    if (OBJ_TAINTED(obj)) {
+        OBJ_TAINT(str);
+    }
+
     return str;
 }
 
@@ -247,7 +263,10 @@ rb_any_to_s(VALUE obj)
         return rb_str_new("", 0);
     }
 
-    return rb_str_new_cstr(buf);
+    VALUE result = rb_str_new_cstr(buf);
+    free(buf);
+
+    return result;
 }
 
 extern "C" void
@@ -259,12 +278,14 @@ rb_check_frozen(VALUE obj)
 }
 
 extern "C" VALUE
-rb_singleton_class(VALUE obj) {
+rb_singleton_class(VALUE obj)
+{
     JLocalEnv env;
 
     jmethodID IRubyObject_getSingletonClass_method = getMethodID(env, IRubyObject_class, "getSingletonClass",
             "()Lorg/jruby/RubyClass;");
     jobject singleton = env->CallObjectMethod(valueToObject(env, obj), IRubyObject_getSingletonClass_method);
     checkExceptions(env);
+
     return objectToValue(env, singleton);
 }

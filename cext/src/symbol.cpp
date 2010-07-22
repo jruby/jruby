@@ -124,7 +124,8 @@ rb_id2name(ID sym)
 }
 
 extern "C" ID
-rb_to_id(VALUE obj) {
+rb_to_id(VALUE obj)
+{
     return SYM2ID(callMethod(obj, "to_sym", 0));
 }
 

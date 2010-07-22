@@ -25,27 +25,32 @@
 using namespace jruby;
 
 extern "C" VALUE
-rb_thread_local_aref(VALUE thread, ID id) {
+rb_thread_local_aref(VALUE thread, ID id)
+{
     return callMethod(thread, "[]", 1, ID2SYM(id));
 }
 
 extern "C" VALUE
-rb_thread_local_aset(VALUE thread, ID id, VALUE value) {
+rb_thread_local_aset(VALUE thread, ID id, VALUE value)
+{
     return callMethod(thread, "[]=", 2, ID2SYM(id), value);
 }
 
 extern "C" int
-rb_thread_alone() {
+rb_thread_alone()
+{
     return 0; // Fake out, never true on the JVM and different semantics apply anyway
 }
 
 extern "C" void
-rb_thread_schedule() {
+rb_thread_schedule()
+{
     callMethod(rb_cThread, "pass", 0);
 }
 
 extern "C" int
-rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct timeval *timeout) {
+rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct timeval *timeout)
+{
     JLocalEnv env;
     struct timeval start, end;
     int interval;
@@ -75,12 +80,14 @@ rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct
 }
 
 extern "C" VALUE
-rb_thread_current(void) {
+rb_thread_current(void)
+{
     return callMethod(rb_cThread, "current", 0);
 }
 
 extern "C" VALUE
-rb_thread_blocking_region(rb_blocking_function_t func, void* data, rb_unblock_function_t, void*) {
+rb_thread_blocking_region(rb_blocking_function_t func, void* data, rb_unblock_function_t, void*)
+{
     // unblock function is ignored, Rubinius does it, too, so it can't be too bad to get exts working
     VALUE ret = Qnil;
     // TODO: Make sure this thread can be run in parallel

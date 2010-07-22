@@ -39,9 +39,9 @@ rb_class_new(VALUE klass)
 }
 
 extern "C" VALUE
-rb_class_inherited(VALUE super, VALUE klass) {
-    VALUE parent = (super ? super : rb_cObject);
-    return callMethod(parent, "inherited", 1, klass);
+rb_class_inherited(VALUE super, VALUE klass)
+{
+    return callMethod(super ? super : rb_cObject, "inherited", 1, klass);
 }
 
 extern "C" VALUE
@@ -138,27 +138,32 @@ rb_define_alloc_func(VALUE klass, VALUE (*fn)(VALUE))
 }
 
 extern "C" VALUE
-rb_path2class(const char* path) {
+rb_path2class(const char* path)
+{
     JLocalEnv env;
     jmethodID mid = getMethodID(env, Ruby_class, "getClassFromPath", "(Ljava/lang/String;)Lorg/jruby/RubyModule;");
     jobject klass = env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(path));
     checkExceptions(env);
+
     return objectToValue(env, klass);
 }
 
 extern "C" VALUE
-rb_obj_alloc(VALUE klass) {
+rb_obj_alloc(VALUE klass)
+{
     JLocalEnv env;
     jobject allocator = getDefaultAllocator(env, klass);
     jmethodID mid = getMethodID(env, ObjectAllocator_class, "allocate",
             "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;)Lorg/jruby/runtime/builtin/IRubyObject;");
     jobject instance = env->CallObjectMethod(allocator, mid, getRuntime(), valueToObject(env, klass));
     checkExceptions(env);
+
     return objectToValue(env, instance);
 }
 
 extern "C" void
-rb_include_module(VALUE self, VALUE module) {
+rb_include_module(VALUE self, VALUE module)
+{
     callMethod(self, "include", 1, module);
 }
 

@@ -22,18 +22,21 @@
 using namespace jruby;
 
 extern "C" VALUE
-rb_reg_source(VALUE regexp) {
+rb_reg_source(VALUE regexp)
+{
     return callMethod(regexp, "source", 0);
 }
 
 extern "C" int
-rb_reg_options(VALUE regexp) {
+rb_reg_options(VALUE regexp)
+{
     VALUE count = callMethod(regexp, "options", 0);
     return FIX2INT(count);
 }
 
 extern "C" VALUE
-rb_reg_regcomp(VALUE str) {
+rb_reg_regcomp(VALUE str)
+{
     return callMethod(rb_cRegexp, "new", 1, str);
 }
 

@@ -206,31 +206,35 @@ rb_string_value(VALUE* ptr)
 }
 
 extern "C" char* 
-rb_string_value_ptr(VALUE* object_variable) {
-    VALUE str = rb_string_value(object_variable);    
-    return (char*)(RSTRING_PTR(str));
+rb_string_value_ptr(VALUE* object_variable)
+{
+    VALUE str = rb_string_value(object_variable);
+    return (char*) (RSTRING_PTR(str));
 }
 
 extern "C" char* 
-rb_string_value_cstr(VALUE* object_variable) {
+rb_string_value_cstr(VALUE* object_variable)
+{
     VALUE str = rb_string_value(object_variable);
     long long str_size = NUM2LL(callMethod(str, "length", 0));
-    char* cstr = (char*)(RSTRING_PTR(str));
+    char* cstr = (char*) (RSTRING_PTR(str));
 
-    if((unsigned int)str_size != strlen(cstr)) {
-      rb_raise(rb_eArgError, "string contains NULL byte");
+    if ((unsigned int) str_size != strlen(cstr)) {
+        rb_raise(rb_eArgError, "string contains NULL byte");
     }
 
     return cstr;
 }
 
 extern "C" VALUE 
-rb_str_freeze(VALUE str) {
+rb_str_freeze(VALUE str)
+{
     return callMethodA(str, "freeze", 0, NULL);
 }
 
 extern "C" VALUE
-rb_str_intern(VALUE str) {
+rb_str_intern(VALUE str)
+{
     return callMethodA(str, "to_sym", 0, NULL);
 }
 
@@ -241,12 +245,14 @@ rb_str_length(VALUE str)
 }
 
 extern "C" VALUE
-rb_String(VALUE obj) {
+rb_String(VALUE obj)
+{
     return rb_convert_type(obj, T_STRING, "String", "to_s");
 }
 
 extern "C" VALUE
-rb_check_string_type(VALUE val) {
+rb_check_string_type(VALUE val)
+{
     return rb_check_convert_type(val, 0, "String", "to_str");
 }
 
@@ -291,12 +297,16 @@ jruby_rstring(VALUE v)
 }
 
 extern "C" char*
-rb_str2cstr(VALUE str, long* len) {
+rb_str2cstr(VALUE str, long* len)
+{
     char* cstr = RSTRING_PTR(str);
+
     if (len) {
         *len = RSTRING_LEN(str);
-    } else if((unsigned int)RSTRING_LEN(str) != strlen(cstr)) {
+
+    } else if ((unsigned int) RSTRING_LEN(str) != strlen(cstr)) {
         rb_warn("string contains \\0 character");
     }
+
     return cstr;
 }

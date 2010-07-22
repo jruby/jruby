@@ -31,7 +31,8 @@ using namespace jruby;
 #define RB_EXC_BUFSIZE 256
 
 extern "C" void
-rb_warn(const char *fmt, ...) {
+rb_warn(const char *fmt, ...)
+{
     va_list args;
     char msg[RB_EXC_BUFSIZE];
 
@@ -43,7 +44,8 @@ rb_warn(const char *fmt, ...) {
 }
 
 extern "C" void
-rb_warning(const char *fmt, ...) {
+rb_warning(const char *fmt, ...)
+{
     va_list args;
     char msg[RB_EXC_BUFSIZE];
 
@@ -55,34 +57,41 @@ rb_warning(const char *fmt, ...) {
 }
 
 extern "C" VALUE
-rb_yield(VALUE argument) {
+rb_yield(VALUE argument)
+{
     JLocalEnv env;
     jobject retval = env->CallStaticObjectMethod(JRuby_class, JRuby_yield, getRuntime(), valueToObject(env, argument));
     checkExceptions(env);
+    
     return objectToValue(env, retval);
 }
 
 extern "C" int
-rb_block_given_p() {
+rb_block_given_p()
+{
     JLocalEnv env;
     return (int)(env->CallStaticIntMethod(JRuby_class, JRuby_blockGiven, getRuntime()));
 }
 
 extern "C" VALUE
-rb_block_proc() {
+rb_block_proc()
+{
     JLocalEnv env;
     jobject proc = env->CallStaticObjectMethod(JRuby_class, JRuby_getBlockProc, getRuntime());
     checkExceptions(env);
+    
     return objectToValue(env, proc);
 }
 
 extern "C" VALUE
-rb_require(const char* name) {
+rb_require(const char* name)
+{
     return callMethod(rb_mKernel, "require", 1, rb_str_new_cstr(name));
 }
 
 extern "C" void
-rb_define_alias(VALUE klass, const char* new_name, const char* old_name) {
+rb_define_alias(VALUE klass, const char* new_name, const char* old_name)
+{
     JLocalEnv env;
     jmethodID mid = getMethodID(env, RubyModule_class, "defineAlias",
             "(Ljava/lang/String;Ljava/lang/String;)V");

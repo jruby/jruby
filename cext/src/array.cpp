@@ -32,7 +32,8 @@
 using namespace jruby;
 
 struct RArray*
-RubyArray::toRArray() {
+RubyArray::toRArray()
+{
     JLocalEnv env;
     int length;
     jobjectArray elements;
@@ -57,7 +58,7 @@ RubyArray::toRArray() {
     return &rarray;
 }
 
-struct RArray*
+extern "C" struct RArray*
 jruby_rarray(VALUE v)
 {
     Handle* h = Handle::valueOf(v);
@@ -191,12 +192,14 @@ rb_ary_aref(int argc, VALUE* argv, VALUE ary)
 }
 
 extern "C" VALUE
-rb_check_array_type(VALUE val) {
+rb_check_array_type(VALUE val)
+{
     return rb_check_convert_type(val, 0, "Array", "to_ary");
 }
 
 extern "C" int
-rb_ary_size(VALUE ary) {
+rb_ary_size(VALUE ary)
+{
     return jruby_rarray(ary)->len;
 }
 
@@ -204,19 +207,21 @@ rb_ary_size(VALUE ary) {
 // Really just used as a placeholder/sentinal value to half implement
 // rb_iterate
 extern "C" VALUE
-rb_each(VALUE ary) {
+rb_each(VALUE ary)
+{
     rb_raise(rb_eArgError, "rb_each not fully supported", 0);
     return Qnil;
 }
 
 extern "C" VALUE
-rb_iterate(VALUE(*ifunc)(VALUE), VALUE ary, VALUE(*cb)(ANYARGS), VALUE cb_data) {
-    if(ifunc != rb_each || !rb_obj_is_kind_of(ary, rb_cArray)) {
+rb_iterate(VALUE(*ifunc)(VALUE), VALUE ary, VALUE(*cb)(ANYARGS), VALUE cb_data)
+{
+    if (ifunc != rb_each || !rb_obj_is_kind_of(ary, rb_cArray)) {
         rb_raise(rb_eArgError, "rb_iterate only supported with rb_each and an Array");
         return Qnil;
     }
 
-    for(int i = 0; i < rb_ary_size(ary); i++) {
+    for (int i = 0; i < rb_ary_size(ary); i++) {
         (*cb)(rb_ary_entry(ary, i), cb_data, Qnil);
     }
 
