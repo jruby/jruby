@@ -546,6 +546,7 @@ VALUE rb_Array(VALUE val);
 VALUE rb_ary_new(void);
 VALUE rb_ary_new2(long length);
 VALUE rb_ary_new4(long n, const VALUE *);
+VALUE rb_assoc_new(VALUE, VALUE);
 int rb_ary_size(VALUE self);
 VALUE rb_ary_push(VALUE array, VALUE val);
 VALUE rb_ary_pop(VALUE array);

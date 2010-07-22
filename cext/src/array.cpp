@@ -98,6 +98,14 @@ rb_ary_new4(long n, const VALUE* argv)
     return ary;
 }
 
+extern "C" VALUE
+rb_assoc_new(VALUE key, VALUE value) {
+    VALUE ary = rb_ary_new2(2);
+    rb_ary_push(ary, key);
+    rb_ary_push(ary, value);
+    return ary;
+}
+
 extern "C" VALUE 
 rb_ary_push(VALUE array, VALUE val) 
 {
