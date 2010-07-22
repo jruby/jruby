@@ -302,6 +302,10 @@ Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jin
             h = new RubyFloat(env, obj, env->GetDoubleField(obj, RubyFloat_value_field));
             break;
 
+        case org_jruby_runtime_ClassIndex_TIME:
+            h = new Handle(env, obj, T_DATA); // Special case handling
+            break;
+
         default:
             h = new Handle(env, obj, T_OBJECT);
             break;

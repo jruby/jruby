@@ -72,7 +72,7 @@ RubyIO::RubyIO(FILE* native_file, int native_fd, const char* native_mode) {
     obj = valueToObject(env, callMethod(rb_cIO, "", 2, INT2FIX(native_fd), rb_str_new_cstr(mode)));
 }
 
-RubyIO::RubyIO(JNIEnv* env, jobject obj_, jobject fd_, jstring mode_) {
+RubyIO::RubyIO(JNIEnv* env, jobject obj_, jobject fd_, jstring mode_): Handle(env, obj_, T_FILE) {
     obj = obj_;
     FileDescriptor_object = fd_;
 

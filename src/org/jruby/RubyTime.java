@@ -86,8 +86,13 @@ public class RubyTime extends RubyObject {
     // understood by Java API.
     private static final Pattern TZ_PATTERN
             = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
-    
+
     private static final ByteList TZ_STRING = ByteList.create("TZ");
+
+    @Override
+    public int getNativeTypeIndex() {
+        return ClassIndex.TIME;
+    }
 
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
         RubyString tzVar = runtime.newString(TZ_STRING);

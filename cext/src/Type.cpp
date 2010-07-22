@@ -38,7 +38,7 @@ rb_type(VALUE obj)
         if (obj == Qfalse) return T_FALSE;
 
     }
-    return Handle::valueOf(obj)->getType();    
+    return Handle::valueOf(obj)->getType();
 }
 
 static struct types {
