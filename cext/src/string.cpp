@@ -250,6 +250,11 @@ rb_check_string_type(VALUE val) {
     return rb_check_convert_type(val, 0, "String", "to_str");
 }
 
+extern "C" VALUE
+rb_str_resize(VALUE str, long size) {
+    return callMethod(str, "slice", 2, INT2FIX(0), LONG2FIX(size));
+}
+
 static RubyString*
 jruby_str(VALUE v)
 {
