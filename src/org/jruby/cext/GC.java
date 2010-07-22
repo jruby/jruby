@@ -24,16 +24,14 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import org.jruby.RubyBasicObject;
+
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ReferenceReaper;
-import org.jruby.util.WeakIdentityHashMap;
 
 
 public class GC {
 
-    @SuppressWarnings(value="unchecked")
     private static final Map<Object, Handle> nativeHandles = new IdentityHashMap<Object, Handle>();
     private static final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory());
     private static volatile Reference<Object> reaper = null;

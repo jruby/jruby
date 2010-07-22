@@ -22,6 +22,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 
+@SuppressWarnings("serial")
 public class RubyData extends RubyObject {
 
     private RubyData(Ruby runtime, RubyClass klass) {

@@ -19,9 +19,7 @@
 
 package org.jruby.cext;
 
-import java.util.Map;
 import org.jruby.RubyString;
-import org.jruby.util.WeakIdentityHashMap;
 
 /**
  *

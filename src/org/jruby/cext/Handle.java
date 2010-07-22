@@ -19,7 +19,6 @@
 package org.jruby.cext;
 
 import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
@@ -34,6 +33,7 @@ public final class Handle {
     private static final long FIXNUM_MIN = Integer.getInteger("sun.arch.data.model") == 32
             ? (Long.MIN_VALUE >> 1) : ((long) Integer.MIN_VALUE >> 1);
 
+    @SuppressWarnings("unused")
     private final Ruby runtime;
     private final long address;
     
