@@ -31,9 +31,9 @@ MODEL = 32 # Default to 32bit compiles
 
 # Try to determine JAVA_HOME if not set
 ifndef JAVA_HOME
-  JAVAC := $(shell which javac)
+  JAVAC := $(strip $(realpath $(shell which javac)))
   ifdef JAVAC
-    JAVA_HOME := $(shell readlink -f $(JAVAC) | xargs dirname | xargs dirname )
+    JAVA_HOME := $(dir $(dir $(JAVAC)))
   endif
 endif
 JDK_HOME=$(shell if [ -d "$(JAVA_HOME)"/include ];then echo "$(JAVA_HOME)"; else echo "$(JAVA_HOME)"/..; fi)
@@ -76,7 +76,6 @@ endif
 
 PICFLAGS = -fPIC
 SOFLAGS = # Filled in for each OS specifically
-FFI_MMAP_EXEC = -DFFI_MMAP_EXEC_WRIT
 
 STRIP = strip -S
 
