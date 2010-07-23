@@ -29,9 +29,10 @@ end
 Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
 RUBY_PLATFORM = Config::MAKEFILE_CONFIG['RUBY_PLATFORM']
 
-$topdir     = File.expand_path(File.join(__FILE__, "..", "..", "..", "native"))
+$topdir     = File.expand_path("../../../native/include", __FILE__)
+$hdrdir     = File.expand_path("ruby", $topdir)
 $top_srcdir = $topdir
-$hdrdir     = $topdir
+$extmk      = false
 
 unless File.exists?($hdrdir + "/ruby.h")
   abort "mkmf.rb can't find header files for ruby at #{$hdrdir}/ruby.h"
@@ -1314,7 +1315,7 @@ SHELL = /bin/sh
 #{"top_srcdir = " + $top_srcdir.sub(%r"\A#{Regexp.quote($topdir)}/", "$(topdir)/") if $extmk}
 srcdir = #{srcdir.gsub(/\$\((srcdir)\)|\$\{(srcdir)\}/) {mkintpath(CONFIG[$1||$2])}.quote}
 topdir = #{mkintpath($extmk ? CONFIG["topdir"] : $topdir).quote}
-hdrdir = #{$extmk ? mkintpath(CONFIG["hdrdir"]).quote : '$(topdir)'}
+hdrdir = #{mkintpath($extmk ? CONFIG["hdrdir"] : $hdrdir).quote}
 VPATH = #{vpath.join(CONFIG['PATH_SEPARATOR'])}
 }
   if $extmk

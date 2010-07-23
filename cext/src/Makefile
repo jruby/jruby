@@ -48,8 +48,9 @@ SRC_DIR ?= $(shell pwd)
 JNI_DIR ?= $(SRC_DIR)
 JRUBY_NATIVE_DIR ?= $(JRUBY_BASEDIR)/lib/native/
 BUILD_DIR ?= $(JRUBY_BASEDIR)/build
-HDR_DIR ?= $(JRUBY_NATIVE_DIR)
-RUBY_HEADERS = defines.h dl.h intern.h re.h ruby.h
+HDR_DIR ?= $(JRUBY_NATIVE_DIR)/include
+RUBY_HEADERS = $(patsubst %.h, $(HDR_DIR)/ruby/%.h, $(notdir $(wildcard $(SRC_DIR)/include/ruby/*.h)))
+RUBY_HEADERS += $(HDR_DIR)/ruby.h
 CONFIG_H = $(BUILD_DIR)/config.h
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
@@ -82,7 +83,7 @@ STRIP = strip -S
 
 JDK_INCLUDES = -I"$(JDK_HOME)/include" -I"$(JDK_HOME)/include/$(OS)"
 IFLAGS = -I"$(BUILD_DIR)" -I"$(SRC_DIR)" -I"$(BUILD_DIR)"/jni \
-  -I"$(SRC_DIR)"/include
+  -I"$(SRC_DIR)"/include -I"$(SRC_DIR)"/include/ruby
 CFLAGS = $(OFLAGS) $(WFLAGS) $(IFLAGS) $(PICFLAGS) $(JDK_INCLUDES) $(ARCHFLAGS)
 CFLAGS += -D_REENTRANT -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
 CXXFLAGS = $(CFLAGS)
@@ -281,9 +282,10 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 	@mkdir -p $(@D)
 	$(CCACHE) $(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(RUBY_HEADERS): $(wildcard $(SRC_DIR)/include/*.h) 
-	@mkdir -p $(JRUBY_NATIVE_DIR)
-	@cp $(SRC_DIR)/include/*.h $(JRUBY_NATIVE_DIR)/
+$(RUBY_HEADERS): $(wildcard $(SRC_DIR)/include/ruby/*.h) $(SRC_DIR)/include/ruby.h
+	@mkdir -p $(HDR_DIR)/ruby
+	@cp $(wildcard $(SRC_DIR)/include/ruby/*.h) $(HDR_DIR)/ruby/
+	@cp $(SRC_DIR)/include/ruby.h $(HDR_DIR)/
 
 .SECONDARY: $(JAVA_HDRS)
 
@@ -298,6 +300,7 @@ clean: dist-clean
 	$(RM) $(wildcard config.*)
 	$(RM) $(wildcard configure)
 	$(RM) -R autom4te.cache
+	$(RM) $(RUBY_HEADERS)
 
 
 dist-clean:
