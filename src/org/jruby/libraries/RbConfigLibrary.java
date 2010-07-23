@@ -267,7 +267,7 @@ public class RbConfigLibrary implements Library {
             setConfig(mkmfHash, "DLEXT", "bundle");
             ldshared = "cc -dynamic -bundle -undefined suppress -flat_namespace ";
             cflags += " -DTARGET_RT_MAC_CFM=0 ";
-            ldflags += " -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 -undefined dynamic_lookup ";
+            ldflags += " -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 ";
         } else {
             setConfig(mkmfHash, "DLEXT", "so");
         }
@@ -298,6 +298,7 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "CC", "cc ");
         setConfig(mkmfHash, "CPP", "cc -E ");
         setConfig(mkmfHash, "OUTFLAG", "-o ");
+        setConfig(mkmfHash, "COMMON_HEADERS", "ruby.h");
         setConfig(mkmfHash, "PATH_SEPARATOR", ":");
         setConfig(mkmfHash, "INSTALL", "install -c ");
         setConfig(mkmfHash, "RM", "rm -f");
