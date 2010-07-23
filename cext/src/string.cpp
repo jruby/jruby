@@ -261,6 +261,11 @@ rb_str_resize(VALUE str, long size) {
     return callMethod(str, "slice", 2, INT2FIX(0), LONG2FIX(size));
 }
 
+extern "C" void
+rb_str_set_len(VALUE str, long size) {
+    rb_str_resize(str, size);
+}
+
 static RubyString*
 jruby_str(VALUE v)
 {
