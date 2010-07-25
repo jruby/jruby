@@ -28,11 +28,13 @@
 package org.jruby.ext.socket;
 
 import static com.kenai.constantine.platform.AddressFamily.AF_INET;
+import static com.kenai.constantine.platform.AddressFamily.AF_INET6;
 import static com.kenai.constantine.platform.IPProto.IPPROTO_TCP;
 import static com.kenai.constantine.platform.IPProto.IPPROTO_UDP;
 import static com.kenai.constantine.platform.NameInfo.NI_NUMERICHOST;
 import static com.kenai.constantine.platform.NameInfo.NI_NUMERICSERV;
 import static com.kenai.constantine.platform.ProtocolFamily.PF_INET;
+import static com.kenai.constantine.platform.ProtocolFamily.PF_INET6;
 import static com.kenai.constantine.platform.Sock.SOCK_DGRAM;
 import static com.kenai.constantine.platform.Sock.SOCK_STREAM;
 
@@ -76,6 +78,7 @@ import org.jruby.util.io.ModeFlags;
 
 import com.kenai.constantine.platform.AddressFamily;
 import com.kenai.constantine.platform.Sock;
+import java.net.Inet6Address;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
@@ -624,11 +627,12 @@ public class RubySocket extends RubyBasicSocket {
                 port = getservbyname(context, recv, new IRubyObject[]{port});
             }
 
-            //IRubyObject family = args[2];
+            IRubyObject family = args[2];
             IRubyObject socktype = args[3];
             //IRubyObject protocol = args[4];
             IRubyObject flags = args[5];
 
+            boolean is_ipv6 = (! family.isNil()) && (RubyNumeric.fix2int(family) & AF_INET6.value()) == AF_INET6.value();
             boolean sock_stream = true;
             boolean sock_dgram = true;
             if(!socktype.isNil()) {
@@ -642,39 +646,40 @@ public class RubySocket extends RubyBasicSocket {
 
             // When Socket::AI_PASSIVE and host is nil, return 'any' address.
             InetAddress[] addrs = null;
-            if(!flags.isNil()) {
+            if(!flags.isNil() && RubyFixnum.fix2int(flags) > 0) {
                 // The value of 1 is for Socket::AI_PASSIVE.
                 int flag = RubyNumeric.fix2int(flags);
                 if ((flag == 1) && emptyHost ) {
-                    addrs = InetAddress.getAllByName("0.0.0.0");
+                    // use RFC 2732 style string to ensure that we get Inet6Address
+                    addrs = InetAddress.getAllByName(is_ipv6 ? "[::]" : "0.0.0.0");
                 }
 
             }
 
             if (addrs == null)
-                addrs = InetAddress.getAllByName(emptyHost ? null : host.convertToString().toString());
+                addrs = InetAddress.getAllByName(emptyHost ? (is_ipv6 ? "[::1]" : null) : host.convertToString().toString());
 
             List<IRubyObject> l = new ArrayList<IRubyObject>();
             for(int i = 0; i < addrs.length; i++) {
                 IRubyObject[] c;
                 if(sock_dgram) {
                     c = new IRubyObject[7];
-                    c[0] = r.newString("AF_INET");
+                    c[0] = r.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
                     c[1] = port;
                     c[2] = r.newString(getHostAddress(recv, addrs[i]));
                     c[3] = r.newString(addrs[i].getHostAddress());
-                    c[4] = r.newFixnum(PF_INET);
+                    c[4] = r.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                     c[5] = r.newFixnum(SOCK_DGRAM);
                     c[6] = r.newFixnum(IPPROTO_UDP);
                     l.add(r.newArrayNoCopy(c));
                 }
                 if(sock_stream) {
                     c = new IRubyObject[7];
-                    c[0] = r.newString("AF_INET");
+                    c[0] = r.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
                     c[1] = port;
                     c[2] = r.newString(getHostAddress(recv, addrs[i]));
                     c[3] = r.newString(addrs[i].getHostAddress());
-                    c[4] = r.newFixnum(PF_INET);
+                    c[4] = r.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                     c[5] = r.newFixnum(SOCK_STREAM);
                     c[6] = r.newFixnum(IPPROTO_TCP);
                     l.add(r.newArrayNoCopy(c));
@@ -709,7 +714,7 @@ public class RubySocket extends RubyBasicSocket {
             port = list.get(1).toString();
         } else if (arg0 instanceof RubyString) {
             String arg = ((RubyString)arg0).toString();
-            Matcher m = STRING_ADDRESS_PATTERN.matcher(arg);
+            Matcher m = STRING_IPV4_ADDRESS_PATTERN.matcher(arg);
             if (!m.matches()) {
                 IRubyObject obj = unpack_sockaddr_in(context, recv, arg0);
                 if (obj instanceof RubyArray) {
@@ -724,9 +729,19 @@ public class RubySocket extends RubyBasicSocket {
                 else {
                     throw runtime.newArgumentError("invalid address string");
                 }
-            } else if ((host = m.group(HOST_GROUP)) == null || host.length() == 0 ||
-                    (port = m.group(PORT_GROUP)) == null || port.length() == 0) {
+            } else if ((host = m.group(IPV4_HOST_GROUP)) == null || host.length() == 0 ||
+                    (port = m.group(IPV4_PORT_GROUP)) == null || port.length() == 0) {
                 throw runtime.newArgumentError("invalid address string");
+            } else {
+                // Try IPv6
+                try {
+                    InetAddress ipv6_addr = InetAddress.getByName(host);
+                    if (ipv6_addr instanceof Inet6Address) {
+                        host = ipv6_addr.getHostAddress();
+                    }
+                } catch (UnknownHostException uhe) {
+                    throw runtime.newArgumentError("invalid address string");
+                }
             }
         } else {
             throw runtime.newArgumentError("invalid args");
@@ -759,14 +774,13 @@ public class RubySocket extends RubyBasicSocket {
         return do_not_reverse_lookup(recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName();
     }
 
-    // FIXME: may need to broaden for IPV6 IP address strings
-    private static final Pattern STRING_ADDRESS_PATTERN =
+    private static final Pattern STRING_IPV4_ADDRESS_PATTERN =
         Pattern.compile("((.*)\\/)?([\\.0-9]+)(:([0-9]+))?");
 
     private final static Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");
     private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
     private final static Pattern PERM_DENIED_PATTERN = Pattern.compile("[Pp]ermission.*denied");
 
-    private static final int HOST_GROUP = 3;
-    private static final int PORT_GROUP = 5;
+    private static final int IPV4_HOST_GROUP = 3;
+    private static final int IPV4_PORT_GROUP = 5;
 }// RubySocket
