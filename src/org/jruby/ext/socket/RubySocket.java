@@ -596,7 +596,7 @@ public class RubySocket extends RubyBasicSocket {
             InetAddress addr = getRubyInetAddress(hostname.convertToString().getByteList());
             Ruby runtime = context.getRuntime();
             IRubyObject[] ret = new IRubyObject[4];
-            ret[0] = runtime.newString(addr.getCanonicalHostName());
+            ret[0] = runtime.newString(addr.getHostAddress());
             ret[1] = runtime.newArray();
             ret[2] = runtime.newFixnum(2); // AF_INET
             ret[3] = runtime.newString(new ByteList(addr.getAddress()));
@@ -661,7 +661,7 @@ public class RubySocket extends RubyBasicSocket {
                     c = new IRubyObject[7];
                     c[0] = r.newString("AF_INET");
                     c[1] = port;
-                    c[2] = r.newString(addrs[i].getCanonicalHostName());
+                    c[2] = r.newString(getHostAddress(recv, addrs[i]));
                     c[3] = r.newString(addrs[i].getHostAddress());
                     c[4] = r.newFixnum(PF_INET);
                     c[5] = r.newFixnum(SOCK_DGRAM);
@@ -672,7 +672,7 @@ public class RubySocket extends RubyBasicSocket {
                     c = new IRubyObject[7];
                     c[0] = r.newString("AF_INET");
                     c[1] = port;
-                    c[2] = r.newString(addrs[i].getCanonicalHostName());
+                    c[2] = r.newString(getHostAddress(recv, addrs[i]));
                     c[3] = r.newString(addrs[i].getHostAddress());
                     c[4] = r.newFixnum(PF_INET);
                     c[5] = r.newFixnum(SOCK_STREAM);
@@ -753,6 +753,10 @@ public class RubySocket extends RubyBasicSocket {
         }
         return runtime.newArray(runtime.newString(host), runtime.newString(port));
 
+    }
+
+    private static String getHostAddress(IRubyObject recv, InetAddress addr) {
+        return do_not_reverse_lookup(recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName();
     }
 
     // FIXME: may need to broaden for IPV6 IP address strings
