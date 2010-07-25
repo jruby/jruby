@@ -545,6 +545,7 @@ void rb_define_alias(VALUE klass, const char *new_name, const char *old_name);
 VALUE rb_Array(VALUE val);
 VALUE rb_ary_new(void);
 VALUE rb_ary_new2(long length);
+VALUE rb_ary_new3(long size, ...);
 VALUE rb_ary_new4(long n, const VALUE *);
 VALUE rb_assoc_new(VALUE, VALUE);
 int rb_ary_size(VALUE self);

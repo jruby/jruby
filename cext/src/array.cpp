@@ -87,6 +87,21 @@ rb_ary_new(void)
     return callMethod(rb_cArray, "new", 0);
 }
 
+extern "C" VALUE
+rb_ary_new3(long size, ...)
+{
+    va_list args;
+    long i;
+    VALUE ary = rb_ary_new2(size);
+
+    va_start(args, size);
+    for (i = 0; i < size; i++) {
+        rb_ary_push(ary, va_arg(args, VALUE));
+    }
+    va_end(args);
+    return ary;
+}
+
 extern "C" VALUE 
 rb_ary_new4(long n, const VALUE* argv) 
 {
