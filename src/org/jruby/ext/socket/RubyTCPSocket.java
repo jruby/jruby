@@ -164,7 +164,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             String hostString = hostname.convertToString().toString();
             addr = InetAddress.getByName(hostString);
             
-            ret[0] = r.newString(addr.getCanonicalHostName());
+            ret[0] = r.newString(do_not_reverse_lookup(recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName());
             ret[1] = r.newArray();
             ret[3] = r.newString(addr.getHostAddress());
             
