@@ -51,6 +51,10 @@ extern "C" {
 #define NORETURN(x) __attribute__ ((noreturn)) x
 #endif
 
+#ifndef EXTERN
+#define EXTERN extern
+#endif
+
 #undef _
 #ifdef HAVE_PROTOTYPES
 # define _(args) args
@@ -843,6 +847,7 @@ VALUE rb_io_write(VALUE io, VALUE str);
 int rb_io_fd(VALUE io);
 #define HAVE_RB_IO_FD 1
 // Writes the OpenFile struct pointer of val into ptr
+rb_io_t* jruby_io_struct(VALUE io);
 #define GetOpenFile(val, ptr) (ptr = jruby_io_struct(val))
 #define GetReadFile(ptr) (ptr->f)
 #define GetWriteFile(ptr) (ptr->f)
@@ -869,6 +874,9 @@ int rb_thread_alone();
 /** Get and set thread locals */
 VALUE rb_thread_local_aset(VALUE thread, ID id, VALUE value);
 VALUE rb_thread_local_aref(VALUE thread, ID id);
+
+/** This flag marks the currently executing thread critical. */
+extern VALUE rb_thread_critical;
 
 /* Global Module objects. */
 extern VALUE rb_mKernel;
