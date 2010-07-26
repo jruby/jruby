@@ -1705,7 +1705,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
 
-            if (lToDelete.isDirectory()) {
+            if (lToDelete.isDirectory() && !isSymlink) {
                 throw runtime.newErrnoEPERMError(filename.toString());
             }
 
