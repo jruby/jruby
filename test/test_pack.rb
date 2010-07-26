@@ -100,4 +100,9 @@ class TestPack < Test::Unit::TestCase
     assert_equal(["foo\r\n\r\r\r1\r2\r\r\r\rvvs"], "foo\r\n\r\r\r1\r=\r\n2\r\r\r\rvvs".unpack("M"))
     assert_equal(["foo\r\n"], "foo\r\n".unpack("M"))
   end
+
+  # JRUBY-4967
+  def test_pack_CC
+    assert_raises(ArgumentError) { [0].pack('CC') }
+  end
 end
