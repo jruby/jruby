@@ -232,8 +232,9 @@ public class RubyInstanceConfig {
             || SafePropertyAccessor.getBoolean("jruby.compile.threadless");
     public static boolean FASTCASE_COMPILE_ENABLED =
             SafePropertyAccessor.getBoolean("jruby.compile.fastcase");
-    public static boolean FASTSEND_COMPILE_ENABLED =
-            SafePropertyAccessor.getBoolean("jruby.compile.fastsend");
+    public static boolean FASTSEND_COMPILE_ENABLED
+            = FASTEST_COMPILE_ENABLED
+            || SafePropertyAccessor.getBoolean("jruby.compile.fastsend");
     public static boolean LAZYHANDLES_COMPILE = SafePropertyAccessor.getBoolean("jruby.compile.lazyHandles", false);
     public static boolean INLINE_DYNCALL_ENABLED
             = FASTEST_COMPILE_ENABLED
