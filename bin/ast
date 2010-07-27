@@ -14,7 +14,7 @@ OptionParser.new do |opts|
   
   opts.on('-h', '--help', 'Display this help') do |h|
     puts opts
-    exit
+    exit true
   end
   
   opts.on('-s', '--sexp', 'Display the S-Expression for the AST') do |t|
@@ -37,16 +37,16 @@ end.parse!
 
 if ARGV.length > 1
   puts "You may only specify one script (see --help)"
-  exit 1
+  abort
 elsif ARGV.length == 1
   if options[:expression]
     puts "-e and a script is not a valid combination (see --help)"
-    exit 1
+    abort
   end
   options[:expression] = File.read(ARGV.shift)
 elsif ! options.has_key?(:expression)
   puts "No script specified (see --help)"
-  exit 1
+  abort
 end
 
 require 'jruby'
