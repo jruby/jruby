@@ -50,7 +50,7 @@ JRUBY_NATIVE_DIR ?= $(JRUBY_BASEDIR)/lib/native/
 BUILD_DIR ?= $(JRUBY_BASEDIR)/build
 HDR_DIR ?= $(JRUBY_NATIVE_DIR)/include
 RUBY_HEADERS = $(patsubst %.h, $(HDR_DIR)/ruby/%.h, $(notdir $(wildcard $(SRC_DIR)/include/ruby/*.h)))
-RUBY_HEADERS += $(HDR_DIR)/ruby.h
+RUBY_HEADERS += $(patsubst %.h, $(HDR_DIR)/%.h, $(notdir $(wildcard $(SRC_DIR)/include/*.h)))
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(notdir $(SRCS)))
@@ -256,7 +256,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 $(RUBY_HEADERS): $(wildcard $(SRC_DIR)/include/ruby/*.h) $(SRC_DIR)/include/ruby.h
 	@mkdir -p $(HDR_DIR)/ruby
 	@cp $(wildcard $(SRC_DIR)/include/ruby/*.h) $(HDR_DIR)/ruby/
-	@cp $(SRC_DIR)/include/ruby.h $(HDR_DIR)/
+	@cp $(wildcard $(SRC_DIR)/include/*.h) $(HDR_DIR)/
 
 .SECONDARY: $(JAVA_HDRS)
 
