@@ -27,7 +27,7 @@
 
 using namespace jruby;
 
-static bool
+extern "C" bool
 jruby_obj_frozen(VALUE obj)
 {
     return callMethod(obj, "frozen?", 0) == Qtrue;
