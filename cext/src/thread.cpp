@@ -24,6 +24,8 @@
 
 using namespace jruby;
 
+VALUE rb_thread_critical = 0;
+
 extern "C" VALUE
 rb_thread_local_aref(VALUE thread, ID id)
 {
