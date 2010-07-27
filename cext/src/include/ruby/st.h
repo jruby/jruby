@@ -5,7 +5,7 @@
 #ifndef RUBY_ST_H
 #define RUBY_ST_H 1
 
-#include "config.h"
+#include "st_sizes.h"
 
 #if defined(__cplusplus)
 extern "C" {

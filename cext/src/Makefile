@@ -51,7 +51,6 @@ BUILD_DIR ?= $(JRUBY_BASEDIR)/build
 HDR_DIR ?= $(JRUBY_NATIVE_DIR)/include
 RUBY_HEADERS = $(patsubst %.h, $(HDR_DIR)/ruby/%.h, $(notdir $(wildcard $(SRC_DIR)/include/ruby/*.h)))
 RUBY_HEADERS += $(HDR_DIR)/ruby.h
-CONFIG_H = $(BUILD_DIR)/config.h
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(notdir $(SRCS)))
@@ -247,35 +246,7 @@ $(LIBCEXT):  $(OBJS) $(CXXOBJS) $(RUBY_HEADERS)
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) -o $@ $(LDFLAGS) $(SOFLAGS) $(OBJS) $(CXXOBJS) $(LIBS)
 
-## The ST library must be built twice on MacOS X with x86 processor to support universial builds.
-## This means that, for each x86 architecture (i386 and x86_64 atm) the configure script must run
-## and finally we have to manually link with lipo.
-## XXX: This is very nasty and should be a separate automake-using workflow
-ifeq ($(OS), darwin)
-  ifneq ($(findstring $(CPU), i386 x86_64),)
-$(BUILD_DIR)/st.o: $(SRC_DIR)/st.c $(wildcard $(SRC_DIR)/st.h)
-	@mkdir -p $(@D)
-
-	$(RM) $(wildcard $(SRC_DIR)/config.*) $(BUILD_DIR)/config.h $(SRC_DIR)/configure
-	CFLAGS="-arch i386" sh autoconf.sh
-	@cp $(SRC_DIR)/config.h $(CONFIG_H)
-	$(CCACHE) $(CC) -arch i386 $(OFLAGS) $(IFLAGS) $(PICFLAGS) -c $< -o $@.i386
-
-	$(RM) $(wildcard $(SRC_DIR)/config.*) $(BUILD_DIR)/config.h $(SRC_DIR)/configure
-	CFLAGS="-arch x86_64" sh autoconf.sh
-	@cp $(SRC_DIR)/config.h $(CONFIG_H)
-	$(CCACHE) $(CC) -arch x86_64 $(OFLAGS) $(IFLAGS) $(PICFLAGS) -c $< -o $@.x86_64
-
-	@lipo -arch i386 $@.i386 -arch x86_64 $@.x86_64 -output $@ -create
-  endif
-endif
-
-$(CONFIG_H):
-	@mkdir -p $(@D)
-	CFLAGS="-m$(MODEL)" sh autoconf.sh
-	@cp $(SRC_DIR)/config.h $(CONFIG_H)
-
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS) $(CONFIG_H)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 	$(CCACHE) $(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
@@ -293,10 +264,9 @@ $(JAVA_HDRS):
 	@mkdir -p $(@D)
 	javah -classpath $(JRUBY_CLASSES) -d $(@D) $(subst _,., $(basename $(@F)))
 
-.PHONY: clean $(CONFIG_H)
+.PHONY: clean
 clean: dist-clean
 	$(RM) $(LIBCEXT)
-	$(RM) $(CONFIG_H)
 	$(RM) $(wildcard config.*)
 	$(RM) $(wildcard configure)
 	$(RM) -R autom4te.cache
