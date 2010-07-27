@@ -36,17 +36,14 @@ OptionParser.new do |opts|
 end.parse!
 
 if ARGV.length > 1
-  puts "You may only specify one script (see --help)"
-  abort
+  abort "You may only specify one script (see --help)"
 elsif ARGV.length == 1
   if options[:expression]
-    puts "-e and a script is not a valid combination (see --help)"
-    abort
+    abort "-e and a script is not a valid combination (see --help)"
   end
   options[:expression] = File.read(ARGV.shift)
 elsif ! options.has_key?(:expression)
-  puts "No script specified (see --help)"
-  abort
+  abort "No script specified (see --help)"
 end
 
 require 'jruby'
