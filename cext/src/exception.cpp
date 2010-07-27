@@ -175,3 +175,11 @@ rb_protect(VALUE (*func)(VALUE), VALUE data, int* status)
         return Qnil;
     }
 }
+
+extern "C" void
+rb_jump_tag(int status) {
+    if (status) {
+        // TODO: Check if there is an exception here?
+        rb_exc_raise(rb_gv_get("$!"));
+    }
+}
