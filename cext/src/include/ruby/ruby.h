@@ -377,6 +377,7 @@ void rb_raise(VALUE exc, const char *fmt, ...) __attribute__((noreturn));
 VALUE rb_rescue(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE);
 VALUE rb_rescue2(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE,...);
 VALUE rb_ensure(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE);
+VALUE rb_protect(VALUE (*func)(VALUE), VALUE data, int* status);
 
 void rb_fatal(const char *fmt, ...) __attribute__((noreturn));
 void rb_sys_fail(const char *msg) __attribute__((noreturn));

@@ -160,3 +160,18 @@ rb_rescue2(VALUE (*b_proc)(ANYARGS), VALUE data1, VALUE (*r_proc)(ANYARGS), VALU
     }
 }
 
+extern "C" VALUE
+rb_protect(VALUE (*func)(VALUE), VALUE data, int* status)
+{
+    bool returned = false;
+    VALUE result;
+    try {
+        result = (*func)(data);
+        returned = true;
+        *status = 0;
+        return result;
+    } catch (jruby::JavaException& ex) {
+        *status = 1;
+        return Qnil;
+    }
+}
