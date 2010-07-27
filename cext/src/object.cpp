@@ -289,3 +289,15 @@ rb_singleton_class(VALUE obj)
 
     return objectToValue(env, singleton);
 }
+
+extern "C" void
+jruby_infect(VALUE object1, VALUE object2)
+{
+    if (OBJ_TAINTED(object1)) {
+        JLocalEnv env;
+        jmethodID mid = getMethodID(env, IRubyObject_class, "infectBy",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+        env->CallObjectMethod(valueToObject(env, object2), mid, object1);
+        checkExceptions(env);
+    }
+}

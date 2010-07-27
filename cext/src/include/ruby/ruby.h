@@ -115,6 +115,9 @@ typedef intptr_t SIGNED_VALUE;
 #define SYM2ID(x) RSHIFT((unsigned long)x,8)
 
 #define OBJ_FROZEN(x) jruby_obj_frozen(x)
+#define OBJ_INFECT(o1, o2) jruby_infect((o1), (o2))
+#define OBJ_TAINT(obj) rb_obj_taint((obj))
+#define OBJ_TAINTED(obj) rb_obj_tainted((obj))
 
 /** The false object. */
 #define Qfalse ((VALUE)0)
@@ -827,9 +830,7 @@ VALUE rb_obj_tainted(VALUE);
 VALUE rb_any_to_s(VALUE obj);
 VALUE rb_inspect(VALUE obj);
 VALUE rb_obj_as_string(VALUE obj);
-
-#define OBJ_TAINT(obj) rb_obj_taint((obj))
-#define OBJ_TAINTED(obj) rb_obj_tainted((obj))
+void jruby_infect(VALUE object1, VALUE object2);
 
 VALUE rb_attr_get(VALUE obj, ID id);
 
