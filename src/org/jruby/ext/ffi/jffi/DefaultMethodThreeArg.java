@@ -23,7 +23,7 @@ class DefaultMethodThreeArg extends DefaultMethod {
             IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
         if (needsInvocationSession) {
-            Invocation invocation = new Invocation(context);
+            Invocation invocation = new Invocation(context, postInvokeCount, referenceCount);
             try {
                 m1.marshal(invocation, buffer, arg1);
                 m2.marshal(invocation, buffer, arg2);

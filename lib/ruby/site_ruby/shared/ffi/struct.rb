@@ -126,17 +126,46 @@ module FFI
     end
 
     def self.in
-      :buffer_in
+      ptr(:in)
     end
 
     def self.out
-      :buffer_out
+      ptr(:out)
+    end
+
+    def self.ptr(flags = :inout)
+      @ref_data_type ||= Type::Mapped.new(StructByReference.new(self))
+    end
+
+    def self.val
+      @val_data_type ||= StructByValue.new(self)
     end
 
     def self.by_value
-      ::FFI::StructByValue.new(self)
+      self.val
     end
 
+    def self.by_ref(flags = :inout)
+      self.ptr(flags)
+    end
+
+    class ManagedStructConverter < StructByReference
+
+      def initialize(struct_class)
+        super(struct_class)
+
+        raise NoMethodError, "release() not implemented for class #{struct_class}" unless struct_class.respond_to? :release
+        @method = struct_class.method(:release)
+      end
+
+      def from_native(ptr, ctx)
+        struct_class.new(AutoPointer.new(ptr, @method))
+      end
+    end
+
+    def self.auto_ptr
+      @managed_type ||= Type::Mapped.new(ManagedStructConverter.new(self))
+    end
 
 
     class << self
@@ -145,7 +174,7 @@ module FFI
       def layout(*spec)
         return @layout if spec.size == 0
 
-        builder = FFI::StructLayoutBuilder.new
+        builder = StructLayoutBuilder.new
         builder.union = self < Union
         builder.packed = @packed if defined?(@packed)
         builder.alignment = @min_alignment if defined?(@min_alignment)
@@ -157,7 +186,7 @@ module FFI
         end
         builder.size = @size if defined?(@size) && @size > builder.size
         cspec = builder.build
-        @layout = cspec unless self == FFI::Struct
+        @layout = cspec unless self == Struct
         @size = cspec.size
         return cspec
       end
@@ -189,35 +218,38 @@ module FFI
         end
       end
 
-      def find_type(type, mod = nil)
-        if type.kind_of?(Class) && type < FFI::Struct
+
+      def find_field_type(type, mod = enclosing_module)
+        if type.kind_of?(Class) && type < Struct
           FFI::Type::Struct.new(type)
-        elsif type.is_a?(::Array)
+
+        elsif type.kind_of?(Class) && type < FFI::StructLayout::Field
           type
-        elsif mod
+
+        elsif type.kind_of?(::Array)
+          FFI::Type::Array.new(find_field_type(type[0]), type[1])
+
+        else
+          find_type(type, mod)
+        end
+      end
+
+      def find_type(type, mod = enclosing_module)
+        if mod
           mod.find_type(type)
         end || FFI.find_type(type)
       end
-
 
       private
 
       def hash_layout(builder, spec)
         raise "Ruby version not supported" if RUBY_VERSION =~ /1.8.*/ && !(RUBY_PLATFORM =~ /java/)
-        mod = enclosing_module
-        spec[0].each do |name,type|
-          if type.kind_of?(Class) && type < Struct
-            builder.add_struct(name, type)
-          elsif type.kind_of?(::Array)
-            builder.add_array(name, find_type(type[0], mod), type[1])
-          else
-            builder.add_field(name, find_type(type, mod))
+        spec[0].each do |name, type|
+          builder.add name, find_field_type(type), nil
           end
         end
-      end
 
       def array_layout(builder, spec)
-        mod = enclosing_module
         i = 0
         while i < spec.size
           name, type = spec[i, 2]
@@ -231,22 +263,9 @@ module FFI
             offset = nil
           end
 
-          ftype = if type.kind_of?(Class) && type < Struct
-            FFI::Type::Struct.new(type)
-
-          elsif type.kind_of?(Class) && type < FFI::StructLayout::Field
-            type
-
-          elsif type.kind_of?(::Array)
-            FFI::Type::Array.new(find_type(type[0], mod), type[1])
-
-          else
-            find_type(type, mod)
+          builder.add name, find_field_type(type), offset
           end
-
-          builder.add name, ftype, offset
         end
       end
     end
   end
-end

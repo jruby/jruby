@@ -94,12 +94,22 @@ module FFI
       invokers = []
       load_error = nil
       ffi_libraries.each do |lib|
-        begin
-          invokers << FFI.create_invoker(lib, cname.to_s, arg_types, find_type(ret_type), options)
-        rescue LoadError => ex
-          load_error = ex
-        end if invokers.empty?
+        if invokers.empty?
+          begin
+            function = lib.find_function(cname.to_s)
+            raise NotFoundError.new(name, cname.to_s) unless function
+            invokers << if arg_types.length > 0 && arg_types[arg_types.length - 1] == FFI::NativeType::VARARGS
+              FFI::VariadicInvoker.new(arg_types, find_type(ret_type), function, options)
+            else
+              FFI::Function.new(find_type(ret_type), arg_types, function, options)
+            end
+   
+          rescue LoadError => ex
+            load_error = ex
+
+          end
         end
+      end
       invoker = invokers.compact.shift
       raise load_error if load_error && invoker.nil?
       #raise FFI::NotFoundError.new(cname.to_s, *libraries) unless invoker
@@ -185,11 +195,27 @@ module FFI
       defined?(@ffi_callbacks) ? @ffi_callbacks: (@ffi_callbacks = Hash.new)
     end
 
-    def typedef(current, add, info=nil)
-      __type_map[add] = if current.kind_of?(FFI::Type)
-        current
+    def typedef(old, add, info=nil)
+      @ffi_typedefs = Hash.new unless defined?(@ffi_typedefs)
+
+      @ffi_typedefs[add] = if old.kind_of?(FFI::Type)
+        old
+
+      elsif @ffi_typedefs.has_key?(old)
+        @ffi_typedefs[old]
+
+      elsif old.is_a?(DataConverter)
+        FFI::Type::Mapped.new(old)
+
+      elsif old == :enum
+        if add.kind_of?(Array)
+          self.enum(add)
+        else
+          self.enum(info, add)
+        end
+
       else
-        __type_map[current] || FFI.find_type(current)
+        FFI.find_type(old)
       end
     end
 
@@ -226,20 +252,24 @@ module FFI
       @ffi_enums.__map_symbol(symbol)
     end
 
-    def find_type(name)
-      if name.kind_of?(FFI::Type)
-        name
+    def find_type(t)
+      if t.kind_of?(FFI::Type)
+        t
+      
+      elsif defined?(@ffi_typedefs) && @ffi_typedefs.has_key?(t)
+        @ffi_typedefs[t]
 
-      elsif name.is_a?(Class) && name < FFI::Struct
+      elsif defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(t)
+        @ffi_callbacks[t]
+
+      elsif t.is_a?(DataConverter)
+        # Add a typedef so next time the converter is used, it hits the cache
+        typedef Type::Mapped.new(t), t
+
+      elsif t.is_a?(Class) && t < FFI::Struct
         FFI::NativeType::POINTER
 
-      elsif defined?(@ffi_typedefs) && @ffi_typedefs.has_key?(name)
-        @ffi_typedefs[name]
-
-      elsif defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(name)
-        @ffi_callbacks[name]
-
-      end || FFI.find_type(name)
+      end || FFI.find_type(t)
     end
   end
 end

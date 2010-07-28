@@ -4,7 +4,6 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.CallingConvention;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
-import com.kenai.jffi.Library;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -13,6 +12,7 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
@@ -22,8 +22,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = "FFI::VariadicInvoker", parent = "Object")
 public class VariadicInvoker extends RubyObject {
     private final CallingConvention convention;
-    private final Library library;
-    private final long address;
+    private final Pointer address;
     private final FunctionInvoker functionInvoker;
     private final com.kenai.jffi.Type returnType;
 
@@ -40,11 +39,10 @@ public class VariadicInvoker extends RubyObject {
      * Creates a new <tt>Invoker</tt> instance.
      * @param arity
      */
-    private VariadicInvoker(Ruby runtime, IRubyObject klazz, Library library, long address,
+    private VariadicInvoker(Ruby runtime, IRubyObject klazz, Pointer address,
             FunctionInvoker functionInvoker, com.kenai.jffi.Type returnType,
             CallingConvention convention) {
         super(runtime, (RubyClass) klazz);
-        this.library = library;
         this.address = address;
         this.functionInvoker = functionInvoker;
         this.returnType = returnType;
@@ -60,29 +58,25 @@ public class VariadicInvoker extends RubyObject {
         return Arity.OPTIONAL;
     }
 
-    @JRubyMethod(name = { "__new" }, meta = true, required = 4)
-    public static VariadicInvoker newInvoker(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        CallingConvention conv = "stdcall".equals(args[3].toString())
-                ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
-        Library library;
-        long address;
-        try {
-            library = args[0] instanceof DynamicLibrary 
-                    ? ((DynamicLibrary) args[0]).getNativeLibrary() 
-                    : Library.getCachedInstance(args[0].toString(), Library.LAZY);
-            address = args[1] instanceof DynamicLibrary.Symbol
-                    ? ((DynamicLibrary.Symbol) args[1]).getAddress()
-                    : library.getSymbolAddress(args[1].toString());
-        } catch (UnsatisfiedLinkError ex) {
-            throw context.getRuntime().newLoadError(ex.getMessage());
+    @JRubyMethod(name = { "__new" }, meta = true, required = 3, optional = 1)
+    public static VariadicInvoker newInvoker(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
+
+        if (!(args[0] instanceof Pointer)) {
+            throw context.getRuntime().newTypeError(args[0], context.getRuntime().fastGetModule("FFI").fastGetClass("Pointer"));
         }
-        if (!(args[2] instanceof Type)) {
+
+        final Pointer address = (Pointer) args[0];
+        
+        if (!(args[1] instanceof Type)) {
             throw context.getRuntime().newTypeError("invalid return type");
         }
-        Type returnType = (Type) args[2];
         
+        final Type returnType = (Type) args[1];
+        final CallingConvention conv = "stdcall".equals(args[2].toString())
+                ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
+
         FunctionInvoker functionInvoker = DefaultMethodFactory.getFunctionInvoker(returnType);
-        return new VariadicInvoker(recv.getRuntime(), recv, library, address,
+        return new VariadicInvoker(context.getRuntime(), klass, address,
                 functionInvoker, FFIUtil.getFFIType(returnType), conv);
     }
 
@@ -121,8 +115,8 @@ public class VariadicInvoker extends RubyObject {
         }
 
         Invocation invocation = new Invocation(context);
+        Function function = new Function(address.getAddress(), returnType, ffiParamTypes, convention);
         try {
-            Function function = new Function(address, returnType, ffiParamTypes, convention);
             HeapInvocationBuffer args = new HeapInvocationBuffer(function);
             for (int i = 0; i < marshallers.length; ++i) {
                 marshallers[i].marshal(invocation, args, params[i]);
@@ -131,6 +125,7 @@ public class VariadicInvoker extends RubyObject {
             return functionInvoker.invoke(context, function, args);
         } finally {
             invocation.finish();
+            function.dispose();
         }
     }
 }

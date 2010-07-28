@@ -92,7 +92,11 @@ final class CallbackMarshaller implements ParameterMarshaller {
         buffer.putAddress(cb.getAddress());
     }
 
-    public boolean needsInvocationSession() {
+    public boolean requiresPostInvoke() {
         return true;
+    }
+
+    public boolean requiresReference() {
+        return false;
     }
 }

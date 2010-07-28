@@ -6,6 +6,8 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.ext.ffi.MappedType;
+import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Type;
@@ -54,6 +56,12 @@ public class FastLongMethodFactory {
                 case ULONG:
                     return true;
             }
+
+        } else if (type instanceof MappedType) {
+            MappedType mt = (MappedType) type;
+            return isFastLongResult(mt.getRealType()) && !mt.isReferenceRequired() && !mt.isPostInvokeRequired();
+
+
         }
         return false;
     }
@@ -74,6 +82,10 @@ public class FastLongMethodFactory {
                 case ULONG:
                     return true;
             }
+        
+        } else if (paramType instanceof MappedType) {
+            return isFastLongParam(((MappedType) paramType).getRealType());
+
         }
         return false;
     }
@@ -100,8 +112,24 @@ public class FastLongMethodFactory {
                 throw module.getRuntime().newRuntimeError("Arity " + parameterTypes.length + " not implemented");
         }
     }
+
+
     final LongParameterConverter getLongParameterConverter(Type type) {
-        switch (type.getNativeType()) {
+        if (type instanceof Type.Builtin) {
+            return getLongParameterConverter(type.getNativeType());
+        
+        } else if (type instanceof MappedType) {
+            MappedType mtype = (MappedType) type;
+            return new MappedParameterConverter(getLongParameterConverter(mtype.getRealType()), mtype);
+        
+        } else {
+            throw new IllegalArgumentException("Unknown type " + type);
+        }
+    }
+
+
+    final LongParameterConverter getLongParameterConverter(NativeType type) {
+        switch (type) {
             case BOOL: return BooleanParameterConverter.INSTANCE;
             case CHAR: return Signed8ParameterConverter.INSTANCE;
             case UCHAR: return Unsigned8ParameterConverter.INSTANCE;
@@ -129,8 +157,22 @@ public class FastLongMethodFactory {
                 throw new IllegalArgumentException("Unknown type " + type);
         }
     }
+
     final LongResultConverter getLongResultConverter(Type type) {
-        switch (type.getNativeType()) {
+        if (type instanceof Type.Builtin) {
+            return getLongResultConverter(type.getNativeType());
+
+        } else if (type instanceof MappedType) {
+            MappedType mtype = (MappedType) type;
+            return new MappedResultConverter(getLongResultConverter(mtype.getRealType()), mtype);
+        
+        } else {
+            throw new IllegalArgumentException("unsupported return type " + type);
+        }
+
+    }
+    final LongResultConverter getLongResultConverter(NativeType type) {
+        switch (type) {
             case VOID: return VoidResultConverter.INSTANCE;
             case BOOL: return BooleanResultConverter.INSTANCE;
             case CHAR: return Signed8ResultConverter.INSTANCE;
@@ -249,6 +291,20 @@ public class FastLongMethodFactory {
         }
     }
 
+    static final class MappedResultConverter implements LongResultConverter {
+        private final LongResultConverter longConverter;
+        private final MappedType mappedType;
+
+        public MappedResultConverter(LongResultConverter longConverter, MappedType mappedType) {
+            this.longConverter = longConverter;
+            this.mappedType = mappedType;
+        }
+
+        public final IRubyObject fromNative(ThreadContext context, long value) {
+            return mappedType.fromNative(context, longConverter.fromNative(context, value));
+        }
+    }
+
     static final class StringResultConverter implements LongResultConverter {
         private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
         public static final LongResultConverter INSTANCE = new StringResultConverter();
@@ -338,6 +394,20 @@ public class FastLongMethodFactory {
         public static final LongParameterConverter INSTANCE = new Float64ParameterConverter();
         public final long longValue(ThreadContext context, IRubyObject obj) {
             return Double.doubleToRawLongBits(RubyNumeric.num2dbl(obj));
+        }
+    }
+
+    static final class MappedParameterConverter extends BaseParameterConverter {
+        private final LongParameterConverter longConverter;
+        private final MappedType mappedType;
+
+        public MappedParameterConverter(LongParameterConverter longConverter, MappedType mappedType) {
+            this.longConverter = longConverter;
+            this.mappedType = mappedType;
+        }
+
+        public final long longValue(ThreadContext context, IRubyObject obj) {
+            return longConverter.longValue(context, mappedType.toNative(context, obj));
         }
     }
 }

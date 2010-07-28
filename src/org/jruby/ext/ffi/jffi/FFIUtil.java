@@ -72,6 +72,9 @@ public final class FFIUtil {
 
             return FFIUtil.newArray((org.jruby.ext.ffi.Type.Array) type);
 
+        } else if (type instanceof org.jruby.ext.ffi.MappedType) {
+
+            return FFIUtil.getFFIType(((org.jruby.ext.ffi.MappedType) type).getRealType());
 
         } else {
             return null;

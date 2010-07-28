@@ -32,10 +32,13 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -192,5 +195,15 @@ public final class Util {
             throw runtime.newIndexError("Memory access offset="
                     + off + " size=" + len + " is out of bounds");
         }
+    }
+
+    public static final Type findType(ThreadContext context, IRubyObject name) {
+        if (name instanceof Type) {
+            return (Type) name;
+        }
+        final RubyModule ffi = context.getRuntime().fastGetModule("FFI");
+        final IRubyObject typeDefs = ffi.fastFetchConstant("TypeDefs");
+        final IRubyObject type = ((RubyHash) typeDefs).fastARef(name);
+        return type instanceof Type ? (Type) type : (Type) ffi.callMethod(context, "find_type", name);
     }
 }

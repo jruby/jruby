@@ -38,8 +38,16 @@ module FFI
   def self.find_type(name, type_map = nil)
     type = if name.is_a?(FFI::Type)
       name
+
+    elsif name.is_a?(DataConverter)
+      (type_map || TypeDefs)[name] = Type::Mapped.new(name)
+
+    elsif name.respond_to?("native_type") && name.respond_to?("to_native") && name.respond_to?("from_native")
+      FFI::Type::Mapped.new(name)
+
     elsif type_map
       type_map[name]
+    
     end || TypeDefs[name]
 
     raise TypeError, "Unable to resolve type '#{name}'" unless type

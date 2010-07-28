@@ -60,10 +60,15 @@ abstract class MemoryOp {
     public static final MemoryOp getMemoryOp(Type type) {
         if (type instanceof Type.Builtin) {
             return getMemoryOp(type.getNativeType());
+
         } else if (type instanceof StructByValue) {
             StructByValue sbv = (StructByValue) type;
             return new StructOp(sbv.getStructClass());
+        
+        } else if (type instanceof MappedType) {
+            return getMemoryOp(((MappedType) type).getRealType());
         }
+
         return null;
     }
     

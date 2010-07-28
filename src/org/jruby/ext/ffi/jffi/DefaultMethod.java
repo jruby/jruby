@@ -12,18 +12,28 @@ import org.jruby.runtime.builtin.IRubyObject;
 class DefaultMethod extends JFFIDynamicMethod {
     private final ParameterMarshaller[] marshallers;
     protected final boolean needsInvocationSession;
+    protected final int postInvokeCount;
+    protected final int referenceCount;
+
     public DefaultMethod(RubyModule implementationClass, Function function,
             FunctionInvoker functionInvoker, ParameterMarshaller[] marshallers) {
         super(implementationClass, Arity.fixed(marshallers.length), function, functionInvoker);
         this.marshallers = marshallers;
-        boolean needsInvocation = false;
+
+        int piCount = 0;
+        int refCount = 0;
         for (ParameterMarshaller m : marshallers) {
-            if (m.needsInvocationSession()) {
-                needsInvocation = true;
-                break;
+            if (m.requiresPostInvoke()) {
+                ++piCount;
+            }
+
+            if (m.requiresReference()) {
+                ++refCount;
             }
         }
-        this.needsInvocationSession = needsInvocation;
+        this.postInvokeCount = piCount;
+        this.referenceCount = refCount;
+        this.needsInvocationSession = piCount > 0 || refCount > 0;
     }
 
     @Override
@@ -31,7 +41,7 @@ class DefaultMethod extends JFFIDynamicMethod {
         arity.checkArity(context.getRuntime(), args);
         HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
         if (needsInvocationSession) {
-            Invocation invocation = new Invocation(context);
+            Invocation invocation = new Invocation(context, postInvokeCount, referenceCount);
             try {
                 for (int i = 0; i < args.length; ++i) {
                     marshallers[i].marshal(invocation, buffer, args[i]);

@@ -22,6 +22,7 @@ import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.InvalidMemoryIO;
+import org.jruby.ext.ffi.MappedType;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.NullMemoryIO;
 import org.jruby.ext.ffi.Platform;
@@ -481,6 +482,10 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 throw runtime.newTypeError(value, runtime.fastGetModule("FFI").fastGetClass("Struct"));
             }
 
+        } else if (type instanceof MappedType) {
+            MappedType mappedType = (MappedType) type;
+            setReturnValue(runtime, mappedType.getRealType(), buffer, mappedType.toNative(runtime.getCurrentContext(), value));
+
         } else {
             buffer.setLongReturn(0L);
             throw runtime.newRuntimeError("unsupported return type from struct: " + type);
@@ -569,6 +574,10 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                         new IRubyObject[] { new Pointer(runtime, memory) },
                         Block.NULL_BLOCK);
 
+        } else if (type instanceof MappedType) {
+            MappedType mappedType = (MappedType) type;
+            return mappedType.fromNative(runtime.getCurrentContext(), fromNative(runtime, mappedType.getRealType(), buffer, index));
+
         } else {
             throw runtime.newTypeError("unsupported callback parameter type: " + type);
         }
@@ -654,7 +663,11 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         
         } else if (type instanceof StructByValue) {
             return true;
+        
+        } else if (type instanceof MappedType) {
+            return isParameterTypeValid(((MappedType) type).getRealType());
         }
+        
         return false;
     }
 }
