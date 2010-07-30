@@ -53,4 +53,9 @@ public class Utils {
         return 0;
     }
 
+    static String getFilename(ScriptEngine engine) {
+        Object filename = engine.getContext().getAttribute(ScriptEngine.FILENAME);
+        return filename != null ? (String)filename : "<script>";
+    }
+
 }
