@@ -159,6 +159,12 @@ rb_f_global_variables()
     return callMethod(rb_mKernel, "global_variables", 0);
 }
 
+extern "C" void
+rb_set_kcode(const char *code)
+{
+    rb_gv_set("$KCODE", rb_str_new_cstr(code));
+}
+
 #define M(x) rb_m##x = getConstModule(env, #x)
 #define C(x) rb_c##x = getConstClass(env, #x)
 #define E(x) rb_e##x = getConstClass(env, #x)

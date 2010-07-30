@@ -751,6 +751,8 @@ void rb_gc_unregister_address(VALUE* address);
 VALUE rb_gv_get(const char* name);
 /** Set named global to given value, returning the value. $ optional. */
 VALUE rb_gv_set(const char* name, VALUE value);
+/** Sets the $KCODE global variable */
+void rb_set_kcode(const char *code);
 /** Return an array containing the names of all global variables */
 VALUE rb_f_global_variables();
 
