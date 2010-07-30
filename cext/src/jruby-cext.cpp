@@ -104,6 +104,7 @@ namespace jruby {
     jfieldID Block_null_block_field;
     jfieldID RaiseException_exception_field;
 
+    bool is19;
     jobject runtime;
     jobject nullBlock;
     jobject nilRef;
@@ -299,6 +300,8 @@ Java_org_jruby_cext_Native_initNative(JNIEnv* env, jobject self, jobject runtime
 {
     try {
         loadIds(env);
+        jruby::is19 = (bool)(env->GetBooleanField(runtime, getFieldID(env, Ruby_class, "is1_9", "Z")) == JNI_TRUE);
+
         jruby::runtime = env->NewGlobalRef(runtime);
         jruby::nullBlock = env->NewGlobalRef(env->GetStaticObjectField(Block_class, Block_null_block_field));
 

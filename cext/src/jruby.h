@@ -113,6 +113,7 @@ namespace jruby {
     extern jfieldID RubySymbol_symbol_field;
     extern jfieldID RaiseException_exception_field;
 
+    extern bool is19;
     extern jobject runtime;
     extern jobject nullBlock;
     extern jobject nilRef;
@@ -164,6 +165,7 @@ namespace jruby {
     jobject valueToObject(JNIEnv* env, VALUE v);
     VALUE objectToValue(JNIEnv* env, jobject obj);
 
+    inline bool is1_9() { return jruby::is19; }
     inline jobject getRuntime() { return jruby::runtime; }
     inline jobject getNullBlock() { return jruby::nullBlock; }
     jobject getTrue();

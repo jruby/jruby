@@ -273,7 +273,7 @@ extern "C" void
 rb_check_frozen(VALUE obj)
 {
     if (OBJ_FROZEN(obj)) {
-        rb_raise(rb_eRuntimeError, "can't modify frozen %s", rb_obj_classname(obj));
+        rb_raise(is1_9() ? rb_eRuntimeError : rb_eTypeError, "can't modify frozen %s", rb_obj_classname(obj));
     }
 }
 

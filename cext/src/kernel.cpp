@@ -99,4 +99,3 @@ rb_define_alias(VALUE klass, const char* new_name, const char* old_name)
             env->NewStringUTF(old_name));
     checkExceptions(env);
 }
-
