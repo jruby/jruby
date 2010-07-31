@@ -82,6 +82,7 @@ public class RubyProcess {
         runtime.loadConstantSet(process, com.kenai.constantine.platform.RLIMIT.class);
         
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
+        process.defineConstant("WUNTRACED", runtime.newFixnum(2));
         
         return process;
     }
