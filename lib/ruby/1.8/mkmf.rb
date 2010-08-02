@@ -495,12 +495,6 @@ end
 
 def try_func(func, libs, headers = nil, &b)
   headers = cpp_include(headers)
-  return true if egrep_cpp(/.*#{func}.*/, <<"SRC")
-#{COMMON_HEADERS}
-#{headers}
-/* top */
-int main() { return 0; }
-SRC
   try_link(<<"SRC", libs, &b) or try_link(<<"SRC", libs, &b)
 #{COMMON_HEADERS}
 #{headers}
@@ -746,6 +740,15 @@ end
 #
 def have_func(func, headers = nil, &b)
   checking_for checking_message("#{func}()", headers) do
+    if egrep_cpp(/.*#{func}.*/, <<"SRC")
+#{COMMON_HEADERS}
+#{headers}
+/* top */
+int main() { return 0; }
+SRC
+      $defs.push(format("-DHAVE_%s", func.tr_cpp))
+      return true
+    end
     if try_func(func, $libs, headers, &b)
       $defs.push(format("-DHAVE_%s", func.tr_cpp))
       true
