@@ -27,6 +27,7 @@ end
 
 # JRuby RbConfig::CONFIG is not complete. 
 Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
+# Some extconf.rb's rely on RUBY_PLATFORM to point to the native platform
 RUBY_PLATFORM = Config::MAKEFILE_CONFIG['RUBY_PLATFORM']
 
 $topdir     = File.expand_path("../../../native/include", __FILE__)
