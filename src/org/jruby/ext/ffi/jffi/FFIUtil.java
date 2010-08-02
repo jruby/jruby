@@ -49,7 +49,6 @@ public final class FFIUtil {
         m.put(NativeType.BUFFER_INOUT, com.kenai.jffi.Type.POINTER);
         m.put(NativeType.STRING, com.kenai.jffi.Type.POINTER);
         m.put(NativeType.STRPTR, com.kenai.jffi.Type.POINTER);
-        m.put(NativeType.WIN32PTR, com.kenai.jffi.Type.POINTER);
 
         return m;
     }
