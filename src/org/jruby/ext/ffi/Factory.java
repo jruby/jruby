@@ -130,12 +130,17 @@ public abstract class Factory {
             if (ffi.fastGetClass("Enum") == null) {
                 Enum.createEnumClass(runtime, ffi);
             }
+            if (ffi.fastGetClass("Type").fastGetClass("Mapped") == null) {
+                MappedType.createConverterTypeClass(runtime, ffi);
+            }
             if (ffi.fastGetClass(FileDescriptorIO.CLASS_NAME) == null) {
                 FileDescriptorIO.createFileDescriptorIOClass(runtime, ffi);
             }
             
             Platform.createPlatformModule(runtime, ffi);
             IOModule.createIOModule(runtime, ffi);
+            DataConverter.createDataConverterModule(runtime, ffi);
+            StructByReference.createStructByReferenceClass(runtime, ffi);
         }
     }
     

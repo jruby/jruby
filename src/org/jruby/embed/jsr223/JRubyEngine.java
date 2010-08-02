@@ -84,6 +84,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             throw new NullPointerException("either script or context is null");
         }
         setContext(context);
+        container.setScriptFilename(Utils.getFilename(this));
         try {
             EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
             IRubyObject ret = unit.run();
@@ -129,7 +130,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             throw new NullPointerException("either reader or context is null");
         }
         setContext(context);
-        String filename = (String) context.getAttribute(ScriptEngine.FILENAME);
+        String filename = Utils.getFilename(this);
         try {
             EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
             IRubyObject ret = unit.run();
@@ -147,6 +148,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (script == null) {
             throw new NullPointerException("script is null");
         }
+        container.setScriptFilename(Utils.getFilename(this));
         try {
             EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
             IRubyObject ret = unit.run();
@@ -164,7 +166,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (reader == null) {
             throw new NullPointerException("reader is null");
         }
-        String filename = (String) getContext().getAttribute(ScriptEngine.FILENAME);
+        String filename = Utils.getFilename(this);
         try {
             EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
             IRubyObject ret = unit.run();
@@ -183,6 +185,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             throw new NullPointerException("either script or bindings is null");
         }
         getContext().setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+        container.setScriptFilename(Utils.getFilename(this));
         try {
             EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
             IRubyObject ret = unit.run();
@@ -201,7 +204,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             throw new NullPointerException("either reader or bindings is null");
         }
         getContext().setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        String filename = (String) getContext().getAttribute(ScriptEngine.FILENAME);
+        String filename = Utils.getFilename(this);
         try {
             EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
             IRubyObject ret = unit.run();

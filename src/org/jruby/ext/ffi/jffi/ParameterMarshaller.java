@@ -11,5 +11,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 interface ParameterMarshaller {
     public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject value);
     public void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject value);
-    public boolean needsInvocationSession();
+    public boolean requiresPostInvoke();
+    public boolean requiresReference();
 }

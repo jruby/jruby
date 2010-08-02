@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name="FFI::Struct", parent="Object")
 public class Struct extends RubyObject implements StructLayout.Storage {
     private final StructLayout layout;
-    private final IRubyObject[] referenceCache;
+    private final Object[] referenceCache;
     private AbstractMemory memory;
     private IRubyObject[] valueCache;
     
@@ -197,6 +197,11 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return layout.members(context);
     }
 
+    @JRubyMethod(name="null?")
+    public IRubyObject null_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(getMemory().getMemoryIO().isNull());
+    }
+
     public final AbstractMemory getMemory() {
         return memory != null ? memory : (memory = MemoryPointer.allocate(getRuntime(), layout.getSize(), 1, true));
     }
@@ -217,6 +222,10 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     }
     
     public void putReference(StructLayout.Member member, IRubyObject value) {
+        referenceCache[layout.getReferenceFieldIndex(member)] = value;
+    }
+    
+    public void putReference(StructLayout.Member member, Object value) {
         referenceCache[layout.getReferenceFieldIndex(member)] = value;
     }
 }

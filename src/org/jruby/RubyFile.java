@@ -1702,15 +1702,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // Broken symlinks considered by exists() as non-existing,
             // so we need to check for symlinks explicitly.
             if (!lToDelete.exists() && !isSymlink) {
-                throw runtime.newErrnoENOENTError(filename.toString());
+                throw runtime.newErrnoENOENTError(filename.getUnicodeValue());
             }
 
-            if (lToDelete.isDirectory()) {
-                throw runtime.newErrnoEPERMError(filename.toString());
+            if (lToDelete.isDirectory() && !isSymlink) {
+                throw runtime.newErrnoEPERMError(filename.getUnicodeValue());
             }
 
             if (!lToDelete.delete()) {
-                throw runtime.newErrnoEACCESError(filename.toString());
+                throw runtime.newErrnoEACCESError(filename.getUnicodeValue());
             }
         }
         

@@ -86,6 +86,9 @@
       <jvmarg value="-Djruby.lib=${lib.dir}"/>
       <jvmarg value="-Djruby.shell=/bin/sh"/>
       <jvmarg value="-Djruby.script=jruby"/>
+      <!--
+      <env key="RUBYOPT" value=""/>
+      -->
       <arg line="${jruby.args}"/>
     </java>
   </target>
@@ -119,7 +122,10 @@
       <jvmarg value="-Djruby.lib=${lib.dir}"/>
       <jvmarg value="-Djruby.shell=/bin/sh"/>
       <jvmarg value="-Djruby.script=jruby"/>
+      <!--
+      <env key="RUBYOPT" value=""/>
+      -->
       <arg line="${jruby.args}"/>
     </java>
-  </target>   
+  </target>
 </project>

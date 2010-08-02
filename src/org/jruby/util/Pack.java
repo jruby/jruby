@@ -1385,7 +1385,7 @@ public class Pack {
         int listSize = list.size();
 
         while (occurrences-- > 0) {
-            if (listSize-- <= 0) {
+            if (listSize-- <= 0 || index >= list.size()) {
                 throw runtime.newArgumentError(sTooFew);
             }
 

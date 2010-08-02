@@ -132,6 +132,11 @@ public final class StructLayout extends Type {
                 ArrayFieldAllocator.INSTANCE, layoutClass);
         arrayFieldClass.defineAnnotatedMethods(ArrayField.class);
 
+        RubyClass mappedFieldClass = runtime.defineClassUnder("Mapped", fieldClass,
+                MappedFieldAllocator.INSTANCE, layoutClass);
+        mappedFieldClass.defineAnnotatedMethods(MappedField.class);
+
+
         return layoutClass;
     }
     
@@ -497,7 +502,7 @@ public final class StructLayout extends Type {
     public static class Field extends RubyObject {
 
         /** The basic ops to read/write this field */
-        FieldIO io;
+        private FieldIO io;
 
         /** The name of this field */
         private IRubyObject name;
@@ -586,6 +591,10 @@ public final class StructLayout extends Type {
          */
         public final boolean isValueReferenceNeeded() {
             return io.isValueReferenceNeeded();
+        }
+
+        final FieldIO getFieldIO() {
+            return io;
         }
 
         @JRubyMethod
@@ -760,17 +769,49 @@ public final class StructLayout extends Type {
         }
     }
 
+    private static final class MappedFieldAllocator implements ObjectAllocator {
+        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            return new MappedField(runtime, klass);
+        }
+        private static final ObjectAllocator INSTANCE = new MappedFieldAllocator();
+    }
+
+    @JRubyClass(name="FFI::StructLayout::Mapped", parent="FFI::StructLayout::Field")
+    public static final class MappedField extends Field {
+
+        public MappedField(Ruby runtime, RubyClass klass) {
+            super(runtime, klass, DefaultFieldIO.INSTANCE);
+        }
+
+        @JRubyMethod(required = 4)
+        public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            if (!(args[2] instanceof MappedType)) {
+                throw context.getRuntime().newTypeError(args[2],
+                        context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Mapped"));
+            }
+
+            if (!(args[3] instanceof Field)) {
+                throw context.getRuntime().newTypeError(args[3],
+                        context.getRuntime().fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Field"));
+            }
+
+            init(args[0], args[2], args[1], new MappedFieldIO((MappedType) args[2], ((Field) args[3]).getFieldIO()));
+
+            return this;
+        }
+    }
+
 
     public static interface Storage {
         IRubyObject getCachedValue(Member member);
         void putCachedValue(Member member, IRubyObject value);
-        void putReference(Member member, IRubyObject value);
+        void putReference(Member member, Object value);
     }
 
     static class NullStorage implements Storage {
         public IRubyObject getCachedValue(Member member) { return null; }
         public void putCachedValue(Member member, IRubyObject value) { }
-        public void putReference(Member member, IRubyObject value) { }
+        public void putReference(Member member, Object value) { }
     }
     
     @JRubyClass(name="FFI::StructLayout::ArrayProxy", parent="Object")
@@ -1165,6 +1206,42 @@ public final class StructLayout extends Type {
 
         public final boolean isValueReferenceNeeded() {
             return false;
+        }
+    }
+
+    static final class MappedFieldIO implements FieldIO {
+        private final FieldIO nativeFieldIO;
+        private final MappedType mappedType;
+
+        public MappedFieldIO(MappedType mappedType, FieldIO nativeFieldIO) {
+            this.nativeFieldIO = nativeFieldIO;
+            this.mappedType = mappedType;
+        }
+
+        /* since we always need to call in to ruby to convert the native value to
+         * a ruby value, we cannot cache it here.
+         */
+        public final boolean isCacheable() {
+            return false;
+        }
+
+        public final boolean isValueReferenceNeeded() {
+            return nativeFieldIO.isValueReferenceNeeded() || mappedType.isReferenceRequired();
+        }
+
+        public final IRubyObject get(ThreadContext context, Storage cache, Member m, IRubyObject ptr) {
+            return mappedType.fromNative(context, nativeFieldIO.get(context, nullStorage, m, ptr));
+        }
+
+        public void put(ThreadContext context, Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
+            final IRubyObject nativeValue = mappedType.toNative(context, value);
+            nativeFieldIO.put(context, cache, m, ptr, nativeValue);
+
+            if (isValueReferenceNeeded()) {
+                // keep references to both the ruby and native values to preserve
+                // reference chains
+                cache.putReference(m, new Object[] { value, nativeValue });
+            }
         }
     }
 }

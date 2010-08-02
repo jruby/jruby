@@ -8,6 +8,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -53,6 +54,11 @@ public final class AutoPointer extends Pointer {
         if (ptr instanceof MemoryPointer || ptr instanceof AutoPointer) {
             throw runtime.newTypeError("Cannot use AutoPointer with MemoryPointer or AutoPointer instances");
         }
+    }
+
+    @JRubyMethod(name="from_native", meta = true)
+    public static IRubyObject from_native(ThreadContext context, IRubyObject recv, IRubyObject value, IRubyObject ctx) {
+        return ((RubyClass) recv).newInstance(context, new IRubyObject[] { value }, Block.NULL_BLOCK);
     }
 
     @Override
