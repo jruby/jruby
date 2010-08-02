@@ -265,7 +265,7 @@ public class RbConfigLibrary implements Library {
             setConfig(mkmfHash, "DLEXT", "dll");
         } else if (Platform.IS_MAC) {
             setConfig(mkmfHash, "DLEXT", "bundle");
-            ldshared = "cc -dynamic -bundle -undefined suppress -flat_namespace ";
+            ldshared = "cc -dynamic -bundle -undefined dynamic_lookup ";
             cflags += " -DTARGET_RT_MAC_CFM=0 ";
             ldflags += " -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 ";
         } else {
