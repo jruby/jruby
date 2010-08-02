@@ -55,12 +55,14 @@ rb_hash_size(VALUE hash)
 extern "C" void
 rb_hash_foreach(VALUE hash, int (*func)(ANYARGS), VALUE arg)
 {
-    VALUE iterator = callMethod(hash, "to_iter", 0);
-    VALUE entry = Qnil;
+    long size = NUM2LONG(rb_hash_size(hash));
+    if (size == 0) return;
 
-    while (RTEST(entry = callMethod(iterator, "next", 1, entry))) {
-        VALUE key = callMethod(entry, "key", 0);
-        VALUE value = callMethod(entry, "value", 0);
+    VALUE hash_array = callMethod(hash, "to_a", 0);
+    for (long i = 0; i < size; i++) {
+        VALUE key_value_ary = rb_ary_entry(hash_array, i);
+        VALUE key = rb_ary_entry(key_value_ary, 0);
+        VALUE value = rb_ary_entry(key_value_ary, 1);
 
         int ret = (*func)(key, value, arg);
         switch (ret) {
