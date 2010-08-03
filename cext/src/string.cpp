@@ -75,7 +75,7 @@ rb_str_new_cstr(const char *ptr)
     return newString(ptr, ptr ? strlen(ptr) : 0);
 }
 
-#define STR_BUF_MIN_SIZE 128
+#define STR_BUF_MIN_SIZE 1
 extern "C" VALUE
 rb_str_buf_new(long capacity)
 {
