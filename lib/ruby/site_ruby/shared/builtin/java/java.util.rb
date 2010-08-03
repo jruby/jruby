@@ -47,7 +47,7 @@ end
 
 module java::util::Enumeration
   include Enumerable
-  
+
   def each
     while (has_more_elements)
       yield next_element
@@ -57,7 +57,7 @@ end
 
 module java::util::Iterator
   include Enumerable
-  
+
   def each
     while (has_next)
       yield self.next
@@ -66,6 +66,27 @@ module java::util::Iterator
 end
 
 module java::util::List
+  module RubyComparators
+    class BlockComparator
+      include java::util::Comparator
+
+      def initialize(block)
+        @block = block
+      end
+
+      def compare(o1, o2)
+        @block.call(o1, o2)
+      end
+    end
+
+    class SpaceshipComparator
+      include java::util::Comparator
+      def compare(o1, o2)
+        o1 <=> o2
+      end
+    end
+  end
+
   def [](ix1, ix2 = nil)
     if (ix2)
       sub_list(ix1, ix1 + ix2)
@@ -77,6 +98,7 @@ module java::util::List
       nil
     end
   end
+
   def []=(ix,val)
     if (ix.is_a?(Range))
       ix.each { |i| remove(i) }
@@ -87,42 +109,18 @@ module java::util::List
     set(ix,val)
     val
   end
-  def sort()
-    comparator = Class.new do
-      include java::util::Comparator
-      if block_given?
-        define_method :compare do |o1, o2|
-          yield o1, o2
-        end
-      else
-        def compare(o1, o2)
-          o1 <=> o2
-        end
-      end
-    end.new
 
+  def sort(&block)
+    comparator = block ? RubyComparators::BlockComparator.new(block) : RubyComparators::SpaceshipComparator.new
     list = java::util::ArrayList.new
     list.addAll(self)
-
     java::util::Collections.sort(list, comparator)
-
     list
   end
+
   def sort!(&block)
-    comparator = java::util::Comparator.impl do |name, o1, o2|
-      if block
-        block.call(o1, o2)
-      else
-        o1 <=> o2
-      end
-    end
-
+    comparator = block ? RubyComparators::BlockComparator.new(block) : RubyComparators::SpaceshipComparator.new
     java::util::Collections.sort(self, comparator)
-
     self
-  end
-  def _wrap_yield(*args)
-    p = yield(*args)
-    p p
   end
 end
