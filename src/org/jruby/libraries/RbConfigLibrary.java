@@ -195,6 +195,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "rubylibdir",     rubyLibDir);
         setConfig(configHash, "sitedir",        siteDir);
         setConfig(configHash, "sitelibdir",     siteLibDir);
+        setConfig(configHash, "sitearch", "java");
         setConfig(configHash, "sitearchdir",    siteArchDir);
         setConfig(configHash, "archdir",   archDir);
         setConfig(configHash, "topdir",   archDir);
