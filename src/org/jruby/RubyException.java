@@ -151,6 +151,20 @@ public class RubyException extends RubyObject {
     public ThreadContext.RubyStackTraceElement[] getBacktraceFrames() {
         return backtraceFrames;
     }
+
+    public void prepareBacktrace(ThreadContext context, boolean nativeException) {
+        ThreadContext.RubyStackTraceElement[] stackTrace = getBacktraceFrames();
+
+        // if it's null, build a backtrace
+        if (stackTrace == null) {
+            stackTrace = context.createBacktrace2(0, nativeException);
+
+            // if it's still null, just use an empty trace
+            if (stackTrace == null) stackTrace = new ThreadContext.RubyStackTraceElement[0];
+
+            setBacktraceFrames(stackTrace);
+        }
+    }
     
     public static final int RAW = 0;
     public static final int RAW_FILTERED = 1;
@@ -197,9 +211,9 @@ public class RubyException extends RubyObject {
         case RUBY_COMPILED:
             backtrace = ThreadContext.createRubyCompiledBacktrace(getRuntime(), javaStackTrace);
             break;
-//        case RUBY_HYBRID:
-//            backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, javaStackTrace, getRuntime().getDebug().isTrue());
-//            break;
+        case RUBY_HYBRID:
+            backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, javaStackTrace, getRuntime().getDebug().isTrue());
+            break;
         }
     }
 

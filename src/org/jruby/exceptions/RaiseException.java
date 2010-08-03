@@ -56,6 +56,7 @@ public class RaiseException extends JumpException {
     
     private RubyException exception;
     private String providedMessage;
+    private boolean nativeException;
 
     public RaiseException(RubyException actException) {
         this(actException, false);
@@ -67,6 +68,7 @@ public class RaiseException extends JumpException {
             msg = "No message available";
         }
         providedMessage = msg;
+        this.nativeException = nativeException;
         if (DEBUG) {
             Thread.dumpStack();
         }
@@ -83,6 +85,7 @@ public class RaiseException extends JumpException {
         if (DEBUG) {
             Thread.dumpStack();
         }
+        this.nativeException = isNativeException;
         setException(exception, isNativeException);
     }
 
@@ -135,16 +138,10 @@ public class RaiseException extends JumpException {
         return exception;
     }
 
-    /**
-     * Sets the exception
-     * @param newException The exception to set
-     */
-    protected void setException(RubyException newException, boolean nativeException) {
-        Ruby runtime = newException.getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-
+    public void preRaise(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
         if (!context.isWithinDefined()) {
-            runtime.getGlobalVariables().set("$!", newException);
+            runtime.getGlobalVariables().set("$!", exception);
         }
 
         if (runtime.hasEventHooks()) {
@@ -157,34 +154,30 @@ public class RaiseException extends JumpException {
                     context.getFrameKlazz());
         }
 
+        exception.prepareBacktrace(context, nativeException);
+    }
+    
+    private StackTraceElement[] cachedTrace;
+
+    @Override
+    public StackTraceElement[] getStackTrace() {
+        if (cachedTrace == null) {
+            // JRUBY-2673: if wrapping a NativeException, use the actual Java exception's trace as our Java trace
+            if (exception instanceof NativeException) {
+                setStackTrace(cachedTrace = ((NativeException)exception).getCause().getStackTrace());
+            } else {
+                setStackTrace(cachedTrace = javaTraceFromRubyTrace(exception.getBacktraceFrames()));
+            }
+        }
+        return cachedTrace;
+    }
+
+    /**
+     * Sets the exception
+     * @param newException The exception to set
+     */
+    protected void setException(RubyException newException, boolean nativeException) {
         this.exception = newException;
-
-        if (runtime.getStackTraces() > 5) {
-            return;
-        }
-
-        runtime.setStackTraces(runtime.getStackTraces() + 1);
-
-        ThreadContext.RubyStackTraceElement[] stackTrace = newException.getBacktraceFrames();
-
-        // if it's null, build a backtrace
-        if (stackTrace == null) {
-            stackTrace = context.createBacktrace2(0, nativeException);
-
-            // if it's still null, just use an empty trace
-            if (stackTrace == null) stackTrace = new ThreadContext.RubyStackTraceElement[0];
-            
-            newException.setBacktraceFrames(stackTrace);
-        }
-
-        // JRUBY-2673: if wrapping a NativeException, use the actual Java exception's trace as our Java trace
-        if (newException instanceof NativeException) {
-            setStackTrace(((NativeException)newException).getCause().getStackTrace());
-        } else {
-            setStackTrace(javaTraceFromRubyTrace(stackTrace));
-        }
-
-        runtime.setStackTraces(runtime.getStackTraces() - 1);
     }
 
     private StackTraceElement[] javaTraceFromRubyTrace(ThreadContext.RubyStackTraceElement[] trace) {
