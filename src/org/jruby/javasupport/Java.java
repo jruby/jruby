@@ -1181,6 +1181,7 @@ public class Java implements Library {
             }
         }
         clazz.setReifiedClass(proxyImplClass);
+        clazz.setRubyClassAllocator(proxyImplClass);
 
         return proxyImplClass;
     }
