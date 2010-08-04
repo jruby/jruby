@@ -1195,7 +1195,7 @@ public class RubyEnumerable {
         return runtime.getTrue();
     }
     
-    @JRubyMethod(name = "one?", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "one?", frame = true)
     public static IRubyObject one_p(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;
