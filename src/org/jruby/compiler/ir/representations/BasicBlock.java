@@ -20,7 +20,6 @@ public class BasicBlock {
     Label _label;                   // All basic blocks have a starting label
     List<IR_Instr> _instrs;         // List of non-label instructions
     boolean _isLive;
-    BasicBlock _rescuedBodyEndBB;  // If this is the start of a rescue block, this is the last basic block of the rescued body
 
     public BasicBlock(CFG c, Label l) {
         _instrs = new ArrayList<IR_Instr>();
@@ -28,16 +27,11 @@ public class BasicBlock {
         _isLive = true;
         _cfg = c;
         _id = c.getNextBBID();
-        _rescuedBodyEndBB = null;
     }
 
     public void updateCFG(CFG c) {
         _cfg = c;
         _id = c.getNextBBID();
-    }
-
-    void setRescuedBodyEndBB(BasicBlock rbEnd) {
-        _rescuedBodyEndBB = rbEnd;
     }
 
     public int getID() {
@@ -54,10 +48,6 @@ public class BasicBlock {
 
     public List<IR_Instr> getInstrs() {
         return _instrs;
-    }
-
-    public BasicBlock getRescuedBodyEndBB() {
-        return _rescuedBodyEndBB;
     }
 
     public BasicBlock splitAtInstruction(IR_Instr splitPoint, Label newLabel, boolean includeSplitPointInstr) {
@@ -91,7 +81,7 @@ public class BasicBlock {
     }
 
     public BasicBlock cloneForInlining(InlinerInfo ii) {
-        BasicBlock clonedBB = new BasicBlock(ii.callerCFG, ii.getRenamedLabel(_label));
+        BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
         for (IR_Instr i: getInstrs()) {
             if (i instanceof YIELD_Instr) {
                 ii.recordYieldSite(clonedBB, (YIELD_Instr)i);

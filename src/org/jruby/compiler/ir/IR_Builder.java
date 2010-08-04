@@ -2607,7 +2607,9 @@ public class IR_Builder
             rv = null;
         }
 
-        RESCUED_BODY_END_MARKER_Instr rbEndInstr = new RESCUED_BODY_END_MARKER_Instr(rbStartInstr);
+		  // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
+		  // let us discover the edge of the region during linear traversal of instructions during cfg construction.
+        RESCUED_BODY_END_MARKER_Instr rbEndInstr = new RESCUED_BODY_END_MARKER_Instr();
         m.addInstr(rbEndInstr);
 
         // Build the actual rescue block(s)

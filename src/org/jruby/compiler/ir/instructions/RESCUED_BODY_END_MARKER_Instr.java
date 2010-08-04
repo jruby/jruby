@@ -11,19 +11,13 @@ public class RESCUED_BODY_END_MARKER_Instr extends IR_Instr
 {
     private static Operand[] _empty = new Operand[] {};
 
-    public final RESCUED_BODY_START_MARKER_Instr _rbStartInstr;
-
-    public RESCUED_BODY_END_MARKER_Instr(RESCUED_BODY_START_MARKER_Instr start)
-    {
+    public RESCUED_BODY_END_MARKER_Instr() {
         super(Operation.RESCUE_BODY_END);
-        _rbStartInstr = start;
     }
 
     public Operand[] getOperands() { return _empty; }
 
     public void simplifyOperands(Map<Operand, Operand> valueMap) { }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { 
-		 throw new RuntimeException("Not implemented yet!");
-	 }
+    public IR_Instr cloneForInlining(InlinerInfo ii) { return this; }
 }

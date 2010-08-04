@@ -69,7 +69,6 @@ public enum NativeType implements NativeParam {
     // ARRAY and STRUCT are only used internally
     ARRAY,
     STRUCT,
-    WIN32PTR,
 
     /* map from one type to another */
     MAPPED;

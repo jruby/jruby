@@ -310,10 +310,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public synchronized void beDead() {
         status = status.DEAD;
-        try {
-            if (selector != null) selector.close();
-        } catch (IOException ioe) {
-        }
     }
 
     public void pollThreadEvents() {
@@ -854,11 +850,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return select(io, SelectionKey.OP_ACCEPT);
     }
 
-    private volatile Selector selector;
-
     private synchronized Selector getSelector(SelectableChannel channel) throws IOException {
-        if (selector == null) selector = Selector.open();
-        return selector;
+        return channel.provider().openSelector();
     }
     
     public boolean select(RubyIO io, int ops) {
@@ -900,11 +893,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     throw getRuntime().newRuntimeError("Error with selector: " + ioe);
                 } finally {
                     try {
-                        if (key != null) {
-                            key.cancel();
-                            currentSelector.selectNow();
-                        }
+                        // clean up the key in the selector
+                        try {
+                            if (key != null) {
+                                key.cancel();
+                                currentSelector.selectNow();
+                            }
+                        } catch (Exception e) {}
+                        
                         afterBlockingCall();
+                        try {currentSelector.close();} catch (IOException ioe2) {}
                         currentSelector = null;
                         if (io != null) io.removeBlockingThread(this);
                         selectable.configureBlocking(oldBlocking);

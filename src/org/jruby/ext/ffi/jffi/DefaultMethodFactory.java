@@ -314,10 +314,7 @@ public final class DefaultMethodFactory {
                 return BufferMarshaller.OUT;
             case BUFFER_INOUT:
                 return BufferMarshaller.INOUT;
-
-            case WIN32PTR:
-                return BufferMarshaller.WIN32PTR;
-                
+    
             default:
                 throw new IllegalArgumentException("Invalid parameter type: " + type);
         }
@@ -759,20 +756,12 @@ public final class DefaultMethodFactory {
         static final ParameterMarshaller OUT = new BufferMarshaller(ArrayFlags.OUT);
         static final ParameterMarshaller INOUT = new BufferMarshaller(ArrayFlags.IN | ArrayFlags.OUT);
 
-        /** A special case for implementation of the Win32API 'P' type */
-        static final ParameterMarshaller WIN32PTR = new BufferMarshaller(ArrayFlags.IN | ArrayFlags.OUT, true);
-
         private final int flags;
-        private final boolean acceptIntegerValues;
-
+        
         public BufferMarshaller(int flags) {
-            this(flags, false);
+            this.flags = flags;
         }
 
-        public BufferMarshaller(int flags, boolean acceptIntegerValues) {
-            this.flags = flags;
-            this.acceptIntegerValues = acceptIntegerValues;
-        }
         private static final int bufferFlags(Buffer buffer) {
             int f = buffer.getInOutFlags();
             return ((f & Buffer.IN) != 0 ? ArrayFlags.IN: 0)
@@ -793,8 +782,10 @@ public final class DefaultMethodFactory {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             if (parameter instanceof Buffer) {
                 addBufferParameter(buffer, parameter, flags);
+
             } else if (parameter instanceof Pointer) {
                 buffer.putAddress(getAddress((Pointer) parameter));
+
             } else if (parameter instanceof Struct) {
                 IRubyObject memory = ((Struct) parameter).getMemory();
                 if (memory instanceof Buffer) {
@@ -808,6 +799,7 @@ public final class DefaultMethodFactory {
                 }
             } else if (parameter.isNil()) {
                 buffer.putAddress(0L);
+
             } else if (parameter instanceof RubyString) {
                 ByteList bl = ((RubyString) parameter).getByteList();
                 buffer.putArray(bl.getUnsafeBytes(), bl.begin(), bl.length(), flags | ArrayFlags.NULTERMINATE);
@@ -830,10 +822,6 @@ public final class DefaultMethodFactory {
                     }
                     break;
                 }
-
-            } else if (parameter instanceof RubyInteger && acceptIntegerValues) {
-                
-                buffer.putAddress(((RubyInteger) parameter).getLongValue());
 
             } else {
                 throw context.getRuntime().newArgumentError("Invalid buffer/pointer parameter");
