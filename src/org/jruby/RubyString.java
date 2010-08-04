@@ -6548,7 +6548,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         for (; p < end; p++) {
             if (rslen == 0 && bytes[p] == '\n') {
-                if (bytes[++p] != '\n') continue;
+                if (++p == end || bytes[p] != '\n') continue;
                 while(p < end && bytes[p] == '\n') p++;
             }
             if (ptr < p && bytes[p - 1] == newline &&
