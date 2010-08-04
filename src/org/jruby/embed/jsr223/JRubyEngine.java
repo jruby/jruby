@@ -92,7 +92,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(isTerminationOn()) {
+            if(Utils.isTerminationOn(this)) {
                 container.terminate();
             }
         }
@@ -116,15 +116,6 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         }
     }
 
-    private boolean isTerminationOn() {
-        boolean termination = false;
-        Object obj = container.getAttribute(AttributeName.TERMINATION.toString());
-        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
-            termination = true;
-        }
-        return termination;
-    }
-
     public Object eval(Reader reader, ScriptContext context) throws ScriptException {
         if (reader == null || context == null) {
             throw new NullPointerException("either reader or context is null");
@@ -138,7 +129,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(isTerminationOn()) {
+            if(Utils.isTerminationOn(this)) {
                 container.terminate();
             }
         }
@@ -156,7 +147,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(isTerminationOn()) {
+            if(Utils.isTerminationOn(this)) {
                 container.terminate();
             }
         }
@@ -174,7 +165,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(isTerminationOn()) {
+            if(Utils.isTerminationOn(this)) {
                 container.terminate();
             }
         }
@@ -193,7 +184,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(isTerminationOn()) {
+            if(Utils.isTerminationOn(this)) {
                 container.terminate();
             }
         }
@@ -212,7 +203,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(isTerminationOn()) {
+            if(Utils.isTerminationOn(this)) {
                 container.terminate();
             }
         }

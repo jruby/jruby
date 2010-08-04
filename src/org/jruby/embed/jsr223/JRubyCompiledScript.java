@@ -77,19 +77,10 @@ public class JRubyCompiledScript extends CompiledScript {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(isTerminationOn()) {
+            if(Utils.isTerminationOn(engine)) {
                 container.terminate();
             }
         }
-    }
-
-    private boolean isTerminationOn() {
-        boolean termination = false;
-        Object obj = container.getAttribute(AttributeName.TERMINATION.toString());
-        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
-            termination = true;
-        }
-        return termination;
     }
 
     public Object eval(Bindings bindings) throws ScriptException {
@@ -103,7 +94,7 @@ public class JRubyCompiledScript extends CompiledScript {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(isTerminationOn()) {
+            if(Utils.isTerminationOn(engine)) {
                 container.terminate();
             }
         }
@@ -120,7 +111,7 @@ public class JRubyCompiledScript extends CompiledScript {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(isTerminationOn()) {
+            if(Utils.isTerminationOn(engine)) {
                 container.terminate();
             }
         }
