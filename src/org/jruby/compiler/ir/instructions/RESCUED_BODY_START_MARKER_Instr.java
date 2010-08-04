@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 import java.util.List;
+import java.util.ArrayList;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
@@ -18,9 +19,6 @@ public class RESCUED_BODY_START_MARKER_Instr extends IR_Instr
     final public Label _end;
     final public List<Label> _rescueBlockLabels;
 
-    BasicBlock _rescuedBodyStartBB;
-    BasicBlock _rescuedBodyEndBB;
-
     public RESCUED_BODY_START_MARKER_Instr(Label rBegin, Label elseBlock, Label rEnd, List<Label> rbLabels)
     {
         super(Operation.RESCUE_BODY_START);
@@ -29,11 +27,6 @@ public class RESCUED_BODY_START_MARKER_Instr extends IR_Instr
         _rescueBlockLabels = rbLabels;
         _elseBlock = elseBlock;
     }
-
-    public void setRescuedBodyStartBB(BasicBlock bb) { _rescuedBodyStartBB = bb; }
-    public void setRescuedBodyEndBB(BasicBlock bb) { _rescuedBodyEndBB = bb; }
-    public BasicBlock getRescuedBodyStartBB() { return _rescuedBodyStartBB; }
-    public BasicBlock getRescuedBodyEndBB() { return _rescuedBodyEndBB; }
 
     public String toString() {
         StringBuffer buf = new StringBuffer(super.toString());
@@ -49,6 +42,10 @@ public class RESCUED_BODY_START_MARKER_Instr extends IR_Instr
     public void simplifyOperands(Map<Operand, Operand> valueMap) { }
 
     public IR_Instr cloneForInlining(InlinerInfo ii) { 
-		 throw new RuntimeException("Not implemented yet!");
-	 }
+        List<Label> newLabels = new ArrayList<Label>();
+        for (Label l: _rescueBlockLabels)
+            newLabels.add(ii.getRenamedLabel(l));
+
+        return new RESCUED_BODY_START_MARKER_Instr(ii.getRenamedLabel(_begin), _elseBlock == null ? null : ii.getRenamedLabel(_elseBlock), ii.getRenamedLabel(_end), newLabels);
+    }
 }

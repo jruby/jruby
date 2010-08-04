@@ -147,6 +147,10 @@ public class IR_Module extends IR_ScopeImpl {
         return null;
     }
 
+    public boolean isCoreClass(String className) {
+        return this == IR_Class.getCoreClass(className);
+    }
+
     public String getName() {
         return _name;
     }
