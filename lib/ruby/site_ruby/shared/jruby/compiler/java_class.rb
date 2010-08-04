@@ -591,7 +591,9 @@ JAVA
         if return_type.void?
           "return;"
         else
-          "return (#{return_type.wrapper_name})ruby_result.toJava(#{return_type.name}.class);"
+          # Can't return wrapped array as primitive array
+          cast_to = return_type.is_array ? return_type.fully_typed_name : return_type.wrapper_name
+          "return (#{cast_to})ruby_result.toJava(#{return_type.name}.class);"
         end
       else
         raise "no java_signature has been set for method #{name}"
