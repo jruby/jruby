@@ -79,6 +79,7 @@ public class RubyException extends RubyObject {
         super(runtime, rubyClass);
         
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
+        this.javaStackTrace = Thread.currentThread().getStackTrace();
     }
     
     private static ObjectAllocator EXCEPTION_ALLOCATOR = new ObjectAllocator() {
@@ -140,12 +141,6 @@ public class RubyException extends RubyObject {
     
     public void setBacktraceFrames(ThreadContext.RubyStackTraceElement[] backtraceFrames) {
         this.backtraceFrames = backtraceFrames;
-        if (TRACE_TYPE == RAW ||
-                TRACE_TYPE == RAW_FILTERED ||
-                TRACE_TYPE == RUBY_COMPILED ||
-                TRACE_TYPE == RUBY_HYBRID) {
-            javaStackTrace = Thread.currentThread().getStackTrace();
-        }
     }
     
     public ThreadContext.RubyStackTraceElement[] getBacktraceFrames() {
