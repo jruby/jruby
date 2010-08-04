@@ -371,7 +371,7 @@ public class CFG {
         a.swallowBB(b);
         _cfg.removeEdge(a, b);
         for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
-            _cfg.addEdge(a, e._dst);
+            _cfg.addEdge(a, e._dst)._type = e._type;
         }
         _cfg.removeVertex(b);
     }
@@ -397,7 +397,7 @@ public class CFG {
         _bbMap.put(splitBB._label, splitBB);
         List<CFG_Edge> edgesToRemove = new java.util.ArrayList<CFG_Edge>();
         for (CFG_Edge e: outgoingEdgesOf(yieldBB)) {
-            _cfg.addEdge(splitBB, e._dst);
+            _cfg.addEdge(splitBB, e._dst)._type = e._type;
             edgesToRemove.add(e);
         }
         // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste!
@@ -421,7 +421,7 @@ public class CFG {
         }
         for (CFG_Edge e: ccfg.outgoingEdgesOf(cEntry)) {
             if (e._dst != cExit)
-                _cfg.addEdge(yieldBB, e._dst);
+                _cfg.addEdge(yieldBB, e._dst)._type = e._type;
         }
         for (CFG_Edge e: ccfg.incomingEdgesOf(cExit)) {
             if (e._src != cEntry) {
@@ -433,7 +433,7 @@ public class CFG {
                     _cfg.addEdge(e._src, rescuerOfSplitBB != null ? rescuerOfSplitBB : _exitBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
                 }
                 else {
-                    _cfg.addEdge(e._src, splitBB);
+                    _cfg.addEdge(e._src, splitBB)._type = e._type;
                 }
             }
         }
@@ -465,7 +465,7 @@ public class CFG {
         _cfg.addVertex(splitBB);
         List<CFG_Edge> edgesToRemove = new java.util.ArrayList<CFG_Edge>();
         for (CFG_Edge e: outgoingEdgesOf(callBB)) {
-            _cfg.addEdge(splitBB, e._dst);
+            _cfg.addEdge(splitBB, e._dst)._type = e._type;
             edgesToRemove.add(e);
         }
         // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste! 
@@ -496,7 +496,7 @@ public class CFG {
                 for (CFG_Edge e: mcfg.outgoingEdgesOf(x)) {
                     BasicBlock b = e._dst;
                     if (b != mExit)
-                        _cfg.addEdge(rx, ii.getRenamedBB(b));
+                        _cfg.addEdge(rx, ii.getRenamedBB(b))._type = e._type;
                 }
             }
         }
@@ -504,7 +504,7 @@ public class CFG {
         // 4. Hook up entry/exit edges
         for (CFG_Edge e: mcfg.outgoingEdgesOf(mEntry)) {
             if (e._dst != mExit)
-                _cfg.addEdge(callBB, ii.getRenamedBB(e._dst));
+                _cfg.addEdge(callBB, ii.getRenamedBB(e._dst))._type = e._type;
         }
 
         for (CFG_Edge e: mcfg.incomingEdgesOf(mExit)) {
@@ -517,7 +517,7 @@ public class CFG {
                     _cfg.addEdge(ii.getRenamedBB(e._src), rescuerOfSplitBB != null ? rescuerOfSplitBB : _exitBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
                 }
                 else {
-                    _cfg.addEdge(ii.getRenamedBB(e._src), splitBB);
+                    _cfg.addEdge(ii.getRenamedBB(e._src), splitBB)._type = e._type;
                 }
             }
         }
