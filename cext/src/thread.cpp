@@ -24,6 +24,8 @@
 
 using namespace jruby;
 
+static void GIL_releaseNoCleanup();
+
 VALUE rb_thread_critical = 0;
 
 extern "C" VALUE
@@ -74,7 +76,7 @@ rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct
         */
 	    return 0;
     } else {
-        // TODO: Make sure this thread can be run in parallel
+        GIL_releaseNoCleanup();
 	    int ret = select(max, read, write, except, timeout);
         // TODO: Check for async events and possibly exceptions
         return ret;
@@ -92,7 +94,17 @@ rb_thread_blocking_region(rb_blocking_function_t func, void* data, rb_unblock_fu
 {
     // unblock function is ignored, Rubinius does it, too, so it can't be too bad to get exts working
     VALUE ret = Qnil;
-    // TODO: Make sure this thread can be run in parallel
+    GIL_releaseNoCleanup();
     ret = (*func)(data);
     return ret;
+}
+
+static void
+GIL_releaseNoCleanup() {
+    JLocalEnv env;
+    jclass gil = env->FindClass("org/jruby/cext/GIL");
+    checkExceptions(env);
+    jmethodID mid = getStaticMethodID(env, gil, "releaseNoCleanup", "()V");
+    env->CallStaticVoidMethod(gil, mid);
+    checkExceptions(env);
 }

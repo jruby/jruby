@@ -37,7 +37,10 @@ final class GIL {
                 GC.cleanup();
             }
         } finally {
-            lock.unlock();
+            if (lock.getHoldCount() > 0) {
+                // This might be 0 if the C code released the GIL
+                lock.unlock();
+            }
         }
     }
 
