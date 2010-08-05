@@ -368,12 +368,20 @@ public class CFG {
     }
 
     private void mergeBBs(BasicBlock a, BasicBlock b) {
-        a.swallowBB(b);
-        _cfg.removeEdge(a, b);
-        for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
-            _cfg.addEdge(a, e._dst)._type = e._type;
+        BasicBlock aR = _bbRescuerMap.get(a);
+        BasicBlock bR = _bbRescuerMap.get(b);
+        // We can merge the two basic blocks only if they are protected by the same rescue block!
+        if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
+            a.swallowBB(b);
+            _cfg.removeEdge(a, b);
+            for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                _cfg.addEdge(a, e._dst)._type = e._type;
+            }
+            _cfg.removeVertex(b);
+
+            if ((aR == null) && (bR != null))
+                _bbRescuerMap.put(a, bR);
         }
-        _cfg.removeVertex(b);
     }
 
         // callBB will only have a single successor & splitBB will only have a single predecessor
@@ -408,6 +416,8 @@ public class CFG {
             _bbRescuerMap.put(splitBB, yieldBBrescuer);
 
         // 2. Merge closure cfg into the current cfg
+        // NOTE: No need to clone basic blocks in the closure because they are part of the caller's cfg
+        // and is being merged in at the yield site -- there is no need for the closure after the merge.
         CFG ccfg = cl.getCFG();
         BasicBlock cEntry = ccfg.getEntryBB(); 
         BasicBlock cExit  = ccfg.getExitBB(); 
@@ -438,20 +448,21 @@ public class CFG {
             }
         }
 
-        // callBB will only have a single successor & splitBB will only have a single predecessor
-        // after inlining the callee.  Merge them with their successor/predecessors respectively
-        mergeStraightlineBBs(yieldBB, splitBB);
-
-        // 5. Clone rescued regions; SSS FIXME: VERIFY
+        // 5. No need to clone rescued regions -- just assimilate them
         for (RescuedRegion r: ccfg._outermostRRs) {
-            _outermostRRs.add(r.cloneForInlining(ii));
+            _outermostRRs.add(r);
         }
 
-        // 6. Update bb rescuer map; SSS FIXME: VERIFY
+        // 6. Update bb rescuer map -- assimilate the rescuer map
         Map<BasicBlock, BasicBlock> cRescuerMap = ccfg._bbRescuerMap;
         for (BasicBlock cb: cRescuerMap.keySet()) {
-            _bbRescuerMap.put(ii.getRenamedBB(cb), ii.getRenamedBB(cRescuerMap.get(cb)));
+            _bbRescuerMap.put(cb, cRescuerMap.get(cb));
         }
+
+        // 7. callBB will only have a single successor & splitBB will only have a single predecessor
+        //    after inlining the callee.  Merge them with their successor/predecessors respectively
+        //    Merge only after fixing up the rescuer map above
+        mergeStraightlineBBs(yieldBB, splitBB);
     }
 
     public void inlineMethod(IRMethod m, BasicBlock callBB, CallInstruction call) {
@@ -522,10 +533,6 @@ public class CFG {
             }
         }
 
-        // callBB will only have a single successor & splitBB will only have a single predecessor
-        // after inlining the callee.  Merge them with their successor/predecessors respectively
-        mergeStraightlineBBs(callBB, splitBB);
-
         // 5. Clone rescued regions
         for (RescuedRegion r: mcfg._outermostRRs) {
             _outermostRRs.add(r.cloneForInlining(ii));
@@ -537,7 +544,12 @@ public class CFG {
             _bbRescuerMap.put(ii.getRenamedBB(mb), ii.getRenamedBB(mRescuerMap.get(mb)));
         }
 
-        // 7. Inline any closure argument passed into the call.
+        // 7. callBB will only have a single successor & splitBB will only have a single predecessor
+        //    after inlining the callee.  Merge them with their successor/predecessors respectively
+        //    Merge only after fixing up the rescuer map above
+        mergeStraightlineBBs(callBB, splitBB);
+
+        // 8. Inline any closure argument passed into the call.
         Operand closureArg = call.getClosureArg();
         List    yieldSites = ii.getYieldSites();
         if (closureArg != null && !yieldSites.isEmpty()) {
@@ -704,8 +716,13 @@ public class CFG {
 
     public String toStringInstrs() {
         StringBuffer buf = new StringBuffer();
-        for (BasicBlock b : getNodes()) {
+        for (BasicBlock b: getNodes()) {
             buf.append(b.toStringInstrs());
+        }
+
+        buf.append("\n\n------ Exception handling map ------\n");
+        for (BasicBlock bb: _bbRescuerMap.keySet()) {
+            buf.append("BB " + bb.getID() + " --> BB " + _bbRescuerMap.get(bb).getID() + "\n");
         }
 
         List<IR_Closure> closures = _scope.getClosures();
