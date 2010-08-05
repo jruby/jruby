@@ -866,6 +866,9 @@ VALUE rb_reg_source(VALUE);
 int rb_reg_options(VALUE);
 VALUE rb_reg_regcomp(VALUE);
 
+/* 1.9 provides these, so we will too: */
+#define RUBY_UBF_IO ((rb_unblock_function_t *)-1)
+#define RUBY_UBF_PROCESS ((rb_unblock_function_t *)-1)
 /** Release the GIL and let func run in a parallel */
 typedef VALUE rb_blocking_function_t(void *);
 typedef void rb_unblock_function_t(void *);
