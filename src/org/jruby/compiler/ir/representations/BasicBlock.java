@@ -50,6 +50,18 @@ public class BasicBlock {
         return _instrs;
     }
 
+    public IR_Instr getLastInstr() {
+        int n = _instrs.size();
+        return (n == 0) ? null : _instrs.get(n-1);
+    }
+
+    public boolean removeInstr(IR_Instr i) {
+       if (i == null)
+          return false;
+       else
+          return _instrs.remove(i);
+    }
+
     public boolean isEmpty() {
         return _instrs.isEmpty();
     }
