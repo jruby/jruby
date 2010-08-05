@@ -533,6 +533,7 @@ VALUE rb_iv_set(VALUE obj, const char* name, VALUE value);
 VALUE rb_ivar_get(VALUE obj, ID ivar_name);
 /** Set object's instance variable to given value. */
 VALUE rb_ivar_set(VALUE obj, ID ivar_name, VALUE value);
+VALUE rb_ivar_defined(VALUE obj, ID ivar_name);
 
 /** Nonzero if constant corresponding to Symbol exists in the Module. */
 int rb_const_defined(VALUE, ID);
