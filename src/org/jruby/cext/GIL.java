@@ -45,6 +45,8 @@ final class GIL {
     }
 
     public static void releaseNoCleanup() {
-        lock.unlock();
+        if (lock.getHoldCount() > 0) {
+            lock.unlock();
+        }
     }
 }
