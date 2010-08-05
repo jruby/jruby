@@ -154,7 +154,7 @@ rb_ivar_set(VALUE obj, ID ivar_name, VALUE value)
 }
 
 extern "C" VALUE
-rb_ivar_defined(VALUE obj, ID ivar, VALUE value)
+rb_ivar_defined(VALUE obj, ID ivar)
 {
     JLocalEnv env;
     const char* name = rb_id2name(ivar);
