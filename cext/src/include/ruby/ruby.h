@@ -757,6 +757,8 @@ void rb_set_kcode(const char *code);
 /** Return an array containing the names of all global variables */
 VALUE rb_f_global_variables();
 
+VALUE rb_eval_string(const char* string);
+
 /** Print a warning if $VERBOSE is not nil. */
 void rb_warn(const char *fmt, ...);
 /** Print a warning if $VERBOSE is true. */

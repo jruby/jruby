@@ -165,6 +165,18 @@ rb_set_kcode(const char *code)
     rb_gv_set("$KCODE", rb_str_new_cstr(code));
 }
 
+extern "C" VALUE
+rb_eval_string(const char* string)
+{
+    JLocalEnv env;
+
+    jmethodID mid = getMethodID(env, Ruby_class, "evalScriptlet",
+            "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    jobject result = env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(string));
+    checkExceptions(env);
+    return objectToValue(env, result);
+}
+
 #define M(x) rb_m##x = getConstModule(env, #x)
 #define C(x) rb_c##x = getConstClass(env, #x)
 #define E(x) rb_e##x = getConstClass(env, #x)
