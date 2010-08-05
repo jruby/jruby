@@ -33,7 +33,7 @@ RubyIO::cache_java_handles(JNIEnv *env)
         // Cache the java file descriptor statics
         jclass tmp = env->FindClass("java/io/FileDescriptor");
         FileDescriptor_class = (jclass)(env->NewGlobalRef(tmp));
-        FileDescriptor_fd_field = env->GetFieldID(FileDescriptor_class, "fd", "I");        
+        FileDescriptor_fd_field = env->GetFieldID(FileDescriptor_class, "fd", "I");
         checkExceptions(env);
     }
 }
@@ -57,7 +57,7 @@ RubyIO::toRIO()
         callMethod
         */
     } else {
-        throw JavaException(env, "java/lang/NullPointerException", 
+        throw JavaException(env, "java/lang/NullPointerException",
                 "Invalid file descriptor %d\n", rio.fd);
     }
 
@@ -71,7 +71,7 @@ RubyIO::RubyIO(FILE* native_file, int native_fd, const char* native_mode)
     rio.fd = native_fd;
     rio.f = native_file;
     strncpy(mode, native_mode, 4);
-    
+
     obj = valueToObject(env, callMethod(rb_cIO, "", 2, INT2FIX(native_fd), rb_str_new_cstr(mode)));
 }
 
@@ -116,7 +116,7 @@ rb_io_fd(VALUE io)
 #ifdef NOT_YET_DONE
 extern "C" int
 rb_io_wait_readable(int fd) {
-    
+
 }
 int rb_io_wait_writable(int fd);
 void rb_io_set_nonblock(rb_io_t* io);

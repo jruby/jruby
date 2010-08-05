@@ -174,7 +174,7 @@ VALUE
 jruby::callMethodAConst(VALUE recv, const char* method, int argCount, VALUE* args)
 {
     JLocalEnv env;
-    
+
     return callRubyMethodA(env, recv, getConstMethodNameInstance(env, method), argCount, args);
 }
 
@@ -220,7 +220,7 @@ jruby::callMethodConst(VALUE recv, const char* method, int argCount, ...)
 
     va_end(ap);
 
-    
+
     JLocalEnv env;
     return callRubyMethodA(env, recv, getConstMethodNameInstance(env, method), argCount, args);
 }
@@ -240,7 +240,7 @@ jruby::getSymbol(const char* name)
     JLocalEnv env;
     jobject result = env->CallObjectMethod(getRuntime(), Ruby_newSymbol_method, env->NewStringUTF(name));
     checkExceptions(env);
-    
+
     return objectToValue(env, result);
 }
 

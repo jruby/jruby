@@ -62,7 +62,7 @@ rb_yield(VALUE argument)
     JLocalEnv env;
     jobject retval = env->CallStaticObjectMethod(JRuby_class, JRuby_yield, getRuntime(), valueToObject(env, argument));
     checkExceptions(env);
-    
+
     return objectToValue(env, retval);
 }
 
@@ -79,7 +79,7 @@ rb_block_proc()
     JLocalEnv env;
     jobject proc = env->CallStaticObjectMethod(JRuby_class, JRuby_getBlockProc, getRuntime());
     checkExceptions(env);
-    
+
     return objectToValue(env, proc);
 }
 

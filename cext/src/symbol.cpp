@@ -113,7 +113,7 @@ rb_intern2(const char* name, long len)
 
     Symbol* sym = addSymbol(env, env->GetIntField(result, RubySymbol_id_field), result);
     nonConstSymbolMap.insert(std::map<StringKey, ID>::value_type(StringKey(sym->cstr, (long) len), sym->id));
-    
+
     return sym->id;
 }
 

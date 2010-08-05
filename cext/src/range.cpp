@@ -24,5 +24,3 @@ rb_range_new(VALUE beg, VALUE end, int exclude_end)
 {
     return callMethod(rb_cRange, "new", 3, beg, end, exclude_end ? Qtrue : Qfalse);
 }
-
-

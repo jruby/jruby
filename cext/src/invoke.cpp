@@ -108,7 +108,7 @@ extern "C" JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject jThreadContext,
         jlong address, jlong recv, jint arity, jlongArray argArray)
 {
-    
+
     try {
         int argCount = env->GetArrayLength(argArray);
         jlong* largs = (jlong *) alloca(argCount * sizeof(jlong));
@@ -122,8 +122,8 @@ Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject 
         InvocationSession session(env);
         makeStrongRef(env, (VALUE) recv);
         VALUE v = dispatch((void *) address, arity, argCount, (VALUE) recv, values);
-        return valueToObject(env, v);    
-        
+        return valueToObject(env, v);
+
     } catch (jruby::JavaException& ex) {
         env->Throw(ex.getCause());
         return NULL;
@@ -132,7 +132,7 @@ Java_org_jruby_cext_Native_callMethod(JNIEnv* env, jobject nativeClass, jobject 
         jruby::throwExceptionByName(env, jruby::RuntimeException, "C runtime exception occurred: ", ex.what());
         return NULL;
     }
-    
+
 }
 
 /*
@@ -224,7 +224,7 @@ Java_org_jruby_cext_Native_callMethod3(JNIEnv* env, jobject self, jlong fn, jlon
         makeStrongRef(env, (VALUE) arg1);
         makeStrongRef(env, (VALUE) arg2);
         makeStrongRef(env, (VALUE) arg3);
-        
+
         return valueToObject(env, ((VALUE (*)(VALUE, VALUE, VALUE, VALUE)) fn)((VALUE) recv, (VALUE) arg1, (VALUE) arg2, (VALUE) arg3));
 
     } catch (jruby::JavaException& ex) {

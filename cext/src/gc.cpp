@@ -125,7 +125,7 @@ Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
                     env->DeleteGlobalRef(h->obj);
                     h->obj = obj;
                 }
-                
+
             } else {
                 TAILQ_REMOVE(&liveHandles, h, all);
                 TAILQ_INSERT_TAIL(&deadHandles, h, all);
@@ -159,4 +159,3 @@ Java_org_jruby_cext_Native_pollGC(JNIEnv* env, jobject self)
 
     return obj;
 }
-

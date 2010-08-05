@@ -24,7 +24,7 @@
 #include "jruby.h"
 
 namespace jruby {
-    
+
 
 class JString {
 public:

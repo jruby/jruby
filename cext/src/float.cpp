@@ -68,7 +68,7 @@ RubyFloat::toRFloat()
         TAILQ_INSERT_TAIL(&jruby::nsyncq, &nsync_, syncq);
         registered_ = true;
     }
-    
+
     return &rfloat_;
 }
 
@@ -115,7 +115,7 @@ rb_float_new(double value)
     params[0].l = jruby::getRuntime();
     params[1].j = p2j(f);
     params[2].d = value;
-    
+
     jobject rubyFloat = env->CallStaticObjectMethodA(JRuby_class, JRuby_newFloat, params);
     f->obj = env->NewGlobalRef(rubyFloat);
 
@@ -160,4 +160,3 @@ rb_num2dbl(VALUE val)
 
     return RFLOAT_VALUE(rb_Float(val));
 }
-

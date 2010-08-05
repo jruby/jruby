@@ -32,7 +32,7 @@ namespace jruby {
     jclass RubyBasicObject_class;
     jclass RubyBignum_class;
     jclass RubyClass_class;
-    jclass RubyData_class;    
+    jclass RubyData_class;
     jclass RubyModule_class;
     jclass RubyNumeric_class;
     jclass RubyFloat_class;
@@ -83,8 +83,8 @@ namespace jruby {
     jmethodID RubyBignum_big2long_method;
     jmethodID RubyNumeric_num2long_method;
     jmethodID RubyNumeric_num2chr_method;
-    jmethodID RubyNumeric_num2dbl_method;    
-    jmethodID RubyNumeric_int2fix_method;    
+    jmethodID RubyNumeric_num2dbl_method;
+    jmethodID RubyNumeric_int2fix_method;
     jmethodID RubyString_newStringNoCopy;
     jmethodID RubyString_view;
     jmethodID RubySymbol_getSymbolLong;
@@ -133,7 +133,7 @@ loadClass(JNIEnv* env, const char *name)
     jclass retVal = (jclass)env->NewGlobalRef(tmp);
 
     checkExceptions(env);
-    
+
     return retVal;
 }
 
@@ -141,7 +141,7 @@ jmethodID
 jruby::getMethodID(JNIEnv* env, jclass klass, const char* fieldName, const char* signature)
 {
     jmethodID mid = env->GetMethodID(klass, fieldName, signature);
-    
+
     checkExceptions(env);
 
     return mid;
@@ -275,7 +275,7 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
     JRuby_blockGiven = getStaticMethodID(env, JRuby_class, "blockGiven", "(Lorg/jruby/Ruby;)I");
     JRuby_getBlockProc = getStaticMethodID(env, JRuby_class, "getBlockProc", "(Lorg/jruby/Ruby;)Lorg/jruby/RubyProc;");
-    
+
     RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
     RubyFloat_value_field = getFieldID(env, RubyFloat_class, "value", "D");
     ByteList_bytes_field = getFieldID(env, ByteList_class, "bytes", "[B");
@@ -313,7 +313,7 @@ Java_org_jruby_cext_Native_initNative(JNIEnv* env, jobject self, jobject runtime
 
         constHandles[2] = new Handle(env, callObjectMethod(env, runtime, Ruby_getNil_method), T_NIL);
         constHandles[2]->flags |= FL_CONST;
-        
+
         initRubyClasses(env, runtime);
     } catch (JavaException& ex) {
         return;

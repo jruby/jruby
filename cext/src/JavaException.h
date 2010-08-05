@@ -22,7 +22,7 @@
 #include <stdexcept>
 #include <jni.h>
 namespace jruby {
-    
+
 
 class JavaException: public std::exception {
 private:
@@ -31,12 +31,12 @@ public:
     JavaException(JNIEnv* env, jthrowable t);
     JavaException(JNIEnv* env, const char* exceptionName, const char* fmt, ...);
     ~JavaException() throw();
-    
+
     jthrowable getCause() const;
     jthrowable getCause(JNIEnv* env) const;
     const char* what() const throw();
 };
 
-} // namespace JRuby 
+} // namespace JRuby
 
 #endif // JRuby_JavaException_h

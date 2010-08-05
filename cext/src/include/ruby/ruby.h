@@ -74,10 +74,10 @@ extern "C" {
 #else
 # define ANYARGS
 #endif
-  
+
 #define LONG_LONG long long
 
-/** In MRI, ID represents an interned string, i.e. a Symbol. */    
+/** In MRI, ID represents an interned string, i.e. a Symbol. */
 typedef uintptr_t ID;
 /** In MRI, VALUE represents an object. */
 typedef uintptr_t VALUE;
@@ -196,7 +196,7 @@ typedef enum JRubyType {
     T_NODE,
 } JRubyType;
 
-#define T_MASK (0x1f)    
+#define T_MASK (0x1f)
 
 
 #define RTEST(v) (((v) & ~Qnil) != 0)
@@ -512,15 +512,15 @@ void rb_undef(VALUE, ID);
 #define rb_cv_get(klass, name) rb_cvar_get(klass, rb_intern(name))
 #define rb_cv_set(klass, name, value) rb_cvar_set(klass, rb_intern(name), value, 0)
 /** Returns a value evaluating true if module has named class var.
- * TODO: @@ should be optional. 
+ * TODO: @@ should be optional.
  */
 VALUE rb_cvar_defined(VALUE module_handle, ID name);
 /** Returns class variable by (Symbol) name from module.
- * TODO: @@ should be optional. 
+ * TODO: @@ should be optional.
  */
 VALUE rb_cvar_get(VALUE module_handle, ID name);
-/** Set module's named class variable to given value. Returns the value. 
- * TODO: @@ should be optional. 
+/** Set module's named class variable to given value. Returns the value.
+ * TODO: @@ should be optional.
  */
 VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value);
 #define rb_cvar_set(klass, name, value, ...) __extension__(rb_cvar_set(klass, name, value))
@@ -850,7 +850,7 @@ VALUE rb_exc_new3(VALUE, VALUE);
         rb_exc_new(klass, ptr, (long)strlen(ptr)) : \
         rb_exc_new2(klass, ptr);                \
 })
-    
+
 VALUE rb_io_write(VALUE io, VALUE str);
 int rb_io_fd(VALUE io);
 #define HAVE_RB_IO_FD 1
@@ -965,4 +965,3 @@ extern VALUE rb_eLoadError;
 #endif
 
 #endif	/* JRUBY_RUBY_H */
-

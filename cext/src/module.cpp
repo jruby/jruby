@@ -31,7 +31,7 @@ rb_define_attr(VALUE klass, const char* attr_name, int readable, int writable)
     if (readable) {
         callMethodA(klass, "attr_reader", 1, &rbName);
     }
-    
+
     if (writable) {
         callMethodA(klass, "attr_writer", 1, &rbName);
     }
@@ -62,7 +62,7 @@ extern "C" VALUE
 rb_define_module_under(VALUE module, const char* name)
 {
     JLocalEnv env;
-    
+
     jmethodID Ruby_defineModuleUnder_method = getMethodID(env, Ruby_class, "defineModuleUnder",
             "(Ljava/lang/String;Lorg/jruby/RubyModule;)Lorg/jruby/RubyModule;");
     jobject mod = env->CallObjectMethod(getRuntime(), Ruby_defineModuleUnder_method,
@@ -70,14 +70,14 @@ rb_define_module_under(VALUE module, const char* name)
     checkExceptions(env);
 
     return objectToValue(env, mod);
-    
+
 }
 
 extern "C" void
 rb_define_method(VALUE klass, const char* meth, VALUE(*fn)(ANYARGS), int arity)
 {
     JLocalEnv env;
-    
+
     jmethodID JRuby_newMethod = getStaticMethodID(env, JRuby_class, "newMethod", "(Lorg/jruby/RubyModule;JI)Lorg/jruby/internal/runtime/methods/DynamicMethod;");
     jmethodID RubyModule_addMethod_method = getMethodID(env, RubyModule_class, "addMethod",
             "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");
@@ -113,7 +113,7 @@ rb_define_module_function(VALUE klass,const char* meth, VALUE(*fn)(ANYARGS),int 
             "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");
 
     jobject module = valueToObject(env, klass);
-    
+
     env->CallVoidMethod(module, RubyModule_addModuleFunction_method, env->NewStringUTF(meth),
             env->CallStaticObjectMethod(JRuby_class, JRuby_newMethod, module, (jlong)(intptr_t) fn, arity));
     checkExceptions(env);
@@ -128,7 +128,7 @@ rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYARGS), 
             "()Lorg/jruby/RubyClass;");
     jobject singleton = env->CallObjectMethod(valueToObject(env, object), IRubyObject_getSingletonClass_method);
 
-    jmethodID JRuby_newMethod = getStaticMethodID(env, JRuby_class, "newMethod", 
+    jmethodID JRuby_newMethod = getStaticMethodID(env, JRuby_class, "newMethod",
             "(Lorg/jruby/RubyModule;JI)Lorg/jruby/internal/runtime/methods/DynamicMethod;");
     jmethodID RubyModule_addMethod_method = getMethodID(env, RubyModule_class, "addMethod",
             "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");

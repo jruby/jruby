@@ -85,7 +85,7 @@ rb_num2ll(VALUE v)
 
     jlong result = env->CallStaticLongMethodA(RubyNumeric_class, RubyNumeric_num2long_method, params);
     checkExceptions(env);
-    
+
     return (long long) result;
 }
 
@@ -139,7 +139,7 @@ newNumber(jmethodID method, long long v)
 
     jlong result = env->CallStaticLongMethodA(JRuby_class, method, params);
     checkExceptions(env);
-    
+
     return (RubyFixnum *) j2p(result);
 }
 
@@ -153,7 +153,7 @@ jruby::fixnumToObject(JNIEnv* env, VALUE v)
     if (likely(i >= -CACHE_OFFSET && i < CACHE_OFFSET && (obj = fixnumCache[i + CACHE_OFFSET]) != NULL)) {
         return obj;
     }
-    
+
     jvalue params[2];
 
     params[0].l = getRuntime();
@@ -199,4 +199,3 @@ rb_uint2big(unsigned long long v)
 {
     return (VALUE) newNumber(JRuby_uint2big, (long long) v);
 }
-

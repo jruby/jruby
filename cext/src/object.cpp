@@ -52,9 +52,9 @@ convert_type(VALUE val, const char* type_name, const char* method, int raise)
     return rb_funcall(val, m, 0);
 }
 
-extern "C" VALUE 
+extern "C" VALUE
 rb_obj_freeze(VALUE obj)
-{    
+{
     return callMethodA(obj, "freeze", 0, NULL);
 }
 

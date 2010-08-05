@@ -39,4 +39,3 @@ rb_reg_regcomp(VALUE str)
 {
     return callMethod(rb_cRegexp, "new", 1, str);
 }
-

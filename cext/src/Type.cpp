@@ -94,7 +94,7 @@ rb_check_type(VALUE x, int t)
 		else if (SYMBOL_P(x)) {
 		    etype = "Symbol";
 		}
-#ifdef notyet // FIXME 
+#ifdef notyet // FIXME
 		else if (rb_special_const_p(x)) {
 		    etype = RSTRING(rb_obj_as_string(x))->ptr;
 		}

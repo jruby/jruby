@@ -71,7 +71,7 @@ rb_str_new_cstr(const char *ptr)
     if (!ptr) {
         rb_raise(rb_eArgError, "NULL pointer given");
     }
-    
+
     return newString(ptr, ptr ? strlen(ptr) : 0);
 }
 
@@ -205,14 +205,14 @@ rb_string_value(VALUE* ptr)
     return *ptr;
 }
 
-extern "C" char* 
+extern "C" char*
 rb_string_value_ptr(VALUE* object_variable)
 {
     VALUE str = rb_string_value(object_variable);
     return (char*) (RSTRING_PTR(str));
 }
 
-extern "C" char* 
+extern "C" char*
 rb_string_value_cstr(VALUE* object_variable)
 {
     VALUE str = rb_string_value(object_variable);
@@ -226,7 +226,7 @@ rb_string_value_cstr(VALUE* object_variable)
     return cstr;
 }
 
-extern "C" VALUE 
+extern "C" VALUE
 rb_str_freeze(VALUE str)
 {
     return callMethodA(str, "freeze", 0, NULL);
@@ -294,7 +294,7 @@ jruby_str_cstr(VALUE v)
 extern "C" char*
 jruby_str_cstr_readonly(VALUE v)
 {
-    return jruby_str(v)->toRString(true)->ptr;    
+    return jruby_str(v)->toRString(true)->ptr;
 }
 
 extern "C" int

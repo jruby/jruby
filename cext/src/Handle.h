@@ -138,7 +138,7 @@ namespace jruby {
 
     public:
         virtual ~RubyData();
-        
+
         inline struct RData* toRData() {
             return &rdata;
         }
@@ -168,7 +168,7 @@ namespace jruby {
         bool nsync(JNIEnv* env);
         bool clean(JNIEnv* env);
         int length();
-    
+
     };
 
     class RubyArray : public Handle {
@@ -212,7 +212,7 @@ namespace jruby {
     };
 
     extern Symbol* resolveSymbolById(ID id);
-    
+
     inline Symbol* lookupSymbolById(ID id) {
         Symbol* sym;
         if (likely(id < symbols.size() && (sym  = symbols[id]) != NULL)) {
@@ -220,7 +220,7 @@ namespace jruby {
         }
         return resolveSymbolById(id);
     }
-    
+
     inline jobject idToObject(JNIEnv* env, ID id) {
         return lookupSymbolById(id)->obj;
     }
@@ -237,4 +237,3 @@ namespace jruby {
 #endif
 
 #endif	/* JRUBY_HANDLE_H */
-

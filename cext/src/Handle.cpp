@@ -61,7 +61,7 @@ Handle::Init()
     flags = 0;
     setType(T_NONE);
     TAILQ_INSERT_TAIL(&liveHandles, this, all);
-    
+
     if (++allocCount > GC_THRESHOLD) {
         allocCount = 0;
         JLocalEnv env;
@@ -112,7 +112,7 @@ RubyString::length()
     if (rwdata.rstring != NULL) {
         return rwdata.rstring->len;
     }
-    
+
     JLocalEnv env;
 
     jobject byteList = env->GetObjectField(obj, RubyString_value_field);
@@ -209,7 +209,7 @@ RubyString::jsync(JNIEnv* env)
         env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring->len,
                 (jbyte *) rstring->ptr);
         checkExceptions(env);
-        
+
         env->DeleteLocalRef(bytes);
     }
 
@@ -236,8 +236,8 @@ RubyString::nsync(JNIEnv* env)
         rstring->capa = capacity;
         rstring->ptr = (char *) realloc(rstring->ptr, rstring->capa + 1);
     }
-    
-    env->GetByteArrayRegion((jbyteArray) bytes, begin, length, 
+
+    env->GetByteArrayRegion((jbyteArray) bytes, begin, length,
             (jbyte *) rstring->ptr);
     checkExceptions(env);
     env->DeleteLocalRef(bytes);
@@ -359,7 +359,7 @@ jruby::valueToObject(JNIEnv* env, VALUE v)
 {
     if (FIXNUM_P(v)) {
         return fixnumToObject(env, v);
-        
+
     } else if (SYMBOL_P(v)) {
         return idToObject(env, SYM2ID(v));
     }
@@ -383,7 +383,7 @@ jruby::objectToValue(JNIEnv* env, jobject obj)
 {
     // Should never get null from JRuby, but check it anyway
     if (env->IsSameObject(obj, NULL)) {
-    
+
         return Qnil;
     }
 
@@ -392,7 +392,7 @@ jruby::objectToValue(JNIEnv* env, jobject obj)
 
     VALUE v = (VALUE) env->GetLongField(handleObject, Handle_address_field);
     checkExceptions(env);
-    
+
     env->DeleteLocalRef(handleObject);
 
     return v;
@@ -442,5 +442,3 @@ Java_org_jruby_cext_Native_freeRString(JNIEnv* env, jclass self, jlong address)
         free(rstring);
     }
 }
-
-

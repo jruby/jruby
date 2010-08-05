@@ -268,5 +268,3 @@ getConstModule(JNIEnv* env, const char* name)
     jruby::Handle::valueOf(v)->flags |= FL_CONST;
     return v;
 }
-
-

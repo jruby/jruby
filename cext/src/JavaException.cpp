@@ -66,7 +66,7 @@ jruby::JavaException::getCause(JNIEnv* env) const
 }
 
 const char*
-jruby::JavaException::what() const throw() 
+jruby::JavaException::what() const throw()
 {
     return "java exception";
 }

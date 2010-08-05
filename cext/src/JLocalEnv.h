@@ -20,7 +20,7 @@
 #define JRUBY_JLOCALENV_H
 
 namespace jruby {
-    
+
 class JLocalEnv {
 public:
 	JLocalEnv(bool popFrame = true, int depth = 100);

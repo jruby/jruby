@@ -57,4 +57,3 @@ const char* jruby::NullPointerException = "java/lang/NullPointerException";
 const char* jruby::OutOfBoundsException = "java/lang/IndexOutOfBoundsException";
 const char* jruby::OutOfMemoryException = "java/lang/OutOfMemoryError";
 const char* jruby::RuntimeException = "java/lang/RuntimeException";
-

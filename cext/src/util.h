@@ -52,4 +52,3 @@ extern "C" {
 #endif
 
 #endif	/* COMPAT_H */
-

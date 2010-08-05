@@ -78,7 +78,7 @@ namespace jruby {
     extern jmethodID RubyBignum_big2dbl_method;
     extern jmethodID RubyNumeric_num2long_method;
     extern jmethodID RubyNumeric_num2chr_method;
-    extern jmethodID RubyNumeric_num2dbl_method;    
+    extern jmethodID RubyNumeric_num2dbl_method;
     extern jmethodID RubyNumeric_int2fix_method;
     extern jmethodID RubyString_newStringNoCopy;
     extern jmethodID RubyString_view;
@@ -138,7 +138,7 @@ namespace jruby {
     jobject getConstMethodNameInstance(const char* methodName);
     jobject getConstMethodNameInstance(JNIEnv* env, const char* methodName);
 
-    
+
 #define CONST_METHOD_NAME_CACHE(name) __extension__({          \
         static jobject mid_;                             \
         if (__builtin_expect(!mid_, 0))                  \
@@ -175,7 +175,7 @@ namespace jruby {
 
     VALUE getModule(JNIEnv* env, const char* className);
     VALUE getClass(JNIEnv* env, const char* className);
-    
+
     jfieldID getFieldID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
     jmethodID getMethodID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
     jmethodID getStaticMethodID(JNIEnv* env, jclass klass, const char* methodName, const char* signature);
@@ -214,4 +214,3 @@ namespace jruby {
 #define FL_USER19    (((VALUE)1)<<(FL_USHIFT+19))
 
 #endif	/* JRUBY_H */
-

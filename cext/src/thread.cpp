@@ -58,7 +58,7 @@ rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct
     JLocalEnv env;
     struct timeval start, end;
     int interval;
-    
+
     if (!read && !write && !except) {
 	    if (!timeout) {
             /* TODO: Wire this up to sleep the thread until it it's status is changed from another

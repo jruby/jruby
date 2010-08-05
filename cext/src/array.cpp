@@ -75,14 +75,14 @@ rb_Array(VALUE val)
     return callMethod(rb_cArray, "new", 1, val);
 }
 
-extern "C" VALUE 
-rb_ary_new2(long length) 
+extern "C" VALUE
+rb_ary_new2(long length)
 {
     return callMethod(rb_cArray, "new", 0);
 }
 
 extern "C" VALUE
-rb_ary_new(void) 
+rb_ary_new(void)
 {
     return callMethod(rb_cArray, "new", 0);
 }
@@ -102,8 +102,8 @@ rb_ary_new3(long size, ...)
     return ary;
 }
 
-extern "C" VALUE 
-rb_ary_new4(long n, const VALUE* argv) 
+extern "C" VALUE
+rb_ary_new4(long n, const VALUE* argv)
 {
     VALUE ary = rb_ary_new();
 
@@ -122,56 +122,56 @@ rb_assoc_new(VALUE key, VALUE value) {
     return ary;
 }
 
-extern "C" VALUE 
-rb_ary_push(VALUE array, VALUE val) 
+extern "C" VALUE
+rb_ary_push(VALUE array, VALUE val)
 {
     return callMethod(array, "push", 1, val);
 }
 
-extern "C" VALUE 
+extern "C" VALUE
 rb_ary_pop(VALUE array)
 {
     return callMethod(array, "pop", 0);
 }
 
-extern "C" VALUE 
+extern "C" VALUE
 rb_ary_entry(VALUE array, long offset)
 {
     return callMethod(array, "[]", 1, LONG2NUM(offset));
 }
 
-extern "C" VALUE 
-rb_ary_clear(VALUE array) 
+extern "C" VALUE
+rb_ary_clear(VALUE array)
 {
     return callMethod(array, "clear", 0);
 }
 
-VALUE 
-rb_ary_dup(VALUE array) 
+VALUE
+rb_ary_dup(VALUE array)
 {
     return callMethod(array, "dup", 0);
 }
 
-extern "C" VALUE 
-rb_ary_join(VALUE array1, VALUE array2) 
+extern "C" VALUE
+rb_ary_join(VALUE array1, VALUE array2)
 {
     return callMethod(array1, "join", 1, array2);
 }
 
-extern "C" VALUE 
-rb_ary_reverse(VALUE array) 
+extern "C" VALUE
+rb_ary_reverse(VALUE array)
 {
     return callMethod(array, "reverse", 0);
 }
 
-extern "C" VALUE 
-rb_ary_unshift(VALUE array, VALUE val) 
+extern "C" VALUE
+rb_ary_unshift(VALUE array, VALUE val)
 {
     return callMethod(array, "unshift", 1, val);
 }
 
-extern "C" VALUE 
-rb_ary_shift(VALUE array) 
+extern "C" VALUE
+rb_ary_shift(VALUE array)
 {
     return callMethod(array, "shift", 0);
 }

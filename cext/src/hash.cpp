@@ -22,25 +22,25 @@
 using namespace jruby;
 
 /* Hash */
-extern "C" VALUE 
+extern "C" VALUE
 rb_hash_new(void)
 {
     return callMethod(rb_cHash, "new", 0);
 }
 
-extern "C" VALUE 
-rb_hash_aref(VALUE hash, VALUE key) 
+extern "C" VALUE
+rb_hash_aref(VALUE hash, VALUE key)
 {
     return callMethod(hash, "[]", 1, key);
 }
 
-extern "C" VALUE 
+extern "C" VALUE
 rb_hash_aset(VALUE hash, VALUE key, VALUE val)
 {
     return callMethod(hash, "[]=", 2, key, val);
 }
 
-extern "C" VALUE 
+extern "C" VALUE
 rb_hash_delete(VALUE hash, VALUE key)
 {
     return callMethod(hash, "delete", 1, key);

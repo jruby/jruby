@@ -55,8 +55,8 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
 
     h->obj = env->NewGlobalRef(obj);
     checkExceptions(env);
-    
-    
+
+
     return (VALUE) (uintptr_t) h;
 }
 
@@ -92,6 +92,6 @@ jruby_rdata(VALUE v)
     }
 
     RubyData* d = dynamic_cast<RubyData*>(Handle::valueOf(v));
-    
+
     return d->toRData();
 }

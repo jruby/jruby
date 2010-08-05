@@ -62,7 +62,7 @@ rb_class_name(VALUE klass)
     return callMethodA(klass, "name", 0, NULL);
 }
 
-extern "C" char* 
+extern "C" char*
 rb_class2name(VALUE class_handle)
 {
     return (char *) RSTRING_PTR(rb_class_name(class_handle));
@@ -93,13 +93,13 @@ rb_define_class(const char* name, VALUE parent)
 {
     JLocalEnv env;
     VALUE super = parent ? parent : rb_cObject;
-    
+
     jmethodID defineClass = getMethodID(env, Ruby_class, "defineClass",
             "(Ljava/lang/String;Lorg/jruby/RubyClass;Lorg/jruby/runtime/ObjectAllocator;)Lorg/jruby/RubyClass;");
     jobject result = env->CallObjectMethod(getRuntime(), defineClass,
             env->NewStringUTF(name), valueToObject(env, super), getDefaultAllocator(env, super));
     checkExceptions(env);
-    
+
     return objectToValue(env, result);
 }
 
