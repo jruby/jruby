@@ -3339,6 +3339,7 @@ public final class Ruby {
      */
     private RaiseException newRaiseException(RubyClass exceptionClass, String message) {
         RaiseException re = new RaiseException(this, exceptionClass, message, true);
+        re.preRaise(getCurrentContext());
         return re;
     }
 
@@ -3349,14 +3350,6 @@ public final class Ruby {
 
     public RubySymbol.SymbolTable getSymbolTable() {
         return symbolTable;
-    }
-
-    public void setStackTraces(int stackTraces) {
-        this.stackTraces = stackTraces;
-    }
-
-    public int getStackTraces() {
-        return stackTraces;
     }
 
     public void setRandomSeed(long randomSeed) {
@@ -3768,8 +3761,6 @@ public final class Ruby {
     private final ThreadService threadService;
     
     private POSIX posix;
-
-    private int stackTraces = 0;
 
     private final ObjectSpace objectSpace = new ObjectSpace();
 

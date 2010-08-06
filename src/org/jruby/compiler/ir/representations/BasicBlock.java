@@ -50,6 +50,22 @@ public class BasicBlock {
         return _instrs;
     }
 
+    public IR_Instr getLastInstr() {
+        int n = _instrs.size();
+        return (n == 0) ? null : _instrs.get(n-1);
+    }
+
+    public boolean removeInstr(IR_Instr i) {
+       if (i == null)
+          return false;
+       else
+          return _instrs.remove(i);
+    }
+
+    public boolean isEmpty() {
+        return _instrs.isEmpty();
+    }
+
     public BasicBlock splitAtInstruction(IR_Instr splitPoint, Label newLabel, boolean includeSplitPointInstr) {
         BasicBlock newBB = new BasicBlock(_cfg, newLabel);
         int idx = 0;
@@ -83,12 +99,10 @@ public class BasicBlock {
     public BasicBlock cloneForInlining(InlinerInfo ii) {
         BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
         for (IR_Instr i: getInstrs()) {
-            if (i instanceof YIELD_Instr) {
-                ii.recordYieldSite(clonedBB, (YIELD_Instr)i);
-            }
-            else {
-                clonedBB.addInstr(i.cloneForInlining(ii));
-            }
+				IR_Instr clonedInstr = i.cloneForInlining(ii);
+            clonedBB.addInstr(clonedInstr);
+            if (clonedInstr instanceof YIELD_Instr)
+                ii.recordYieldSite(clonedBB, (YIELD_Instr)clonedInstr);
         }
 
         return clonedBB;

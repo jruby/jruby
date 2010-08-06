@@ -17,6 +17,7 @@ public class YIELD_Instr extends MultiOperandInstr
     public boolean isStaticCallTarget()  { return false; }
 
     public IR_Instr cloneForInlining(InlinerInfo ii) {
-        throw new RuntimeException("Attempt to clone YIELD instruction.  We should never get here!");
+		 // This is just a placeholder during inlining.
+		 return this;
     }
 }

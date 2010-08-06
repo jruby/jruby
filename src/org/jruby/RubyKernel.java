@@ -970,6 +970,7 @@ public class RubyKernel {
         if (runtime.getDebug().isTrue()) {
             printExceptionSummary(context, runtime, raise.getException());
         }
+        raise.preRaise(context);
         throw raise;
     }
 
