@@ -224,6 +224,16 @@ public class ByteArrayLexerSourceTest extends TestCase {
         assertEquals("333333", lines.get(2));
     }
 
+    public void testCaptureLinesWithCarriageReturn() throws IOException {
+        List<String> lines = new ArrayList<String>();
+        LexerSource src = newSource("1\r\n2\r\n3", lines);
+        while (src.read() != RubyYaccLexer.EOF);
+        assertEquals(3, lines.size());
+        assertEquals("1\r\n", lines.get(0));
+        assertEquals("2\r\n", lines.get(1));
+        assertEquals("3", lines.get(2));
+    }
+
     public void testGetRemainingOutputAsStream() throws IOException {
         LexerSource src = newSource("111111\n222222\n333333\n");
         for (int i = 0; i < 10; i++) {
