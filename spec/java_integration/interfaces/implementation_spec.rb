@@ -661,3 +661,18 @@ describe "A Ruby class implementing a Java interface with method returning Boole
     BooleanReturningInterfaceConsumer.new.consume(obj).should be_true
   end
 end
+
+describe "A Ruby class implementing an interface" do
+  describe "that extends a Ruby class implementing an interface" do
+    it "can initialize successfully" do
+      c1 = Class.new do
+        include java.lang.Runnable
+      end
+      lambda {c1.new}.should_not raise_error
+      c2 = Class.new(c1) do
+        include java.io.Serializable
+      end
+      lambda {c2.new}.should_not raise_error
+    end
+  end
+end
