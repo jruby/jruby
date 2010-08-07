@@ -33,11 +33,11 @@ describe "A Ruby class generating a Java stub" do
     javac = JRuby::Compiler::JavaGenerator.generate_javac(
       files,
       :javac_options => [],
-      :classpath => ENV_JAVA['java.class.path'].split(RbConfig::CONFIG['PATH_SEPARATOR']),
+      :classpath => ENV_JAVA['java.class.path'].split(File::PATH_SEPARATOR),
       :target => '/tmp')
-
+    
     javac.should match /javac/
-    javac.should match /jruby\w*\.jar/
+    javac.should match /jruby\w*\.jar#{File::PATH_SEPARATOR}/
     javac.should match /Foo\.java/
     javac.should match /Bar\.java/
   end
