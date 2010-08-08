@@ -15,7 +15,7 @@ module Syslog
       c.const 'LOG_PID'
       c.const 'LOG_CONS'
       c.const 'LOG_ODELAY'
-      c.const 'LOG_NODELAY'
+      c.const 'LOG_NDELAY'
       c.const 'LOG_NOWAIT'
       c.const 'LOG_PERROR'
       c.const 'LOG_AUTH'
