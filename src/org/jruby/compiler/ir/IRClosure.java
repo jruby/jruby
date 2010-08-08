@@ -9,6 +9,9 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.InterpretedIRBlockBody;
 
 public class IRClosure extends IRExecutionScope {
 
@@ -17,13 +20,17 @@ public class IRClosure extends IRExecutionScope {
     public final int closureId;  // Unique id for this closure within the nearest ancestor method.
     public final String name;       // Name useful for debugging and reading ir output
 
-    public IRClosure(IRScope lexicalParent, StaticScope staticScope) {
+    private final BlockBody body;
+
+    public IRClosure(IRScope lexicalParent, StaticScope staticScope, Arity arity, int argumentType) {
         super(lexicalParent, new MetaObject(lexicalParent));
         startLabel = getNewLabel("_CLOSURE_START");
         endLabel = getNewLabel("_CLOSURE_END");
         closureId = getNextClosureId();
         name = "_CLOSURE_" + closureId;
         this.staticScope = staticScope;
+
+        this.body = new InterpretedIRBlockBody(this, arity, argumentType);
     }
 
     @Override
@@ -68,5 +75,9 @@ public class IRClosure extends IRExecutionScope {
     @Override
     protected StaticScope constructStaticScope(StaticScope parent) {
         return new BlockStaticScope(parent);
+    }
+
+    public BlockBody getBlockBody() {
+        return body;
     }
 }

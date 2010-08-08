@@ -16,6 +16,7 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /*
@@ -279,20 +280,32 @@ public class CallInstr extends MultiOperandInstr {
     public void interpret(InterpreterContext interp, IRubyObject self) {
         IRubyObject receiver = (IRubyObject) getReceiver().retrieve(interp);
         String name = (String) _methAddr.retrieve(interp);        // TODO: What happens when _methAddr is not actually a name?
-        Object resultValue = receiver.callMethod(interp.getContext(), name, prepareArguments(interp));
+        Object resultValue;
+
+        if (_closure == null) {
+            resultValue = receiver.callMethod(interp.getContext(), name, prepareArguments(interp));
+        } else {
+            resultValue = receiver.callMethod(interp.getContext(), name, prepareArguments(interp), prepareBlock(interp));
+        }
 
         getResult().store(interp, resultValue);
     }
 
+    private Block prepareBlock(InterpreterContext interp) {
+        return (Block) _closure.retrieve(interp);
+    }
+
     public IRubyObject[] prepareArguments(InterpreterContext interp) {
         Operand[] operands = getOperands();
-        IRubyObject[] args = new IRubyObject[operands.length - 2];
+        int closureOffset = _closure == null ? 0 : 1;
+        IRubyObject[] args = new IRubyObject[operands.length - 2 - closureOffset];
+        int length = args.length - closureOffset;
 
-        System.out.println("Operands: " + java.util.Arrays.toString(operands));
-        for (int i = 0; i < args.length; i++) {
+        for (int i = 0; i < length; i++) {
             args[i] = (IRubyObject) operands[i + 2].retrieve(interp);
         }
 
+        System.out.println("ARGS>LENGTH " + args.length);
         System.out.println("ARGS: " + java.util.Arrays.toString(args));
         return args;
     }

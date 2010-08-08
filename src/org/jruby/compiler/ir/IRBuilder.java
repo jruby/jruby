@@ -164,6 +164,7 @@ import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Symbol;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.util.ByteList;
 
@@ -1925,7 +1926,7 @@ public class IRBuilder {
 
     public Operand buildForIter(final ForNode forNode, IRExecutionScope s) {
             // Create a new closure context
-        IRClosure closure = new IRClosure(s, forNode.getScope());
+        IRClosure closure = new IRClosure(s, forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
         s.addClosure(closure);
 
             // Build args
@@ -2062,8 +2063,7 @@ public class IRBuilder {
     }
 
     public Operand buildIter(final IterNode iterNode, IRExecutionScope s) {
-            // Create a new closure context
-        IRClosure closure = new IRClosure(s, iterNode.getScope());
+        IRClosure closure = new IRClosure(s, iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
         s.addClosure(closure);
 
             // Build args

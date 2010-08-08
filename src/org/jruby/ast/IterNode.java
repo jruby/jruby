@@ -69,8 +69,7 @@ public class IterNode extends Node {
         }
         this.scope = scope;
         this.bodyNode = body;
-        NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(this);
-        this.blockBody = InterpretedBlock.newBlockBody(this, Arity.procArityOf(varNode), BlockBody.asArgumentType(argsNodeId));
+        this.blockBody = InterpretedBlock.newBlockBody(this, Arity.procArityOf(varNode), getArgumentType());
     }
 
     public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
@@ -81,6 +80,10 @@ public class IterNode extends Node {
         this.bodyNode = body;
         this.scope = scope;
         this.blockBody = new Interpreted19Block(this);
+    }
+
+    public int getArgumentType() {
+        return BlockBody.asArgumentType(BlockBody.getArgumentTypeWackyHack(this));
     }
 
     public NodeType getNodeType() {

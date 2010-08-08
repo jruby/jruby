@@ -7,6 +7,10 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.Binding;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class MetaObject extends Operand {
     public final IRScope scope;
@@ -39,6 +43,10 @@ public class MetaObject extends Operand {
         return scope instanceof IRClass;
     }
 
+    public boolean isClosure() {
+        return scope instanceof IRClosure;
+    }
+
     public Operand getContainer() {
         return scope.getContainer();
     }
@@ -51,6 +59,13 @@ public class MetaObject extends Operand {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
+        if (isClosure()) {
+            BlockBody body = ((IRClosure) scope).getBlockBody();
+            Binding binding = interp.getContext().currentBinding((IRubyObject) interp.getSelf());
+
+            return new Block(body, binding);
+        }
+        
         System.out.println("METAOOBJECT RETRIEVE: " + scope + ", C: " + scope.getClass().getSimpleName());
         return null;
     }
