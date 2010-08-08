@@ -63,6 +63,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.JRubyFile;
 
 /**
@@ -131,7 +132,7 @@ public class LoadService {
         Source, Extension, Both, Neither;
         
         public static final String[] sourceSuffixes = { ".class", ".rb" };
-        public static final String[] extensionSuffixes = { ".jar", ".so", ".bundle", ".dll" , "" };
+        public static final String[] extensionSuffixes = { ".jar", ".so", ".bundle", ".dll" };
         private static final String[] allSuffixes = { ".class", ".rb", ".jar", ".so", ".bundle", ".dll" };
         private static final String[] emptySuffixes = { "" };
         
@@ -150,7 +151,7 @@ public class LoadService {
         }
     }
     protected static final Pattern sourcePattern = Pattern.compile("\\.(?:rb)$");
-    protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|jar)$");
+    protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|bundle|jar)$");
 
     protected RubyArray loadPath;
     protected RubyArray loadedFeatures;
@@ -465,14 +466,27 @@ public class LoadService {
             return searchNameString;
         }
     }
-    
+
     public class BailoutSearcher implements LoadSearcher {
-        public boolean shouldTrySearch(SearchState state) {
-            return true;
+        private SuffixType suffixType;
+
+        public BailoutSearcher(SuffixType type) {
+            suffixType = type;
         }
-    
+
+        public BailoutSearcher() {
+            suffixType = null;
+        }
+
+        public boolean shouldTrySearch(SearchState state) {
+            return state.library == null;
+        }
+
+        // According to Rubyspec, source files should be loaded even if an equally named
+        // extension is loaded already. So we use the BailoutSearcher twice, once only
+        // for source files and once for whatever suffix type the state determines
         public void trySearch(SearchState state) throws AlreadyLoaded {
-            for (String suffix : state.suffixType.getSuffixes()) {
+            for (String suffix : (suffixType == null ? state.suffixType.getSuffixes() : suffixType.getSuffixes())) {
                 String searchName = state.searchFile + suffix;
                 RubyString searchNameString = RubyString.newString(runtime, searchName);
                 if (featureAlreadyLoaded(searchNameString)) {
@@ -692,12 +706,15 @@ public class LoadService {
     private static RaiseException newLoadErrorFromThrowable(Ruby runtime, String file, Throwable t) {
         return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()));
     }
-    
+
+    // Using the BailoutSearch twice, once only for source files and once for state suffixes,
+    // in order to adhere to Rubyspec
     protected final List<LoadSearcher> searchers = new ArrayList<LoadSearcher>();
     {
-        searchers.add(new BailoutSearcher());
+        searchers.add(new BailoutSearcher(SuffixType.Source));
         searchers.add(new NormalSearcher());
         searchers.add(new ClassLoaderSearcher());
+        searchers.add(new BailoutSearcher());
         searchers.add(new ExtensionSearcher());
         searchers.add(new ScriptClassSearcher());
     }
