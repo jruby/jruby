@@ -468,31 +468,35 @@ public class LoadService {
     }
 
     public class BailoutSearcher implements LoadSearcher {
-        private SuffixType suffixType;
-
-        public BailoutSearcher(SuffixType type) {
-            suffixType = type;
-        }
-
-        public BailoutSearcher() {
-            suffixType = null;
-        }
-
         public boolean shouldTrySearch(SearchState state) {
             return state.library == null;
         }
 
-        // According to Rubyspec, source files should be loaded even if an equally named
-        // extension is loaded already. So we use the BailoutSearcher twice, once only
-        // for source files and once for whatever suffix type the state determines
-        public void trySearch(SearchState state) throws AlreadyLoaded {
-            for (String suffix : (suffixType == null ? state.suffixType.getSuffixes() : suffixType.getSuffixes())) {
-                String searchName = state.searchFile + suffix;
+        protected void trySearch(String file, SuffixType suffixType) throws AlreadyLoaded {
+            for (String suffix : suffixType.getSuffixes()) {
+                String searchName = file + suffix;
                 RubyString searchNameString = RubyString.newString(runtime, searchName);
                 if (featureAlreadyLoaded(searchNameString)) {
                     throw new AlreadyLoaded(searchNameString);
                 }
             }
+        }
+
+        public void trySearch(SearchState state) throws AlreadyLoaded {
+            trySearch(state.searchFile, state.suffixType);
+        }
+    }
+
+    public class SourceBailoutSearcher extends BailoutSearcher {
+        public boolean shouldTrySearch(SearchState state) {
+            return true;
+        }
+
+        // According to Rubyspec, source files should be loaded even if an equally named
+        // extension is loaded already. So we use the bailout search twice, once only
+        // for source files and once for whatever suffix type the state determines
+        public void trySearch(SearchState state) throws AlreadyLoaded {
+            super.trySearch(state.searchFile, SuffixType.Source);
         }
     }
 
@@ -711,7 +715,7 @@ public class LoadService {
     // in order to adhere to Rubyspec
     protected final List<LoadSearcher> searchers = new ArrayList<LoadSearcher>();
     {
-        searchers.add(new BailoutSearcher(SuffixType.Source));
+        searchers.add(new SourceBailoutSearcher());
         searchers.add(new NormalSearcher());
         searchers.add(new ClassLoaderSearcher());
         searchers.add(new BailoutSearcher());
