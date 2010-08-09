@@ -807,8 +807,11 @@ int rb_big_bytes_used(VALUE obj);
 // fake out, used with RBIGNUM_LEN anyway, which provides the full answer
 #define SIZEOF_BDIGITS 1
 
-/** Call block with given argument or raise error if no block given. */
+/** Call block with given argument(s) or raise error if no block given. */
 VALUE rb_yield(VALUE argument);
+VALUE rb_yield_splat(VALUE array);
+VALUE rb_yield_values(int n, ...);
+
 /** Return 1 if block given, 0 if not */
 int rb_block_given_p();
 /** Return the Proc for the implicit block */

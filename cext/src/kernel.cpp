@@ -59,11 +59,32 @@ rb_warning(const char *fmt, ...)
 extern "C" VALUE
 rb_yield(VALUE argument)
 {
+    return rb_yield_splat(rb_ary_new3(1, argument));
+}
+
+extern "C" VALUE
+rb_yield_splat(VALUE array)
+{
     JLocalEnv env;
-    jobject retval = env->CallStaticObjectMethod(JRuby_class, JRuby_yield, getRuntime(), valueToObject(env, argument));
+    jobject retval = env->CallStaticObjectMethod(JRuby_class, JRuby_yield, getRuntime(), valueToObject(env, array));
     checkExceptions(env);
 
     return objectToValue(env, retval);
+}
+
+extern "C" VALUE
+rb_yield_values(int n, ...)
+{
+    va_list varargs;
+    VALUE ary = rb_ary_new2(n);
+
+    va_start(varargs, n);
+    while (n--) {
+        rb_ary_push(ary, va_arg(varargs, VALUE));
+    }
+    va_end(varargs);
+
+    return rb_yield_splat(ary);
 }
 
 extern "C" int

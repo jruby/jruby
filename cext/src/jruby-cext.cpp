@@ -272,7 +272,7 @@ loadIds(JNIEnv* env)
     JRuby_getRString = getStaticMethodID(env, JRuby_class, "getRString", "(Lorg/jruby/RubyString;)J");
     JRuby_newFloat = getStaticMethodID(env, JRuby_class, "newFloat", "(Lorg/jruby/Ruby;JD)Lorg/jruby/RubyFloat;");
     JRuby_yield = getStaticMethodID(env, JRuby_class, "yield",
-            "(Lorg/jruby/Ruby;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+            "(Lorg/jruby/Ruby;Lorg/jruby/RubyArray;)Lorg/jruby/runtime/builtin/IRubyObject;");
     JRuby_blockGiven = getStaticMethodID(env, JRuby_class, "blockGiven", "(Lorg/jruby/Ruby;)I");
     JRuby_getBlockProc = getStaticMethodID(env, JRuby_class, "getBlockProc", "(Lorg/jruby/Ruby;)Lorg/jruby/RubyProc;");
 

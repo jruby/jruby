@@ -21,6 +21,7 @@ package org.jruby.cext;
 import java.math.BigInteger;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -132,8 +133,8 @@ public class JRuby {
     }
     
     /** rb_yield */
-    public static IRubyObject yield(Ruby runtime, IRubyObject args) {
-        return runtime.getCurrentContext().getFrameBlock().call(runtime.getCurrentContext(), args);
+    public static IRubyObject yield(Ruby runtime, RubyArray args) {
+        return runtime.getCurrentContext().getFrameBlock().call(runtime.getCurrentContext(), args.toJavaArray());
     }
 
     /** rb_block_given_p */
