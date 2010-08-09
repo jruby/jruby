@@ -781,6 +781,10 @@ ID rb_intern(const char*);
 ID rb_intern2(const char*, long);
 ID rb_intern_const(const char*);
 
+int rb_is_class_id(ID symbol);
+int rb_is_instance_id(ID symbol);
+int rb_is_const_id(ID symbol);
+
 #define CONST_ID_CACHE(result, str)                     \
     {                                                   \
         static ID rb_intern_id_cache;                   \

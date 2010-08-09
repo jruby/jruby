@@ -24,6 +24,7 @@
 #include <jni.h>
 
 #include <map>
+#include <cctype>
 
 #include "JLocalEnv.h"
 #include "jruby.h"
@@ -127,6 +128,27 @@ extern "C" ID
 rb_to_id(VALUE obj)
 {
     return SYM2ID(callMethod(obj, "to_sym", 0));
+}
+
+extern "C" int
+rb_is_const_id(ID symbol)
+{
+    char first = rb_id2name(symbol)[0];
+    return isupper(first) ? Qtrue : Qfalse;
+}
+
+extern "C" int
+rb_is_instance_id(ID symbol)
+{
+    char* c_symbol = (char*)rb_id2name(symbol);
+    return (strlen(c_symbol) > 0 && c_symbol[0] == '@' && (strlen(c_symbol) < 2 || c_symbol[1] != '@')) ? Qtrue : Qfalse;
+}
+
+extern "C" int
+rb_is_class_id(ID symbol)
+{
+    char* c_symbol = (char*)rb_id2name(symbol);
+    return (strlen(c_symbol) > 1 && c_symbol[0] == '@' && c_symbol[1] == '@')  ? Qtrue : Qfalse;
 }
 
 static Symbol*
