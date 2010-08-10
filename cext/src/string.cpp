@@ -261,7 +261,8 @@ rb_str_resize(VALUE str, long size) {
     long length = (long) jruby_str_length(str);
     if (size != length) {
         if (length < size) {
-            // FIXME: Need to enlarge the internal realSize of the RubyString
+            // FIXME: Potential segfault
+            // Need to enlarge the internal realSize of the RubyString for extensions which write to it
         } else {
             callMethod(str, "slice!", 2, INT2FIX(0), LONG2FIX(size));
         }

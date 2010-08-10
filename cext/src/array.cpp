@@ -75,6 +75,10 @@ rb_Array(VALUE val)
 extern "C" VALUE
 rb_ary_new2(long length)
 {
+    // FIXME: Potential segfault
+    // MRI sets the internal buffer to the specified size here to
+    // allow writing to the array from C. Extensions might not
+    // check the size after calling this method
     return callMethod(rb_cArray, "new", 0);
 }
 
