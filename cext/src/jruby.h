@@ -58,6 +58,7 @@ namespace jruby {
     extern jclass Symbol_class;
     extern jclass JRuby_class;
     extern jclass ByteList_class;
+    extern jclass FileDescriptor_class;
 
     extern jmethodID IRubyObject_callMethod;
     extern jmethodID IRubyObject_asJavaString_method;
@@ -105,6 +106,19 @@ namespace jruby {
     extern jmethodID JRuby_yield;
     extern jmethodID JRuby_blockGiven;
     extern jmethodID JRuby_getBlockProc;
+    extern jmethodID JRuby_gv_get_method;
+    extern jmethodID JRuby_gv_set_method;
+    extern jmethodID RubyArray_toJavaArray_method;
+    extern jmethodID RubyClass_newClass_method;
+    extern jmethodID Ruby_defineClass_method;
+    extern jmethodID Ruby_defineClassUnder_method;
+    extern jmethodID RubyClass_setAllocator_method;
+    extern jmethodID Ruby_getClassFromPath_method;
+    extern jmethodID ObjectAllocator_allocate_method;
+    extern jmethodID RubyClass_getAllocator_method;
+    extern jmethodID RubyBasicObject_getInstanceVariable_method;
+    extern jmethodID RubyBasicObject_setInstanceVariable_method;
+    extern jmethodID RubyBasicObject_hasInstanceVariable_method;
     extern jfieldID Handle_address_field;
     extern jfieldID RubyString_value_field;
     extern jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;
@@ -112,6 +126,9 @@ namespace jruby {
     extern jfieldID RubySymbol_id_field;
     extern jfieldID RubySymbol_symbol_field;
     extern jfieldID RaiseException_exception_field;
+    extern jfieldID RubyArray_length_field;
+    extern jfieldID ObjectAllocator_NotAllocatableAllocator_field;
+    extern jfieldID FileDescriptor_fd_field;
 
     extern bool is19;
     extern jobject runtime;

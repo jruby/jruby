@@ -116,9 +116,8 @@ rb_iv_get(VALUE obj, const char* name)
     (name[0] != '@') ? strcpy(var_name, "@")[0] : var_name[0] = '\0';
     strcat(var_name, name);
 
-    jmethodID mid = getMethodID(env, RubyBasicObject_class, "getInstanceVariable",
-            "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
-    jobject retval = env->CallObjectMethod(valueToObject(env, obj), mid, env->NewStringUTF(var_name));
+    jobject retval = env->CallObjectMethod(valueToObject(env, obj), RubyBasicObject_getInstanceVariable_method,
+            env->NewStringUTF(var_name));
     checkExceptions(env);
 
     return objectToValue(env, retval);
@@ -133,10 +132,8 @@ rb_iv_set(VALUE obj, const char* name, VALUE value)
     (name[0] != '@') ? strcpy(var_name, "@")[0] : var_name[0] = '\0';
     strcat(var_name, name);
 
-    jmethodID mid = getMethodID(env, RubyBasicObject_class, "setInstanceVariable",
-            "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
-    jobject retval = env->CallObjectMethod(valueToObject(env, obj), mid, env->NewStringUTF(var_name),
-            valueToObject(env, value));
+    jobject retval = env->CallObjectMethod(valueToObject(env, obj), RubyBasicObject_setInstanceVariable_method,
+            env->NewStringUTF(var_name), valueToObject(env, value));
     checkExceptions(env);
     return objectToValue(env, retval);
 }
@@ -163,8 +160,8 @@ rb_ivar_defined(VALUE obj, ID ivar)
     (name[0] != '@') ? strcpy(var_name, "@")[0] : var_name[0] = '\0';
     strcat(var_name, name);
 
-    jmethodID mid = getMethodID(env, RubyBasicObject_class, "hasInstanceVariable", "(Ljava/lang/String;)Z");
-    jboolean retval = env->CallBooleanMethod(valueToObject(env, obj), mid, env->NewStringUTF(var_name));
+    jboolean retval = env->CallBooleanMethod(valueToObject(env, obj), RubyBasicObject_hasInstanceVariable_method,
+            env->NewStringUTF(var_name));
     checkExceptions(env);
 
     if (retval == JNI_TRUE) {

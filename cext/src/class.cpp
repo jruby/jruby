@@ -31,9 +31,8 @@ extern "C" VALUE
 rb_class_new(VALUE klass)
 {
     JLocalEnv env;
-    jmethodID mid = getStaticMethodID(env, RubyClass_class, "newClass",
-            "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;)Lorg/jruby/RubyClass;");
-    jobject jklass = env->CallStaticObjectMethod(RubyClass_class, mid, getRuntime(), valueToObject(env, klass));
+    jobject jklass = env->CallStaticObjectMethod(RubyClass_class, RubyClass_newClass_method,
+            getRuntime(), valueToObject(env, klass));
     checkExceptions(env);
     return objectToValue(env, jklass);
 }
@@ -94,9 +93,7 @@ rb_define_class(const char* name, VALUE parent)
     JLocalEnv env;
     VALUE super = parent ? parent : rb_cObject;
 
-    jmethodID defineClass = getMethodID(env, Ruby_class, "defineClass",
-            "(Ljava/lang/String;Lorg/jruby/RubyClass;Lorg/jruby/runtime/ObjectAllocator;)Lorg/jruby/RubyClass;");
-    jobject result = env->CallObjectMethod(getRuntime(), defineClass,
+    jobject result = env->CallObjectMethod(getRuntime(), Ruby_defineClass_method,
             env->NewStringUTF(name), valueToObject(env, super), getDefaultAllocator(env, super));
     checkExceptions(env);
 
@@ -109,10 +106,7 @@ rb_define_class_under(VALUE module, const char* name, VALUE parent)
     JLocalEnv env;
     VALUE super = parent ? parent : rb_cObject;
 
-    jmethodID Ruby_defineClass_method = getMethodID(env, Ruby_class, "defineClassUnder",
-            "(Ljava/lang/String;Lorg/jruby/RubyClass;Lorg/jruby/runtime/ObjectAllocator;Lorg/jruby/RubyModule;)Lorg/jruby/RubyClass;");
-
-    jobject result = env->CallObjectMethod(getRuntime(), Ruby_defineClass_method,
+    jobject result = env->CallObjectMethod(getRuntime(), Ruby_defineClassUnder_method,
             env->NewStringUTF(name), valueToObject(env, super), getDefaultAllocator(env, super),
             valueToObject(env, module));
     checkExceptions(env);
@@ -128,11 +122,7 @@ rb_define_alloc_func(VALUE klass, VALUE (*fn)(VALUE))
     jobject allocator = env->NewObject(NativeObjectAllocator_class,
             getMethodID(env, NativeObjectAllocator_class, "<init>", "(J)V"),
             p2j((void *) fn));
-
     checkExceptions(env);
-
-    jmethodID RubyClass_setAllocator_method = getMethodID(env, RubyClass_class,
-            "setAllocator", "(Lorg/jruby/runtime/ObjectAllocator;)V");
 
     env->CallVoidMethod(valueToObject(env, klass), RubyClass_setAllocator_method, allocator);
 }
@@ -141,8 +131,7 @@ extern "C" VALUE
 rb_path2class(const char* path)
 {
     JLocalEnv env;
-    jmethodID mid = getMethodID(env, Ruby_class, "getClassFromPath", "(Ljava/lang/String;)Lorg/jruby/RubyModule;");
-    jobject klass = env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(path));
+    jobject klass = env->CallObjectMethod(getRuntime(), Ruby_getClassFromPath_method, env->NewStringUTF(path));
     checkExceptions(env);
 
     return objectToValue(env, klass);
@@ -153,9 +142,8 @@ rb_obj_alloc(VALUE klass)
 {
     JLocalEnv env;
     jobject allocator = getDefaultAllocator(env, klass);
-    jmethodID mid = getMethodID(env, ObjectAllocator_class, "allocate",
-            "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;)Lorg/jruby/runtime/builtin/IRubyObject;");
-    jobject instance = env->CallObjectMethod(allocator, mid, getRuntime(), valueToObject(env, klass));
+    jobject instance = env->CallObjectMethod(allocator, ObjectAllocator_allocate_method,
+            getRuntime(), valueToObject(env, klass));
     checkExceptions(env);
 
     return objectToValue(env, instance);
@@ -170,10 +158,7 @@ rb_include_module(VALUE self, VALUE module)
 static jobject
 getNotAllocatableAllocator(JNIEnv* env)
 {
-    jfieldID NotAllocatableAllocator_field = env->GetStaticFieldID(ObjectAllocator_class, "NOT_ALLOCATABLE_ALLOCATOR",
-            "Lorg/jruby/runtime/ObjectAllocator;");
-    checkExceptions(env);
-    jobject allocator = env->GetStaticObjectField(ObjectAllocator_class, NotAllocatableAllocator_field);
+    jobject allocator = env->GetStaticObjectField(ObjectAllocator_class, ObjectAllocator_NotAllocatableAllocator_field);
     checkExceptions(env);
 
     return allocator;
@@ -182,8 +167,7 @@ getNotAllocatableAllocator(JNIEnv* env)
 static jobject
 getDefaultAllocator(JNIEnv* env, VALUE parent)
 {
-    jobject allocator = env->CallObjectMethod(valueToObject(env, parent),
-            getMethodID(env, RubyClass_class, "getAllocator", "()Lorg/jruby/runtime/ObjectAllocator;"));
+    jobject allocator = env->CallObjectMethod(valueToObject(env, parent), RubyClass_getAllocator_method);
     checkExceptions(env);
 
     return allocator;

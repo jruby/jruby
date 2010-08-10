@@ -38,9 +38,6 @@ RubyArray::toRArray()
     int length;
     jobjectArray elements;
 
-    jfieldID RubyArray_length_field = getFieldID(env, RubyArray_class, "realLength", "I");
-    jmethodID RubyArray_toJavaArray_method = getMethodID(env, RubyArray_class, "toJavaArray",
-            "()[Lorg/jruby/runtime/builtin/IRubyObject;");
     length = (int)(env->GetIntField(obj, RubyArray_length_field));
     elements = (jobjectArray)(env->CallObjectMethod(obj, RubyArray_toJavaArray_method));
 

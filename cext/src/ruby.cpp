@@ -130,9 +130,7 @@ rb_gv_get(const char* name)
 {
     JLocalEnv env;
 
-    jmethodID mid = getStaticMethodID(env, JRuby_class, "gv_get",
-            "(Lorg/jruby/Ruby;Ljava/lang/String;)J");
-    jlong result = env->CallStaticLongMethod(JRuby_class, mid, getRuntime(),
+    jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_gv_get_method, getRuntime(),
             getGlobalVariableName(env, name));
     checkExceptions(env);
 
@@ -144,9 +142,7 @@ rb_gv_set(const char* name, VALUE value)
 {
     JLocalEnv env;
 
-    jmethodID mid = getStaticMethodID(env, JRuby_class, "gv_set",
-            "(Lorg/jruby/Ruby;Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)J");
-    jlong result = env->CallStaticLongMethod(JRuby_class, mid, getRuntime(),
+    jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_gv_set_method, getRuntime(),
             getGlobalVariableName(env, name), valueToObject(env, value));
     checkExceptions(env);
 

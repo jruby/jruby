@@ -48,6 +48,7 @@ namespace jruby {
     jclass JRuby_class;
     jclass ByteList_class;
     jclass Block_class;
+    jclass FileDescriptor_class;
     jmethodID JRuby_callMethod;
     jmethodID JRuby_callMethod0;
     jmethodID JRuby_callMethod1;
@@ -66,6 +67,8 @@ namespace jruby {
     jmethodID JRuby_yield;
     jmethodID JRuby_blockGiven;
     jmethodID JRuby_getBlockProc;
+    jmethodID JRuby_gv_get_method;
+    jmethodID JRuby_gv_set_method;
 
     jmethodID ThreadContext_getRuntime_method;
     jmethodID Ruby_defineModule_method;
@@ -95,6 +98,17 @@ namespace jruby {
     jmethodID Handle_valueOf;
     jmethodID Ruby_getCurrentContext_method;
     jmethodID GC_trigger;
+    jmethodID RubyArray_toJavaArray_method;
+    jmethodID RubyClass_newClass_method;
+    jmethodID Ruby_defineClass_method;
+    jmethodID Ruby_defineClassUnder_method;
+    jmethodID RubyClass_setAllocator_method;
+    jmethodID Ruby_getClassFromPath_method;
+    jmethodID ObjectAllocator_allocate_method;
+    jmethodID RubyClass_getAllocator_method;
+    jmethodID RubyBasicObject_getInstanceVariable_method;
+    jmethodID RubyBasicObject_setInstanceVariable_method;
+    jmethodID RubyBasicObject_hasInstanceVariable_method;
     jfieldID Handle_address_field;
     jfieldID RubyString_value_field;
     jfieldID RubyFloat_value_field;
@@ -103,6 +117,9 @@ namespace jruby {
     jfieldID RubySymbol_symbol_field;
     jfieldID Block_null_block_field;
     jfieldID RaiseException_exception_field;
+    jfieldID RubyArray_length_field;
+    jfieldID ObjectAllocator_NotAllocatableAllocator_field;
+    jfieldID FileDescriptor_fd_field;
 
     bool is19;
     jobject runtime;
@@ -195,6 +212,7 @@ loadIds(JNIEnv* env)
     JRuby_class = loadClass(env, "org/jruby/cext/JRuby");
     ByteList_class = loadClass(env, "org/jruby/util/ByteList");
     Block_class = loadClass(env, "org/jruby/runtime/Block");
+    FileDescriptor_class = loadClass(env, "java/io/FileDescriptor");
 
     Handle_address_field = getFieldID(env, Handle_class, "address", "J");
     Ruby_defineModule_method = getMethodID(env, Ruby_class, "defineModule", "(Ljava/lang/String;)Lorg/jruby/RubyModule;");
@@ -275,6 +293,31 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;Lorg/jruby/RubyArray;)Lorg/jruby/runtime/builtin/IRubyObject;");
     JRuby_blockGiven = getStaticMethodID(env, JRuby_class, "blockGiven", "(Lorg/jruby/Ruby;)I");
     JRuby_getBlockProc = getStaticMethodID(env, JRuby_class, "getBlockProc", "(Lorg/jruby/Ruby;)Lorg/jruby/RubyProc;");
+    RubyArray_toJavaArray_method = getMethodID(env, RubyArray_class, "toJavaArray",
+            "()[Lorg/jruby/runtime/builtin/IRubyObject;");
+    RubyClass_newClass_method = getStaticMethodID(env, RubyClass_class, "newClass",
+            "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;)Lorg/jruby/RubyClass;");
+    Ruby_defineClass_method = getMethodID(env, Ruby_class, "defineClass",
+            "(Ljava/lang/String;Lorg/jruby/RubyClass;Lorg/jruby/runtime/ObjectAllocator;)Lorg/jruby/RubyClass;");
+    Ruby_defineClassUnder_method = getMethodID(env, Ruby_class, "defineClassUnder",
+            "(Ljava/lang/String;Lorg/jruby/RubyClass;Lorg/jruby/runtime/ObjectAllocator;Lorg/jruby/RubyModule;)Lorg/jruby/RubyClass;");
+    RubyClass_setAllocator_method = getMethodID(env, RubyClass_class, "setAllocator",
+            "(Lorg/jruby/runtime/ObjectAllocator;)V");
+    Ruby_getClassFromPath_method = getMethodID(env, Ruby_class, "getClassFromPath",
+            "(Ljava/lang/String;)Lorg/jruby/RubyModule;");
+    ObjectAllocator_allocate_method = getMethodID(env, ObjectAllocator_class, "allocate",
+            "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    RubyClass_getAllocator_method = getMethodID(env, RubyClass_class, "getAllocator",
+            "()Lorg/jruby/runtime/ObjectAllocator;");
+    RubyBasicObject_getInstanceVariable_method = getMethodID(env, RubyBasicObject_class, "getInstanceVariable",
+            "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    RubyBasicObject_setInstanceVariable_method = getMethodID(env, RubyBasicObject_class, "setInstanceVariable",
+            "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
+    RubyBasicObject_hasInstanceVariable_method = getMethodID(env, RubyBasicObject_class, "hasInstanceVariable",
+            "(Ljava/lang/String;)Z");
+    JRuby_gv_get_method = getStaticMethodID(env, JRuby_class, "gv_get", "(Lorg/jruby/Ruby;Ljava/lang/String;)J");
+    JRuby_gv_set_method = getStaticMethodID(env, JRuby_class, "gv_set",
+            "(Lorg/jruby/Ruby;Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)J");
 
     RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
     RubyFloat_value_field = getFieldID(env, RubyFloat_class, "value", "D");
@@ -285,6 +328,10 @@ loadIds(JNIEnv* env)
     RubySymbol_symbol_field = getFieldID(env, Symbol_class, "symbol", "Ljava/lang/String;");
     Block_null_block_field = env->GetStaticFieldID(Block_class, "NULL_BLOCK", "Lorg/jruby/runtime/Block;");
     RaiseException_exception_field = getFieldID(env, RaiseException_class, "exception", "Lorg/jruby/RubyException;");
+    RubyArray_length_field = getFieldID(env, RubyArray_class, "realLength", "I");
+    ObjectAllocator_NotAllocatableAllocator_field = env->GetStaticFieldID(ObjectAllocator_class, "NOT_ALLOCATABLE_ALLOCATOR",
+            "Lorg/jruby/runtime/ObjectAllocator;");
+    FileDescriptor_fd_field = getFieldID(env, FileDescriptor_class, "fd", "I");
 }
 
 static jobject
