@@ -88,11 +88,10 @@ extern "C" VALUE
 rb_ary_new3(long size, ...)
 {
     va_list args;
-    long i;
     VALUE ary = rb_ary_new2(size);
 
     va_start(args, size);
-    for (i = 0; i < size; i++) {
+    for (long i = 0; i < size; i++) {
         rb_ary_push(ary, va_arg(args, VALUE));
     }
     va_end(args);
@@ -104,7 +103,7 @@ rb_ary_new4(long n, const VALUE* argv)
 {
     VALUE ary = rb_ary_new();
 
-    for (int i = 0; i < n; ++i) {
+    for (long i = 0; i < n; ++i) {
         rb_ary_push(ary, argv[i]);
     }
 
