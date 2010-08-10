@@ -26,7 +26,7 @@ using namespace jruby;
 extern "C" VALUE
 rb_exc_new(VALUE etype, const char *ptr, long len)
 {
-    return rb_funcall(etype, rb_intern("new"), 1, rb_str_new(ptr, len));
+    return rb_exc_new3(etype, rb_str_new(ptr, len));
 }
 
 #undef rb_exc_new2
@@ -41,7 +41,7 @@ extern "C" VALUE
 rb_exc_new3(VALUE etype, VALUE str)
 {
     StringValue(str);
-    return rb_funcall(etype, rb_intern("new"), 1, str);
+    return callMethod(etype, "new", 1, str);
 }
 
 extern "C" VALUE
