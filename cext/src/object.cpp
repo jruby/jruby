@@ -64,7 +64,8 @@ rb_obj_classname(VALUE obj)
     return rb_class2name(rb_class_of(obj));
 }
 
-extern "C" void rb_extend_object(VALUE object, VALUE module)
+extern "C" void
+rb_extend_object(VALUE object, VALUE module)
 {
     callMethod(object, "extend", 1, module);
 }
