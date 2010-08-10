@@ -23,9 +23,8 @@
 
 using namespace jruby;
 
-// FIXME rb_big_bytes_used() is not a ruby function
 extern "C" int
-rb_big_bytes_used(VALUE obj)
+jruby_big_bytes_used(VALUE obj)
 {
     return NUM2INT(callMethod(obj, "size", 0));
 }

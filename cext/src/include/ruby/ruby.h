@@ -806,8 +806,8 @@ extern VALUE rb_float_new(double value);
 extern double jruby_float_value(VALUE v);
 VALUE rb_Float(VALUE object_handle);
 
-int rb_big_bytes_used(VALUE obj);
-#define RBIGNUM_LEN(obj) rb_big_bytes_used(obj)
+int jruby_big_bytes_used(VALUE obj);
+#define RBIGNUM_LEN(obj) jruby_big_bytes_used(obj)
 // fake out, used with RBIGNUM_LEN anyway, which provides the full answer
 #define SIZEOF_BDIGITS 1
 
