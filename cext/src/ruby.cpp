@@ -150,6 +150,24 @@ rb_gv_set(const char* name, VALUE value)
     return (VALUE)result;
 }
 
+extern "C" void
+rb_define_readonly_variable(const char* name, VALUE* value)
+{
+    JLocalEnv env;
+    jstring varName;
+    if (name[0] == '$') {
+        varName = env->NewStringUTF(name);
+    } else {
+        char _name[strlen(name) + 2];
+        _name[0] = '$';
+        _name[1] = '\0';
+        strcat(_name, name);
+        varName = env->NewStringUTF(_name);
+    }
+    env->CallVoidMethod(getRuntime(), Ruby_defineReadonlyVariable_method, varName, valueToObject(env, *value));
+    checkExceptions(env);
+}
+
 extern "C" VALUE
 rb_f_global_variables()
 {
