@@ -701,6 +701,7 @@ char* jruby_str_cstr_readonly(VALUE v);
 
 #define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_dup
+#define rb_str_new_shared rb_str_new3
 #define rb_str_new4 rb_str_new_frozen
 #define rb_str_new5 rb_str_new_with_class
 #define rb_tainted_str_new2 rb_tainted_str_new_cstr
