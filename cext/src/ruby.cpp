@@ -47,6 +47,7 @@ VALUE rb_cFloat;
 VALUE rb_cHash;
 VALUE rb_cInteger;
 VALUE rb_cIO;
+VALUE rb_cMatch;
 VALUE rb_cMethod;
 VALUE rb_cModule;
 VALUE rb_cNilClass;
@@ -202,6 +203,7 @@ jruby::initRubyClasses(JNIEnv* env, jobject runtime)
     C(Hash);
     C(Integer);
     C(IO);
+    rb_cMatch = getConstClass(env, "MatchData");
     C(Method);
     C(Module);
     C(NilClass);

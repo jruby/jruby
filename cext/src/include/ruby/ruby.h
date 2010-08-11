@@ -915,6 +915,7 @@ extern VALUE rb_cFloat;
 extern VALUE rb_cHash;
 extern VALUE rb_cInteger;
 extern VALUE rb_cIO;
+extern VALUE rb_cMatch;
 extern VALUE rb_cMethod;
 extern VALUE rb_cModule;
 extern VALUE rb_cNilClass;
