@@ -889,6 +889,8 @@ int rb_thread_alone();
 VALUE rb_thread_local_aset(VALUE thread, ID id, VALUE value);
 VALUE rb_thread_local_aref(VALUE thread, ID id);
 
+VALUE rb_time_new(long sec, long usec);
+
 /** This flag marks the currently executing thread critical. */
 extern VALUE rb_thread_critical;
 
