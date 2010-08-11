@@ -5,21 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 
-<<<<<<< HEAD
-import org.jruby.compiler.ir.IR_Closure;
-import org.jruby.compiler.ir.IR_ExecutionScope;
-import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IR_Module;
-import org.jruby.compiler.ir.IR_Scope;
-=======
-import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRScope;
-import org.jruby.compiler.ir.instructions.ASSERT_METHOD_VERSION_Instr;
->>>>>>> Simple renaming in ir package
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;

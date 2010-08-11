@@ -39,7 +39,6 @@ public class InterpretedIRMethod extends DynamicMethod {
             BasicBlock jumpBlock = basicBlock;
 
             while (basicBlock != null) {
-//            System.out.println("BB:" + basicBlock);
                 for (Instr instruction : basicBlock.getInstrs()) {
                     try {
                         System.out.println("EXEC'ing: " + instruction);
@@ -50,13 +49,12 @@ public class InterpretedIRMethod extends DynamicMethod {
                     }
                 }
 
-                if (jumpBlock != basicBlock) {
+                if (jumpBlock != basicBlock) { // Explicit jump needed from last instruction
                     basicBlock = jumpBlock;
-                } else {
+                } else {                       // Implicit jump because we fell off current block
                     basicBlock = cfg.getFallThroughBB(basicBlock);
                     jumpBlock = basicBlock;
                 }
-
             }
 
             return (IRubyObject) interp.getReturnValue();

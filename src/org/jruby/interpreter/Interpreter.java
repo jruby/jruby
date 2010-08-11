@@ -1,13 +1,9 @@
 package org.jruby.interpreter;
 
-import com.kenai.jaffl.mapper.FunctionMapper.Context;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
@@ -32,8 +28,6 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 

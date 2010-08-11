@@ -14,12 +14,12 @@ public class NOT_Instr extends OneOperandInstr
         super(Operation.NOT, dst, arg);
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) {
-        return new NOT_Instr(ii.getRenamedVariable(_result), _arg.cloneForInlining(ii));
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new NOT_Instr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));
     }
 
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
-        return (_arg instanceof BooleanLiteral) ? ((BooleanLiteral)_arg).logicalNot() : null;
+        return (argument instanceof BooleanLiteral) ? ((BooleanLiteral)argument).logicalNot() : null;
     }
 }

@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A set of variables which are only used in a particular scope and never

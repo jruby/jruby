@@ -20,7 +20,7 @@ public class METHOD_VERSION_GUARD_Instr extends GuardInstr
         this.failurePathLabel = failurePathLabel;
     }
 
-    public IR_Instr cloneForInlining(InlinerInfo ii) { 
+    public Instr cloneForInlining(InlinerInfo ii) { 
         return new METHOD_VERSION_GUARD_Instr(guardedMethod, reqdVersion, ii.getRenamedLabel(failurePathLabel));
     }
 }
