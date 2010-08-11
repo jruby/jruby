@@ -110,6 +110,7 @@ namespace jruby {
     jmethodID RubyBasicObject_getInstanceVariable_method;
     jmethodID RubyBasicObject_setInstanceVariable_method;
     jmethodID RubyBasicObject_hasInstanceVariable_method;
+    jmethodID JRuby_sysFail;
     jfieldID Handle_address_field;
     jfieldID RubyString_value_field;
     jfieldID RubyFloat_value_field;
@@ -322,6 +323,7 @@ loadIds(JNIEnv* env)
     JRuby_gv_get_method = getStaticMethodID(env, JRuby_class, "gv_get", "(Lorg/jruby/Ruby;Ljava/lang/String;)J");
     JRuby_gv_set_method = getStaticMethodID(env, JRuby_class, "gv_set",
             "(Lorg/jruby/Ruby;Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    JRuby_sysFail = getStaticMethodID(env, JRuby_class, "sysFail", "(Lorg/jruby/Ruby;Ljava/lang/String;)V");
 
     RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
     RubyFloat_value_field = getFieldID(env, RubyFloat_class, "value", "D");

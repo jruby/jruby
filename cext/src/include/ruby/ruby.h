@@ -382,9 +382,10 @@ VALUE rb_rescue2(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE,...);
 VALUE rb_ensure(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE);
 VALUE rb_protect(VALUE (*func)(VALUE), VALUE data, int* status);
 void rb_jump_tag(int status);
+void rb_throw(const char* symbol, VALUE result);
 
 void rb_fatal(const char *fmt, ...) __attribute__((noreturn));
-void rb_sys_fail(const char *msg) __attribute__((noreturn));
+void rb_sys_fail(const char *msg);
 void rb_bug(const char*, ...) __attribute__((noreturn));
 VALUE rb_exc_new(VALUE, const char*, long);
 VALUE rb_exc_new2(VALUE, const char*);

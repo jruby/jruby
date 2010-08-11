@@ -174,6 +174,20 @@ rb_eval_string(const char* string)
     return objectToValue(env, result);
 }
 
+extern "C" void
+rb_sys_fail(const char* msg)
+{
+    JLocalEnv env;
+    env->CallVoidMethod(JRuby_class, JRuby_sysFail, getRuntime(), env->NewStringUTF(msg));
+}
+
+extern "C" void
+rb_throw(const char* symbol, VALUE result)
+{
+    VALUE params[2] = {ID2SYM(rb_intern(symbol)), result};
+    callMethodA(rb_mKernel, "throw", 2, params);
+}
+
 #define M(x) rb_m##x = getConstModule(env, #x)
 #define C(x) rb_c##x = getConstClass(env, #x)
 #define E(x) rb_e##x = getConstClass(env, #x)

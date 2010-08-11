@@ -23,17 +23,23 @@ import java.math.BigInteger;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyClass;
+import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import com.kenai.jaffl.LastError;
 
 /**
  *
@@ -203,5 +209,20 @@ public class JRuby {
 
     public static void clearErrorInfo(Ruby runtime) {
         runtime.getCurrentContext().setErrorInfo(runtime.getNil());
+    }
+
+    /** rb_sys_fail */
+    public static void sysFail(Ruby runtime, String message) {
+        final int n = LastError.getLastError();
+
+        IRubyObject arg = (message != null) ? runtime.newString(message) : runtime.getNil();
+
+        RubyClass instance = runtime.getErrno(n);
+        if(instance == null) {
+            instance = runtime.getSystemCallError();
+            throw new RaiseException((RubyException)(instance.newInstance(runtime.getCurrentContext(), new IRubyObject[]{arg, runtime.newFixnum(n)}, Block.NULL_BLOCK)));
+        } else {
+            throw new RaiseException((RubyException)(instance.newInstance(runtime.getCurrentContext(), new IRubyObject[]{arg}, Block.NULL_BLOCK)));
+        }
     }
 }
