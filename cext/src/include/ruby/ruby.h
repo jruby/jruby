@@ -754,6 +754,7 @@ void rb_set_kcode(const char *code);
 VALUE rb_f_global_variables();
 
 VALUE rb_eval_string(const char* string);
+VALUE rb_obj_instance_eval(int, VALUE*, VALUE);
 
 /** Print a warning if $VERBOSE is not nil. */
 void rb_warn(const char *fmt, ...);
