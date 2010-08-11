@@ -772,6 +772,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
         clearCodeRange();
     }
     
+    /** rb_str_resize
+     */
+    public final void resize(int length) {
+        modify();
+        if (value.getRealSize() > length) {
+            value.setRealSize(length);
+        }
+        value.length(length);
+    }
+
     final void view(ByteList bytes) {
         modifyCheck();
 
