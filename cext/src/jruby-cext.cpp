@@ -84,6 +84,7 @@ namespace jruby {
     jmethodID RubyObject_getNativeTypeIndex_method;
     jmethodID RubyBignum_big2dbl_method;
     jmethodID RubyBignum_big2long_method;
+    jmethodID RubyBignum_big2ulong_method;
     jmethodID RubyNumeric_num2long_method;
     jmethodID RubyNumeric_num2chr_method;
     jmethodID RubyNumeric_num2dbl_method;
@@ -232,6 +233,9 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/RubyBignum;)D");
 
     RubyBignum_big2long_method = getStaticMethodID(env, RubyBignum_class, "big2long",
+            "(Lorg/jruby/RubyBignum;)J");
+
+    RubyBignum_big2ulong_method = getStaticMethodID(env, RubyBignum_class, "big2ulong",
             "(Lorg/jruby/RubyBignum;)J");
 
     RubyNumeric_num2long_method = getStaticMethodID(env, RubyNumeric_class, "num2long",

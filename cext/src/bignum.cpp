@@ -51,7 +51,14 @@ rb_big2long(VALUE obj)
 extern "C" unsigned long
 rb_big2ulong(VALUE obj)
 {
-    return (long) rb_big2ll(obj);
+    if (TYPE(obj) == T_BIGNUM) {
+        JLocalEnv env;
+        jlong result = env->CallStaticLongMethod(RubyBignum_class, RubyBignum_big2ulong_method, valueToObject(env, obj));
+        checkExceptions(env);
+        return (unsigned long) result;
+    } else {
+        return (unsigned long) rb_big2ll(obj);
+    }
 }
 
 extern "C" double

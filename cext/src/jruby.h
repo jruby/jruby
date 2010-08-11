@@ -76,6 +76,7 @@ namespace jruby {
     extern jmethodID RubyData_newRubyData_method;
     extern jmethodID RaiseException_constructor;
     extern jmethodID RubyBignum_big2long_method;
+    extern jmethodID RubyBignum_big2ulong_method;
     extern jmethodID RubyBignum_big2dbl_method;
     extern jmethodID RubyNumeric_num2long_method;
     extern jmethodID RubyNumeric_num2chr_method;

@@ -69,6 +69,7 @@ public class RubyBignum extends RubyInteger {
     private static final long MAX = (1L << (BIT_SIZE - 1)) - 1;
     private static final BigInteger LONG_MAX = BigInteger.valueOf(MAX);
     private static final BigInteger LONG_MIN = BigInteger.valueOf(-MAX - 1);
+    private static final BigInteger ULONG_MAX = BigInteger.valueOf(1).shiftLeft(BIT_SIZE).subtract(BigInteger.valueOf(1));
 
     private final BigInteger value;
 
@@ -153,8 +154,20 @@ public class RubyBignum extends RubyInteger {
         return big.longValue();
     }
 
+    /** rb_big2ulong
+     * This is here because for C extensions ulong can hold different values without throwing a RangeError
+     */
+    public static long big2ulong(RubyBignum value) {
+        BigInteger big = value.getValue();
+
+        if (big.compareTo(LONG_MIN) <= 0 || big.compareTo(ULONG_MAX) > 0) {
+            throw value.getRuntime().newRangeError("bignum too big to convert into `ulong'");
+        }
+        return value.getValue().longValue();
+    }
+
     /** rb_big2dbl
-     * 
+     *
      */
     public static double big2dbl(RubyBignum value) {
         BigInteger big = value.getValue();
