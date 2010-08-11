@@ -260,12 +260,9 @@ extern "C" VALUE
 rb_str_resize(VALUE str, long size) {
     long length = (long) jruby_str_length(str);
     if (size != length) {
-        if (length < size) {
-            // FIXME: Potential segfault
-            // Need to enlarge the internal realSize of the RubyString for extensions which write to it
-        } else {
-            callMethod(str, "slice!", 2, INT2FIX(0), LONG2FIX(size));
-        }
+        JLocalEnv env;
+        env->CallVoidMethod(valueToObject(env, str), RubyString_resize_method, (jint)size);
+        checkExceptions(env);
     }
     return str;
 }

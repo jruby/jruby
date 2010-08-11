@@ -122,6 +122,7 @@ namespace jruby {
     extern jmethodID RubyBasicObject_hasInstanceVariable_method;
     extern jmethodID Ruby_defineReadonlyVariable_method;
     extern jmethodID JRuby_sysFail;
+    extern jmethodID RubyString_resize_method;
     extern jfieldID Handle_address_field;
     extern jfieldID RubyString_value_field;
     extern jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;

@@ -112,6 +112,7 @@ namespace jruby {
     jmethodID RubyBasicObject_hasInstanceVariable_method;
     jmethodID Ruby_defineReadonlyVariable_method;
     jmethodID JRuby_sysFail;
+    jmethodID RubyString_resize_method;
     jfieldID Handle_address_field;
     jfieldID RubyString_value_field;
     jfieldID RubyFloat_value_field;
@@ -327,6 +328,7 @@ loadIds(JNIEnv* env)
     Ruby_defineReadonlyVariable_method = getMethodID(env, Ruby_class, "defineReadonlyVariable",
             "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
     JRuby_sysFail = getStaticMethodID(env, JRuby_class, "sysFail", "(Lorg/jruby/Ruby;Ljava/lang/String;)V");
+    RubyString_resize_method = getMethodID(env, RubyString_class, "resize", "(I)V");
 
     RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
     RubyFloat_value_field = getFieldID(env, RubyFloat_class, "value", "D");
