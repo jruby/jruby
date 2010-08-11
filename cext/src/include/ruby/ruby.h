@@ -511,17 +511,11 @@ void rb_undef(VALUE, ID);
 #define rb_define_class_variable(klass, name, val) rb_cvar_set(klass, rb_intern(name), val, 0)
 #define rb_cv_get(klass, name) rb_cvar_get(klass, rb_intern(name))
 #define rb_cv_set(klass, name, value) rb_cvar_set(klass, rb_intern(name), value, 0)
-/** Returns a value evaluating true if module has named class var.
- * TODO: @@ should be optional.
- */
+/** Returns a value evaluating true if module has named class var. */
 VALUE rb_cvar_defined(VALUE module_handle, ID name);
-/** Returns class variable by (Symbol) name from module.
- * TODO: @@ should be optional.
- */
+/** Returns class variable by (Symbol) name from module. */
 VALUE rb_cvar_get(VALUE module_handle, ID name);
-/** Set module's named class variable to given value. Returns the value.
- * TODO: @@ should be optional.
- */
+/** Set module's named class variable to given value. Returns the value. */
 VALUE rb_cvar_set(VALUE module_handle, ID name, VALUE value);
 #define rb_cvar_set(klass, name, value, ...) __extension__(rb_cvar_set(klass, name, value))
 

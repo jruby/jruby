@@ -165,11 +165,7 @@ rb_ivar_defined(VALUE obj, ID ivar)
             env->NewStringUTF(var_name));
     checkExceptions(env);
 
-    if (retval == JNI_TRUE) {
-        return Qtrue;
-    } else {
-        return Qfalse;
-    }
+    return (retval == JNI_TRUE) ? Qtrue : Qfalse;
 }
 
 extern "C" void

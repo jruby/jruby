@@ -24,6 +24,7 @@
 
 using namespace jruby;
 
+static void class_variable_prefix(char* target, ID source);
 static jobject getNotAllocatableAllocator(JNIEnv* env);
 static jobject getDefaultAllocator(JNIEnv* env, VALUE parent);
 
@@ -70,13 +71,25 @@ rb_class2name(VALUE class_handle)
 extern "C" VALUE
 rb_cvar_defined(VALUE klass, ID name)
 {
-    return callMethod(klass, "class_variable_defined?", 1, ID2SYM(name));
+    if (rb_is_instance_id(name)) {
+        // Class Instance variable
+        return rb_ivar_defined(klass, name);
+    }
+    char target[strlen(rb_id2name(name)) + 3];
+    class_variable_prefix(target, name);
+    return callMethod(klass, "class_variable_defined?", 1, rb_str_new_cstr(target));
 }
 
 extern "C" VALUE
 rb_cvar_get(VALUE klass, ID name)
 {
-    return callMethod(klass, "class_variable_get", 1, ID2SYM(name));
+    if (rb_is_instance_id(name)) {
+        // Class Instance variable
+        return rb_ivar_get(klass, name);
+    }
+    char target[strlen(rb_id2name(name)) + 3];
+    class_variable_prefix(target, name);
+    return callMethod(klass, "class_variable_get", 1, rb_str_new_cstr(target));
 }
 
 #undef rb_cvar_set
@@ -84,7 +97,13 @@ rb_cvar_get(VALUE klass, ID name)
 extern "C" VALUE
 rb_cvar_set(VALUE klass, ID name, VALUE value)
 {
-    return callMethod(klass, "class_variable_set", 2, ID2SYM(name), value);
+    if (rb_is_instance_id(name)) {
+        // Class Instance variable
+        return rb_ivar_set(klass, name, value);
+    }
+    char target[strlen(rb_id2name(name)) + 3];
+    class_variable_prefix(target, name);
+    return callMethod(klass, "class_variable_set", 2, rb_str_new_cstr(target), value);
 }
 
 extern "C" VALUE
@@ -153,6 +172,18 @@ extern "C" void
 rb_include_module(VALUE self, VALUE module)
 {
     callMethod(self, "include", 1, module);
+}
+
+static void
+class_variable_prefix(char* target, ID source)
+{
+    int i = 0;
+    if (!rb_is_class_id(source)) {
+        target[i++] = '@';
+        target[i++] = '@';
+    }
+    target[i] = '\0';
+    strcat(target, rb_id2name(source));
 }
 
 static jobject
