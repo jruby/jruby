@@ -300,7 +300,7 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;Lorg/jruby/RubyArray;)Lorg/jruby/runtime/builtin/IRubyObject;");
     JRuby_blockGiven = getStaticMethodID(env, JRuby_class, "blockGiven", "(Lorg/jruby/Ruby;)I");
     JRuby_getBlockProc = getStaticMethodID(env, JRuby_class, "getBlockProc", "(Lorg/jruby/Ruby;)Lorg/jruby/RubyProc;");
-    RubyArray_toJavaArray_method = getMethodID(env, RubyArray_class, "toJavaArray",
+    RubyArray_toJavaArray_method = getMethodID(env, RubyArray_class, "toJavaArrayUnsafe",
             "()[Lorg/jruby/runtime/builtin/IRubyObject;");
     RubyClass_newClass_method = getStaticMethodID(env, RubyClass_class, "newClass",
             "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;)Lorg/jruby/RubyClass;");
