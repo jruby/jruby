@@ -59,7 +59,7 @@ RubyIO::RubyIO(FILE* native_file, int native_fd, const char* native_mode)
     rio.fd = native_fd;
     rio.f = native_file;
     strncpy(mode, native_mode, 4);
-    mode[5] = '\0';
+    mode[4] = '\0';
 
     obj = valueToObject(env, callMethod(rb_cIO, "new", 2, INT2FIX(native_fd), rb_str_new_cstr(mode)));
 }
@@ -70,7 +70,7 @@ RubyIO::RubyIO(JNIEnv* env, jobject obj_, jobject fd_, jstring mode_): Handle(en
 
     const char* utf = env->GetStringUTFChars(mode_, NULL);
     strncpy(mode, utf, 4);
-    mode[5] = '\0';
+    mode[4] = '\0';
     env->ReleaseStringUTFChars(mode_, utf);
 }
 
