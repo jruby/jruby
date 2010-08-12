@@ -326,18 +326,6 @@ class TestThread < Test::Unit::TestCase
     assert done
   end
 
-  def test_queue_push_and_pop
-    q = Queue.new
-    t = Thread.new {
-      q.pop
-      q.push(:t)
-    }
-    Thread.pass until t.status == "sleep"
-    q.push(:main)
-    r = q.pop
-    assert_equal(:t, r)
-  end
-
   # JRUBY-4154
   if RUBY_VERSION < "1.9"
     def test_thread_exclusive
