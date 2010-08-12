@@ -75,9 +75,10 @@ RubyIO::RubyIO(JNIEnv* env, jobject obj_, jobject fd_, jstring mode_): Handle(en
 }
 
 RubyIO::~RubyIO() {
-    if (rio.f) {
-        fclose(rio.f);
-    }
+    // For now, just don't close the file.
+    // if (rio.f) {
+    //     fclose(rio.f);
+    // }
 }
 
 extern "C" rb_io_t*
