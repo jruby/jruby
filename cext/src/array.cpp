@@ -75,17 +75,16 @@ rb_Array(VALUE val)
 extern "C" VALUE
 rb_ary_new2(long length)
 {
-    // FIXME: Potential segfault
-    // MRI sets the internal buffer to the specified size here to
-    // allow writing to the array from C. Extensions might not
-    // check the size after calling this method
-    return callMethod(rb_cArray, "new", 0);
+    JLocalEnv env;
+    jobject ary = env->CallStaticObjectMethod(RubyArray_class, RubyArray_newArray, getRuntime(), (jlong)length);
+    checkExceptions(env);
+    return objectToValue(env, ary);
 }
 
 extern "C" VALUE
 rb_ary_new(void)
 {
-    return callMethod(rb_cArray, "new", 0);
+    return rb_ary_new2(0);
 }
 
 extern "C" VALUE
@@ -105,7 +104,7 @@ rb_ary_new3(long size, ...)
 extern "C" VALUE
 rb_ary_new4(long n, const VALUE* argv)
 {
-    VALUE ary = rb_ary_new();
+    VALUE ary = rb_ary_new2(n);
 
     for (long i = 0; i < n; ++i) {
         rb_ary_push(ary, argv[i]);
