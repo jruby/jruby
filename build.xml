@@ -1511,7 +1511,7 @@
 
   <property name="jruby-cext-native.home" value="${basedir}/cext/src/"/>
 
-  <target name="build-jruby-cext-native" depends="jar-complete"
+  <target name="build-jruby-cext-native" depends="jar"
     description="Build JRuby cext support">
     <exec executable="make" dir="${jruby-cext-native.home}" failonerror="true"/>
   </target>
@@ -1521,7 +1521,9 @@
     <exec executable="make" dir="${jruby-cext-native.home}" failonerror="true">
         <arg value="dist-clean"/>
     </exec>
-  </target> 
+  </target>
+
+  <target name="cext" depends="build-jruby-cext-native"/>
 
   <target name="test-rails-stable" depends="jar"><rake task="test:rails"/></target>
   <target name="test-prawn" depends="jar"><rake task="test:prawn"/></target>
