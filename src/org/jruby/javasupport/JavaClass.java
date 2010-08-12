@@ -65,6 +65,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -100,18 +101,20 @@ public class JavaClass extends JavaObject {
     static {
         boolean canSetAccessible = false;
 
-        try {
-            AccessController.checkPermission(new ReflectPermission("suppressAccessChecks"));
-            canSetAccessible = true;
-        } catch (Throwable t) {
-            // added this so if things are weird in the future we can debug without
-            // spinning a new binary
-            if (SafePropertyAccessor.getBoolean("jruby.ji.logCanSetAccessible")) {
-                t.printStackTrace();
+        if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
+            try {
+                AccessController.checkPermission(new ReflectPermission("suppressAccessChecks"));
+                canSetAccessible = true;
+            } catch (Throwable t) {
+                // added this so if things are weird in the future we can debug without
+                // spinning a new binary
+                if (SafePropertyAccessor.getBoolean("jruby.ji.logCanSetAccessible")) {
+                    t.printStackTrace();
+                }
+
+                // assume any exception means we can't suppress access checks
+                canSetAccessible = false;
             }
-            
-            // assume any exception means we can't suppress access checks
-            canSetAccessible = false;
         }
 
         CAN_SET_ACCESSIBLE = canSetAccessible;
