@@ -214,7 +214,10 @@ rb_check_array_type(VALUE val)
 extern "C" int
 rb_ary_size(VALUE ary)
 {
-    return jruby_rarray(ary)->len;
+    JLocalEnv env;
+    int length = (int)(env->GetIntField(valueToObject(env, ary), RubyArray_length_field));
+    checkExceptions(env);
+    return length;
 }
 
 // Copyied from Rbx
