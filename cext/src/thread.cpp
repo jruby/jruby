@@ -43,7 +43,7 @@ rb_thread_local_aset(VALUE thread, ID id, VALUE value)
 extern "C" int
 rb_thread_alone()
 {
-    return 0; // Fake out, never true on the JVM and different semantics apply anyway
+    return rb_ary_size(callMethodA(rb_cThread, "list", 0, NULL)) < 2;
 }
 
 extern "C" void
