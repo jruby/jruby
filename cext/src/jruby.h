@@ -124,6 +124,7 @@ namespace jruby {
     extern jmethodID JRuby_sysFail;
     extern jmethodID RubyString_resize_method;
     extern jmethodID RubyArray_newArray;
+    extern jmethodID JRuby_threadSleep;
     extern jfieldID Handle_address_field;
     extern jfieldID RubyString_value_field;
     extern jfieldID ByteList_bytes_field, ByteList_begin_field, ByteList_length_field;

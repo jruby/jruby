@@ -225,4 +225,12 @@ public class JRuby {
             throw new RaiseException((RubyException)(instance.newInstance(runtime.getCurrentContext(), new IRubyObject[]{arg}, Block.NULL_BLOCK)));
         }
     }
+
+    public static void threadSleep(Ruby runtime, int interval) {
+        try {
+            runtime.getCurrentContext().getThread().sleep(interval);
+        } catch (InterruptedException e) {
+            // Thread wakeup, do nothing
+        }
+    }
 }

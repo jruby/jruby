@@ -56,28 +56,15 @@ extern "C" int
 rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct timeval *timeout)
 {
     JLocalEnv env;
-    struct timeval start, end;
-    int interval;
 
     if (!read && !write && !except) {
-	    if (!timeout) {
-            /* TODO: Wire this up to sleep the thread until it it's status is changed from another
-            env->CallStaticMethodID(JRuby_class, JRuby_thread_sleep, getRuntime(), (jint)-1);
-            checkExceptions(env);
-            */
-	        return 0;
-        }
-        /* TODO: Wire this up
-        getclockofday(&start);
-        getclockofday(&end);
-        interval = end.tv_sec + timeout->tv_sec - start.tv_sec;
-        env->CallStaticMethodID(JRuby_class, JRuby_thread_sleep, getRuntime(), (jint)interval);
+        // Just sleep for the specified amount of time
+        long interval = timeout ? (timeout->tv_sec * 1000 + timeout->tv_usec / 1000) : 0;
+        env->CallStaticVoidMethod(JRuby_class, JRuby_threadSleep, getRuntime(), (jint)interval);
         checkExceptions(env);
-        */
-	    return 0;
+        return 0;
     } else {
-        GIL_releaseNoCleanup();
-	    int ret = select(max, read, write, except, timeout);
+        int ret = select(max, read, write, except, timeout);
         // TODO: Check for async events and possibly exceptions
         return ret;
     }

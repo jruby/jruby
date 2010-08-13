@@ -114,6 +114,7 @@ namespace jruby {
     jmethodID JRuby_sysFail;
     jmethodID RubyString_resize_method;
     jmethodID RubyArray_newArray;
+    jmethodID JRuby_threadSleep;
     jfieldID Handle_address_field;
     jfieldID RubyString_value_field;
     jfieldID RubyFloat_value_field;
@@ -331,6 +332,7 @@ loadIds(JNIEnv* env)
     JRuby_sysFail = getStaticMethodID(env, JRuby_class, "sysFail", "(Lorg/jruby/Ruby;Ljava/lang/String;)V");
     RubyString_resize_method = getMethodID(env, RubyString_class, "resize", "(I)V");
     RubyArray_newArray = getStaticMethodID(env, RubyArray_class, "newArray", "(Lorg/jruby/Ruby;J)Lorg/jruby/RubyArray;");
+    JRuby_threadSleep = getStaticMethodID(env, JRuby_class, "threadSleep", "(Lorg/jruby/Ruby;I)V");
 
     RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
     RubyFloat_value_field = getFieldID(env, RubyFloat_class, "value", "D");
