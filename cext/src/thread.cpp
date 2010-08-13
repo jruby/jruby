@@ -16,8 +16,6 @@
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <sys/select.h>
-
 #include "ruby.h"
 #include "jruby.h"
 #include "JLocalEnv.h"
