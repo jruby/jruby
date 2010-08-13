@@ -489,9 +489,9 @@ unsigned long rb_fix2uint(VALUE);
 long long rb_num2ll(VALUE);
 unsigned long long rb_num2ull(VALUE);
 double rb_num2dbl(VALUE);
-SIGNED_VALUE rb_big2long(VALUE);
+long rb_big2long(VALUE);
 #define rb_big2int(x) rb_big2long(x)
-VALUE rb_big2ulong(VALUE);
+unsigned long rb_big2ulong(VALUE);
 #define rb_big2uint(x) rb_big2ulong(x)
 long long rb_big2ll(VALUE);
 double rb_big2dbl(VALUE);
