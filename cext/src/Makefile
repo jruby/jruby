@@ -79,8 +79,10 @@ SOFLAGS = # Filled in for each OS specifically
 
 STRIP = strip -S
 
-
-JDK_INCLUDES = -I"$(JDK_HOME)/include" -I"$(JDK_HOME)/include/$(OS)"
+# Only set JDK includes if not previously set.
+ifndef JDK_INCLUDES
+	JDK_INCLUDES = -I"$(JDK_HOME)/include" -I"$(JDK_HOME)/include/$(OS)"
+endif
 IFLAGS = -I"$(BUILD_DIR)" -I"$(SRC_DIR)" -I"$(BUILD_DIR)"/jni \
   -I"$(SRC_DIR)"/include -I"$(SRC_DIR)"/include/ruby
 CFLAGS = $(OFLAGS) $(WFLAGS) $(IFLAGS) $(PICFLAGS) $(JDK_INCLUDES) $(ARCHFLAGS)
@@ -237,7 +239,9 @@ debug: all
 	@echo CPU="$(CPU)"
 	@echo JAVA_HOME="$(JAVA_HOME)"
 	@echo JDK_HOME="$(JDK_HOME)"
+	@echo JDK_INCLUDES="$(JDK_INCLUDES)"
 	@echo JAVA_HDRS="$(JAVA_HDRS)"
+	@echo JAVAC="$(JAVAC)"
 	@echo CEXT_JAVA="$(CEXT_JAVA)"
 	@echo "PLATFORM=$(PLATFORM)"
 	@echo "OBJS=$(OBJS)"
