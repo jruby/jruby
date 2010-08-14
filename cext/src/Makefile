@@ -137,9 +137,10 @@ ifeq ($(OS), win32)
   CFLAGS += -mwin32 -D_JNI_IMPLEMENTATION_
   LDFLAGS += -Wl,--add-stdcall-alias
   PICFLAGS=
-  SOFLAGS += -shared -mimpure-text -static-libgcc
+  SOFLAGS += -shared -mimpure-text -Wl,--enable-auto-image-base,--enable-auto-import
   PREFIX =
   JNIEXT=dll
+  LIBS += -lws2_32
 endif
 
 ifeq ($(OS), darwin)
