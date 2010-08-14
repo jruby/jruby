@@ -259,7 +259,7 @@ public class RbConfigLibrary implements Library {
         String ldflags = soflags;
         String ldshared = "cc -shared ";
         
-        String archflags = " -arch " + Platform.ARCH;
+        String archflags = " -m" + (Platform.IS_64_BIT ? "64" : "32");
 
         // A few platform specific values
         if (Platform.IS_WINDOWS) {
@@ -269,6 +269,7 @@ public class RbConfigLibrary implements Library {
             ldshared = "cc -dynamic -bundle -undefined dynamic_lookup ";
             cflags += " -DTARGET_RT_MAC_CFM=0 ";
             ldflags += " -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 ";
+            archflags = " -arch " + Platform.ARCH;
         } else {
             setConfig(mkmfHash, "DLEXT", "so");
         }
