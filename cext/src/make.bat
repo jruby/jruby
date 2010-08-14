@@ -10,13 +10,5 @@
 @ECHO JAVA_HOME=%JAVA_HOME%
 @ECHO JDK_INCLUDES=%JDK_INCLUDES%
 
-@IF [%1]==[] GOTO :plain_make
-make.exe %1
-@GOTO :end
-
-:plain_make
-make.exe
-
-:end
-
+make.exe %*
 
