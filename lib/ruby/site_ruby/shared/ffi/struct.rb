@@ -43,17 +43,7 @@ module FFI
       self[field_name].offset
     end
 
-    class Enum < Field
-      
-      def get(ptr)
-        type.find(ptr.get_int(offset))
-      end
-
-      def put(ptr, value)
-        ptr.put_int(offset, type.find(value))
-      end
-
-    end
+    # Enum is implemented in java
 
     # InnerStruct is implemented in java
     
@@ -178,6 +168,7 @@ module FFI
         builder.union = self < Union
         builder.packed = @packed if defined?(@packed)
         builder.alignment = @min_alignment if defined?(@min_alignment)
+        builder.byte_order = @byte_order
 
         if spec[0].kind_of?(Hash)
           hash_layout(builder, spec)
@@ -208,6 +199,10 @@ module FFI
         @min_alignment = alignment
       end
       alias :align :aligned
+
+      def byte_order(order = :native)
+        @byte_order = order
+      end
 
       def enclosing_module
         begin

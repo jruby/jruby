@@ -28,6 +28,7 @@
 
 package org.jruby.ext.ffi;
 
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,6 +39,7 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -192,9 +194,11 @@ public final class StructLayout extends Type {
         this.members = Collections.unmodifiableList(memberList);
     }
     
-    @JRubyMethod(name = "new", meta = true, required = 3)
+    @JRubyMethod(name = "new", meta = true, required = 3, optional = 1)
     public static final IRubyObject newStructLayout(ThreadContext context, IRubyObject klass, 
-            IRubyObject rbFields, IRubyObject size, IRubyObject alignment) {
+            IRubyObject[] args) {
+
+        IRubyObject rbFields = args[0], size = args[1], alignment = args[2];
 
         if (!(rbFields instanceof RubyArray)) {
             throw context.getRuntime().newTypeError(rbFields, context.getRuntime().getArray());
@@ -543,9 +547,14 @@ public final class StructLayout extends Type {
             this.io = io;
         }
 
-        @JRubyMethod
-        public IRubyObject initialize(ThreadContext context, IRubyObject name, IRubyObject offset, IRubyObject type) {
-            init(name, type, offset);
+        void init(IRubyObject[] args, FieldIO io) {
+            init(args[0], args[2], args[1], io);
+        }
+
+        @JRubyMethod(name="initialize", required = 3, optional = 1)
+        public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            
+            init(args[0], args[2], args[1]);
 
             return this;
         }
@@ -597,6 +606,27 @@ public final class StructLayout extends Type {
             return io;
         }
 
+        static ByteOrder getByteOrderOption(ThreadContext context, IRubyObject[] args) {
+
+            ByteOrder order = ByteOrder.nativeOrder();
+
+            if (args.length > 3 && args[3] instanceof RubyHash) {
+                RubyHash options = (RubyHash) args[3];
+                IRubyObject byte_order = options.fastARef(RubySymbol.newSymbol(context.getRuntime(), "byte_order"));
+                if (byte_order instanceof RubySymbol || byte_order instanceof RubyString) {
+                    String orderName = byte_order.asJavaString();
+                    if ("network".equals(orderName) || "big".equals(orderName)) {
+                        order = ByteOrder.BIG_ENDIAN;
+                    
+                    } else if ("little".equals(orderName)) {
+                        order = ByteOrder.LITTLE_ENDIAN;
+                    }
+                }
+            }
+            
+            return order;
+        }
+
         @JRubyMethod
         public final IRubyObject size(ThreadContext context) {
             return context.getRuntime().newFixnum(type.getNativeSize());
@@ -638,10 +668,9 @@ public final class StructLayout extends Type {
         }
 
         @Override
-        @JRubyMethod
-        public IRubyObject initialize(ThreadContext context, IRubyObject name, IRubyObject offset, IRubyObject type) {
+        public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
 
-            init(name, type, offset, new NumberFieldIO(checkType(type)));
+            init(args, new NumberFieldIO(checkType(args[2]), getByteOrderOption(context, args)));
 
             return this;
         }
@@ -657,7 +686,15 @@ public final class StructLayout extends Type {
     @JRubyClass(name="FFI::StructLayout::Enum", parent="FFI::StructLayout::Field")
     public static final class EnumField extends Field {
         public EnumField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass, EnumFieldIO.INSTANCE);
+            super(runtime, klass);
+        }
+
+        @Override
+        public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+
+            init(args, new EnumFieldIO(getByteOrderOption(context, args)));
+
+            return this;
         }
     }
 
@@ -704,12 +741,15 @@ public final class StructLayout extends Type {
         }
 
         @Override
-        @JRubyMethod
-        public IRubyObject initialize(ThreadContext context, IRubyObject name, IRubyObject offset, IRubyObject type) {
+        @JRubyMethod(name="initialize", required = 3, optional = 1)
+        public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            
+            IRubyObject type = args[2];
+
             if (!(type instanceof CallbackInfo)) {
                 throw context.getRuntime().newTypeError(type, context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Function"));
             }
-            init(name, type, offset, FunctionFieldIO.INSTANCE);
+            init(args, FunctionFieldIO.INSTANCE);
 
             return this;
         }
@@ -730,13 +770,16 @@ public final class StructLayout extends Type {
         }
         
         @Override
-        @JRubyMethod
-        public IRubyObject initialize(ThreadContext context, IRubyObject name, IRubyObject offset, IRubyObject type) {
+        @JRubyMethod(name="initialize", required = 3, optional = 1)
+        public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+
+            IRubyObject type = args[2];
+
             if (!(type instanceof StructByValue)) {
                 throw context.getRuntime().newTypeError(type,
                         context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Struct"));
             }
-            init(name, type, offset, new InnerStructFieldIO((StructByValue) type));
+            init(args, new InnerStructFieldIO((StructByValue) type));
 
             return this;
         }
@@ -757,13 +800,15 @@ public final class StructLayout extends Type {
         }
 
         @Override
-        @JRubyMethod
-        public IRubyObject initialize(ThreadContext context, IRubyObject name, IRubyObject offset, IRubyObject type) {
+        @JRubyMethod(name="initialize", required = 3, optional = 1)
+        public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+
+            IRubyObject type = args[2];
             if (!(type instanceof Type.Array)) {
                 throw context.getRuntime().newTypeError(type,
                         context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Array"));
             }
-            init(name, type, offset, new ArrayFieldIO((Type.Array) type));
+            init(args, new ArrayFieldIO((Type.Array) type));
 
             return this;
         }
@@ -917,8 +962,8 @@ public final class StructLayout extends Type {
     static final class NumberFieldIO implements FieldIO {
         private final MemoryOp op;
 
-        NumberFieldIO(Type type) {
-            this.op = MemoryOp.getMemoryOp(type);
+        NumberFieldIO(Type type, ByteOrder order) {
+            this.op = MemoryOp.getMemoryOp(type, order);
         }
         
         NumberFieldIO(MemoryOp op) {
@@ -946,19 +991,23 @@ public final class StructLayout extends Type {
      * Enum (maps :foo => 1, :bar => 2, etc)
      */
     static final class EnumFieldIO implements FieldIO {
-        public static final FieldIO INSTANCE = new EnumFieldIO();
+        private final MemoryOp op;
+
+        public EnumFieldIO(ByteOrder order) {
+            this.op = MemoryOp.getMemoryOp(NativeType.INT, order);
+        }
+
 
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr, IRubyObject value) {
             // Upcall to ruby to convert :foo to an int, then write it out
-            m.getMemoryIO(ptr).putInt(m.offset,
-                    RubyNumeric.num2int(m.type.callMethod(context, "find", value)));
+            op.put(context.getRuntime(), m.getMemoryIO(ptr), m.offset,
+                    m.type.callMethod(context, "find", value));
         }
 
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, IRubyObject ptr) {
             // Read an int from the native memory, then upcall to the ruby value
             // lookup code to convert it to the appropriate symbol
-            return m.type.callMethod(context, "find",
-                    context.getRuntime().newFixnum(m.getMemoryIO(ptr).getInt(m.offset)));
+            return m.type.callMethod(context, "find", op.get(context.getRuntime(), m.getMemoryIO(ptr), m.offset));
         }
 
         public final boolean isCacheable() {

@@ -1,6 +1,7 @@
 
 package org.jruby.ext.ffi;
 
+import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.runtime.Block;
@@ -21,8 +22,18 @@ abstract class MemoryOp {
     public static final MemoryOp UINT64 = new Unsigned64();
     public static final MemoryOp FLOAT32 = new Float32();
     public static final MemoryOp FLOAT64 = new Float64();
+    public static final MemoryOp INT16SWAP = new Signed16Swapped();
+    public static final MemoryOp UINT16SWAP = new Unsigned16Swapped();
+    public static final MemoryOp INT32SWAP = new Signed32Swapped();
+    public static final MemoryOp UINT32SWAP = new Unsigned32Swapped();
+    public static final MemoryOp INT64SWAP = new Signed64Swapped();
+    public static final MemoryOp UINT64SWAP = new Unsigned64Swapped();
 
-    public static final MemoryOp getMemoryOp(NativeType type) {
+    public static MemoryOp getMemoryOp(NativeType type) {
+        return getMemoryOp(type, ByteOrder.nativeOrder());
+    }
+    
+    public static MemoryOp getMemoryOp(NativeType type, ByteOrder order) {
         switch (type) {
             case BOOL:
                 return BOOL;
@@ -31,42 +42,46 @@ abstract class MemoryOp {
             case UCHAR:
                 return UINT8;
             case SHORT:
-                return INT16;
+                return order.equals(ByteOrder.nativeOrder()) ? INT16 : INT16SWAP;
             case USHORT:
-                return UINT16;
+                return order.equals(ByteOrder.nativeOrder()) ? UINT16 : UINT16SWAP;
             case INT:
-                return INT32;
+                return order.equals(ByteOrder.nativeOrder()) ? INT32 : INT32SWAP;
             case UINT:
-                return UINT32;
+                return order.equals(ByteOrder.nativeOrder()) ? UINT32 : UINT32SWAP;
             case LONG_LONG:
-                return INT64;
+                return order.equals(ByteOrder.nativeOrder()) ? INT64 : INT64SWAP;
             case ULONG_LONG:
-                return UINT64;
+                return order.equals(ByteOrder.nativeOrder()) ? UINT64 : UINT64SWAP;
             case FLOAT:
                 return FLOAT32;
             case DOUBLE:
                 return FLOAT64;
             case LONG:
                 return Platform.getPlatform().longSize() == 32
-                        ? INT32 : INT64;
+                        ? getMemoryOp(NativeType.INT, order) : getMemoryOp(NativeType.LONG_LONG, order);
             case ULONG:
                 return Platform.getPlatform().longSize() == 32
-                        ? UINT32 : UINT64;
+                        ? getMemoryOp(NativeType.UINT, order) : getMemoryOp(NativeType.ULONG_LONG, order);
             default:
                 return null;
         }
     }
 
-    public static final MemoryOp getMemoryOp(Type type) {
+    public static MemoryOp getMemoryOp(Type type) {
+        return getMemoryOp(type, ByteOrder.nativeOrder());
+    }
+
+    public static MemoryOp getMemoryOp(Type type, ByteOrder order) {
         if (type instanceof Type.Builtin) {
-            return getMemoryOp(type.getNativeType());
+            return getMemoryOp(type.getNativeType(), order);
 
         } else if (type instanceof StructByValue) {
             StructByValue sbv = (StructByValue) type;
             return new StructOp(sbv.getStructClass());
         
         } else if (type instanceof MappedType) {
-            return getMemoryOp(((MappedType) type).getRealType());
+            return getMemoryOp(((MappedType) type).getRealType(), order);
         }
 
         return null;
@@ -112,6 +127,7 @@ abstract class MemoryOp {
             return Util.newUnsigned8(runtime, io.getByte(offset));
         }
     }
+
     static final class Signed16 extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putShort(offset, Util.int16Value(value));
@@ -121,6 +137,17 @@ abstract class MemoryOp {
             return Util.newSigned16(runtime, io.getShort(offset));
         }
     }
+
+    static final class Signed16Swapped extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putShort(offset, Short.reverseBytes(Util.int16Value(value)));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned16(runtime, Short.reverseBytes(io.getShort(offset)));
+        }
+    }
+
     static final class Unsigned16 extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putShort(offset, (short) Util.uint16Value(value));
@@ -130,6 +157,17 @@ abstract class MemoryOp {
             return Util.newUnsigned16(runtime, io.getShort(offset));
         }
     }
+    
+    static final class Unsigned16Swapped extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putShort(offset, Short.reverseBytes((short) Util.uint16Value(value)));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned16(runtime, Short.reverseBytes(io.getShort(offset)));
+        }
+    }
+
     static final class Signed32 extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putInt(offset, Util.int32Value(value));
@@ -139,6 +177,17 @@ abstract class MemoryOp {
             return Util.newSigned32(runtime, io.getInt(offset));
         }
     }
+
+    static final class Signed32Swapped extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putInt(offset, Integer.reverseBytes(Util.int32Value(value)));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned32(runtime, Integer.reverseBytes(io.getInt(offset)));
+        }
+    }
+
     static final class Unsigned32 extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putInt(offset, (int) Util.uint32Value(value));
@@ -148,6 +197,17 @@ abstract class MemoryOp {
             return Util.newUnsigned32(runtime, io.getInt(offset));
         }
     }
+
+    static final class Unsigned32Swapped extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putInt(offset, Integer.reverseBytes((int) Util.uint32Value(value)));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned32(runtime, Integer.reverseBytes(io.getInt(offset)));
+        }
+    }
+    
     static final class Signed64 extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putLong(offset, Util.int64Value(value));
@@ -157,6 +217,17 @@ abstract class MemoryOp {
             return Util.newSigned64(runtime, io.getLong(offset));
         }
     }
+
+    static final class Signed64Swapped extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putLong(offset, Long.reverseBytes(Util.int64Value(value)));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newSigned64(runtime, Long.reverseBytes(io.getLong(offset)));
+        }
+    }
+
     static final class Unsigned64 extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putLong(offset, Util.uint64Value(value));
@@ -166,6 +237,17 @@ abstract class MemoryOp {
             return Util.newUnsigned64(runtime, io.getLong(offset));
         }
     }
+
+    static final class Unsigned64Swapped extends MemoryOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putLong(offset, Long.reverseBytes(Util.uint64Value(value)));
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return Util.newUnsigned64(runtime, Long.reverseBytes(io.getLong(offset)));
+        }
+    }
+    
     static final class Float32 extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putFloat(offset, Util.floatValue(value));
@@ -175,6 +257,7 @@ abstract class MemoryOp {
             return runtime.newFloat(io.getFloat(offset));
         }
     }
+    
     static final class Float64 extends MemoryOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putDouble(offset, Util.doubleValue(value));
