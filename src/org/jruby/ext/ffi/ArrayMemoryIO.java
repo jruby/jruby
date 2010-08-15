@@ -70,6 +70,10 @@ public final class ArrayMemoryIO implements MemoryIO {
         return false;
     }
 
+    public final ByteOrder order() {
+        return ByteOrder.nativeOrder();
+    }
+
     public ArrayMemoryIO slice(long offset) {
         checkBounds(offset, 1);
         return offset == 0 ? this : new ArrayMemoryIO(runtime, array(), arrayOffset() + (int) offset, arrayLength() - (int) offset);

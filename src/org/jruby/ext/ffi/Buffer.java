@@ -2,6 +2,7 @@
 package org.jruby.ext.ffi;
 
 
+import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -157,6 +158,13 @@ public final class Buffer extends AbstractMemory {
     public IRubyObject inspect(ThreadContext context) {
         return RubyString.newString(context.getRuntime(),
                 String.format("#<Buffer size=%d>", size));
+    }
+
+    
+    public final AbstractMemory order(Ruby runtime, ByteOrder order) {
+        return new Buffer(runtime, getMetaClass(),
+                order.equals(getMemoryIO().order()) ? getMemoryIO() : new SwappedMemoryIO(runtime, getMemoryIO()),
+                size, typeSize, inout);
     }
     
     ArrayMemoryIO getArrayMemoryIO() {

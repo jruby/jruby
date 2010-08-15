@@ -1,6 +1,7 @@
 
 package org.jruby.ext.ffi;
 
+import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -72,6 +73,12 @@ public class Pointer extends AbstractMemory {
 
     public static final RubyClass getPointerClass(Ruby runtime) {
         return runtime.fastGetModule("FFI").fastGetClass("Pointer");
+    }
+
+    public final AbstractMemory order(Ruby runtime, ByteOrder order) {
+        return new Pointer(runtime,
+                order.equals(getMemoryIO().order()) ? (DirectMemoryIO) getMemoryIO() : new SwappedMemoryIO(runtime, getMemoryIO()),
+                size, typeSize);
     }
 
     @JRubyMethod(name = { "initialize" })

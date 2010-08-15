@@ -30,12 +30,14 @@ package org.jruby.ext.ffi;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.ThreadContext;
@@ -205,5 +207,23 @@ public final class Util {
         final IRubyObject typeDefs = ffi.fastFetchConstant("TypeDefs");
         final IRubyObject type = ((RubyHash) typeDefs).fastARef(name);
         return type instanceof Type ? (Type) type : (Type) ffi.callMethod(context, "find_type", name);
+    }
+
+    public static ByteOrder parseByteOrder(Ruby runtime, IRubyObject byte_order) {
+        if (byte_order instanceof RubySymbol || byte_order instanceof RubyString) {
+            String orderName = byte_order.asJavaString();
+            if ("network".equals(orderName) || "big".equals(orderName)) {
+                return ByteOrder.BIG_ENDIAN;
+
+            } else if ("little".equals(orderName)) {
+                return ByteOrder.LITTLE_ENDIAN;
+            
+            } else {
+                return ByteOrder.nativeOrder();
+            }
+
+        } else {
+            throw runtime.newTypeError(byte_order, runtime.getSymbol());
+        }
     }
 }

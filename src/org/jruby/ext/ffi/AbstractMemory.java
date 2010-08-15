@@ -28,6 +28,7 @@
 
 package org.jruby.ext.ffi;
 
+import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -1600,7 +1601,20 @@ abstract public class AbstractMemory extends RubyObject {
     public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
         return slice(context.getRuntime(), RubyNumeric.fix2long(value));
     }
+
+    @JRubyMethod(name = "order", required = 0)
+    public final IRubyObject order(ThreadContext context) {
+        return context.getRuntime().newSymbol(getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
+    }
+
+    @JRubyMethod(name = "order", required = 1)
+    public final IRubyObject order(ThreadContext context, IRubyObject byte_order) {
+        return order(context.getRuntime(), Util.parseByteOrder(context.getRuntime(), byte_order));
+    }
+
+    abstract public AbstractMemory order(Ruby runtime, ByteOrder order);
     abstract protected AbstractMemory slice(Ruby runtime, long offset);
     abstract protected AbstractMemory slice(Ruby runtime, long offset, long size);
     abstract protected Pointer getPointer(Ruby runtime, long offset);
+
 }

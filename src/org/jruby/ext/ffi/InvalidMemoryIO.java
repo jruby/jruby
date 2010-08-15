@@ -2,6 +2,7 @@
 
 package org.jruby.ext.ffi;
 
+import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.exceptions.RaiseException;
@@ -28,6 +29,10 @@ public abstract class InvalidMemoryIO implements MemoryIO {
 
     protected RaiseException ex() {
         return new RaiseException(runtime, getErrorClass(runtime), message, true);
+    }
+
+    public ByteOrder order() {
+        return ByteOrder.nativeOrder();
     }
     
     public MemoryIO slice(long offset) {
