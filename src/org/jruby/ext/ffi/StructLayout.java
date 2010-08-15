@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +67,10 @@ public final class StructLayout extends Type {
     static final String CLASS_NAME = "StructLayout";
 
     /** The name:offset map for this struct */
-    private final Map<IRubyObject, Member> fieldMap;
+    private final Map<IRubyObject, Member> fieldSymbolMap;
+
+    /** The name:offset map for this struct */
+    private final Map<IRubyObject, Member> fieldStringMap;
     
     /** The ordered list of field names (as symbols) */
     private final List<IRubyObject> fieldNames;
@@ -158,8 +163,9 @@ public final class StructLayout extends Type {
         List<Field> fieldList = new ArrayList<Field>(fields.size());
         List<IRubyObject> names = new ArrayList<IRubyObject>(fields.size());
         List<Member> memberList = new ArrayList<Member>(fields.size());
-        Map<IRubyObject, Member> memberMap = new LinkedHashMap<IRubyObject, Member>(fields.size());
-
+        Map<IRubyObject, Member> memberStringMap = new HashMap<IRubyObject, Member>(fields.size());
+        Map<IRubyObject, Member> memberSymbolMap = new IdentityHashMap<IRubyObject, Member>(fields.size() * 2);
+        
         int index = 0;
         for (IRubyObject obj : fields) {
             
@@ -176,10 +182,11 @@ public final class StructLayout extends Type {
             fieldList.add(f);
 
             Member m = new Member(f, index, f.isCacheable() ? cfCount++ : -1, f.isValueReferenceNeeded() ? refCount++ : -1);
-            memberMap.put(f.name, m);
+            memberSymbolMap.put(f.name, m);
 
             // Allow fields to be accessed as ['name'] as well as [:name] for legacy code
-            memberMap.put(f.name.asString(), m);
+            memberStringMap.put(f.name, m);
+            memberStringMap.put(f.name.asString(), m);
             memberList.add(m);
         }
 
@@ -190,7 +197,8 @@ public final class StructLayout extends Type {
         // Create the ordered list of field names from the map
         this.fieldNames = Collections.unmodifiableList(new ArrayList<IRubyObject>(names));
         this.fields = Collections.unmodifiableList(fieldList);
-        this.fieldMap = Collections.unmodifiableMap(memberMap);
+        this.fieldStringMap = Collections.unmodifiableMap(memberStringMap);
+        this.fieldSymbolMap = Collections.unmodifiableMap(memberSymbolMap);
         this.members = Collections.unmodifiableList(memberList);
     }
     
@@ -264,7 +272,7 @@ public final class StructLayout extends Type {
             RubyArray offset = RubyArray.newArray(runtime);
             // Assemble a [ :name, offset ] array
             offset.append(name);
-            offset.append(runtime.newFixnum(fieldMap.get(name).offset));
+            offset.append(runtime.newFixnum(getMember(runtime, name).offset));
             offsets.append(offset);
         }
 
@@ -296,10 +304,16 @@ public final class StructLayout extends Type {
      * @return A <tt>Member</tt> descriptor.
      */
     final Member getMember(Ruby runtime, IRubyObject name) {
-        Member f = fieldMap.get(name);
+        Member f = fieldSymbolMap.get(name);
         if (f != null) {
             return f;
         }
+        
+        f = fieldStringMap.get(name);
+        if (f != null) {
+            return f;
+        }
+
         throw runtime.newArgumentError("Unknown field: " + name);
     }
 
