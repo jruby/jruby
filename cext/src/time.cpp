@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Wayne Meissner, Tim Felgentreff
+ * Copyright (C) 2010 Tim Felgentreff
  *
  * This file is part of jruby-cext.
  *
