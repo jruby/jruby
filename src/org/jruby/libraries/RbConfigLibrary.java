@@ -60,6 +60,8 @@ public class RbConfigLibrary implements Library {
     private static final String RUBY_SOLARIS = "solaris";
     private static final String RUBY_FREEBSD = "freebsd";
     private static final String RUBY_AIX = "aix";
+   
+    private static String normalizedHome;
     
     /** This is a map from Java's "friendly" OS names to those used by Ruby */
     public static final Map<String, String> RUBY_OS_NAMES = new HashMap<String, String>();
@@ -126,7 +128,6 @@ public class RbConfigLibrary implements Library {
         //setConfig(configHash, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
         setConfig(configHash, "arch", "universal-java" + System.getProperty("java.specification.version"));
 
-        String normalizedHome;
         normalizedHome = runtime.getJRubyHome();
         if ((normalizedHome == null) && Ruby.isSecurityRestricted()) {
             normalizedHome = "SECURITY RESTRICTED";
@@ -257,12 +258,17 @@ public class RbConfigLibrary implements Library {
         String cflags = jflags + " -fexceptions" + picflags;
         String soflags = true ? "" : " -shared -static-libgcc -mimpure-text -Wl,-O1 ";
         String ldflags = soflags;
+        String dldflags = "";
         String ldshared = "cc -shared ";
         
         String archflags = " -m" + (Platform.IS_64_BIT ? "64" : "32");
 
         // A few platform specific values
         if (Platform.IS_WINDOWS) {
+            ldflags += " -L" + new NormalizedFile(normalizedHome, "lib/native/" + (Platform.IS_64_BIT ? "x86_64" : "i386") + "-Windows").getPath();
+            ldflags += " -ljruby-cext";
+            dldflags = "-Wl,--enable-auto-image-base,--enable-auto-import";
+            archflags += " -march=native -mtune=native";
             setConfig(mkmfHash, "DLEXT", "dll");
         } else if (Platform.IS_MAC) {
             setConfig(mkmfHash, "DLEXT", "bundle");
@@ -282,7 +288,7 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "CPPFLAGS", "");
         setConfig(mkmfHash, "ARCH_FLAG", archflags);
         setConfig(mkmfHash, "LDFLAGS", ldflags);
-        setConfig(mkmfHash, "DLDFLAGS", "");
+        setConfig(mkmfHash, "DLDFLAGS", dldflags);
         setConfig(mkmfHash, "LIBEXT", libext);
         setConfig(mkmfHash, "OBJEXT", objext);
         setConfig(mkmfHash, "LIBRUBYARG_STATIC", "");

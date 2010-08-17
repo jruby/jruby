@@ -34,7 +34,7 @@ using namespace jruby;
 
 static void GIL_releaseNoCleanup();
 
-VALUE rb_thread_critical = 0;
+RUBY_DLLSPEC VALUE rb_thread_critical = 0;
 
 extern "C" VALUE
 rb_thread_local_aref(VALUE thread, ID id)

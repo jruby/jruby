@@ -134,7 +134,7 @@ ifeq ($(OS), win32)
     CC += -mno-cygwin
     LDFLAGS += -mno-cygwin
   endif
-  CFLAGS += -mwin32 -D_JNI_IMPLEMENTATION_
+  CFLAGS += -march=native -mtune=native -D_JNI_IMPLEMENTATION_ -DRUBY_DLLSPEC="__declspec(dllexport)"
   LDFLAGS += -Wl,--add-stdcall-alias
   PICFLAGS=
   SOFLAGS += -shared -mimpure-text -Wl,--enable-auto-image-base,--enable-auto-import
