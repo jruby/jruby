@@ -758,7 +758,6 @@ public class ChannelStream implements Stream, Finalizable {
             } catch (IllegalArgumentException e) {
                 throw new InvalidValueException();
             } catch (IOException ioe) {
-                ioe.printStackTrace();
                 throw ioe;
             }
         } else if (descriptor.getChannel() instanceof SelectableChannel) {
@@ -1165,7 +1164,6 @@ public class ChannelStream implements Stream, Finalizable {
                     ready_stat = sel.selectNow();
                     sel.close();
                 } catch (Throwable ex) {
-                    ex.printStackTrace();
                 } finally {
                     if (sel != null) {
                         try {
