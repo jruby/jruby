@@ -705,7 +705,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private void frozenCheck() {
-        if (isFrozen()) throw getRuntime().newFrozenError("string");
+        frozenCheck(false);
+    }
+
+    private void frozenCheck(boolean runtimeError) {
+        if (isFrozen()) throw getRuntime().newFrozenError("string", runtimeError);
     }
 
     /** rb_str_modify
@@ -2391,14 +2395,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         DynamicScope scope = context.getCurrentScope();
         if (matcher.search(value.getBegin(), range, Option.NONE) >= 0) {
-            frozenCheck();
+            frozenCheck(true);
             byte[] bytes = value.getUnsafeBytes();
             int size = value.getRealSize();
             RubyMatchData match = RubyRegexp.updateBackRef(context, this, scope, matcher, pattern);
             RubyString repl = objAsString(context, block.yield(context, 
                     makeShared(context.getRuntime(), matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
             modifyCheck(bytes, size);
-            frozenCheck();
+            frozenCheck(true);
             scope.setBackRef(match);
             return subBangCommon(context, pattern, matcher, repl, repl.flags);
         } else {

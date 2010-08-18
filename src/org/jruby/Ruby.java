@@ -3242,8 +3242,12 @@ public final class Ruby {
     }
 
     public RaiseException newFrozenError(String objectType) {
+        return newFrozenError(objectType, false);
+    }
+
+    public RaiseException newFrozenError(String objectType, boolean runtimeError) {
         // TODO: Should frozen error have its own distinct class?  If not should more share?
-        return newRaiseException(is1_9() ? getRuntimeError() : getTypeError(), "can't modify frozen " + objectType);
+        return newRaiseException(is1_9() || runtimeError ? getRuntimeError() : getTypeError(), "can't modify frozen " + objectType);
     }
 
     public RaiseException newSystemStackError(String message) {
