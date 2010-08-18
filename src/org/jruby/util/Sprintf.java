@@ -621,7 +621,10 @@ public class Sprintf {
 
                     if (len < precision) {
                         if (leadChar == 0) {
-                            buf.fill('0', precision - len);
+                            if (fchar != 'd' || usePrefixForZero || !negative ||
+                                    ((flags & FLAG_ZERO) != 0 && (flags & FLAG_MINUS) == 0)) {
+                                buf.fill('0', precision - len);
+                            }
                         } else if (leadChar == '.') {
                             buf.fill(leadChar,precision-len);
                             buf.append(PREFIX_NEGATIVE);
@@ -637,6 +640,10 @@ public class Sprintf {
                     buf.append(bytes,first,numlen);
 
                     if (width > 0) buf.fill(' ',width);
+                    if (len < precision && fchar == 'd' && negative && !usePrefixForZero
+                            && (flags & FLAG_MINUS) != 0) {
+                        buf.fill(' ', precision - len);
+                    }
                                         
                     offset++;
                     incomplete = false;
