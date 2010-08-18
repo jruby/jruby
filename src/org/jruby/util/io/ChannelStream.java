@@ -1147,7 +1147,7 @@ public class ChannelStream implements Stream, Finalizable {
         }
 
         // FIXME: I got a bunch of NPEs when I didn't check for nulls here...HOW?!
-        if (descriptor != null && descriptor.isSeekable() && descriptor.isOpen()) {
+        if (descriptor != null && descriptor.isOpen()) {
             closeForFinalize(); // close without removing from finalizers
         }
     }
