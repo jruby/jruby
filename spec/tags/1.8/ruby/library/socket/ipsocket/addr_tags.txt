@@ -1,1 +1,0 @@
-fails(JRUBY-2791,macos):Socket::IPSocket#addr returns an array with the socket's information
