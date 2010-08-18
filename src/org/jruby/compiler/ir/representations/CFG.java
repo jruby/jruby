@@ -156,6 +156,7 @@ public class CFG {
 
     private void removeBB(BasicBlock b) {
         _cfg.removeVertex(b);
+        _bbMap.remove(b._label);
         _bbRescuerMap.remove(b);
         // SSS FIXME: Patch up rescued regions as well??
     }
@@ -333,11 +334,11 @@ public class CFG {
             rr.setFirstRescueBB(firstRescueBB);
 
             // 2. Record a mapping from the region's exclusive basic blocks to the first bb that will start exception handling for all their exceptions.
-            for (BasicBlock b: rr._exclusiveBBs)
+            // 3. Add an exception edge from every exclusive bb of the region to firstRescueBB
+            for (BasicBlock b: rr._exclusiveBBs) {
                 _bbRescuerMap.put(b, firstRescueBB);
-
-            // 3. Add an exception edge from the last bb of the region to firstRescueBB
-            g.addEdge(rr._endBB, firstRescueBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
+                g.addEdge(b, firstRescueBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
+				}
         }
 
         // Dummy entry and exit basic blocks and other dummy edges are needed to maintain the CFG 
@@ -364,14 +365,17 @@ public class CFG {
             g.addEdge(currBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         }
 
+        _cfg = g;
+
+        // Delete orphaned (with no incoming edges) blocks
+        deleteOrphanedBlocks();
+
         // Set up the bb array
         int n = getMaxNodeID();
         _bbArray = new BasicBlock[n];
         for (BasicBlock x : _bbMap.values()) {
             _bbArray[x.getID() - 1] = x;
         }
-
-        _cfg = g;
     }
 
     private void mergeBBs(BasicBlock a, BasicBlock b) {
@@ -772,6 +776,31 @@ public class CFG {
         if (!bbSet.get(bb.getID())) {
             stack.push(bb);
             bbSet.set(bb.getID());
+        }
+    }
+
+    public void deleteOrphanedBlocks() {
+		  System.out.println("\nGraph:\n" + getGraph().toString());
+		  System.out.println("\nInstructions:\n" + toStringInstrs());
+
+        // FIXME: Quick and dirty implementation
+        while (true) {
+            BasicBlock bbToRemove = null;
+            for (BasicBlock b: getNodes()) {
+                // Skip entry bb!
+                if (b == _entryBB)
+                    continue;
+
+                // Every other bb should have at least one incoming edge
+                if (incomingEdgesOf(b).size() == 0) {
+                    bbToRemove = b;
+                    break;
+                }
+            }
+            if (bbToRemove == null)
+                break;
+            else
+                removeBB(bbToRemove);
         }
     }
 

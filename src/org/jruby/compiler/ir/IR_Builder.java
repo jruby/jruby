@@ -1719,9 +1719,13 @@ public class IR_Builder
         //     ensure
         //        .. something else ..
         //     end
+		  //
 
         if (ebi.noFallThru)
             m.addInstr(new LABEL_Instr(ebi.start));
+
+		  // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
+        _ensureBlockStack.pop();
 
         // Two cases:
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
@@ -1735,8 +1739,6 @@ public class IR_Builder
             if (ebi.endLabelNeeded)
                m.addInstr(new LABEL_Instr(ebi.end));
         }
-
-        _ensureBlockStack.pop();
 
         return rv;
     }
@@ -2690,7 +2692,7 @@ public class IR_Builder
 
     public Operand buildReturn(ReturnNode returnNode, IR_Scope m) {
         Operand retVal = (returnNode.getValueNode() == null) ? Nil.NIL : build(returnNode.getValueNode(), m);
-        // Before we return, have to go execute all the ensure blocks
+        // Before we return, have to go execute all the ensure blocks (except the one we are currently executing!)
         if (!_ensureBlockStack.empty())
             EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
         m.addInstr(new RETURN_Instr(retVal));

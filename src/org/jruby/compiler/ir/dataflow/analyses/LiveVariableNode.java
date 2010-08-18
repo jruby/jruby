@@ -223,6 +223,17 @@ public class LiveVariableNode extends FlowGraphNode
     {
 //        System.out.println("dead processing for " + _bb.getID());
         LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
+
+		  if (_out == null) {
+			  // _out cannot be null for reachable bbs! 
+			  // This bb is unreachable! (or we have a mighty bug!)
+			  // Mark everything dead in here!
+			  for (IR_Instr i: _bb.getInstrs())
+				  i.markDead();
+
+			  return;
+		  }
+
         _tmp = (BitSet)_out.clone();
 
         // Traverse the instructions in this basic block in reverse order!
