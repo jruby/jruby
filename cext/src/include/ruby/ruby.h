@@ -904,6 +904,10 @@ RUBY_DLLSPEC VALUE rb_thread_local_aref(VALUE thread, ID id);
 
 RUBY_DLLSPEC VALUE rb_time_new(long sec, long usec);
 
+// Fake out
+RUBY_DLLSPEC static inline void rb_thread_stop_timer_thread(void) {}
+RUBY_DLLSPEC static inline void rb_thread_start_timer_thread(void) {}
+
 /** Global flag which marks the currently executing thread critical. */
 extern RUBY_DLLSPEC VALUE rb_thread_critical;
 
