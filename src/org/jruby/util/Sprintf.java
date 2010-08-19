@@ -628,11 +628,15 @@ public class Sprintf {
                         } else if (leadChar == '.') {
                             buf.fill(leadChar,precision-len);
                             buf.append(PREFIX_NEGATIVE);
+                        } else if (!usePrefixForZero) {
+                            buf.append(PREFIX_NEGATIVE);
+                            buf.fill(leadChar,precision - len - 1);
                         } else {
                             buf.fill(leadChar,precision-len+1); // the 1 is for the stripped sign char
                         }
                     } else if (leadChar != 0) {
-                        if ((flags & (FLAG_PRECISION | FLAG_ZERO)) == 0) {
+                        if ((flags & (FLAG_PRECISION | FLAG_ZERO)) == 0 ||
+                                (!usePrefixForZero && "xXbBo".indexOf(fchar) != -1)) {
                             buf.append(PREFIX_NEGATIVE);
                         }
                         if (leadChar != '.') buf.append(leadChar);
