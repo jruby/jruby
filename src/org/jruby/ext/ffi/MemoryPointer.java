@@ -102,13 +102,6 @@ public final class MemoryPointer extends Pointer {
     public final String toString() {
         return String.format("MemoryPointer[address=%#x, size=%d]", getAddress(), size);
     }
-
-    @Override
-    @JRubyMethod(name = { "to_s", "inspect" })
-    public final IRubyObject inspect(ThreadContext context) {
-        return RubyString.newString(context.getRuntime(),
-                String.format("#<MemoryPointer address=%#x size=%d>", getAddress(), size));
-    }
     
     @JRubyMethod(name = "free")
     public final IRubyObject free(ThreadContext context) {

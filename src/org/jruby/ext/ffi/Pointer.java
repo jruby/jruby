@@ -111,17 +111,13 @@ public class Pointer extends AbstractMemory {
 
 
     @Override
-    @JRubyMethod(name = "to_s", optional = 1)
+    @JRubyMethod(name = { "to_s", "inspect" }, optional = 1)
     public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
-        return RubyString.newString(context.getRuntime(),
-                String.format("Pointer [address=%x]", getAddress()));
-    }
+        String s = size != Long.MAX_VALUE
+                ? String.format("#<%s address=0x%x size=%s>", getMetaClass().getName(), getAddress(), size)
+                : String.format("#<%s address=0x%x>", getMetaClass().getName(), getAddress());
 
-    @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(ThreadContext context) {
-        String hex = Long.toHexString(getAddress());
-        return RubyString.newString(context.getRuntime(),
-                String.format("#<Pointer address=0x%s>", hex));
+        return RubyString.newString(context.getRuntime(), s);
     }
 
     @JRubyMethod(name = { "address", "to_i" })
