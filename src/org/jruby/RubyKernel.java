@@ -373,12 +373,11 @@ public class RubyKernel {
             if(((RubyString) object).getByteList().getRealSize() == 0){ // rb_cstr_to_dbl case
                 throw recv.getRuntime().newArgumentError("invalid value for Float(): " + object.inspect());
             }
-            return RubyNumeric.str2fnum(recv.getRuntime(),(RubyString)object,true);
+            return RubyNumeric.str2fnum19(recv.getRuntime(),(RubyString)object,true);
         }else if(object.isNil()){
             throw recv.getRuntime().newTypeError("can't convert nil into Float");
         } else {
-            RubyFloat rFloat = (RubyFloat)TypeConverter.convertToType19(object, recv.getRuntime().getFloat(), "to_f");
-            return rFloat;
+            return (RubyFloat)TypeConverter.convertToType19(object, recv.getRuntime().getFloat(), "to_f");
         }
     }
 

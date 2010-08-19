@@ -543,7 +543,7 @@ public class Sprintf {
                     } else {
                         negative = ((RubyBignum)arg).getValue().signum() < 0;
                         zero = ((RubyBignum)arg).getValue().equals(BigInteger.ZERO);
-                        if (negative && fchar == 'u') {
+                        if (negative && fchar == 'u' && usePrefixForZero) {
                             bytes = getUnsignedNegativeBytes((RubyBignum)arg);
                         } else {
                             bytes = getBignumBytes((RubyBignum)arg,base,sign,fchar=='X');
@@ -635,7 +635,7 @@ public class Sprintf {
                             buf.fill(leadChar,precision-len+1); // the 1 is for the stripped sign char
                         }
                     } else if (leadChar != 0) {
-                        if ((flags & (FLAG_PRECISION | FLAG_ZERO)) == 0 ||
+                        if (((flags & (FLAG_PRECISION | FLAG_ZERO)) == 0 && usePrefixForZero) ||
                                 (!usePrefixForZero && "xXbBo".indexOf(fchar) != -1)) {
                             buf.append(PREFIX_NEGATIVE);
                         }
@@ -663,7 +663,11 @@ public class Sprintf {
                     if (!(arg instanceof RubyFloat)) {
                         // FIXME: what is correct 'recv' argument?
                         // (this does produce the desired behavior)
-                        arg = RubyKernel.new_float(arg,arg);
+                        if (usePrefixForZero) {
+                            arg = RubyKernel.new_float(arg,arg);
+                        } else {
+                            arg = RubyKernel.new_float19(arg,arg);
+                        }
                     }
                     double dval = ((RubyFloat)arg).getDoubleValue();
                     boolean nan = dval != dval;
