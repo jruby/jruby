@@ -357,9 +357,6 @@ public class RubyNumeric extends RubyObject {
     }
     
     public static RubyFloat str2fnum19(Ruby runtime, RubyString arg, boolean strict) {
-        if (arg.toString().startsWith("0x")) {
-            return ConvertBytes.byteListToInum19(runtime, arg.getByteList(), 16, true).toFloat();
-        }
         return str2fnumCommon(runtime, arg, strict, biteListCaller19);
     }
 
