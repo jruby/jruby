@@ -233,3 +233,9 @@ rb_define_global_function(const char* name, VALUE(*fn)(ANYARGS), int arity)
 {
     rb_define_module_function(rb_mKernel, name, fn, arity);
 }
+
+extern "C" void
+rb_undef_alloc_func(VALUE klass) {
+  rb_undef_method(rb_singleton_class(klass), "allocate");
+}
+

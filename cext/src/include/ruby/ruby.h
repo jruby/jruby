@@ -878,6 +878,14 @@ RUBY_DLLSPEC rb_io_t* jruby_io_struct(VALUE io);
 
 RUBY_DLLSPEC VALUE rb_range_new(VALUE, VALUE, int);
 
+RUBY_DLLSPEC void rb_undef_alloc_func(VALUE);
+RUBY_DLLSPEC void rb_need_block(void);
+
+RUBY_DLLSPEC VALUE rb_marshal_dump(VALUE, VALUE);
+RUBY_DLLSPEC VALUE rb_marshal_load(VALUE);
+
+RUBY_DLLSPEC VALUE rb_reg_nth_match(long, VALUE);
+RUBY_DLLSPEC VALUE rb_reg_new(const char*, long, int);
 RUBY_DLLSPEC VALUE rb_reg_source(VALUE);
 RUBY_DLLSPEC int rb_reg_options(VALUE);
 RUBY_DLLSPEC VALUE rb_reg_regcomp(VALUE);

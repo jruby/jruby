@@ -94,6 +94,13 @@ rb_block_given_p()
     return (int)(env->CallStaticIntMethod(JRuby_class, JRuby_blockGiven, getRuntime()));
 }
 
+extern "C" void
+rb_need_block() {
+  if (!rb_block_given_p()) {
+    rb_raise(rb_eLocalJumpError, "no block given", 0);
+  }
+}
+
 extern "C" VALUE
 rb_block_proc()
 {

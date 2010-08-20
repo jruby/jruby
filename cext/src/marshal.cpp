@@ -30,36 +30,18 @@
 #include "ruby.h"
 
 using namespace jruby;
- 
+
 extern "C" VALUE
-rb_reg_nth_match(long nth, VALUE match_data) {
-  if (NIL_P(match_data)) {
-    return Qnil;
+rb_marshal_dump(VALUE obj, VALUE io) {
+  if (NIL_P(io)) {
+    return callMethod(rb_path2class("Marshal"), "dump", 1, obj);
+  } else {
+    return callMethod(rb_path2class("Marshal"), "dump", 2, obj, io);
   }
-  return callMethod(match_data, "[]", 1, LONG2NUM(nth));
 }
 
 extern "C" VALUE
-rb_reg_new(const char *str, long len, int options)
-{
-    return callMethod(rb_cRegexp, "new", 2, rb_str_new(str, len), INT2NUM(options));
+rb_marshal_load(VALUE data) {
+  return callMethod(rb_path2class("Marshal"), "load", 1, data);
 }
 
-extern "C" VALUE
-rb_reg_source(VALUE regexp)
-{
-    return callMethod(regexp, "source", 0);
-}
-
-extern "C" int
-rb_reg_options(VALUE regexp)
-{
-    VALUE count = callMethod(regexp, "options", 0);
-    return FIX2INT(count);
-}
-
-extern "C" VALUE
-rb_reg_regcomp(VALUE str)
-{
-    return callMethod(rb_cRegexp, "new", 1, str);
-}
