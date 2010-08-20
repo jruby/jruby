@@ -268,7 +268,9 @@ public class RubyKernel {
             exArgs = new IRubyObject[]{msg, symbol};
         }
 
-        throw new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
+        RaiseException exception = new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
+        exception.preRaise(context);
+        throw exception;
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, module = true, visibility = PRIVATE)
