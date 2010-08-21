@@ -591,9 +591,15 @@ RUBY_DLLSPEC struct RArray* jruby_rarray(VALUE ary);
 /* Hash */
 RUBY_DLLSPEC VALUE rb_hash_new(void);
 RUBY_DLLSPEC VALUE rb_hash_aref(VALUE hash, VALUE key);
+#ifndef HAVE_RB_HASH_ASET
+# define HAVE_RB_HASH_ASET 1
+#endif
 RUBY_DLLSPEC VALUE rb_hash_aset(VALUE hash, VALUE key, VALUE val);
 RUBY_DLLSPEC VALUE rb_hash_delete(VALUE hash, VALUE key);
 RUBY_DLLSPEC VALUE rb_hash_size(VALUE hash);
+#ifndef HAVE_RB_HASH_FOREACH
+# define HAVE_RB_HASH_FOREACH 1
+#endif
 RUBY_DLLSPEC void rb_hash_foreach(VALUE hash, int (*func)(ANYARGS), VALUE arg);
 
 /* String */
@@ -991,6 +997,17 @@ RUBY_DLLSPEC extern VALUE rb_eScriptError;
 RUBY_DLLSPEC extern VALUE rb_eNameError;
 RUBY_DLLSPEC extern VALUE rb_eSyntaxError;
 RUBY_DLLSPEC extern VALUE rb_eLoadError;
+
+#define ruby_verbose (rb_gv_get("$VERBOSE"))
+
+// TODO: get rjb to use a different #ifdef than "RUBINIUS"
+#define RUBINIUS 1
+#define HAVE_RB_ERRINFO 1
+#define HAVE_RB_SET_ERRINFO 1
+#define rb_errinfo (rb_gv_get("$!"))
+#define rb_set_errinfo(err) (rb_gv_set("$!", err))
+
+#define ALLOCA_N(type,n) (type*)alloca(sizeof(type)*(n))
 
 #ifdef	__cplusplus
 }
