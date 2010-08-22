@@ -300,18 +300,27 @@ public class LoadService {
 
     public boolean smartLoad(String file) {
         checkEmptyLoad(file);
-
-        // We don't support .so, but some stdlib require .so directly
-        // replace it with .jar to look for an extension type we do support
-        if (file.endsWith(".so")) {
-            file = file.replaceAll(".so$", ".jar");
-        }
         if (Platform.IS_WINDOWS) {
             file = file.replace('\\', '/');
         }
-        
+
+        SearchState state;
+
         try {
-            SearchState state = findFileForLoad(file);
+            // Even if we don't support .so, some stdlib require .so directly
+            // replace it with .jar to look for a java extension and if that fails,
+            // try the platform specific library ending
+            if (file.endsWith(".so")) {
+                file = file.replaceAll(".so$", ".jar");
+                state = findFileForLoad(file);
+                if (state.library == null) {
+                    file = file.replaceAll("jar$", Platform.IS_MAC ? "bundle" : (Platform.IS_WINDOWS ? "dll" : "so"));
+                    state = findFileForLoad(file);
+                }
+            } else {
+                state = findFileForLoad(file);
+            }
+
             return tryLoadingLibraryOrScript(runtime, state);
         } catch (AlreadyLoaded al) {
             // Library has already been loaded in some form, bail out
