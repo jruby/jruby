@@ -1,0 +1,2 @@
+fails:URI.join accepts URI objects
+fails:URI.join accepts string-like arguments with to_str

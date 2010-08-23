@@ -685,7 +685,7 @@ end
 # Internal use only.
 #
 def checking_for(m, fmt = nil)
-  f = caller[0][/in `(.*)'$/, 1] and f << ": " #` for vim #'
+  f = caller[0][/in `([^<].*)'$/, 1] and f << ": " #` for vim #'
   m = "checking #{/\Acheck/ =~ f ? '' : 'for '}#{m}... "
   message "%s", m
   a = r = nil
@@ -988,9 +988,11 @@ def have_const(const, headers = nil, opt = "", &b)
 end
 
 STRING_OR_FAILED_FORMAT = "%s"
+# :stopdoc:
 def STRING_OR_FAILED_FORMAT.%(x)
   x ? super : "failed"
 end
+# :startdoc:
 
 # Returns the size of the given +type+.  You may optionally specify additional
 # +headers+ to search in for the +type+.

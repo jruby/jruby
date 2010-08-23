@@ -1,0 +1,1 @@
+fails:URI#merge accepts a string-like argument

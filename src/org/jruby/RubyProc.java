@@ -135,8 +135,10 @@ public class RubyProc extends RubyObject implements DataType {
         if (!block.isGiven()) {
             block = context.getPreviousFrame().getBlock();
         }
-        
-        if (block.isGiven() && block.getProcObject() != null) {
+
+        // This metaclass == recv check seems gross, but MRI seems to do the same:
+        // if (!proc && ruby_block->block_obj && CLASS_OF(ruby_block->block_obj) == klass) {
+        if (block.isGiven() && block.getProcObject() != null && block.getProcObject().getMetaClass() == recv) {
             return block.getProcObject();
         }
         
