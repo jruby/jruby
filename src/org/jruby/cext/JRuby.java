@@ -42,11 +42,12 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.RubyThread;
+import org.jruby.RubyThread.BlockingTask;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -243,5 +244,44 @@ public class JRuby {
         } catch (InterruptedException e) {
             // Thread wakeup, do nothing
         }
+    }
+
+    public static final class NativeFunctionTask implements BlockingTask {
+
+        private Native nativeInstance;
+        private long run, run_data, wakeup, wakeup_data = 0;
+        public long retval = 4; // 4 is VALUE Qnil
+
+        public NativeFunctionTask(Native nativeInstance, long run, long run_data,
+                long wakeup, long wakeup_data) {
+            this.nativeInstance = nativeInstance;
+            this.run = run;
+            this.run_data = run_data;
+            this.wakeup = wakeup;
+            this.wakeup_data = wakeup_data;
+        }
+
+        public void run() throws InterruptedException {
+            retval = nativeInstance.callFunction(run, run_data);
+        }
+
+        public void wakeup() {
+            nativeInstance.callFunction(wakeup, wakeup_data);
+        }
+    }
+
+    public static long nativeBlockingRegion(Ruby runtime, long blocking_func, long blocking_data,
+            long unblocking_func, long unblocking_data) {
+        RubyThread thread = runtime.getCurrentContext().getThread();
+        NativeFunctionTask task = new NativeFunctionTask(Native.getInstance(runtime), blocking_func,
+                blocking_data, unblocking_func, unblocking_data);
+        int lockCount = GIL.releaseAllLocks();
+        try {
+            thread.executeBlockingTask(task);
+        } catch (InterruptedException e) {
+        } finally {
+            GIL.acquire(lockCount);
+        }
+        return task.retval;
     }
 }

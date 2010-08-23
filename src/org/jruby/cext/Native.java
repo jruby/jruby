@@ -197,6 +197,8 @@ final class Native {
     final native IRubyObject callMethod2(long fn, long recv, long arg0, long arg1);
     final native IRubyObject callMethod3(long fn, long recv, long arg0, long arg1, long arg2);
 
+    final native long callFunction(long fn, long data);
+
     final native long newHandle(IRubyObject obj, int type);
     final native long newFixnumHandle(IRubyObject obj, long value);
     final native long newFloatHandle(IRubyObject obj, double value);

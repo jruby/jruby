@@ -47,7 +47,7 @@ public final class NativeObjectAllocator implements ObjectAllocator {
         try {
             return Native.getInstance(runtime).callMethod0(function, Handle.nativeHandle(klass));
         } finally {
-            GIL.release(context);
+            GIL.release();
         }
     }
 }

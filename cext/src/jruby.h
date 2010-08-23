@@ -119,6 +119,7 @@ namespace jruby {
     extern jmethodID JRuby_getBlockProc;
     extern jmethodID JRuby_gv_get_method;
     extern jmethodID JRuby_gv_set_method;
+    extern jmethodID JRuby_nativeBlockingRegion;
     extern jmethodID RubyArray_toJavaArray_method;
     extern jmethodID RubyClass_newClass_method;
     extern jmethodID Ruby_defineClass_method;

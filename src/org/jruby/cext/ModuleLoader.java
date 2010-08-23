@@ -72,7 +72,7 @@ public class ModuleLoader {
             n.callInit(context, init);
             modules.add(lib);
         } finally {
-            GIL.release(context);
+            GIL.release();
         }
     }
 }

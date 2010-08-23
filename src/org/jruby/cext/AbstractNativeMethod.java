@@ -76,7 +76,7 @@ public abstract class AbstractNativeMethod extends DynamicMethod {
 
 
     static void post(ThreadContext context) {
-        GIL.release(context);
+        GIL.release();
         context.postMethodFrameOnly();
     }
 

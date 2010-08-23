@@ -29,7 +29,6 @@
 package org.jruby.cext;
 
 import java.util.concurrent.locks.ReentrantLock;
-import org.jruby.runtime.ThreadContext;
 
 final class GIL {
 
@@ -42,22 +41,31 @@ final class GIL {
         lock.lock();
     }
 
-    public static void release(ThreadContext context) {
+    public static void acquire(int locks) {
+        for(int i = 0; i < locks; i++) {
+            acquire();
+        }
+    }
+
+    public static void release() {
         try {
             if (lock.getHoldCount() == 1) {
                 GC.cleanup();
             }
         } finally {
-            if (lock.getHoldCount() > 0) {
-                // This might be 0 if the C code released the GIL
-                lock.unlock();
-            }
+            lock.unlock();
         }
     }
 
     public static void releaseNoCleanup() {
-        if (lock.getHoldCount() > 0) {
-            lock.unlock();
+        lock.unlock();
+    }
+
+    public static int releaseAllLocks() {
+        int i;
+        for(i = 0; i < lock.getHoldCount(); i++) {
+            releaseNoCleanup();
         }
+        return ++i;
     }
 }

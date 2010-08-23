@@ -29,6 +29,7 @@
 #include "ruby.h"
 #include "jruby.h"
 #include "JLocalEnv.h"
+#include "JUtil.h"
 
 using namespace jruby;
 
@@ -85,21 +86,14 @@ rb_thread_current(void)
 }
 
 extern "C" VALUE
-rb_thread_blocking_region(rb_blocking_function_t func, void* data, rb_unblock_function_t, void*)
+rb_thread_blocking_region(rb_blocking_function_t func, void* data, rb_unblock_function_t ub_func, void* data2)
 {
-    // unblock function is ignored, Rubinius does it, too, so it can't be too bad to get exts working
-    VALUE ret = Qnil;
-    GIL_releaseNoCleanup();
-    ret = (*func)(data);
-    return ret;
+    JLocalEnv env;
+    jlong jret = env->CallStaticLongMethod(JRuby_class, JRuby_nativeBlockingRegion, getRuntime(),
+            p2j((void *)func), p2j(data),
+            p2j((void *)ub_func), p2j(data2));
+    checkExceptions(env);
+
+    return (VALUE)(j2p(jret));
 }
 
-static void
-GIL_releaseNoCleanup() {
-    JLocalEnv env;
-    jclass gil = env->FindClass("org/jruby/cext/GIL");
-    checkExceptions(env);
-    jmethodID mid = getStaticMethodID(env, gil, "releaseNoCleanup", "()V");
-    env->CallStaticVoidMethod(gil, mid);
-    checkExceptions(env);
-}

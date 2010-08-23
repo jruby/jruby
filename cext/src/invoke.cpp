@@ -286,3 +286,26 @@ clearSyncQueue(DataSyncQueue* q)
         TAILQ_REMOVE(q, d, syncq);
     }
 }
+
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    callFunction
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL
+Java_org_jruby_cext_Native_callFunction(JNIEnv* env, jobject, jlong function, jlong data)
+{
+    try {
+        return ((VALUE (*)(void*)) function)((void*) data);
+
+    } catch (jruby::JavaException& ex) {
+        env->Throw(ex.getCause());
+        return NULL;
+
+    } catch (std::exception& ex) {
+        jruby::throwExceptionByName(env, jruby::RuntimeException, "C runtime exception occurred: ", ex.what());
+        return NULL;
+    }
+}
+
+
