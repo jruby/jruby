@@ -106,7 +106,7 @@ namespace jruby {
     jmethodID IRubyObject_callMethod;
     jmethodID IRubyObject_asJavaString_method;
     jmethodID IRubyObject_respondsTo_method;
-    jmethodID Handle_valueOf;
+    jmethodID Handle_nativeHandle;
     jmethodID Ruby_getCurrentContext_method;
     jmethodID GC_trigger;
     jmethodID RubyArray_toJavaArray_method;
@@ -263,7 +263,8 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;J)Lorg/jruby/RubyNumeric;");
 
     GC_trigger = getStaticMethodID(env, GC_class, "trigger", "()V");
-    Handle_valueOf = getStaticMethodID(env, Handle_class, "valueOf", "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/cext/Handle;");
+    Handle_nativeHandle = getStaticMethodID(env, Handle_class, "nativeHandle",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;)J");
 
     IRubyObject_callMethod = getMethodID(env, IRubyObject_class, "callMethod",
             "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;[Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");

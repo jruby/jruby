@@ -392,19 +392,13 @@ jruby::valueToObject(JNIEnv* env, VALUE v)
 VALUE
 jruby::objectToValue(JNIEnv* env, jobject obj)
 {
-    // Should never get null from JRuby, but check it anyway
+    // Should never get null from JRuby, but check for it just in case
     if (env->IsSameObject(obj, NULL)) {
-
         return Qnil;
     }
 
-    jobject handleObject = env->CallStaticObjectMethod(Handle_class, Handle_valueOf, obj);
+    VALUE v = (VALUE) env->CallStaticLongMethod(Handle_class, Handle_nativeHandle, obj);
     checkExceptions(env);
-
-    VALUE v = (VALUE) env->GetLongField(handleObject, Handle_address_field);
-    checkExceptions(env);
-
-    env->DeleteLocalRef(handleObject);
 
     return v;
 }
