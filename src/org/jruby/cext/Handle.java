@@ -143,12 +143,12 @@ public final class Handle {
     static long nativeHandle(IRubyObject obj) {
         if (obj.getClass() == RubyFixnum.class) {
             final long val = ((RubyFixnum) obj).getLongValue();
-            if (val < FIXNUM_MAX && val >= FIXNUM_MIN) {
-                return ((val << 1) | 0x1);
+            if (val <= FIXNUM_MAX && val >= FIXNUM_MIN) {
+                return ((val << FIXNUM_SHIFT) | FIXNUM_FLAG);
             }
         
         } else if (obj.getClass() == RubySymbol.class) {
-            return ((long) ((RubySymbol) obj).getId() << 8) | 0xeL;
+            return ((long) ((RubySymbol) obj).getId() << SYMBOL_SHIFT) | SYMBOL_FLAG;
         }
 
         return Handle.valueOf(obj).getAddress();
