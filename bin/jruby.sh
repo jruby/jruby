@@ -187,6 +187,7 @@ java_class=org.jruby.Main
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
+set -- $JRUBY_OPTS "$@"
 while [ $# -gt 0 ]
 do
     case "$1" in
@@ -333,7 +334,7 @@ fi
 
 if [ "$nailgun_client" != "" ]; then
   if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
-    exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $JRUBY_OPTS "$@"
+    exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain "$@"
   else
     echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
     exit 1
@@ -348,7 +349,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
-    $java_class $JRUBY_OPTS "$@"
+    $java_class "$@"
 
   # Record the exit status immediately, or it will be overridden.
   JRUBY_STATUS=$?
@@ -371,7 +372,7 @@ else
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $JRUBY_OPTS "$@"
+      $java_class "$@"
 
     # Record the exit status immediately, or it will be overridden.
     JRUBY_STATUS=$?
@@ -384,7 +385,7 @@ else
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $JRUBY_OPTS "$@"
+      $java_class "$@"
   fi
 fi
 fi
