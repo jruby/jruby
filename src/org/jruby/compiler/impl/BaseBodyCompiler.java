@@ -2130,9 +2130,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void superClass() {
-        loadRuntime();
+        loadSelf();
+        metaclass();
         method.swap();
-        invokeUtilityMethod("getSuperClassForDefined", sig(RubyModule.class, params(Ruby.class, RubyModule.class)));
+        invokeUtilityMethod("findImplementerIfNecessary", sig(RubyModule.class, params(RubyModule.class, RubyModule.class)));
+        method.invokevirtual(p(RubyModule.class), "getSuperClass", sig(RubyClass.class));
     }
 
     public void attached() {
