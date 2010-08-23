@@ -36,48 +36,50 @@ using namespace jruby;
 
 #define CACHE_OFFSET (128L)
 static jobject fixnumCache[2 * CACHE_OFFSET];
+static inline RubyFixnum* newNumber(jmethodID method, long long v);
+
+
+extern "C" int
+rb_num2int(VALUE v)
+{
+    return likely(FIXNUM_P(v)) ? FIX2INT(v) : (int) rb_num2ll(v);
+}
+
+extern "C" unsigned int
+rb_num2uint(VALUE v)
+{
+    return likely(FIXNUM_P(v)) ? FIX2UINT(v) : (unsigned int) rb_num2ull(v);
+}
 
 extern "C" long
 rb_num2long(VALUE v)
 {
-    return (long) rb_num2ll(v);
+    return likely(FIXNUM_P(v)) ? FIX2LONG(v) : (long) rb_num2ll(v);
 }
 
 extern "C" unsigned long
 rb_num2ulong(VALUE v)
 {
-    return (unsigned long) rb_num2ull(v);
-}
-
-extern "C" long
-rb_num2int(VALUE v)
-{
-    return rb_num2long(v);
-}
-
-extern "C" unsigned long
-rb_num2uint(VALUE v)
-{
-    return rb_num2ulong(v);
+    return likely(FIXNUM_P(v)) ? FIX2ULONG(v) : (unsigned long) rb_num2ull(v);
 }
 
 extern "C" long
 rb_fix2int(VALUE v)
 {
-    return rb_num2long(v);
+    return FIX2LONG(v);
 }
 
 extern "C" unsigned long
 rb_fix2uint(VALUE v)
 {
-    return rb_num2ulong(v);
+    return FIX2ULONG(v);
 }
 
 extern "C" long long
 rb_num2ll(VALUE v)
 {
     if (FIXNUM_P(v)) {
-        return RSHIFT((SIGNED_VALUE) v, 1);
+        return FIX2LONG(v);
     }
 
     Handle* h = Handle::valueOf(v);
@@ -99,6 +101,13 @@ rb_num2ll(VALUE v)
     return (long long) result;
 }
 
+
+extern "C" unsigned long long
+rb_num2ull(VALUE v)
+{
+    return (unsigned long long) rb_num2ll(v);
+}
+
 extern "C" char
 rb_num2chr(VALUE v)
 {
@@ -108,22 +117,17 @@ rb_num2chr(VALUE v)
     return (char) result;
 }
 
-extern "C" unsigned long long
-rb_num2ull(VALUE v)
-{
-    return (unsigned long long) rb_num2ll(v);
-}
 
 extern "C" VALUE
 rb_int2inum(long v)
 {
-    return rb_ll2inum(v);
+    return FIXABLE(v) ? INT2FIX(v) : rb_ll2inum(v);
 }
 
 extern "C" VALUE
 rb_uint2inum(unsigned long v)
 {
-    return rb_ull2inum(v);
+    return POSFIXABLE(v) ? UINT2FIX(v) : rb_ull2inum(v);
 }
 
 extern "C" VALUE

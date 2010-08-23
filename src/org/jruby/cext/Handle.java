@@ -39,10 +39,15 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class Handle {
-    private static final long FIXNUM_MAX = Integer.getInteger("sun.arch.data.model") == 32
+    private static final long FIXNUM_MAX = Integer.getInteger("sun.arch.data.model") == 64
             ? (Long.MAX_VALUE >> 1) : ((long) Integer.MAX_VALUE >> 1);
-    private static final long FIXNUM_MIN = Integer.getInteger("sun.arch.data.model") == 32
+    private static final long FIXNUM_MIN = Integer.getInteger("sun.arch.data.model") == 64
             ? (Long.MIN_VALUE >> 1) : ((long) Integer.MIN_VALUE >> 1);
+
+    private static final long FIXNUM_FLAG = 0x1L;
+    private static final int FIXNUM_SHIFT = 1;
+    private static final int SYMBOL_SHIFT = 8;
+    private static final long SYMBOL_FLAG = 0xeL;
 
     @SuppressWarnings("unused")
     private final Ruby runtime;
@@ -100,8 +105,8 @@ public final class Handle {
             switch (type) {
                 case ClassIndex.FIXNUM: {
                     final long val = ((RubyFixnum) obj).getLongValue();
-                    nativeHandle = (val < FIXNUM_MAX && val >= FIXNUM_MIN)
-                            ? ((val << 1) | 0x1)
+                    nativeHandle = (val <= FIXNUM_MAX && val >= FIXNUM_MIN)
+                            ? ((val << FIXNUM_SHIFT) | FIXNUM_FLAG)
                             : Native.getInstance(runtime).newFixnumHandle(obj, val);
                     }
                     break;
@@ -111,7 +116,7 @@ public final class Handle {
                     break;
 
                 case ClassIndex.SYMBOL:
-                    nativeHandle = ((long) ((RubySymbol) obj).getId() << 8) | 0xeL;
+                    nativeHandle = ((long) ((RubySymbol) obj).getId() << SYMBOL_SHIFT) | SYMBOL_FLAG;
                     break;
 
                 case ClassIndex.FILE: // RubyIO uses FILE as type index, matching MRI's T_FILE
