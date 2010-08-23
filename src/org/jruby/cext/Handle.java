@@ -30,8 +30,10 @@
 package org.jruby.cext;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
+import org.jruby.RubyNil;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
@@ -48,6 +50,10 @@ public final class Handle {
     private static final int FIXNUM_SHIFT = 1;
     private static final int SYMBOL_SHIFT = 8;
     private static final long SYMBOL_FLAG = 0xeL;
+    private static final long Qfalse = 0L;
+    private static final long Qtrue = 2L;
+    private static final long Qnil = 4L;
+    
 
     @SuppressWarnings("unused")
     private final Ruby runtime;
@@ -149,6 +155,12 @@ public final class Handle {
         
         } else if (obj.getClass() == RubySymbol.class) {
             return ((long) ((RubySymbol) obj).getId() << SYMBOL_SHIFT) | SYMBOL_FLAG;
+        
+        } else if (obj.getClass() == RubyBoolean.class) {
+            return obj.isTrue() ? Qtrue : Qfalse;
+        
+        } else if (obj.getClass() == RubyNil.class) {
+            return Qnil;
         }
 
         return Handle.valueOf(obj).getAddress();
