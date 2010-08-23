@@ -33,7 +33,17 @@
 
 using namespace jruby;
 
-static void GIL_releaseNoCleanup();
+static VALUE jruby_select(void* data) {
+    void** data_array = (void**)data;
+    int max                 = (long)(data_array[0]);
+    fd_set* read            = (fd_set*)(data_array[1]);
+    fd_set* write           = (fd_set*)(data_array[2]);
+    fd_set* except          = (fd_set*)(data_array[3]);
+    struct timeval* timeout = (struct timeval*)(data_array[4]);
+
+    int ret = select(max, read, write, except, timeout);
+    return (VALUE)ret;
+}
 
 RUBY_DLLSPEC VALUE rb_thread_critical = 0;
 
@@ -73,9 +83,15 @@ rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct
         checkExceptions(env);
         return 0;
     } else {
-        int ret = select(max, read, write, except, timeout);
-        // TODO: Check for async events and possibly exceptions
-        return ret;
+        void** data = (void**)xmalloc(sizeof(void*) * 5);
+        data[0] = (void*)max;
+        data[1] = (void*)read;
+        data[2] = (void*)write;
+        data[3] = (void*)except;
+        data[4] = (void*)timeout;
+
+        VALUE ret = rb_thread_blocking_region(jruby_select, (void*)data, NULL, NULL);
+        return (int)ret;
     }
 }
 

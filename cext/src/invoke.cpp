@@ -296,6 +296,7 @@ JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_callFunction(JNIEnv* env, jobject, jlong function, jlong data)
 {
     try {
+        if (function == (jlong)NULL) return (jlong)NULL; // Just in case somebody passes no unblock function
         return ((VALUE (*)(void*)) function)((void*) data);
 
     } catch (jruby::JavaException& ex) {
