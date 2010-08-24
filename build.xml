@@ -1556,7 +1556,27 @@
     <jar update="yes" destfile="${build.lib.dir}/joda-time-${joda-time.version}.jar" basedir="${tzdata.builddir}/build" />
   </target>
 
+  <!-- See http://tlrobinson.net/blog/2008/11/13/ant-tasks-for-git/ -->
+  <macrodef name = "git">
+    <attribute name = "command" />
+    <attribute name = "dir" default = "" />
+    <element name = "args" optional = "true" />
+    <sequential>
+      <echo message = "git @{command}" />
+      <exec executable = "git" dir = "@{dir}">
+        <arg value = "@{command}" />
+        <args/>
+      </exec>
+    </sequential>
+  </macrodef>
+
   <target name="clean-tzdata" description="Remove files used for updating time zone information">
     <delete dir="${tzdata.builddir}" failonerror="no" />
+    <git command="checkout" dir="${base.dir}">
+      <args>
+        <arg value="--" />
+        <arg value="${build.lib.dir}/joda-time-${joda-time.version}.jar" />
+      </args>
+    </git>
   </target>
 </project>
