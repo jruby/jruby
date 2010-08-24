@@ -304,7 +304,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.6.1.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda-time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -347,7 +347,7 @@
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.6.1.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda-time.version}.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -392,7 +392,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.6.1.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda-time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -490,7 +490,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.6.1.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda-time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${shared.lib.dir}/yecht.jar"/>
@@ -580,7 +580,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.6.1.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda-time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${shared.lib.dir}/yecht.jar"/>
@@ -1531,7 +1531,7 @@
     <java classname="org.joda.time.tz.ZoneInfoCompiler"
           fork="true"
           failonerror="false">
-      <classpath path="${build.lib.dir}/joda-time-1.6.1.jar" />
+      <classpath path="${build.lib.dir}/joda-time-${joda-time.version}.jar" />
       <!-- Override default provider since data directory doesn't exist yet -->
       <sysproperty key="org.joda.time.DateTimeZone.Provider"
                    value="org.joda.time.tz.UTCProvider" />
@@ -1553,7 +1553,7 @@
   </target>
 
   <target name="update-tzdata" depends="compile-tzdata" description="Update joda-time's zone info with one we compiled">
-    <jar update="yes" destfile="${build.lib.dir}/joda-time-1.6.1.jar" basedir="${tzdata.builddir}/build" />
+    <jar update="yes" destfile="${build.lib.dir}/joda-time-${joda-time.version}.jar" basedir="${tzdata.builddir}/build" />
   </target>
 
   <target name="clean-tzdata" description="Remove files used for updating time zone information">
