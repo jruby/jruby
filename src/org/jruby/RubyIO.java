@@ -562,7 +562,7 @@ public class RubyIO extends RubyObject {
             modes |= ModeFlags.WRONLY | ModeFlags.TRUNC | ModeFlags.CREAT;
             break;
         default :
-            throw runtime.newArgumentError("illegal access mode " + modes);
+            throw runtime.newArgumentError("illegal access mode " + modesString);
         }
 
         ModifierLoop: for (int n = 1; n < length; n++) {
@@ -579,7 +579,7 @@ public class RubyIO extends RubyObject {
             case ':':
                 break ModifierLoop;
             default:
-                throw runtime.newArgumentError("illegal access mode " + modes);
+                throw runtime.newArgumentError("illegal access mode " + modesString);
             }
         }
 
