@@ -38,16 +38,19 @@ import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.RubyThread.BlockingTask;
+import org.jruby.RubyUnboundMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -144,6 +147,21 @@ public class JRuby {
         GC.register(f, Handle.newHandle(runtime, f, handle));
 
         return f;
+    }
+
+    public static IRubyObject newThread(Ruby runtime, long fn, IRubyObject args_ary) {
+        IRubyObject[] args = (args_ary instanceof RubyArray) ? ((RubyArray)args_ary).toJavaArray() : new IRubyObject[] {args_ary};
+        String name = System.currentTimeMillis() + "$_jruby-cext";
+        IRubyObject recv = runtime.getCurrentContext().getFrameSelf();
+        RubyUnboundMethod method = RubyUnboundMethod.newUnboundMethod(recv.getMetaClass(), name, recv.getMetaClass(), name,
+                newMethod(recv.getMetaClass(), fn, args.length));
+        MethodBlock mb = new MethodBlock(method, runtime.getCurrentContext().getCurrentScope().getStaticScope()) {
+            @Override
+            public IRubyObject callback(IRubyObject value, IRubyObject method, IRubyObject self, Block unusedBlock) {
+                return RubyUnboundMethod.bmcall(value, method, self, unusedBlock);
+            }
+        };
+        return RubyThread.newInstance(runtime.getThread(), args, new Block(mb));
     }
 
     public static long getRString(RubyString str) {

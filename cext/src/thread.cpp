@@ -102,6 +102,16 @@ rb_thread_current(void)
 }
 
 extern "C" VALUE
+rb_thread_create(VALUE (*fn)(ANYARGS), void* arg)
+{
+    JLocalEnv env;
+    jobject ret = env->CallStaticObjectMethod(JRuby_class, JRuby_newThread, getRuntime(),
+                p2j((void*)fn), valueToObject(env, (arg == NULL ? rb_ary_new() : (VALUE)arg)));
+    checkExceptions(env);
+    return objectToValue(env, ret);
+}
+
+extern "C" VALUE
 rb_thread_blocking_region(rb_blocking_function_t func, void* data, rb_unblock_function_t ub_func, void* data2)
 {
     JLocalEnv env;

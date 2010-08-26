@@ -80,6 +80,7 @@ namespace jruby {
     jmethodID JRuby_gv_get_method;
     jmethodID JRuby_gv_set_method;
     jmethodID JRuby_nativeBlockingRegion;
+    jmethodID JRuby_newThread;
 
     jmethodID ThreadContext_getRuntime_method;
     jmethodID Ruby_defineModule_method;
@@ -346,6 +347,8 @@ loadIds(JNIEnv* env)
     RubyArray_newArray = getStaticMethodID(env, RubyArray_class, "newArray", "(Lorg/jruby/Ruby;J)Lorg/jruby/RubyArray;");
     JRuby_threadSleep = getStaticMethodID(env, JRuby_class, "threadSleep", "(Lorg/jruby/Ruby;I)V");
     JRuby_nativeBlockingRegion = getStaticMethodID(env, JRuby_class, "nativeBlockingRegion", "(Lorg/jruby/Ruby;JJJJ)J");
+    JRuby_newThread = getStaticMethodID(env, JRuby_class, "newThread",
+            "(Lorg/jruby/Ruby;JLorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
 
     RubyString_value_field = getFieldID(env, RubyString_class, "value", "Lorg/jruby/util/ByteList;");
     RubyFloat_value_field = getFieldID(env, RubyFloat_class, "value", "D");

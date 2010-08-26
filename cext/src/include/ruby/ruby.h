@@ -991,6 +991,7 @@ RUBY_DLLSPEC int rb_thread_alone();
 /** Get and set thread locals */
 RUBY_DLLSPEC VALUE rb_thread_local_aset(VALUE thread, ID id, VALUE value);
 RUBY_DLLSPEC VALUE rb_thread_local_aref(VALUE thread, ID id);
+RUBY_DLLSPEC VALUE rb_thread_create(VALUE (*fn)(ANYARGS), void* arg);
 
 RUBY_DLLSPEC VALUE rb_time_new(long sec, long usec);
 
