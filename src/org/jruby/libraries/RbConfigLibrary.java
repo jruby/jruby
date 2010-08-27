@@ -166,6 +166,8 @@ public class RbConfigLibrary implements Library {
         }
         setConfig(configHash, "LIBRUBY", jrubyJarFile);
         setConfig(configHash, "LIBRUBY_SO", jrubyJarFile);
+        setConfig(configHash, "LIBRUBY_SO", jrubyJarFile);
+        setConfig(configHash, "LIBRUBY_ALIASES", jrubyJarFile);
         
         setConfig(configHash, "build", Constants.BUILD);
         setConfig(configHash, "target", Constants.TARGET);
