@@ -1074,6 +1074,7 @@ RUBY_DLLSPEC extern VALUE rb_eSyntaxError;
 RUBY_DLLSPEC extern VALUE rb_eLoadError;
 
 #define ruby_verbose (rb_gv_get("$VERBOSE"))
+#define ruby_debug (rb_gv_get("$DEBUG"))
 
 // TODO: get rjb to use a different #ifdef than "RUBINIUS"
 #define RUBINIUS 1
