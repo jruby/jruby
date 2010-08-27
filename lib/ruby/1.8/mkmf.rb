@@ -4,10 +4,6 @@ $stderr << "WARNING: JRuby does not support native extensions or the `mkmf' libr
 
 require 'rbconfig'
 
-# JRuby's RbConfig::CONFIG and MAKEFILE_CONFIG are not complete.
-Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
-Config::MAKEFILE_CONFIG = Config::CONFIG
-
 # We're missing this in our rbconfig
 module Config
   def Config::expand(val, config = CONFIG)
@@ -36,6 +32,11 @@ $topdir     = File.expand_path("../../../native/include", __FILE__)
 $hdrdir     = File.expand_path("ruby", $topdir)
 $top_srcdir = $topdir
 $extmk      = false
+
+# JRuby's RbConfig::CONFIG and MAKEFILE_CONFIG are not complete.
+Config::CONFIG['archdir'] = $topdir
+Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
+Config::MAKEFILE_CONFIG = Config::CONFIG
 
 unless File.exists?($hdrdir + "/ruby.h")
   abort "mkmf.rb can't find header files for ruby at #{$hdrdir}/ruby.h"

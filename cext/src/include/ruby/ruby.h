@@ -1083,6 +1083,8 @@ RUBY_DLLSPEC extern VALUE rb_eLoadError;
 #define rb_errinfo (rb_gv_get("$!"))
 #define rb_set_errinfo(err) (rb_gv_set("$!", err))
 
+#define RUBY_METHOD_FUNC(func) ((VALUE (*)(ANYARGS))func)
+
 #define ALLOCA_N(type,n) (type*)alloca(sizeof(type)*(n))
 
 #ifdef	__cplusplus
