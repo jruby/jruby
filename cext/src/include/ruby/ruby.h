@@ -46,13 +46,11 @@
 extern "C" {
 #endif
 
-#ifdef __cplusplus
-# ifndef  HAVE_PROTOTYPES
-#  define HAVE_PROTOTYPES 1
-# endif
-# ifndef  HAVE_STDARG_PROTOTYPES
-#  define HAVE_STDARG_PROTOTYPES 1
-# endif
+#ifndef  HAVE_PROTOTYPES
+# define HAVE_PROTOTYPES 1
+#endif
+#ifndef  HAVE_STDARG_PROTOTYPES
+# define HAVE_STDARG_PROTOTYPES 1
 #endif
 
 #ifndef NORETURN
