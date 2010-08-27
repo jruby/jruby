@@ -4,6 +4,10 @@ $stderr << "WARNING: JRuby does not support native extensions or the `mkmf' libr
 
 require 'rbconfig'
 
+# JRuby's RbConfig::CONFIG and MAKEFILE_CONFIG are not complete.
+Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
+Config::MAKEFILE_CONFIG = Config::CONFIG
+
 # We're missing this in our rbconfig
 module Config
   def Config::expand(val, config = CONFIG)
@@ -25,8 +29,6 @@ module Config
   end
 end
 
-# JRuby RbConfig::CONFIG is not complete. 
-Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
 # Some extconf.rb's rely on RUBY_PLATFORM to point to the native platform
 RUBY_PLATFORM = Config::MAKEFILE_CONFIG['RUBY_PLATFORM']
 
