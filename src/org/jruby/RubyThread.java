@@ -899,27 +899,43 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 } catch (IOException ioe) {
                     throw getRuntime().newRuntimeError("Error with selector: " + ioe);
                 } finally {
+                    // Note: I don't like ignoring these exceptions, but it's
+                    // unclear how likely they are to happen or what damage we
+                    // might do by ignoring them. Note that the pieces are separate
+                    // so that we can ensure one failing does not affect the others
+                    // running.
+
+                    // clean up the key in the selector
                     try {
-                        // clean up the key in the selector
-                        try {
-                            if (key != null) {
-                                key.cancel();
-                                currentSelector.selectNow();
-                            }
-                        } catch (Exception e) {}
-                        
-                        afterBlockingCall();
-                        try {currentSelector.close();} catch (IOException ioe2) {}
-                        currentSelector = null;
-                        if (io != null) io.removeBlockingThread(this);
-                        selectable.configureBlocking(oldBlocking);
-                    } catch (IOException ioe) {
-                        // ignore; I don't like doing it, but it seems like we
-                        // really just need to make all channels non-blocking by
-                        // default and use select when implementing blocking ops,
-                        // so if this remains set non-blocking, perhaps it's not
-                        // such a big deal...
+                        if (key != null) key.cancel();
+                        if (currentSelector != null) currentSelector.selectNow();
+                    } catch (Exception e) {
+                        // ignore
                     }
+
+                    // shut down and null out the selector
+                    try {
+                        if (currentSelector != null) {
+                            currentSelector.close();
+                        }
+                    } catch (Exception e) {
+                        // ignore
+                    } finally {
+                        currentSelector = null;
+                    }
+
+                    // remove this thread as a blocker against the given IO
+                    if (io != null) io.removeBlockingThread(this);
+
+                    // go back to previous blocking state on the selectable
+                    try {
+                        selectable.configureBlocking(oldBlocking);
+                    } catch (Exception e) {
+                        // ignore
+                    }
+
+                    // clear thread state from blocking call
+                    afterBlockingCall();
                 }
             }
         } else {
