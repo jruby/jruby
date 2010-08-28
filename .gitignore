@@ -49,3 +49,4 @@ test/testapp/testapp
 glob_test
 spaces test
 .DS_Store
+dev_null

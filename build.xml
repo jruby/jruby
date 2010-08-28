@@ -48,6 +48,21 @@
   <import file="netbeans-ant.xml" optional="true"/>
   <import file="ivy/build.xml" />
 
+  <condition property="dev.null" value="/dev/null">
+    <os family="unix"/>
+  </condition>
+  <condition property="dev.null" value="NUL">
+    <os family="windows"/>
+  </condition>
+  <condition property="dev.null" value="dev_null">
+    <not>
+      <and>
+        <os family="unix"/>
+        <os family="windows"/>
+      </and>
+    </not>
+  </condition>
+
   <!-- Initializes the build -->
   <target name="init">
     <tstamp><format property="build.date" pattern="yyyy-MM-dd"/></tstamp>
@@ -1472,9 +1487,9 @@
 
   <target name="build-ng" depends="need-ng" if="should.build.ng">
       <echo message="Configuring ng client in ${nailgun.home}"/>
-      <exec executable="./configure" dir="${nailgun.home}" failonerror="true" output="/dev/null"/>
+      <exec executable="./configure" dir="${nailgun.home}" failonerror="true" output="${dev.null}"/>
       <echo message="Building ng client in ${nailgun.home}"/>
-    <exec executable="make" dir="${nailgun.home}" output="/dev/null"/>
+    <exec executable="make" dir="${nailgun.home}" output="${dev.null}"/>
   </target>
 
   <target name="need-clean-ng">
@@ -1487,7 +1502,7 @@
   </target>
 
   <target name="clean-ng" depends="need-clean-ng" if="should-clean-ng">
-    <exec executable="make" dir="${nailgun.home}" osfamily="unix" failifexecutionfails="false" output="/dev/null">
+    <exec executable="make" dir="${nailgun.home}" osfamily="unix" failifexecutionfails="false" output="${dev.null}">
         <arg value="clean"/>
     </exec>
   </target>
@@ -1502,6 +1517,7 @@
   <target name="bench-language" depends="jar"><rake task="bench:language"/></target>
 
   <target name="fetch-tzdata" description="Fetch tzdata into build/tzdata">
+    <available property="tzdata.present" filepath="${tzdata.builddir}/src" file="tzdata${tzdata.version}.tar.gz" />
     <mkdir dir="${tzdata.builddir}/src" />
     <ftp server="${tzdata.ftpserver}"
          action="get"
@@ -1528,8 +1544,10 @@
   <target name="compile-tzdata" depends="expand-tzdata" description="Compile tzdata in build/tzdata">
     <mkdir dir="${tzdata.builddir}/build" />
     <mkdir dir="${tzdata.builddir}/build/org/joda/time/tz/data" />
+    <echo message="Compiling tzdata version ${tzdata.version}" />
     <java classname="org.joda.time.tz.ZoneInfoCompiler"
           fork="true"
+          output="${dev.null}"
           failonerror="false">
       <classpath path="${build.lib.dir}/joda-time-${joda.time.version}.jar" />
       <!-- Override default provider since data directory doesn't exist yet -->
@@ -1556,27 +1574,11 @@
     <jar update="yes" destfile="${build.lib.dir}/joda-time-${joda.time.version}.jar" basedir="${tzdata.builddir}/build" />
   </target>
 
-  <!-- See http://tlrobinson.net/blog/2008/11/13/ant-tasks-for-git/ -->
-  <macrodef name = "git">
-    <attribute name = "command" />
-    <attribute name = "dir" default = "" />
-    <element name = "args" optional = "true" />
-    <sequential>
-      <echo message = "git @{command}" />
-      <exec executable = "git" dir = "@{dir}">
-        <arg value = "@{command}" />
-        <args/>
-      </exec>
-    </sequential>
-  </macrodef>
-
   <target name="clean-tzdata" description="Remove files used for updating time zone information">
     <delete dir="${tzdata.builddir}" failonerror="no" />
-    <git command="checkout" dir="${base.dir}">
-      <args>
-        <arg value="--" />
-        <arg value="${build.lib.dir}/joda-time-${joda.time.version}.jar" />
-      </args>
-    </git>
+    <echo message="Reset joda-time jar" />
+    <exec executable="git" failonerror="false" failifexecutionfails="false">
+      <arg line="checkout -- ${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+    </exec>
   </target>
 </project>
