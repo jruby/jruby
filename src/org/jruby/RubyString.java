@@ -2210,6 +2210,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     int cc;
                     if (p < end && StringSupport.preciseLength(enc, bytes, p, end) > 0 &&
                             isEVStr(cc = codePoint(runtime, enc, bytes, p, end))) {
+                        if ("$@{".indexOf(cc) != -1) {
+                            cc = '#';
+                        }
                         result.prefixEscapeCat(cc);
                         continue;
                     }
