@@ -100,6 +100,12 @@ rb_str_dup(VALUE str)
 }
 
 extern "C" VALUE
+rb_str_dup_frozen(VALUE str)
+{
+    return rb_str_freeze(rb_str_dup(str));
+}
+
+extern "C" VALUE
 rb_str_append(VALUE str, VALUE str2)
 {
     return callMethod(str, "<<", 1, str2);
@@ -157,6 +163,18 @@ extern "C" int
 rb_str_cmp(VALUE str1, VALUE str2)
 {
     return NUM2INT(callMethod(str1, "<=>", 1, str2));
+}
+
+extern "C" void
+rb_str_update(VALUE str, long beg, long len, VALUE val)
+{
+  callMethod(str, "[]=", 3, LONG2NUM(beg), LONG2NUM(len), val);
+}
+
+extern "C" VALUE
+rb_str_inspect(VALUE str)
+{
+  return callMethod(str, "inspect", 0);
 }
 
 extern "C" VALUE

@@ -698,7 +698,7 @@ RUBY_DLLSPEC VALUE rb_str_dup(VALUE);
 RUBY_DLLSPEC VALUE rb_str_locktmp(VALUE);
 RUBY_DLLSPEC VALUE rb_str_unlocktmp(VALUE);
 RUBY_DLLSPEC VALUE rb_str_dup_frozen(VALUE);
-#define rb_str_dup_frozen rb_str_new_frozen
+#define rb_str_new_frozen rb_str_dup_frozen
 RUBY_DLLSPEC VALUE rb_str_plus(VALUE, VALUE);
 RUBY_DLLSPEC VALUE rb_str_times(VALUE, VALUE);
 RUBY_DLLSPEC VALUE rb_str_length(VALUE str);
