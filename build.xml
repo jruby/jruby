@@ -1495,6 +1495,7 @@
   <target name="need-clean-ng">
     <condition property="should-clean-ng">
       <and>
+        <os family="unix"/>
         <available file="${nailgun.home}/Makefile"/>
         <available file="${nailgun.home}/ng"/>
       </and>
