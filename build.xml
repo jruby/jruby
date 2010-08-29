@@ -1487,9 +1487,9 @@
 
   <target name="build-ng" depends="need-ng" if="should.build.ng">
       <echo message="Configuring ng client in ${nailgun.home}"/>
-      <exec executable="./configure" dir="${nailgun.home}" failonerror="true" output="${dev.null}"/>
+      <exec executable="./configure" osfamily="unix" dir="${nailgun.home}" failonerror="true" output="${dev.null}"/>
       <echo message="Building ng client in ${nailgun.home}"/>
-    <exec executable="make" dir="${nailgun.home}" output="${dev.null}"/>
+    <exec executable="make" osfamily="unix" dir="${nailgun.home}" output="${dev.null}"/>
   </target>
 
   <target name="need-clean-ng">
