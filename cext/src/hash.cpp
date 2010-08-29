@@ -45,6 +45,15 @@ rb_hash_aref(VALUE hash, VALUE key)
 }
 
 extern "C" VALUE
+rb_hash_lookup(VALUE hash, VALUE key)
+{
+    if (RTEST(callMethod(hash, "has_key?", 1, key))) {
+        return rb_hash_aref(hash, key);
+    }
+    return Qnil; // without Hash#default
+}
+
+extern "C" VALUE
 rb_hash_aset(VALUE hash, VALUE key, VALUE val)
 {
     return callMethod(hash, "[]=", 2, key, val);

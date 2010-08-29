@@ -303,6 +303,8 @@ RUBY_DLLSPEC void xfree(void*);
 
 #define RHASH_SIZE(h) FIX2INT(rb_hash_size(h))
 #define RHASH_LEN(h) FIX2INT(rb_hash_size(h))
+#define RHASH ({ JRuby does not support RHASH })
+#define RHASH_TBL ({ JRuby does not support RHASH_TBL })
 
 #define RFLOAT(v) jruby_rfloat(v)
 #define RFLOAT_VALUE(v) jruby_float_value(v)
@@ -675,6 +677,7 @@ RUBY_DLLSPEC VALUE rb_hash_size(VALUE hash);
 # define HAVE_RB_HASH_FOREACH 1
 #endif
 RUBY_DLLSPEC void rb_hash_foreach(VALUE hash, int (*func)(ANYARGS), VALUE arg);
+RUBY_DLLSPEC VALUE rb_hash_lookup(VALUE hash, VALUE key);
 
 /* String */
 RUBY_DLLSPEC VALUE rb_str_new(const char*, long);
