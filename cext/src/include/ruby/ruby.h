@@ -833,6 +833,7 @@ RUBY_DLLSPEC VALUE rb_data_object_alloc(VALUE,void*,RUBY_DATA_FUNC,RUBY_DATA_FUN
 
 RUBY_DLLSPEC void rb_gc_mark_locations(VALUE*, VALUE*);
 RUBY_DLLSPEC void rb_gc_mark(VALUE);
+RUBY_DLLSPEC void rb_gc_mark_maybe(VALUE v);
 /** Mark variable global */
 RUBY_DLLSPEC void rb_global_variable(VALUE* handle_address);
 RUBY_DLLSPEC void rb_gc_register_address(VALUE* address);
@@ -843,6 +844,7 @@ RUBY_DLLSPEC VALUE rb_gv_get(const char* name);
 /** Set named global to given value, returning the value. $ optional. */
 RUBY_DLLSPEC VALUE rb_gv_set(const char* name, VALUE value);
 #define rb_define_variable(name, value) rb_gv_set(name, *value)
+RUBY_DLLSPEC void rb_define_readonly_variable(const char* name, VALUE* value);
 /** Sets the $KCODE global variable */
 RUBY_DLLSPEC void rb_set_kcode(const char *code);
 /** Return an array containing the names of all global variables */
