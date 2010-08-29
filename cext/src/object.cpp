@@ -284,6 +284,12 @@ rb_singleton_class(VALUE obj)
     return objectToValue(env, singleton);
 }
 
+extern "C" VALUE
+rb_obj_dup(VALUE obj)
+{
+    return callMethod(obj, "dup", 0);
+}
+
 extern "C" void
 jruby_infect(VALUE object1, VALUE object2)
 {
