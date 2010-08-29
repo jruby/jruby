@@ -55,6 +55,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.ASTCompiler19;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadService19;
@@ -624,10 +625,11 @@ public class RubyInstanceConfig {
         }
 
         String fullVersion = String.format(
-                "jruby %s (ruby %s%s%d) (%s %s) (%s %s) [%s-java]",
+                "jruby %s (ruby %s%s%d) (%s %s) (%s %s) [%s-%s-java]",
                 Constants.VERSION, ver, patchDelimeter, patchlevel,
                 Constants.COMPILE_DATE, Constants.REVISION,
                 System.getProperty("java.vm.name"), System.getProperty("java.version"),
+                Platform.getOSName(),
                 SafePropertyAccessor.getProperty("os.arch", "unknown")
                 );
 
