@@ -138,7 +138,7 @@ import org.jruby.compiler.ir.instructions.RUBY_INTERNALS_CALL_Instr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.THREAD_POLL_Instr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
-import org.jruby.compiler.ir.instructions.YIELD_Instr;
+import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Backref;
 import org.jruby.compiler.ir.operands.BacktickString;
@@ -2877,7 +2877,7 @@ public class IRBuilder {
     public Operand buildYield(YieldNode node, IRScope s) {
         List<Operand> args = setupYieldArgs(node.getArgsNode(), s);
         Variable      ret  = s.getNewTemporaryVariable();
-        s.addInstr(new YIELD_Instr(ret, args.toArray(new Operand[args.size()])));
+        s.addInstr(new YieldInstr(ret, args.toArray(new Operand[args.size()])));
         return ret;
     }
 

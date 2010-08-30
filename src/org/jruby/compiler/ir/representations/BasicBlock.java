@@ -5,7 +5,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.YIELD_Instr;
+import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
 import org.jruby.compiler.ir.instructions.RECV_CLOSURE_ARG_Instr;
@@ -101,14 +101,14 @@ public class BasicBlock {
         for (Instr i: getInstrs()) {
 				Instr clonedInstr = i.cloneForInlining(ii);
             clonedBB.addInstr(clonedInstr);
-            if (clonedInstr instanceof YIELD_Instr)
-                ii.recordYieldSite(clonedBB, (YIELD_Instr)clonedInstr);
+            if (clonedInstr instanceof YieldInstr)
+                ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
         }
 
         return clonedBB;
     }
 
-    public void processClosureArgAndReturnInstrs(InlinerInfo ii, YIELD_Instr yi) {
+    public void processClosureArgAndReturnInstrs(InlinerInfo ii, YieldInstr yi) {
         Variable  yieldResult = ii.getRenamedVariable(yi.result);
         Operand[] yieldArgs   = yi.getOperands();
 

@@ -59,7 +59,7 @@ public class IRClosure extends IRExecutionScope {
     }
 
     public String toStringBody() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append(name).append(" = { \n");
         org.jruby.compiler.ir.representations.CFG c = getCFG();
         if (c != null) {

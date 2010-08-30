@@ -29,7 +29,7 @@ public class InterpretedIRMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        InterpreterContext interp = new IRInterpreterContext(context, self, args, method.getStaticScope());
+        InterpreterContext interp = new IRInterpreterContext(context, self, args, method.getStaticScope(), block);
 
         Arity.checkArgumentCount(context.getRuntime(), args.length, requiredArgsCount, maxArgsCount);
 
@@ -80,8 +80,9 @@ public class InterpretedIRMethod extends DynamicMethod {
         protected Object[] temporaryVariables;
         protected DynamicScope localVariables;
         protected Frame frame;
+        protected Block block;
 
-        public IRInterpreterContext(ThreadContext context, IRubyObject self, IRubyObject[] parameters, StaticScope staticScope) {
+        public IRInterpreterContext(ThreadContext context, IRubyObject self, IRubyObject[] parameters, StaticScope staticScope, Block block) {
             context.preMethodScopeOnly(self.getMetaClass(), staticScope);
 
             this.context = context;
@@ -90,6 +91,15 @@ public class InterpretedIRMethod extends DynamicMethod {
 //            System.out.println("TVS: " + temporaryVariableSize);
             this.temporaryVariables = new Object[temporaryVariableSize];
             this.localVariables = context.getCurrentScope();
+            this.block = block;
+        }
+
+        public Block getBlock() {
+            return block;
+        }
+
+        public void setBlock(Block block) {
+            this.block = block;
         }
 
         public Object getReturnValue() {

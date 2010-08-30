@@ -1,5 +1,6 @@
 package org.jruby.interpreter;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -30,6 +31,9 @@ public interface InterpreterContext {
     public Object setTemporaryVariable(int offset, Object value);
     public Object getLocalVariable(int location);
     public Object setLocalVariable(int location, Object value);
+
+    public Block getBlock();
+    public void setBlock(Block block);
 
     public Object getSelf();
     

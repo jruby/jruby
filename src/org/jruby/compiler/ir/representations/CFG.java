@@ -29,7 +29,7 @@ import org.jruby.compiler.ir.instructions.RESCUED_BODY_END_MARKER_Instr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
-import org.jruby.compiler.ir.instructions.YIELD_Instr;
+import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
@@ -413,7 +413,7 @@ public class CFG {
         mergeBBs(edges.iterator().next()._src, splitBB);
     }
 
-    private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YIELD_Instr yield) {
+    private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, getNewLabel(), false);
         _cfg.addVertex(splitBB);
@@ -594,7 +594,7 @@ public class CFG {
                 throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
 
             Tuple t = (Tuple)yieldSites.get(0);
-            inlineClosureAtYieldSite(ii, (IRClosure)((MetaObject)closureArg).scope, (BasicBlock)t.a, (YIELD_Instr)t.b);
+            inlineClosureAtYieldSite(ii, (IRClosure)((MetaObject)closureArg).scope, (BasicBlock)t.a, (YieldInstr)t.b);
         }
     }
 
