@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <jni.h>
+#include "JUtil.h"
 #include "jruby.h"
 #include "ruby.h"
 #include "Handle.h"
@@ -40,36 +41,152 @@
 
 using namespace jruby;
 
-struct RArray*
-RubyArray::toRArray()
+RubyArray::RubyArray(JNIEnv* env, jobject obj_): Handle(env, obj_, T_ARRAY)
 {
-    JLocalEnv env;
-    int length;
-    jobjectArray elements;
-
-    elements = (jobjectArray)(env->CallObjectMethod(obj, RubyArray_toJavaArray_method));
-    length = (int)(env->GetArrayLength(elements));
-
-    if (length > 0) {
-        int i;
-        VALUE* ptr = (VALUE*)xmalloc(sizeof(VALUE) * length);
-        for (i = 0; i < length; i++) {
-            ptr[i] = objectToValue(env, env->GetObjectArrayElement(elements, i));
-        }
-        rarray.ptr = ptr;
-    } else {
-        rarray.ptr = NULL;
-    }
-    rarray.len = length;
-    return &rarray;
+    rwdata.rarray = NULL;
 }
 
-extern "C" struct RArray*
+RubyArray::~RubyArray()
+{
+    // See Java_org_jruby_cext_Native_freeRArray
+}
+
+static bool
+RubyArray_jsync(JNIEnv* env, DataSync* data)
+{
+    return ((RubyArray *) data->data)->jsync(env);
+}
+
+static bool
+RubyArray_nsync(JNIEnv* env, DataSync* data)
+{
+    return ((RubyArray *) data->data)->nsync(env);
+}
+
+static bool
+RubyArray_clean(JNIEnv* env, DataSync* data)
+{
+    return ((RubyArray *) data->data)->clean(env);
+}
+
+struct RArray*
+RubyArray::toRArray(bool readonly)
+{
+    if (rwdata.rarray != NULL) {
+        if (readonly || !rwdata.readonly) {
+            return rwdata.rarray;
+        }
+
+        // Switch from readonly to read-write
+        rwdata.readonly = false;
+        TAILQ_INSERT_TAIL(&jruby::nsyncq, &rwdata.nsync, syncq);
+        JLocalEnv env;
+        nsync(env);
+
+        return rwdata.rarray;
+    }
+
+    JLocalEnv env;
+    rwdata.jsync.data = this;
+    rwdata.jsync.sync = RubyArray_jsync;
+    rwdata.nsync.data = this;
+    rwdata.nsync.sync = RubyArray_nsync;
+    rwdata.clean.data = this;
+    rwdata.clean.sync = RubyArray_clean;
+    rwdata.rarray = (RArray *) j2p(env->CallStaticLongMethod(JRuby_class, JRuby_getRArray, obj));
+    checkExceptions(env);
+    rwdata.readonly = readonly;
+
+    TAILQ_INSERT_TAIL(&jruby::cleanq, &rwdata.clean, syncq);
+    TAILQ_INSERT_TAIL(&jruby::jsyncq, &rwdata.jsync, syncq);
+    if (!readonly) {
+        TAILQ_INSERT_TAIL(&jruby::nsyncq, &rwdata.nsync, syncq);
+    }
+    nsync(env);
+
+    return rwdata.rarray;
+}
+
+bool
+RubyArray::clean(JNIEnv* env)
+{
+    // Clear the cached data
+    rwdata.readonly = false;
+    rwdata.rarray = NULL;
+
+    return false;
+}
+
+bool
+RubyArray::jsync(JNIEnv* env)
+{
+    if (rwdata.readonly && rwdata.rarray != NULL) {
+        // Readonly, just clear the cached data
+        rwdata.rarray = NULL;
+        rwdata.readonly = false;
+        return false;
+    }
+
+    if (rwdata.rarray != NULL && rwdata.rarray->ptr != NULL) {
+        env->CallVoidMethod(obj, RubyArray_clear_method);
+        checkExceptions(env);
+
+        RArray* rarray = rwdata.rarray;
+        // Copy all values back into the Java array
+        for (long i; i < rarray->aux.capa; i++) {
+            env->CallObjectMethod(obj, RubyArray_append_method, valueToObject(env, rarray->ptr[i]));
+            checkExceptions(env);
+        }
+        env->SetIntField(obj, RubyArray_length_field, (jint)(rarray->aux.capa));
+        checkExceptions(env);
+    }
+    return true;
+}
+
+bool
+RubyArray::nsync(JNIEnv* env)
+{
+    // Retrieve real element array, it's length and the actual object array and it's length
+
+    jobjectArray elements = (jobjectArray)(env->CallObjectMethod(obj, RubyArray_toJavaArray_method));
+    checkExceptions(env);
+    long len = (long)(env->GetArrayLength(elements));
+    checkExceptions(env);
+    jobjectArray values = (jobjectArray)(env->GetObjectField(obj, RubyArray_values_field));
+    checkExceptions(env);
+    long capa = (long)(env->GetArrayLength(values) - env->GetIntField(obj, RubyArray_begin_field));
+    checkExceptions(env);
+    env->DeleteLocalRef(values);
+
+    assert(len <= capa);
+
+    RArray* rarray = rwdata.rarray;
+
+    // If capacity has grown, reallocate the C array
+    if ((capa > rarray->aux.capa) || (rarray->aux.capa == 0)) {
+        rarray->aux.capa = capa;
+        rarray->ptr = (VALUE*)realloc(rarray->ptr, sizeof(VALUE) * capa);
+    }
+
+    // If there is content, copy over
+    if (capa > 0) {
+        for (long i = 0; i < len; i++) {
+            rarray->ptr[i] = objectToValue(env, env->GetObjectArrayElement(elements, i));
+            checkExceptions(env);
+        }
+    }
+
+    env->DeleteLocalRef(elements);
+    rarray->len = len;
+    return true;
+}
+
+extern "C" RArray*
 jruby_rarray(VALUE v)
 {
     Handle* h = Handle::valueOf(v);
     if (h->getType() == T_ARRAY) {
-        return ((RubyArray *) h)->toRArray();
+        return ((RubyArray *) h)->toRArray(false);
     }
 
     rb_raise(rb_eTypeError, "wrong type (expected Array)");
@@ -84,6 +201,10 @@ rb_Array(VALUE val)
 extern "C" VALUE
 rb_ary_new2(long length)
 {
+    if (length < 0) {
+        rb_raise(rb_eArgError, "negative array size (or size too big)");
+    }
+
     JLocalEnv env;
     jobject ary = env->CallStaticObjectMethod(RubyArray_class, RubyArray_newArray, getRuntime(), (jlong)length);
     checkExceptions(env);

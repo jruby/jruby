@@ -180,13 +180,24 @@ namespace jruby {
 
     class RubyArray : public Handle {
     private:
-        struct RArray rarray;
+        struct RWData {
+            bool readonly;
+            RArray* rarray;
+            DataSync jsync;
+            DataSync nsync;
+            DataSync clean;
+            DataSync rosync;
+        };
+        RWData rwdata;
 
     public:
         RubyArray(JNIEnv* env, jobject obj);
         virtual ~RubyArray();
 
-        struct RArray* toRArray();
+        RArray* toRArray(bool readonly);
+        bool jsync(JNIEnv* env);
+        bool nsync(JNIEnv* env);
+        bool clean(JNIEnv* env);
     };
 
     extern void runSyncQueue(JNIEnv* env, DataSyncQueue* q);

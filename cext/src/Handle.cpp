@@ -258,18 +258,6 @@ RubyString::nsync(JNIEnv* env)
     return true;
 }
 
-RubyArray::RubyArray(JNIEnv* env, jobject obj_): Handle(env, obj_, T_ARRAY)
-{
-    rarray.ptr = NULL;
-}
-
-RubyArray::~RubyArray()
-{
-    if (rarray.ptr) {
-        free(rarray.ptr);
-    }
-}
-
 extern "C" JNIEXPORT jlong JNICALL
 Java_org_jruby_cext_Native_newHandle(JNIEnv* env, jobject self, jobject obj, jint type)
 {
@@ -447,3 +435,32 @@ Java_org_jruby_cext_Native_freeRString(JNIEnv* env, jclass self, jlong address)
         free(rstring);
     }
 }
+
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    newRArray
+ * Signature: ()J
+ */
+extern "C" JNIEXPORT jlong JNICALL
+Java_org_jruby_cext_Native_newRArray(JNIEnv* env, jclass self)
+{
+    return p2j(calloc(1, sizeof(struct RArray)));
+}
+
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    freeRArray
+ * Signature: (J)V
+ */
+extern "C" JNIEXPORT void JNICALL
+Java_org_jruby_cext_Native_freeRArray(JNIEnv* env, jclass self, jlong address)
+{
+    RArray* rarray = (RArray *) j2p(address);
+    if (rarray != NULL) {
+        if (rarray->ptr != NULL) {
+            free(rarray->ptr);
+        }
+        free(rarray);
+    }
+}
+

@@ -114,6 +114,7 @@ namespace jruby {
     extern jmethodID JRuby_int2big;
     extern jmethodID JRuby_uint2big;
     extern jmethodID JRuby_getRString;
+    extern jmethodID JRuby_getRArray;
     extern jmethodID JRuby_yield;
     extern jmethodID JRuby_blockGiven;
     extern jmethodID JRuby_getBlockProc;
@@ -136,6 +137,8 @@ namespace jruby {
     extern jmethodID JRuby_sysFail;
     extern jmethodID RubyString_resize_method;
     extern jmethodID RubyArray_newArray;
+    extern jmethodID RubyArray_clear_method;
+    extern jmethodID RubyArray_append_method;
     extern jmethodID JRuby_threadSleep;
     extern jfieldID Handle_address_field;
     extern jfieldID RubyString_value_field;
@@ -147,6 +150,8 @@ namespace jruby {
     extern jfieldID RubyArray_length_field;
     extern jfieldID ObjectAllocator_NotAllocatableAllocator_field;
     extern jfieldID FileDescriptor_fd_field;
+    extern jfieldID RubyArray_values_field;
+    extern jfieldID RubyArray_begin_field;
 
     extern bool is19;
     extern jobject runtime;

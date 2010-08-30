@@ -53,6 +53,7 @@ import java.util.Set;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.cext.RArray;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.javasupport.JavaUtil;
@@ -246,7 +247,9 @@ public class RubyArray extends RubyObject implements List {
     private int begin = 0;
     private int realLength = 0;
 
-    /* 
+    private RArray rarray;
+
+    /*
      * plain internal array assignment
      */
     private RubyArray(Ruby runtime, IRubyObject[] vals) {
@@ -386,6 +389,14 @@ public class RubyArray extends RubyObject implements List {
 
     public int getLength() {
         return realLength;
+    }
+
+    public void setRArray(RArray rarray) {
+        this.rarray = rarray;
+    }
+
+    public RArray getRArray() {
+        return rarray;
     }
 
     public IRubyObject[] toJavaArray() {

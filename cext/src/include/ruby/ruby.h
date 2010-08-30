@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <limits.h>
+#include <assert.h>
 
 // A number of extensions expect these to be already included
 #include <stddef.h>
@@ -147,8 +148,13 @@ struct RString {
 };
 
 struct RArray {
-    VALUE* ptr;
-    int len;
+    struct RBasic basic;
+    long len;
+    union {
+        long capa;
+        VALUE shared;
+    } aux;
+    VALUE *ptr;
 };
 
 struct RIO {
@@ -292,11 +298,7 @@ RUBY_DLLSPEC void xfree(void*);
 /** The length of the array. */
 #define RARRAY_LEN(ary) RARRAY(ary)->len
 /** Returns a pointer to a VALUE[] that mirrors the data in
- * the ruby array.
- * TODO: The pointer buffer should be flushed to the ruby array when
- * control returns to Ruby code and be updated with the array
- * contents when control crosses to C code.
- */
+ * the ruby array. */
 #define RARRAY_PTR(ary) RARRAY(ary)->ptr
 /** Pointer to the MRI array structure */
 #define RARRAY(ary) jruby_rarray(ary)

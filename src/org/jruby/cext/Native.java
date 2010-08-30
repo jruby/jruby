@@ -215,5 +215,6 @@ final class Native {
 
     static native long newRString();
     static native void freeRString(long address);
-
+    static native long newRArray();
+    static native void freeRArray(long address);
 }

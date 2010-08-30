@@ -73,6 +73,7 @@ namespace jruby {
     jmethodID JRuby_int2big;
     jmethodID JRuby_uint2big;
     jmethodID JRuby_getRString;
+    jmethodID JRuby_getRArray;
     jmethodID JRuby_newFloat;
     jmethodID JRuby_yield;
     jmethodID JRuby_blockGiven;
@@ -126,6 +127,8 @@ namespace jruby {
     jmethodID JRuby_sysFail;
     jmethodID RubyString_resize_method;
     jmethodID RubyArray_newArray;
+    jmethodID RubyArray_clear_method;
+    jmethodID RubyArray_append_method;
     jmethodID JRuby_threadSleep;
     jfieldID Handle_address_field;
     jfieldID RubyString_value_field;
@@ -138,6 +141,8 @@ namespace jruby {
     jfieldID RubyArray_length_field;
     jfieldID ObjectAllocator_NotAllocatableAllocator_field;
     jfieldID FileDescriptor_fd_field;
+    jfieldID RubyArray_values_field;
+    jfieldID RubyArray_begin_field;
 
     bool is19;
     jobject runtime;
@@ -310,12 +315,13 @@ loadIds(JNIEnv* env)
     JRuby_uint2big = getStaticMethodID(env, JRuby_class, "uint2big",
             "(Lorg/jruby/Ruby;J)J");
     JRuby_getRString = getStaticMethodID(env, JRuby_class, "getRString", "(Lorg/jruby/RubyString;)J");
+    JRuby_getRArray = getStaticMethodID(env, JRuby_class, "getRArray", "(Lorg/jruby/RubyArray;)J");
     JRuby_newFloat = getStaticMethodID(env, JRuby_class, "newFloat", "(Lorg/jruby/Ruby;JD)Lorg/jruby/RubyFloat;");
     JRuby_yield = getStaticMethodID(env, JRuby_class, "yield",
             "(Lorg/jruby/Ruby;Lorg/jruby/RubyArray;)Lorg/jruby/runtime/builtin/IRubyObject;");
     JRuby_blockGiven = getStaticMethodID(env, JRuby_class, "blockGiven", "(Lorg/jruby/Ruby;)I");
     JRuby_getBlockProc = getStaticMethodID(env, JRuby_class, "getBlockProc", "(Lorg/jruby/Ruby;)Lorg/jruby/RubyProc;");
-    RubyArray_toJavaArray_method = getMethodID(env, RubyArray_class, "toJavaArrayUnsafe",
+    RubyArray_toJavaArray_method = getMethodID(env, RubyArray_class, "toJavaArray",
             "()[Lorg/jruby/runtime/builtin/IRubyObject;");
     RubyClass_newClass_method = getStaticMethodID(env, RubyClass_class, "newClass",
             "(Lorg/jruby/Ruby;Lorg/jruby/RubyClass;)Lorg/jruby/RubyClass;");
@@ -345,6 +351,9 @@ loadIds(JNIEnv* env)
     JRuby_sysFail = getStaticMethodID(env, JRuby_class, "sysFail", "(Lorg/jruby/Ruby;Ljava/lang/String;)V");
     RubyString_resize_method = getMethodID(env, RubyString_class, "resize", "(I)V");
     RubyArray_newArray = getStaticMethodID(env, RubyArray_class, "newArray", "(Lorg/jruby/Ruby;J)Lorg/jruby/RubyArray;");
+    RubyArray_clear_method = getMethodID(env, RubyArray_class, "clear", "()V");
+    RubyArray_append_method = getMethodID(env, RubyArray_class, "append",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/RubyArray;");
     JRuby_threadSleep = getStaticMethodID(env, JRuby_class, "threadSleep", "(Lorg/jruby/Ruby;I)V");
     JRuby_nativeBlockingRegion = getStaticMethodID(env, JRuby_class, "nativeBlockingRegion", "(Lorg/jruby/Ruby;JJJJ)J");
     JRuby_newThread = getStaticMethodID(env, JRuby_class, "newThread",
@@ -363,6 +372,8 @@ loadIds(JNIEnv* env)
     ObjectAllocator_NotAllocatableAllocator_field = env->GetStaticFieldID(ObjectAllocator_class, "NOT_ALLOCATABLE_ALLOCATOR",
             "Lorg/jruby/runtime/ObjectAllocator;");
     FileDescriptor_fd_field = getFieldID(env, FileDescriptor_class, "fd", "I");
+    RubyArray_values_field = getFieldID(env, RubyArray_class, "values", "[Lorg/jruby/runtime/builtin/IRubyObject;");
+    RubyArray_begin_field = getFieldID(env, RubyArray_class, "begin", "I");
 }
 
 static jobject
