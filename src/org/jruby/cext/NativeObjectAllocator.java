@@ -31,7 +31,6 @@ package org.jruby.cext;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class NativeObjectAllocator implements ObjectAllocator {
@@ -42,7 +41,6 @@ public final class NativeObjectAllocator implements ObjectAllocator {
     }
 
     public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-        ThreadContext context = runtime.getCurrentContext();
         GIL.acquire();
         try {
             return Native.getInstance(runtime).callMethod0(function, Handle.nativeHandle(klass));
