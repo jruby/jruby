@@ -127,6 +127,7 @@ rb_define_module_function(VALUE klass,const char* meth, VALUE(*fn)(ANYARGS),int 
     env->CallVoidMethod(module, RubyModule_addModuleFunction_method, env->NewStringUTF(meth),
             env->CallStaticObjectMethod(JRuby_class, JRuby_newMethod, module, (jlong)(intptr_t) fn, arity));
     checkExceptions(env);
+    callMethod(klass, "module_function", 1, ID2SYM(rb_intern(meth)));
 }
 
 extern "C" void
