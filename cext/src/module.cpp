@@ -202,7 +202,8 @@ rb_const_get_at(VALUE module, ID symbol)
     jobject c = env->CallObjectMethod(valueToObject(env, module), mid, idToString(env, symbol));
     checkExceptions(env);
 
-    return objectToValue(env, c);
+    // Check for null return and call const_missing, if neccessary
+    return c == NULL ? callMethod(module, "const_missing", 1, ID2SYM(symbol)) : objectToValue(env, c);
 }
 
 extern "C" VALUE
