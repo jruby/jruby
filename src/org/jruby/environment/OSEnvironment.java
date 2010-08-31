@@ -37,6 +37,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 
 import org.jruby.Ruby;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.util.ByteList;
 
 public class OSEnvironment {
@@ -80,7 +81,13 @@ public class OSEnvironment {
 		Map envs = new HashMap();
         Encoding encoding = EncodingDB.getEncodings().get(Charset.defaultCharset().name().getBytes()).getEncoding();
         
-		for (Map.Entry<Object, Object> entry : entrySet) {
+        // On Windows, entrySet doesn't have corresponding keys for these
+        if (Platform.IS_WINDOWS) {
+            envs.put(runtime.newString("HOME"), runtime.newString(System.getProperty("user.home")));
+            envs.put(runtime.newString("USER"), runtime.newString(System.getProperty("user.name")));
+        }
+
+        for (Map.Entry<Object, Object> entry : entrySet) {
             String value = (String)entry.getValue();
             String key = (String)entry.getKey();
 
