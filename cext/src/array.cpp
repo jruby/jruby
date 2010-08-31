@@ -174,15 +174,18 @@ RubyArray::nsync(JNIEnv* env)
     }
 
     // If there is content, copy over
-    if (len > 0) {
-        for (long i = 0; i < len; i++) {
-            rarray->ptr[i] = objectToValue(env, env->GetObjectArrayElement(values, i + begin));
-            checkExceptions(env);
-        }
+    for (long i = 0; i < len; i++) {
+        rarray->ptr[i] = objectToValue(env, env->GetObjectArrayElement(values, i + begin));
+        checkExceptions(env);
+    }
+
+    // Fill capacity with Qundefs
+    for (long i = len; i < capa; i++) {
+        rarray->ptr[i] = Qundef;
     }
 
     env->DeleteLocalRef(values);
-    rarray->len = len;
+    rarray->len = capa;
     return true;
 }
 
