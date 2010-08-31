@@ -916,6 +916,8 @@ RUBY_DLLSPEC VALUE rb_yield_values(int n, ...);
 RUBY_DLLSPEC int rb_block_given_p();
 /** Return the Proc for the implicit block */
 RUBY_DLLSPEC VALUE rb_block_proc();
+/** Create a proc with func as body and val as proc argument ({|*args, proc_arg| func }) */
+RUBY_DLLSPEC VALUE rb_proc_new(VALUE (*func)(ANYARGS), VALUE val);
 
 /** Freeze object and return it. */
 RUBY_DLLSPEC VALUE rb_obj_freeze(VALUE obj);

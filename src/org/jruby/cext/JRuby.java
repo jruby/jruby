@@ -148,19 +148,27 @@ public class JRuby {
         return f;
     }
 
-    public static IRubyObject newThread(Ruby runtime, long fn, IRubyObject args_ary) {
-        IRubyObject[] args = (args_ary instanceof RubyArray) ? ((RubyArray)args_ary).toJavaArray() : new IRubyObject[] {args_ary};
-        String name = System.currentTimeMillis() + "$_jruby-cext";
+    public static Block newBlock(Ruby runtime, long fn, int arity) {
+        String name = System.currentTimeMillis() + "$block_jruby-cext";
         IRubyObject recv = runtime.getCurrentContext().getFrameSelf();
         RubyUnboundMethod method = RubyUnboundMethod.newUnboundMethod(recv.getMetaClass(), name, recv.getMetaClass(), name,
-                newMethod(recv.getMetaClass(), fn, args.length));
+                newMethod(recv.getMetaClass(), fn, arity));
         MethodBlock mb = new MethodBlock(method, runtime.getCurrentContext().getCurrentScope().getStaticScope()) {
             @Override
             public IRubyObject callback(IRubyObject value, IRubyObject method, IRubyObject self, Block unusedBlock) {
                 return RubyUnboundMethod.bmcall(value, method, self, unusedBlock);
             }
         };
-        return RubyThread.newInstance(runtime.getThread(), args, new Block(mb));
+        return mb.cloneBlock(runtime.getCurrentContext().currentBinding());
+    }
+
+    public static IRubyObject newThread(Ruby runtime, long fn, IRubyObject args_ary) {
+        IRubyObject[] args = (args_ary instanceof RubyArray) ? ((RubyArray)args_ary).toJavaArray() : new IRubyObject[] {args_ary};
+        return RubyThread.newInstance(runtime.getThread(), args, newBlock(runtime, fn, -1));
+    }
+
+    public static IRubyObject newProc(Ruby runtime, long fn) {
+        return RubyProc.newProc(runtime, newBlock(runtime, fn, -1), Block.Type.PROC);
     }
 
     public static long getRString(RubyString str) {
