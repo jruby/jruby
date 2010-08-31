@@ -154,15 +154,14 @@ RubyArray::nsync(JNIEnv* env)
 {
     // Retrieve real element array, it's length and the actual object array and it's length
 
-    jobjectArray elements = (jobjectArray)(env->CallObjectMethod(obj, RubyArray_toJavaArray_method));
-    checkExceptions(env);
-    long len = (long)(env->GetArrayLength(elements));
+    long len = (long)(env->GetIntField(obj, RubyArray_length_field));
     checkExceptions(env);
     jobjectArray values = (jobjectArray)(env->GetObjectField(obj, RubyArray_values_field));
     checkExceptions(env);
-    long capa = (long)(env->GetArrayLength(values) - env->GetIntField(obj, RubyArray_begin_field));
+    jint begin = env->GetIntField(obj, RubyArray_begin_field);
     checkExceptions(env);
-    env->DeleteLocalRef(values);
+    long capa = (long)(env->GetArrayLength(values) - begin);
+    checkExceptions(env);
 
     assert(len <= capa);
 
@@ -175,14 +174,14 @@ RubyArray::nsync(JNIEnv* env)
     }
 
     // If there is content, copy over
-    if (capa > 0) {
+    if (len > 0) {
         for (long i = 0; i < len; i++) {
-            rarray->ptr[i] = objectToValue(env, env->GetObjectArrayElement(elements, i));
+            rarray->ptr[i] = objectToValue(env, env->GetObjectArrayElement(values, i + begin));
             checkExceptions(env);
         }
     }
 
-    env->DeleteLocalRef(elements);
+    env->DeleteLocalRef(values);
     rarray->len = len;
     return true;
 }
