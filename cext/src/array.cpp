@@ -196,7 +196,7 @@ RubyArray::nsync(JNIEnv* env)
 }
 
 static VALUE
-newArray(long len, int set_rarray_len = false)
+newArray(long len)
 {
     if (len < 0) {
         rb_raise(rb_eArgError, "negative array size (or size too big)");
@@ -207,11 +207,6 @@ newArray(long len, int set_rarray_len = false)
     checkExceptions(env);
 
     VALUE ary_value = objectToValue(env, ary);
-
-    if (set_rarray_len) {
-        // When using rb_ary_new2, the capacity must be set
-        jruby_rarray(ary_value)->aux.capa = len;
-    }
     return ary_value;
 }
 
@@ -235,7 +230,7 @@ rb_Array(VALUE val)
 extern "C" VALUE
 rb_ary_new2(long length)
 {
-    return newArray(length, true);
+    return newArray(length);
 }
 
 extern "C" VALUE
