@@ -128,16 +128,22 @@ RubyArray::jsync(JNIEnv* env)
     }
 
     if (rwdata.rarray != NULL && rwdata.rarray->ptr != NULL) {
-        env->CallVoidMethod(obj, RubyArray_clear_method);
+        jobjectArray values = (jobjectArray)(env->GetObjectField(obj, RubyArray_values_field));
+        checkExceptions(env);
+        jint begin = env->GetIntField(obj, RubyArray_begin_field);
         checkExceptions(env);
 
         RArray* rarray = rwdata.rarray;
+        assert((env->GetArrayLength(values) - begin) >= rarray->aux.capa);
+
         // Copy all values back into the Java array
-        for (long i; i < rarray->aux.capa; i++) {
-            env->CallObjectMethod(obj, RubyArray_append_method, valueToObject(env, rarray->ptr[i]));
+        for (long i = 0; i < rarray->len; i++) {
+            env->SetObjectArrayElement(values, i + begin, valueToObject(env, rarray->ptr[i]));
             checkExceptions(env);
         }
-        env->SetIntField(obj, RubyArray_length_field, (jint)(rarray->aux.capa));
+        env->DeleteLocalRef(values);
+
+        env->SetIntField(obj, RubyArray_length_field, (jint)(rarray->len));
         checkExceptions(env);
     }
     return true;
