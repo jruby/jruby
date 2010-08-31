@@ -45,12 +45,10 @@ import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.RubyThread.BlockingTask;
-import org.jruby.RubyUnboundMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -149,27 +147,19 @@ public class JRuby {
         return f;
     }
 
-    public static Block newBlock(Ruby runtime, long fn, int arity) {
-        String name = System.currentTimeMillis() + "$block_jruby-cext";
-        IRubyObject recv = runtime.getCurrentContext().getFrameSelf();
-        RubyMethod method = RubyMethod.newMethod(recv.getMetaClass(), name, recv.getMetaClass(), name,
-                newMethod(recv.getMetaClass(), fn, arity), recv);
-        MethodBlock mb = new MethodBlock(method, runtime.getCurrentContext().getCurrentScope().getStaticScope()) {
-            @Override
-            public IRubyObject callback(IRubyObject value, IRubyObject method, IRubyObject self, Block unusedBlock) {
-                return RubyMethod.bmcall(value, method, self, unusedBlock);
-            }
-        };
-        return mb.cloneBlock(runtime.getCurrentContext().currentBinding());
-    }
-
     public static IRubyObject newThread(Ruby runtime, long fn, IRubyObject args_ary) {
+        RubyProc proc = (RubyProc) newProc(runtime, fn);
         IRubyObject[] args = (args_ary instanceof RubyArray) ? ((RubyArray)args_ary).toJavaArray() : new IRubyObject[] {args_ary};
-        return RubyThread.newInstance(runtime.getThread(), args, newBlock(runtime, fn, -1));
+        return RubyThread.newInstance(runtime.getThread(), args, proc.getBlock());
     }
 
     public static IRubyObject newProc(Ruby runtime, long fn) {
-        return RubyProc.newProc(runtime, newBlock(runtime, fn, -1), Block.Type.PROC);
+        String name = System.currentTimeMillis() + "$block_jruby-cext";
+        IRubyObject recv = runtime.getCurrentContext().getFrameSelf();
+        RubyMethod method = RubyMethod.newMethod(recv.getMetaClass(), name, recv.getMetaClass(), name,
+                new NativeProcMethod(recv.getMetaClass(), fn), recv);
+        IRubyObject proc = method.to_proc(runtime.getCurrentContext(), Block.NULL_BLOCK);
+        return proc;
     }
 
     public static long getRString(RubyString str) {

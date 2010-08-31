@@ -309,4 +309,26 @@ Java_org_jruby_cext_Native_callFunction(JNIEnv* env, jobject, jlong function, jl
     }
 }
 
+/*
+ * Class:     org_jruby_cext_Native
+ * Method:    callProcMethod
+ * Signature: (JJ)Lorg/jruby/runtime/builtin/IRubyObject;
+ */
+extern "C" JNIEXPORT jobject JNICALL
+Java_org_jruby_cext_Native_callProcMethod(JNIEnv* env, jobject, jlong fn, jlong args_ary)
+{
+    try {
 
+        InvocationSession session(env);
+        makeStrongRef(env, (VALUE) args_ary);
+        return valueToObject(env, ((VALUE (*)(VALUE)) fn)((VALUE) args_ary));
+
+    } catch (jruby::JavaException& ex) {
+        env->Throw(ex.getCause());
+        return NULL;
+
+    } catch (std::exception& ex) {
+        jruby::throwExceptionByName(env, jruby::RuntimeException, "C runtime exception occurred: ", ex.what());
+        return NULL;
+    }
+}
