@@ -186,6 +186,26 @@ RubyArray::nsync(JNIEnv* env)
     return true;
 }
 
+static VALUE
+newArray(long len, int set_rarray_len = false)
+{
+    if (len < 0) {
+        rb_raise(rb_eArgError, "negative array size (or size too big)");
+    }
+
+    JLocalEnv env;
+    jobject ary = env->CallStaticObjectMethod(RubyArray_class, RubyArray_newArray, getRuntime(), (jlong)len);
+    checkExceptions(env);
+
+    VALUE ary_value = objectToValue(env, ary);
+
+    if (set_rarray_len) {
+        // When using rb_ary_new2, the capacity must be set
+        jruby_rarray(ary_value)->aux.capa = len;
+    }
+    return ary_value;
+}
+
 extern "C" RArray*
 jruby_rarray(VALUE v)
 {
@@ -206,27 +226,20 @@ rb_Array(VALUE val)
 extern "C" VALUE
 rb_ary_new2(long length)
 {
-    if (length < 0) {
-        rb_raise(rb_eArgError, "negative array size (or size too big)");
-    }
-
-    JLocalEnv env;
-    jobject ary = env->CallStaticObjectMethod(RubyArray_class, RubyArray_newArray, getRuntime(), (jlong)length);
-    checkExceptions(env);
-    return objectToValue(env, ary);
+    return newArray(length, true);
 }
 
 extern "C" VALUE
 rb_ary_new(void)
 {
-    return rb_ary_new2(0);
+    return newArray(0);
 }
 
 extern "C" VALUE
 rb_ary_new3(long size, ...)
 {
     va_list args;
-    VALUE ary = rb_ary_new2(size);
+    VALUE ary = newArray(size);
 
     va_start(args, size);
     for (long i = 0; i < size; i++) {
@@ -239,7 +252,7 @@ rb_ary_new3(long size, ...)
 extern "C" VALUE
 rb_ary_new4(long n, const VALUE* argv)
 {
-    VALUE ary = rb_ary_new2(n);
+    VALUE ary = newArray(n);
 
     for (long i = 0; i < n; ++i) {
         rb_ary_push(ary, argv[i]);
@@ -250,7 +263,7 @@ rb_ary_new4(long n, const VALUE* argv)
 
 extern "C" VALUE
 rb_assoc_new(VALUE key, VALUE value) {
-    VALUE ary = rb_ary_new2(2);
+    VALUE ary = newArray(2);
     rb_ary_push(ary, key);
     rb_ary_push(ary, value);
     return ary;
