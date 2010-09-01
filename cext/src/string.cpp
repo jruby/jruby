@@ -157,6 +157,7 @@ RubyString::jsync(JNIEnv* env)
         env->SetByteArrayRegion((jbyteArray) bytes, begin, rstring->len,
                 (jbyte *) rstring->ptr);
         checkExceptions(env);
+        env->SetIntField(byteList, ByteList_length_field, rstring->len);
 
         env->DeleteLocalRef(bytes);
     }
@@ -175,11 +176,12 @@ RubyString::nsync(JNIEnv* env)
     checkExceptions(env);
     long length = env->GetIntField(byteList, ByteList_length_field);
     checkExceptions(env);
+    jint capacity = env->GetArrayLength((jarray) bytes) - begin;
+    checkExceptions(env);
     env->DeleteLocalRef(byteList);
 
     RString* rstring = rwdata.rstring;
 
-    jint capacity = env->GetArrayLength((jarray) bytes);
     if ((capacity > rstring->capa) || (rstring->capa == 0)) {
         rstring->capa = capacity;
         rstring->ptr = (char *) realloc(rstring->ptr, rstring->capa + 1);
@@ -212,7 +214,7 @@ newString(const char* ptr, int len, int capacity = 0, bool tainted = false)
         checkExceptions(env);
     }
 
-    jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_newString, jruby::getRuntime(), bytes, (jboolean) tainted);
+    jlong result = env->CallStaticLongMethod(JRuby_class, JRuby_newString, jruby::getRuntime(), bytes, (jint)len, (jboolean) tainted);
     checkExceptions(env);
 
     return (VALUE) result;

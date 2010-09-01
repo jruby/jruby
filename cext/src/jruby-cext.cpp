@@ -306,7 +306,7 @@ loadIds(JNIEnv* env)
     JRuby_clearErrorInfo = getStaticMethodID(env, JRuby_class, "clearErrorInfo",
             "(Lorg/jruby/Ruby;)V");
     JRuby_newString = getStaticMethodID(env, JRuby_class, "newString",
-            "(Lorg/jruby/Ruby;[BZ)J");
+            "(Lorg/jruby/Ruby;[BIZ)J");
     JRuby_ll2inum = getStaticMethodID(env, JRuby_class, "ll2inum",
             "(Lorg/jruby/Ruby;J)J");
     JRuby_ull2inum = getStaticMethodID(env, JRuby_class, "ull2inum",

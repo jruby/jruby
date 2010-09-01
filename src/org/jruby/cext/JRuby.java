@@ -112,11 +112,12 @@ public class JRuby {
     }
 
 
-    public static long newString(Ruby runtime, byte[] bytes, boolean tainted) {
+    public static long newString(Ruby runtime, byte[] bytes, int length, boolean tainted) {
         IRubyObject retval = RubyString.newStringNoCopy(runtime, bytes);
         if (tainted) {
             retval.setTaint(tainted);
         }
+        ((RubyString) retval).getByteList().setRealSize(length);
 
         return Handle.nativeHandle(retval);
     }
