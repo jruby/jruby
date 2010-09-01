@@ -174,7 +174,7 @@
     </tstamp>
 
     <exec executable="git" outputproperty="jruby.revision" failonerror="false" failifexecutionfails="false">
-      <arg line="log -1 --format=format:%h"/>
+      <arg line="log -1 --pretty=format:%h"/>
     </exec>
 
     <copy todir="${basedir}/src_gen" overwrite="true">
