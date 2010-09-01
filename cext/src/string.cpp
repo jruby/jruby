@@ -443,6 +443,7 @@ rb_str_resize(VALUE str, long size) {
         JLocalEnv env;
         env->CallVoidMethod(valueToObject(env, str), RubyString_resize_method, (jint)size);
         checkExceptions(env);
+        jruby_rstring(str)->len = size;
     }
     return str;
 }
@@ -461,7 +462,6 @@ jruby_str(VALUE v)
 
     return (RubyString *) v;
 }
-
 
 extern "C" char*
 jruby_str_cstr(VALUE v)
