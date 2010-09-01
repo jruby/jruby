@@ -56,10 +56,10 @@
   </condition>
   <condition property="dev.null" value="dev_null">
     <not>
-      <and>
+      <or>
         <os family="unix"/>
         <os family="windows"/>
-      </and>
+      </or>
     </not>
   </condition>
 
