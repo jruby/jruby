@@ -15,11 +15,11 @@ module JRuby::Compiler
       jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
         File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
       end
-      classpath_string = options[:classpath].size > 0 ? options[:classpath].join(":") : "."
+      separator = File::PATH_SEPARATOR
+      classpath_string = options[:classpath].size > 0 ? options[:classpath].join(separator) : "."
       javac_opts = options[:javac_options].join(' ')
       target = options[:target]
       java_home = ENV_JAVA['jruby.home']
-      separator = File::PATH_SEPARATOR
 
       compile_string = "javac #{javac_opts} -d #{target} -cp #{java_home}/lib/#{jruby_jar}#{separator}#{classpath_string} #{files_string}"
 
