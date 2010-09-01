@@ -778,8 +778,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         modify();
         if (value.getRealSize() > length) {
             value.setRealSize(length);
+        } else if (value.length() < length) {
+            value.length(length);
         }
-        value.length(length);
     }
 
     final void view(ByteList bytes) {
