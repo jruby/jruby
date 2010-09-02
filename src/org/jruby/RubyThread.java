@@ -986,11 +986,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
     public void beforeBlockingCall() {
+        pollThreadEvents();
         enterSleep();
     }
     
     public void afterBlockingCall() {
         exitSleep();
+        pollThreadEvents();
     }
 
     private void receivedAnException(ThreadContext context, IRubyObject exception) {
