@@ -67,8 +67,8 @@ public class RubyBignum extends RubyInteger {
 
     private static final int BIT_SIZE = 64;
     private static final long MAX = (1L << (BIT_SIZE - 1)) - 1;
-    private static final BigInteger LONG_MAX = BigInteger.valueOf(MAX);
-    private static final BigInteger LONG_MIN = BigInteger.valueOf(-MAX - 1);
+    public static final BigInteger LONG_MAX = BigInteger.valueOf(MAX);
+    public static final BigInteger LONG_MIN = BigInteger.valueOf(-MAX - 1);
 
     private final BigInteger value;
 

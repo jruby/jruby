@@ -35,7 +35,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import java.math.BigInteger;
 import org.jruby.CompatVersion;
+import org.jruby.RubyBignum;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsPreOneArgNode;
@@ -1358,8 +1360,15 @@ public class ParserSupport {
             return fixnumNode;
         } else if (integerNode instanceof BignumNode) {
             BignumNode bignumNode = (BignumNode) integerNode;
+
+            BigInteger value = bignumNode.getValue().negate();
+
+            // Negating a bignum will make the last negative value of our bignum
+            if (value.compareTo(RubyBignum.LONG_MIN) >= 0) {
+                return new FixnumNode(bignumNode.getPosition(), value.longValue());
+            }
             
-            bignumNode.setValue(bignumNode.getValue().negate());
+            bignumNode.setValue(value);
         }
         
         return integerNode;
