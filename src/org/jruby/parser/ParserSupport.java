@@ -107,7 +107,6 @@ import org.jruby.ast.FCallNoArgNode;
 import org.jruby.ast.FCallOneArgBlockNode;
 import org.jruby.ast.FCallOneArgBlockPassNode;
 import org.jruby.ast.FCallOneArgNode;
-import org.jruby.ast.FCallSpecialArgBlockNode;
 import org.jruby.ast.FCallSpecialArgBlockPassNode;
 import org.jruby.ast.FCallSpecialArgNode;
 import org.jruby.ast.FCallThreeArgBlockNode;
@@ -369,7 +368,7 @@ public class ParserSupport {
     public Node addRootNode(Node topOfAST, ISourcePosition position) {
         position = topOfAST != null ? topOfAST.getPosition() : position;
 
-        if (result.getBeginNodes().size() == 0) {
+        if (result.getBeginNodes().isEmpty()) {
             if (topOfAST == null) topOfAST = NilImplicitNode.NIL;
             
             return new RootNode(position, result.getScope(), topOfAST);
@@ -1160,7 +1159,6 @@ public class ParserSupport {
                     lexer.getCurrentLine(), "Both block arg and actual block given.");
         }
 
-        if (iter != null) new FCallSpecialArgBlockNode(position(operation, args), (String) operation.getValue(), args, (IterNode) iter);
         return new FCallSpecialArgNode(position(operation, args), (String) operation.getValue(), args);
     }
 
