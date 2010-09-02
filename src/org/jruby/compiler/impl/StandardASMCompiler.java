@@ -146,6 +146,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private String classname;
     private String sourcename;
 
+    private Integer javaVersion;
+
     private ClassWriter classWriter;
     private SkinnyMethodAdapter initMethod;
     private SkinnyMethodAdapter clinitMethod;
@@ -189,6 +191,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public StandardASMCompiler(String classname, String sourcename) {
         this.classname = classname;
         this.sourcename = sourcename;
+    }
+
+    public void setJavaVersion(Integer javaVersion) {
+        this.javaVersion = javaVersion;
     }
 
     public byte[] getClassByteArray() {
@@ -393,7 +399,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
         // Create the class with the appropriate class name and source file
-        classWriter.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER,getClassname(), null, p(AbstractScript.class), null);
+        classWriter.visit(javaVersion == null ? RubyInstanceConfig.JAVA_VERSION : javaVersion,
+                ACC_PUBLIC + ACC_SUPER,getClassname(), null, p(AbstractScript.class), null);
 
         // add setPosition impl, which stores filename as constant to speed updates
         SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, "setPosition", sig(Void.TYPE, params(ThreadContext.class, int.class)), null, null));
