@@ -42,6 +42,7 @@ static VALUE jruby_select(void* data) {
     struct timeval* timeout = (struct timeval*)(data_array[4]);
 
     int ret = select(max, read, write, except, timeout);
+    xfree(data);
     return (VALUE)ret;
 }
 
@@ -91,7 +92,6 @@ rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct
         data[4] = (void*)timeout;
 
         VALUE ret = rb_thread_blocking_region(jruby_select, (void*)data, NULL, NULL);
-        xfree((void*)data);
         return (int)ret;
     }
 }
