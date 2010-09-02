@@ -64,6 +64,7 @@ public class Token implements ISourcePositionHolder {
 		this.position = position;
 	}
     
+    @Override
     public String toString() {
         return "Token { Value=" + value + ", Position=" + position + "}";
     }

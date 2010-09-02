@@ -61,7 +61,7 @@ public class RubyYaccLexer {
     private static ByteList END_MARKER = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_', '_'});
     private static ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});
     private static ByteList END_DOC_MARKER = new ByteList(new byte[] {'e', 'n', 'd'});
-    private static HashMap<String, Keyword> map;
+    private static final HashMap<String, Keyword> map;
 
     static {
         map = new HashMap<String, Keyword>();
@@ -274,7 +274,7 @@ public class RubyYaccLexer {
         this.isOneEight = isOneEight;
     }
     
-    public void reset() {
+    public final void reset() {
     	token = 0;
     	yaccValue = null;
     	src = null;
@@ -438,7 +438,7 @@ public class RubyYaccLexer {
 	 * @param c the character to test
 	 * @return true if character is a hex value (0-9a-f)
 	 */
-    static final boolean isHexChar(int c) {
+    static boolean isHexChar(int c) {
         return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
     }
 
@@ -446,7 +446,7 @@ public class RubyYaccLexer {
 	 * @param c the character to test
      * @return true if character is an octal value (0-7)
 	 */
-    static final boolean isOctChar(int c) {
+    static boolean isOctChar(int c) {
         return '0' <= c && c <= '7';
     }
     
@@ -529,7 +529,7 @@ public class RubyYaccLexer {
             return Tokens.tWORDS_BEG;
 
         case 'w':
-            lex_strterm = new StringTerm(str_squote | STR_FUNC_QWORDS, begin, end);
+            lex_strterm = new StringTerm(/* str_squote | */ STR_FUNC_QWORDS, begin, end);
             do {c = src.read();} while (Character.isWhitespace(c));
             src.unread(c);
             yaccValue = new Token("%"+c+begin, getPosition());
@@ -802,11 +802,11 @@ public class RubyYaccLexer {
 
     // DEBUGGING HELP 
     private int yylex2() throws IOException {
-        int token = yylex2();
+        int currentToken = yylex2();
         
-        printToken(token);
+        printToken(currentToken);
         
-        return token;
+        return currentToken;
     }
 
     /**
@@ -853,7 +853,7 @@ public class RubyYaccLexer {
                 /* fall through */
             case '\n':
                 if (isOneEight) {             	// Replace a string of newlines with a single one
-                    while((c = src.read()) == '\n');
+                    while((c = src.read()) == '\n') {}
                 } else {
                     switch (lex_state) {
                     case EXPR_BEG: case EXPR_FNAME: case EXPR_DOT:
