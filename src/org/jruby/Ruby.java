@@ -140,6 +140,7 @@ import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
 import org.jruby.runtime.CallBlock;
 import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.io.SelectorPool;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -3744,6 +3745,15 @@ public final class Ruby {
         return hierarchyLock;
     }
 
+    /**
+     * Get the runtime-global selector pool
+     *
+     * @return a SelectorPool from which to get Selector instances
+     */
+    public SelectorPool getSelectorPool() {
+        return selectorPool;
+    }
+
     private volatile int constantGeneration = 1;
     private final ThreadService threadService;
     
@@ -3932,4 +3942,7 @@ public final class Ruby {
 
     // An atomic long for generating DynamicMethod serial numbers
     private final AtomicLong dynamicMethodSerial = new AtomicLong(0);
+
+    // A soft pool of selectors for blocking IO operations
+    private final SelectorPool selectorPool = new SelectorPool();
 }
