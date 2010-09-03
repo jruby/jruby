@@ -877,7 +877,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     selectable.configureBlocking(false);
                     
                     if (io != null) io.addBlockingThread(this);
-                    currentSelector = getSelector(selectable);
+                    currentSelector = getRuntime().getSelectorPool().get();
 
                     key = selectable.register(currentSelector, ops);
 
@@ -916,7 +916,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     // shut down and null out the selector
                     try {
                         if (currentSelector != null) {
-                            currentSelector.close();
+                            getRuntime().getSelectorPool().put(currentSelector);
                         }
                     } catch (Exception e) {
                         // ignore
