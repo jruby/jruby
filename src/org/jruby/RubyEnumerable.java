@@ -536,7 +536,7 @@ public class RubyEnumerable {
     public static IRubyObject detect(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
         boolean blockGiven = block.isGiven();
 
-        if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find(context, null, block);
+        if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find(context, ifnone, block);
 
         return block.isGiven() ? detectCommon(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "detect", ifnone);
     }
