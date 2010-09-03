@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.compiler.JITCompiler;
 
 /**
  * A Simple cache which maintains a collection of classes that can potentially be shared among

@@ -100,6 +100,7 @@ public class IOInputStream extends InputStream {
         return returnValue;
     }
 
+    @Override
     public int read(byte[] b) throws IOException {
         if (in != null) {
             return in.read(b, 0, b.length);
@@ -114,6 +115,7 @@ public class IOInputStream extends InputStream {
         return returnValue;
     }
 
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         if (in != null) {
             return in.read(b, off, len);

@@ -69,7 +69,7 @@ public class Platform {
     public static final Map<String, String> ARCH_NAMES = new HashMap<String, String>() {{
         put("x86", "i386");
     }};
-    private static final String initOperatingSystem() {
+    private static String initOperatingSystem() {
         String osname = getProperty("os.name", "unknown").toLowerCase();
         for (String s : OS_NAMES.keySet()) {
             if (s.equalsIgnoreCase(osname)) {
@@ -81,7 +81,7 @@ public class Platform {
         }
         return osname;
     }
-    private static final String initArchitecture() {
+    private static String initArchitecture() {
         String arch = getProperty("os.arch", "unknown").toLowerCase();
         for (String s : ARCH_NAMES.keySet()) {
             if (s.equalsIgnoreCase(arch)) {

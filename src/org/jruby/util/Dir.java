@@ -98,7 +98,7 @@ public class Dir {
                 s++;
                 break;
             case '*':
-                while(pat < pend && (c = bytes[pat++]) == '*');
+                while(pat < pend && (c = bytes[pat++]) == '*') {}
                 if(s < send && (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
                     return FNM_NOMATCH;
                 }
@@ -384,7 +384,7 @@ public class Dir {
 
     }
 
-    private static interface GlobFunc {
+    public static interface GlobFunc {
         int call(byte[] ptr, int p, int len, Object ary);
     }
 
