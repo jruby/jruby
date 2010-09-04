@@ -99,7 +99,7 @@ public class StringTerm extends StrTerm {
         if (begin == '\0' && flags == 0) {
             ByteList buffer = new ByteList();
             src.unread(c);
-            if (parseSimpleStringIntoBuffer(src, buffer) == RubyYaccLexer.EOF) {
+            if (parseSimpleStringIntoBuffer(lexer, src, buffer) == RubyYaccLexer.EOF) {
                 throw new SyntaxException(PID.STRING_HITS_EOF, src.getPosition(), 
                         src.getCurrentLine(), "unterminated string meets end of file");
             }
@@ -192,8 +192,9 @@ public class StringTerm extends StrTerm {
         return options | kcode;
     }
     
-    public int parseSimpleStringIntoBuffer(LexerSource src, ByteList buffer) throws java.io.IOException {
+    public int parseSimpleStringIntoBuffer(RubyYaccLexer lexer, LexerSource src, ByteList buffer) throws java.io.IOException {
         int c;
+
 
         while ((c = src.read()) != RubyYaccLexer.EOF) {
             if (c == end) {
@@ -201,10 +202,18 @@ public class StringTerm extends StrTerm {
                 break;
             } else if (c == '\\') {
                 c = src.read();
-                if ((c == '\n' || c != end) && c != '\\') buffer.append('\\');
-            } 
+                if (!lexer.isOneEight() && c == 'u') {
+                    lexer.readUTFEscape(buffer, true, false);
 
-            buffer.append(c);
+                    // ENEBO: Mixed escape via non-ascii magic missing
+                } else if((c == '\n' || c != end) && c != '\\') {
+                    buffer.append('\\').append(c);
+                } else {
+                    buffer.append(c);
+                }
+            } else {
+                buffer.append(c);
+            }
         }
         
         return c;
@@ -215,6 +224,7 @@ public class StringTerm extends StrTerm {
         boolean expand = (flags & RubyYaccLexer.STR_FUNC_EXPAND) != 0;
         boolean escape = (flags & RubyYaccLexer.STR_FUNC_ESCAPE) != 0;
         boolean regexp = (flags & RubyYaccLexer.STR_FUNC_REGEXP) != 0;
+        boolean symbol = (flags & RubyYaccLexer.STR_FUNC_SYMBOL) != 0;
         int c;
 
         while ((c = src.read()) != RubyYaccLexer.EOF) {
@@ -248,6 +258,18 @@ public class StringTerm extends StrTerm {
                     if (escape) buffer.append(c);
                     break;
 
+                case 'u':
+                    if (!lexer.isOneEight()) {
+                        if (!expand) {
+                            buffer.append('\\');
+                            break;
+                        }
+                        lexer.readUTFEscape(buffer, true, symbol);
+
+                        // ENEBO: Mixed escape via non-ascii magic missing
+
+                        continue;
+                    }
                 default:
                     if (regexp) {
                         src.unread(c);
