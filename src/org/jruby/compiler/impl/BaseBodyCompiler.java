@@ -2789,4 +2789,21 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         loadThreadContext();
         invokeUtilityMethod("traceEnd", sig(void.class, ThreadContext.class));
     }
+
+    public void preMultiAssign(int head, boolean args) {
+        // arrayish object is on stack, call utility and unpack
+        if (head == 1 && args) {
+            invokeUtilityMethod("arraySlice1N", sig(IRubyObject[].class, IRubyObject.class));
+            method.dup();
+            method.pushInt(1);
+            method.aaload();
+            method.swap();
+            method.pushInt(0);
+            method.aaload();
+        } else if (head == 1 && !args) {
+            invokeUtilityMethod("arraySlice1", sig(IRubyObject.class, IRubyObject.class));
+        } else {
+            throw new RuntimeException("invalid preMultiAssign args: " + head + ", " + args);
+        }
+    }
 }

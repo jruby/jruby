@@ -628,4 +628,6 @@ public interface BodyCompiler {
     public void traceEnd();
 
     public String getNativeMethodName();
+
+    public void preMultiAssign(int head, boolean args);
 }

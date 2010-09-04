@@ -1870,4 +1870,16 @@ public class RuntimeHelpers {
         }
         return metaClass.getCacheToken() == generation;
     }
+
+    public static IRubyObject[] arraySlice1N(IRubyObject arrayish) {
+        arrayish = aryToAry(arrayish);
+        RubyArray arrayish2 = ensureMultipleAssignableRubyArray(arrayish, arrayish.getRuntime(), true);
+        return new IRubyObject[] {arrayEntryOrNilZero(arrayish2), subarrayOrEmpty(arrayish2, arrayish2.getRuntime(), 1)};
+    }
+
+    public static IRubyObject arraySlice1(IRubyObject arrayish) {
+        arrayish = aryToAry(arrayish);
+        RubyArray arrayish2 = ensureMultipleAssignableRubyArray(arrayish, arrayish.getRuntime(), true);
+        return arrayEntryOrNilZero(arrayish2);
+    }
 }
