@@ -1250,7 +1250,14 @@ public class ParserSupport {
 
         if (tail instanceof StrNode) {
             if (head instanceof StrNode) {
-        	    return new StrNode(head.getPosition(), (StrNode) head, (StrNode) tail);
+                StrNode front = (StrNode) head;
+                // string_contents always makes an empty strnode...which is sometimes valid but
+                // never if it ever is in literal_concat.
+                if (front.getValue().getRealSize() > 0) {
+                    return new StrNode(head.getPosition(), front, (StrNode) tail);
+                } else {
+                    return tail;
+                }
             } 
             head.setPosition(head.getPosition());
             return ((ListNode) head).add(tail);
