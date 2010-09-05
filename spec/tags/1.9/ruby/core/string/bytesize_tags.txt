@@ -1,4 +1,0 @@
-fails:#String#bytesize works with strings containing single UTF-8 characters
-fails:#String#bytesize works with pseudo-ASCII strings containing single UTF-8 characters
-fails:#String#bytesize works with strings containing UTF-8 characters
-fails:#String#bytesize works with pseudo-ASCII strings containing UTF-8 characters
