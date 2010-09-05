@@ -307,19 +307,13 @@ public class LoadService {
         SearchState state;
 
         try {
-            // Even if we don't support .so, some stdlib require .so directly
-            // replace it with .jar to look for a java extension and if that fails,
-            // try the platform specific library ending
+            // Even if we don't support .so, some stdlib require .so directly.
+            // Replace it with .jar to look for a java extension
+            // JRUBY-5033: The ExtensionSearcher will locate C exts, too, this way.
             if (file.endsWith(".so")) {
                 file = file.replaceAll(".so$", ".jar");
-                state = findFileForLoad(file);
-                if (state.library == null) {
-                    file = file.replaceAll("jar$", Platform.IS_MAC ? "bundle" : (Platform.IS_WINDOWS ? "dll" : "so"));
-                    state = findFileForLoad(file);
-                }
-            } else {
-                state = findFileForLoad(file);
             }
+            state = findFileForLoad(file);
 
             return tryLoadingLibraryOrScript(runtime, state);
         } catch (AlreadyLoaded al) {
@@ -498,7 +492,10 @@ public class LoadService {
 
     public class SourceBailoutSearcher extends BailoutSearcher {
         public boolean shouldTrySearch(SearchState state) {
-            return true;
+            // JRUBY-5032: Load extension files if they are required
+            // explicitely, and even if an rb file of the same name
+            // has already been loaded (effectively skipping the search for a source file).
+            return !extensionPattern.matcher(state.loadName).find();
         }
 
         // According to Rubyspec, source files should be loaded even if an equally named
