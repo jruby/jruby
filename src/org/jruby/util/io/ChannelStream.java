@@ -1457,7 +1457,8 @@ public class ChannelStream implements Stream, Finalizable {
             }
 
             byte[] b = new byte[1];
-            return read(b, 0, 1) == 1 ? b[0] : -1;
+            // java.io.InputStream#read must return an unsigned value;
+            return read(b, 0, 1) == 1 ? b[0] & 0xff: -1;
         }
 
         @Override
