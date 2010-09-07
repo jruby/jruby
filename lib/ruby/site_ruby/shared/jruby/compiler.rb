@@ -192,7 +192,11 @@ module JRuby::Compiler
           errors += compile_proc[filename]
 	}
       else
-        errors += compile_proc[filename]
+        if filename =~ /\.java$/
+          files << filename
+        else
+          errors += compile_proc[filename]
+        end
       end
     end
 
