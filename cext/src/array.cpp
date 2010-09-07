@@ -136,11 +136,11 @@ RubyArray::jsync(JNIEnv* env)
         RArray* rarray = rwdata.rarray;
         assert((env->GetArrayLength(values) - begin) >= rarray->aux.capa);
 
-        long real_length = rarray->len;
+        long used_length = rarray->len;
         // Copy all values back into the Java array
-        for (long i = 0; i < rarray->aux.capa; i++) {
+        for (long i = 0; i < used_length; i++) {
             if (unlikely(rarray->ptr[i] == Qundef)) {
-                real_length = i;
+                used_length = i;
                 break; // Qundef cannot be assigned normally. End here.
             } else {
                 env->SetObjectArrayElement(values, i + begin, valueToObject(env, rarray->ptr[i]));
@@ -149,7 +149,7 @@ RubyArray::jsync(JNIEnv* env)
         }
         env->DeleteLocalRef(values);
 
-        env->SetIntField(obj, RubyArray_length_field, (jint)real_length);
+        env->SetIntField(obj, RubyArray_length_field, (jint)used_length);
         checkExceptions(env);
     }
     return true;
@@ -191,7 +191,7 @@ RubyArray::nsync(JNIEnv* env)
     }
 
     env->DeleteLocalRef(values);
-    rarray->len = capa;
+    rarray->len = len;
     return true;
 }
 
