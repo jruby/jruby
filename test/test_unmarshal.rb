@@ -24,13 +24,15 @@ class TestUnmarshal < Test::Unit::TestCase
   end
 
   def test_fixnum_unbuffered
-    # need to read unbuffered value from ChannelStream.
+    # need to be big enough for reading unbuffered bytes from ChannelStream.
     obj = Array.new(2000, 60803)
     dump = Marshal.dump(obj)
-    piper, pipew = IO.pipe
-    pipew << dump
-    Marshal.load(piper).each do |e|
-      assert_equal(60803, e, 'JRUBY-5064')
+    IO.pipe do |piper, pipew|
+      pipew << dump
+      pipew.close
+      Marshal.load(piper).each do |e|
+        assert_equal(60803, e, 'JRUBY-5064')
+      end
     end
   end
 
