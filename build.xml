@@ -320,7 +320,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -353,7 +353,7 @@
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -398,7 +398,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -494,7 +494,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${shared.lib.dir}/yecht.jar"/>
@@ -583,7 +583,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.vladium}.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${shared.lib.dir}/yecht.jar"/>
