@@ -250,6 +250,11 @@ public class RbConfigLibrary implements Library {
     private static void setupMakefileConfig(RubyModule configModule, RubyHash mkmfHash) {
         Ruby ruby = configModule.getRuntime();
         
+        String cc = System.getenv("CC");
+        cc = cc == null ? "cc " : cc;
+        String cpp = System.getenv("CPP");
+        cpp = cpp == null ? cc + "-E " : cpp;
+
         String jflags = " -fno-omit-frame-pointer -fno-strict-aliasing ";
         String oflags = " -O2  -DNDEBUG";
         String wflags = " -W -Werror -Wall -Wno-unused -Wno-parentheses ";
@@ -261,7 +266,7 @@ public class RbConfigLibrary implements Library {
         String soflags = true ? "" : " -shared -static-libgcc -mimpure-text -Wl,-O1 ";
         String ldflags = soflags;
         String dldflags = "";
-        String ldshared = "cc -shared ";
+        String ldshared = cc + "-shared ";
         
         String archflags = " -m" + (Platform.IS_64_BIT ? "64" : "32");
 
@@ -274,7 +279,7 @@ public class RbConfigLibrary implements Library {
             setConfig(mkmfHash, "DLEXT", "dll");
         } else if (Platform.IS_MAC) {
             setConfig(mkmfHash, "DLEXT", "bundle");
-            ldshared = "cc -dynamic -bundle -undefined dynamic_lookup ";
+            ldshared = cc + "-dynamic -bundle -undefined dynamic_lookup ";
             cflags += " -DTARGET_RT_MAC_CFM=0 ";
             ldflags += " -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 ";
             archflags = " -arch " + Platform.ARCH;
@@ -305,8 +310,8 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "ruby_install_name", jrubyScript());
         setConfig(mkmfHash, "LDSHARED", ldshared);
         setConfig(mkmfHash, "RUBY_PLATFORM", getOSName());
-        setConfig(mkmfHash, "CC", "cc ");
-        setConfig(mkmfHash, "CPP", "cc -E ");
+        setConfig(mkmfHash, "CC", cc);
+        setConfig(mkmfHash, "CPP", cpp);
         setConfig(mkmfHash, "OUTFLAG", "-o ");
         setConfig(mkmfHash, "COMMON_HEADERS", "ruby.h");
         setConfig(mkmfHash, "PATH_SEPARATOR", ":");
