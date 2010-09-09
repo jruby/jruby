@@ -301,11 +301,11 @@ Java_org_jruby_cext_Native_callFunction(JNIEnv* env, jobject, jlong function, jl
 
     } catch (jruby::JavaException& ex) {
         env->Throw(ex.getCause());
-        return NULL;
+        return 0x0;
 
     } catch (std::exception& ex) {
         jruby::throwExceptionByName(env, jruby::RuntimeException, "C runtime exception occurred: ", ex.what());
-        return NULL;
+        return 0x0;
     }
 }
 
