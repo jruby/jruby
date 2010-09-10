@@ -110,7 +110,7 @@ public class HandleFactory {
             signature = sig(Object.class, Object.class, Object[].class);
             break;
         }
-        m = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC, "invoke", signature, null, null));
+        m = new SkinnyMethodAdapter(cv, ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC, "invoke", signature, null, null);
 
         m.start();
 
@@ -169,7 +169,7 @@ public class HandleFactory {
         m.end();
 
         if (needsArgsVersion) {
-            m = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC, "invoke", sig(Object.class, Object.class, Object[].class), null, null));
+            m = new SkinnyMethodAdapter(cv, ACC_PUBLIC | ACC_FINAL | ACC_SYNTHETIC, "invoke", sig(Object.class, Object.class, Object[].class), null, null);
 
             m.start();
 
@@ -195,7 +195,7 @@ public class HandleFactory {
         }
 
         // constructor
-        m = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC, "<init>", sig(void.class), null, null));
+        m = new SkinnyMethodAdapter(cv, ACC_PUBLIC, "<init>", sig(void.class), null, null);
         m.start();
         m.aload(0);
         m.invokespecial(p(Handle.class), "<init>", sig(void.class));

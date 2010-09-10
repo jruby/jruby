@@ -403,7 +403,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 ACC_PUBLIC + ACC_SUPER,getClassname(), null, p(AbstractScript.class), null);
 
         // add setPosition impl, which stores filename as constant to speed updates
-        SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, "setPosition", sig(Void.TYPE, params(ThreadContext.class, int.class)), null, null));
+        SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor(), ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, "setPosition", sig(Void.TYPE, params(ThreadContext.class, int.class)), null, null);
         method.start();
 
         method.aload(0); // thread context
@@ -441,7 +441,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         if (generateLoad || generateMain) {
             // the load method is used for loading as a top-level script, and prepares appropriate scoping around the code
-            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "load", getMethodSignature(4), null, null));
+            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor(), ACC_PUBLIC, "load", getMethodSignature(4), null, null);
             method.start();
 
             // invoke __file__ with threadcontext, self, args (null), and block (null)
@@ -478,7 +478,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         if (generateMain) {
             // add main impl, used for detached or command-line execution of this script with a new runtime
             // root method of a script is always in stub0, method0
-            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, "main", sig(Void.TYPE, params(String[].class)), null, null));
+            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor(), ACC_PUBLIC | ACC_STATIC, "main", sig(Void.TYPE, params(String[].class)), null, null);
             method.start();
 
             // new instance to invoke run against
@@ -558,7 +558,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private void beginInit() {
         ClassVisitor cv = getClassVisitor();
 
-        initMethod = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC, "<init>", sig(Void.TYPE), null, null));
+        initMethod = new SkinnyMethodAdapter(cv, ACC_PUBLIC, "<init>", sig(Void.TYPE), null, null);
         initMethod.start();
         initMethod.aload(THIS);
         initMethod.invokespecial(p(AbstractScript.class), "<init>", sig(Void.TYPE));
@@ -578,7 +578,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private void beginClassInit() {
         ClassVisitor cv = getClassVisitor();
 
-        clinitMethod = new SkinnyMethodAdapter(cv.visitMethod(ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(Void.TYPE), null, null));
+        clinitMethod = new SkinnyMethodAdapter(cv, ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(Void.TYPE), null, null);
         clinitMethod.start();
 
         if (invDynSupportInstaller != null) {
@@ -636,7 +636,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         methodCompiler.beginMethod(args, scope);
         
         // boxed arg list __file__
-        SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "__file__", getMethodSignature(4), null, null));
+        SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor(), ACC_PUBLIC, "__file__", getMethodSignature(4), null, null);
         method.start();
 
         // invoke static __file__
@@ -652,7 +652,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         if (methodCompiler.isSpecificArity()) {
             // exact arg list __file__
-            method = new SkinnyMethodAdapter(getClassVisitor().visitMethod(ACC_PUBLIC, "__file__", getMethodSignature(scope.getRequiredArgs()), null, null));
+            method = new SkinnyMethodAdapter(getClassVisitor(), ACC_PUBLIC, "__file__", getMethodSignature(scope.getRequiredArgs()), null, null);
             method.start();
 
             // invoke static __file__

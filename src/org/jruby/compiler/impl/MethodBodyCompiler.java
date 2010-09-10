@@ -86,12 +86,12 @@ public class MethodBodyCompiler extends RootScopedBodyCompiler {
         if (specificArity) {
             
             method = new SkinnyMethodAdapter(
-                    script.getClassVisitor().visitMethod(
-                        ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
-                        methodName,
-                        StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 4),
-                        null,
-                        null));
+                    script.getClassVisitor(),
+                    ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
+                    methodName,
+                    StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 4),
+                    null,
+                    null);
             method.start();
 
             // check arity in the variable-arity version
