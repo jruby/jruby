@@ -43,8 +43,12 @@ def setup(options = "", *long_options)
       end
     end
     long_options.each do |s|
-      opt_name = s[/\A(?:--)?([^\s=]+)/, 1].intern
-      o.on(s.gsub(/([a-z])([A-Z])/){$1+"-"+$2.downcase}.sub(/\A(?!--)/, '--')) do |val|
+      opt_name, arg_name = s.split(/(?=[\s=])/, 2)
+      opt_name.sub!(/\A--/, '')
+      s = "--#{opt_name.gsub(/([A-Z]+|[a-z])([A-Z])/, '\1-\2').downcase}#{arg_name}"
+      puts "#{opt_name}=>#{s}" if $DEBUG
+      opt_name = opt_name.intern
+      o.on(s) do |val|
         opt_hash[opt_name] = val
       end
     end
@@ -304,7 +308,9 @@ def httpd
     |argv, options|
     require 'webrick'
     opt = options[:RequestTimeout] and options[:RequestTimeout] = opt.to_i
-    opt = options[:Port] and (options[:Port] = Integer(opt)) rescue nil
+    [:Port, :MaxClients].each do |name|
+      opt = options[name] and (options[name] = Integer(opt)) rescue nil
+    end
     unless argv.empty?
       options[:DocumentRoot] = argv.shift
     end

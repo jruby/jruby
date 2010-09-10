@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
+	<classpathentry excluding="org/jruby/runtime/Constants.java" kind="src" path="src"/>
+	<classpathentry excluding="*.java" kind="src" path="src_gen"/>
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5">
 		<accessrules>
@@ -28,7 +29,7 @@
 	<classpathentry kind="lib" path="build_lib/asm-commons-3.2.jar"/>
 	<classpathentry kind="lib" path="build_lib/asm-util-3.2.jar"/>
 	<classpathentry kind="lib" path="build_lib/jnr-posix.jar"/>
-	<classpathentry kind="lib" path="build_lib/joda-time-1.6.jar"/>
+	<classpathentry kind="lib" path="build_lib/joda-time-1.6.1.jar"/>
 	<classpathentry kind="lib" path="build_lib/jgrapht-jdk1.5.jar"/>
 	<classpathentry kind="lib" path="build_lib/livetribe-jsr223-2.0.6.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/ANT"/>

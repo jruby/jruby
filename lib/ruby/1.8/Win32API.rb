@@ -5,10 +5,32 @@ require 'ffi-internal.so'
 
 class Win32API
   SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
+
+  class Pointer
+    extend FFI::DataConverter
+    native_type FFI::Type::POINTER
+    
+    def to_native(value, ctx)
+      if value.kind_of?(Integer)
+        FFI::Pointer.new(value)
+      else
+        value
+      end
+    end
+
+    def from_native(value, ctx)
+      if !value.null?
+        value.get_string(0)
+      else
+        nil
+      end
+    end
+  end
+
   TypeDefs = {
     '0' => FFI::Type::VOID,
     'V' => FFI::Type::VOID,
-    'P' => FFI::Type::WIN32PTR,
+    'P' => FFI::Type::Mapped.new(Pointer),
     'I' => FFI::Type::INT,
     'N' => FFI::Type::INT,
     'L' => FFI::Type::INT,

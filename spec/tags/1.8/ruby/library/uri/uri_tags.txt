@@ -1,0 +1,1 @@
+fails:the URI method returns the argument if it is a URI object

@@ -133,7 +133,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
 
     /** the default and only constructor */
     public WeakIdentityHashMap() {
-        clear();
+        clear(3);
     }
 
     public WeakIdentityHashMap(int size) {
@@ -144,7 +144,7 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
         clear(3);
     }
     
-    void clear(int size) {
+    private void clear(int size) {
         range = size;
         this.size = 0;
         ratio = DEFAULT_RATIO;

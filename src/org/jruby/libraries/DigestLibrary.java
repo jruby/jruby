@@ -39,28 +39,4 @@ public class DigestLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
         org.jruby.RubyDigest.createDigest(runtime);
     }
-
-    public static class MD5 implements Library {
-        public void load(final Ruby runtime, boolean wrap) throws IOException {
-            org.jruby.RubyDigest.createDigestMD5(runtime);
-        }
-    }
-
-    public static class RMD160 implements Library {
-        public void load(final Ruby runtime, boolean wrap) throws IOException {
-            org.jruby.RubyDigest.createDigestRMD160(runtime);
-        }
-    }
-
-    public static class SHA1 implements Library {
-        public void load(final Ruby runtime, boolean wrap) throws IOException {
-            org.jruby.RubyDigest.createDigestSHA1(runtime);
-        }
-    }
-
-    public static class SHA2 implements Library {
-        public void load(final Ruby runtime, boolean wrap) throws IOException {
-            org.jruby.RubyDigest.createDigestSHA2(runtime);
-        }
-    }
 }// DigestLibrary

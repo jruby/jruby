@@ -1,5 +1,6 @@
 module FFI
-  class AutoPointer
+  class AutoPointer < Pointer
+    extend DataConverter
 
     # call-seq:
     #   AutoPointer.new(pointer, method)     => the passed Method will be invoked at GC time
@@ -27,5 +28,10 @@ module FFI
     # going to be useful if you subclass AutoPointer, and override
     # release(), which by default does nothing.
     #
+    
+    def self.native_type
+      raise RuntimeError.new("no release method defined for #{self.inspect}") unless self.respond_to?(:release)
+      Type::POINTER
+    end
   end
 end

@@ -31,7 +31,7 @@ class TC_IO_Open_ClassMethod < Test::Unit::TestCase
    end
 
    def test_open_with_modestring
-      assert_nothing_raised{ @stream = IO.open(2, 'w') }
+      assert_nothing_raised{ @stream = IO.open(@fileno, 'w') }
       assert_kind_of(IO, @stream)
    end
 

@@ -145,6 +145,22 @@ class TestDir < Test::Unit::TestCase
     end
   end
 
+  # JRUBY-4983
+  def test_entries_unicode
+    Dir.mkdir("./testDir_1")
+    Dir.mkdir("./testDir_1/glück")
+
+    assert_nothing_raised { Dir.entries("./testDir_1/glück") }
+    require 'fileutils'
+    assert_nothing_raised do
+      FileUtils.cp_r("./testDir_1/glück", "./testDir_1/target")
+      FileUtils.rm_r("./testDir_1/glück")
+    end
+  ensure
+    Dir.unlink "./testDir_1/target" rescue nil
+    Dir.unlink "./testDir_1/glück" rescue nil
+  end
+
   if WINDOWS
     def test_chdir_slash_windows
       @orig_pwd = Dir.pwd

@@ -71,6 +71,7 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.LoadService;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
@@ -267,7 +268,9 @@ public class RubyKernel {
             exArgs = new IRubyObject[]{msg, symbol};
         }
 
-        throw new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
+        RaiseException exception = new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
+        exception.preRaise(context);
+        throw exception;
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, module = true, visibility = PRIVATE)
@@ -363,22 +366,26 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Float", module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
     public static RubyFloat new_float19(IRubyObject recv, IRubyObject object) {
+        Ruby runtime = recv.getRuntime();
         if(object instanceof RubyFixnum){
-            return RubyFloat.newFloat(object.getRuntime(), ((RubyFixnum)object).getDoubleValue());
-        }else if(object instanceof RubyFloat){
+            return RubyFloat.newFloat(runtime, ((RubyFixnum)object).getDoubleValue());
+        } else if (object instanceof RubyFloat) {
             return (RubyFloat)object;
-        }else if(object instanceof RubyBignum){
-            return RubyFloat.newFloat(object.getRuntime(), RubyBignum.big2dbl((RubyBignum)object));
-        }else if(object instanceof RubyString){
+        } else if(object instanceof RubyBignum){
+            return RubyFloat.newFloat(runtime, RubyBignum.big2dbl((RubyBignum)object));
+        } else if(object instanceof RubyString){
             if(((RubyString) object).getByteList().getRealSize() == 0){ // rb_cstr_to_dbl case
-                throw recv.getRuntime().newArgumentError("invalid value for Float(): " + object.inspect());
+                throw runtime.newArgumentError("invalid value for Float(): " + object.inspect());
             }
-            return RubyNumeric.str2fnum(recv.getRuntime(),(RubyString)object,true);
-        }else if(object.isNil()){
-            throw recv.getRuntime().newTypeError("can't convert nil into Float");
+            RubyString arg = (RubyString)object;
+            if (arg.toString().startsWith("0x")) {
+                return ConvertBytes.byteListToInum19(runtime, arg.getByteList(), 16, true).toFloat();
+            }
+            return RubyNumeric.str2fnum19(runtime, arg,true);
+        } else if(object.isNil()){
+            throw runtime.newTypeError("can't convert nil into Float");
         } else {
-            RubyFloat rFloat = (RubyFloat)TypeConverter.convertToType19(object, recv.getRuntime().getFloat(), "to_f");
-            return rFloat;
+            return (RubyFloat)TypeConverter.convertToType19(object, runtime.getFloat(), "to_f");
         }
     }
 
@@ -970,6 +977,7 @@ public class RubyKernel {
         if (runtime.getDebug().isTrue()) {
             printExceptionSummary(context, runtime, raise.getException());
         }
+        raise.preRaise(context);
         throw raise;
     }
 
@@ -1562,6 +1570,11 @@ public class RubyKernel {
         int resultCode;
 
         try {
+            if (! Platform.IS_WINDOWS && args[args.length -1].asJavaString().matches(".*[^&]&\\s*")) {
+                // looks like we need to send process to the background
+                ShellLauncher.runWithoutWait(runtime, args);
+                return runtime.newBoolean(true);
+            }
             resultCode = ShellLauncher.runAndWait(runtime, args);
         } catch (Exception e) {
             resultCode = 127;

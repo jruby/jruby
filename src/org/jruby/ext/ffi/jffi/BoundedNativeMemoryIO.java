@@ -1,6 +1,7 @@
 
 package org.jruby.ext.ffi.jffi;
 
+import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
@@ -82,6 +83,10 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
     
     public final boolean isDirect() {
         return true;
+    }
+
+    public final ByteOrder order() {
+        return ByteOrder.nativeOrder();
     }
 
     public final byte getByte(long offset) {

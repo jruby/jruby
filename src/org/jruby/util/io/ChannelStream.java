@@ -758,7 +758,6 @@ public class ChannelStream implements Stream, Finalizable {
             } catch (IllegalArgumentException e) {
                 throw new InvalidValueException();
             } catch (IOException ioe) {
-                ioe.printStackTrace();
                 throw ioe;
             }
         } else if (descriptor.getChannel() instanceof SelectableChannel) {
@@ -1147,7 +1146,7 @@ public class ChannelStream implements Stream, Finalizable {
         }
 
         // FIXME: I got a bunch of NPEs when I didn't check for nulls here...HOW?!
-        if (descriptor != null && descriptor.isSeekable() && descriptor.isOpen()) {
+        if (descriptor != null && descriptor.isOpen()) {
             closeForFinalize(); // close without removing from finalizers
         }
     }
@@ -1165,7 +1164,6 @@ public class ChannelStream implements Stream, Finalizable {
                     ready_stat = sel.selectNow();
                     sel.close();
                 } catch (Throwable ex) {
-                    ex.printStackTrace();
                 } finally {
                     if (sel != null) {
                         try {
@@ -1459,7 +1457,8 @@ public class ChannelStream implements Stream, Finalizable {
             }
 
             byte[] b = new byte[1];
-            return read(b, 0, 1) == 1 ? b[0] : -1;
+            // java.io.InputStream#read must return an unsigned value;
+            return read(b, 0, 1) == 1 ? b[0] & 0xff: -1;
         }
 
         @Override

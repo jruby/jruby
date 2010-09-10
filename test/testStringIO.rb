@@ -194,3 +194,13 @@ test_equal(nil ,$_)
 test_exception(IOError) { StringIO.allocate.gets }
 test_exception(IOError) { StringIO.allocate << 5 }
 test_exception(IOError) { StringIO.allocate.close }
+
+# JRUBY-4683
+s = StringIO.new("1234567890")
+test_equal("12345", s.read(5))
+s.pos = 0
+test_equal("1234567890", s.read(10)) # reaches EOF
+s.pos = 0
+test_equal("1234567890", s.read(11)) # EOF flag is cleared
+s.pos = 0
+test_equal("1234567890", s.read(10))

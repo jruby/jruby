@@ -166,6 +166,17 @@ public class RubyEnumerator extends RubyObject {
         return this;
     }
 
+    @JRubyMethod(name = "dup")
+    @Override
+    public IRubyObject dup() {
+        // JRUBY-5013: Enumerator needs to copy private fields in order to have a valid structure
+        RubyEnumerator copy = (RubyEnumerator) super.dup();
+        copy.object     = this.object;
+        copy.method     = this.method;
+        copy.methodArgs = this.methodArgs;
+        return copy;
+    }
+
     /**
      * Send current block and supplied args to method on target. According to MRI
      * Block may not be given and "each" should just ignore it and call on through to

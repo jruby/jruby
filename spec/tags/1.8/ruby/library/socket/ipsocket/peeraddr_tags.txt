@@ -1,1 +1,0 @@
-fails(JRUBY-2791,macos):Socket::IPSocket#peeraddr returns an array of information on the peer

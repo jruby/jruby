@@ -1624,6 +1624,8 @@ dsym	       : tSYMBEG xstring_contents tSTRING_END {
 
                    if ($2 instanceof DStrNode) {
                        $$ = new DSymbolNode($1.getPosition(), $<DStrNode>2);
+                   } else if ($2 instanceof StrNode) {
+                       $$ = new SymbolNode($1.getPosition(), $<StrNode>2.getValue().toString().intern());
                    } else {
                        $$ = new DSymbolNode($1.getPosition());
                        $<DSymbolNode>$.add($2);

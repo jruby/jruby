@@ -140,12 +140,6 @@ public class ClassNode extends Node implements IScopingNode {
 
         IRubyObject classBodyResult = ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, clazz, self, aBlock);
 
-        // Experimental class reification support, to create real Java classes
-        // for Ruby classes after the first opening
-        if (!definedAlready && RubyInstanceConfig.REIFY_RUBY_CLASSES) {
-            clazz.reify();
-        }
-
         return classBodyResult;
     }
 }

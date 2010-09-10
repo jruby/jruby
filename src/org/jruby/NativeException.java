@@ -33,11 +33,9 @@ import java.lang.reflect.Member;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.SafePropertyAccessor;
 
 @JRubyClass(name = "NativeException", parent = "RuntimeError")
 public class NativeException extends RubyException {
@@ -47,9 +45,10 @@ public class NativeException extends RubyException {
     private final Ruby runtime;
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
-        super(runtime, rubyClass, cause.getClass().getName() + ": " + cause.getMessage());
+        super(runtime, rubyClass);
         this.runtime = runtime;
         this.cause = cause;
+        this.message = runtime.newString(cause.getClass().getName() + ": " + searchStackMessage(cause));
     }
 
     public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
@@ -146,5 +145,16 @@ public class NativeException extends RubyException {
 
     public Throwable getCause() {
         return cause;
+    }
+
+    private String searchStackMessage(Throwable cause) {
+        String message = null;
+
+        do {
+            message = cause.getMessage();
+            cause = cause.getCause();
+        } while (message == null && cause != null);
+
+        return message;
     }
 }

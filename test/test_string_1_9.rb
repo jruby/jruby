@@ -34,4 +34,15 @@ class TestString19 < Test::Unit::TestCase
     assert_raise(RangeError) {'test' << -3}
     assert_raise(RangeError) {'test' << -2**64}
   end
+
+  # JRUBY-4979
+  def test_inspect
+    prev_kcode = $KCODE
+    $KCODE = 'UTF8'
+    begin
+      assert_equal("&#12354;", "&#12354;".inspect)
+    ensure
+      $KCODE = prev_kcode
+    end
+  end
 end

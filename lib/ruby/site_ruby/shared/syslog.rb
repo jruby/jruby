@@ -107,14 +107,15 @@ module Syslog
 
       self
     end
-    alias_method :open!, :open
 
     ##
     # like open, but closes it first
-    def reopen(*args)
+    def reopen(*args, &block)
       close
-      open(*args)
+      open(*args, &block)
     end
+
+    alias_method :open!, :reopen
 
     ##
     # Is it open?

@@ -3063,6 +3063,8 @@ states[422] = new ParserState() {
 
                    if (((Node)yyVals[-1+yyTop]) instanceof DStrNode) {
                        yyVal = new DSymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), ((DStrNode)yyVals[-1+yyTop]));
+                   } else if (((Node)yyVals[-1+yyTop]) instanceof StrNode) {
+                       yyVal = new SymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), ((StrNode)yyVals[-1+yyTop]).getValue().toString().intern());
                    } else {
                        yyVal = new DSymbolNode(((Token)yyVals[-2+yyTop]).getPosition());
                        ((DSymbolNode)yyVal).add(((Node)yyVals[-1+yyTop]));
@@ -3964,7 +3966,7 @@ states[66] = new ParserState() {
   }
 };
 }
-					// line 1901 "DefaultRubyParser.y"
+					// line 1903 "DefaultRubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -3998,4 +4000,4 @@ states[66] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 7825 "-"
+					// line 7827 "-"

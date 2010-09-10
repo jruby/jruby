@@ -3,6 +3,7 @@ package org.jruby.javasupport.util;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
@@ -13,6 +14,7 @@ import org.jruby.RubyKernel;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -1860,6 +1862,12 @@ public class RuntimeHelpers {
     }
 
     public static boolean isGenerationEqual(IRubyObject object, int generation) {
-        return object.getMetaClass().getCacheToken() == generation;
+        RubyClass metaClass;
+        if (object instanceof RubyBasicObject) {
+            metaClass = ((RubyBasicObject)object).getMetaClass();
+        } else {
+            metaClass = object.getMetaClass();
+        }
+        return metaClass.getCacheToken() == generation;
     }
 }

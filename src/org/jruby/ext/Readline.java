@@ -73,13 +73,6 @@ public class Readline {
     private final static boolean DEBUG = false;
     private static IRubyObject COMPLETION_CASE_FOLD = null;
 
-    public static class Service implements Library {
-
-        public void load(final Ruby runtime, boolean wrap) throws IOException {
-            createReadline(runtime);
-        }
-    }
-
     public static class ReadlineHistory extends History {
         ArrayList historyList = null;
         Field index = null;

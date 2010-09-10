@@ -117,7 +117,7 @@
 class Delegator < BasicObject
   kernel = ::Kernel.dup
   kernel.class_eval do
-    [:to_s,:inspect,:=~,:!~,:===,:<=>].each do |m|
+    [:to_s,:inspect,:=~,:!~,:===,:<=>,:eql?,:hash].each do |m|
       undef_method m
     end
   end
@@ -137,7 +137,9 @@ class Delegator < BasicObject
     __setobj__(obj)
   end
 
+  #
   # Handles the magic of delegation through \_\_getobj\_\_.
+  #
   def method_missing(m, *args, &block)
     target = self.__getobj__
     begin
@@ -161,11 +163,49 @@ class Delegator < BasicObject
   end
 
   #
-  # Returns true if two objects are considered same.
+  # Returns the methods available to this delegate object as the union
+  # of this object's and \_\_getobj\_\_ methods.
+  #
+  def methods
+    __getobj__.methods | super
+  end
+
+  #
+  # Returns the methods available to this delegate object as the union
+  # of this object's and \_\_getobj\_\_ public methods.
+  #
+  def public_methods(all=true)
+    __getobj__.public_methods(all) | super
+  end
+
+  #
+  # Returns the methods available to this delegate object as the union
+  # of this object's and \_\_getobj\_\_ protected methods.
+  #
+  def protected_methods(all=true)
+    __getobj__.protected_methods(all) | super
+  end
+
+  # Note: no need to specialize private_methods, since they are not forwarded
+
+  #
+  # Returns true if two objects are considered of equal value.
   #
   def ==(obj)
     return true if obj.equal?(self)
     self.__getobj__ == obj
+  end
+
+  #
+  # Returns true if two objects are not considered of equal value.
+  #
+  def !=(obj)
+    return false if obj.equal?(self)
+    __getobj__ != obj
+  end
+
+  def !
+    !__getobj__
   end
 
   #
@@ -184,7 +224,9 @@ class Delegator < BasicObject
     raise NotImplementedError, "need to define `__setobj__'"
   end
 
+  #
   # Serialization support for the object returned by \_\_getobj\_\_.
+  #
   def marshal_dump
     ivars = instance_variables.reject {|var| /\A@delegate_/ =~ var}
     [
@@ -193,7 +235,10 @@ class Delegator < BasicObject
       __getobj__
     ]
   end
+
+  #
   # Reinitializes delegation from a serialized object.
+  #
   def marshal_load(data)
     version, vars, values, obj = data
     if version == :__v2__
@@ -212,7 +257,36 @@ class Delegator < BasicObject
   end
   private :initialize_clone, :initialize_dup
 
+  ##
+  # :method: trust
+  # Trust both the object returned by \_\_getobj\_\_ and self.
+  #
+
+  ##
+  # :method: untrust
+  # Untrust both the object returned by \_\_getobj\_\_ and self.
+  #
+
+  ##
+  # :method: taint
+  # Taint both the object returned by \_\_getobj\_\_ and self.
+  #
+
+  ##
+  # :method: untaint
+  # Untaint both the object returned by \_\_getobj\_\_ and self.
+  #
+
+  [:trust, :untrust, :taint, :untaint].each do |method|
+    define_method method do
+      __getobj__.send(method)
+      super()
+    end
+  end
+
+  #
   # Freeze self and target at once.
+  #
   def freeze
     __getobj__.freeze
     super
@@ -281,10 +355,10 @@ end
 #
 def DelegateClass(superclass)
   klass = Class.new(Delegator)
-  methods = superclass.public_instance_methods(true)
+  methods = superclass.instance_methods
   methods -= ::Delegator.public_api
   methods -= [:to_s,:inspect,:=~,:!~,:===]
-  klass.module_eval {
+  klass.module_eval do
     def __getobj__  # :nodoc:
       @delegate_dc_obj
     end
@@ -292,11 +366,15 @@ def DelegateClass(superclass)
       raise ArgumentError, "cannot delegate to self" if self.equal?(obj)
       @delegate_dc_obj = obj
     end
-  }
-  klass.module_eval do
     methods.each do |method|
       define_method(method, Delegator.delegating_block(method))
     end
+  end
+  klass.define_singleton_method :public_instance_methods do |all=true|
+    super(all) - superclass.protected_instance_methods
+  end
+  klass.define_singleton_method :protected_instance_methods do |all=true|
+    super(all) | superclass.protected_instance_methods
   end
   return klass
 end

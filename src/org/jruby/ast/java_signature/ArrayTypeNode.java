@@ -46,6 +46,11 @@ public class ArrayTypeNode extends ReferenceTypeNode {
     }
 
     @Override
+    public String getWrapperName() {
+        return typeForArray.getWrapperName() + "[]";
+    }
+
+    @Override
     public String getName() {
         return typeForArray.getName() + "[]";
     }

@@ -70,6 +70,11 @@ class TestThread < Test::Unit::TestCase
     assert(t.inspect["dead"])
   end
 
+  def test_inspect
+    t = Thread.new {}.join
+    assert_match /#<Thread:0x[0-9a-z]+ \w+>/, t.inspect
+  end
+
   def thread_foo()
     raise "hello"
   end
@@ -95,6 +100,7 @@ class TestThread < Test::Unit::TestCase
       e = error
     end
     assert(! e.nil?)
+    assert_match /thread [0-9a-z]+ tried to join itself/, e.message
   end
 
   def test_raise
@@ -225,6 +231,7 @@ class TestThread < Test::Unit::TestCase
       end
  
       a.join
+      fail
       b.join
     rescue SystemExit
       # rescued!

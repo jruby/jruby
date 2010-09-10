@@ -79,6 +79,7 @@ public class RubyException extends RubyObject {
         super(runtime, rubyClass);
         
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
+        this.javaStackTrace = Thread.currentThread().getStackTrace();
     }
     
     private static ObjectAllocator EXCEPTION_ALLOCATOR = new ObjectAllocator() {
@@ -140,16 +141,24 @@ public class RubyException extends RubyObject {
     
     public void setBacktraceFrames(ThreadContext.RubyStackTraceElement[] backtraceFrames) {
         this.backtraceFrames = backtraceFrames;
-        if (TRACE_TYPE == RAW ||
-                TRACE_TYPE == RAW_FILTERED ||
-                TRACE_TYPE == RUBY_COMPILED ||
-                TRACE_TYPE == RUBY_HYBRID) {
-            javaStackTrace = Thread.currentThread().getStackTrace();
-        }
     }
     
     public ThreadContext.RubyStackTraceElement[] getBacktraceFrames() {
         return backtraceFrames;
+    }
+
+    public void prepareBacktrace(ThreadContext context, boolean nativeException) {
+        ThreadContext.RubyStackTraceElement[] stackTrace = getBacktraceFrames();
+
+        // if it's null, build a backtrace
+        if (stackTrace == null) {
+            stackTrace = context.createBacktrace2(0, nativeException);
+
+            // if it's still null, just use an empty trace
+            if (stackTrace == null) stackTrace = new ThreadContext.RubyStackTraceElement[0];
+
+            setBacktraceFrames(stackTrace);
+        }
     }
     
     public static final int RAW = 0;
@@ -197,9 +206,9 @@ public class RubyException extends RubyObject {
         case RUBY_COMPILED:
             backtrace = ThreadContext.createRubyCompiledBacktrace(getRuntime(), javaStackTrace);
             break;
-//        case RUBY_HYBRID:
-//            backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, javaStackTrace, getRuntime().getDebug().isTrue());
-//            break;
+        case RUBY_HYBRID:
+            backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, javaStackTrace, getRuntime().getDebug().isTrue());
+            break;
         }
     }
 

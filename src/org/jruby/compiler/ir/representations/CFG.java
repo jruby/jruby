@@ -30,6 +30,7 @@ import org.jruby.compiler.ir.instructions.RETURN_Instr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.YIELD_Instr;
+import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
@@ -41,7 +42,7 @@ import org.jgrapht.*;
 import org.jgrapht.graph.*;
 
 public class CFG {
-    public enum CFG_Edge_Type { UNKNOWN, DUMMY_EDGE, FALLTHRU_EDGE, FORWARD_EDGE, BACK_EDGE, EXIT_EDGE, EXCEPTION_EDGE }
+    public enum CFG_Edge_Type { REGULAR, DUMMY_EDGE, JUMP_EDGE, FALLTHRU_EDGE, FORWARD_EDGE, BACK_EDGE, EXIT_EDGE, EXCEPTION_EDGE }
 
     public static class CFG_Edge {
         final public BasicBlock _src;
@@ -51,12 +52,12 @@ public class CFG {
         public CFG_Edge(BasicBlock s, BasicBlock d) {
             _src = s;
             _dst = d;
-            _type = CFG_Edge_Type.UNKNOWN;   // Unknown type to start with
+            _type = CFG_Edge_Type.REGULAR;   // Unknown type to start with
         }
 
         @Override
         public String toString() {
-            return "<" + _src.getID() + " --> " + _dst.getID() + ">";
+            return "<" + _src.getID() + " --> " + _dst.getID() + "> (" + _type + ")";
         }
     }
 
@@ -70,6 +71,8 @@ public class CFG {
     Map<Label, BasicBlock>              _bbMap;         // Map of label -> basic blocks with that label
     BasicBlock[]                        _bbArray;       // Array indexed by bb id
     List<BasicBlock>                    _linearizedBBList;  // Linearized list of bbs
+    Map<BasicBlock, BasicBlock>         _bbRescuerMap;  // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
+    List<RescuedRegion>                 _outermostRRs;  // Outermost rescued regions
 
     public CFG(IR_ExecutionScope s) {
         _nextBBId = 0; // Init before building basic blocks below!
@@ -77,6 +80,8 @@ public class CFG {
         _postOrderList = null;
         _dfProbs = new HashMap<String, DataFlowProblem>();
         _bbMap = new HashMap<Label, BasicBlock>();
+        _outermostRRs = new ArrayList<RescuedRegion>();
+        _bbRescuerMap = new HashMap<BasicBlock, BasicBlock>();
     }
 
     public DirectedGraph getGraph() {
@@ -136,15 +141,24 @@ public class CFG {
         return _scope.getNewLabel();
     }
 
-    private BasicBlock createNewBB(Label l, DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap) {
+    private BasicBlock createNewBB(Label l, DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap, Stack<RescuedRegion> nestedRescuedRegions) {
         BasicBlock b = new BasicBlock(this, l);
         bbMap.put(b._label, b);
         g.addVertex(b);
+        if (!nestedRescuedRegions.empty())
+            nestedRescuedRegions.peek().addBB(b);
         return b;
     }
 
-    private BasicBlock createNewBB(DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap) {
-        return createNewBB(getNewLabel(), g, bbMap);
+    private BasicBlock createNewBB(DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap, Stack<RescuedRegion> nestedRescuedRegions) {
+        return createNewBB(getNewLabel(), g, bbMap, nestedRescuedRegions);
+    }
+
+    private void removeBB(BasicBlock b) {
+        _cfg.removeVertex(b);
+        _bbMap.remove(b._label);
+        _bbRescuerMap.remove(b);
+        // SSS FIXME: Patch up rescued regions as well??
     }
 
     private void addEdge(DirectedGraph<BasicBlock, CFG_Edge> g, BasicBlock src, Label tgt, Map<Label, BasicBlock> bbMap, Map<Label, List<BasicBlock>> forwardRefs) {
@@ -179,16 +193,22 @@ public class CFG {
         // List of bbs that have a 'return' instruction
         List<BasicBlock> retBBs = new ArrayList<BasicBlock>();
 
-        // Rescue body end marker instructions are mapped to the bbs that end the rescued bodies
-        Map<RESCUED_BODY_END_MARKER_Instr, BasicBlock> rbeMarkers = new HashMap<RESCUED_BODY_END_MARKER_Instr, BasicBlock>();
+        // List of bbs that have a 'throw' instruction
+        List<BasicBlock> excBBs = new ArrayList<BasicBlock>();
+
+        // Stack of nested rescue regions
+        Stack<RescuedRegion> nestedRescuedRegions = new Stack<RescuedRegion>();
+
+        // List of all rescued regions
+        List<RescuedRegion> allRescuedRegions = new ArrayList<RescuedRegion>();
 
         DirectedGraph<BasicBlock, CFG_Edge> g = getNewCFG();
 
         // Dummy entry basic block (see note at end to see why)
-        _entryBB = createNewBB(g, _bbMap);
+        _entryBB = createNewBB(g, _bbMap, nestedRescuedRegions);
 
         // First real bb
-        BasicBlock firstBB = createNewBB(g, _bbMap);
+        BasicBlock firstBB = createNewBB(g, _bbMap, nestedRescuedRegions);
 
         // Build the rest!
         BasicBlock prevBB = null;
@@ -201,7 +221,7 @@ public class CFG {
             if (iop == Operation.LABEL) {
                 Label l = ((LABEL_Instr) i)._lbl;
                 prevBB = currBB;
-                newBB = createNewBB(l, g, _bbMap);
+                newBB = createNewBB(l, g, _bbMap, nestedRescuedRegions);
                 if (!bbEndedWithControlXfer) // Jump instruction bbs dont add an edge to the succeeding bb by default
                 {
                     g.addEdge(currBB, newBB);
@@ -219,7 +239,7 @@ public class CFG {
                 bbEndedWithControlXfer = false;
             } else if (bbEnded && (iop != Operation.RESCUE_BODY_END)) {
                 prevBB = currBB;
-                newBB = createNewBB(g, _bbMap);
+                newBB = createNewBB(g, _bbMap, nestedRescuedRegions);
                 if (!bbEndedWithControlXfer) // Jump instruction bbs dont add an edge to the succeeding bb by default
                 {
                     g.addEdge(currBB, newBB); // currBB cannot be null!
@@ -230,10 +250,23 @@ public class CFG {
             }
 
             if (i instanceof RESCUED_BODY_START_MARKER_Instr) {
-                ((RESCUED_BODY_START_MARKER_Instr) i).setRescuedBodyStartBB(currBB);
+// SSS: Do we need this anymore?
+//                currBB.addInstr(i);
+                RESCUED_BODY_START_MARKER_Instr rbsmi = (RESCUED_BODY_START_MARKER_Instr)i;
+                RescuedRegion rr = new RescuedRegion(rbsmi._elseBlock, rbsmi._rescueBlockLabels);
+                rr.addBB(currBB);
+                allRescuedRegions.add(rr);
+
+                if (nestedRescuedRegions.empty())
+                    _outermostRRs.add(rr);
+                else
+                    nestedRescuedRegions.peek().addNestedRegion(rr);
+
+                nestedRescuedRegions.push(rr);
             } else if (i instanceof RESCUED_BODY_END_MARKER_Instr) {
-                currBB.addInstr(i);
-                rbeMarkers.put((RESCUED_BODY_END_MARKER_Instr) i, currBB);
+// SSS: Do we need this anymore?
+//                currBB.addInstr(i);
+                nestedRescuedRegions.pop().setEndBB(currBB);
             } else if (iop.endsBasicBlock()) {
                 bbEnded = true;
                 currBB.addInstr(i);
@@ -257,7 +290,7 @@ public class CFG {
                     bbEndedWithControlXfer = true;
                 } else if (i instanceof THROW_EXCEPTION_Instr) {
                     tgt = null;
-                    retBBs.add(currBB);
+                    excBBs.add(currBB);
                     bbEndedWithControlXfer = true;
                 } else if (i instanceof JUMP_INDIRECT_Instr) {
                     tgt = null;
@@ -293,16 +326,19 @@ public class CFG {
             }
         }
 
-        // Hook up the first bb of all the rescue blocks with the last bb of the rescued body
-        for (RESCUED_BODY_END_MARKER_Instr rbEnd : rbeMarkers.keySet()) {
-            BasicBlock rbEndBB = rbeMarkers.get(rbEnd);
-            RESCUED_BODY_START_MARKER_Instr rbStart = rbEnd._rbStartInstr;
-            rbStart.setRescuedBodyEndBB(rbEndBB);
-            for (Label l : rbStart._rescueBlockLabels) {
-                BasicBlock rescueBlockStartBB = getTargetBB(l);
-                rescueBlockStartBB.setRescuedBodyEndBB(rbEndBB);
-                g.addEdge(rbEndBB, rescueBlockStartBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
-            }
+        // Process all rescued regions
+        for (RescuedRegion rr: allRescuedRegions) {
+            BasicBlock firstRescueBB = getTargetBB(rr.getFirstRescueBlockLabel());
+
+            // 1. Tell the region that firstRescueBB is its protector!
+            rr.setFirstRescueBB(firstRescueBB);
+
+            // 2. Record a mapping from the region's exclusive basic blocks to the first bb that will start exception handling for all their exceptions.
+            // 3. Add an exception edge from every exclusive bb of the region to firstRescueBB
+            for (BasicBlock b: rr._exclusiveBBs) {
+                _bbRescuerMap.put(b, firstRescueBB);
+                g.addEdge(b, firstRescueBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
+				}
         }
 
         // Dummy entry and exit basic blocks and other dummy edges are needed to maintain the CFG 
@@ -314,16 +350,25 @@ public class CFG {
         // * dummy entry -> dummy exit
         // * dummy entry -> first basic block (real entry)
         // * all return bbs to the exit bb
+        // * all exception bbs to the exit bb (mark these exception edges)
         // * last bb     -> dummy exit (only if the last bb didn't end with a control transfer!
-        _exitBB = createNewBB(g, _bbMap);
+        _exitBB = createNewBB(g, _bbMap, nestedRescuedRegions);
         g.addEdge(_entryBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         g.addEdge(_entryBB, firstBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         for (BasicBlock rb : retBBs) {
             g.addEdge(rb, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         }
+        for (BasicBlock rb : excBBs) {
+            g.addEdge(rb, _exitBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
+        }
         if (!bbEndedWithControlXfer) {
             g.addEdge(currBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         }
+
+        _cfg = g;
+
+        // Delete orphaned (with no incoming edges) blocks
+        deleteOrphanedBlocks();
 
         // Set up the bb array
         int n = getMaxNodeID();
@@ -331,17 +376,24 @@ public class CFG {
         for (BasicBlock x : _bbMap.values()) {
             _bbArray[x.getID() - 1] = x;
         }
-
-        _cfg = g;
     }
 
     private void mergeBBs(BasicBlock a, BasicBlock b) {
-        a.swallowBB(b);
-        _cfg.removeEdge(a, b);
-        for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
-            _cfg.addEdge(a, e._dst);
+        BasicBlock aR = _bbRescuerMap.get(a);
+        BasicBlock bR = _bbRescuerMap.get(b);
+        // We can merge the two basic blocks only if they are protected by the same rescue block!
+        if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
+            a.swallowBB(b);
+            _cfg.removeEdge(a, b);
+            for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                _cfg.addEdge(a, e._dst)._type = e._type;
+            }
+
+            removeBB(b);
+
+            if ((aR == null) && (bR != null))
+                _bbRescuerMap.put(a, bR);
         }
-        _cfg.removeVertex(b);
     }
 
         // callBB will only have a single successor & splitBB will only have a single predecessor
@@ -363,13 +415,15 @@ public class CFG {
         _bbMap.put(splitBB._label, splitBB);
         List<CFG_Edge> edgesToRemove = new java.util.ArrayList<CFG_Edge>();
         for (CFG_Edge e: outgoingEdgesOf(yieldBB)) {
-            _cfg.addEdge(splitBB, e._dst);
+            _cfg.addEdge(splitBB, e._dst)._type = e._type;
             edgesToRemove.add(e);
         }
         // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste!
         _cfg.removeAllEdges(edgesToRemove);
 
         // 2. Merge closure cfg into the current cfg
+        // NOTE: No need to clone basic blocks in the closure because they are part of the caller's cfg
+        // and is being merged in at the yield site -- there is no need for the closure after the merge.
         CFG ccfg = cl.getCFG();
         BasicBlock cEntry = ccfg.getEntryBB(); 
         BasicBlock cExit  = ccfg.getExitBB(); 
@@ -383,18 +437,51 @@ public class CFG {
         }
         for (CFG_Edge e: ccfg.outgoingEdgesOf(cEntry)) {
             if (e._dst != cExit)
-                _cfg.addEdge(yieldBB, e._dst);
+                _cfg.addEdge(yieldBB, e._dst)._type = e._type;
         }
         for (CFG_Edge e: ccfg.incomingEdgesOf(cExit)) {
-            if (e._src != cEntry)
-                _cfg.addEdge(e._src, splitBB);
+            if (e._src != cEntry) {
+                if (e._type == CFG_Edge_Type.EXCEPTION_EDGE) {
+                    // e._src has an explicit throw that returns from the closure
+                    // after inlining, if the yield instruction has a rescuer, then the
+                    // throw has to be captured by the rescuer as well.
+                    BasicBlock rescuerOfSplitBB = _bbRescuerMap.get(splitBB);
+                    _cfg.addEdge(e._src, rescuerOfSplitBB != null ? rescuerOfSplitBB : _exitBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
+                }
+                else {
+                    _cfg.addEdge(e._src, splitBB)._type = e._type;
+                }
+            }
         }
 
-        // callBB will only have a single successor & splitBB will only have a single predecessor
-        // after inlining the callee.  Merge them with their successor/predecessors respectively
-        mergeStraightlineBBs(yieldBB, splitBB);
+        // 5. No need to clone rescued regions -- just assimilate them
+        for (RescuedRegion r: ccfg._outermostRRs) {
+            _outermostRRs.add(r);
+        }
 
-        // 3. TODO: Patch up exception edges
+        // 6. Update bb rescuer map
+        // 6a. splitBB will be protected by the same bb as yieldB
+        BasicBlock yieldBBrescuer = _bbRescuerMap.get(yieldBB);
+        if (yieldBBrescuer != null)
+            _bbRescuerMap.put(splitBB, yieldBBrescuer);
+
+        // 6b. remap existing protections for bbs in mcfg to their renamed bbs.
+        // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by callBBrescuer.
+        Map<BasicBlock, BasicBlock> cRescuerMap = ccfg._bbRescuerMap;
+        for (BasicBlock cb: ccfg.getNodes()) {
+            if (cb != cEntry && cb != cExit) {
+                BasicBlock cbProtector = cRescuerMap.get(cb);
+                if (cbProtector != null)
+                    _bbRescuerMap.put(cb, cbProtector);
+                else if (yieldBBrescuer != null)
+                    _bbRescuerMap.put(cb, yieldBBrescuer);
+            }
+        }
+
+        // 7. callBB will only have a single successor & splitBB will only have a single predecessor
+        //    after inlining the callee.  Merge them with their successor/predecessors respectively
+        //    Merge only after fixing up the rescuer map above
+        mergeStraightlineBBs(yieldBB, splitBB);
     }
 
     public void inlineMethod(IRMethod m, BasicBlock callBB, CallInstruction call) {
@@ -406,10 +493,11 @@ public class CFG {
         _cfg.addVertex(splitBB);
         List<CFG_Edge> edgesToRemove = new java.util.ArrayList<CFG_Edge>();
         for (CFG_Edge e: outgoingEdgesOf(callBB)) {
-            _cfg.addEdge(splitBB, e._dst);
+            _cfg.addEdge(splitBB, e._dst)._type = e._type;
             edgesToRemove.add(e);
         }
-        // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste!
+        // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste! 
+        // That is why I build the new list edgesToRemove
         _cfg.removeAllEdges(edgesToRemove);
 
         // 2. clone callee
@@ -417,46 +505,78 @@ public class CFG {
         BasicBlock mEntry = mcfg.getEntryBB(); 
         BasicBlock mExit  = mcfg.getExitBB(); 
         DirectedGraph<BasicBlock, CFG_Edge> g = getNewCFG();
-
-        // map of original bb in callee to renamed (inlined) bb in the caler 
-        Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
         for (BasicBlock b: mcfg.getNodes()) {
             if (b != mEntry && b != mExit) {
-              BasicBlock b2 = b.cloneForInlining(ii);
-              bbRenameMap.put(b, b2);
-              _cfg.addVertex(b2);
-              _bbMap.put(b2._label, b2);
+              BasicBlock bCloned = b.cloneForInlining(ii);
+              _cfg.addVertex(bCloned);
+              _bbMap.put(bCloned._label, bCloned);
             }
         }
 
         // 3. set up new edges
-        for (BasicBlock x: bbRenameMap.keySet()) {
-            BasicBlock rx = bbRenameMap.get(x);
-            for (CFG_Edge e: mcfg.outgoingEdgesOf(x)) {
-                BasicBlock b = e._dst;
-                if (b != mExit)
-                    _cfg.addEdge(rx, bbRenameMap.get(b));
+        for (BasicBlock x: mcfg.getNodes()) {
+            if (x != mEntry && x != mExit) {
+                BasicBlock rx = ii.getRenamedBB(x);
+                for (CFG_Edge e: mcfg.outgoingEdgesOf(x)) {
+                    BasicBlock b = e._dst;
+                    if (b != mExit)
+                        _cfg.addEdge(rx, ii.getRenamedBB(b))._type = e._type;
+                }
             }
         }
 
         // 4. Hook up entry/exit edges
         for (CFG_Edge e: mcfg.outgoingEdgesOf(mEntry)) {
             if (e._dst != mExit)
-                _cfg.addEdge(callBB, bbRenameMap.get(e._dst));
+                _cfg.addEdge(callBB, ii.getRenamedBB(e._dst))._type = e._type;
         }
 
         for (CFG_Edge e: mcfg.incomingEdgesOf(mExit)) {
-            if (e._src != mEntry)
-                _cfg.addEdge(bbRenameMap.get(e._src), splitBB);
+            if (e._src != mEntry) {
+                if (e._type == CFG_Edge_Type.EXCEPTION_EDGE) {
+                    // e._src has an explicit throw that returns from the callee
+                    // after inlining, if the caller instruction has a rescuer, then the
+                    // throw has to be captured by the rescuer as well.
+                    BasicBlock rescuerOfSplitBB = _bbRescuerMap.get(splitBB);
+                    _cfg.addEdge(ii.getRenamedBB(e._src), rescuerOfSplitBB != null ? rescuerOfSplitBB : _exitBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
+                }
+                else {
+                    _cfg.addEdge(ii.getRenamedBB(e._src), splitBB)._type = e._type;
+                }
+            }
         }
 
-        // callBB will only have a single successor & splitBB will only have a single predecessor
-        // after inlining the callee.  Merge them with their successor/predecessors respectively
+        // 5. Clone rescued regions
+        for (RescuedRegion r: mcfg._outermostRRs) {
+            _outermostRRs.add(r.cloneForInlining(ii));
+        }
+
+        // 6. Update bb rescuer map
+        // 6a. splitBB will be protected by the same bb as callBB
+        BasicBlock callBBrescuer = _bbRescuerMap.get(callBB);
+        if (callBBrescuer != null)
+            _bbRescuerMap.put(splitBB, callBBrescuer);
+
+        // 6b. remap existing protections for bbs in mcfg to their renamed bbs.
+        // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by callBBrescuer.
+        Map<BasicBlock, BasicBlock> mRescuerMap = mcfg._bbRescuerMap;
+        for (BasicBlock x: mcfg.getNodes()) {
+            if (x != mEntry && x != mExit) {
+                BasicBlock xRenamed   = ii.getRenamedBB(x);
+                BasicBlock xProtector = mRescuerMap.get(x);
+                if (xProtector != null)
+                    _bbRescuerMap.put(xRenamed, ii.getRenamedBB(xProtector));
+                else if (callBBrescuer != null)
+                    _bbRescuerMap.put(xRenamed, callBBrescuer);
+            }
+        }
+
+        // 7. callBB will only have a single successor & splitBB will only have a single predecessor
+        //    after inlining the callee.  Merge them with their successor/predecessors respectively
+        //    Merge only after fixing up the rescuer map above
         mergeStraightlineBBs(callBB, splitBB);
 
-        // 5. TODO: Patch up exception edges
-
-        // 6. Inline any closure argument passed into the call.
+        // 8. Inline any closure argument passed into the call.
         Operand closureArg = call.getClosureArg();
         List    yieldSites = ii.getYieldSites();
         if (closureArg != null && !yieldSites.isEmpty()) {
@@ -623,8 +743,13 @@ public class CFG {
 
     public String toStringInstrs() {
         StringBuffer buf = new StringBuffer();
-        for (BasicBlock b : getNodes()) {
+        for (BasicBlock b: getNodes()) {
             buf.append(b.toStringInstrs());
+        }
+
+        buf.append("\n\n------ Exception handling map ------\n");
+        for (BasicBlock bb: _bbRescuerMap.keySet()) {
+            buf.append("BB " + bb.getID() + " --> BB " + _bbRescuerMap.get(bb).getID() + "\n");
         }
 
         List<IR_Closure> closures = _scope.getClosures();
@@ -651,7 +776,32 @@ public class CFG {
         if (!bbSet.get(bb.getID())) {
             stack.push(bb);
             bbSet.set(bb.getID());
-		  }
+        }
+    }
+
+    public void deleteOrphanedBlocks() {
+		  System.out.println("\nGraph:\n" + getGraph().toString());
+		  System.out.println("\nInstructions:\n" + toStringInstrs());
+
+        // FIXME: Quick and dirty implementation
+        while (true) {
+            BasicBlock bbToRemove = null;
+            for (BasicBlock b: getNodes()) {
+                // Skip entry bb!
+                if (b == _entryBB)
+                    continue;
+
+                // Every other bb should have at least one incoming edge
+                if (incomingEdgesOf(b).size() == 0) {
+                    bbToRemove = b;
+                    break;
+                }
+            }
+            if (bbToRemove == null)
+                break;
+            else
+                removeBB(bbToRemove);
+        }
     }
 
     public List<BasicBlock> linearize() {
@@ -663,7 +813,17 @@ public class CFG {
         BitSet bbSet = new BitSet(1+getMaxNodeID());
         bbSet.set(root.getID());
         Stack<BasicBlock> stack = new Stack<BasicBlock>();
+
+        // Push all exception edge targets (first bbs of rescue blocks) first so that rescue handlers are laid out last
+        // at the end of the method, outside the common execution path
+        for (CFG_Edge e: _cfg.edgeSet()) {
+            if (e._type == CFG_Edge_Type.EXCEPTION_EDGE)
+                pushBBOnStack(stack, bbSet, e._dst);
+        }
+
+        // Root next!
         stack.push(root);
+
         while (!stack.empty()) {
             BasicBlock b = stack.pop();
 //            System.out.println("processing bb: " + b.getID());
@@ -674,11 +834,10 @@ public class CFG {
             }
             else {
                 assert !stack.empty();
-          
+
                // Find the basic block that is the target of the 'taken' branch
-               List<IR_Instr> bis = b.getInstrs();
-               int n = bis.size();
-               if (n == 0) {
+               IR_Instr lastInstr = b.getLastInstr();
+               if (lastInstr == null) {
                    // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
                    BasicBlock b1 = null, b2 = null; 
                    for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
@@ -706,28 +865,90 @@ public class CFG {
                    }
                }
                else {
-                  IR_Instr lastInstr = bis.get(n-1);
 //                  System.out.println("last instr is: " + lastInstr);
-                  // Ignore target bbs if this bb ends in a jump
-                  if (! (lastInstr instanceof JUMP_Instr)) {
-                      BasicBlock takenBlock = null;
+                  BasicBlock blockToIgnore = null;
+                  if (lastInstr instanceof JUMP_Instr) {
+                      blockToIgnore = _bbMap.get(((JUMP_Instr)lastInstr)._target);
 
+                      // Check if all of blockToIgnore's predecessors get to it with a jump!
+                      // This can happen because of exceptions and rescue handlers
+                      // If so, dont ignore it.  Process it right away (because everyone will end up ignoring this block!)
+                      boolean allJumps = true;
+                      for (CFG_Edge e: _cfg.incomingEdgesOf(blockToIgnore)) {
+                          if (! (e._src.getLastInstr() instanceof JUMP_Instr))
+                              allJumps = false;
+                      }
+
+                      if (allJumps)
+                          blockToIgnore = null;
+                  }
+                  else if (lastInstr instanceof BRANCH_Instr) {
                       // Push the taken block onto the stack first so that it gets processed last!
-                      if (lastInstr instanceof BRANCH_Instr) {
-                          takenBlock = _bbMap.get(((BRANCH_Instr)lastInstr).getJumpTarget());
-                          pushBBOnStack(stack, bbSet, takenBlock);
-                      }
-             
-                      // Push everything else
-                      for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
-                          BasicBlock x = e._dst;
-                          if (x != takenBlock)
-                              pushBBOnStack(stack, bbSet, x);
-                      }
+                      BasicBlock takenBlock = _bbMap.get(((BRANCH_Instr)lastInstr).getJumpTarget());
+                      pushBBOnStack(stack, bbSet, takenBlock);
+                      blockToIgnore = takenBlock;
+                  }
+         
+                  // Push everything else
+                  for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                      BasicBlock x = e._dst;
+                      if (x != blockToIgnore)
+                          pushBBOnStack(stack, bbSet, x);
                   }
                }
             }
         }
+
+        // Verify that all bbs have been laid out!
+        for (BasicBlock b: getNodes()) {
+            if (!bbSet.get(b.getID()))
+                throw new RuntimeException("Bad CFG linearization: BB " + b.getID() + " has been missed!");
+        }
+
+        // Fixup (add/remove) jumps where appropriate
+        int n = _linearizedBBList.size();
+        for (int i = 0; i < n; i++) {
+            BasicBlock curr = _linearizedBBList.get(i); 
+            IR_Instr   li   = curr.getLastInstr();
+            if ((i+1) < n) {
+                BasicBlock next = _linearizedBBList.get(i+1);
+
+                // If curr ends in a jump to next, remove the jump!
+                if (li instanceof JUMP_Instr) {
+                    if (next == _bbMap.get(((JUMP_Instr)li)._target)) {
+                        System.out.println("BB " + curr.getID() + " falls through in layout to BB " + next.getID() + ".  Removing jump from former bb!"); 
+                        curr.removeInstr(li);
+                    }
+                }
+                // If curr has a single successor and next is not it, and curr does't end in a control transfer instruction, add a jump!
+                else {
+                    Set<CFG_Edge> succs = _cfg.outgoingEdgesOf(curr);
+                    if (succs.size() == 1) {
+                        BasicBlock tgt = succs.iterator().next()._dst;
+                        if ((tgt != next) && ((li == null) || !li._op.xfersControl())) {
+                            System.out.println("BB " + curr.getID() + " doesn't fall through to " + next.getID() + ".  Adding a jump to " + tgt._label);
+                            curr.addInstr(new JUMP_Instr(tgt._label));
+                        }
+                    }
+                }
+
+                if (curr == _exitBB) {
+                    // Add a dummy ret
+                    System.out.println("Exit bb is not the last bb in the layout!  Adding a dummy return!");
+                    curr.addInstr(new RETURN_Instr(Nil.NIL));
+                }
+            }
+            else if (curr != _exitBB) {
+                Set<CFG_Edge> succs = _cfg.outgoingEdgesOf(curr);
+                assert succs.size() == 1;
+                BasicBlock tgt = succs.iterator().next()._dst;
+                if ((li == null) || !li._op.xfersControl()) {
+                    System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
+                    curr.addInstr(new JUMP_Instr(tgt._label));
+                }
+            }
+        }
+
         return _linearizedBBList;
     }
 }

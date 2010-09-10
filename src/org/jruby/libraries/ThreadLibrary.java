@@ -224,25 +224,29 @@ public class ThreadLibrary implements Library {
 
         @JRubyMethod(name = "wait", required = 1, optional = 1)
         public IRubyObject wait_ruby(ThreadContext context, IRubyObject args[]) {
+            Ruby runtime = context.getRuntime();
             if ( args.length < 1 ) {
-                throw context.getRuntime().newArgumentError(args.length, 1);
+                throw runtime.newArgumentError(args.length, 1);
             }
             if ( args.length > 2 ) {
-                throw context.getRuntime().newArgumentError(args.length, 2);
+                throw runtime.newArgumentError(args.length, 2);
             }
 
             if (!( args[0] instanceof Mutex )) {
-                throw context.getRuntime().newTypeError(args[0], context.getRuntime().fastGetClass("Mutex"));
+                throw context.getRuntime().newTypeError(args[0], runtime.fastGetClass("Mutex"));
             }
             Mutex mutex = (Mutex)args[0];
 
             Double timeout = null;
             if ( args.length > 1 && !args[1].isNil() ) {
                 timeout = args[1].convertToFloat().getDoubleValue();
+                if (timeout < 0) {
+                    throw runtime.newArgumentError("time interval must be positive");
+                }
             }
 
             if (Thread.interrupted()) {
-                throw context.getRuntime().newConcurrencyError("thread interrupted");
+                throw runtime.newConcurrencyError("thread interrupted");
             }
             boolean success = false;
             try {
@@ -251,7 +255,7 @@ public class ThreadLibrary implements Library {
                     try {
                         success = context.getThread().wait_timeout(this, timeout);
                     } catch (InterruptedException ie) {
-                        throw context.getRuntime().newConcurrencyError(ie.getLocalizedMessage());
+                        throw runtime.newConcurrencyError(ie.getLocalizedMessage());
                     } finally {
                         // An interrupt or timeout may have caused us to miss
                         // a notify that we consumed, so do another notify in
@@ -265,7 +269,7 @@ public class ThreadLibrary implements Library {
                 mutex.lock(context);
             }
             if (timeout != null) {
-                return context.getRuntime().newBoolean(success);
+                return runtime.newBoolean(success);
             } else {
                 return this;
             }

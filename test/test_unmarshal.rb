@@ -23,4 +23,17 @@ class TestUnmarshal < Test::Unit::TestCase
     flunk "Unmarshalling failed with EOF error at " + result + " string."
   end
 
+  def test_fixnum_unbuffered
+    # need to be big enough for reading unbuffered bytes from ChannelStream.
+    obj = Array.new(2000, 60803)
+    dump = Marshal.dump(obj)
+    IO.pipe do |piper, pipew|
+      pipew << dump
+      pipew.close
+      Marshal.load(piper).each do |e|
+        assert_equal(60803, e, 'JRUBY-5064')
+      end
+    end
+  end
+
 end

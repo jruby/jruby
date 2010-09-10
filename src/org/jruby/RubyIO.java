@@ -46,6 +46,7 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -561,7 +562,7 @@ public class RubyIO extends RubyObject {
             modes |= ModeFlags.WRONLY | ModeFlags.TRUNC | ModeFlags.CREAT;
             break;
         default :
-            throw runtime.newArgumentError("illegal access mode " + modes);
+            throw runtime.newArgumentError("illegal access mode " + modesString);
         }
 
         ModifierLoop: for (int n = 1; n < length; n++) {
@@ -578,7 +579,7 @@ public class RubyIO extends RubyObject {
             case ':':
                 break ModifierLoop;
             default:
-                throw runtime.newArgumentError("illegal access mode " + modes);
+                throw runtime.newArgumentError("illegal access mode " + modesString);
             }
         }
 
@@ -2268,7 +2269,7 @@ public class RubyIO extends RubyObject {
             ByteList line;
 
             if (args[i].isNil()) {
-                line = NIL_BYTELIST;
+                line = getNilByteList(runtime);
             } else if (runtime.isInspecting(args[i])) {
                 line = RECURSIVE_BYTELIST;
             } else if (args[i] instanceof RubyArray) {
@@ -2783,22 +2784,26 @@ public class RubyIO extends RubyObject {
             openFile.checkClosed(runtime);
         }
         
-        ByteList newBuffer = openFile.getMainStream().readall();
+        try {
+            ByteList newBuffer = openFile.getMainStream().readall();
 
-        // TODO same zero-length checks as file above
+            // TODO same zero-length checks as file above
 
-        if (str == null) {
-            if (newBuffer == null) {
-                str = RubyString.newEmptyString(runtime);
+            if (str == null) {
+                if (newBuffer == null) {
+                    str = RubyString.newEmptyString(runtime);
+                } else {
+                    str = RubyString.newString(runtime, newBuffer);
+                }
             } else {
-                str = RubyString.newString(runtime, newBuffer);
+                if (newBuffer == null) {
+                    str.empty();
+                } else {
+                    str.setValue(newBuffer);
+                }
             }
-        } else {
-            if (newBuffer == null) {
-                str.empty();
-            } else {
-                str.setValue(newBuffer);
-            }
+        } catch (NonReadableChannelException ex) {
+            throw runtime.newIOError("not opened for reading");
         }
 
         str.taint(runtime.getCurrentContext());
@@ -3660,6 +3665,10 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "try_convert", meta = true, backtrace = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject tryConvert(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return arg.respondsTo("to_io") ? convertToIO(context, arg) : context.getRuntime().getNil();
+    }
+
+    private static ByteList getNilByteList(Ruby runtime) {
+        return runtime.is1_9() ? ByteList.EMPTY_BYTELIST : NIL_BYTELIST;
     }
     
     /**

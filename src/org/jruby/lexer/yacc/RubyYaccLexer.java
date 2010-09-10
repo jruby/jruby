@@ -58,10 +58,12 @@ import org.jruby.util.ByteList;
 /** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
  */
 public class RubyYaccLexer {
+    public static final Encoding UTF8_ENCODING = Encoding.load("UTF8");
+    
     private static ByteList END_MARKER = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_', '_'});
     private static ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});
     private static ByteList END_DOC_MARKER = new ByteList(new byte[] {'e', 'n', 'd'});
-    private static HashMap<String, Keyword> map;
+    private static final HashMap<String, Keyword> map;
 
     static {
         map = new HashMap<String, Keyword>();
@@ -274,7 +276,7 @@ public class RubyYaccLexer {
         this.isOneEight = isOneEight;
     }
     
-    public void reset() {
+    public final void reset() {
     	token = 0;
     	yaccValue = null;
     	src = null;
@@ -391,6 +393,10 @@ public class RubyYaccLexer {
         return cmdArgumentState;
     }
 
+    public boolean isOneEight() {
+        return isOneEight;
+    }
+
     public StackState getConditionState() {
         return conditionState;
     }
@@ -438,7 +444,7 @@ public class RubyYaccLexer {
 	 * @param c the character to test
 	 * @return true if character is a hex value (0-9a-f)
 	 */
-    static final boolean isHexChar(int c) {
+    static boolean isHexChar(int c) {
         return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
     }
 
@@ -446,7 +452,7 @@ public class RubyYaccLexer {
 	 * @param c the character to test
      * @return true if character is an octal value (0-7)
 	 */
-    static final boolean isOctChar(int c) {
+    static boolean isOctChar(int c) {
         return '0' <= c && c <= '7';
     }
     
@@ -529,7 +535,7 @@ public class RubyYaccLexer {
             return Tokens.tWORDS_BEG;
 
         case 'w':
-            lex_strterm = new StringTerm(str_squote | STR_FUNC_QWORDS, begin, end);
+            lex_strterm = new StringTerm(/* str_squote | */ STR_FUNC_QWORDS, begin, end);
             do {c = src.read();} while (Character.isWhitespace(c));
             src.unread(c);
             yaccValue = new Token("%"+c+begin, getPosition());
@@ -802,11 +808,11 @@ public class RubyYaccLexer {
 
     // DEBUGGING HELP 
     private int yylex2() throws IOException {
-        int token = yylex2();
+        int currentToken = yylex2();
         
-        printToken(token);
+        printToken(currentToken);
         
-        return token;
+        return currentToken;
     }
 
     /**
@@ -825,6 +831,7 @@ public class RubyYaccLexer {
                 lex_strterm = null;
                 lex_state = LexState.EXPR_END;
             }
+
             return tok;
         }
 
@@ -853,7 +860,7 @@ public class RubyYaccLexer {
                 /* fall through */
             case '\n':
                 if (isOneEight) {             	// Replace a string of newlines with a single one
-                    while((c = src.read()) == '\n');
+                    while((c = src.read()) == '\n') {}
                 } else {
                     switch (lex_state) {
                     case EXPR_BEG: case EXPR_FNAME: case EXPR_DOT:
@@ -1843,13 +1850,17 @@ public class RubyYaccLexer {
             yaccValue = new Token("?", getPosition());
             return '?';
         } else if (c == '\\') {
-            // FIXME: peek('u') utf8 stuff for 1.9
-            c = readEscape();
+            if (!isOneEight && src.peek('u')) {
+                src.read(); // Eat 'u'
+                c = readUTFEscape(null /* Not String literal so no buffer setting */, false, false);
+            } else {
+                c = readEscape();
+            }
         }
         
-        c &= 0xff;
         lex_state = LexState.EXPR_END;
         if (isOneEight) {
+            c &= 0xff;
             yaccValue = new FixnumNode(getPosition(), c);
         } else {
             // TODO: this isn't handling multibyte yet
@@ -2214,6 +2225,92 @@ public class RubyYaccLexer {
         yaccValue = getInteger(number, 10);
         return Tokens.tINTEGER;
     }
+
+    // Note: parser_tokadd_utf8 variant just for regexp literal parsing.  This variant is to be
+    // called when string_literal and regexp_literal.
+    public void readUTFEscapeRegexpLiteral() throws IOException {
+        tokenBuffer.append("\\u");
+        if (src.peek('{')) { // handle \\u{...}
+            do {
+                tokenBuffer.append("{");
+                if (scanHexLiteral(6, false, "invalid Unicode escape") > 0x10ffff) {
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
+                            getCurrentLine(), "invalid Unicode codepoint (too large)");
+                }
+            } while (src.peek(' ') || src.peek('\t'));
+
+            int c = src.read();
+            if (c != '}') {
+                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
+                        getCurrentLine(), "unterminated Unicode escape");
+            }
+            tokenBuffer.append((char) c);
+        } else { // handle \\uxxxx
+            scanHexLiteral(token, true, "Invalid Unicode escape");
+        }
+    }
+
+    private byte[] mbcBuf = new byte[6];
+
+    //FIXME: This seems like it could be more efficient to ensure size in bytelist and then pass
+    // in bytelists byte backing store.  This method would look ugly since realSize would need
+    // to be tweaked and I don't know how many bytes this codepoint has up front so I would need
+    // to grow by 6 (which may be wasteful).  Another idea is to make Encoding accept an interface
+    // for populating bytes and then make ByteList implement that interface.  I like this last idea
+    // since it would not leak bytelist impl details all over the place.
+    private void tokenAddMBC(int codepoint, ByteList buffer, Encoding encoding) {
+        int length = encoding.codeToMbc(codepoint, mbcBuf, 0);
+        buffer.append(mbcBuf, 0, length);
+    }
+
+    // MRI: parser_tokadd_utf8 sans regexp literal parsing
+    public int readUTFEscape(ByteList buffer, boolean stringLiteral, boolean symbolLiteral) throws IOException {
+        int codepoint;
+        int c;
+
+        if (src.peek('{')) { // handle \\u{...}
+            do {
+                src.read(); // Eat curly or whitespace
+                codepoint = scanHex(6, false, "invalid Unicode escape");
+                if (codepoint > 0x10ffff) {
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
+                            getCurrentLine(), "invalid Unicode codepoint (too large)");
+                }
+                if (codepoint >= 0x80) {
+                    buffer.setEncoding(UTF8_ENCODING);
+                    if (stringLiteral) tokenAddMBC(codepoint, buffer, UTF8_ENCODING);
+                } else if (stringLiteral) {
+                    if (codepoint == 0 && symbolLiteral) {
+                        throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
+                            getCurrentLine(), "symbol cannot contain '\\u0000'");
+                    }
+
+                    buffer.append((char) codepoint);
+                }
+            } while (src.peek(' ') || src.peek('\t'));
+
+            c = src.read();
+            if (c != '}') {
+                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
+                        getCurrentLine(), "unterminated Unicode escape");
+            }
+        } else { // handle \\uxxxx
+            codepoint = scanHex(4, true, "Invalid Unicode escape");
+            if (codepoint >= 0x80) {
+                buffer.setEncoding(UTF8_ENCODING);
+                if (stringLiteral) tokenAddMBC(codepoint, buffer, UTF8_ENCODING);
+            } else if (stringLiteral) {
+                if (codepoint == 0 && symbolLiteral) {
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
+                        getCurrentLine(), "symbol cannot contain '\\u0000'");
+                }
+
+                buffer.append((char) codepoint);
+            }
+        }
+
+        return codepoint;
+    }
     
     public int readEscape() throws IOException {
         int c = src.read();
@@ -2240,29 +2337,7 @@ public class RubyYaccLexer {
                 src.unread(c);
                 return scanOct(3);
             case 'x' : // hex constant
-                int i = 0;
-                //char hexValue = scanHex(2);
-
-                char hexValue = '\0';
-
-                for (; i < 2; i++) {
-                    int h1 = src.read();
-
-                    if (!RubyYaccLexer.isHexChar(h1)) {
-                        src.unread(h1);
-                        break;
-                    }
-
-                    hexValue <<= 4;
-                    hexValue |= Integer.parseInt(""+(char)h1, 16) & 15;
-                }
-                
-                // No hex value after the 'x'.
-                if (i == 0) {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
-                            getCurrentLine(), "Invalid escape character syntax");
-                }
-                return hexValue;
+                return scanHex(2, false, "Invalid escape character syntax");
             case 'b' : // backspace
                 return '\010';
             case 's' : // space
@@ -2299,6 +2374,68 @@ public class RubyYaccLexer {
             default :
                 return c;
         }
+    }
+
+    /**
+     * Read up to count hexadecimal digits and store those digits in a token buffer.  If strict is
+     * provided then count number of hex digits must be present. If no digits can be read a syntax
+     * exception will be thrown.  This will also return the codepoint as a value so codepoint
+     * ranges can be checked.
+     */
+    private char scanHexLiteral(int count, boolean strict, String errorMessage) throws IOException {
+        int i = 0;
+        char hexValue = '\0';
+
+        for (; i < count; i++) {
+            int h1 = src.read();
+
+            if (!RubyYaccLexer.isHexChar(h1)) {
+                src.unread(h1);
+                break;
+            }
+
+            tokenBuffer.append(h1);
+
+            hexValue <<= 4;
+            hexValue |= Integer.parseInt("" + (char) h1, 16) & 15;
+        }
+
+        // No hex value after the 'x'.
+        if (i == 0 || strict && count != i) {
+            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
+                    getCurrentLine(), errorMessage);
+        }
+
+        return hexValue;
+    }
+
+    /**
+     * Read up to count hexadecimal digits.  If strict is provided then count number of hex
+     * digits must be present. If no digits can be read a syntax exception will be thrown.
+     */
+    private int scanHex(int count, boolean strict, String errorMessage) throws IOException {
+        int i = 0;
+        int hexValue = '\0';
+
+        for (; i < count; i++) {
+            int h1 = src.read();
+
+            if (!RubyYaccLexer.isHexChar(h1)) {
+                src.unread(h1);
+                break;
+            }
+
+            hexValue <<= 4;
+            hexValue |= Integer.parseInt("" + (char) h1, 16) & 15;
+        }
+
+        // No hex value after the 'x'.
+        if (i == 0 || (strict && count != i)) {
+            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
+                    getCurrentLine(), errorMessage);
+        }
+
+        return hexValue;
     }
 
     private char scanOct(int count) throws IOException {

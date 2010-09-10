@@ -1,6 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 import java.lang.OutOfMemoryError
+import "java_integration.fixtures.ThrowExceptionInInitializer"
 
 describe "Non-wrapped Java throwables" do
   it "can be rescued" do
@@ -22,5 +23,15 @@ describe "A Ruby-level exception" do
 
     java_ex = JRuby.runtime.new_name_error("error message", "name");
     java_ex.message.should == "error message"
+  end
+end
+
+describe "A native exception wrapped by another" do  
+  it "gets the first available message from the causes' chain" do
+    begin
+      ThrowExceptionInInitializer.new.test
+    rescue NativeException => e
+      e.message.should =~ /lets cause an init exception$/
+    end
   end
 end

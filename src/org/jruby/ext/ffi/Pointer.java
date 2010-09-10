@@ -1,6 +1,7 @@
 
 package org.jruby.ext.ffi;
 
+import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -46,6 +47,10 @@ public class Pointer extends AbstractMemory {
         }
     }
 
+    public static final Pointer getNull(Ruby runtime) {
+        return (Pointer) runtime.fastGetModule("FFI").fastGetClass("Pointer").fastGetConstant("NULL");
+    }
+
     Pointer(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz, new NullMemoryIO(runtime), 0);
     }
@@ -68,6 +73,12 @@ public class Pointer extends AbstractMemory {
 
     public static final RubyClass getPointerClass(Ruby runtime) {
         return runtime.fastGetModule("FFI").fastGetClass("Pointer");
+    }
+
+    public final AbstractMemory order(Ruby runtime, ByteOrder order) {
+        return new Pointer(runtime,
+                order.equals(getMemoryIO().order()) ? (DirectMemoryIO) getMemoryIO() : new SwappedMemoryIO(runtime, getMemoryIO()),
+                size, typeSize);
     }
 
     @JRubyMethod(name = { "initialize" })
@@ -100,17 +111,13 @@ public class Pointer extends AbstractMemory {
 
 
     @Override
-    @JRubyMethod(name = "to_s", optional = 1)
+    @JRubyMethod(name = { "to_s", "inspect" }, optional = 1)
     public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
-        return RubyString.newString(context.getRuntime(),
-                String.format("Pointer [address=%x]", getAddress()));
-    }
+        String s = size != Long.MAX_VALUE
+                ? String.format("#<%s address=0x%x size=%s>", getMetaClass().getName(), getAddress(), size)
+                : String.format("#<%s address=0x%x>", getMetaClass().getName(), getAddress());
 
-    @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(ThreadContext context) {
-        String hex = Long.toHexString(getAddress());
-        return RubyString.newString(context.getRuntime(),
-                String.format("#<Pointer address=0x%s>", hex));
+        return RubyString.newString(context.getRuntime(), s);
     }
 
     @JRubyMethod(name = { "address", "to_i" })

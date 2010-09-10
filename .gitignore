@@ -53,4 +53,5 @@ lib/ruby/cext/
 *.so
 *.bundle
 *.[oa]
+dev_null
 

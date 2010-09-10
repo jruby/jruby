@@ -5,12 +5,10 @@
 
 package org.jruby.ext;
 
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
-import org.jruby.RubyKernel;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -21,7 +19,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.Library;
 
 /**
  *
@@ -31,24 +28,11 @@ import org.jruby.runtime.load.Library;
 public class WeakRef extends RubyObject {
     private WeakReference<IRubyObject> ref;
     
-    private static final ObjectAllocator WEAKREF_ALLOCATOR = new ObjectAllocator() {
+    public static final ObjectAllocator WEAKREF_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             return new WeakRef(runtime, klazz);
         }
     };
-    
-    public static class WeakRefLibrary implements Library {
-        public void load(Ruby runtime, boolean wrap) throws IOException {
-            RubyKernel.require(runtime.getKernel(), runtime.newString("delegate"), Block.NULL_BLOCK);
-            
-            RubyClass delegatorClass = (RubyClass)runtime.getClassFromPath("Delegator");
-            RubyClass weakrefClass = runtime.defineClass("WeakRef", delegatorClass, WEAKREF_ALLOCATOR);
-            
-            weakrefClass.defineAnnotatedMethods(WeakRef.class);
-            
-            runtime.defineClass("RefError", runtime.getStandardError(), runtime.getStandardError().getAllocator());
-        }
-    }
     
     @JRubyClass(name="RefError", parent="StandardError")
     public static class RefError {}

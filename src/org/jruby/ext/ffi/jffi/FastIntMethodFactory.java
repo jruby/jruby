@@ -7,6 +7,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.ext.ffi.DirectMemoryIO;
+import org.jruby.ext.ffi.MappedType;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Platform;
@@ -60,6 +61,10 @@ public class FastIntMethodFactory extends MethodFactory {
                 case ULONG:
                     return Platform.getPlatform().longSize() == 32;
             }
+        
+        } else if (type instanceof MappedType) {
+            return isFastIntResult(((MappedType) type).getRealType());
+
         }
         return false;
     }
@@ -80,7 +85,13 @@ public class FastIntMethodFactory extends MethodFactory {
                 case ULONG:
                     return Platform.getPlatform().longSize() == 32;
             }
+        
+        } else if (paramType instanceof MappedType) {
+            MappedType mt = (MappedType) paramType;
+            return isFastIntParam(mt.getRealType()) && !mt.isReferenceRequired() && !mt.isPostInvokeRequired();
+
         }
+
         return false;
     }
     
@@ -106,8 +117,18 @@ public class FastIntMethodFactory extends MethodFactory {
                 throw module.getRuntime().newRuntimeError("Arity " + parameterTypes.length + " not implemented");
         }
     }
+    
     final IntParameterConverter getIntParameterConverter(Type type) {
-        return type instanceof Type.Builtin ? getIntParameterConverter(type.getNativeType()) : null;
+        if (type instanceof Type.Builtin) {
+            return getIntParameterConverter(type.getNativeType());
+
+        } else if (type instanceof MappedType) {
+            MappedType ctype = (MappedType) type;
+            return new MappedParameterConverter(getIntParameterConverter(ctype.getRealType()), ctype);
+
+        } else {
+            return null;
+        }
     }
     
     final IntParameterConverter getIntParameterConverter(NativeParam type) {
@@ -142,9 +163,20 @@ public class FastIntMethodFactory extends MethodFactory {
                 throw new IllegalArgumentException("Unknown type " + type);
         }
     }
+
     final IntResultConverter getIntResultConverter(Type type) {
-        return type instanceof Type.Builtin ? getIntResultConverter(type.getNativeType()) : null;
+        if (type instanceof Type.Builtin) {
+            return getIntResultConverter(type.getNativeType());
+
+        } else if (type instanceof MappedType) {
+            MappedType ctype = (MappedType) type;
+            return new MappedResultConverter(getIntResultConverter(ctype.getRealType()), ctype);
+
+        } else {
+            return null;
+        }
     }
+
     final IntResultConverter getIntResultConverter(NativeType type) {
         switch (type) {
             case VOID: return VoidResultConverter.INSTANCE;
@@ -248,6 +280,21 @@ public class FastIntMethodFactory extends MethodFactory {
             return new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address));
         }
     }
+
+    static final class MappedResultConverter implements IntResultConverter {
+        private final IntResultConverter nativeConverter;
+        private final MappedType mappedType;
+
+        public MappedResultConverter(IntResultConverter nativeConverter, MappedType mappedType) {
+            this.nativeConverter = nativeConverter;
+            this.mappedType = mappedType;
+        }
+
+        public final IRubyObject fromNative(ThreadContext context, int value) {
+            return mappedType.fromNative(context, nativeConverter.fromNative(context, value));
+        }
+    }
+
 
     static final class StringResultConverter implements IntResultConverter {
         private static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
@@ -362,5 +409,19 @@ public class FastIntMethodFactory extends MethodFactory {
         }
 
 
+    }
+
+    static final class MappedParameterConverter extends BaseParameterConverter {
+        private final IntParameterConverter nativeConverter;
+        private final MappedType mappedType;
+
+        public MappedParameterConverter(IntParameterConverter nativeConverter, MappedType mappedType) {
+            this.nativeConverter = nativeConverter;
+            this.mappedType = mappedType;
+        }
+
+        public final int intValue(ThreadContext context, IRubyObject obj) {
+            return nativeConverter.intValue(context, mappedType.toNative(context, obj));
+        }
     }
 }

@@ -798,10 +798,15 @@ public class RubyFloat extends RubyNumeric {
     public IRubyObject round() {
         double f = value;
         if (f > 0.0) {
-            f = Math.floor(f + 0.5);
-        }
-        if (f < 0.0) {
-            f = Math.ceil(f - 0.5);
+            f = Math.floor(f);
+            if (value - f >= 0.5) {
+                f += 1.0;
+            }
+        } else if (f < 0.0) {
+            f = Math.ceil(f);
+            if (f - value >= 0.5) {
+                f -= 1.0;
+            }
         }
         return dbl2num(getRuntime(), f);
     }

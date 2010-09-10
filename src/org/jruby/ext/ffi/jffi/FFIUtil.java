@@ -49,7 +49,6 @@ public final class FFIUtil {
         m.put(NativeType.BUFFER_INOUT, com.kenai.jffi.Type.POINTER);
         m.put(NativeType.STRING, com.kenai.jffi.Type.POINTER);
         m.put(NativeType.STRPTR, com.kenai.jffi.Type.POINTER);
-        m.put(NativeType.WIN32PTR, com.kenai.jffi.Type.POINTER);
 
         return m;
     }
@@ -72,6 +71,9 @@ public final class FFIUtil {
 
             return FFIUtil.newArray((org.jruby.ext.ffi.Type.Array) type);
 
+        } else if (type instanceof org.jruby.ext.ffi.MappedType) {
+
+            return FFIUtil.getFFIType(((org.jruby.ext.ffi.MappedType) type).getRealType());
 
         } else {
             return null;

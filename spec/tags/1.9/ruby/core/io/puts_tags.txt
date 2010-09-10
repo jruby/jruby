@@ -1,1 +1,0 @@
-fails:IO#puts writes empty string with a newline when given nil as an arg

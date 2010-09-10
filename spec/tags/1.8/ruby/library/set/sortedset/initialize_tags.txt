@@ -1,1 +1,0 @@
-fails(JRUBY-3657 ruby_bug[1.8.7]):SortedSet#initialize takes only comparable values

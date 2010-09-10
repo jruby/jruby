@@ -310,10 +310,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public synchronized void beDead() {
         status = status.DEAD;
-        try {
-            if (selector != null) selector.close();
-        } catch (IOException ioe) {
-        }
     }
 
     public void pollThreadEvents() {
@@ -470,7 +466,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             }
         }
         if (isCurrent()) {
-            throw getRuntime().newThreadError("thread tried to join itself");
+            throw getRuntime().newThreadError("thread " + identityString() + " tried to join itself");
         }
         try {
             if (threadService.getCritical()) {
@@ -550,8 +546,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // FIXME: There's some code duplication here with RubyObject#inspect
         StringBuilder part = new StringBuilder();
         String cname = getMetaClass().getRealClass().getName();
-        part.append("#<").append(cname).append(":0x");
-        part.append(Integer.toHexString(System.identityHashCode(this)));
+        part.append("#<").append(cname).append(":");
+        part.append(identityString());
         part.append(' ');
         part.append(status.toString().toLowerCase());
         part.append('>');
@@ -902,11 +898,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return select(io, SelectionKey.OP_ACCEPT);
     }
 
-    private volatile Selector selector;
-
     private synchronized Selector getSelector(SelectableChannel channel) throws IOException {
-        if (selector == null) selector = Selector.open();
-        return selector;
+        return channel.provider().openSelector();
     }
     
     public boolean select(RubyIO io, int ops) {
@@ -925,7 +918,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     selectable.configureBlocking(false);
                     
                     if (io != null) io.addBlockingThread(this);
-                    currentSelector = getSelector(selectable);
+                    currentSelector = getRuntime().getSelectorPool().get();
 
                     key = selectable.register(currentSelector, ops);
 
@@ -947,22 +940,43 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 } catch (IOException ioe) {
                     throw getRuntime().newRuntimeError("Error with selector: " + ioe);
                 } finally {
+                    // Note: I don't like ignoring these exceptions, but it's
+                    // unclear how likely they are to happen or what damage we
+                    // might do by ignoring them. Note that the pieces are separate
+                    // so that we can ensure one failing does not affect the others
+                    // running.
+
+                    // clean up the key in the selector
                     try {
-                        if (key != null) {
-                            key.cancel();
-                            currentSelector.selectNow();
-                        }
-                        afterBlockingCall();
-                        currentSelector = null;
-                        if (io != null) io.removeBlockingThread(this);
-                        selectable.configureBlocking(oldBlocking);
-                    } catch (IOException ioe) {
-                        // ignore; I don't like doing it, but it seems like we
-                        // really just need to make all channels non-blocking by
-                        // default and use select when implementing blocking ops,
-                        // so if this remains set non-blocking, perhaps it's not
-                        // such a big deal...
+                        if (key != null) key.cancel();
+                        if (currentSelector != null) currentSelector.selectNow();
+                    } catch (Exception e) {
+                        // ignore
                     }
+
+                    // shut down and null out the selector
+                    try {
+                        if (currentSelector != null) {
+                            getRuntime().getSelectorPool().put(currentSelector);
+                        }
+                    } catch (Exception e) {
+                        // ignore
+                    } finally {
+                        currentSelector = null;
+                    }
+
+                    // remove this thread as a blocker against the given IO
+                    if (io != null) io.removeBlockingThread(this);
+
+                    // go back to previous blocking state on the selectable
+                    try {
+                        selectable.configureBlocking(oldBlocking);
+                    } catch (Exception e) {
+                        // ignore
+                    }
+
+                    // clear thread state from blocking call
+                    afterBlockingCall();
                 }
             }
         } else {
@@ -1012,11 +1026,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
     public void beforeBlockingCall() {
+        pollThreadEvents();
         enterSleep();
     }
     
     public void afterBlockingCall() {
         exitSleep();
+        pollThreadEvents();
     }
 
     private void receivedAnException(ThreadContext context, IRubyObject exception) {
@@ -1066,8 +1082,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return hash;
     }
 
-    @Override
     public String toString() {
         return threadImpl.toString();
+    }
+
+    private String identityString() {
+        return "0x" + Integer.toHexString(System.identityHashCode(this));
     }
 }

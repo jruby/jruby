@@ -57,7 +57,6 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -126,7 +125,6 @@ import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.ast.RootNode;
@@ -136,6 +134,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
 import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.io.SelectorPool;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -247,7 +246,8 @@ public final class Ruby {
      */
     private Ruby(RubyInstanceConfig config) {
         this.config             = config;
-        this.is1_9               = config.getCompatVersion() == CompatVersion.RUBY1_9;
+        this.is1_9              = config.getCompatVersion() == CompatVersion.RUBY1_9;
+        this.doNotReverseLookupEnabled = is1_9;
         this.threadService      = new ThreadService(this);
         if(config.isSamplingEnabled()) {
             org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
@@ -718,10 +718,10 @@ public final class Ruby {
         ThreadContext context = getCurrentContext();
 
         assert scriptNode != null : "scriptNode is not null";
-        assert scriptNode instanceof RootNode;
+        assert scriptNode instanceof RootNode : "scriptNode is not a RootNode";
 
         try {
-            return ((RootNode)scriptNode).interpret(this, context, getTopSelf(), Block.NULL_BLOCK);
+            return ((RootNode)scriptNode).getBodyNode().interpret(this, context, getTopSelf(), Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
@@ -1420,42 +1420,42 @@ public final class Ruby {
     private void initBuiltins() {
         addLazyBuiltin("java.rb", "java", "org.jruby.javasupport.Java");
         addLazyBuiltin("jruby.rb", "jruby", "org.jruby.libraries.JRubyLibrary");
-        addLazyBuiltin("jruby/ext.rb", "jruby/ext", "org.jruby.RubyJRuby$ExtLibrary");
-        addLazyBuiltin("jruby/util.rb", "jruby/util", "org.jruby.RubyJRuby$UtilLibrary");
-        addLazyBuiltin("jruby/core_ext.rb", "jruby/core_ext", "org.jruby.RubyJRuby$CoreExtLibrary");
-        addLazyBuiltin("jruby/type.rb", "jruby/type", "org.jruby.RubyJRuby$TypeLibrary");
-        addLazyBuiltin("jruby/synchronized.rb", "jruby/synchronized", "org.jruby.RubyJRuby$SynchronizedLibrary");
+        addLazyBuiltin("jruby/ext.rb", "jruby/ext", "org.jruby.ext.jruby.JRubyExtLibrary");
+        addLazyBuiltin("jruby/util.rb", "jruby/util", "org.jruby.ext.jruby.JRubyUtilLibrary");
+        addLazyBuiltin("jruby/core_ext.rb", "jruby/core_ext", "org.jruby.ext.jruby.JRubyCoreExtLibrary");
+        addLazyBuiltin("jruby/type.rb", "jruby/type", "org.jruby.ext.jruby.JRubyTypeLibrary");
+        addLazyBuiltin("jruby/synchronized.rb", "jruby/synchronized", "org.jruby.ext.jruby.JRubySynchronizedLibrary");
         addLazyBuiltin("iconv.jar", "iconv", "org.jruby.libraries.IConvLibrary");
         addLazyBuiltin("nkf.jar", "nkf", "org.jruby.libraries.NKFLibrary");
         addLazyBuiltin("stringio.jar", "stringio", "org.jruby.libraries.StringIOLibrary");
         addLazyBuiltin("strscan.jar", "strscan", "org.jruby.libraries.StringScannerLibrary");
         addLazyBuiltin("zlib.jar", "zlib", "org.jruby.libraries.ZlibLibrary");
         addLazyBuiltin("enumerator.jar", "enumerator", "org.jruby.libraries.EnumeratorLibrary");
-        addLazyBuiltin("readline.jar", "readline", "org.jruby.ext.Readline$Service");
+        addLazyBuiltin("readline.jar", "readline", "org.jruby.ext.ReadlineService");
         addLazyBuiltin("thread.jar", "thread", "org.jruby.libraries.ThreadLibrary");
         addLazyBuiltin("thread.rb", "thread", "org.jruby.libraries.ThreadLibrary");
         addLazyBuiltin("digest.jar", "digest", "org.jruby.libraries.DigestLibrary");
         addLazyBuiltin("digest.rb", "digest", "org.jruby.libraries.DigestLibrary");
-        addLazyBuiltin("digest/md5.jar", "digest/md5", "org.jruby.libraries.DigestLibrary$MD5");
-        addLazyBuiltin("digest/rmd160.jar", "digest/rmd160", "org.jruby.libraries.DigestLibrary$RMD160");
-        addLazyBuiltin("digest/sha1.jar", "digest/sha1", "org.jruby.libraries.DigestLibrary$SHA1");
-        addLazyBuiltin("digest/sha2.jar", "digest/sha2", "org.jruby.libraries.DigestLibrary$SHA2");
+        addLazyBuiltin("digest/md5.jar", "digest/md5", "org.jruby.libraries.MD5");
+        addLazyBuiltin("digest/rmd160.jar", "digest/rmd160", "org.jruby.libraries.RMD160");
+        addLazyBuiltin("digest/sha1.jar", "digest/sha1", "org.jruby.libraries.SHA1");
+        addLazyBuiltin("digest/sha2.jar", "digest/sha2", "org.jruby.libraries.SHA2");
         addLazyBuiltin("bigdecimal.jar", "bigdecimal", "org.jruby.libraries.BigDecimalLibrary");
         addLazyBuiltin("io/wait.jar", "io/wait", "org.jruby.libraries.IOWaitLibrary");
         addLazyBuiltin("etc.jar", "etc", "org.jruby.libraries.EtcLibrary");
-        addLazyBuiltin("weakref.rb", "weakref", "org.jruby.ext.WeakRef$WeakRefLibrary");
+        addLazyBuiltin("weakref.rb", "weakref", "org.jruby.ext.WeakRefLibrary");
         addLazyBuiltin("delegate_internal.jar", "delegate_internal", "org.jruby.ext.DelegateLibrary");
         addLazyBuiltin("timeout.rb", "timeout", "org.jruby.ext.Timeout");
         addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.SocketLibrary");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.libraries.RbConfigLibrary");
         addLazyBuiltin("jruby/serialization.rb", "serialization", "org.jruby.libraries.JRubySerializationLibrary");
-        addLazyBuiltin("ffi-internal.jar", "ffi-internal", "org.jruby.ext.ffi.Factory$Service");
+        addLazyBuiltin("ffi-internal.jar", "ffi-internal", "org.jruby.ext.ffi.FFIService");
         addLazyBuiltin("tempfile.rb", "tempfile", "org.jruby.libraries.TempfileLibrary");
         addLazyBuiltin("fcntl.rb", "fcntl", "org.jruby.libraries.FcntlLibrary");
         if (is1_9()) {
             addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
             addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
-            addLazyBuiltin("fiber.rb", "fiber", "org.jruby.libraries.FiberLibrary$ExtLibrary");
+            addLazyBuiltin("fiber.rb", "fiber", "org.jruby.libraries.FiberExtLibrary");
         }
 
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
@@ -2480,7 +2480,7 @@ public final class Ruby {
                 + 2 // initial spaces
                 + 1; // spaces before "at"
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
         buffer
                 .append("An exception has occurred:\n")
@@ -3205,7 +3205,9 @@ public final class Ruby {
     }
 
     public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
-        return new RaiseException(new RubyNoMethodError(this, getNoMethodError(), message, name, args), true);
+        RaiseException exception = new RaiseException(new RubyNoMethodError(this, getNoMethodError(), message, name, args), true);
+        exception.preRaise(getCurrentContext());
+        return exception;
     }
 
     public RaiseException newNameError(String message, String name) {
@@ -3220,12 +3222,18 @@ public final class Ruby {
         if (printWhenVerbose && origException != null && this.isVerbose()) {
             origException.printStackTrace(getErrorStream());
         }
-        return new RaiseException(new RubyNameError(
+        
+        RaiseException exception = new RaiseException(new RubyNameError(
                 this, getNameError(), message, name), false);
+        exception.preRaise(getCurrentContext());
+
+        return exception;
     }
 
     public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
-        return new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), message, reason, exitValue), true);
+        RaiseException exception = new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), message, reason, exitValue), true);
+        exception.preRaise(getCurrentContext());
+        return exception;
     }
 
     public RaiseException newLocalJumpErrorNoBlock() {
@@ -3233,7 +3241,7 @@ public final class Ruby {
     }
 
     public RaiseException newRedoLocalJumpError() {
-        return new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), "unexpected redo", RubyLocalJumpError.Reason.REDO, getNil()), true);
+        return newLocalJumpError(RubyLocalJumpError.Reason.REDO, getNil(), "unexpected redo");
     }
 
     public RaiseException newLoadError(String message) {
@@ -3241,8 +3249,12 @@ public final class Ruby {
     }
 
     public RaiseException newFrozenError(String objectType) {
+        return newFrozenError(objectType, false);
+    }
+
+    public RaiseException newFrozenError(String objectType, boolean runtimeError) {
         // TODO: Should frozen error have its own distinct class?  If not should more share?
-        return newRaiseException(is1_9() ? getRuntimeError() : getTypeError(), "can't modify frozen " + objectType);
+        return newRaiseException(is1_9() || runtimeError ? getRuntimeError() : getTypeError(), "can't modify frozen " + objectType);
     }
 
     public RaiseException newSystemStackError(String message) {
@@ -3257,7 +3269,9 @@ public final class Ruby {
     }
 
     public RaiseException newSystemExit(int status) {
-        return new RaiseException(RubySystemExit.newInstance(this, status));
+        RaiseException exception = new RaiseException(RubySystemExit.newInstance(this, status));
+        exception.preRaise(getCurrentContext());
+        return exception;
     }
 
     public RaiseException newIOError(String message) {
@@ -3338,6 +3352,7 @@ public final class Ruby {
      */
     private RaiseException newRaiseException(RubyClass exceptionClass, String message) {
         RaiseException re = new RaiseException(this, exceptionClass, message, true);
+        re.preRaise(getCurrentContext());
         return re;
     }
 
@@ -3348,14 +3363,6 @@ public final class Ruby {
 
     public RubySymbol.SymbolTable getSymbolTable() {
         return symbolTable;
-    }
-
-    public void setStackTraces(int stackTraces) {
-        this.stackTraces = stackTraces;
-    }
-
-    public int getStackTraces() {
-        return stackTraces;
     }
 
     public void setRandomSeed(long randomSeed) {
@@ -3638,9 +3645,7 @@ public final class Ruby {
         return objectSpaceEnabled;
     }
 
-    // The method is intentionally not public, since it typically should
-    // not be used outside of the core.
-    /* package-private */ void setObjectSpaceEnabled(boolean objectSpaceEnabled) {
+    public void setObjectSpaceEnabled(boolean objectSpaceEnabled) {
         this.objectSpaceEnabled = objectSpaceEnabled;
     }
 
@@ -3765,12 +3770,19 @@ public final class Ruby {
         return hierarchyLock;
     }
 
+    /**
+     * Get the runtime-global selector pool
+     *
+     * @return a SelectorPool from which to get Selector instances
+     */
+    public SelectorPool getSelectorPool() {
+        return selectorPool;
+    }
+
     private volatile int constantGeneration = 1;
     private final ThreadService threadService;
     
     private POSIX posix;
-
-    private int stackTraces = 0;
 
     private final ObjectSpace objectSpace = new ObjectSpace();
 
@@ -3952,4 +3964,7 @@ public final class Ruby {
 
     // An atomic int for generating class generation numbers
     private final AtomicInteger moduleGeneration = new AtomicInteger(1);
+
+    // A soft pool of selectors for blocking IO operations
+    private final SelectorPool selectorPool = new SelectorPool();
 }

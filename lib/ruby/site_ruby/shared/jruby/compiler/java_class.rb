@@ -15,8 +15,13 @@ module JRuby::Compiler
       jruby_jar, = ['jruby.jar', 'jruby-complete.jar'].select do |jar|
         File.exist? "#{ENV_JAVA['jruby.home']}/lib/#{jar}"
       end
-      classpath_string = options[:classpath].size > 0 ? options[:classpath].join(":") : "."
-      compile_string = "javac #{options[:javac_options].join(' ')} -d #{options[:target]} -cp #{ENV_JAVA['jruby.home']}/lib/#{jruby_jar}:#{classpath_string} #{files_string}"
+      separator = File::PATH_SEPARATOR
+      classpath_string = options[:classpath].size > 0 ? options[:classpath].join(separator) : "."
+      javac_opts = options[:javac_options].join(' ')
+      target = options[:target]
+      java_home = ENV_JAVA['jruby.home']
+
+      compile_string = "javac #{javac_opts} -d #{target} -cp #{java_home}/lib/#{jruby_jar}#{separator}#{classpath_string} #{files_string}"
 
       compile_string
     end
@@ -591,7 +596,9 @@ JAVA
         if return_type.void?
           "return;"
         else
-          "return (#{return_type.wrapper_name})ruby_result.toJava(#{return_type.name}.class);"
+          # Can't return wrapped array as primitive array
+          cast_to = return_type.is_array ? return_type.fully_typed_name : return_type.wrapper_name
+          "return (#{cast_to})ruby_result.toJava(#{return_type.name}.class);"
         end
       else
         raise "no java_signature has been set for method #{name}"

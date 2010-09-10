@@ -51,6 +51,10 @@ module JRuby::Compiler
         options[:javac_options] << tgt
       end
 
+      opts.on("-5"," --jdk5", "Generate JDK 5 classes (version 49)") do |x|
+        options[:jdk5] = true
+      end
+
       opts.on("--java", "Generate .java classes to accompany the script") do
         options[:java] = true
       end
@@ -146,6 +150,10 @@ module JRuby::Compiler
           inspector.inspect(node)
 
           asmCompiler = BytecodeCompiler.new(pathname.gsub(".", "/"), filename)
+          if options[:jdk5]
+            asmCompiler.java_version= 49
+          end
+
           compiler = ASTCompiler.new
           compiler.compile_root(node, asmCompiler, inspector)
 
@@ -184,7 +192,11 @@ module JRuby::Compiler
           errors += compile_proc[filename]
 	}
       else
-        errors += compile_proc[filename]
+        if filename =~ /\.java$/
+          files << filename
+        else
+          errors += compile_proc[filename]
+        end
       end
     end
 

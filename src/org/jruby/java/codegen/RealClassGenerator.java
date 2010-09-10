@@ -27,6 +27,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.util.ClassCache.OneShotClassLoader;
+import org.jruby.util.JRubyClassLoader;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
@@ -451,13 +453,16 @@ public class RealClassGenerator {
         // create the class
         byte[] bytes = cw.toByteArray();
         Class newClass;
-        synchronized (ruby.getJRubyClassLoader()) {
-            // try to load the specified name; only if that fails, try to define the class
-            try {
-                newClass = ruby.getJRubyClassLoader().loadClass(name);
-            } catch (ClassNotFoundException cnfe) {
-                newClass = ruby.getJRubyClassLoader().defineClass(name, cw.toByteArray());
-            }
+        JRubyClassLoader loader;
+        if (superClass.getClassLoader() instanceof JRubyClassLoader) {
+            loader = new JRubyClassLoader(superClass.getClassLoader());
+        } else {
+            loader = new JRubyClassLoader(ruby.getJRubyClassLoader());
+        }
+        try {
+            newClass = loader.loadClass(name);
+        } catch (ClassNotFoundException cnfe) {
+            newClass = loader.defineClass(name, cw.toByteArray());
         }
 
         if (DEBUG) {

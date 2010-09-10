@@ -38,7 +38,7 @@ final class CallbackMethodWithBlock extends DynamicMethod {
         Arity.checkArgumentCount(context.getRuntime(), args,
                 marshallers.length - (blockGiven ? 1 : 0), marshallers.length);
         
-        Invocation invocation = new Invocation(context);
+        Invocation invocation = new Invocation(context, 0, 0);
         try {
             HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
 

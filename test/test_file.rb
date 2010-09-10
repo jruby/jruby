@@ -818,17 +818,29 @@ class TestFile < Test::Unit::TestCase
     mask = 0200
     orig_mask = File.umask(mask)
 
-    arch = java.lang.System.getProperty('sun.arch.data.model')
-    if (WINDOWS && arch == '64')
-      # TODO: We have a bug on Windows with x64 JVM
-      # See JRUBY-2819
-      return
-    end
+    return if windows_64bit?
 
     assert_equal(mask, File.umask)
     # Subsequent calls should still return the same umask, not zero
     assert_equal(mask, File.umask)
   ensure
+    File.umask(orig_mask)
+  end
+  
+  # JRUBY-4937
+  def test_umask_respects_existing_umask_value
+    return if windows_64bit?
+    
+    orig_mask = File.umask
+    # Cleanup old test files just in case
+    FileUtils.rm_rf %w[ file_test_out.1.0644 file_test_out.2 ]
+
+    File.umask( 0172 ) # Set umask to fixed weird test value
+    open( "file_test_out.1.0644", 'w', 0707 ) { |f| assert_equal(0172, File.umask) }
+    open( "file_test_out.2",      'w'       ) { |f| assert_equal(0172, File.umask) }
+    
+  ensure
+    FileUtils.rm_rf %w[ file_test_out.1.0644 file_test_out.2 ]
     File.umask(orig_mask)
   end
 
@@ -988,4 +1000,31 @@ class TestFile < Test::Unit::TestCase
   ensure
     Dir.rmdir("dir_tmp")
   end
+
+  # JRUBY-4927
+  def test_chmod_when_chdir
+    pwd = Dir.getwd
+    path = Tempfile.new("somewhere").path
+    FileUtils.rm_rf path
+    FileUtils.mkpath path
+    FileUtils.mkpath File.join(path, "src")
+    Dir.chdir path
+
+    1.upto(4) do |i|
+      File.open("src/file#{i}", "w+") {|f| f.write "file#{i} raw"}
+    end
+    Dir['src/*'].each do |file|
+      File.chmod(0o755, file)
+      assert_equal 0o755, (File.stat(file).mode & 0o755)
+    end
+  ensure
+    FileUtils.rm_rf(path)
+    Dir.chdir(pwd)
+  end
+  
+  def windows_64bit?
+    arch = java.lang.System.getProperty('sun.arch.data.model')
+    WINDOWS && arch == '64'
+  end
+  
 end

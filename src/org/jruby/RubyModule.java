@@ -366,9 +366,9 @@ public class RubyModule extends RubyObject {
         if (getBaseName() == null) {
             if (bareName == null) {
                 if (isClass()) {
-                    bareName = "#<" + "Class" + ":01x" + Integer.toHexString(System.identityHashCode(this)) + ">";
+                    bareName = "#<" + "Class"  + ":0x1" + String.format("%08x", System.identityHashCode(this)) + ">";
                 } else {
-                    bareName = "#<" + "Module" + ":01x" + Integer.toHexString(System.identityHashCode(this)) + ">";
+                    bareName = "#<" + "Module" + ":0x1" + String.format("%08x", System.identityHashCode(this)) + ">";
                 }
             }
 
@@ -1099,7 +1099,11 @@ public class RubyModule extends RubyObject {
             // reopen a java class
         } else {
             if (superClazz == null) superClazz = runtime.getObject();
-            clazz = RubyClass.newClass(runtime, superClazz, name, superClazz.getAllocator(), this, true);
+            if (superClazz == runtime.getObject() && RubyInstanceConfig.REIFY_RUBY_CLASSES) {
+                clazz = RubyClass.newClass(runtime, superClazz, name, REIFYING_OBJECT_ALLOCATOR, this, true);
+            } else {
+                clazz = RubyClass.newClass(runtime, superClazz, name, superClazz.getAllocator(), this, true);
+            }
         }
 
         return clazz;

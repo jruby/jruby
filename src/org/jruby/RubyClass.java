@@ -31,6 +31,7 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -65,14 +66,19 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.collections.WeakHashSet;
 import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.util.CheckClassAdapter;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -99,12 +105,6 @@ public class RubyClass extends RubyModule {
         classClass.defineAnnotatedMethods(RubyClass.class);
         
         classClass.addMethod("new", new SpecificArityNew(classClass, Visibility.PUBLIC));
-        
-        // This is a non-standard method; have we decided to start extending Ruby?
-        //classClass.defineFastMethod("subclasses", callbackFactory.getFastOptMethod("subclasses"));
-        
-        // FIXME: for some reason this dispatcher causes a VerifyError...
-        //classClass.dispatcher = callbackFactory.createDispatcher(classClass);
     }
     
     public static final ObjectAllocator CLASS_ALLOCATOR = new ObjectAllocator() {
@@ -133,7 +133,9 @@ public class RubyClass extends RubyModule {
         this.allocator = new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                 try {
-                    return (IRubyObject)cls.newInstance();
+                    RubyBasicObject object = (RubyBasicObject)cls.newInstance();
+                    object.setMetaClass(klazz);
+                    return object;
                 } catch (InstantiationException ie) {
                     throw runtime.newTypeError("could not allocate " + cls + " with default constructor:\n" + ie);
                 } catch (IllegalAccessException iae) {
@@ -213,7 +215,9 @@ public class RubyClass extends RubyModule {
             }
         }
         IRubyObject obj = allocator.allocate(runtime, this);
-        if (obj.getMetaClass().getRealClass() != getRealClass()) throw runtime.newTypeError("wrong instance allocation");
+        if (obj.getMetaClass().getRealClass() != getRealClass()) {
+            throw runtime.newTypeError("wrong instance allocation");
+        }
         return obj;
     }
 
@@ -226,11 +230,13 @@ public class RubyClass extends RubyModule {
     }
 
     public static class VariableAccessor {
+        private String name;
         private int index;
         private final int classId;
-        public VariableAccessor(int index, int classId) {
+        public VariableAccessor(String name, int index, int classId) {
             this.index = index;
             this.classId = classId;
+            this.name = name;
         }
         public int getClassId() {
             return classId;
@@ -238,24 +244,33 @@ public class RubyClass extends RubyModule {
         public int getIndex() {
             return index;
         }
+        public String getName() {
+            return name;
+        }
         public Object get(Object object) {
             return ((IRubyObject)object).getVariable(index);
         }
         public void set(Object object, Object value) {
             ((IRubyObject)object).setVariable(index, value);
         }
-        public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(-1, -1);
+        public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(null, -1, -1);
     }
 
     public Map<String, VariableAccessor> getVariableAccessorsForRead() {
         return variableAccessors;
     }
     
-    private volatile int accessorCount = 0;
     private volatile VariableAccessor objectIdAccessor = VariableAccessor.DUMMY_ACCESSOR;
 
-    private synchronized final VariableAccessor allocateVariableAccessor() {
-        return new VariableAccessor(accessorCount++, this.id);
+    private synchronized final VariableAccessor allocateVariableAccessor(String name) {
+        String[] myVariableNames = variableNames;
+        int newIndex = myVariableNames.length;
+        String[] newVariableNames = new String[newIndex + 1];
+        VariableAccessor newVariableAccessor = new VariableAccessor(name, newIndex, this.id);
+        System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);
+        newVariableNames[newIndex] = name;
+        variableNames = newVariableNames;
+        return newVariableAccessor;
     }
 
     public VariableAccessor getVariableAccessorForWrite(String name) {
@@ -264,9 +279,10 @@ public class RubyClass extends RubyModule {
             synchronized (this) {
                 Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
                 ivarAccessor = myVariableAccessors.get(name);
+
                 if (ivarAccessor == null) {
                     // allocate a new accessor and populate a new table
-                    ivarAccessor = allocateVariableAccessor();
+                    ivarAccessor = allocateVariableAccessor(name);
                     Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
                     newVariableAccessors.putAll(myVariableAccessors);
                     newVariableAccessors.put(name, ivarAccessor);
@@ -284,7 +300,7 @@ public class RubyClass extends RubyModule {
     }
 
     public synchronized VariableAccessor getObjectIdAccessorForWrite() {
-        if (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR) objectIdAccessor = allocateVariableAccessor();
+        if (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR) objectIdAccessor = allocateVariableAccessor("object_id");
         return objectIdAccessor;
     }
 
@@ -302,6 +318,20 @@ public class RubyClass extends RubyModule {
 
     public Map<String, VariableAccessor> getVariableTableCopy() {
         return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
+    }
+
+    /**
+     * Get an array of all the known instance variable names. The offset into
+     * the array indicates the offset of the variable's value in the per-object
+     * variable array.
+     *
+     * @return a copy of the array of known instance variable names
+     */
+    public String[] getVariableNames() {
+        String[] original = variableNames;
+        String[] copy = new String[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
+        return copy;
     }
 
     @Override
@@ -1033,6 +1063,17 @@ public class RubyClass extends RubyModule {
         return superClazz != null ? superClazz : runtime.getNil();
     }
 
+    @JRubyMethod(optional = 1)
+    public IRubyObject __subclasses__(ThreadContext context, IRubyObject[] args) {
+        boolean recursive = false;
+        if (args.length > 0) {
+            recursive = args[0].isTrue();
+        }
+
+        return RubyArray.newArray(context.getRuntime(), subclasses(recursive)).freeze(context);
+    }
+
+
     private void checkNotInitialized() {
         if (superClass != null || (runtime.is1_9() && this == runtime.getBasicObject())) {
             throw runtime.newTypeError("already initialized class");
@@ -1113,14 +1154,19 @@ public class RubyClass extends RubyModule {
         // calculate an appropriate name, using "Anonymous####" if none is present
         String name;
         if (getBaseName() == null) {
-            name = "Anonymous" + id;
+            name = "AnonymousRubyClass#" + id;
         } else {
             name = getName();
         }
         
         String javaName = "ruby." + name.replaceAll("::", ".");
         String javaPath = "ruby/" + name.replaceAll("::", "/");
-        JRubyClassLoader parentCL = runtime.getJRubyClassLoader();
+        OneShotClassLoader parentCL;
+        if (superClass.getRealClass().getReifiedClass().getClassLoader() instanceof OneShotClassLoader) {
+            parentCL = (OneShotClassLoader)superClass.getRealClass().getReifiedClass().getClassLoader();
+        } else {
+            parentCL = new OneShotClassLoader(runtime.getJRubyClassLoader());
+        }
 
         if (superClass.reifiedClass != null) {
             reifiedParent = superClass.reifiedClass;
@@ -1179,13 +1225,6 @@ public class RubyClass extends RubyModule {
         m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
         m.invokespecial(p(reifiedParent), "<init>", sig(void.class, Ruby.class, RubyClass.class));
         m.voidreturn();
-        m.end();
-
-        // toJava method to always pass the actual object
-        mv = cw.visitMethod(ACC_PUBLIC, "toJava", CodegenUtils.sig(Object.class, Class.class), null, null);
-        m = new SkinnyMethodAdapter(mv);
-        m.aload(0);
-        m.areturn();
         m.end();
 
         for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
@@ -1392,7 +1431,9 @@ public class RubyClass extends RubyModule {
     private Class reifiedClass;
 
     @SuppressWarnings("unchecked")
+    private static String[] EMPTY_STRING_ARRAY = new String[0];
     private Map<String, VariableAccessor> variableAccessors = (Map<String, VariableAccessor>)Collections.EMPTY_MAP;
+    private volatile String[] variableNames = EMPTY_STRING_ARRAY;
 
     private volatile boolean hasObjectID = false;
     public boolean hasObjectID() {

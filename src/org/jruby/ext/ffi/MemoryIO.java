@@ -28,6 +28,8 @@
 
 package org.jruby.ext.ffi;
 
+import java.nio.ByteOrder;
+
 /**
  * Abstracted memory operations.
  * <p>
@@ -49,6 +51,14 @@ public interface MemoryIO {
      * @return <tt>true</tt> if the memory area is a native pointer.
      */
     public boolean isDirect();
+
+    /**
+     * Gets the {@link ByteOrder} this {@code MemoryIO} instance will read/write
+     * values to memory in.
+     *
+     * @return The current ByteOrder
+     */
+    public ByteOrder order();
 
     /**
      * Creates a new MemoryIO pointing to a subset of the memory area of this

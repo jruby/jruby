@@ -212,7 +212,7 @@ public class RubyDir extends RubyObject {
      */
     @JRubyMethod(name = "entries", required = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static RubyArray entries(IRubyObject recv, IRubyObject path) {
-        return entriesCommon(recv.getRuntime(), path.convertToString().toString());
+        return entriesCommon(recv.getRuntime(), path.convertToString().getUnicodeValue());
     }
 
     @JRubyMethod(name = "entries", required = 1, meta = true, compat = CompatVersion.RUBY1_9)

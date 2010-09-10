@@ -19,12 +19,12 @@ import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.Buffer;
 import org.jruby.ext.ffi.CallbackInfo;
+import org.jruby.ext.ffi.MappedType;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.MemoryPointer;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Platform;
-import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
 import org.jruby.ext.ffi.StructByValue;
@@ -86,10 +86,14 @@ public final class DefaultMethodFactory {
         boolean canBeFastInt = enums.isNil() && parameterTypes.length <= 3 
                 && fastIntFactory.isFastIntResult(returnType) && convention == CallingConvention.DEFAULT;
         for (int i = 0; canBeFastInt && i < parameterTypes.length; ++i) {
-            if (!(parameterTypes[i] instanceof Type.Builtin) || marshallers[i].needsInvocationSession()) {
+            Type t = parameterTypes[i] instanceof MappedType
+                    ? ((MappedType) parameterTypes[i]).getRealType()
+                    : parameterTypes[i];
+
+            if (!(t instanceof Type.Builtin) || marshallers[i].requiresPostInvoke()) {
                 canBeFastInt = false;
             } else {
-                switch (parameterTypes[i].getNativeType()) {
+                switch (t.getNativeType()) {
                     case POINTER:
                     case BUFFER_IN:
                     case BUFFER_OUT:
@@ -143,13 +147,21 @@ public final class DefaultMethodFactory {
     static FunctionInvoker getFunctionInvoker(Type returnType) {
         if (returnType instanceof Type.Builtin) {
             return getFunctionInvoker(returnType.getNativeType());
+
         } else if (returnType instanceof CallbackInfo) {
             return new CallbackInvoker((CallbackInfo) returnType);
+
         } else if (returnType instanceof org.jruby.ext.ffi.Enum) {
             return new EnumInvoker((org.jruby.ext.ffi.Enum) returnType);
+
         } else if (returnType instanceof StructByValue) {
             return new StructByValueInvoker((StructByValue) returnType);
+        
+        } else if (returnType instanceof MappedType) {
+            MappedType ctype = (MappedType) returnType;
+            return new MappedTypeInvoker(getFunctionInvoker(ctype.getRealType()), ctype);
         }
+
         throw returnType.getRuntime().newArgumentError("Cannot get FunctionInvoker for " + returnType);
     }
 
@@ -208,12 +220,20 @@ public final class DefaultMethodFactory {
     static final ParameterMarshaller getMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
         if (type instanceof Type.Builtin) {
             return enums != null && !enums.isNil() ? getEnumMarshaller(type, enums) : getMarshaller(type.getNativeType());
+
         } else if (type instanceof org.jruby.ext.ffi.CallbackInfo) {
             return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
+
         } else if (type instanceof org.jruby.ext.ffi.Enum) {
             return getEnumMarshaller(type, type.callMethod(type.getRuntime().getCurrentContext(), "to_hash"));
+
         } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
             return new StructByValueMarshaller((org.jruby.ext.ffi.StructByValue) type);
+        
+        } else if (type instanceof org.jruby.ext.ffi.MappedType) {
+            MappedType ctype = (MappedType) type;
+            return new MappedTypeMarshaller(getMarshaller(ctype.getRealType(), convention, enums), ctype);
+
         } else {
             return null;
         }
@@ -294,10 +314,7 @@ public final class DefaultMethodFactory {
                 return BufferMarshaller.OUT;
             case BUFFER_INOUT:
                 return BufferMarshaller.INOUT;
-
-            case WIN32PTR:
-                return BufferMarshaller.WIN32PTR;
-                
+    
             default:
                 throw new IllegalArgumentException("Invalid parameter type: " + type);
         }
@@ -495,6 +512,24 @@ public final class DefaultMethodFactory {
     }
 
     /**
+     * Invokes the native function, then passes the return value off to a
+     * conversion method to massage it to a custom ruby type.
+     */
+    private static final class MappedTypeInvoker extends BaseInvoker {
+        private final FunctionInvoker nativeInvoker;
+        private final MappedType mappedType;
+
+        public MappedTypeInvoker(FunctionInvoker nativeInvoker, MappedType converter) {
+            this.nativeInvoker = nativeInvoker;
+            this.mappedType = converter;
+        }
+
+        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
+            return mappedType.fromNative(context, nativeInvoker.invoke(context, function, args));
+        }
+    }
+
+    /**
      * Invokes the native function with a callback/function pointer return value.
      * Returns a {@link Invoker} to ruby.
      */
@@ -533,7 +568,11 @@ public final class DefaultMethodFactory {
 
     /*------------------------------------------------------------------------*/
     static abstract class BaseMarshaller implements ParameterMarshaller {
-        public boolean needsInvocationSession() {
+        public boolean requiresPostInvoke() {
+            return false;
+        }
+
+        public boolean requiresReference() {
             return false;
         }
     }
@@ -717,27 +756,19 @@ public final class DefaultMethodFactory {
         static final ParameterMarshaller OUT = new BufferMarshaller(ArrayFlags.OUT);
         static final ParameterMarshaller INOUT = new BufferMarshaller(ArrayFlags.IN | ArrayFlags.OUT);
 
-        /** A special case for implementation of the Win32API 'P' type */
-        static final ParameterMarshaller WIN32PTR = new BufferMarshaller(ArrayFlags.IN | ArrayFlags.OUT, true);
-
         private final int flags;
-        private final boolean acceptIntegerValues;
-
+        
         public BufferMarshaller(int flags) {
-            this(flags, false);
+            this.flags = flags;
         }
 
-        public BufferMarshaller(int flags, boolean acceptIntegerValues) {
-            this.flags = flags;
-            this.acceptIntegerValues = acceptIntegerValues;
-        }
         private static final int bufferFlags(Buffer buffer) {
             int f = buffer.getInOutFlags();
             return ((f & Buffer.IN) != 0 ? ArrayFlags.IN: 0)
                     | ((f & Buffer.OUT) != 0 ? ArrayFlags.OUT : 0);
         }
         @Override
-        public boolean needsInvocationSession() {
+        public boolean requiresPostInvoke() {
             return false;
         }
         private static final void addBufferParameter(InvocationBuffer buffer, IRubyObject parameter, int flags) {
@@ -751,8 +782,10 @@ public final class DefaultMethodFactory {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             if (parameter instanceof Buffer) {
                 addBufferParameter(buffer, parameter, flags);
+
             } else if (parameter instanceof Pointer) {
                 buffer.putAddress(getAddress((Pointer) parameter));
+
             } else if (parameter instanceof Struct) {
                 IRubyObject memory = ((Struct) parameter).getMemory();
                 if (memory instanceof Buffer) {
@@ -766,6 +799,7 @@ public final class DefaultMethodFactory {
                 }
             } else if (parameter.isNil()) {
                 buffer.putAddress(0L);
+
             } else if (parameter instanceof RubyString) {
                 ByteList bl = ((RubyString) parameter).getByteList();
                 buffer.putArray(bl.getUnsafeBytes(), bl.begin(), bl.length(), flags | ArrayFlags.NULTERMINATE);
@@ -788,10 +822,6 @@ public final class DefaultMethodFactory {
                     }
                     break;
                 }
-
-            } else if (parameter instanceof RubyInteger && acceptIntegerValues) {
-                
-                buffer.putAddress(((RubyInteger) parameter).getLongValue());
 
             } else {
                 throw context.getRuntime().newArgumentError("Invalid buffer/pointer parameter");
@@ -865,6 +895,40 @@ public final class DefaultMethodFactory {
 
         public final void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
             marshal(invocation.getThreadContext(), buffer, parameter);
+        }
+    }
+
+    static final class MappedTypeMarshaller implements ParameterMarshaller {
+        private final ParameterMarshaller nativeMarshaller;
+        private final MappedType mappedType;
+
+        public MappedTypeMarshaller(ParameterMarshaller nativeMarshaller, MappedType mappedType) {
+            this.nativeMarshaller = nativeMarshaller;
+            this.mappedType = mappedType;
+        }
+
+
+        public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
+            ThreadContext context = invocation.getThreadContext();
+            final IRubyObject nativeValue = mappedType.toNative(context, parameter);
+
+            // keep a hard ref to the converted value if needed
+            if (mappedType.isReferenceRequired()) {
+                invocation.addReference(nativeValue);
+            }
+            nativeMarshaller.marshal(context, buffer, nativeValue);
+        }
+
+        public void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
+            nativeMarshaller.marshal(context, buffer, mappedType.toNative(context, parameter));
+        }
+
+        public boolean requiresPostInvoke() {
+            return mappedType.isReferenceRequired();
+        }
+
+        public boolean requiresReference() {
+            return mappedType.isReferenceRequired();
         }
     }
 }

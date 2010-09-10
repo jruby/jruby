@@ -93,4 +93,13 @@ public class AndNode extends Node implements BinaryOperatorNode {
         
         return secondNode.interpret(runtime, context, self, aBlock);
     }
+
+    @Override
+    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        if (!context.getRuntime().is1_9()) {
+            return super.definition(runtime, context, self, aBlock);
+        } else {
+            return "expression";
+        }
+    }
 }

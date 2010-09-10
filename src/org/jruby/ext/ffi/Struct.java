@@ -1,6 +1,7 @@
 
 package org.jruby.ext.ffi;
 
+import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -15,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name="FFI::Struct", parent="Object")
 public class Struct extends RubyObject implements StructLayout.Storage {
     private final StructLayout layout;
-    private final IRubyObject[] referenceCache;
+    private final Object[] referenceCache;
     private AbstractMemory memory;
     private IRubyObject[] valueCache;
     
@@ -197,6 +198,23 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return layout.members(context);
     }
 
+    @JRubyMethod(name="null?")
+    public IRubyObject null_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(getMemory().getMemoryIO().isNull());
+    }
+
+    @JRubyMethod(name = "order", required = 0)
+    public final IRubyObject order(ThreadContext context) {
+        return context.getRuntime().newSymbol(getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
+    }
+
+    @JRubyMethod(name = "order", required = 1)
+    public final IRubyObject order(ThreadContext context, IRubyObject byte_order) {
+        ByteOrder order = Util.parseByteOrder(context.getRuntime(), byte_order);
+        return new Struct(context.getRuntime(), getMetaClass(), layout,
+                getMemory().order(context.getRuntime(), Util.parseByteOrder(context.getRuntime(), byte_order)));
+    }
+
     public final AbstractMemory getMemory() {
         return memory != null ? memory : (memory = MemoryPointer.allocate(getRuntime(), layout.getSize(), 1, true));
     }
@@ -217,6 +235,10 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     }
     
     public void putReference(StructLayout.Member member, IRubyObject value) {
+        referenceCache[layout.getReferenceFieldIndex(member)] = value;
+    }
+    
+    public void putReference(StructLayout.Member member, Object value) {
         referenceCache[layout.getReferenceFieldIndex(member)] = value;
     }
 }

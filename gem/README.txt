@@ -30,6 +30,31 @@ A Ruby implementation with working RubyGems.
 
 Install like any other gem.
 
+== USAGE:
+
+To run an instance of JRuby core without stdlib, you can do the following:
+
+  require 'jruby-jars'
+  exec("java", "-cp", JRubyJars.core_jar_path, "org.jruby.Main")
+
+If you need access to the standard library as well, then you can do:
+
+  classpath = [
+    JRubyJars.core_jar_path,
+    JRubyJars.stdlib_jar_path
+  ].join(File::PATH_SEPARATOR)
+  exec("java", "-cp", classpath, "org.jruby.Main")
+
+Building on this this, then, you could build a cross-platform way to execute
+commands with jruby:
+
+  args = ["-cp", classpath, "org.jruby.Main"] + ARGV
+  exec("java", *args)
+
+And call this with:
+
+  myjruby -I"lib:test" test/test_jruby_execution.rb
+
 == LICENSE:
 
 JRuby is tri-licensed GPL, LGPL, and CPL.

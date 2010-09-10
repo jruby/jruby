@@ -536,7 +536,7 @@ public class RubyEnumerable {
     public static IRubyObject detect(ThreadContext context, IRubyObject self, IRubyObject ifnone, final Block block) {
         boolean blockGiven = block.isGiven();
 
-        if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find(context, null, block);
+        if (self instanceof RubyArray && blockGiven) return ((RubyArray) self).find(context, ifnone, block);
 
         return block.isGiven() ? detectCommon(context, self, ifnone, block) : enumeratorize(context.getRuntime(), self, "detect", ifnone);
     }
@@ -1195,7 +1195,7 @@ public class RubyEnumerable {
         return runtime.getTrue();
     }
     
-    @JRubyMethod(name = "one?", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "one?", frame = true)
     public static IRubyObject one_p(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.getRuntime();
         final ThreadContext localContext = context;

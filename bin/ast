@@ -1,73 +1,49 @@
 #!/usr/bin/env jruby
-#
-# == Synopsis
-#
-# ast: Display information in the AST
-#
-# == Usage
-#
-# ast [OPTION] ... script.rb
-#
-# -h, --help:
-# Display this help
-#
-# -s, --sexp:
-# Display the S-Expression for the AST
-#
-# --source:
-# Display the source
-#
-# --no-ast
-# Do not print out the AST for this (only useful with -s)
-#
-# -e:
-# Expression to try: 'ast -e "puts 1"'
-#
-# script.rb: The script to execute
 
-require 'getoptlong'
-require 'rdoc/usage'
+require 'optparse'
 
-opts = GetoptLong.new(
-  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
-  [ '--sexp', '-s', GetoptLong::NO_ARGUMENT ],
-  [ '--no-ast', GetoptLong::NO_ARGUMENT ],
-  [ '--source', GetoptLong::NO_ARGUMENT ],
-  [ '--expression', '-e', GetoptLong::REQUIRED_ARGUMENT ]
-)
+opts = {}
+options = {
+  :print_source => false,
+  :print_sexp   => false,
+  :print_ast    => true,
+}
 
-print_source = false
-print_sexp = false
-print_ast = true
-expression = nil
-
-opts.each do |opt, arg|
-  case opt
-  when '--help'
-    RDoc::usage
-  when '--sexp'
-    print_sexp = true
-  when '--no-ast'
-    print_ast = false
-  when '--expression'
-    expression = arg
-  when '--source'
-    print_source = true
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options]"
+  
+  opts.on('-h', '--help', 'Display this help') do |h|
+    puts opts
+    exit true
   end
-end
+  
+  opts.on('-s', '--sexp', 'Display the S-Expression for the AST') do |t|
+    options[:print_sexp] = true
+  end
+  
+  opts.on('--source', 'Display the source') do |s|
+    options[:print_source] = true
+  end
+  
+  opts.on('--no-ast', 'Do not print out the AST for this (only useful with -s)') do |a|
+    options[:print_ast] = false
+  end
+  
+  opts.on('-e exp', '--expression') do |e|
+    options[:expression] = e
+  end
+  
+end.parse!
 
 if ARGV.length > 1
-  puts "You may only specify one script (see --help)"
-  exit 0
+  abort "You may only specify one script (see --help)"
 elsif ARGV.length == 1
-  if expression
-    puts "-e and a script is not a valid combination (see --help)"
-    exit 0
+  if options[:expression]
+    abort "-e and a script is not a valid combination (see --help)"
   end
-  expression = File.read(ARGV.shift)
-elsif !expression
-  puts "No script specified (see --help)"
-  exit 0
+  options[:expression] = File.read(ARGV.shift)
+elsif ! options.has_key?(:expression)
+  abort "No script specified (see --help)"
 end
 
 require 'jruby'
@@ -99,21 +75,21 @@ def indent(string)
   string.gsub(/,\s*$/, '').squeeze("\n")
 end
 
-root = JRuby.parse(expression)
+root = JRuby.parse(options[:expression])
 
-if print_source
+if options[:print_source]
   puts "Source:"
-  puts expression
+  puts options[:expression]
   puts
 end
 
-if print_ast
+if options[:print_ast]
   print "AST:"
   puts indent(root.to_string) 
   puts
 end
 
-if print_sexp
+if options[:print_sexp]
   puts "SEXP:"
   puts org.jruby.ast.util.SexpMaker.create(root) 
 end

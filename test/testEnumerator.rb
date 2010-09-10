@@ -175,3 +175,6 @@ end
 test_no_exception {
   JRuby3492.new("foo", :each_byte)
 }
+
+# JRUBY-5013: dup'ed Enumerator should be able to enumerate correctly
+test_no_exception { [].each.dup.to_a }

@@ -48,6 +48,21 @@
   <import file="netbeans-ant.xml" optional="true"/>
   <import file="ivy/build.xml" />
 
+  <condition property="dev.null" value="/dev/null">
+    <os family="unix"/>
+  </condition>
+  <condition property="dev.null" value="NUL">
+    <os family="windows"/>
+  </condition>
+  <condition property="dev.null" value="dev_null">
+    <not>
+      <or>
+        <os family="unix"/>
+        <os family="windows"/>
+      </or>
+    </not>
+  </condition>
+
   <!-- Initializes the build -->
   <target name="init">
     <tstamp><format property="build.date" pattern="yyyy-MM-dd"/></tstamp>
@@ -307,7 +322,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -350,7 +365,7 @@
         <zipfileset src="${build.lib.dir}/joni.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
         <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
@@ -395,7 +410,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -499,7 +514,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${shared.lib.dir}/yecht.jar"/>
@@ -529,6 +544,7 @@
     <target name="jar-complete-1.9" depends="generate-method-classes, generate-unsafe" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
       <property name="mainclass" value="org.jruby.Main"/>
       <property name="filename" value="jruby-complete.jar"/>
+      <property name="bilename" value="jruby-complete.bar"/>
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
       <property name="jar-complete-home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
       <mkdir dir="${jar-complete-home}"/>
@@ -588,7 +604,7 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-1.6.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <zipfileset src="${shared.lib.dir}/yecht.jar"/>
@@ -604,6 +620,7 @@
       <antcall target="_osgify-jar_">
         <param name="bndfile" value="jruby-complete.bnd" />
         <param name="jar.wrap" value="${dest.lib.dir}/${filename}" />
+        <param name="bar.wrap" value="${dest.lib.dir}/${bilename}" />
       </antcall>
     </target>
 
@@ -1458,6 +1475,7 @@
     <delete dir="${api.docs.dir}"/>
     <delete dir="src_gen"/>
     <antcall target="clean-ng"/>
+    <antcall target="clean-tzdata" />
   </target>
 
   <!-- FIXME: Cannot run Rake on clean until minijruby so keep this target -->
@@ -1487,14 +1505,15 @@
 
   <target name="build-ng" depends="need-ng" if="should.build.ng">
       <echo message="Configuring ng client in ${nailgun.home}"/>
-      <exec executable="./configure" dir="${nailgun.home}" failonerror="true" output="/dev/null"/>
+      <exec executable="./configure" osfamily="unix" dir="${nailgun.home}" failonerror="true" output="${dev.null}"/>
       <echo message="Building ng client in ${nailgun.home}"/>
-    <exec executable="make" dir="${nailgun.home}" output="/dev/null"/>
+    <exec executable="make" osfamily="unix" dir="${nailgun.home}" output="${dev.null}"/>
   </target>
 
   <target name="need-clean-ng">
     <condition property="should-clean-ng">
       <and>
+        <os family="unix"/>
         <available file="${nailgun.home}/Makefile"/>
         <available file="${nailgun.home}/ng"/>
       </and>
@@ -1502,7 +1521,7 @@
   </target>
 
   <target name="clean-ng" depends="need-clean-ng" if="should-clean-ng">
-    <exec executable="make" dir="${nailgun.home}" osfamily="unix" failifexecutionfails="false" output="/dev/null">
+    <exec executable="make" dir="${nailgun.home}" osfamily="unix" failifexecutionfails="false" output="${dev.null}">
         <arg value="clean"/>
     </exec>
   </target>
@@ -1537,4 +1556,70 @@
   <target name="test-rails-stable" depends="jar"><rake task="test:rails"/></target>
   <target name="test-prawn" depends="jar"><rake task="test:prawn"/></target>
   <target name="bench-language" depends="jar"><rake task="bench:language"/></target>
+
+  <target name="fetch-tzdata" description="Fetch tzdata into build/tzdata">
+    <available property="tzdata.present" filepath="${tzdata.builddir}/src" file="tzdata${tzdata.version}.tar.gz" />
+    <mkdir dir="${tzdata.builddir}/src" />
+    <ftp server="${tzdata.ftpserver}"
+         action="get"
+         verbose="yes"
+         passive="yes"
+         userid="anonymous"
+         password="${tzdata.ftp.anonymous.userid}"
+         remotedir="/pub"
+         newer="yes">
+      <fileset dir="${tzdata.builddir}/src">
+        <include name="tzdata${tzdata.version}.tar.gz" />
+      </fileset>
+    </ftp>
+  </target>
+
+  <target name="expand-tzdata" depends="fetch-tzdata" description="Expand tzdata into build/tzdata">
+    <untar src="${tzdata.builddir}/src/tzdata${tzdata.version}.tar.gz"
+           compression="gzip"
+           dest="${tzdata.builddir}/src"
+    />
+  </target>
+
+  <!-- basically a copy of joda-time's compile.zoneinfo task -->
+  <target name="compile-tzdata" depends="expand-tzdata" description="Compile tzdata in build/tzdata">
+    <mkdir dir="${tzdata.builddir}/build" />
+    <mkdir dir="${tzdata.builddir}/build/org/joda/time/tz/data" />
+    <echo message="Compiling tzdata version ${tzdata.version}" />
+    <java classname="org.joda.time.tz.ZoneInfoCompiler"
+          fork="true"
+          output="${dev.null}"
+          failonerror="false">
+      <classpath path="${build.lib.dir}/joda-time-${joda.time.version}.jar" />
+      <!-- Override default provider since data directory doesn't exist yet -->
+      <sysproperty key="org.joda.time.DateTimeZone.Provider"
+                   value="org.joda.time.tz.UTCProvider" />
+      <!-- Specify source and destination directories -->
+      <arg line="-src ${tzdata.builddir}/src -dst ${tzdata.builddir}/build/org/joda/time/tz/data" />
+      <!-- Specify all the data files to compile -->
+      <arg value="africa" />
+      <arg value="antarctica" />
+      <arg value="asia" />
+      <arg value="australasia" />
+      <arg value="europe" />
+      <arg value="northamerica" />
+      <arg value="southamerica" />
+      <arg value="pacificnew" />
+      <arg value="etcetera" />
+      <arg value="backward" />
+      <arg value="systemv" />
+    </java>
+  </target>
+
+  <target name="update-tzdata" depends="compile-tzdata" description="Update joda-time's zone info with one we compiled">
+    <jar update="yes" destfile="${build.lib.dir}/joda-time-${joda.time.version}.jar" basedir="${tzdata.builddir}/build" />
+  </target>
+
+  <target name="clean-tzdata" description="Remove files used for updating time zone information">
+    <delete dir="${tzdata.builddir}" failonerror="no" />
+    <echo message="Reset joda-time jar" />
+    <exec executable="git" failonerror="false" failifexecutionfails="false">
+      <arg line="checkout -- ${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+    </exec>
+  </target>
 </project>

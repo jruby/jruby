@@ -716,7 +716,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private void frozenCheck() {
-        if (isFrozen()) throw getRuntime().newFrozenError("string");
+        frozenCheck(false);
+    }
+
+    private void frozenCheck(boolean runtimeError) {
+        if (isFrozen()) throw getRuntime().newFrozenError("string", runtimeError);
     }
 
     /** rb_str_modify
@@ -2175,9 +2179,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int end = p + value.getRealSize();
         RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
 
-        final Encoding enc;
+        Encoding enc;
         if (is1_9) {
-            enc = value.getEncoding().isAsciiCompatible() ? value.getEncoding() : USASCIIEncoding.INSTANCE;
+            enc = value.getEncoding();
+            if (enc != runtime.getKCode().getEncoding()) {
+                enc = runtime.getKCode().getEncoding();
+            }
+            if (!enc.isAsciiCompatible()) {
+                enc = USASCIIEncoding.INSTANCE;
+            }
             result.associateEncoding(enc);
         } else {
             enc = runtime.getKCode().getEncoding();
@@ -2222,6 +2232,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     int cc;
                     if (p < end && StringSupport.preciseLength(enc, bytes, p, end) > 0 &&
                             isEVStr(cc = codePoint(runtime, enc, bytes, p, end))) {
+                        if ("$@{".indexOf(cc) != -1) {
+                            cc = '#';
+                        }
                         result.prefixEscapeCat(cc);
                         continue;
                     }
@@ -2413,14 +2426,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         DynamicScope scope = context.getCurrentScope();
         if (matcher.search(value.getBegin(), range, Option.NONE) >= 0) {
-            frozenCheck();
+            frozenCheck(true);
             byte[] bytes = value.getUnsafeBytes();
             int size = value.getRealSize();
             RubyMatchData match = RubyRegexp.updateBackRef(context, this, scope, matcher, pattern);
             RubyString repl = objAsString(context, block.yield(context, 
                     makeShared(context.getRuntime(), matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
             modifyCheck(bytes, size);
-            frozenCheck();
+            frozenCheck(true);
             scope.setBackRef(match);
             return subBangCommon(context, pattern, matcher, repl, repl.flags);
         } else {
@@ -2653,7 +2666,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (block.isGiven()) {
             return gsubCommon(context, bang, getQuotedPattern(arg0), block, null, 0);
         } else {
-            throw context.getRuntime().newArgumentError("wrong number of arguments (1 for 2)");
+            String method = "gsub";
+            if (bang) {
+                method += "!";
+            }
+            return enumeratorize(context.getRuntime(), this, method, arg0);
         }
     }
 
@@ -2676,6 +2693,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (beg < 0) {
             scope.setBackRef(runtime.getNil());
             return bang ? runtime.getNil() : strDup(runtime); /* bang: true, no match, no substitution */
+        } else if (repl == null && bang && isFrozen()) {
+            throw getRuntime().newRuntimeError("can't modify frozen string");
         }
 
         int blen = slen + 30; /* len + margin */
@@ -6564,7 +6583,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         for (; p < end; p++) {
             if (rslen == 0 && bytes[p] == '\n') {
-                if (bytes[++p] != '\n') continue;
+                if (++p == end || bytes[p] != '\n') continue;
                 while(p < end && bytes[p] == '\n') p++;
             }
             if (ptr < p && bytes[p - 1] == newline &&

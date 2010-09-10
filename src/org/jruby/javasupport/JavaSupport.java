@@ -183,6 +183,8 @@ public class JavaSupport {
 
     private RaiseException createRaiseException(Throwable exception, Member target) {
         RaiseException re = RaiseException.createNativeRaiseException(runtime, exception, target);
+
+        re.preRaise(runtime.getCurrentContext());
         
         return re;
     }

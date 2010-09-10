@@ -75,9 +75,10 @@ public enum Operation
     public boolean isReturn()     { return _type == OpType.ret_op; }
     public boolean isException()  { return _type == OpType.exc_op; }
     public boolean isArgReceive() { return _type == OpType.recv_arg_op; }
+    public boolean xfersControl() { return isBranch() || isReturn() || isException(); }
 
     public boolean startsBasicBlock() { return this == LABEL; }
-    public boolean endsBasicBlock() { return isBranch() || isReturn() || isException(); }
+    public boolean endsBasicBlock() { return xfersControl(); }
 
     // By default, call instructions cannot be deleted even if their results aren't used by anyone
     // unless we know more about what the call is, what it does, etc.

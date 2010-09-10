@@ -35,7 +35,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import java.math.BigInteger;
 import org.jruby.CompatVersion;
+import org.jruby.RubyBignum;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsPreOneArgNode;
@@ -105,7 +107,6 @@ import org.jruby.ast.FCallNoArgNode;
 import org.jruby.ast.FCallOneArgBlockNode;
 import org.jruby.ast.FCallOneArgBlockPassNode;
 import org.jruby.ast.FCallOneArgNode;
-import org.jruby.ast.FCallSpecialArgBlockNode;
 import org.jruby.ast.FCallSpecialArgBlockPassNode;
 import org.jruby.ast.FCallSpecialArgNode;
 import org.jruby.ast.FCallThreeArgBlockNode;
@@ -367,7 +368,7 @@ public class ParserSupport {
     public Node addRootNode(Node topOfAST, ISourcePosition position) {
         position = topOfAST != null ? topOfAST.getPosition() : position;
 
-        if (result.getBeginNodes().size() == 0) {
+        if (result.getBeginNodes().isEmpty()) {
             if (topOfAST == null) topOfAST = NilImplicitNode.NIL;
             
             return new RootNode(position, result.getScope(), topOfAST);
@@ -1158,7 +1159,6 @@ public class ParserSupport {
                     lexer.getCurrentLine(), "Both block arg and actual block given.");
         }
 
-        if (iter != null) new FCallSpecialArgBlockNode(position(operation, args), (String) operation.getValue(), args, (IterNode) iter);
         return new FCallSpecialArgNode(position(operation, args), (String) operation.getValue(), args);
     }
 
@@ -1250,7 +1250,14 @@ public class ParserSupport {
 
         if (tail instanceof StrNode) {
             if (head instanceof StrNode) {
-        	    return new StrNode(head.getPosition(), (StrNode) head, (StrNode) tail);
+                StrNode front = (StrNode) head;
+                // string_contents always makes an empty strnode...which is sometimes valid but
+                // never if it ever is in literal_concat.
+                if (front.getValue().getRealSize() > 0) {
+                    return new StrNode(head.getPosition(), front, (StrNode) tail);
+                } else {
+                    return tail;
+                }
             } 
             head.setPosition(head.getPosition());
             return ((ListNode) head).add(tail);
@@ -1358,8 +1365,15 @@ public class ParserSupport {
             return fixnumNode;
         } else if (integerNode instanceof BignumNode) {
             BignumNode bignumNode = (BignumNode) integerNode;
+
+            BigInteger value = bignumNode.getValue().negate();
+
+            // Negating a bignum will make the last negative value of our bignum
+            if (value.compareTo(RubyBignum.LONG_MIN) >= 0) {
+                return new FixnumNode(bignumNode.getPosition(), value.longValue());
+            }
             
-            bignumNode.setValue(bignumNode.getValue().negate());
+            bignumNode.setValue(value);
         }
         
         return integerNode;

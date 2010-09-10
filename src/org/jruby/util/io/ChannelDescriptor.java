@@ -117,6 +117,12 @@ public class ChannelDescriptor {
      * tell if a channel is "really" seekable.
      */
     private boolean canBeSeekable = true;
+
+    /**
+     * In order to avoid closing the JVM's stdio streams, we set a flag here to
+     * indicate that this ChannelDescriptor instance wraps one of those streams.
+     */
+    private final boolean stdio;
     
     /**
      * Construct a new ChannelDescriptor with the specified channel, file number,
@@ -138,6 +144,11 @@ public class ChannelDescriptor {
         this.originalModes = originalModes;
         this.fileDescriptor = fileDescriptor;
         this.canBeSeekable = canBeSeekable;
+        this.stdio = (
+                fileDescriptor == FileDescriptor.in ||
+                fileDescriptor == FileDescriptor.out ||
+                fileDescriptor == FileDescriptor.err
+                );
 
         registerDescriptor(this);
     }
@@ -800,8 +811,14 @@ public class ChannelDescriptor {
             if (DEBUG) getLogger("ChannelDescriptor").info("Descriptor for fileno " + internalFileno + " refs: " + count);
 
             if (count <= 0) {
-                channel.close();
-                unregisterDescriptor(internalFileno);
+                try {
+                    // we should never close JVM's in, out, or err here
+                    if (!stdio) {
+                        channel.close();
+                    }
+                } finally {
+                    unregisterDescriptor(internalFileno);
+                }
             }
         }
     }

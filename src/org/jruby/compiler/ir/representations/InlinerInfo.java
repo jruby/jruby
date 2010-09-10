@@ -22,6 +22,7 @@ public class InlinerInfo {
     private Operand[] callArgs;
     private Map<Label, Label> lblRenameMap;
     private Map<Variable, Variable> varRenameMap;
+    private Map<BasicBlock, BasicBlock> bbRenameMap;
     private List yieldSites;
 
     public InlinerInfo(CallInstruction call, CFG c) {
@@ -30,6 +31,7 @@ public class InlinerInfo {
         this.callerCFG = c;
         this.varRenameMap = new HashMap<Variable, Variable>();
         this.lblRenameMap = new HashMap<Label, Label>();
+        this.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
         this.yieldSites = new ArrayList();
     }
 
@@ -43,20 +45,34 @@ public class InlinerInfo {
     }
 
     public Variable getRenamedVariable(Variable v) {
-		  // SSS FIXME: What if 'v' is SelfVariable?
+        // SSS FIXME: What if 'v' is SelfVariable?
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
-           newVar = this.callerCFG.getScope().getNewInlineVariable();
-			  if (v instanceof LocalVariable) {
-				  // Frame load/store placement dataflow pass (and possible other passes later on) exploit
-				  // information whether a variable is a temporary or a local/self variable.
-				  // So, variable renaming for inlining has to preserve this information.
-				  newVar = new LocalVariable(newVar.getName());
-			  }
-           this.varRenameMap.put(v, newVar);
+            newVar = this.callerCFG.getScope().getNewInlineVariable();
+            if (v instanceof LocalVariable) {
+                // Frame load/store placement dataflow pass (and possible other passes later on) exploit
+                // information whether a variable is a temporary or a local/self variable.
+                // So, variable renaming for inlining has to preserve this information.
+                newVar = new LocalVariable(newVar.getName());
+            }
+            this.varRenameMap.put(v, newVar);
         }
         return newVar;
     }
+
+    public BasicBlock getRenamedBB(BasicBlock bb) {
+        return bbRenameMap.get(bb);
+    }
+
+    public BasicBlock getOrCreateRenamedBB(BasicBlock bb) {
+        BasicBlock renamedBB = getRenamedBB(bb);
+        if (renamedBB == null) {
+            renamedBB =  new BasicBlock(this.callerCFG, getRenamedLabel(bb._label));
+            bbRenameMap.put(bb, renamedBB);
+        }
+        return renamedBB;
+    }
+
 
     public Operand getCallArg(int index) {
         return index < callArgs.length ? callArgs[index] : null;
