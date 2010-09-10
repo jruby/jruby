@@ -12,6 +12,11 @@ class BenchAttrAssign < Array
     self.bar = 1; self.bar = 1; self.bar = 1; self.bar = 1; self.bar = 1
     self.bar = 1; self.bar = 1; self.bar = 1; self.bar = 1; self.bar = 1
   end
+
+  def ten_reads
+    self.bar; self.bar; self.bar; self.bar; self.bar
+    self.bar; self.bar; self.bar; self.bar; self.bar
+  end
   
   def ten_array_assigns
     self[1] = 1; self[1] = 1; self[1] = 1; self[1] = 1; self[1] = 1
@@ -41,7 +46,6 @@ class BenchAttrAssign < Array
   end
 end
 
-
 def bench_attr_assign(bm)
   foo = BenchAttrAssign.new
   
@@ -51,6 +55,7 @@ def bench_attr_assign(bm)
   
   bm.report("control") { 1000000.times { foo.control } }
   bm.report("1m attr asgns") { 1000000.times { foo.ten_assigns } }
+  bm.report("1m attr reads") { 1000000.times { foo.ten_reads } }
   bm.report("1m array[1] asgns") { 1000000.times { foo.ten_array_assigns } }
   bm.report("1m array[1,2] asgns") { 1000000.times { foo.ten_array_assigns2 } }
   bm.report("1m attr masgns") { 1000000.times { foo.ten_masgn_assigns } }
