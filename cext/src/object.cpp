@@ -290,6 +290,12 @@ rb_obj_dup(VALUE obj)
     return callMethod(obj, "dup", 0);
 }
 
+extern "C" VALUE
+rb_obj_clone(VALUE obj)
+{
+    return callMethod(obj, "clone", 0);
+}
+
 extern "C" void
 jruby_infect(VALUE object1, VALUE object2)
 {

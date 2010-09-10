@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
-  
+
 // Some platform specific includes
 #if defined(__WIN32__) || defined(__MINGW32__)
 #   include "jruby_win32.h"
@@ -934,6 +934,7 @@ RUBY_DLLSPEC VALUE rb_obj_is_kind_of(VALUE, VALUE);
 RUBY_DLLSPEC VALUE rb_obj_is_instance_of(VALUE, VALUE);
 /** Returns the Class object this object is an instance of. */
 #define rb_obj_class(object) rb_class_of((object))
+RUBY_DLLSPEC VALUE rb_obj_clone(VALUE obj);
 
 RUBY_DLLSPEC void rb_extend_object(VALUE, VALUE);
 RUBY_DLLSPEC VALUE rb_obj_taint(VALUE);
