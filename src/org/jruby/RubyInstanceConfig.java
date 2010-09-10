@@ -819,20 +819,7 @@ public class RubyInstanceConfig {
                 // verify it if it's there
                 jrubyHome = verifyHome(jrubyHome);
             } else {
-                try {
-                    // try loading from classloader resources
-                    URI jrubyHomeURI = getClass().getResource("/META-INF/jruby.home").toURI();
-                    String scheme = jrubyHomeURI.getScheme();
-                    String path = jrubyHomeURI.getSchemeSpecificPart();
-                    if ("jar".equals(scheme) && path.startsWith("file:")) {
-                        // special case for jar:file (most typical case)
-                        jrubyHome = path;
-                    } else {
-                        jrubyHome = "classpath:/META-INF/jruby.home";
-                        return jrubyHome;
-                    }
-                } catch (Exception e) {}
-
+                 if (true) return "classpath:/META-INF/jruby.home";
                 if (jrubyHome != null) {
                     // verify it if it's there
                     jrubyHome = verifyHome(jrubyHome);
