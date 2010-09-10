@@ -28,12 +28,15 @@
 package org.jruby.ext.socket;
 
 import static com.kenai.constantine.platform.IPProto.IPPROTO_TCP;
+import static com.kenai.constantine.platform.IPProto.IPPROTO_IP;
 import static com.kenai.constantine.platform.Sock.SOCK_DGRAM;
 import static com.kenai.constantine.platform.Sock.SOCK_STREAM;
 import static com.kenai.constantine.platform.TCP.TCP_NODELAY;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.MulticastSocket;
+import java.net.InetAddress;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -69,12 +72,14 @@ import org.jruby.util.io.OpenFile;
 import com.kenai.constantine.platform.SocketLevel;
 import com.kenai.constantine.platform.SocketOption;
 
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 @JRubyClass(name="BasicSocket", parent="IO")
 public class RubyBasicSocket extends RubyIO {
     private static final ByteList FORMAT_SMALL_I = new ByteList(ByteList.plain("i"));
+    protected MulticastStateManager multicastStateManager = null;
 
     private static ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -261,6 +266,22 @@ public class RubyBasicSocket extends RubyIO {
         Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
         if(socketChannel instanceof SocketChannel) {
             asSocket().setTcpNoDelay(asBoolean(val));
+        }
+    }
+
+    private void joinMulticastGroup(IRubyObject val) throws IOException {
+        Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
+
+        if(socketChannel instanceof DatagramChannel) {
+            if (multicastStateManager == null) {
+                multicastStateManager = new MulticastStateManager();
+            }
+
+            if (val instanceof RubyString)
+            {
+                byte [] ipaddr_buf = val.convertToString().getBytes();
+                multicastStateManager.addMembership(ipaddr_buf);
+            }
         }
     }
 
@@ -570,6 +591,11 @@ public class RubyBasicSocket extends RubyIO {
                 default:
                     if (IPPROTO_TCP.value() == level && TCP_NODELAY.value() == opt) {
                         setTcpNoDelay(val);
+                    }
+                    else if (IPPROTO_IP.value() == level) {
+                        if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt) {
+                            joinMulticastGroup(val);
+                        }
                     } else {
                         throw context.getRuntime().newErrnoENOPROTOOPTError();
                     }
@@ -578,6 +604,11 @@ public class RubyBasicSocket extends RubyIO {
             default:
                 if (IPPROTO_TCP.value() == level && TCP_NODELAY.value() == opt) {
                     setTcpNoDelay(val);
+                }
+                else if (IPPROTO_IP.value() == level) {
+                    if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt) {
+                        joinMulticastGroup(val);
+                    }
                 } else {
                     throw context.getRuntime().newErrnoENOPROTOOPTError();
                 }
