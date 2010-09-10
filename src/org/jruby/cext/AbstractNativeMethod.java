@@ -33,9 +33,11 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 public abstract class AbstractNativeMethod extends DynamicMethod {
     protected final Arity arity;
@@ -66,18 +68,21 @@ public abstract class AbstractNativeMethod extends DynamicMethod {
 
     static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
         context.preMethodFrameOnly(self.getType(), name, self, Block.NULL_BLOCK);
+        DynamicScope currentScope = context.getCurrentScope();
+        context.pushScope(new ManyVarsDynamicScope(currentScope.getStaticScope(), currentScope));
         GIL.acquire();
     }
 
     static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
         context.preMethodFrameOnly(self.getType(), name, self, block);
+        DynamicScope currentScope = context.getCurrentScope();
+        context.pushScope(new ManyVarsDynamicScope(currentScope.getStaticScope(), currentScope));
         GIL.acquire();
     }
 
-
     static void post(ThreadContext context) {
         GIL.release();
-        context.postMethodFrameOnly();
+        context.postMethodFrameAndScope();
     }
 
     final Native getNativeInstance() {
