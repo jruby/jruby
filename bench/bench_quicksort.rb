@@ -16,7 +16,10 @@ def quicksort(l)
   end
 end
 
-Benchmark.bm(25) do |b| 
-  5.times { b.report("350-element quicksort") { quicksort($small_array) } }
-  5.times { b.report("35k-element quicksort") { quicksort($big_array) } }
+TIMES = (ARGV[0] || 5).to_i
+Benchmark.bm(25) do |b|
+  TIMES.times do
+    b.report("350-element quicksort") { quicksort($small_array) }
+    b.report("35k-element quicksort") { quicksort($big_array) }
+  end
 end
