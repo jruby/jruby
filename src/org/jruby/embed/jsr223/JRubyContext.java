@@ -33,9 +33,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -50,8 +48,8 @@ import org.jruby.embed.ScriptingContainer;
 class JRubyContext implements ScriptContext {
     private ScriptingContainer container;
     private final List<Integer> scopeList;
-    private SimpleBindings globalMap = null;
-    private JRubyBindings engineMap;
+    private Bindings globalMap = null;
+    private Bindings engineMap;
 
     public enum Scope {
 
@@ -68,6 +66,29 @@ class JRubyContext implements ScriptContext {
         }
     }
 
+    static JRubyContext convert(ScriptingContainer container, ScriptContext context) {
+        if (context instanceof JRubyContext) return (JRubyContext) context;
+        JRubyContext tmpContext = new JRubyContext(container);
+        tmpContext.setWriter(context.getWriter());
+        tmpContext.setErrorWriter(context.getErrorWriter());
+        tmpContext.setReader(context.getReader(), false);
+        tmpContext.setEngineScopeBindings(context.getBindings(ScriptContext.ENGINE_SCOPE));
+        tmpContext.setGlobalScopeBindings(context.getBindings(ScriptContext.GLOBAL_SCOPE));
+        return tmpContext;
+    }
+
+    // update ScriptContext by JRubyContext after eval
+    static void update(JRubyContext jrubyContext, ScriptContext context) {
+        if (jrubyContext == null || context == null) return;
+        Bindings tmpBindings = jrubyContext.getEngineScopeBindings();
+        Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+        Set<String> keys = tmpBindings.keySet();
+        for (String key : keys) {
+            Object value = tmpBindings.get(key);
+            bindings.put(key, value);
+        }
+    }
+
     JRubyContext(ScriptingContainer container) {
         this.container = container;
         List<Integer> list = new ArrayList<Integer>();
@@ -75,7 +96,7 @@ class JRubyContext implements ScriptContext {
             list.add(scope.getPriority());
         }
         scopeList = Collections.unmodifiableList(list);
-        engineMap = new JRubyBindings(container);
+        engineMap = new SimpleBindings();
     }
 
     private void checkName(String name) {
@@ -136,6 +157,14 @@ class JRubyContext implements ScriptContext {
         }
     }
 
+    Bindings getEngineScopeBindings() {
+        return engineMap;
+    }
+
+    Bindings getGlobalScopeBindings() {
+        return globalMap;
+    }
+
     public Writer getErrorWriter() {
         return (Writer) container.getErrorWriter();
     }
@@ -174,37 +203,20 @@ class JRubyContext implements ScriptContext {
             throw new NullPointerException("null bindings in ENGINE scope");
         }
         if (scope == Scope.ENGINE.getPriority()) {
-            if (bindings instanceof JRubyBindings) {
-                engineMap = (JRubyBindings) bindings;
-            } else {
-                JRubyBindings b = new JRubyBindings(container);
-                container.setAttribute(JRubyBindings.BACKED_BINDING, bindings);
-                Set<Map.Entry<String, Object>> s = bindings.entrySet();
-                Iterator itr = s.iterator();
-                while (itr.hasNext()) {
-                    Map.Entry<String, Object> m = (Map.Entry<String, Object>) itr.next();
-                    String key = m.getKey();
-                    Object value = m.getValue();
-                    b.put(key, value);
-                }
-                this.engineMap = b;
-            }
+            engineMap = bindings;
         } else if (scope == Scope.GLOBAL.getPriority()) {
-            /*
-            if (getBindings(scope) == null) {
-                throw new IllegalArgumentException("no bindings in " + scope + " scope");
-            }
-            */
-            if (bindings instanceof SimpleBindings) {
-                globalMap = (SimpleBindings) bindings;
-            } else if (bindings == null) {
-                globalMap = null;
-            } else {
-                throw new IllegalArgumentException("invalid bindings");
-            }
+            globalMap = bindings;
         } else {
             throw new IllegalArgumentException("invalid scope");
         }
+    }
+
+    void setEngineScopeBindings(Bindings bindings) {
+        engineMap = bindings;
+    }
+
+    void setGlobalScopeBindings(Bindings bindings) {
+        globalMap = bindings;
     }
 
     public void setErrorWriter(Writer errorWriter) {
@@ -218,13 +230,17 @@ class JRubyContext implements ScriptContext {
     }
 
     public void setReader(Reader reader) {
+        setReader(reader, true);
+    }
+
+    void setReader(Reader reader, boolean updateContainer) {
         if (reader == null) {
             return;
         }
         if (getReader() == reader) {
             return;
         }
-        container.setReader(reader);
+        if (updateContainer) container.setReader(reader);
     }
 
     public void setWriter(Writer writer) {

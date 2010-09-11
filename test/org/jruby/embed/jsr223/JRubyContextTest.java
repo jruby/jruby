@@ -229,7 +229,7 @@ public class JRubyContextTest {
         ScriptEngineManager manager = new ScriptEngineManager();
         ScriptEngine engine = manager.getEngineByName("jruby");
         JRubyContext instance = (JRubyContext) engine.getContext();
-        JRubyBindings jb = new JRubyBindings(container);
+        Bindings jb = new SimpleBindings();
         jb.put("abc", "aabc");
         jb.put("@abc", "abbc");
         jb.put("$abc", "abcc");
@@ -413,7 +413,7 @@ public class JRubyContextTest {
             expResult = "null bindings in ENGINE scope";
             assertEquals(expResult, e.getMessage());
         }
-        bindings = new JRubyBindings(container);
+        bindings = new SimpleBindings();
         bindings.put("abc", "aabc");
         bindings.put(ScriptEngine.LANGUAGE, "jruby");
         instance.setBindings(bindings, ScriptContext.ENGINE_SCOPE);

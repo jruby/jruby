@@ -29,9 +29,12 @@
  */
 package org.jruby.embed.jsr223;
 
+import java.util.Set;
+import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import org.jruby.embed.AttributeName;
+import org.jruby.embed.ScriptingContainer;
 
 /**
  * A collection of JSR223 specific utility methods.
@@ -67,5 +70,60 @@ public class Utils {
         return termination;
     }
 
+    static void preEval(ScriptingContainer container, JRubyContext jrubyContext) {
+        Bindings bindings = getBindings(jrubyContext);
+        if (bindings == null) return;
+        Set<String> keys = bindings.keySet();
+        for (String key : keys) {
+            Object value = bindings.get(key);
+            Object oldValue = put(container, key, value);
+        }
+    }
 
+    private static Bindings getBindings(JRubyContext jrubyContext) {
+        if (jrubyContext == null) return null;
+        Bindings bindings = jrubyContext.getEngineScopeBindings();
+        if (bindings == null) bindings = jrubyContext.getGlobalScopeBindings();
+        return bindings;
+    }
+
+    static void postEval(ScriptingContainer container, JRubyContext jrubyContext) {
+        if (jrubyContext == null) return;
+        Set<String> keys = container.getVarMap().keySet();
+        if (keys == null || keys.size() == 0) return;
+        for (String key : keys) {
+            Object value = container.getVarMap().get(key);
+            jrubyContext.getEngineScopeBindings().put(key, value);
+        }
+    }
+
+    private static Object put(ScriptingContainer container, String key, Object value) {
+        Object oldValue = null;
+        String adjustedKey = adjustKey(key);
+        if (isRubyVariable(container, adjustedKey)) {
+            oldValue = container.put(adjustedKey, value);
+        } else {
+            oldValue = container.setAttribute(adjustedKey, value);
+            /* Maybe no need anymore?
+            if (container.getAttributeMap().containsKey(BACKED_BINDING)) {
+                Bindings b = (Bindings) container.getAttribute(BACKED_BINDING);
+                b.put(key, value);
+            }
+             *
+             */
+        }
+        return oldValue;
+    }
+
+    private static boolean isRubyVariable(ScriptingContainer container, String name) {
+        return container.getVarMap().getVariableInterceptor().isKindOfRubyVariable(name);
+    }
+
+    private static String adjustKey(String key) {
+        if (key.equals(ScriptEngine.ARGV)) {
+            return "ARGV";
+        } else {
+            return key;
+        }
+    }
 }

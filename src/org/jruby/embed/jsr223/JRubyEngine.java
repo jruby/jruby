@@ -42,7 +42,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
-import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -57,12 +56,12 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
 
     private final ScriptingContainer container;
     private JRubyEngineFactory factory;
-    private JRubyContext context;
+    private JRubyContext jrubyContext;
 
     JRubyEngine(ScriptingContainer container, JRubyEngineFactory factory) {
         this.container = container;
         this.factory = factory;
-        context = new JRubyContext(container);
+        jrubyContext = new JRubyContext(container);
     }
 
     public CompiledScript compile(String script) throws ScriptException {
@@ -83,9 +82,10 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (script == null || context == null) {
             throw new NullPointerException("either script or context is null");
         }
-        setContext(context);
         container.setScriptFilename(Utils.getFilename(this));
+        JRubyContext tmpContext = JRubyContext.convert(container, context);
         try {
+            Utils.preEval(container, tmpContext);
             EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
             IRubyObject ret = unit.run();
             return JavaEmbedUtils.rubyToJava(ret);
@@ -95,6 +95,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             if(Utils.isTerminationOn(this)) {
                 container.terminate();
             }
+            Utils.postEval(container, tmpContext);
+            if (tmpContext != context) JRubyContext.update(tmpContext, context);
         }
     }
 
@@ -120,9 +122,10 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (reader == null || context == null) {
             throw new NullPointerException("either reader or context is null");
         }
-        setContext(context);
         String filename = Utils.getFilename(this);
+        JRubyContext tmpContext = JRubyContext.convert(container, context);
         try {
+            Utils.preEval(container, tmpContext);
             EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
             IRubyObject ret = unit.run();
             return JavaEmbedUtils.rubyToJava(ret);
@@ -132,97 +135,61 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             if(Utils.isTerminationOn(this)) {
                 container.terminate();
             }
-        }
-    }
-
-    public Object eval(String script) throws ScriptException {
-        if (script == null) {
-            throw new NullPointerException("script is null");
-        }
-        container.setScriptFilename(Utils.getFilename(this));
-        try {
-            EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            if(Utils.isTerminationOn(this)) {
-                container.terminate();
-            }
-        }
-    }
-
-    public Object eval(Reader reader) throws ScriptException {
-        if (reader == null) {
-            throw new NullPointerException("reader is null");
-        }
-        String filename = Utils.getFilename(this);
-        try {
-            EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            if(Utils.isTerminationOn(this)) {
-                container.terminate();
-            }
+            Utils.postEval(container, tmpContext);
+            if (tmpContext != context) JRubyContext.update(tmpContext, context);
         }
     }
 
     public Object eval(String script, Bindings bindings) throws ScriptException {
-        if (script == null || bindings == null) {
-            throw new NullPointerException("either script or bindings is null");
-        }
-        getContext().setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        container.setScriptFilename(Utils.getFilename(this));
-        try {
-            EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            if(Utils.isTerminationOn(this)) {
-                container.terminate();
-            }
-        }
+        JRubyContext context = getScriptContext(bindings);
+        return eval(script, context);
     }
 
     public Object eval(Reader reader, Bindings bindings) throws ScriptException {
-        if (reader == null || bindings == null) {
-            throw new NullPointerException("either reader or bindings is null");
+        JRubyContext context = getScriptContext(bindings);
+        return eval(reader, context);
+    }
+
+    public Object eval(String script) throws ScriptException {
+        return eval(script, jrubyContext);
+    }
+
+    public Object eval(Reader reader) throws ScriptException {
+        return eval(reader, jrubyContext);
+    }
+
+    protected JRubyContext getScriptContext(Bindings bindings) {
+        if (bindings == null) {
+            throw new NullPointerException("null bindings in engine scope");
         }
-        getContext().setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        String filename = Utils.getFilename(this);
-        try {
-            EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            if(Utils.isTerminationOn(this)) {
-                container.terminate();
-            }
+
+        JRubyContext newContext = new JRubyContext(container);
+        newContext.setEngineScopeBindings(bindings);
+        Bindings global = getBindings(ScriptContext.GLOBAL_SCOPE);
+        if (global != null) {
+            newContext.setGlobalScopeBindings(global);
         }
+        newContext.setReader(jrubyContext.getReader(), false);
+        newContext.setWriter(jrubyContext.getWriter());
+        newContext.setErrorWriter(jrubyContext.getErrorWriter());
+
+        return newContext;
     }
 
     public Object get(String key) {
-        return getBindings(ScriptContext.ENGINE_SCOPE).get(key);
+        return jrubyContext.getEngineScopeBindings().get(key);
     }
 
     public void put(String key, Object value) {
-        getBindings(ScriptContext.ENGINE_SCOPE).put(key, value);
+        jrubyContext.getEngineScopeBindings().put(key, value);
     }
 
     public Bindings getBindings(int scope) {
-        return context.getBindings(scope);
+        return jrubyContext.getBindings(scope);
     }
 
     public void setBindings(Bindings bindings, int scope) {
-        context.setBindings(bindings, scope);
+        jrubyContext.setBindings(bindings, scope);
     }
 
     public Bindings createBindings() {
@@ -230,30 +197,14 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
     }
 
     public ScriptContext getContext() {
-        return context;
+        return jrubyContext;
     }
 
     public void setContext(ScriptContext ctx) {
         if (ctx == null) {
             throw new NullPointerException("context is null");
         }
-        if (ctx instanceof JRubyContext) {
-            context = (JRubyContext)ctx;
-        } else {
-            context = new JRubyContext(container);
-            // This causes a trouble since a standard input will be changed.
-            // A program would wait new input.
-            //context.setReader(ctx.getReader());
-            context.setWriter(ctx.getWriter());
-            context.setErrorWriter(ctx.getErrorWriter());
-            context.setBindings(ctx.getBindings(ScriptContext.ENGINE_SCOPE),
-                          ScriptContext.ENGINE_SCOPE);
-            if (ctx.getBindings(ScriptContext.GLOBAL_SCOPE) != null) {
-                context.setBindings(ctx.getBindings(ScriptContext.GLOBAL_SCOPE),
-                                    ScriptContext.GLOBAL_SCOPE);
-            }
-            ctx = context;
-        }
+        jrubyContext = JRubyContext.convert(container, ctx);
     }
 
     public ScriptEngineFactory getFactory() {
@@ -269,6 +220,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             throw new NullPointerException("receiver is null");
         }
         try {
+            Utils.preEval(container, jrubyContext);
             if (args == null || args.length == 0) {
                 return container.callMethod(receiver, method, Object.class);
             }
@@ -278,6 +230,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
                 throw wrapMethodException(e);
             }
             throw wrapException(e);
+        } finally {
+            Utils.postEval(container, jrubyContext);
         }
     }
 
@@ -301,6 +255,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             throw new NullPointerException("method is null");
         }
         try {
+            Utils.preEval(container, jrubyContext);
             if (args == null || args.length == 0) {
                 return container.callMethod(null, method, Object.class);
             }
@@ -310,6 +265,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
                 throw wrapMethodException(e);
             }
             throw wrapException(e);
+        } finally {
+            Utils.postEval(container, jrubyContext);
         }
     }
 
