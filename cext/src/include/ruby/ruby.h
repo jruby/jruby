@@ -1089,7 +1089,7 @@ RUBY_DLLSPEC extern VALUE rb_eLoadError;
 #define ruby_debug (rb_gv_get("$DEBUG"))
 
 // TODO: get rjb to use a different #ifdef than "RUBINIUS"
-#define RUBINIUS 1
+// #define RUBINIUS 1
 #define HAVE_RB_ERRINFO 1
 #define HAVE_RB_SET_ERRINFO 1
 #define rb_errinfo (rb_gv_get("$!"))
