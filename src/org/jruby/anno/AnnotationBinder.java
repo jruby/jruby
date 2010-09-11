@@ -196,15 +196,18 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         boolean frame = false;
                         boolean scope = false;
                         if (anno.frame()) {
+                            if (DEBUG) System.out.println("Method has frame = true: " + methodDescs.get(0).getDeclaringType() + ": " + methodDescs);
                             frame = true;
                         }
                         if (anno.reads() != null) for (FrameField read : anno.reads()) {
                             switch (read) {
                             case BACKREF:
                             case LASTLINE:
+                                if (DEBUG) System.out.println("Method reads scope field " + read + ": " + methodDescs.get(0).getDeclaringType() + ": " + methodDescs);
                                 scope = true;
                                 break;
                             default:
+                                if (DEBUG) System.out.println("Method reads frame field " + read + ": " + methodDescs.get(0).getDeclaringType() + ": " + methodDescs);
                                 frame = true;
                             }
                         }
@@ -212,9 +215,11 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             switch (write) {
                             case BACKREF:
                             case LASTLINE:
+                                if (DEBUG) System.out.println("Method writes scope field " + write + ": " + methodDescs.get(0).getDeclaringType() + ": " + methodDescs);
                                 scope = true;
                                 break;
                             default:
+                                if (DEBUG) System.out.println("Method writes frame field " + write + ": " + methodDescs.get(0).getDeclaringType() + ": " + methodDescs);
                                 frame = true;
                             }
                         }

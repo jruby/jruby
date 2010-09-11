@@ -32,6 +32,7 @@ package org.jruby.compiler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
@@ -56,6 +57,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ClassCache;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 public class JITCompiler implements JITCompilerMBean {
     public static final boolean USE_CACHE = true;
@@ -284,6 +286,7 @@ public class JITCompiler implements JITCompilerMBean {
             long start = System.nanoTime();
 
             asmCompiler = new StandardASMCompiler(className, filename);
+
             asmCompiler.startScript(staticScope);
             final ASTCompiler compiler = ruby.getInstanceConfig().newCompiler();
 
@@ -294,6 +297,9 @@ public class JITCompiler implements JITCompilerMBean {
             };
 
             ASTInspector inspector = new ASTInspector();
+            if (ruby.getInstanceConfig().isJitDumping()) {
+                inspector = new ASTInspector(className, true);
+            }
             // check args first, since body inspection can depend on args
             inspector.inspect(argsNode);
             inspector.inspect(bodyNode);
@@ -326,6 +332,10 @@ public class JITCompiler implements JITCompilerMBean {
             }
             
             bytecode = asmCompiler.getClassByteArray();
+            if (ruby.getInstanceConfig().isJitDumping()) {
+                TraceClassVisitor tcv = new TraceClassVisitor(new PrintWriter(System.out));
+                new ClassReader(bytecode).accept(tcv, 0);
+            }
             
             if (bytecode.length > ruby.getInstanceConfig().getJitMaxSize()) {
                 bytecode = null;

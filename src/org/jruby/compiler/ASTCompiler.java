@@ -2645,7 +2645,7 @@ public class ASTCompiler {
         inspector.inspect(forNode.getVarNode());
 
         // force heap-scope behavior, since it uses parent's scope
-        inspector.setFlag(ASTInspector.CLOSURE);
+        inspector.setFlag(forNode, ASTInspector.CLOSURE);
 
         context.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
                 closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);

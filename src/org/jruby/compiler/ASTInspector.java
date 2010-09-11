@@ -107,6 +107,20 @@ import org.jruby.util.SafePropertyAccessor;
  * @author headius
  */
 public class ASTInspector {
+    private final boolean dump;
+    private final String name;
+    public ASTInspector() {
+        dump = false;
+        name = null;
+    }
+
+    public ASTInspector(String name, boolean dump) {
+        this.name = name;
+        this.dump = dump;
+    }
+
+    private static final boolean DEBUG = false;
+
     public static final int BLOCK_ARG = 0x1; // block argument to the method
     public static final int CLOSURE = 0x2; // closure present
     public static final int CLASS = 0x4; // class present
@@ -128,6 +142,13 @@ public class ASTInspector {
     public static final int CLASS_VAR = 0x40000; // accesses or sets class variables
     public static final int SUPER = 0x80000; // makes normal super call
     public static final int RETRY = 0x100000; // contains a retry
+
+    private static final String[] MODIFIER_NAMES = {
+        "BLOCK", "CLOSURE", "CLASS", "METHOD", "EVAL", "FRAME_AWARE", "FRAME_SELF",
+        "FRAME_VISIBILITY", "FRAME_BLOCK", "FRAME_NAME", "BACKREF", "LASTLINE", "FRAME_CLASS",
+        "OPT_ARGS", "REST_ARG", "SCOPE_AWARE", "ZSUPER", "CONSTANT", "CLASS_VAR",
+        "SUPER", "RETRY"
+    };
     
     private int flags;
     
@@ -138,10 +159,12 @@ public class ASTInspector {
     public static final Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
 
     public static void addFrameAwareMethods(String... methods) {
+        if (DEBUG) System.out.println("Adding frame-aware method names: " + Arrays.toString(methods));
         FRAME_AWARE_METHODS.addAll(Arrays.asList(methods));
     }
     
     public static void addScopeAwareMethods(String... methods) {
+        if (DEBUG) System.out.println("Adding scope-aware method names: " + Arrays.toString(methods));
         SCOPE_AWARE_METHODS.addAll(Arrays.asList(methods));
     }
 
@@ -166,6 +189,7 @@ public class ASTInspector {
     }
     
     public void disable() {
+        if (dump) System.out.println("[ASTInspector] " + name + " DISABLED");
         flags = 0xFFFFFFFF;
     }
 
@@ -219,8 +243,8 @@ public class ASTInspector {
      * @param nodes The child nodes to walk with a new inspector
      * @return The new inspector resulting from the walk
      */
-    public static ASTInspector subInspect(Node... nodes) {
-        ASTInspector newInspector = new ASTInspector();
+    public ASTInspector subInspect(Node... nodes) {
+        ASTInspector newInspector = new ASTInspector(name, dump);
         
         for (Node node : nodes) {
             newInspector.inspect(node);
@@ -232,8 +256,18 @@ public class ASTInspector {
     public boolean getFlag(int modifier) {
         return (flags & modifier) != 0;
     }
-    
+
     public void setFlag(int modifier) {
+        if (dump) {
+            System.out.println("[ASTInspector] " + name + "\n\tset flag " + Integer.toHexString(modifier));
+        }
+        flags |= modifier;
+    }
+    
+    public void setFlag(Node node, int modifier) {
+        if (dump) {
+            System.out.println("[ASTInspector] " + name + "\n\tset flag " + Integer.toHexString(modifier) + "\n\tbecause of " + node.getNodeType() + " at " + node.getPosition());
+        }
         flags |= modifier;
     }
     
@@ -257,7 +291,7 @@ public class ASTInspector {
         
         switch (node.getNodeType()) {
         case ALIASNODE:
-            setFlag(METHOD);
+            setFlag(node, METHOD);
             break;
         case ANDNODE:
             AndNode andNode = (AndNode)node;
@@ -290,21 +324,21 @@ public class ASTInspector {
             break;
         case ARGSNODE:
             ArgsNode argsNode = (ArgsNode)node;
-            if (argsNode.getBlock() != null) setFlag(BLOCK_ARG);
+            if (argsNode.getBlock() != null) setFlag(node, BLOCK_ARG);
             if (argsNode.getOptArgs() != null) {
-                setFlag(OPT_ARGS);
+                setFlag(node, OPT_ARGS);
                 inspect(argsNode.getOptArgs());
             }
-            if (argsNode.getRestArg() == -2 || argsNode.getRestArg() >= 0) setFlag(REST_ARG);
+            if (argsNode.getRestArg() == -2 || argsNode.getRestArg() >= 0) setFlag(node, REST_ARG);
             break;
         case ATTRASSIGNNODE:
             AttrAssignNode attrAssignNode = (AttrAssignNode)node;
-            setFlag(FRAME_SELF);
+            setFlag(node, FRAME_SELF);
             inspect(attrAssignNode.getArgsNode());
             inspect(attrAssignNode.getReceiverNode());
             break;
         case BACKREFNODE:
-            setFlag(BACKREF);
+            setFlag(node, BACKREF);
             break;
         case BEGINNODE:
             inspect(((BeginNode)node).getBodyNode());
@@ -334,7 +368,7 @@ public class ASTInspector {
                     callNode.getReceiverNode() instanceof ConstNode &&
                     ((ConstNode)callNode.getReceiverNode()).getName() == "Proc") {
                 // Proc.new needs the caller's block to instantiate a proc
-                setFlag(FRAME_BLOCK);
+                setFlag(node, FRAME_BLOCK);
             }
         case FCALLNODE:
             inspect(((IArgumentNode)node).getArgsNode());
@@ -342,13 +376,13 @@ public class ASTInspector {
         case VCALLNODE:
             INameNode nameNode = (INameNode)node;
             if (FRAME_AWARE_METHODS.contains(nameNode.getName())) {
-                setFlag(FRAME_AWARE);
+                setFlag(node, FRAME_AWARE);
                 if (nameNode.getName().indexOf("eval") != -1) {
-                    setFlag(EVAL);
+                    setFlag(node, EVAL);
                 }
             }
             if (SCOPE_AWARE_METHODS.contains(nameNode.getName())) {
-                setFlag(SCOPE_AWARE);
+                setFlag(node, SCOPE_AWARE);
             }
             break;
         case CASENODE:
@@ -358,25 +392,25 @@ public class ASTInspector {
             inspect(caseNode.getElseNode());
             break;
         case CLASSNODE:
-            setFlag(CLASS);
+            setFlag(node, CLASS);
             ClassNode classNode = (ClassNode)node;
             inspect(classNode.getCPath());
             inspect(classNode.getSuperNode());
             break;
         case CLASSVARNODE:
-            setFlag(CLASS_VAR);
+            setFlag(node, CLASS_VAR);
             break;
         case CONSTDECLNODE:
             inspect(((AssignableNode)node).getValueNode());
-            setFlag(CONSTANT);
+            setFlag(node, CONSTANT);
             break;
         case CLASSVARASGNNODE:
             inspect(((AssignableNode)node).getValueNode());
-            setFlag(CLASS_VAR);
+            setFlag(node, CLASS_VAR);
             break;
         case CLASSVARDECLNODE:
             inspect(((AssignableNode)node).getValueNode());
-            setFlag(CLASS_VAR);
+            setFlag(node, CLASS_VAR);
             break;
         case COLON2NODE:
             inspect(((Colon2Node)node).getLeftNode());
@@ -384,12 +418,12 @@ public class ASTInspector {
         case COLON3NODE:
             break;
         case CONSTNODE:
-            setFlag(CONSTANT);
+            setFlag(node, CONSTANT);
             break;
         case DEFNNODE:
         case DEFSNODE:
-            setFlag(METHOD);
-            setFlag(FRAME_VISIBILITY);
+            setFlag(node, METHOD);
+            setFlag(node, FRAME_VISIBILITY);
             break;
         case DEFINEDNODE:
             switch (((DefinedNode)node).getExpressionNode().getNodeType()) {
@@ -452,8 +486,8 @@ public class ASTInspector {
         case FLOATNODE:
             break;
         case FORNODE:
-            setFlag(CLOSURE);
-            setFlag(SCOPE_AWARE);
+            setFlag(node, CLOSURE);
+            setFlag(node, SCOPE_AWARE);
             inspect(((ForNode)node).getIterNode());
             inspect(((ForNode)node).getBodyNode());
             inspect(((ForNode)node).getVarNode());
@@ -461,17 +495,17 @@ public class ASTInspector {
         case GLOBALASGNNODE:
             GlobalAsgnNode globalAsgnNode = (GlobalAsgnNode)node;
             if (globalAsgnNode.getName().equals("$_")) {
-                setFlag(LASTLINE);
+                setFlag(node, LASTLINE);
             } else if (globalAsgnNode.getName().equals("$~")) {
-                setFlag(BACKREF);
+                setFlag(node, BACKREF);
             }
             inspect(globalAsgnNode.getValueNode());
             break;
         case GLOBALVARNODE:
             if (((GlobalVarNode)node).getName().equals("$_")) {
-                setFlag(LASTLINE);
+                setFlag(node, LASTLINE);
             } else if (((GlobalVarNode)node).getName().equals("$~")) {
-                setFlag(BACKREF);
+                setFlag(node, BACKREF);
             }
             break;
         case HASHNODE:
@@ -494,10 +528,10 @@ public class ASTInspector {
             inspect(iscopingNode.getCPath());
             break;
         case ITERNODE:
-            setFlag(CLOSURE);
+            setFlag(node, CLOSURE);
             break;
         case LAMBDANODE:
-            setFlag(CLOSURE);
+            setFlag(node, CLOSURE);
             break;
         case LOCALASGNNODE:
             LocalAsgnNode localAsgnNode = (LocalAsgnNode)node;
@@ -513,22 +547,22 @@ public class ASTInspector {
             break;
         case MATCHNODE:
             inspect(((MatchNode)node).getRegexpNode());
-            setFlag(BACKREF);
+            setFlag(node, BACKREF);
             break;
         case MATCH2NODE:
             Match2Node match2Node = (Match2Node)node;
             inspect(match2Node.getReceiverNode());
             inspect(match2Node.getValueNode());
-            setFlag(BACKREF);
+            setFlag(node, BACKREF);
             break;
         case MATCH3NODE:
             Match3Node match3Node = (Match3Node)node;
             inspect(match3Node.getReceiverNode());
             inspect(match3Node.getValueNode());
-            setFlag(BACKREF);
+            setFlag(node, BACKREF);
             break;
         case MODULENODE:
-            setFlag(CLASS);
+            setFlag(node, CLASS);
             inspect(((ModuleNode)node).getCPath());
             break;
         case MULTIPLEASGN19NODE:
@@ -601,7 +635,7 @@ public class ASTInspector {
             break;
         case OPELEMENTASGNNODE:
             OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode)node;
-            setFlag(FRAME_SELF);
+            setFlag(node, FRAME_SELF);
             inspect(opElementAsgnNode.getArgsNode());
             inspect(opElementAsgnNode.getReceiverNode());
             inspect(opElementAsgnNode.getValueNode());
@@ -616,15 +650,15 @@ public class ASTInspector {
             break;
         case POSTEXENODE:
             PostExeNode postExeNode = (PostExeNode)node;
-            setFlag(CLOSURE);
-            setFlag(SCOPE_AWARE);
+            setFlag(node, CLOSURE);
+            setFlag(node, SCOPE_AWARE);
             inspect(postExeNode.getBodyNode());
             inspect(postExeNode.getVarNode());
             break;
         case PREEXENODE:
             PreExeNode preExeNode = (PreExeNode)node;
-            setFlag(CLOSURE);
-            setFlag(SCOPE_AWARE);
+            setFlag(node, CLOSURE);
+            setFlag(node, SCOPE_AWARE);
             inspect(preExeNode.getBodyNode());
             inspect(preExeNode.getVarNode());
             break;
@@ -639,7 +673,7 @@ public class ASTInspector {
                 if (blockNode.size() > 500) {
                     // method has more than 500 lines; we'll need to split it
                     // and therefore need to use a heap-based scope
-                    setFlag(SCOPE_AWARE);
+                    setFlag(node, SCOPE_AWARE);
                 }
             }
             break;
@@ -657,13 +691,13 @@ public class ASTInspector {
             disable();
             break;
         case RETRYNODE:
-            setFlag(RETRY);
+            setFlag(node, RETRY);
             break;
         case RETURNNODE:
             inspect(((ReturnNode)node).getValueNode());
             break;
         case SCLASSNODE:
-            setFlag(CLASS);
+            setFlag(node, CLASS);
             SClassNode sclassNode = (SClassNode)node;
             inspect(sclassNode.getReceiverNode());
             break;
@@ -682,7 +716,7 @@ public class ASTInspector {
             SuperNode superNode = (SuperNode)node;
             inspect(superNode.getArgsNode());
             inspect(superNode.getIterNode());
-            setFlag(SUPER);
+            setFlag(node, SUPER);
             break;
         case SVALUENODE:
             inspect(((SValueNode)node).getValue());
@@ -695,7 +729,7 @@ public class ASTInspector {
         case TRUENODE:
             break;
         case UNDEFNODE:
-            setFlag(METHOD);
+            setFlag(node, METHOD);
             break;
         case UNTILNODE:
             UntilNode untilNode = (UntilNode)node;
@@ -709,7 +743,7 @@ public class ASTInspector {
                 untilNode.containsNonlocalFlow = true;
                 
                 // we set scope-aware to true to force heap-based locals
-                setFlag(SCOPE_AWARE);
+                setFlag(node, SCOPE_AWARE);
             }
             integrate(untilInspector);
             break;
@@ -720,7 +754,7 @@ public class ASTInspector {
             inspect(((WhenNode)node).getExpressionNodes());
             inspect(((WhenNode)node).getNextCase());
             // Because Regexp#=== sets backref, we have to make this backref-aware
-            setFlag(BACKREF);
+            setFlag(node, BACKREF);
             break;
         case WHILENODE:
             WhileNode whileNode = (WhileNode)node;
@@ -734,7 +768,7 @@ public class ASTInspector {
                 whileNode.containsNonlocalFlow = true;
                 
                 // we set scope-aware to true to force heap-based locals
-                setFlag(SCOPE_AWARE);
+                setFlag(node, SCOPE_AWARE);
             }
             integrate(whileInspector);
             break;
@@ -748,8 +782,8 @@ public class ASTInspector {
         case ZEROARGNODE:
             break;
         case ZSUPERNODE:
-            setFlag(SCOPE_AWARE);
-            setFlag(ZSUPER);
+            setFlag(node, SCOPE_AWARE);
+            setFlag(node, ZSUPER);
             inspect(((ZSuperNode)node).getIterNode());
             break;
         default:
