@@ -68,6 +68,8 @@ RubyIO::RubyIO(FILE* native_file, int native_fd, const char* native_mode)
 RubyIO::RubyIO(JNIEnv* env, jobject obj_, jobject fd_, jstring mode_): Handle(env, obj_, T_FILE) {
     obj = obj_;
     FileDescriptor_object = fd_;
+    rio.fd = NULL;
+    rio.f = NULL;
 
     const char* utf = env->GetStringUTFChars(mode_, NULL);
     strncpy(mode, utf, 4);
