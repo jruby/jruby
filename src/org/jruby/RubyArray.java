@@ -630,8 +630,10 @@ public class RubyArray extends RubyObject implements List {
     
     public boolean includes(ThreadContext context, IRubyObject item) {
         int myBegin = this.begin;
+        int end = myBegin + realLength;
+        IRubyObject[] values = this.values;
         
-        for (int i = myBegin; i < myBegin + realLength; i++) {
+        for (int i = myBegin; i < end; i++) {
             final IRubyObject value;
             try {
                 value = values[i];
