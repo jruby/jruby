@@ -36,6 +36,7 @@ RubyIO::toRIO()
         int jfd = (int)(env->GetIntField(FileDescriptor_object, FileDescriptor_fd_field));
         rio.fd = jfd;
         rio.f = fdopen(jfd, mode);
+        rio.io_obj = (VALUE)this;
     }
 
     if (rio.fd) {
@@ -108,9 +109,14 @@ rb_io_fd(VALUE io)
 extern "C" int
 rb_io_wait_readable(int fd) {
 
+extern "C" void
+rb_io_check_readable(rb_io_t* io) {
+    callMethod(io->io_obj, "read_nonblock", 1, INT2NUM(0));
 }
-int rb_io_wait_writable(int fd);
-void rb_io_set_nonblock(rb_io_t* io);
-void rb_io_check_readable(rb_io_t* io);
-void rb_io_check_writable(rb_io_t* io);
+
+extern "C" void
+rb_io_check_writable(rb_io_t* io) {
+    callMethod(io->io_obj, "write_nonblock", 1, INT2NUM(0));
+}
+
 #endif

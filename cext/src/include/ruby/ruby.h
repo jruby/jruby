@@ -160,6 +160,7 @@ struct RArray {
 struct RIO {
     int fd;
     FILE* f;
+    VALUE io_obj;
 };
 
 typedef struct RIO rb_io_t;
