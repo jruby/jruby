@@ -183,6 +183,11 @@ rb_io_check_writable(rb_io_t* io) {
     callMethod(io->io_obj, "write_nonblock", 1, INT2NUM(0));
 }
 
+extern "C" void
+rb_io_check_closed(rb_io_t* io) {
+    callMethod(io->io_obj, "closed?", 0);
+}
+
 static int set_non_blocking(int fd) {
   int flags;
 #if defined(O_NONBLOCK)
