@@ -26,6 +26,8 @@
 
 using namespace jruby;
 
+static int set_non_blocking(int fd);
+
 struct RIO*
 RubyIO::toRIO()
 {
@@ -107,9 +109,11 @@ rb_io_fd(VALUE io)
     return jruby_io_struct(io)->fd;
 }
 
-#ifdef NOT_YET_DONE
-extern "C" int
-rb_io_wait_readable(int fd) {
+extern "C" void
+rb_io_set_nonblock(rb_io_t* io)
+{
+    set_non_blocking(io->fd);
+}
 
 extern "C" void
 rb_io_check_readable(rb_io_t* io) {
@@ -121,4 +125,14 @@ rb_io_check_writable(rb_io_t* io) {
     callMethod(io->io_obj, "write_nonblock", 1, INT2NUM(0));
 }
 
+static int set_non_blocking(int fd) {
+  int flags;
+#if defined(O_NONBLOCK)
+  if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
+    flags = 0;
+  return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+#else
+  flags = 1;
+  return ioctl(fd, FIOBIO, &flags);
 #endif
+}
