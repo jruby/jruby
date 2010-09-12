@@ -165,7 +165,7 @@ struct RIO {
 typedef struct RIO rb_io_t;
 #if defined(__WIN32__) || defined(__MINGW32__)
 #else
-	typedef struct RIO OpenFile; // 1.8 compat
+    typedef struct RIO OpenFile; // 1.8 compat
 #endif
 #define HAVE_RB_IO_T 1
 
