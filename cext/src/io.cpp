@@ -23,6 +23,7 @@
 #include "JavaException.h"
 #include "JLocalEnv.h"
 #include "ruby.h"
+#include <errno.h>
 
 using namespace jruby;
 
@@ -94,6 +95,63 @@ jruby_io_struct(VALUE io)
         rb_raise(rb_eArgError, "Invalid type. Expected an object of type IO");
     }
     return ((RubyIO*) h)->toRIO();
+}
+
+static int
+jruby_io_wait(int fd, int read)
+{
+    bool retry = false;
+
+    if (fd < 0) {
+        rb_raise(rb_eIOError, "closed stream");
+    }
+
+    switch(errno) {
+    case EINTR:
+#ifdef ERESTART
+    case ERESTART:
+#endif
+        retry = true;
+        break;
+
+    case EAGAIN:
+#if defined(EWOULDBLOCK) && EWOULDBLOCK != EAGAIN
+    case EWOULDBLOCK:
+#endif
+        break;
+
+    default:
+        return Qfalse;
+    }
+
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+
+    int ready = 0;
+
+    while (!ready) {
+        if (read) {
+            ready = rb_thread_select(fd+1, &fds, 0, 0, 0);
+        } else {
+            ready = rb_thread_select(fd+1, 0, &fds, 0, 0);
+        }
+        if (!retry) break;
+    }
+
+    return Qtrue;
+}
+
+extern "C" int
+rb_io_wait_readable(int f)
+{
+    return jruby_io_wait(f, 1);
+}
+
+extern "C" int
+rb_io_wait_writable(int f)
+{
+    return jruby_io_wait(f, 0);
 }
 
 /** Send #write to io passing str. */
