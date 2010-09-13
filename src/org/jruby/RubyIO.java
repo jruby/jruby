@@ -89,6 +89,9 @@ import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
 
+import org.jruby.util.io.SelectorFactory;
+import java.nio.channels.spi.SelectorProvider;
+
 import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
@@ -1318,7 +1321,7 @@ public class RubyIO extends RubyObject {
         synchronized (selectable.blockingLock()) {
             boolean oldBlocking = selectable.isBlocking();
             try {
-                selector = Selector.open();
+                selector = SelectorFactory.openWithRetryFrom(getRuntime(), SelectorProvider.provider());
 
                 selectable.configureBlocking(false);
                 int real_ops = selectable.validOps() & SelectionKey.OP_WRITE;
@@ -1371,7 +1374,7 @@ public class RubyIO extends RubyObject {
         synchronized (selectable.blockingLock()) {
             boolean oldBlocking = selectable.isBlocking();
             try {
-                selector = Selector.open();
+                selector = SelectorFactory.openWithRetryFrom(getRuntime(), SelectorProvider.provider());
 
                 selectable.configureBlocking(false);
                 int real_ops = selectable.validOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
@@ -3169,7 +3172,7 @@ public class RubyIO extends RubyObject {
             Set unselectable_writes = new HashSet();
             Map<RubyIO, Boolean> blocking = new HashMap();
             
-            selector = Selector.open();
+            selector = SelectorFactory.openWithRetryFrom(context.getRuntime(), SelectorProvider.provider());
             if (!args[0].isNil()) {
                 // read
                 checkArrayType(runtime, args[0]);

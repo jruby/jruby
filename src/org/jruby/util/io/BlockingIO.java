@@ -118,7 +118,7 @@ public class BlockingIO {
         private final ConcurrentLinkedQueue<IOChannel> registrationQueue;
 
         public IOSelector(SelectorProvider provider) throws IOException {
-            selector = provider.openSelector();
+            selector = SelectorFactory.openWithRetryFrom(null, provider);
             registrationQueue = new ConcurrentLinkedQueue<IOChannel>();
         }
         public void run() {

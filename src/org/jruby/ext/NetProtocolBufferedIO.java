@@ -49,6 +49,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.exceptions.RaiseException;
 
+import org.jruby.util.io.SelectorFactory;
+import java.nio.channels.spi.SelectorProvider;
+
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
@@ -104,7 +107,7 @@ public class NetProtocolBufferedIO {
                 boolean oldBlocking = nim.channel.isBlocking();
 
                 try {
-                    selector = Selector.open();
+                    selector = SelectorFactory.openWithRetryFrom(recv.getRuntime(), SelectorProvider.provider());
                     nim.channel.configureBlocking(false);
                     SelectionKey key = nim.channel.register(selector, SelectionKey.OP_READ);
                     int n = selector.select(timeout);

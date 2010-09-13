@@ -37,6 +37,8 @@ import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.nio.channels.spi.SelectorProvider;
+
 /**
  * This is a simple implementation of a soft-referenced java.nio.channels.Selector
  * pool. It is intended to allow us to reuse a small pool of selectors rather
@@ -89,7 +91,7 @@ public class SelectorPool {
 
         if (selector != null) return selector;
 
-        return Selector.open();
+        return SelectorFactory.openWithRetryFrom(null, SelectorProvider.provider());
     }
 
     private void returnToPool(Selector selector) {
