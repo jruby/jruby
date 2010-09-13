@@ -127,6 +127,15 @@ public class LocalGlobalVariable extends GlobalVariable {
     }
 
     /**
+     * Returns enum type of this variable defined in {@link BiVariable}.
+     *
+     * @return this enum type, BiVariable.Type.GlobalVariable.
+     */
+    public Type getType() {
+        return Type.LocalGlobalVariable;
+    }
+
+    /**
      * Returns true if the given name is a local global type variable. Unless
      * returns false.
      *

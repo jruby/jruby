@@ -145,7 +145,7 @@ public class VariableInterceptor {
     public void retrieve(BiVariableMap map, Ruby runtime, IRubyObject receiver) {
         switch (behavior) {
             case GLOBAL:
-                //LocalGlobalVariable.retrieve(runtime, receiver, map); // do tryLazyRetrieval
+                LocalGlobalVariable.retrieve(runtime, receiver, map);
                 break;
             case BSF:
                 PersistentLocalVariable.retrieve(runtime, receiver, map);
@@ -173,9 +173,10 @@ public class VariableInterceptor {
     public void tryLazyRetrieval(BiVariableMap map, Ruby runtime, IRubyObject receiver, Object key) {
         switch (behavior) {
             case GLOBAL:
-                if (LocalGlobalVariable.isValidName(key)) {
-                    LocalGlobalVariable.retrieveByKey(runtime, map, (String)key);
-                }
+                // GLOBAL type doesn't attempt lasy retieval anymore
+                //if (LocalGlobalVariable.isValidName(key)) {
+                //    LocalGlobalVariable.retrieveByKey(runtime, map, (String)key);
+                //}
                 break;
             case BSF:
                 break;
@@ -197,7 +198,7 @@ public class VariableInterceptor {
     public void terminateGlobalVariables(List<BiVariable> variables, Ruby runtime) {
         if (LocalVariableBehavior.GLOBAL == behavior) {
             for (int i = 0; i < variables.size(); i++) {
-                if (BiVariable.Type.GlobalVariable == variables.get(i).getType()) {
+                if (BiVariable.Type.LocalGlobalVariable == variables.get(i).getType()) {
                     IRubyObject irobj = JavaEmbedUtils.javaToRuby(runtime, null);
                     runtime.getGlobalVariables().set("$" + variables.get(i).getName(), irobj);
                 }

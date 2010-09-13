@@ -48,7 +48,7 @@ public interface BiVariable {
      * Defines a type correspond to Ruby's variables and constant types.
      */
     public enum Type {
-        Constant, GlobalVariable, ClassVariable, InstanceVariable, LocalVariable
+        Constant, GlobalVariable, LocalGlobalVariable, ClassVariable, InstanceVariable, LocalVariable
     }
 
     /**
