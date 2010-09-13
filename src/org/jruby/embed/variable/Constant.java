@@ -33,7 +33,6 @@ import org.jruby.embed.internal.BiVariableMap;
 import java.util.Collection;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -62,7 +61,7 @@ public class Constant extends AbstractVariable {
     }
     
     private Constant(Ruby runtime, String name, Object... javaObject) {
-        super(runtime, name, javaObject);
+        super(runtime, name, false, javaObject);
     }
 
     /**
@@ -72,7 +71,7 @@ public class Constant extends AbstractVariable {
      * @param irubyObject Ruby constant object
      */
     Constant(IRubyObject origin, String name, IRubyObject irubyObject) {
-        super(origin, name, irubyObject);
+        super(origin, name, true, irubyObject);
     }
 
     void markInitialized() {
@@ -141,16 +140,15 @@ public class Constant extends AbstractVariable {
      * @param receiver is the instance that will have variable injection.
      */
     public void inject(Ruby runtime, IRubyObject receiver) {
-        if (initialized) {
+        if (fromRuby) {
             return;
         }
-        RubyModule rubyClass = getRubyClass(runtime);
-        if (rubyClass != null) {
-          rubyClass.setConstant(name, irubyObject);
-        } else {
-          RubyModule module = runtime.getCurrentContext().getRubyClass();
-          module.setConstant(name, irubyObject);
-        }
+        RubyModule rubyModule = getRubyClass(runtime);
+        if (rubyModule == null) rubyModule = runtime.getCurrentContext().getRubyClass();
+        if (rubyModule == null) return;
+
+        rubyModule.storeConstant(name, irubyObject);
+        rubyModule.invalidateCacheDescendants();
         initialized = true;
     }
 

@@ -61,7 +61,7 @@ public class ClassVariable extends AbstractVariable {
     }
     
     private ClassVariable(Ruby runtime, String name, Object... javaObject) {
-        super(runtime, name, javaObject);
+        super(runtime, name, false, javaObject);
     }
 
     /**
@@ -71,7 +71,7 @@ public class ClassVariable extends AbstractVariable {
      * @param irubyObject Ruby class variable object
      */
     ClassVariable(IRubyObject origin, String name, IRubyObject irubyObject) {
-        super(origin, name, irubyObject);
+        super(origin, name, true, irubyObject);
     }
 
     /**

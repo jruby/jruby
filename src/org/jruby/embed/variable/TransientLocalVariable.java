@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -65,7 +65,7 @@ public class TransientLocalVariable extends AbstractVariable {
     }
 
     private TransientLocalVariable(Ruby runtime, String name, Object... javaObject) {
-        super(runtime, name, javaObject);
+        super(runtime, name, false, javaObject);
     }
 
     /**

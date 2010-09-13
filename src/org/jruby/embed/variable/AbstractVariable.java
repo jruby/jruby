@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,7 +30,6 @@
 package org.jruby.embed.variable;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.parser.StaticScope;
@@ -47,9 +46,11 @@ abstract class AbstractVariable implements BiVariable {
     protected Object javaObject = null;
     protected Class javaType = null;
     protected IRubyObject irubyObject = null;
+    protected final boolean fromRuby;
 
-    protected AbstractVariable(Ruby runtime, String name, Object... values) {
+    protected AbstractVariable(Ruby runtime, String name, boolean fromRuby, Object... values) {
         this.name = name;
+        this.fromRuby = fromRuby;
         updateJavaObject(runtime, values[0]);
         if (values.length > 1) {
             javaType = (Class) values[1];
@@ -72,9 +73,10 @@ abstract class AbstractVariable implements BiVariable {
         this.irubyObject = JavaEmbedUtils.javaToRuby(runtime, javaObject);
     }
 
-    protected AbstractVariable(IRubyObject origin, String name, IRubyObject rubyObject) {
+    protected AbstractVariable(IRubyObject origin, String name, boolean fromRuby, IRubyObject rubyObject) {
         this.origin = origin;
         this.name = name;
+        this.fromRuby = fromRuby;
         updateRubyObject(rubyObject);
     }
 

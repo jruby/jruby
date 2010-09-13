@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -63,7 +63,7 @@ public class InstanceVariable extends AbstractVariable {
     }
 
     private InstanceVariable(Ruby runtime, String name, Object... javaObject) {
-        super(runtime, name, javaObject);
+        super(runtime, name, false, javaObject);
     }
 
     /**
@@ -73,7 +73,7 @@ public class InstanceVariable extends AbstractVariable {
      * @param irubyObject Ruby instance object
      */
     public InstanceVariable(IRubyObject origin, String name, IRubyObject irubyObject) {
-        super(origin, name, irubyObject);
+        super(origin, name, true, irubyObject);
     }
 
     /**
