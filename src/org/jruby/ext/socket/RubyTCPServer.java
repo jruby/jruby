@@ -58,6 +58,9 @@ import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 
+import org.jruby.util.io.SelectorFactory;
+import java.nio.channels.spi.SelectorProvider;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -211,7 +214,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
             try {
                 ssc.configureBlocking(false);
-                selector = Selector.open();
+                selector = SelectorFactory.openWithRetryFrom(getRuntime(), SelectorProvider.provider());
 
                 int selected = selector.selectNow();
                 if (selected == 0) {
