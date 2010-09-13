@@ -250,9 +250,10 @@ public class RbConfigLibrary implements Library {
     private static void setupMakefileConfig(RubyModule configModule, RubyHash mkmfHash) {
         Ruby ruby = configModule.getRuntime();
         
-        String cc = System.getenv("CC");
+        RubyHash envHash = (RubyHash) ruby.getObject().fastFetchConstant("ENV".intern());
+        String cc = (String) envHash.get("CC");
         cc = cc == null ? "cc" : cc;
-        String cpp = System.getenv("CPP");
+        String cpp = (String) envHash.get("CPP");
         cpp = cpp == null ? cc + " -E " : cpp;
 
         String jflags = " -fno-omit-frame-pointer -fno-strict-aliasing ";
