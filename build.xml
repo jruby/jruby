@@ -1582,4 +1582,10 @@
       <arg line="checkout -- ${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
     </exec>
   </target>
+
+  <target name="ci-matrix" depends="clean,jar" description="Run a matrix configuration job from Hudson.">
+    <property name="testtype" value="test"/>
+    <echo>Running ${testtype} build with JDK ${jdk}</echo>
+    <antcall target="${testtype}"/>
+  </target>
 </project>
