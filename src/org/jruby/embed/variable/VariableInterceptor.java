@@ -31,6 +31,7 @@ package org.jruby.embed.variable;
 
 import java.util.List;
 import org.jruby.Ruby;
+import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -63,38 +64,38 @@ public class VariableInterceptor {
      * @param value variable value
      * @return an appropriate type of the variable instance.
      */
-    public BiVariable getVariableInstance(Ruby runtime, String name, Object... value) {
+    public BiVariable getVariableInstance(RubyObject receiver, String name, Object... value) {
         if (value == null || value.length < 1) {
             return null;
         }
         switch (behavior) {
             case GLOBAL:
                 if ("ARGV".equals(name)) {
-                    return Constant.getInstance(runtime, name, value);
+                    return Constant.getInstance(receiver, name, value);
                 }
-                return LocalGlobalVariable.getInstance(runtime, name, value);
+                return LocalGlobalVariable.getInstance(receiver, name, value);
             case BSF:
                 BiVariable[] bEntries = {
-                    PersistentLocalVariable.getInstance(runtime, name, value),
-                    GlobalVariable.getInstance(runtime, name, value)
+                    PersistentLocalVariable.getInstance(receiver, name, value),
+                    GlobalVariable.getInstance(receiver, name, value)
                 };
                 return resolve(bEntries);
             case PERSISTENT:
                 BiVariable[] pEntries = {
-                    GlobalVariable.getInstance(runtime, name, value),
-                    InstanceVariable.getInstance(runtime, name, value),
-                    ClassVariable.getInstance(runtime, name, value),
-                    Constant.getInstance(runtime, name, value),
-                    PersistentLocalVariable.getInstance(runtime, name, value)
+                    GlobalVariable.getInstance(receiver, name, value),
+                    InstanceVariable.getInstance(receiver, name, value),
+                    ClassVariable.getInstance(receiver, name, value),
+                    Constant.getInstance(receiver, name, value),
+                    PersistentLocalVariable.getInstance(receiver, name, value)
                 };
                 return resolve(pEntries);
             default:
                 BiVariable[] tEntries = {
-                    GlobalVariable.getInstance(runtime, name, value),
-                    InstanceVariable.getInstance(runtime, name, value),
-                    ClassVariable.getInstance(runtime, name, value),
-                    Constant.getInstance(runtime, name, value),
-                    TransientLocalVariable.getInstance(runtime, name, value)
+                    GlobalVariable.getInstance(receiver, name, value),
+                    InstanceVariable.getInstance(receiver, name, value),
+                    ClassVariable.getInstance(receiver, name, value),
+                    Constant.getInstance(receiver, name, value),
+                    TransientLocalVariable.getInstance(receiver, name, value)
                 };
                 return resolve(tEntries);
         }
@@ -130,7 +131,7 @@ public class VariableInterceptor {
         }
         List<BiVariable> variables = map.getVariables();
         for (int i=0; i<variables.size(); i++) {
-            variables.get(i).inject(runtime, receiver);
+            variables.get(i).inject();
         }
     }
 
@@ -142,22 +143,22 @@ public class VariableInterceptor {
      * @param runtime Ruby runtime
      * @param receiver a receiver when the script has been evaluated once
      */
-    public void retrieve(BiVariableMap map, Ruby runtime, IRubyObject receiver) {
+    public void retrieve(BiVariableMap map, RubyObject receiver) {
         switch (behavior) {
             case GLOBAL:
-                LocalGlobalVariable.retrieve(runtime, receiver, map);
+                LocalGlobalVariable.retrieve(receiver, map);
                 break;
             case BSF:
-                PersistentLocalVariable.retrieve(runtime, receiver, map);
+                PersistentLocalVariable.retrieve(receiver, map);
                 break;
             case PERSISTENT:
-                PersistentLocalVariable.retrieve(runtime, receiver, map);
+                PersistentLocalVariable.retrieve(receiver, map);
             // continues to the default case
             default:
-                InstanceVariable.retrieve(runtime, receiver, map);
+                InstanceVariable.retrieve(receiver, map);
                 //GlobalVariable.retrieve(runtime, receiver, map);//tryLazyRetrieval
-                ClassVariable.retrieve(runtime, receiver, map);
-                Constant.retrieve(runtime, receiver, map);
+                ClassVariable.retrieve(receiver, map);
+                Constant.retrieve(receiver, map);
         }
     }
 

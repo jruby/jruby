@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -369,9 +369,9 @@ public class ScriptingContainerTest {
 
         // Bug. Can't retrieve instance variables from Ruby.
         instance.runScriptlet("@eular = 2.718281828");
-        //assertEquals(2.718281828, instance.get("@eular"));
+        assertEquals(2.718281828, instance.get("@eular"));
         instance.runScriptlet("@name = \"holly\"");
-        //assertEquals("holly", instance.get("@name"));
+        assertEquals("holly", instance.get("@name"));
         instance.runScriptlet("$category = \"bush\"");
         assertEquals("bush", instance.get("$category"));
 

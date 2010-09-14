@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,6 +33,7 @@ import org.jruby.embed.internal.BiVariableMap;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -46,32 +47,41 @@ public class ClassVariable extends AbstractVariable {
 
     /**
      * Returns an instance of this class. This factory method is used when a class
-     * variables is put in {@link BiVariableMap}.
+     * variables is put in {@link BiVariableMap}. This variable is originated from Java.
      *
-     * @param runtime Ruby runtime
+     * @param runtime
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of ClassVariable
      */
-    public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
+    public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
         if (name.matches(pattern)) {
-            return new ClassVariable(runtime, name, javaObject);
+            return new ClassVariable(receiver, name, javaObject);
         }
         return null;
     }
-    
-    private ClassVariable(Ruby runtime, String name, Object... javaObject) {
-        super(runtime, name, false, javaObject);
+
+    /**
+     * Constructor when the variable is originated from Java
+     * 
+     * @param receiver
+     * @param name
+     * @param javaObject
+     */
+    private ClassVariable(RubyObject receiver, String name, Object... javaObject) {
+        super(receiver, name, false, javaObject);
     }
 
     /**
-     * A constructor used when class variables are retrieved from Ruby.
+     * A constructor used when this variable is retrieved from Ruby.
      *
+     * @param receiver a receiver object that this variable/constant is originally in. When
+     *        the variable/constant is originated from Ruby, receiver may not be null.
      * @param name the class variable name
      * @param irubyObject Ruby class variable object
      */
-    ClassVariable(IRubyObject origin, String name, IRubyObject irubyObject) {
-        super(origin, name, true, irubyObject);
+    ClassVariable(IRubyObject receiver, String name, IRubyObject irubyObject) {
+        super(receiver, name, true, irubyObject);
     }
 
     /**
@@ -81,20 +91,33 @@ public class ClassVariable extends AbstractVariable {
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved class variables.
      */
-    public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
-        if (receiver == null) {
-            receiver = runtime.getTopSelf();
-        }
+    public static void retrieve(RubyObject receiver, BiVariableMap vars) {
+        // trying to get variables from receiver;
+        updateClassVar(receiver, vars);
+        // trying to get variables from topself.
+        RubyObject topSelf = (RubyObject) receiver.getRuntime().getTopSelf();
+        updateClassVar(topSelf, vars);
+    }
+
+    private static void updateClassVar(RubyObject receiver, BiVariableMap vars) {
         List<String> names = receiver.getMetaClass().getClassVariableNameList();
-        for (String name : names) {
-            BiVariable var;
-            IRubyObject value = receiver.getMetaClass().getClassVar(name);
-            if (vars.containsKey((Object)name)) {
-                var = vars.getVariable(name);
-                var.setRubyObject(value);
-            } else {
-                var = new ClassVariable(receiver, name, value);
-                vars.update(name, var);
+        for (String n : names) {
+            BiVariable var = null;
+            IRubyObject value = receiver.getMetaClass().getClassVar(n);
+            List<String> savedNames = vars.getNames();
+            for (int i=0; i<savedNames.size(); i++) {
+                if (n.equals(savedNames.get(i))) {
+                    var = (BiVariable) vars.getVariables().get(i);
+                    if (receiver == var.getReceiver()) {
+                        var.setRubyObject(value);
+                    } else {
+                        var = null;
+                    }
+                }
+            }
+            if (var == null) {
+                var = new ClassVariable(receiver, n, value);
+                vars.update(n, var);
             }
         }
     }
@@ -126,9 +149,8 @@ public class ClassVariable extends AbstractVariable {
      * @param runtime is environment where a variable injection occurs
      * @param receiver is the instance that will have variable injection.
      */
-    public void inject(Ruby runtime, IRubyObject receiver) {
-        if (origin != null && origin != receiver) return;
-        RubyModule rubyClass = getRubyClass(runtime);
+    public void inject() {
+        RubyModule rubyClass = getRubyClass(receiver.getRuntime());
         rubyClass.setClassVar(name, irubyObject);
     }
 

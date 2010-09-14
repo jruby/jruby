@@ -398,7 +398,7 @@ public class JRubyEngineTest {
         try {
             instance.put(key, value);
         } catch (IllegalArgumentException e) {
-            String expResult = "key is empty";
+            String expResult = "key can not be empty";
             assertEquals(expResult, e.getMessage());
         }
 

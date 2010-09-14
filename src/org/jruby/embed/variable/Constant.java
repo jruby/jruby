@@ -31,8 +31,11 @@ package org.jruby.embed.variable;
 
 import org.jruby.embed.internal.BiVariableMap;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -48,30 +51,32 @@ public class Constant extends AbstractVariable {
      * Returns an instance of this class. This factory method is used when a constant
      * is put in {@link BiVariableMap}.
      *
-     * @param runtime Ruby runtime
+     * @param runtime
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of Constant
      */
-    public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
+    public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
         if (name.matches(pattern)) {
-            return new Constant(runtime, name, javaObject);
+            return new Constant(receiver, name, javaObject);
         }
         return null;
     }
     
-    private Constant(Ruby runtime, String name, Object... javaObject) {
-        super(runtime, name, false, javaObject);
+    private Constant(RubyObject receiver, String name, Object... javaObject) {
+        super(receiver, name, false, javaObject);
     }
 
     /**
      * A constructor used when constants are retrieved from Ruby.
      *
+     * @param receiver a receiver object that this variable/constant is originally in. When
+     *        the variable/constant is originated from Ruby, receiver may not be null.
      * @param name the constant name
      * @param irubyObject Ruby constant object
      */
-    Constant(IRubyObject origin, String name, IRubyObject irubyObject) {
-        super(origin, name, true, irubyObject);
+    Constant(IRubyObject receiver, String name, IRubyObject irubyObject) {
+        super(receiver, name, true, irubyObject);
     }
 
     void markInitialized() {
@@ -85,30 +90,70 @@ public class Constant extends AbstractVariable {
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved constants.
      */
-    public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
-        if (receiver == null) {
-            receiver = runtime.getTopSelf();
+    public static void retrieve(RubyObject receiver, BiVariableMap vars) {
+        IRubyObject argv = receiver.getMetaClass().fastGetConstant("ARGV");
+        if (argv != null) {
+            updateARGV(vars, receiver, "ARGV", argv);
         }
-        IRubyObject irobj = runtime.getTopSelf().getMetaClass().fastGetConstant("ARGV");
-        if (irobj != null) {
-            updateVarMap(vars, receiver, "ARGV", irobj);
-        }
-        Collection<String> names = receiver.getMetaClass().getConstantNames();
-        for (String name : names) {
-            IRubyObject value = receiver.getMetaClass().getConstant(name);
-            updateVarMap(vars, receiver, name, value);
+        
+        updateConstantsOfSuperClass(receiver, vars);
+        // Constants might have the same names but different receivers.
+        updateConstants(receiver, vars);
+        RubyObject topSelf = (RubyObject)receiver.getRuntime().getTopSelf();
+        updateConstants(topSelf, vars);
+    }
+
+    private static void updateARGV(BiVariableMap vars, IRubyObject receiver, String name, IRubyObject value) {
+        BiVariable var;  // This var is for ARGV.
+        // ARGV constant should be only one
+        if (vars.containsKey((Object)name)) {
+            var = vars.getVariable((RubyObject)receiver.getRuntime().getTopSelf(), name);
+            var.setRubyObject(value);
+        } else {
+            var = new Constant(receiver.getRuntime().getTopSelf(), name, value);
+            ((Constant) var).markInitialized();
+            vars.update(name, var);
         }
     }
 
-    private static void updateVarMap(BiVariableMap vars, IRubyObject origin, String name, IRubyObject value) {
-        BiVariable var;
-        if (vars.containsKey((Object) name)) {
-            var = vars.getVariable(name);
-            var.setRubyObject(value);
-        } else {
-            var = new Constant(origin, name, value);
-            ((Constant) var).markInitialized();
-            vars.update(name, var);
+    private static void updateConstantsOfSuperClass(RubyObject receiver, BiVariableMap vars) {
+        // Super class has many many constants, so this method updates only
+        // constans in BiVariableMap.
+        Map<String, IRubyObject> map = receiver.getMetaClass().getSuperClass().getConstantMap();
+        List<BiVariable> variables = vars.getVariables();
+            // Need to check that this constant has been stored in BiVariableMap.
+        for (BiVariable variable : variables) {
+            if (variable.getType() == Type.Constant) {
+                if (map.containsKey(variable.getName())) {
+                    IRubyObject value = map.get(variable.getName());
+                    variable.setRubyObject(value);
+                }
+            }
+        }
+    }
+
+    private static void updateConstants(RubyObject receiver, BiVariableMap vars) {
+        Collection<String> names = receiver.getMetaClass().getConstantNames();
+        for (String name : names) {
+            IRubyObject value = receiver.getMetaClass().getConstant(name);
+            BiVariable var = null;
+            List<String> savedNames = vars.getNames();
+            // Need to check that this constant has been stored in BiVariableMap.
+            for (int i=0; i<savedNames.size(); i++) {
+                if (name.equals(savedNames.get(i))) {
+                    var = (BiVariable) vars.getVariables().get(i);
+                    if (receiver == var.getReceiver()) {
+                        var.setRubyObject(value);
+                    } else {
+                        var = null;
+                    }
+                }
+            }
+            if (var == null) {
+                var = new Constant(receiver, name, value);
+                ((Constant) var).markInitialized();
+                vars.update(name, var);
+            }
         }
     }
 
@@ -135,16 +180,13 @@ public class Constant extends AbstractVariable {
     /**
      * Injects a constant value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
-     *
-     * @param runtime is environment where a variable injection occurs
-     * @param receiver is the instance that will have variable injection.
      */
-    public void inject(Ruby runtime, IRubyObject receiver) {
+    public void inject() {
         if (fromRuby) {
             return;
         }
-        RubyModule rubyModule = getRubyClass(runtime);
-        if (rubyModule == null) rubyModule = runtime.getCurrentContext().getRubyClass();
+        RubyModule rubyModule = getRubyClass(receiver.getRuntime());
+        if (rubyModule == null) rubyModule = receiver.getRuntime().getCurrentContext().getRubyClass();
         if (rubyModule == null) return;
 
         rubyModule.storeConstant(name, irubyObject);

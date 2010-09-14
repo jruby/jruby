@@ -32,6 +32,7 @@ package org.jruby.embed.variable;
 import org.jruby.embed.internal.BiVariableMap;
 import java.util.Set;
 import org.jruby.Ruby;
+import org.jruby.RubyObject;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -53,15 +54,15 @@ public class LocalGlobalVariable extends GlobalVariable {
      * @param javaObject Java object that should be assigned to.
      * @return the instance of LocalGlobalVariable
      */
-    public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
+    public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
         if (name.matches(pattern)) {
-            return new LocalGlobalVariable(runtime, name, javaObject);
+            return new LocalGlobalVariable(receiver, name, javaObject);
         }
         return null;
     }
 
-    private LocalGlobalVariable(Ruby runtime, String name, Object... javaObject) {
-        super(runtime, name, javaObject);
+    private LocalGlobalVariable(RubyObject receiver, String name, Object... javaObject) {
+        super(receiver, name, javaObject);
     }
 
     /**
@@ -70,8 +71,8 @@ public class LocalGlobalVariable extends GlobalVariable {
      * @param name the local global type variable name
      * @param irubyObject Ruby global object
      */
-    LocalGlobalVariable(String name, IRubyObject irubyObject) {
-        super(name, irubyObject);
+    LocalGlobalVariable(IRubyObject receiver, String name, IRubyObject irubyObject) {
+        super(receiver, name, irubyObject);
     }
 
     /**
@@ -81,8 +82,8 @@ public class LocalGlobalVariable extends GlobalVariable {
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved global variables.
      */
-    public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
-        GlobalVariables gvars = runtime.getGlobalVariables();
+    public static void retrieve(RubyObject receiver, BiVariableMap vars) {
+        GlobalVariables gvars = receiver.getRuntime().getGlobalVariables();
         Set<String> names = gvars.getNames();
         for (String name : names) {
             if (isPredefined(name)) {
@@ -92,22 +93,22 @@ public class LocalGlobalVariable extends GlobalVariable {
             IRubyObject value = gvars.get(name);
             String javaName = name.substring(1); // eliminates a preceding character, "$"
             if (vars.containsKey((Object)javaName)) {
-                var = vars.getVariable(javaName);
+                var = vars.getVariable((RubyObject)receiver.getRuntime().getTopSelf(), javaName);
                 var.setRubyObject(value);
             } else {
-                var = new LocalGlobalVariable(javaName, value);
+                var = new LocalGlobalVariable((RubyObject)receiver.getRuntime().getTopSelf(), javaName, value);
                 vars.update(javaName, var);
             }
         }
     }
 
-    private static void updateMap(BiVariableMap vars, String name, IRubyObject value) {
+    private static void updateMap(BiVariableMap vars, RubyObject receiver, String name, IRubyObject value) {
         BiVariable var;
         if (vars.containsKey((Object) name)) {
-            var = vars.getVariable(name);
+            var = vars.getVariable(receiver, name);
             var.setRubyObject(value);
         } else {
-            var = new LocalGlobalVariable(name, value);
+            var = new LocalGlobalVariable(receiver, name, value);
             vars.update(name, var);
         }
     }
@@ -123,7 +124,7 @@ public class LocalGlobalVariable extends GlobalVariable {
     public static void retrieveByKey(Ruby runtime, BiVariableMap vars, String key) {
         GlobalVariables gvars = runtime.getGlobalVariables();
         IRubyObject value = gvars.get("$" + key);
-        updateMap(vars, key, value);
+        updateMap(vars, (RubyObject)runtime.getTopSelf(), key, value);
     }
 
     /**
@@ -131,6 +132,7 @@ public class LocalGlobalVariable extends GlobalVariable {
      *
      * @return this enum type, BiVariable.Type.GlobalVariable.
      */
+    @Override
     public Type getType() {
         return Type.LocalGlobalVariable;
     }
@@ -149,13 +151,10 @@ public class LocalGlobalVariable extends GlobalVariable {
     /**
      * Injects a global value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
-     *
-     * @param runtime is environment where a variable injection occurs
-     * @param receiver is the instance that will have variable injection.
      */
     @Override
-    public void inject(Ruby runtime, IRubyObject receiver) {
-        runtime.getGlobalVariables().set(("$"+name).intern(), irubyObject);
+    public void inject() {
+        receiver.getRuntime().getGlobalVariables().set(("$"+name).intern(), irubyObject);
     }
 
     /**

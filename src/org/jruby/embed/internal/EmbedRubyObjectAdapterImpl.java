@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -36,6 +36,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
+import org.jruby.RubyObject;
 import org.jruby.RubyObjectAdapter;
 import org.jruby.RubyString;
 import org.jruby.embed.AttributeName;
@@ -98,7 +99,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         BiVariableMap map = container.getVarMap();
         synchronized (map) {
             if (map.containsKey(variableName)) {
-                BiVariable bv = map.getVariable(variableName);
+                BiVariable bv = map.getVariable((RubyObject)container.getProvider().getRuntime().getTopSelf(), variableName);
                 bv.setRubyObject(value);
             } else {
                 InstanceVariable iv = new InstanceVariable(obj, variableName, value);
@@ -112,7 +113,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         BiVariableMap map = container.getVarMap();
         synchronized (map) {
             if (map.containsKey(variableName)) {
-                BiVariable bv = map.getVariable(variableName);
+                BiVariable bv = map.getVariable((RubyObject)container.getProvider().getRuntime().getTopSelf(), variableName);
                 return bv.getRubyObject();
             }
         }
@@ -375,7 +376,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             return null;
         }
         Ruby runtime = container.getProvider().getRuntime();
-        IRubyObject rubyReceiver = receiver != null ? JavaUtil.convertJavaToRuby(runtime, receiver) : runtime.getTopSelf();
+        RubyObject rubyReceiver = getReceiverObject(runtime, receiver);
+        
         boolean sharing_variables = true;
         Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
         if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
@@ -418,8 +420,16 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         }
     }
 
+    private RubyObject getReceiverObject(Ruby runtime, Object receiver) {
+        if (receiver == null || !(receiver instanceof IRubyObject) || receiver instanceof RubyNil) {
+            return (RubyObject)runtime.getTopSelf();
+        }
+        else if (receiver instanceof RubyObject) return (RubyObject)receiver;
+        else return (RubyObject)((IRubyObject)receiver).getRuntime().getTopSelf();
+    }
+
     private IRubyObject callEachType(MethodType type, IRubyObject rubyReceiver, String methodName, Block block, Object... args) {
-        Ruby runtime = container.getProvider().getRuntime();
+        Ruby runtime = rubyReceiver.getRuntime();
         IRubyObject[] rubyArgs = null;
         if (args != null && args.length > 0) {
             rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);

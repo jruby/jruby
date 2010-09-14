@@ -63,14 +63,7 @@ public interface BiVariable {
      *
      * @return an original receiver.
      */
-    public IRubyObject getOrigin();
-
-    /**
-     * Changes the original receiver to the given value.
-     *
-     * @param an original receiver.
-     */
-    public void setOrigin(IRubyObject origin);
+    public IRubyObject getReceiver();
 
     /**
      * Returns a name of the variable this object holds. The name follows Ruby's
@@ -99,11 +92,8 @@ public interface BiVariable {
     /**
      * Injects a variable value to a parsed Ruby script. This method is invoked
      * during EvalUnit#run() is executed. Users don't use this method.
-     *
-     * @param runtime is environment where a variable injection occurs
-     * @param receiver is the instance that will have variable injection.
      */
-    public void inject(Ruby runtime, IRubyObject receiver);
+    public void inject();
 
     /**
      * Returns a value of the variable this object holds in
