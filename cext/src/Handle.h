@@ -128,12 +128,11 @@ namespace jruby {
     class RubyIO : public Handle {
     private:
         struct RIO rio;
-        jobject FileDescriptor_object;
         char mode[5]; // "brw+\0" is the maximum mode string length
 
     public:
         RubyIO(FILE* native_file, int native_fd, const char* native_mode);
-        RubyIO(JNIEnv* env, jobject obj_, jobject fd_, jstring mode_);
+        RubyIO(JNIEnv* env, jobject obj_, jint fileno, jstring mode_);
         virtual ~RubyIO();
 
         struct RIO* toRIO();

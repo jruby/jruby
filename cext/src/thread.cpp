@@ -30,6 +30,7 @@
 #include "jruby.h"
 #include "JLocalEnv.h"
 #include "JUtil.h"
+#include "errno.h"
 
 using namespace jruby;
 
@@ -43,6 +44,9 @@ static VALUE jruby_select(void* data) {
 
     int ret = select(max, read, write, except, timeout);
     xfree(data);
+    if (ret < 0) {
+        printf("jruby_select: An error occured: %d\n", errno);
+    }
     return (VALUE)ret;
 }
 

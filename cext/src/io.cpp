@@ -34,11 +34,9 @@ RubyIO::toRIO()
 {
     JLocalEnv env;
 
-    if (!rio.f && FileDescriptor_object) {
+    if (!rio.f) {
         // open the file with the given descriptor
-        int jfd = (int)(env->GetIntField(FileDescriptor_object, FileDescriptor_fd_field));
-        rio.fd = jfd;
-        rio.f = fdopen(jfd, mode);
+        rio.f = fdopen(rio.fd, mode);
         rio.io_obj = (VALUE)this;
     }
 
@@ -68,10 +66,9 @@ RubyIO::RubyIO(FILE* native_file, int native_fd, const char* native_mode)
     obj = valueToObject(env, callMethod(rb_cIO, "new", 2, INT2FIX(native_fd), rb_str_new_cstr(mode)));
 }
 
-RubyIO::RubyIO(JNIEnv* env, jobject obj_, jobject fd_, jstring mode_): Handle(env, obj_, T_FILE) {
+RubyIO::RubyIO(JNIEnv* env, jobject obj_, jint fileno, jstring mode_): Handle(env, obj_, T_FILE) {
     obj = obj_;
-    FileDescriptor_object = fd_;
-    rio.fd = NULL;
+    rio.fd = (int)fileno;
     rio.f = NULL;
 
     const char* utf = env->GetStringUTFChars(mode_, NULL);
@@ -81,7 +78,7 @@ RubyIO::RubyIO(JNIEnv* env, jobject obj_, jobject fd_, jstring mode_): Handle(en
 }
 
 RubyIO::~RubyIO() {
-    // For now, just don't close the file.
+    // FIXME: For now, just don't close the file.
     // if (rio.f) {
     //     fclose(rio.f);
     // }

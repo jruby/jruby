@@ -127,7 +127,7 @@ public final class Handle {
 
                 case ClassIndex.FILE: // RubyIO uses FILE as type index, matching MRI's T_FILE
                     nativeHandle = Native.getInstance(runtime).newIOHandle(obj,
-                            ((RubyIO) obj).getOpenFile().getMainStream().getDescriptor().getFileDescriptor(),
+                            (int)((RubyIO) obj).fileno(runtime.getCurrentContext()).getLongValue(),
                             ((RubyIO) obj).getOpenFile().getModeAsString(runtime));
                     break;
 
