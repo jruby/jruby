@@ -187,6 +187,10 @@ class TestNumeric < Test::Unit::TestCase
     assert_raises(NoMethodError) { @a.quo @b }
   end
 
+  def test_fdiv
+    assert_equal 0.5, 1.fdiv(2)
+  end
+
   def test_remainder_should_raise_if_self_doesnt_implement_modulo
     assert_raises(NoMethodError) { @a.remainder(@b) }
   end
