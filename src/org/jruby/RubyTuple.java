@@ -11,6 +11,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraysUtil;
 
 /**
  *
@@ -49,7 +50,7 @@ public class RubyTuple extends RubyObject {
     public IRubyObject op_aset(ThreadContext context, IRubyObject idx, IRubyObject val) {
         int index = (int)((RubyFixnum)idx).getLongValue();
         if (index >= ary.length) {
-            ary = Arrays.copyOf(ary, ary.length * 3 / 2 + 1);
+            ary = ArraysUtil.copyOf(ary, ary.length * 3 / 2 + 1);
         }
         return ary[index] = val;
     }
