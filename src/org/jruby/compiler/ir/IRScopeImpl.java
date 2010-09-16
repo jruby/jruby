@@ -149,7 +149,7 @@ public abstract class IRScopeImpl implements IRScope {
         return index;
     }
 
-    private int getPrefixCountSize(String prefix) {
+    protected int getPrefixCountSize(String prefix) {
         Integer index = nextVarIndex.get(prefix);
 
         if (index == null) return 0;

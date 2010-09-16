@@ -186,7 +186,7 @@ public class LiveVariableNode extends FlowGraphNode
     @Override
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append("\tVars Live on Entry: ");
         int count = 0;
         for (int i = 0; i < _in.size(); i++) {
@@ -228,7 +228,7 @@ public class LiveVariableNode extends FlowGraphNode
 			  // _out cannot be null for reachable bbs! 
 			  // This bb is unreachable! (or we have a mighty bug!)
 			  // Mark everything dead in here!
-			  for (IR_Instr i: _bb.getInstrs())
+			  for (Instr i: _bb.getInstrs())
 				  i.markDead();
 
 			  return;

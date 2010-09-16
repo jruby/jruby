@@ -12,6 +12,9 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.exceptions.JumpException;
+import org.jruby.interpreter.Interpreter;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.interpreter.NaiveInterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -77,7 +80,14 @@ public class InterpretedIRBlockBody extends BlockBody {
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
-        throw new UnsupportedOperationException("Not supported yet2.");
+        // FIXME: null self?!?!?!
+        // FIXME: null klass!?!?!?!
+        // FIXME: args processing
+        if (self == null) self = value;
+        IRubyObject[] args = new IRubyObject[] { value };
+        InterpreterContext interp = new NaiveInterpreterContext(context, self, closure.getTemporaryVariableSize(), args, scope, Block.NULL_BLOCK);
+
+        return Interpreter.interpret(context, closure.getCFG(), interp);
     }
 
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {

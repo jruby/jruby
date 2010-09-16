@@ -7,7 +7,7 @@ import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.LOAD_FROM_FRAME_Instr;
+import org.jruby.compiler.ir.instructions.LoadFromFrameInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
@@ -152,7 +152,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                     it.next();
                     for (Variable v : reqdLoads) {
                         if (cl_flp.scopeDefinesVariable(v)) {
-                            it.add(new LOAD_FROM_FRAME_Instr(v, s, v.getName()));
+                            it.add(new LoadFromFrameInstr(v, s, v.getName()));
                             it.previous();
                             newReqdLoads.remove(v);
                         }
@@ -165,7 +165,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                 } else if (call.requiresFrame()) {
                     it.next();
                     for (Variable v : reqdLoads) {
-                        it.add(new LOAD_FROM_FRAME_Instr(v, s, v.getName()));
+                        it.add(new LoadFromFrameInstr(v, s, v.getName()));
                         it.previous();
                     }
                     it.previous();
@@ -184,7 +184,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
         if ((s instanceof IRClosure) && (_bb == _prob.getCFG().getEntryBB())) {
             for (Variable v : reqdLoads) {
                 if (flp.scopeUsesVariable(v)) {
-                    it.add(new LOAD_FROM_FRAME_Instr(v, s, v.getName()));
+                    it.add(new LoadFromFrameInstr(v, s, v.getName()));
                 }
             }
         }

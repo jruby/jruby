@@ -7,8 +7,8 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
-import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
-import org.jruby.compiler.ir.instructions.RECV_CLOSURE_ARG_Instr;
+import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -114,15 +114,15 @@ public class BasicBlock {
 
         for (ListIterator<Instr> it = ((ArrayList<Instr>)_instrs).listIterator(); it.hasNext(); ) {
             Instr i = it.next();
-            if (i instanceof CLOSURE_RETURN_Instr) {
+            if (i instanceof ClosureReturnInstr) {
                 // Replace the closure return receive with a simple copy
-                it.set(new CopyInstr(yieldResult, ((CLOSURE_RETURN_Instr)i).getArg()));
+                it.set(new CopyInstr(yieldResult, ((ClosureReturnInstr)i).getArg()));
             }
-            else if (i instanceof RECV_CLOSURE_ARG_Instr) {
+            else if (i instanceof ReceiveClosureArgInstr) {
                 Operand closureArg;
-                RECV_CLOSURE_ARG_Instr rcai = (RECV_CLOSURE_ARG_Instr)i;
-                int argIndex = rcai._argIndex;
-                boolean restOfArgs = rcai._restOfArgArray;
+                ReceiveClosureArgInstr rcai = (ReceiveClosureArgInstr)i;
+                int argIndex = rcai.argIndex;
+                boolean restOfArgs = rcai.restOfArgArray;
                 if (argIndex < yieldArgs.length) {
                     closureArg = yieldArgs[argIndex].cloneForInlining(ii);
                 }

@@ -105,7 +105,7 @@ import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CASE_Instr;
-import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
+import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
 import org.jruby.compiler.ir.instructions.EQQ_Instr;
@@ -127,7 +127,7 @@ import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
 import org.jruby.compiler.ir.instructions.PUT_GLOBAL_VAR_Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
-import org.jruby.compiler.ir.instructions.RECV_CLOSURE_ARG_Instr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.RECV_CLOSURE_Instr;
 import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
@@ -620,7 +620,7 @@ public class IRBuilder {
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
                 v = s.getNewTemporaryVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 buildAttrAssignAssignment(node, s, v);
                 break;
 // SSS FIXME:
@@ -633,33 +633,33 @@ public class IRBuilder {
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
                 v = getScopeNDown(s, dynamicAsgn.getDepth()).getLocalVariable(dynamicAsgn.getName());
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 break;
             }
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
                 v = s.getNewTemporaryVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
                 v = s.getNewTemporaryVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 v = s.getNewTemporaryVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 buildConstDeclAssignment((ConstDeclNode) node, s, v);
                 break;
             case GLOBALASGNNODE:
                 v = s.getNewTemporaryVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 s.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), v));
                 break;
             case INSTASGNNODE:
                 v = s.getNewTemporaryVariable();
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
                 s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
                 break;
@@ -668,7 +668,7 @@ public class IRBuilder {
                 int depth = localVariable.getDepth();
 
                 v = getScopeNDown(s, depth).getLocalVariable(localVariable.getName());
-                s.addInstr(new RECV_CLOSURE_ARG_Instr(v, argIndex, isSplat));
+                s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 break;
             }
             case MULTIPLEASGNNODE:
@@ -1934,13 +1934,13 @@ public class IRBuilder {
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
             if (argsNodeId != null)
-                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, false);
+                buildBlockArgsAssignment(forNode.getVarNode(), closure, 1, false);
         }
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
         if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
-            closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
+            closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
         return new MetaObject(closure);
     }
@@ -2069,12 +2069,12 @@ public class IRBuilder {
             // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
-            buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, false);
+            buildBlockArgsAssignment(iterNode.getVarNode(), closure, 1, false);
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
         if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
-            closure.addInstr(new CLOSURE_RETURN_Instr(closureRetVal));
+            closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
         return new MetaObject(closure);
     }
@@ -2194,7 +2194,7 @@ public class IRBuilder {
         s.addInstr(new THREAD_POLL_Instr());
         // If a closure, the next is simply a return from the closure!
         // If a regular loop, the next is simply a jump to the end of the iteration
-        s.addInstr((s instanceof IRClosure) ? new CLOSURE_RETURN_Instr(rv) : new JumpInstr(s.getCurrentLoop().iterEndLabel));
+        s.addInstr((s instanceof IRClosure) ? new ClosureReturnInstr(rv) : new JumpInstr(s.getCurrentLoop().iterEndLabel));
         return rv;
     }
 

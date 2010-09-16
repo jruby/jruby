@@ -28,6 +28,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -202,6 +203,41 @@ public class Interpreter {
                 //.. you are done with this cfg /method ..
                 //.. pop call stack, etc ..
             }
+        }
+    }
+
+    public static IRubyObject interpret(ThreadContext context, CFG cfg, InterpreterContext interp) {
+
+        try {
+            BasicBlock basicBlock = cfg.getEntryBB();
+            BasicBlock jumpBlock = basicBlock;
+
+            while (basicBlock != null) {
+                for (Instr instruction : basicBlock.getInstrs()) {
+                    try {
+                        System.out.println("EXEC'ing: " + instruction);
+                        instruction.interpret(interp, (IRubyObject) interp.getSelf());
+                    } catch (Jump jump) {
+                        jumpBlock = cfg.getTargetBB(jump.getTarget());
+                        break;
+                    }
+                }
+
+                if (jumpBlock != basicBlock) { // Explicit jump needed from last instruction
+                    basicBlock = jumpBlock;
+                } else {                       // Implicit jump because we fell off current block
+                    basicBlock = cfg.getFallThroughBB(basicBlock);
+                    jumpBlock = basicBlock;
+                }
+            }
+
+            return (IRubyObject) interp.getReturnValue();
+        } finally {
+            if (interp.getFrame() != null) {
+                context.popFrame();
+                interp.setFrame(null);
+            }
+            context.postMethodScopeOnly();
         }
     }
 }

@@ -10,7 +10,7 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.AllocateFrameInstr;
 import org.jruby.compiler.ir.instructions.StoreToFrameInstr;
-import org.jruby.compiler.ir.instructions.CLOSURE_RETURN_Instr;
+import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
@@ -200,7 +200,7 @@ public class FrameStorePlacementNode extends FlowGraphNode {
                     instrs.next();
                     dirtyVars.clear();
                 }
-            } else if (i instanceof CLOSURE_RETURN_Instr) {
+            } else if (i instanceof ClosureReturnInstr) {
                 // At closure return instructions (which are closure exits), for all variables which are:
                 //
                 //   (a) dirty,
