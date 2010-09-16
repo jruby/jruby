@@ -113,18 +113,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         errorInfo = runtime.getNil();
     }
 
-    public synchronized void receiveMail(ThreadService.Event event) {
-        // if we're already aborting, we can receive no further mail
-        if (status == Status.ABORTING) return;
-        
-        mail = event;
-        switch (event.type) {
-        case KILL:
-            status = Status.ABORTING;
+    public void receiveMail(ThreadService.Event event) {
+        synchronized (this) {
+            // if we're already aborting, we can receive no further mail
+            if (status == Status.ABORTING) return;
+
+            mail = event;
+            switch (event.type) {
+            case KILL:
+                status = Status.ABORTING;
+            }
+
+            // If this thread is sleeping or stopped, wake it
+            notify();
         }
-        
-        // If this thread is sleeping or stopped, wake it
-        notify();
 
         // interrupt the target thread in case it's blocking or waiting
         // WARNING: We no longer interrupt the target thread, since this usually means
@@ -1015,11 +1017,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 try {
                     currentWaitObject = o;
                     status = Status.SLEEP;
+                    pollThreadEvents();
                     o.wait(delay_ms, delay_ns_remainder);
                 } finally {
-                    pollThreadEvents();
                     status = Status.RUN;
                     currentWaitObject = null;
+                    pollThreadEvents();
                 }
             }
             long end_ns = System.nanoTime();
@@ -1028,11 +1031,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             try {
                 currentWaitObject = o;
                 status = Status.SLEEP;
+                pollThreadEvents();
                 o.wait();
             } finally {
-                pollThreadEvents();
                 status = Status.RUN;
                 currentWaitObject = null;
+                pollThreadEvents();
             }
             return true;
         }
