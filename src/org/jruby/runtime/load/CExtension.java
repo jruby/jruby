@@ -88,7 +88,7 @@ public class CExtension implements Library {
             }
             file = dstFile.getAbsolutePath();
         }
-        new ModuleLoader().load(runtime, file);
+        ModuleLoader.load(runtime, file);
     }
 
 }

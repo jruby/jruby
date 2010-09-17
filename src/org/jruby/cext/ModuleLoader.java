@@ -44,7 +44,7 @@ import com.kenai.jffi.Library;
 public class ModuleLoader {
     private static final Set<Library> modules = new HashSet<Library>();
     
-    public void load(Ruby runtime, String name) {
+    public static void load(Ruby runtime, String name) {
         ThreadContext context = runtime.getCurrentContext();
 
         // Ensure the native code is initialized before we load the library
