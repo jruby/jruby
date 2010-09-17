@@ -37,6 +37,10 @@ import org.jruby.runtime.ThreadContext;
 
 import com.kenai.jffi.Library;
 
+/**
+ * The {@link ModuleLoader} is responsible for loading native extensions into the process and calling
+ * their initialization function.
+ */
 public class ModuleLoader {
     private static final Set<Library> modules = new HashSet<Library>();
     

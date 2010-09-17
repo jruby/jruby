@@ -33,7 +33,8 @@ package org.jruby.cext;
 import org.jruby.RubyString;
 
 /**
- *
+ * An {@link RString} is an object tied to a {@link RubyString} for synchronization
+ * of the string value between C and Ruby.
  */
 public final class RString extends Cleaner {
     

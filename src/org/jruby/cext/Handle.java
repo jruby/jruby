@@ -40,6 +40,9 @@ import org.jruby.RubySymbol;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * A {@link Handle} represents an object made available to native code tied to it's runtime.
+ */
 public final class Handle {
     private static final long FIXNUM_MAX = Integer.getInteger("sun.arch.data.model") == 64
             ? (Long.MAX_VALUE >> 1) : ((long) Integer.MAX_VALUE >> 1);
@@ -96,6 +99,16 @@ public final class Handle {
         return "Native ruby object " + Long.toString(address);
     }
 
+    /**
+     * Retrieves the Handle object associated with a {@link RubyObject}. Retrieval is either done
+     * through the {@link GC} for Handles that have already been created, or depending on
+     * the object's native class index.<br/>
+     * Fixnum's and Symbol's native Handles are created through bit-shifting on their values, File and Float
+     * Handles are created using special JNI methods. All other objects are passed to the generic
+     * {@link Native#newHandle} method.<br/>
+     * Once a Handle has been created, it is registered with the {@link GC} to prevent garbage-collection
+     * during native method runs.
+     */
     static Handle valueOf(IRubyObject obj) {
         Handle h = GC.lookup(obj);
         if (h != null) {
@@ -146,6 +159,9 @@ public final class Handle {
         return handle;
     }
 
+    /**
+     * @return the native Handle's address associated with the given RubyObject.
+     */
     static long nativeHandle(IRubyObject obj) {
         if (obj.getClass() == RubyFixnum.class) {
             final long val = ((RubyFixnum) obj).getLongValue();

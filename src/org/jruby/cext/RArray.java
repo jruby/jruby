@@ -33,7 +33,8 @@ package org.jruby.cext;
 import org.jruby.RubyArray;
 
 /**
- *
+ * An {@link RArray} is an object tied to a {@link RubyArray} for synchronization
+ * of array contents between C and Ruby.
  */
 public final class RArray extends Cleaner {
     

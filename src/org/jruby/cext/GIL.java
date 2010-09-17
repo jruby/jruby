@@ -30,6 +30,10 @@ package org.jruby.cext;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * The {@link GIL} keeps locks for Threads running native code. Only one Thread can usually
+ * be running C code at a time.
+ */
 final class GIL {
 
     private static final ReentrantLock lock = new ReentrantLock();
@@ -41,12 +45,21 @@ final class GIL {
         lock.lock();
     }
 
+    /**
+     * Acquire the lock n-times. This method is used to implement {@link JRuby#nativeBlockingRegion}.
+     * After finishing execution of unmanaged code, the executing thread has to re-acquire all previously
+     * owned locks (for cases where the execution of the Thread went through Java->C->Java->C multiple times)
+     */
     public static void acquire(int locks) {
         for(int i = 0; i < locks; i++) {
             acquire();
         }
     }
 
+    /**
+     * Decrease the lock holding count by one, and do a {@link GC} run if this is
+     * the last lock held by this thread.
+     */
     public static void release() {
         try {
             if (lock.getHoldCount() == 1) {
@@ -57,10 +70,17 @@ final class GIL {
         }
     }
 
+    /**
+     * Fast unlocking without GC.
+     */
     public static void releaseNoCleanup() {
         lock.unlock();
     }
 
+    /**
+     * Release all locks currently held by this thread.
+     * @return the unlock count
+     */
     public static int releaseAllLocks() {
         int i;
         for(i = 0; i < lock.getHoldCount(); i++) {

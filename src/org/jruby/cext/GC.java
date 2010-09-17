@@ -39,7 +39,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ReferenceReaper;
 
-
+/**
+ * The cext {@link GC} keeps track of native handles and associates them with their corresponding Java objects
+ * to avoid garbage-collection while either is in use. It will remove unused references when a thread exits native code
+ * or the VM runs out of memory.
+ */
 public class GC {
 
     private static final Map<Object, Handle> nativeHandles = new IdentityHashMap<Object, Handle>();

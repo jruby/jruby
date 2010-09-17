@@ -45,7 +45,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.Platform;
 
-
+/**
+ * The {@link Native} class is used for interfacing with native extensions.
+ * It's singleton instance is tied to the {@link Ruby} runtime in which it was
+ * created and cannot be used in another runtime. The reason for this is, that
+ * C extensions loaded into the process space cannot be isolated from other runtimes
+ * and thus cannot be used twice within the same operating system process.
+ */
 final class Native {
     private static Native INSTANCE;
     private static Library shim = null; // keep a hard ref to avoid GC
@@ -71,6 +77,10 @@ final class Native {
         this.runtime = runtime;
     }
 
+    /**
+     * Loads and initializes the {@value #libName} native library. If it is shipped in a Jar,
+     * it will be extracted to a temporary folder.
+     */
     private void load(Ruby runtime) {
         if (shim != null) return;
 
@@ -97,6 +107,10 @@ final class Native {
         initNative(runtime);
     }
     
+    /**
+     * Tries loading the {@value #libName} library from the classpath, the JRuby Jar or the
+     * jruby home in the file-system.
+     */
     private File loadFromJrubyHome() {
         URL fileUrl = Native.class.getResource(getCextLibraryPath());
         if (fileUrl == null) {
@@ -114,6 +128,10 @@ final class Native {
         return null;
     }
 
+    /**
+     * Copies the {@value #libName} library to a temporary file to allow the operating
+     * system routines to load it into the process space.
+     */
     private File loadFromJar() {
         InputStream is = getCextLibraryStream();
         File dstFile = null;
@@ -177,11 +195,9 @@ final class Native {
         return prefix + System.mapLibraryName(libName);
     }
 
-    private final native void initNative(Ruby runtime);
-
-    public final native long callInit(ThreadContext ctx, long init);
-
-
+    /**
+     * General method to execute a C method with the given arity and arguments. Slow, general path.
+     */
     public final IRubyObject callMethod(ThreadContext ctx, long fn, IRubyObject recv, int arity, IRubyObject[] args) {
         long[] largs = new long[args.length];
         for (int i = 0; i < largs.length; ++i) {
@@ -189,6 +205,9 @@ final class Native {
         }
         return callMethod(ctx, fn, Handle.nativeHandle(recv), arity, largs);
     }
+
+    public final native long callInit(ThreadContext ctx, long init);
+    private final native void initNative(Ruby runtime);
 
     final native IRubyObject callMethod(ThreadContext ctx, long fn, long recv, int arity, long[] args);
     final native IRubyObject callMethod0(long fn, long recv);

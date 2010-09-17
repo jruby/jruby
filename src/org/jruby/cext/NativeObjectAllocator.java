@@ -33,6 +33,10 @@ import org.jruby.RubyClass;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * The {@link NativeObjectAllocator} implements allocation through a native function.
+ * It is only created from within C code.
+ */
 public final class NativeObjectAllocator implements ObjectAllocator {
     private final long function;
 

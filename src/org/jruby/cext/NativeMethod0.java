@@ -33,6 +33,9 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * {@link NativeMethod0} represents an arity-0 native method. This class is for call optimization.
+ */
 public final class NativeMethod0 extends NativeMethod {
     public NativeMethod0(RubyModule clazz, int arity, long function) {
         super(clazz, arity, function);

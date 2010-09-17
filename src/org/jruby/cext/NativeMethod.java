@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008, 2009 Wayne Meissner
+ * Copyright (C) 2009 Wayne Meissner
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
