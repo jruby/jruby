@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,8 +30,8 @@
 package org.jruby.embed.variable;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
@@ -42,15 +42,31 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 abstract class AbstractVariable implements BiVariable {
-    protected IRubyObject origin = null;
+    /*
+     * receiver a receiver object to inject this var in. When the variable/constant
+     * is originated from Java, receiver may be null. During the injection, the
+     * receiver must be set.
+     */
+    protected final IRubyObject receiver;
     protected String name;
     protected Object javaObject = null;
     protected Class javaType = null;
     protected IRubyObject irubyObject = null;
+    protected final boolean fromRuby;
 
-    protected AbstractVariable(Ruby runtime, String name, Object... values) {
+    /**
+     * Constructor used when this variable is originaed from Java.
+     *
+     * @param runtime
+     * @param name
+     * @param fromRuby
+     * @param values
+     */
+    protected AbstractVariable(RubyObject receiver, String name, boolean fromRuby, Object... values) {
+        this.receiver = receiver;
         this.name = name;
-        updateJavaObject(runtime, values[0]);
+        this.fromRuby = fromRuby;
+        updateJavaObject(receiver.getRuntime(), values[0]);
         if (values.length > 1) {
             javaType = (Class) values[1];
         } else {
@@ -72,9 +88,19 @@ abstract class AbstractVariable implements BiVariable {
         this.irubyObject = JavaEmbedUtils.javaToRuby(runtime, javaObject);
     }
 
-    protected AbstractVariable(IRubyObject origin, String name, IRubyObject rubyObject) {
-        this.origin = origin;
+    /**
+     * Constructor when the variable is originated from Ruby.
+     *
+     * @param receiver a receiver object that this variable/constant is originally in. When
+     *        the variable/constant is originated from Ruby, receiver may not be null.
+     * @param name
+     * @param fromRuby
+     * @param rubyObject
+     */
+    protected AbstractVariable(IRubyObject receiver, String name, boolean fromRuby, IRubyObject rubyObject) {
+        this.receiver = receiver;
         this.name = name;
+        this.fromRuby = fromRuby;
         updateRubyObject(rubyObject);
     }
 
@@ -85,12 +111,8 @@ abstract class AbstractVariable implements BiVariable {
         this.irubyObject = rubyObject;
     }
 
-    public IRubyObject getOrigin() {
-        return origin;
-    }
-
-    public void setOrigin(IRubyObject origin) {
-        this.origin = origin;
+    public IRubyObject getReceiver() {
+        return receiver;
     }
 
     public String getName() {

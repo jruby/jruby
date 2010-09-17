@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -48,7 +48,7 @@ public interface BiVariable {
      * Defines a type correspond to Ruby's variables and constant types.
      */
     public enum Type {
-        Constant, GlobalVariable, ClassVariable, InstanceVariable, LocalVariable
+        Constant, GlobalVariable, LocalGlobalVariable, ClassVariable, InstanceVariable, LocalVariable
     }
 
     /**
@@ -63,14 +63,7 @@ public interface BiVariable {
      *
      * @return an original receiver.
      */
-    public IRubyObject getOrigin();
-
-    /**
-     * Changes the original receiver to the given value.
-     *
-     * @param an original receiver.
-     */
-    public void setOrigin(IRubyObject origin);
+    public IRubyObject getReceiver();
 
     /**
      * Returns a name of the variable this object holds. The name follows Ruby's
@@ -99,11 +92,8 @@ public interface BiVariable {
     /**
      * Injects a variable value to a parsed Ruby script. This method is invoked
      * during EvalUnit#run() is executed. Users don't use this method.
-     *
-     * @param runtime is environment where a variable injection occurs
-     * @param receiver is the instance that will have variable injection.
      */
-    public void inject(Ruby runtime, IRubyObject receiver);
+    public void inject();
 
     /**
      * Returns a value of the variable this object holds in

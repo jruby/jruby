@@ -44,8 +44,9 @@ import org.jruby.embed.LocalVariableBehavior;
 public class SingletonLocalContextProvider extends AbstractLocalContextProvider {
     private static LocalContext localContext = null;
 
-    public SingletonLocalContextProvider(LocalVariableBehavior behavior) {
+    public SingletonLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
         this.behavior = behavior;
+        this.lazy = lazy;
     }
     
     public Ruby getRuntime() {

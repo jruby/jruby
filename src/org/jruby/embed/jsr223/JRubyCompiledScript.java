@@ -39,7 +39,6 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import org.jruby.RubyNil;
-import org.jruby.embed.AttributeName;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -59,6 +58,7 @@ public class JRubyCompiledScript extends CompiledScript {
             JRubyEngine engine, String script) {
         this.container = container;
         this.engine = engine;
+        Utils.preEval(container, (JRubyContext) engine.getContext());
         unit = container.parse(script);
     }
 
@@ -67,51 +67,23 @@ public class JRubyCompiledScript extends CompiledScript {
         this.container = container;
         this.engine = engine;
         String filename = System.getProperty(ScriptEngine.FILENAME);
-        unit = container.parse(reader, filename, Utils.getLineNumber(engine));
+        Utils.preEval(container, (JRubyContext) engine.getContext());
+        unit = container.parse(reader, filename, Utils.getLineNumber(engine.getContext()));
     }
 
-    public Object eval() throws ScriptException {
-        try {
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            if(isTerminationOn()) {
-                container.terminate();
-            }
-        }
-    }
-
-    private boolean isTerminationOn() {
-        boolean termination = false;
-        Object obj = container.getAttribute(AttributeName.TERMINATION.toString());
-        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
-            termination = true;
-        }
-        return termination;
-    }
-
+    @Override
     public Object eval(Bindings bindings) throws ScriptException {
         if (bindings == null) {
             throw new NullPointerException("bindings is null");
         }
-        engine.getContext().setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        try {
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            if(isTerminationOn()) {
-                container.terminate();
-            }
-        }
+        ScriptContext context = engine.getScriptContext(bindings);
+        return eval(context);
     }
     
     public Object eval(ScriptContext context) throws ScriptException {
+        JRubyContext tmpContext = JRubyContext.convert(container, context);
         try {
-            engine.setContext(context);
+            Utils.preEval(container, tmpContext);
             IRubyObject ret = unit.run();
             if (!(ret instanceof RubyNil)) {
                 return JavaEmbedUtils.rubyToJava(ret);
@@ -120,9 +92,11 @@ public class JRubyCompiledScript extends CompiledScript {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(isTerminationOn()) {
+            if(Utils.isTerminationOn(tmpContext)) {
                 container.terminate();
             }
+            Utils.postEval(container, tmpContext);
+            if (tmpContext != context) JRubyContext.update(tmpContext, context);
         }
     }
 

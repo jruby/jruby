@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -32,6 +32,7 @@ package org.jruby.embed.variable;
 import org.jruby.embed.internal.BiVariableMap;
 import java.util.Set;
 import org.jruby.Ruby;
+import org.jruby.RubyObject;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -52,17 +53,17 @@ public class GlobalVariable extends AbstractVariable {
      * @param javaObject Java object that should be assigned to.
      * @return the instance of GlobalVariable
      */
-    public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
+    public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
         if (name.matches(pattern)) {
-            GlobalVariable gvar = new GlobalVariable(runtime, name, javaObject);
-            gvar.tryEagerInjection(runtime, null);
+            GlobalVariable gvar = new GlobalVariable(receiver, name, javaObject);
+            gvar.tryEagerInjection(receiver.getRuntime(), null);
             return gvar;
         }
         return null;
     }
 
-    protected GlobalVariable(Ruby runtime, String name, Object... javaObject) {
-        super(runtime, name, javaObject);
+    protected GlobalVariable(RubyObject receiver, String name, Object... javaObject) {
+        super(receiver, name, false, javaObject);
     }
 
     /**
@@ -71,8 +72,8 @@ public class GlobalVariable extends AbstractVariable {
      * @param name the global variable name
      * @param irubyObject Ruby global object
      */
-    GlobalVariable(String name, IRubyObject irubyObject) {
-        super(null, name, irubyObject);
+    GlobalVariable(IRubyObject receiver, String name, IRubyObject irubyObject) {
+        super(receiver, name, true, irubyObject);
     }
 
     /**
@@ -82,25 +83,27 @@ public class GlobalVariable extends AbstractVariable {
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved global variables.
      */
-    public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
-        GlobalVariables gvars = runtime.getGlobalVariables();
+    public static void retrieve(IRubyObject receiver, BiVariableMap vars) {
+        if (vars.isLazy()) return;
+        GlobalVariables gvars = receiver.getRuntime().getGlobalVariables();
         Set<String> names = gvars.getNames();
         for (String name : names) {
             if (isPredefined(name)) {
                 continue;
             }
             IRubyObject value = gvars.get(name);
-            updateMap(vars, name, value);
+            // reciever of gvar should to topSelf always
+            updateGlobalVar(vars, (RubyObject)receiver.getRuntime().getTopSelf(), name, value);
         }
     }
 
-    private static void updateMap(BiVariableMap vars, String name, IRubyObject value) {
+    private static void updateGlobalVar(BiVariableMap vars, RubyObject receiver, String name, IRubyObject value) {
         BiVariable var;
         if (vars.containsKey((Object) name)) {
-            var = vars.getVariable(name);
+            var = vars.getVariable(receiver, name);
             var.setRubyObject(value);
         } else {
-            var = new GlobalVariable(name, value);
+            var = new GlobalVariable(receiver, name, value);
             vars.update(name, var);
         }
     }
@@ -115,8 +118,13 @@ public class GlobalVariable extends AbstractVariable {
      */
     public static void retrieveByKey(Ruby runtime, BiVariableMap vars, String key) {
         GlobalVariables gvars = runtime.getGlobalVariables();
+        // if the specified key doesn't exist, this method is called before the
+        // evaluation. Don't update value in this case.
+        if (!gvars.getNames().contains(key)) return;
+
+        // the specified key is found, so let's update
         IRubyObject value = gvars.get(key);
-        updateMap(vars, key, value);
+        updateGlobalVar(vars, (RubyObject)runtime.getTopSelf(), key, value);
     }
 
     protected static boolean isPredefined(String name) {
@@ -169,11 +177,8 @@ public class GlobalVariable extends AbstractVariable {
     /**
      * A global variable is injected when it is set. This method does nothing.
      * Instead injection is done by tryEagerInjection.
-     *
-     * @param runtime is environment where a variable injection occurs
-     * @param receiver is the instance that will have variable injection.
      */
-    public void inject(Ruby runtime, IRubyObject receiver) {
+    public void inject() {
         // do nothing
     }
 

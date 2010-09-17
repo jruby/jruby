@@ -2645,7 +2645,7 @@ public class ASTCompiler {
         inspector.inspect(forNode.getVarNode());
 
         // force heap-scope behavior, since it uses parent's scope
-        inspector.setFlag(ASTInspector.CLOSURE);
+        inspector.setFlag(forNode, ASTInspector.CLOSURE);
 
         context.createNewForLoop(Arity.procArityOf(forNode.getVarNode()).getValue(),
                 closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
@@ -3051,6 +3051,28 @@ public class ASTCompiler {
                         }
                     }
                 }
+            }
+        } else {
+            // special case for x, *y = whatever
+            if (multipleAsgnNode.getHeadNode() != null &&
+                    multipleAsgnNode.getHeadNode().size() == 1 &&
+                    multipleAsgnNode.getValueNode() instanceof ToAryNode &&
+                    multipleAsgnNode.getArgsNode() != null) {
+                // emit the value
+                compile(multipleAsgnNode.getValueNode().childNodes().get(0), context, true);
+                if (multipleAsgnNode.getArgsNode() instanceof StarNode) {
+                    // slice puts on stack in reverse order
+                    context.preMultiAssign(1, false);
+                    // assign
+                    compileAssignment(multipleAsgnNode.getHeadNode().childNodes().get(0), context, false);
+                } else {
+                    // slice puts on stack in reverse order
+                    context.preMultiAssign(1, true);
+                    // assign
+                    compileAssignment(multipleAsgnNode.getHeadNode().childNodes().get(0), context, false);
+                    compileAssignment(multipleAsgnNode.getArgsNode(), context, false);
+                }
+                return;
             }
         }
 

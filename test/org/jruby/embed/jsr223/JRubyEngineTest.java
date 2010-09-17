@@ -398,7 +398,7 @@ public class JRubyEngineTest {
         try {
             instance.put(key, value);
         } catch (IllegalArgumentException e) {
-            String expResult = "key is empty";
+            String expResult = "key can not be empty";
             assertEquals(expResult, e.getMessage());
         }
 
@@ -543,6 +543,8 @@ public class JRubyEngineTest {
     @Test
     public void testInvokeMethod() throws Exception {
         logger1.info("invokeMethod");
+        System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
+        System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
         ScriptEngineManager manager = new ScriptEngineManager();
         JRubyEngine instance = (JRubyEngine) manager.getEngineByName("jruby");
         String filename = basedir + "/test/org/jruby/embed/ruby/tree.rb";

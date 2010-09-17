@@ -64,8 +64,9 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
             // FIXME: only starting after required args, since opt args may access others
             // and rest args conflicts with compileRoot using "0" to indicate [] signature.
             int start = scope.getRequiredArgs();
+            methodCompiler.loadNil();
             for (int i = start; i < scope.getNumberOfVariables(); i++) {
-                methodCompiler.loadNil();
+                if (i + 1 < scope.getNumberOfVariables()) methodCompiler.method.dup();
                 assignLocalVariable(i, false);
             }
 

@@ -51,7 +51,7 @@ public class BasicObjectStubGenerator {
             }
             
             SkinnyMethodAdapter method = new SkinnyMethodAdapter(
-                    cv.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE, stub.getName(), sig(stub.getReturnType(), signature), null, null));
+                    cv, Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE, stub.getName(), sig(stub.getReturnType(), signature), null, null);
             method.start();
 
             // load self

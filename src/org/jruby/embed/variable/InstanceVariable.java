@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,7 +33,6 @@ import org.jruby.embed.internal.BiVariableMap;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
-import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
@@ -55,25 +54,27 @@ public class InstanceVariable extends AbstractVariable {
      * @param javaObject Java object that should be assigned to.
      * @return the instance of InstanceVariable
      */
-    public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
+    public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
         if (name.matches(pattern)) {
-            return new InstanceVariable(runtime, name, javaObject);
+            return new InstanceVariable(receiver, name, javaObject);
         }
         return null;
     }
 
-    private InstanceVariable(Ruby runtime, String name, Object... javaObject) {
-        super(runtime, name, javaObject);
+    private InstanceVariable(RubyObject receiver, String name, Object... javaObject) {
+        super(receiver, name, false, javaObject);
     }
 
     /**
      * A constructor used when instance variables are retrieved from Ruby.
      *
+     * @param receiver a receiver object that this variable/constant is originally in. When
+     *        the variable/constant is originated from Ruby, receiver may not be null.
      * @param name the instance variable name
      * @param irubyObject Ruby instance object
      */
-    public InstanceVariable(IRubyObject origin, String name, IRubyObject irubyObject) {
-        super(origin, name, irubyObject);
+    public InstanceVariable(IRubyObject receiver, String name, IRubyObject irubyObject) {
+        super(receiver, name, true, irubyObject);
     }
 
     /**
@@ -83,35 +84,53 @@ public class InstanceVariable extends AbstractVariable {
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved instance variables.
      */
-    public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
-        if (receiver == null) {
-            receiver = runtime.getTopSelf();
-        }
+    public static void retrieve(RubyObject receiver, BiVariableMap vars) {
+        if (vars.isLazy()) return;
+        updateInstanceVar(receiver, vars);
+        updateInstanceVar((RubyObject)receiver.getRuntime().getTopSelf(), vars);
+    }
+
+    static void updateInstanceVar(RubyObject receiver, BiVariableMap vars) {
         InstanceVariables ivars = receiver.getInstanceVariables();
-        List<String> names = ivars.getInstanceVariableNameList();
-        for (String name : names) {
-            BiVariable var = null;
-            IRubyObject value = ivars.fastGetInstanceVariable(name);
-            List<String> savedNames = vars.getNames();
-            for (int i=0; i<savedNames.size(); i++) {
-                if (name.equals(savedNames.get(i))) {
-                    var = (BiVariable) vars.getVariables().get(i);
-                    if (receiver == var.getOrigin()) {
-                        var = vars.getVariable(name);
-                        var.setRubyObject(value);
-                        break;
-                    } else {
-                        var = null;
-                    }
-                }
-            }
-            if (var == null) {
-                 // In this case, a variable wasn't handed from Java. Ruby originated one.
-                var = new InstanceVariable(receiver, name, value);
-                vars.update(name, var);
+        List<String> keys = ivars.getInstanceVariableNameList();
+        for (String key : keys) {
+            IRubyObject value = ivars.fastGetInstanceVariable(key);
+            BiVariable var = vars.getVariable(receiver, key);
+            if (var != null) {
+                var.setRubyObject(value);
+            } else {
+                var = new InstanceVariable(receiver, key, value);
+                vars.update(key, var);
             }
         }
     }
+
+    /**
+     * Retrieves a instance variable by key from Ruby runtime after the evaluation.
+     * This method is used when eager retrieval is off.
+     *
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save retrieved instance variables.
+     * @param key instace varible name
+     */
+    public static void retrieveByKey(RubyObject receiver, BiVariableMap vars, String key) {
+        InstanceVariables ivars = receiver.getInstanceVariables();
+
+        // if the specified key doesn't exist, this method is called before the
+        // evaluation. Don't update value in this case.
+        if (!ivars.getInstanceVariableNameList().contains(key)) return;
+
+        // the specified key is found, so let's update
+        IRubyObject value = ivars.fastGetInstanceVariable(key);
+        BiVariable var = vars.getVariable(receiver, key);
+        if (var != null) {
+            var.setRubyObject(value);
+        } else {
+            var = new InstanceVariable(receiver, key, value);
+            vars.update(key, var);
+        }
+    }
+
 
     /**
      * Returns enum type of this variable defined in {@link BiVariable}.
@@ -140,12 +159,8 @@ public class InstanceVariable extends AbstractVariable {
      * @param runtime is environment where a variable injection occurs
      * @param receiver is the instance that will have variable injection.
      */
-    public void inject(Ruby runtime, IRubyObject receiver) {
-        if (origin != null && origin != receiver) return;
-        ThreadContext context = runtime.getCurrentContext();
-        IRubyObject rubyReceiver = receiver != null ? receiver : context.getFrameSelf();
-        IRubyObject rubyName = JavaEmbedUtils.javaToRuby(runtime, name);
-        ((RubyObject) rubyReceiver).instance_variable_set(rubyName, irubyObject);
+    public void inject() {
+        ((RubyObject)receiver).fastSetInstanceVariable(name.intern(), getRubyObject());
     }
 
     /**

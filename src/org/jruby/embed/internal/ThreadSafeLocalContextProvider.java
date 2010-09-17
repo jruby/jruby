@@ -45,8 +45,9 @@ public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider
                 }
             };
 
-    public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior) {
+    public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
         this.behavior = behavior;
+        this.lazy = lazy;
     }
 
     public Ruby getRuntime() {

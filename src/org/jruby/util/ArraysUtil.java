@@ -1,5 +1,5 @@
-/**
- * **** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -12,8 +12,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
- *
+ * Copyright (C) 2010 Yoko Harada <yokolet@gmail.com>
+ * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -25,44 +25,27 @@
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
- * **** END LICENSE BLOCK *****
- */
-package org.jruby.embed.internal;
+ ***** END LICENSE BLOCK *****/
+package org.jruby.util;
 
-import java.util.List;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.embed.LocalVariableBehavior;
-import org.jruby.util.ClassCache;
+import java.lang.reflect.Array;
+import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author Yoko Harada <yokolet@gmail.com>
- */
-public abstract class AbstractLocalContextProvider implements LocalContextProvider {
-    protected RubyInstanceConfig config = new RubyInstanceConfig();
-    protected LocalVariableBehavior behavior = LocalVariableBehavior.TRANSIENT;
-    protected boolean lazy = true;
-
-    @Deprecated
-    public void setLoadPaths(List loadPaths) {
-        if (config != null) {
-            config.setLoadPaths(loadPaths);
-        }
-        
-    }
-
-    @Deprecated
-    public void setClassCache(ClassCache classCache) {
-        if (config != null) {
-            config.setClassCache(classCache);
-        }
-    }
-
-    public RubyInstanceConfig getRubyInstanceConfig() {
-        return config;
-    }
-
-    protected LocalContext getInstance() {
-        return new LocalContext(config, behavior, lazy);
+public final class ArraysUtil {
+    /**
+     * Returns a copy of an array of IRubyObject type. This covers the copyOf method
+     * added in JDK6.
+     *
+     * @param source an array to be copied
+     * @length length a length of the the copy
+     * @return a copy of the source array, which may truncated or filled with nulls
+     *         when the given length is not the same as source length
+     * @throws NegativeArraySizeException if the length is negative
+     * @throws NullPointerException if the source is null
+     */    
+	public static IRubyObject[] copyOf(IRubyObject[] source, int length) {
+        IRubyObject[] destination = (IRubyObject[]) Array.newInstance(IRubyObject.class, length);
+        System.arraycopy(source, 0, destination, 0, Math.min(source.length, length));
+	    return destination;
     }
 }

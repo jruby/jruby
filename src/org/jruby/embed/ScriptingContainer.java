@@ -166,15 +166,19 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Constructs a ScriptingContainer with a default values.
      */
     public ScriptingContainer() {
-        this(LocalContextScope.SINGLETON, LocalVariableBehavior.TRANSIENT);
+        this(LocalContextScope.SINGLETON, LocalVariableBehavior.TRANSIENT, true);
     }
 
     public ScriptingContainer(LocalContextScope scope) {
-        this(scope, LocalVariableBehavior.TRANSIENT);
+        this(scope, LocalVariableBehavior.TRANSIENT, true);
     }
 
     public ScriptingContainer(LocalVariableBehavior behavior) {
-        this(LocalContextScope.SINGLETON, behavior);
+        this(LocalContextScope.SINGLETON, behavior, true);
+    }
+
+    public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior) {
+        this(scope, behavior, true);
     }
 
     /**
@@ -189,9 +193,12 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @param scope is one of a local context scope defined by {@link LocalContextScope}
      * @param behavior is one of a local variable behavior defined by {@link LocalVariableBehavior}
+     * @param lazy is a switch to do lazy retrieval of variabes/constants from
+     *        Ruby runtime. Default is true. When this value is true, ScriptingContainer tries to
+     *        get as many as possible variables/constants from Ruby runtime.
      */
-    public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior) {
-        provider = getProviderInstance(scope, behavior);
+    public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
+        provider = getProviderInstance(scope, behavior, lazy);
         try {
             initConfig();
         } catch (URISyntaxException ex) {
@@ -202,15 +209,15 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         setBasicProperties();
     }
 
-    private LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior) {
+    private LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
         switch(scope) {
             case THREADSAFE :
-                return new ThreadSafeLocalContextProvider(behavior);
+                return new ThreadSafeLocalContextProvider(behavior, lazy);
             case SINGLETHREAD :
-                return new SingleThreadLocalContextProvider(behavior);
+                return new SingleThreadLocalContextProvider(behavior, lazy);
             case SINGLETON :
             default :
-                return new SingletonLocalContextProvider(behavior);
+                return new SingletonLocalContextProvider(behavior, lazy);
         }
     }
 
@@ -1012,48 +1019,94 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Returns a value to which the specified key is mapped in a
-     * variable map, or null if this map contains no mapping for the key. The key
-     * must be a valid Ruby variable name. This is a short cut method of
-     * ScriptingContainer#getVarMap().get(key).
+     * Returns a value of the specified key in a top level of runtime or null
+     * if this map doesn't have a mapping for the key. The key
+     * must be a valid Ruby variable or constant name.
      * 
      * @param key is a key whose associated value is to be returned
      * @return a value to which the specified key is mapped, or null if this
      *         map contains no mapping for the key
      */
     public Object get(String key) {
-        return provider.getVarMap().get(key);
+        return provider.getVarMap().get(provider.getRuntime().getTopSelf(), key);
+    }
+
+    /**
+     * Returns a value of a specified key in a specified receiver or null if
+     * a variable map doesn't have a mapping for the key in a given
+     * receiver. The key must be a valid Ruby variable or constant name. A global
+     * variable doesn't depend on the receiver.
+     *
+     * @param receiver a receiver to get the value from
+     * @param key is a key whose associated value is to be returned
+     * @return a value to which the specified key is mapped, or null if this
+     *         map contains no mapping for the key
+     */
+    public Object get(Object receiver, String key) {
+        return provider.getVarMap().get(receiver, key);
     }
 
     /**
      * Associates the specified value with the specified key in a
-     * variable map. If the map previously contained a mapping for the key,
-     * the old value is replaced. The key must be a valid Ruby variable name.
-     * This is a short cut method of ScriptingContainer#getVarMap().put(key, value).
+     * variable map. This key-value pair is injected to a top level of runtime
+     * during evaluation. If the map previously contained a mapping for the key,
+     * the old value is replaced. The key must be a valid Ruby variable or 
+     * constant name. It will be a top level variable or constant. 
      * 
      * @param key is a key that the specified value is to be associated with
      * @param value is a value to be associated with the specified key
-     * @param lines are line numbers to be parsed from. Only the first argument is used for parsing.
-     *        This field is optional. When no line number is specified, 0 is applied to.
      * @return a previous value associated with a key, or null if there was
      *         no mapping for this key.
      */
     public Object put(String key, Object value) {
-        return provider.getVarMap().put(key, value);
+        return provider.getVarMap().put(provider.getRuntime().getTopSelf(), key, value);
     }
 
     /**
-     * Removes the specified Ruby variable with the specified variable name in a
-     * variable map. If the map previously contained a mapping for the key,
-     * the old value is returned. The key must be a valid Ruby variable name.
-     * This is a short cut method of ScriptingContainer#getVarMap().remove(key).
+     * Associates the specified value with the specified key in a variable map.
+     * This key-value pair is injected to a given receiver during evaluation.
+     * If the map previously contained a mapping for the key,
+     * the old value is replaced. The key must be a valid Ruby variable or 
+     * constant name. A given receiver limits the scope of a variable or constant.
+     * However, a global variable is accecible globally always.
+     *
+     * @param receiver a receiver to put the value in
+     * @param key is a key that the specified value is to be associated with
+     * @param value is a value to be associated with the specified key
+     * @return a previous value associated with a key, or null if there was
+     *         no mapping for this key.
+     */
+    public Object put(Object receiver, String key, Object value) {
+        return provider.getVarMap().put(receiver, key, value);
+    }
+
+    /**
+     * Removes the specified Ruby variable with the specified variable name from a
+     * variable map and runtime top level. If the map previously contained a
+     * mapping for the key, the old value is returned. The key must be a valid
+     * Ruby variable name.
      *
      * @param key is a key that the specified value is to be associated with
      * @return a previous value associated with a key, or null if there was
      *         no mapping for this key.
      */
     public Object remove(String key) {
-        return provider.getVarMap().remove(key);
+        return remove(provider.getRuntime().getTopSelf(), key);
+    }
+
+    /**
+     * Removes the specified Ruby variable with the specified variable name in a
+     * variable map and given receiver. If the map previously contained a mapping for the key,
+     * the old value is returned. The key must be a valid Ruby variable name.
+     * This is a short cut method of ScriptingContainer#getVarMap().remove(key).
+     *
+     * @param receiver a receiver to remove the value from
+     * @param key is a key that the specified value is to be associated with
+     * @return a previous value associated with a key, or null if there was
+     *         no mapping for this key.
+     */
+    public Object remove(Object receiver, String key) {
+        return provider.getVarMap().remove(receiver, key);
     }
 
     /**

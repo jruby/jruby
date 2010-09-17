@@ -1848,6 +1848,12 @@ public class JavaClass extends JavaObject {
             return javaClass.getDeclaredClasses();
         } catch (SecurityException e) {
             return new Class<?>[] {};
+        } catch (NoClassDefFoundError cnfe) {
+            // This is a Scala-specific hack, since Scala uses peculiar
+            // naming conventions and class attributes that confuse Java's
+            // reflection logic and cause a blow up in getDeclaredClasses.
+            // See http://lampsvn.epfl.ch/trac/scala/ticket/2749
+            return new Class<?>[] {};
         }
     }
     

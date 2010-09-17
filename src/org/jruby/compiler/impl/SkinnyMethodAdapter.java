@@ -17,6 +17,9 @@ import static org.jruby.util.CodegenUtils.*;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -29,10 +32,18 @@ import org.objectweb.asm.util.TraceMethodVisitor;
 public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     private final static boolean DEBUG = SafePropertyAccessor.getBoolean("jruby.compile.dump");
     private MethodVisitor method;
+    private String name;
+    private ClassVisitor cv;
     
     /** Creates a new instance of SkinnyMethodAdapter */
     public SkinnyMethodAdapter(MethodVisitor method) {
         setMethodVisitor(method);
+    }
+
+    public SkinnyMethodAdapter(ClassVisitor cv, int flags, String name, String signature, String something, String[] exceptions) {
+        setMethodVisitor(cv.visitMethod(flags, name, signature, something, exceptions));
+        this.cv = cv;
+        this.name = name;
     }
     
     public SkinnyMethodAdapter() {
@@ -514,7 +525,15 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     public void end() {
         if (DEBUG) {
             PrintWriter pw = new PrintWriter(System.out);
-            pw.write("*** Dumping ***\n");
+            String className = "(unknown class)";
+            if (cv instanceof ClassWriter) {
+                className = new ClassReader(((ClassWriter)cv).toByteArray()).getClassName();
+            }
+            if (name != null) {
+                pw.write("*** Dumping " + className + "." + name + " ***\n");
+            } else {
+                pw.write("*** Dumping ***\n");
+            }
             ((TraceMethodVisitor)getMethodVisitor()).print(pw);
             pw.flush();
         }

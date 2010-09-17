@@ -1,5 +1,4 @@
-/**
- * **** BEGIN LICENSE BLOCK *****
+/***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -12,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
- *
+ * Copyright (C) 2010 Ola Bini <ola.bini@gmail.com>
+ * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -25,44 +24,42 @@
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
- * **** END LICENSE BLOCK *****
- */
-package org.jruby.embed.internal;
+ ***** END LICENSE BLOCK *****/
+package org.jruby.util.io;
 
-import java.util.List;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.embed.LocalVariableBehavior;
-import org.jruby.util.ClassCache;
+import java.io.IOException;
+import java.nio.channels.Selector;
+import java.nio.channels.spi.SelectorProvider;
+
+import java.net.BindException;
+
+import org.jruby.Ruby;
 
 /**
- *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
-public abstract class AbstractLocalContextProvider implements LocalContextProvider {
-    protected RubyInstanceConfig config = new RubyInstanceConfig();
-    protected LocalVariableBehavior behavior = LocalVariableBehavior.TRANSIENT;
-    protected boolean lazy = true;
-
-    @Deprecated
-    public void setLoadPaths(List loadPaths) {
-        if (config != null) {
-            config.setLoadPaths(loadPaths);
+public class SelectorFactory {
+    // If it doesn't work after 20 times it's unlikely to ever work. Bailout is only option.
+    private final static int RETRY_MAX = 20; 
+    
+    public static Selector openWithRetryFrom(Ruby runtime, SelectorProvider provider) throws IOException {
+        int retryCount = 0;
+        while(true) {
+            try {
+                return provider.openSelector();
+            } catch(IOException e) {
+                if(e.getMessage() != null && 
+                   e.getMessage().contains("Unable to establish loopback connection") && 
+                   e.getCause() instanceof BindException &&
+                   retryCount < RETRY_MAX) {
+                    retryCount++;
+                    if(runtime != null) {
+                        runtime.getWarnings().warn("try number " + retryCount + " to get a selector");
+                    }
+                } else {
+                    throw e;
+                }
+            }
         }
-        
     }
-
-    @Deprecated
-    public void setClassCache(ClassCache classCache) {
-        if (config != null) {
-            config.setClassCache(classCache);
-        }
-    }
-
-    public RubyInstanceConfig getRubyInstanceConfig() {
-        return config;
-    }
-
-    protected LocalContext getInstance() {
-        return new LocalContext(config, behavior, lazy);
-    }
-}
+}// SelectorFactory

@@ -17,7 +17,7 @@
  * Copyright (C) 2004-2008 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -48,6 +48,7 @@ import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
+import org.jruby.RubyObject;
 import org.jruby.embed.EmbedRubyObjectAdapter;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
@@ -173,8 +174,10 @@ public class JRubyEngine extends BSFEngineImpl {
         if (!name.startsWith("$")) {
             name = "$".concat(name);
         }
-        BiVariable v = interceptor.getVariableInstance(container.getProvider().getRuntime(), name, bean.bean, bean.type);
-        container.getVarMap().setVariable(v);
+        RubyObject receiver = (RubyObject)container.getProvider().getRuntime().getTopSelf();
+        BiVariable v =
+            interceptor.getVariableInstance(receiver, name, bean.bean, bean.type);
+        container.getVarMap().setVariable(receiver, v);
     }
 
     private List<String> getClassPath(BSFManager manager) {

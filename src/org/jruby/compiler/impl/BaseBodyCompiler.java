@@ -102,7 +102,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         this.methodName = methodName;
         this.argParamCount = getActualArgsCount(scope);
 
-        method = new SkinnyMethodAdapter(script.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_STATIC, methodName, getSignature(), null, null));
+        method = new SkinnyMethodAdapter(script.getClassVisitor(), ACC_PUBLIC | ACC_STATIC, methodName, getSignature(), null, null);
 
         createVariableCompiler();
         if (StandardASMCompiler.invDynInvCompilerConstructor != null) {
@@ -581,12 +581,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             // prepare the first builder in the chain
             String newMethodName = "array_builder_" + script.getAndIncrementMethodIndex() + "";
             method = new SkinnyMethodAdapter(
-                    script.getClassVisitor().visitMethod(
+                    script.getClassVisitor(),
                     ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC,
                     newMethodName,
                     sig(IRubyObject[].class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject[].class),
                     null,
-                    null));
+                    null);
             method.start();
 
             for (int i = 0; i < sourceArray.length; i++) {
@@ -601,12 +601,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                     method.end();
                     
                     method = new SkinnyMethodAdapter(
-                            script.getClassVisitor().visitMethod(
+                            script.getClassVisitor(),
                             ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC,
                             nextName,
                             sig(IRubyObject[].class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject[].class),
                             null,
-                            null));
+                            null);
                     method.start();
                 }
 
@@ -695,12 +695,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             // prepare the first builder in the chain
             String builderMethod = "hash_builder_" + script.getAndIncrementMethodIndex() + "";
             method = new SkinnyMethodAdapter(
-                    script.getClassVisitor().visitMethod(
+                    script.getClassVisitor(),
                     ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC,
                     builderMethod,
                     sig(RubyHash.class, "L" + script.getClassname() + ";", ThreadContext.class, RubyHash.class),
                     null,
-                    null));
+                    null);
             method.start();
 
             for (int i = 0; i < keyCount; i++) {
@@ -715,12 +715,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                     method.end();
 
                     method = new SkinnyMethodAdapter(
-                            script.getClassVisitor().visitMethod(
+                            script.getClassVisitor(),
                             ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC,
                             nextName,
                             sig(RubyHash.class, "L" + script.getClassname() + ";", ThreadContext.class, RubyHash.class),
                             null,
-                            null));
+                            null);
                     method.start();
                 }
 
@@ -1434,12 +1434,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void protect(BranchCallback regularCode, BranchCallback protectedCode, Class ret) {
         String mname = getNewEnsureName();
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
-                script.getClassVisitor().visitMethod(
+                script.getClassVisitor(),
                 ACC_PUBLIC | ACC_SYNTHETIC | ACC_STATIC,
                 mname,
                 sig(ret, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class),
                 null,
-                null));
+                null);
         SkinnyMethodAdapter old_method = null;
         SkinnyMethodAdapter var_old_method = null;
         SkinnyMethodAdapter inv_old_method = null;
@@ -1567,12 +1567,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void rescue(BranchCallback regularCode, Class exception, BranchCallback catchCode, Class ret) {
         String mname = getNewRescueName();
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
-                script.getClassVisitor().visitMethod(
+                script.getClassVisitor(),
                     ACC_PUBLIC | ACC_SYNTHETIC | ACC_STATIC,
                     mname,
                     sig(ret, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class),
                     null,
-                    null));
+                    null);
         SkinnyMethodAdapter old_method = null;
         SkinnyMethodAdapter var_old_method = null;
         SkinnyMethodAdapter inv_old_method = null;
@@ -1962,12 +1962,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         };
         String mname = getNewRescueName();
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
-                script.getClassVisitor().visitMethod(
+                script.getClassVisitor(),
                     ACC_PUBLIC | ACC_SYNTHETIC | ACC_STATIC,
                     mname,
                     sig(String.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class),
                     null,
-                    null));
+                    null);
         SkinnyMethodAdapter old_method = null;
         SkinnyMethodAdapter var_old_method = null;
         SkinnyMethodAdapter inv_old_method = null;
@@ -2788,5 +2788,22 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void traceEnd() {
         loadThreadContext();
         invokeUtilityMethod("traceEnd", sig(void.class, ThreadContext.class));
+    }
+
+    public void preMultiAssign(int head, boolean args) {
+        // arrayish object is on stack, call utility and unpack
+        if (head == 1 && args) {
+            invokeUtilityMethod("arraySlice1N", sig(IRubyObject[].class, IRubyObject.class));
+            method.dup();
+            method.pushInt(1);
+            method.aaload();
+            method.swap();
+            method.pushInt(0);
+            method.aaload();
+        } else if (head == 1 && !args) {
+            invokeUtilityMethod("arraySlice1", sig(IRubyObject.class, IRubyObject.class));
+        } else {
+            throw new RuntimeException("invalid preMultiAssign args: " + head + ", " + args);
+        }
     }
 }

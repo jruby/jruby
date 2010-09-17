@@ -586,15 +586,15 @@ public class RubyNumeric extends RubyObject {
         return equalInternal(context, this, other) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    /** num_quo
-     *
+    /** num_quo (1.8)
+     * quo and fdiv in 1.8 just invokes "/"
      */
-    @JRubyMethod(name = "quo")
+    @JRubyMethod(name = {"quo", "fdiv"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return callMethod(context, "/", other);
     }
     
-    /** num_quo
+    /** num_quo (1.9)
     *
     */
     @JRubyMethod(name = "quo", compat = CompatVersion.RUBY1_9)

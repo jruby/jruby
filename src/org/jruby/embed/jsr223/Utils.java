@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,9 +29,12 @@
  */
 package org.jruby.embed.jsr223;
 
+import java.util.Set;
+import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import org.jruby.embed.AttributeName;
+import org.jruby.embed.ScriptingContainer;
 
 /**
  * A collection of JSR223 specific utility methods.
@@ -42,20 +45,102 @@ public class Utils {
     /**
      * Gets line number value from engine's attribute map.
      *
-     * @param engine JSR223 JRuby Engine
+     * @param context ScriptContext to be used to the evaluation
      * @return line number
      */
-    static int getLineNumber(ScriptEngine engine) {
-        Object obj = engine.getContext().getAttribute(AttributeName.LINENUMBER.toString(), ScriptContext.ENGINE_SCOPE);
+    static int getLineNumber(ScriptContext context) {
+        Object obj = context.getAttribute(AttributeName.LINENUMBER.toString(), ScriptContext.ENGINE_SCOPE);
         if (obj instanceof Integer) {
             return (Integer)obj;
         }
         return 0;
     }
 
-    static String getFilename(ScriptEngine engine) {
-        Object filename = engine.getContext().getAttribute(ScriptEngine.FILENAME);
+    /**
+     * Gets a receiver object from engine's attribute map.
+     *
+     * @param context ScriptContext to be used to the evaluation
+     * @return receiver object or null if the attribute doesn't exist
+     */
+    static Object getReceiver(ScriptContext context) {
+        return context.getAttribute(AttributeName.RECEIVER.toString(), ScriptContext.ENGINE_SCOPE);
+    }
+
+    static String getFilename(ScriptContext context) {
+        Object filename = context.getAttribute(ScriptEngine.FILENAME);
         return filename != null ? (String)filename : "<script>";
     }
 
+    static boolean isTerminationOn(ScriptContext context) {
+        boolean termination = false;
+        Object obj = context.getAttribute(AttributeName.TERMINATION.toString());
+        if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
+            termination = true;
+        }
+        return termination;
+    }
+
+    static void preEval(ScriptingContainer container, JRubyContext jrubyContext) {
+        Bindings bindings = getBindings(jrubyContext);
+        Object receiver = getReceiverObject(jrubyContext);
+        if (bindings == null) return;
+        Set<String> keys = bindings.keySet();
+        for (String key : keys) {
+            Object value = bindings.get(key);
+            Object oldValue = put(container, receiver, key, value);
+        }
+    }
+
+    private static Bindings getBindings(JRubyContext jrubyContext) {
+        if (jrubyContext == null) return null;
+        Bindings bindings = jrubyContext.getEngineScopeBindings();
+        if (bindings == null) bindings = jrubyContext.getGlobalScopeBindings();
+        return bindings;
+    }
+
+    private static Object getReceiverObject(JRubyContext jrubyContext) {
+        if (jrubyContext == null) return null;
+        return jrubyContext.getAttribute(AttributeName.RECEIVER.toString(), ScriptContext.ENGINE_SCOPE);
+    }
+
+    static void postEval(ScriptingContainer container, JRubyContext jrubyContext) {
+        if (jrubyContext == null) return;
+        Object receiver = getReceiverObject(jrubyContext);
+        Set<String> keys = container.getVarMap().keySet();
+        if (keys == null || keys.size() == 0) return;
+        for (String key : keys) {
+            Object value = container.getVarMap().get(receiver, key);
+            jrubyContext.getEngineScopeBindings().put(key, value);
+        }
+    }
+
+    private static Object put(ScriptingContainer container, Object receiver, String key, Object value) {
+        Object oldValue = null;
+        String adjustedKey = adjustKey(key);
+        if (isRubyVariable(container, adjustedKey)) {
+            oldValue = container.put(receiver, adjustedKey, value);
+        } else {
+            oldValue = container.setAttribute(adjustedKey, value);
+            /* Maybe no need anymore?
+            if (container.getAttributeMap().containsKey(BACKED_BINDING)) {
+                Bindings b = (Bindings) container.getAttribute(BACKED_BINDING);
+                b.put(key, value);
+            }
+             *
+             */
+        }
+        return oldValue;
+    }
+
+    private static boolean isRubyVariable(ScriptingContainer container, String name) {
+        return container.getVarMap().getVariableInterceptor().isKindOfRubyVariable(name);
+    }
+
+    private static String adjustKey(String key) {
+        if (key.equals(ScriptEngine.ARGV)) {
+            return "ARGV";
+        } else {
+            return key;
+        }
+    }
 }

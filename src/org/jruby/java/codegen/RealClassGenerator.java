@@ -97,10 +97,10 @@ public class RealClassGenerator {
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$self", ci(IRubyObject.class), null, null).visitEnd();
 
         // create static init
-        SkinnyMethodAdapter clinitMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(void.class), null, null));
+        SkinnyMethodAdapter clinitMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(void.class), null, null);
         
         // create constructor
-        SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class, IRubyObject.class), null, null));
+        SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, IRubyObject.class), null, null);
         initMethod.aload(0);
         initMethod.invokespecial(p(Object.class), "<init>", sig(void.class));
         
@@ -143,7 +143,7 @@ public class RealClassGenerator {
                 int rubyIndex = selfIndex + 1;
                 
                 SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
-                        cw.visitMethod(ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null));
+                        cw, ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null);
                 mv.start();
                 mv.line(1);
                 
@@ -291,10 +291,10 @@ public class RealClassGenerator {
         cw.visitField(ACC_STATIC | ACC_FINAL | ACC_PRIVATE, "$runtimeCache", ci(RuntimeCache.class), null, null).visitEnd();
 
         // create static init
-        SkinnyMethodAdapter clinitMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(void.class), null, null));
+        SkinnyMethodAdapter clinitMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(void.class), null, null);
 
         // create constructor
-        SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "<init>", sig(void.class, Ruby.class, RubyClass.class), null, null));
+        SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, Ruby.class, RubyClass.class), null, null);
 
         if (isRubyHierarchy) {
             // superclass is in the Ruby object hierarchy; invoke typical Ruby superclass constructor
@@ -319,7 +319,7 @@ public class RealClassGenerator {
 
         if (isRubyHierarchy) {
             // override toJava
-            SkinnyMethodAdapter toJavaMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "toJava", sig(Object.class, Class.class), null, null));
+            SkinnyMethodAdapter toJavaMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "toJava", sig(Object.class, Class.class), null, null);
             toJavaMethod.aload(0);
             toJavaMethod.areturn();
             toJavaMethod.end();
@@ -328,13 +328,13 @@ public class RealClassGenerator {
             BasicObjectStubGenerator.addBasicObjectStubsToClass(cw);
 
             // add getRuntime and getMetaClass impls based on captured fields
-            SkinnyMethodAdapter getRuntimeMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "getRuntime", sig(Ruby.class), null, null));
+            SkinnyMethodAdapter getRuntimeMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "getRuntime", sig(Ruby.class), null, null);
             getRuntimeMethod.aload(0);
             getRuntimeMethod.getfield(pathName, "$ruby", ci(Ruby.class));
             getRuntimeMethod.areturn();
             getRuntimeMethod.end();
 
-            SkinnyMethodAdapter getMetaClassMethod = new SkinnyMethodAdapter(cw.visitMethod(ACC_PUBLIC, "getMetaClass", sig(RubyClass.class), null, null));
+            SkinnyMethodAdapter getMetaClassMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "getMetaClass", sig(RubyClass.class), null, null);
             getMetaClassMethod.aload(0);
             getMetaClassMethod.getfield(pathName, "$rubyClass", ci(RubyClass.class));
             getMetaClassMethod.areturn();
@@ -370,7 +370,7 @@ public class RealClassGenerator {
                 int rubyIndex = baseIndex + 1;
 
                 SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
-                        cw.visitMethod(ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null));
+                        cw, ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null);
                 mv.start();
                 mv.line(1);
 

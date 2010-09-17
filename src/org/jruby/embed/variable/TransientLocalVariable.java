@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -31,10 +31,10 @@ package org.jruby.embed.variable;
 
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.Ruby;
+import org.jruby.RubyObject;
 import org.jruby.parser.EvalStaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
@@ -56,16 +56,15 @@ public class TransientLocalVariable extends AbstractVariable {
      * @param javaObject Java object that should be assigned to.
      * @return the instance of TransientLocalVariable
      */
-    public static BiVariable getInstance(Ruby runtime, String name, Object... javaObject) {
-
+    public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
         if (name.matches(pattern)) {
-            return new TransientLocalVariable(runtime, name, javaObject);
+            return new TransientLocalVariable(receiver, name, javaObject);
         }
         return null;
     }
 
-    private TransientLocalVariable(Ruby runtime, String name, Object... javaObject) {
-        super(runtime, name, javaObject);
+    private TransientLocalVariable(RubyObject receiver, String name, Object... javaObject) {
+        super(receiver, name, false, javaObject);
     }
 
     /**
@@ -96,18 +95,15 @@ public class TransientLocalVariable extends AbstractVariable {
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved local variables.
      */
-    public static void retrieve(Ruby runtime, IRubyObject receiver, BiVariableMap vars) {
+    public static void retrieve(RubyObject receiver, BiVariableMap vars) {
         // Does nothing. This type of variavles never survive over evaluations.
     }
 
     /**
      * Injects a local variable value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
-     *
-     * @param runtime is environment where a variable injection occurs
-     * @param receiver is the instance that will have variable injection.
      */
-    public void inject(Ruby runtime, IRubyObject receiver) {
+    public void inject() {
         //done in BiVariableMap.inject()
     }
 

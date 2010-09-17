@@ -38,6 +38,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.spi.SelectorProvider;
 import java.util.WeakHashMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,6 +65,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.io.BlockingIO;
+import org.jruby.util.io.SelectorFactory;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -112,18 +114,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         errorInfo = runtime.getNil();
     }
 
-    public synchronized void receiveMail(ThreadService.Event event) {
-        // if we're already aborting, we can receive no further mail
-        if (status == Status.ABORTING) return;
-        
-        mail = event;
-        switch (event.type) {
-        case KILL:
-            status = Status.ABORTING;
+    public void receiveMail(ThreadService.Event event) {
+        synchronized (this) {
+            // if we're already aborting, we can receive no further mail
+            if (status == Status.ABORTING) return;
+
+            mail = event;
+            switch (event.type) {
+            case KILL:
+                status = Status.ABORTING;
+            }
+
+            // If this thread is sleeping or stopped, wake it
+            notify();
         }
-        
-        // If this thread is sleeping or stopped, wake it
-        notify();
 
         // interrupt the target thread in case it's blocking or waiting
         // WARNING: We no longer interrupt the target thread, since this usually means
@@ -899,7 +903,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private synchronized Selector getSelector(SelectableChannel channel) throws IOException {
-        return channel.provider().openSelector();
+        return SelectorFactory.openWithRetryFrom(getRuntime(), channel.provider());
     }
     
     public boolean select(RubyIO io, int ops) {
@@ -1050,12 +1054,30 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             if (delay_ns > 0) {
                 long delay_ms = delay_ns / 1000000;
                 int delay_ns_remainder = (int)( delay_ns % 1000000 );
-                executeBlockingTask(new SleepTask(o, delay_ms, delay_ns_remainder));
+                try {
+                    currentWaitObject = o;
+                    status = Status.SLEEP;
+                    pollThreadEvents();
+                    o.wait(delay_ms, delay_ns_remainder);
+                } finally {
+                    status = Status.RUN;
+                    currentWaitObject = null;
+                    pollThreadEvents();
+                }
             }
             long end_ns = System.nanoTime();
             return ( end_ns - start_ns ) <= delay_ns;
         } else {
-            executeBlockingTask(new SleepTask(o, 0, 0));
+            try {
+                currentWaitObject = o;
+                status = Status.SLEEP;
+                pollThreadEvents();
+                o.wait();
+            } finally {
+                status = Status.RUN;
+                currentWaitObject = null;
+                pollThreadEvents();
+            }
             return true;
         }
     }

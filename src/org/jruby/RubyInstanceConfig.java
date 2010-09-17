@@ -161,6 +161,7 @@ public class RubyInstanceConfig {
     private String[] argv = {};
 
     private final boolean jitLogging;
+    private final boolean jitDumping;
     private final boolean jitLoggingVerbose;
     private int jitLogEvery;
     private int jitThreshold;
@@ -348,6 +349,7 @@ public class RubyInstanceConfig {
         compatVersion = parentConfig.compatVersion;
         compileMode = parentConfig.getCompileMode();
         jitLogging = parentConfig.jitLogging;
+        jitDumping = parentConfig.jitDumping;
         jitLoggingVerbose = parentConfig.jitLoggingVerbose;
         jitLogEvery = parentConfig.jitLogEvery;
         jitThreshold = parentConfig.jitThreshold;
@@ -378,6 +380,7 @@ public class RubyInstanceConfig {
         if (Ruby.isSecurityRestricted()) {
             compileMode = CompileMode.OFF;
             jitLogging = false;
+            jitDumping = false;
             jitLoggingVerbose = false;
             jitLogEvery = 0;
             jitThreshold = -1;
@@ -415,6 +418,7 @@ public class RubyInstanceConfig {
                 }
             }
             jitLogging = SafePropertyAccessor.getBoolean("jruby.jit.logging");
+            jitDumping = SafePropertyAccessor.getBoolean("jruby.jit.dumping");
             jitLoggingVerbose = SafePropertyAccessor.getBoolean("jruby.jit.logging.verbose");
             String logEvery = SafePropertyAccessor.getProperty("jruby.jit.logEvery");
             jitLogEvery = logEvery == null ? 0 : Integer.parseInt(logEvery);
@@ -670,6 +674,10 @@ public class RubyInstanceConfig {
 
     public boolean isJitLogging() {
         return jitLogging;
+    }
+
+    public boolean isJitDumping() {
+        return jitDumping;
     }
 
     public boolean isJitLoggingVerbose() {

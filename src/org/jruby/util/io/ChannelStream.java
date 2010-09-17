@@ -54,6 +54,8 @@ import org.jruby.platform.Platform;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
 
+import java.nio.channels.spi.SelectorProvider;
+
 /**
  * This file implements a seekable IO file.
  */
@@ -1154,7 +1156,7 @@ public class ChannelStream implements Stream, Finalizable {
     public int ready() throws IOException {
         if (descriptor.getChannel() instanceof SelectableChannel) {
             int ready_stat = 0;
-            java.nio.channels.Selector sel = java.nio.channels.Selector.open();
+            java.nio.channels.Selector sel = SelectorFactory.openWithRetryFrom(null, SelectorProvider.provider());;
             SelectableChannel selchan = (SelectableChannel)descriptor.getChannel();
             synchronized (selchan.blockingLock()) {
                 boolean is_block = selchan.isBlocking();
