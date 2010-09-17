@@ -6,7 +6,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class NativeProcMethod extends AbstractNativeMethod {
+public class NativeProcMethod extends NativeMethod {
 
     public NativeProcMethod(RubyModule clazz, long function) {
         super(clazz, -1, function);

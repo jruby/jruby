@@ -33,7 +33,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public final class NativeMethod1 extends AbstractNativeMethod {
+public final class NativeMethod1 extends NativeMethod {
     public NativeMethod1(RubyModule clazz, int arity, long function) {
         super(clazz, arity, function);
     }

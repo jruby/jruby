@@ -33,13 +33,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.jruby.Ruby;
-import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 
 import com.kenai.jffi.Library;
 
 public class ModuleLoader {
-    public static final String libext = Platform.IS_MAC ? "bundle" : "so";
     private static final Set<Library> modules = new HashSet<Library>();
     
     public void load(Ruby runtime, String name) {

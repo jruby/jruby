@@ -29,11 +29,103 @@
 package org.jruby.cext;
 
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
-public final class NativeMethod extends AbstractNativeMethod {
-    
+/**
+ * {@link NativeMethod} represents a method handle to a C extension function in JRuby,
+ * to provide entry points into C code. Native methods setup and tear down scope and context
+ * around a native method call and lock the {@link GIL}. Native methods restrict concurrency
+ * in C extensions to avoid threading issues in C code.
+ */
+public class NativeMethod extends DynamicMethod {
+    protected final Arity arity;
+    protected final long function;
+    private final Native nativeInstance;
+
     public NativeMethod(RubyModule clazz, int arity, long function) {
-        super(clazz, arity, function);
+        super(clazz, Visibility.PUBLIC, CallConfiguration.FrameBacktraceScopeFull);
+        this.arity = Arity.createArity(arity);
+        this.function = function;
+        this.nativeInstance = Native.getInstance(clazz.getRuntime());
     }
-    // generic call method is implemented in AbstractNativeMethod
+
+    @Override
+    public final DynamicMethod dup() {
+        return this;
+    }
+
+    @Override
+    public final Arity getArity() {
+        return arity;
+    }
+
+    @Override
+    public final boolean isNative() {
+        return true;
+    }
+
+    /**
+     * Pushes the method frame for execution of the native function. Enforces use of a {@link ManyVarsDynamicScope}
+     * since we don't know what we will need in the function execution. Lastly, this acquires the {@link GIL} for native
+     * execution in the current Thread.
+     */
+    static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+        context.preMethodFrameOnly(self.getType(), name, self, Block.NULL_BLOCK);
+        DynamicScope currentScope = context.getCurrentScope();
+        context.pushScope(new ManyVarsDynamicScope(currentScope.getStaticScope(), currentScope));
+        GIL.acquire();
+    }
+
+    /** see {@link #pre(ThreadContext, IRubyObject, RubyModule, String)}  */
+    static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
+        context.preMethodFrameOnly(self.getType(), name, self, block);
+        DynamicScope currentScope = context.getCurrentScope();
+        context.pushScope(new ManyVarsDynamicScope(currentScope.getStaticScope(), currentScope));
+        GIL.acquire();
+    }
+
+    /** 
+     * Release the {@link GIL} and pop the call frame and scope.
+     */
+    static void post(ThreadContext context) {
+        GIL.release();
+        context.postMethodFrameAndScope();
+    }
+
+    final Native getNativeInstance() {
+        return nativeInstance;
+    }
+
+    
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
+            String name, IRubyObject[] args) {
+        pre(context, recv, clazz, name);
+        try {
+            return getNativeInstance().callMethod(context, function, recv, arity.getValue(), args);
+        } finally {
+            post(context);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
+            String name, IRubyObject[] args, Block block) {
+
+        pre(context, recv, clazz, name, block);
+        try {
+            return getNativeInstance().callMethod(context, function, recv, arity.getValue(), args);
+        } finally {
+            post(context);
+        }
+    }
+
 }
