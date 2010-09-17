@@ -40,7 +40,7 @@ RubyIO::toRIO()
         rio.io_obj = (VALUE)this;
     }
 
-    if (rio.fd) {
+    if (rio.fd > -1) {
         /* TODO: Synchronization of stream positions
         long int cpos = ftell(rio.f);
         long long rpos = NUM2LL(callMethod(this, "pos", 0));
