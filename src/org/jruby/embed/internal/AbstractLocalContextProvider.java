@@ -41,6 +41,7 @@ import org.jruby.util.ClassCache;
 public abstract class AbstractLocalContextProvider implements LocalContextProvider {
     protected RubyInstanceConfig config = new RubyInstanceConfig();
     protected LocalVariableBehavior behavior = LocalVariableBehavior.TRANSIENT;
+    protected boolean lazy = true;
 
     @Deprecated
     public void setLoadPaths(List loadPaths) {
@@ -62,6 +63,6 @@ public abstract class AbstractLocalContextProvider implements LocalContextProvid
     }
 
     protected LocalContext getInstance() {
-        return new LocalContext(config, behavior);
+        return new LocalContext(config, behavior, lazy);
     }
 }

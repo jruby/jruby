@@ -166,15 +166,19 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Constructs a ScriptingContainer with a default values.
      */
     public ScriptingContainer() {
-        this(LocalContextScope.SINGLETON, LocalVariableBehavior.TRANSIENT);
+        this(LocalContextScope.SINGLETON, LocalVariableBehavior.TRANSIENT, true);
     }
 
     public ScriptingContainer(LocalContextScope scope) {
-        this(scope, LocalVariableBehavior.TRANSIENT);
+        this(scope, LocalVariableBehavior.TRANSIENT, true);
     }
 
     public ScriptingContainer(LocalVariableBehavior behavior) {
-        this(LocalContextScope.SINGLETON, behavior);
+        this(LocalContextScope.SINGLETON, behavior, true);
+    }
+
+    public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior) {
+        this(scope, behavior, true);
     }
 
     /**
@@ -189,9 +193,12 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @param scope is one of a local context scope defined by {@link LocalContextScope}
      * @param behavior is one of a local variable behavior defined by {@link LocalVariableBehavior}
+     * @param lazy is a switch to do lazy retrieval of variabes/constants from
+     *        Ruby runtime. Default is true. When this value is true, ScriptingContainer tries to
+     *        get as many as possible variables/constants from Ruby runtime.
      */
-    public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior) {
-        provider = getProviderInstance(scope, behavior);
+    public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
+        provider = getProviderInstance(scope, behavior, lazy);
         try {
             initConfig();
         } catch (URISyntaxException ex) {
@@ -202,15 +209,15 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         setBasicProperties();
     }
 
-    private LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior) {
+    private LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
         switch(scope) {
             case THREADSAFE :
-                return new ThreadSafeLocalContextProvider(behavior);
+                return new ThreadSafeLocalContextProvider(behavior, lazy);
             case SINGLETHREAD :
-                return new SingleThreadLocalContextProvider(behavior);
+                return new SingleThreadLocalContextProvider(behavior, lazy);
             case SINGLETON :
             default :
-                return new SingletonLocalContextProvider(behavior);
+                return new SingletonLocalContextProvider(behavior, lazy);
         }
     }
 

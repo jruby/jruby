@@ -92,6 +92,7 @@ public class ClassVariable extends AbstractVariable {
      * @param vars map to save retrieved class variables.
      */
     public static void retrieve(RubyObject receiver, BiVariableMap vars) {
+        if (vars.isLazy()) return;
         // trying to get variables from receiver;
         updateClassVar(receiver, vars);
         // trying to get variables from topself.
@@ -100,25 +101,36 @@ public class ClassVariable extends AbstractVariable {
     }
 
     private static void updateClassVar(RubyObject receiver, BiVariableMap vars) {
-        List<String> names = receiver.getMetaClass().getClassVariableNameList();
-        for (String n : names) {
-            BiVariable var = null;
-            IRubyObject value = receiver.getMetaClass().getClassVar(n);
-            List<String> savedNames = vars.getNames();
-            for (int i=0; i<savedNames.size(); i++) {
-                if (n.equals(savedNames.get(i))) {
-                    var = (BiVariable) vars.getVariables().get(i);
-                    if (receiver == var.getReceiver()) {
-                        var.setRubyObject(value);
-                    } else {
-                        var = null;
-                    }
-                }
+        List<String> keys = receiver.getMetaClass().getClassVariableNameList();
+        for (String key : keys) {
+            IRubyObject value = receiver.getMetaClass().getClassVar(key);
+            BiVariable var = vars.getVariable(receiver, key);
+            if (var != null) {
+                var.setRubyObject(value);
+            } else {
+                var = new ClassVariable(receiver, key, value);
+                vars.update(key, var);
             }
-            if (var == null) {
-                var = new ClassVariable(receiver, n, value);
-                vars.update(n, var);
-            }
+        }
+    }
+
+    /**
+     * Retrieves a class variable by key from Ruby runtime after the evaluation.
+     * This method is used when eager retrieval is off.
+     *
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save retrieved instance variables.
+     * @param key instace varible name
+     */
+    public static void retrieveByKey(RubyObject receiver, BiVariableMap vars, String key) {
+        if (!receiver.getMetaClass().getClassVariableNameList().contains(key)) return;
+        IRubyObject value = receiver.getMetaClass().getClassVar(key);
+        BiVariable var = vars.getVariable(receiver, key);
+        if (var != null) {
+            var.setRubyObject(value);
+        } else {
+            var = new ClassVariable(receiver, key, value);
+            vars.update(key, var);
         }
     }
 

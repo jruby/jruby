@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubyNil;
 import org.jruby.RubyObject;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -91,11 +92,9 @@ public class Constant extends AbstractVariable {
      * @param vars map to save retrieved constants.
      */
     public static void retrieve(RubyObject receiver, BiVariableMap vars) {
-        IRubyObject argv = receiver.getMetaClass().fastGetConstant("ARGV");
-        if (argv != null) {
-            updateARGV(vars, receiver, "ARGV", argv);
-        }
-        
+        if (vars.isLazy()) return;
+        updateARGV(receiver, vars);
+        // user defined constants of top level go to a super class
         updateConstantsOfSuperClass(receiver, vars);
         // Constants might have the same names but different receivers.
         updateConstants(receiver, vars);
@@ -103,14 +102,17 @@ public class Constant extends AbstractVariable {
         updateConstants(topSelf, vars);
     }
 
-    private static void updateARGV(BiVariableMap vars, IRubyObject receiver, String name, IRubyObject value) {
+    private static void updateARGV(IRubyObject receiver, BiVariableMap vars) {
+        String name = "ARGV".intern();
+        IRubyObject argv = receiver.getRuntime().getTopSelf().getMetaClass().fastGetConstant(name);
+        if (argv == null || (argv instanceof RubyNil)) return;
         BiVariable var;  // This var is for ARGV.
         // ARGV constant should be only one
         if (vars.containsKey((Object)name)) {
             var = vars.getVariable((RubyObject)receiver.getRuntime().getTopSelf(), name);
-            var.setRubyObject(value);
+            var.setRubyObject(argv);
         } else {
-            var = new Constant(receiver.getRuntime().getTopSelf(), name, value);
+            var = new Constant(receiver.getRuntime().getTopSelf(), name, argv);
             ((Constant) var).markInitialized();
             vars.update(name, var);
         }
@@ -119,7 +121,8 @@ public class Constant extends AbstractVariable {
     private static void updateConstantsOfSuperClass(RubyObject receiver, BiVariableMap vars) {
         // Super class has many many constants, so this method updates only
         // constans in BiVariableMap.
-        Map<String, IRubyObject> map = receiver.getMetaClass().getSuperClass().getConstantMap();
+        Map<String, IRubyObject> map =
+            receiver.getRuntime().getTopSelf().getMetaClass().getSuperClass().getConstantMap();
         List<BiVariable> variables = vars.getVariables();
             // Need to check that this constant has been stored in BiVariableMap.
         for (BiVariable variable : variables) {
@@ -154,6 +157,42 @@ public class Constant extends AbstractVariable {
                 ((Constant) var).markInitialized();
                 vars.update(name, var);
             }
+        }
+    }
+
+    /**
+     * Retrieves a constant by key from Ruby runtime after the evaluation.
+     * This method is used when eager retrieval is off.
+     *
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save retrieved instance variables.
+     * @param key instace varible name
+     */
+    public static void retrieveByKey(RubyObject receiver, BiVariableMap vars, String key) {
+        if ("ARGV".equals(key)) {
+            updateARGV(receiver, vars);
+            return;
+        }
+
+        // if the specified key doesn't exist, this method is called before the
+        // evaluation. Don't update value in this case.
+        IRubyObject value = null;
+        if (receiver.getMetaClass().getConstantNames().contains(key)) {
+            value = receiver.getMetaClass().getConstant(key);
+        } else if (receiver.getRuntime().getTopSelf().getMetaClass().getConstantNames().contains(key)) {
+            value = receiver.getRuntime().getTopSelf().getMetaClass().getConstant(key);
+        } else if (receiver.getRuntime().getTopSelf().getMetaClass().getSuperClass().getConstantNames().contains(key)) {
+            value = receiver.getRuntime().getTopSelf().getMetaClass().getSuperClass().getConstant(key);
+        }
+        if (value == null) return;
+
+        // the specified key is found, so let's update
+        BiVariable var = vars.getVariable(receiver, key);
+        if (var != null) {
+            var.setRubyObject(value);
+        } else {
+            var = new InstanceVariable(receiver, key, value);
+            vars.update(key, var);
         }
     }
 

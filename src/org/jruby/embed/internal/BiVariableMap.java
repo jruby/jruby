@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.variable.BiVariable;
@@ -72,6 +71,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
     private List<String> varNames;
     private List<BiVariable> variables;
     private VariableInterceptor interceptor;
+    private boolean lazy;
 
     /**
      * Constructs an empty map. Users do not instantiate this map. The map is created
@@ -79,9 +79,9 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *
      * @param runtime is environment where variables are used to execute Ruby scripts.
      */
-    public BiVariableMap(Ruby runtime) {
-        this(runtime, LocalVariableBehavior.TRANSIENT);
-    }
+    //public BiVariableMap(Ruby runtime) {
+    //    this(runtime, LocalVariableBehavior.TRANSIENT, false);
+    //}
 
 
     /**
@@ -91,8 +91,9 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @param runtime is environment where variables are used to execute Ruby scripts.
      * @param behavior is one of variable behaviors defined in VariableBehavior.
      */
-    public BiVariableMap(Ruby runtime, LocalVariableBehavior behavior) {
+    public BiVariableMap(Ruby runtime, LocalVariableBehavior behavior, boolean lazy) {
         this.runtime = runtime;
+        this.lazy = lazy;
         varNames = Collections.synchronizedList(new ArrayList<String>());
         variables = Collections.synchronizedList(new ArrayList<BiVariable>());
         interceptor = new VariableInterceptor(behavior);
@@ -225,7 +226,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
         checkKey(key);
         RubyObject robj = getReceiverObject(receiver);
         // attemps to retrieve global variables
-        interceptor.tryLazyRetrieval(this, robj.getRuntime(), null, key);
+        if (lazy) interceptor.tryLazyRetrieval(this, robj, key);
         BiVariable var = getVariable(robj, (String)key);
         if (var == null) return null;
         else return (V) var.getJavaObject();
@@ -538,5 +539,15 @@ public class BiVariableMap<K, V> implements Map<K, V> {
     public void update(String name, BiVariable value) {
         this.varNames.add(name);
         this.variables.add(value);
+    }
+
+    /**
+     * Returns true when eager retrieval is requird or false when eager retrieval is
+     * unnecessary.
+     *
+     * @return true for eager retrieve, false for on-demand retrieval
+     */
+    public boolean isLazy() {
+        return lazy;
     }
 }

@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -44,18 +44,20 @@ import org.jruby.embed.LocalVariableBehavior;
 public class LocalContext {
     private RubyInstanceConfig config;
     private LocalVariableBehavior behavior;
+    private boolean lazy;
     private Ruby runtime = null;
     private BiVariableMap varMap = null;
     private HashMap attribute;
     boolean initialized = false;
 
-    public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior) {
-        initialize(config, behavior);
+    public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
+        initialize(config, behavior, lazy);
     }
 
-    private void initialize(RubyInstanceConfig config, LocalVariableBehavior behavior) {
+    private void initialize(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
         this.config = config;
         this.behavior = behavior;
+        this.lazy = lazy;
 
         attribute = new HashMap();
         attribute.put(AttributeName.READER, new InputStreamReader(System.in));
@@ -75,7 +77,7 @@ public class LocalContext {
 
     public BiVariableMap getVarMap() {
         if (varMap == null) {
-            varMap = new BiVariableMap(getRuntime(), behavior);
+            varMap = new BiVariableMap(getRuntime(), behavior, lazy);
         }
         return varMap;
     }

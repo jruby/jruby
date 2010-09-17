@@ -84,6 +84,7 @@ public class GlobalVariable extends AbstractVariable {
      * @param vars map to save retrieved global variables.
      */
     public static void retrieve(IRubyObject receiver, BiVariableMap vars) {
+        if (vars.isLazy()) return;
         GlobalVariables gvars = receiver.getRuntime().getGlobalVariables();
         Set<String> names = gvars.getNames();
         for (String name : names) {
@@ -117,6 +118,11 @@ public class GlobalVariable extends AbstractVariable {
      */
     public static void retrieveByKey(Ruby runtime, BiVariableMap vars, String key) {
         GlobalVariables gvars = runtime.getGlobalVariables();
+        // if the specified key doesn't exist, this method is called before the
+        // evaluation. Don't update value in this case.
+        if (!gvars.getNames().contains(key)) return;
+
+        // the specified key is found, so let's update
         IRubyObject value = gvars.get(key);
         updateGlobalVar(vars, (RubyObject)runtime.getTopSelf(), key, value);
     }

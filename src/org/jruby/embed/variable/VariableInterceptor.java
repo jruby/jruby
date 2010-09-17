@@ -156,7 +156,7 @@ public class VariableInterceptor {
             // continues to the default case
             default:
                 InstanceVariable.retrieve(receiver, map);
-                //GlobalVariable.retrieve(runtime, receiver, map);//tryLazyRetrieval
+                GlobalVariable.retrieve(receiver, map);
                 ClassVariable.retrieve(receiver, map);
                 Constant.retrieve(receiver, map);
         }
@@ -171,20 +171,25 @@ public class VariableInterceptor {
      * @param receiver a receiver when the script has been evaluated once
      * @
      */
-    public void tryLazyRetrieval(BiVariableMap map, Ruby runtime, IRubyObject receiver, Object key) {
+    public void tryLazyRetrieval(BiVariableMap map, IRubyObject receiver, Object key) {
         switch (behavior) {
             case GLOBAL:
-                // GLOBAL type doesn't attempt lasy retieval anymore
-                //if (LocalGlobalVariable.isValidName(key)) {
-                //    LocalGlobalVariable.retrieveByKey(runtime, map, (String)key);
-                //}
+                if (LocalGlobalVariable.isValidName(key)) {
+                    LocalGlobalVariable.retrieveByKey(receiver.getRuntime(), map, (String)key);
+                }
                 break;
             case BSF:
                 break;
             case PERSISTENT:
             default:
                 if (GlobalVariable.isValidName(key)) {
-                    GlobalVariable.retrieveByKey(runtime, map, (String)key);
+                    GlobalVariable.retrieveByKey(receiver.getRuntime(), map, (String)key);
+                } else if (InstanceVariable.isValidName(key)) {
+                    InstanceVariable.retrieveByKey((RubyObject) receiver,map, (String)key);
+                } else if (ClassVariable.isValidName(key)) {
+                    ClassVariable.retrieveByKey((RubyObject)receiver, map, (String)key);
+                } else if (Constant.isValidName(key)) {
+                    Constant.retrieveByKey((RubyObject)receiver, map, (String)key);
                 }
         }
     }

@@ -40,8 +40,9 @@ import org.jruby.embed.LocalVariableBehavior;
 public class SingleThreadLocalContextProvider extends AbstractLocalContextProvider {
     private LocalContext localContext;
 
-    public SingleThreadLocalContextProvider(LocalVariableBehavior behavior) {
+    public SingleThreadLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
         this.behavior = behavior;
+        this.lazy = lazy;
         localContext = null;
     }
 

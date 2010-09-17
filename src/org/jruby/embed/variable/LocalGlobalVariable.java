@@ -76,33 +76,28 @@ public class LocalGlobalVariable extends GlobalVariable {
     }
 
     /**
-     * Retrieves global variables from Ruby after the evaluation as a local global type.
+     * Retrieves global variables eagerly from Ruby right after the evaluation. The
+     * variable names to be retrieved must be in a variable map.
      *
-     * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved global variables.
      */
     public static void retrieve(RubyObject receiver, BiVariableMap vars) {
+        if (vars.isLazy()) return;
+        
         GlobalVariables gvars = receiver.getRuntime().getGlobalVariables();
         Set<String> names = gvars.getNames();
         for (String name : names) {
             if (isPredefined(name)) {
                 continue;
             }
-            BiVariable var;
             IRubyObject value = gvars.get(name);
             String javaName = name.substring(1); // eliminates a preceding character, "$"
-            if (vars.containsKey((Object)javaName)) {
-                var = vars.getVariable((RubyObject)receiver.getRuntime().getTopSelf(), javaName);
-                var.setRubyObject(value);
-            } else {
-                var = new LocalGlobalVariable((RubyObject)receiver.getRuntime().getTopSelf(), javaName, value);
-                vars.update(javaName, var);
-            }
+            updateLocalGlobal((RubyObject)receiver.getRuntime().getTopSelf(), vars, javaName, value);
         }
     }
 
-    private static void updateMap(BiVariableMap vars, RubyObject receiver, String name, IRubyObject value) {
+    private static void updateLocalGlobal(RubyObject receiver, BiVariableMap vars, String name, IRubyObject value) {
         BiVariable var;
         if (vars.containsKey((Object) name)) {
             var = vars.getVariable(receiver, name);
@@ -114,17 +109,22 @@ public class LocalGlobalVariable extends GlobalVariable {
     }
 
     /**
-     * Retrieves a global variable by key from Ruby after the evaluation.
+     * Retrieves a global variable by key from Ruby runtime after the evaluation.
+     * This method is used when eager retrieval is off.
      *
      * @param runtime Ruby runtime
-     * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save a retrieved global variable.
      * @param key name of the global variable
      */
     public static void retrieveByKey(Ruby runtime, BiVariableMap vars, String key) {
         GlobalVariables gvars = runtime.getGlobalVariables();
+        // if the specified key doesn't exist, this method is called before the
+        // evaluation. Don't update value in this case.
+        if (!gvars.getNames().contains(key)) return;
+
+        // the specified key is found, so let's update
         IRubyObject value = gvars.get("$" + key);
-        updateMap(vars, (RubyObject)runtime.getTopSelf(), key, value);
+        updateLocalGlobal((RubyObject)runtime.getTopSelf(), vars, key, value);
     }
 
     /**

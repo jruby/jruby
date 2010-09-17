@@ -85,34 +85,52 @@ public class InstanceVariable extends AbstractVariable {
      * @param vars map to save retrieved instance variables.
      */
     public static void retrieve(RubyObject receiver, BiVariableMap vars) {
+        if (vars.isLazy()) return;
         updateInstanceVar(receiver, vars);
         updateInstanceVar((RubyObject)receiver.getRuntime().getTopSelf(), vars);
     }
 
     static void updateInstanceVar(RubyObject receiver, BiVariableMap vars) {
         InstanceVariables ivars = receiver.getInstanceVariables();
-        List<String> names = ivars.getInstanceVariableNameList();
-        for (String name : names) {
-            BiVariable var = null;
-            IRubyObject value = ivars.fastGetInstanceVariable(name);
-            List<String> savedNames = vars.getNames();
-            for (int i=0; i<savedNames.size(); i++) {
-                if (name.equals(savedNames.get(i))) {
-                    var = (BiVariable) vars.getVariables().get(i);
-                    if (receiver == var.getReceiver()) {
-                        var.setRubyObject(value);
-                    } else {
-                        var = null;
-                    }
-                }
-            }
-            if (var == null) {
-                 // In this case, a variable wasn't handed from Java. Ruby originated one.
-                var = new InstanceVariable(receiver, name, value);
-                vars.update(name, var);
+        List<String> keys = ivars.getInstanceVariableNameList();
+        for (String key : keys) {
+            IRubyObject value = ivars.fastGetInstanceVariable(key);
+            BiVariable var = vars.getVariable(receiver, key);
+            if (var != null) {
+                var.setRubyObject(value);
+            } else {
+                var = new InstanceVariable(receiver, key, value);
+                vars.update(key, var);
             }
         }
     }
+
+    /**
+     * Retrieves a instance variable by key from Ruby runtime after the evaluation.
+     * This method is used when eager retrieval is off.
+     *
+     * @param receiver receiver object returned when a script is evaluated.
+     * @param vars map to save retrieved instance variables.
+     * @param key instace varible name
+     */
+    public static void retrieveByKey(RubyObject receiver, BiVariableMap vars, String key) {
+        InstanceVariables ivars = receiver.getInstanceVariables();
+
+        // if the specified key doesn't exist, this method is called before the
+        // evaluation. Don't update value in this case.
+        if (!ivars.getInstanceVariableNameList().contains(key)) return;
+
+        // the specified key is found, so let's update
+        IRubyObject value = ivars.fastGetInstanceVariable(key);
+        BiVariable var = vars.getVariable(receiver, key);
+        if (var != null) {
+            var.setRubyObject(value);
+        } else {
+            var = new InstanceVariable(receiver, key, value);
+            vars.update(key, var);
+        }
+    }
+
 
     /**
      * Returns enum type of this variable defined in {@link BiVariable}.

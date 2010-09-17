@@ -98,7 +98,8 @@ public class PersistentLocalVariable extends AbstractVariable {
     }
 
     /**
-     * Retrieves local variables from Ruby after the evaluation.
+     * Retrieves local variables from Ruby after the evaluation. This retrieval doesn't
+     * depend on eager option. Local variables are always retrieved eagerly.
      *
      * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
@@ -118,7 +119,8 @@ public class PersistentLocalVariable extends AbstractVariable {
         // Local variable is always saved as a top level variable.
         for (int i=0; i<names.length; i++) {
             BiVariable var;
-            if ((var = vars.getVariable((RubyObject)receiver.getRuntime().getTopSelf(), names[i])) != null && receiver == var.getReceiver()) {
+            if ((var = vars.getVariable((RubyObject)receiver.getRuntime().getTopSelf(), names[i])) != null
+                    && receiver.getRuntime().getTopSelf() == var.getReceiver()) {
                 var.setRubyObject(values[i]);
             } else {
                 var = new PersistentLocalVariable(receiver.getRuntime().getTopSelf(), names[i], values[i]);
