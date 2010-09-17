@@ -172,7 +172,8 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
     public ScriptEngine getScriptEngine() {
         LocalContextScope scope = SystemPropertyCatcher.getScope(LocalContextScope.SINGLETON);
         LocalVariableBehavior behavior = SystemPropertyCatcher.getBehavior(LocalVariableBehavior.GLOBAL);
-        container = new ScriptingContainer(scope, behavior);
+        boolean lazy = SystemPropertyCatcher.isLazy(true);
+        container = new ScriptingContainer(scope, behavior, lazy);
         SystemPropertyCatcher.setConfiguration(container);
         JRubyEngine engine = new JRubyEngine(container, this);
         return (ScriptEngine)engine;

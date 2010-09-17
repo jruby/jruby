@@ -82,17 +82,17 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (script == null || context == null) {
             throw new NullPointerException("either script or context is null");
         }
-        container.setScriptFilename(Utils.getFilename(this));
         JRubyContext tmpContext = JRubyContext.convert(container, context);
+        container.setScriptFilename(Utils.getFilename(tmpContext));
         try {
             Utils.preEval(container, tmpContext);
-            EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
+            EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(tmpContext));
             IRubyObject ret = unit.run();
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(Utils.isTerminationOn(this)) {
+            if(Utils.isTerminationOn(tmpContext)) {
                 container.terminate();
             }
             Utils.postEval(container, tmpContext);
@@ -122,17 +122,17 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (reader == null || context == null) {
             throw new NullPointerException("either reader or context is null");
         }
-        String filename = Utils.getFilename(this);
         JRubyContext tmpContext = JRubyContext.convert(container, context);
+        String filename = Utils.getFilename(tmpContext);
         try {
             Utils.preEval(container, tmpContext);
-            EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
+            EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(tmpContext));
             IRubyObject ret = unit.run();
             return JavaEmbedUtils.rubyToJava(ret);
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(Utils.isTerminationOn(this)) {
+            if(Utils.isTerminationOn(tmpContext)) {
                 container.terminate();
             }
             Utils.postEval(container, tmpContext);

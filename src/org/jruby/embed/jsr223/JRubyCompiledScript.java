@@ -68,7 +68,7 @@ public class JRubyCompiledScript extends CompiledScript {
         this.engine = engine;
         String filename = System.getProperty(ScriptEngine.FILENAME);
         Utils.preEval(container, (JRubyContext) engine.getContext());
-        unit = container.parse(reader, filename, Utils.getLineNumber(engine));
+        unit = container.parse(reader, filename, Utils.getLineNumber(engine.getContext()));
     }
 
     @Override
@@ -92,7 +92,7 @@ public class JRubyCompiledScript extends CompiledScript {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            if(Utils.isTerminationOn(engine)) {
+            if(Utils.isTerminationOn(tmpContext)) {
                 container.terminate();
             }
             Utils.postEval(container, tmpContext);

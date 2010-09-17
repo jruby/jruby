@@ -62,6 +62,7 @@ public enum AttributeName {
 
     /**
      * A key used in an attribute map to set a line number in error message.
+     * This attribute is for JSR223 only.
      */
     LINENUMBER("org.jruby.embed.linenumber"),
 
@@ -86,7 +87,13 @@ public enum AttributeName {
      * doesn't execute at_exit blocks. If true is set, JRubyEngine terminates the state
      * as well as executes at_exit blocks.
      */
-    TERMINATION("org.jruby.embed.termination");
+    TERMINATION("org.jruby.embed.termination"),
+
+    /**
+     * A key used in an attribute map to set a receiver object for sharing variables.
+     * This attribute is for JSR223 only.
+     */
+    RECEIVER("org.jruby.embed.receiver");
 
     private final String fqpn;
 
