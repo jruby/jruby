@@ -249,41 +249,43 @@ public class RbConfigLibrary implements Library {
     
     private static void setupMakefileConfig(RubyModule configModule, RubyHash mkmfHash) {
         Ruby ruby = configModule.getRuntime();
-        
+
         RubyHash envHash = (RubyHash) ruby.getObject().fastFetchConstant("ENV".intern());
-        String cc = (String) envHash.get("CC");
-        cc = cc == null ? "cc" : cc;
-        String cpp = (String) envHash.get("CPP");
-        cpp = cpp == null ? cc + " -E " : cpp;
+        String cc = getRubyEnv(envHash, "CC", "cc");
+        String cpp = getRubyEnv(envHash, "CPP", "cc -E");
+        String cxx = getRubyEnv(envHash, "CXX", "c++");
 
         String jflags = " -fno-omit-frame-pointer -fno-strict-aliasing ";
-        String oflags = " -O2  -DNDEBUG";
-        String wflags = " -W -Werror -Wall -Wno-unused -Wno-parentheses ";
-        String picflags = true ? "" : " -fPIC -pthread ";
-        
-        String iflags = " -I\"$(JDK_HOME)/include\" -I\"$(JDK_HOME)/include/$(OS)\" -I\"$(BUILD_DIR)\" ";
-        
-        String cflags = jflags + " -fexceptions" + picflags;
-        String soflags = true ? "" : " -shared -static-libgcc -mimpure-text -Wl,-O1 ";
-        String ldflags = soflags;
+        // String oflags = " -O2  -DNDEBUG";
+        // String wflags = " -W -Werror -Wall -Wno-unused -Wno-parentheses ";
+        // String picflags = true ? "" : " -fPIC -pthread ";
+        // String iflags = " -I\"$(JDK_HOME)/include\" -I\"$(JDK_HOME)/include/$(OS)\" -I\"$(BUILD_DIR)\" ";
+        // String soflags = true ? "" : " -shared -static-libgcc -mimpure-text -Wl,-O1 ";
+
+        String cflags = jflags + " -fexceptions" /* + picflags */ + " $(cflags)";
+        String cppflags = " $(DEFS) $(cppflags)";
+        String cxxflags = cflags + " $(cxxflags)";
+        String ldflags = ""; // + soflags;
         String dldflags = "";
-        String ldshared = cc + " -shared ";
-        
+        String ldsharedflags = " -shared ";
+
         String archflags = " -m" + (Platform.IS_64_BIT ? "64" : "32");
 
         // A few platform specific values
         if (Platform.IS_WINDOWS) {
             ldflags += " -L" + new NormalizedFile(normalizedHome, "lib/native/" + (Platform.IS_64_BIT ? "x86_64" : "i386") + "-Windows").getPath();
             ldflags += " -ljruby-cext";
-            dldflags = "-Wl,--enable-auto-image-base,--enable-auto-import";
+            ldsharedflags += " $(if $(filter-out -g -g0,$(debugflags)),,-s)";
+            dldflags = "-Wl,--enable-auto-image-base,--enable-auto-import $(DEFFILE)";
             archflags += " -march=native -mtune=native";
             setConfig(mkmfHash, "DLEXT", "dll");
         } else if (Platform.IS_MAC) {
-            setConfig(mkmfHash, "DLEXT", "bundle");
-            ldshared = cc + " -dynamic -bundle -undefined dynamic_lookup ";
+            ldsharedflags = " -dynamic -bundle -undefined dynamic_lookup ";
             cflags += " -DTARGET_RT_MAC_CFM=0 ";
             ldflags += " -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.4 ";
             archflags = " -arch " + Platform.ARCH;
+            cppflags = " -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE" + cppflags;
+            setConfig(mkmfHash, "DLEXT", "bundle");
         } else {
             setConfig(mkmfHash, "DLEXT", "so");
         }
@@ -293,7 +295,8 @@ public class RbConfigLibrary implements Library {
         
         setConfig(mkmfHash, "configure_args", "");
         setConfig(mkmfHash, "CFLAGS", cflags);
-        setConfig(mkmfHash, "CPPFLAGS", "");
+        setConfig(mkmfHash, "CPPFLAGS", cppflags);
+        setConfig(mkmfHash, "CXXFLAGS", cxxflags);
         setConfig(mkmfHash, "ARCH_FLAG", archflags);
         setConfig(mkmfHash, "LDFLAGS", ldflags);
         setConfig(mkmfHash, "DLDFLAGS", dldflags);
@@ -309,10 +312,12 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "LIBRUBYARG", "");
         setConfig(mkmfHash, "prefix", " "); // This must not be empty for some extconf.rb's to work
         setConfig(mkmfHash, "ruby_install_name", jrubyScript());
-        setConfig(mkmfHash, "LDSHARED", ldshared);
+        setConfig(mkmfHash, "LDSHARED", cc + ldsharedflags);
+        setConfig(mkmfHash, "LDSHAREDXX", cxx + ldsharedflags);
         setConfig(mkmfHash, "RUBY_PLATFORM", getOSName());
         setConfig(mkmfHash, "CC", cc);
         setConfig(mkmfHash, "CPP", cpp);
+        setConfig(mkmfHash, "CXX", cxx);
         setConfig(mkmfHash, "OUTFLAG", "-o ");
         setConfig(mkmfHash, "COMMON_HEADERS", "ruby.h");
         setConfig(mkmfHash, "PATH_SEPARATOR", ":");
@@ -352,4 +357,8 @@ public class RbConfigLibrary implements Library {
         return runtime.getClass("File").callMethod("join", bindir, ruby_install_name.callMethod(context, "+", exeext));
     }
 
+    private static String getRubyEnv(RubyHash envHash, String var, String default_value) {
+        var = (String) envHash.get(var);
+        return var == null ? default_value : var;
+    }
 }
