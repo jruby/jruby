@@ -145,12 +145,10 @@ public class Constant extends AbstractVariable {
             return;
         }
         RubyModule rubyClass = getRubyClass(runtime);
-        if (rubyClass != null) {
-          rubyClass.setConstant(name, irubyObject);
-        } else {
-          RubyModule module = runtime.getCurrentContext().getRubyClass();
-          module.setConstant(name, irubyObject);
-        }
+        if (rubyClass == null) rubyClass = runtime.getCurrentContext().getRubyClass();
+        if (rubyClass == null) return;
+        rubyClass.storeConstant(name, irubyObject);
+        rubyClass.invalidateCacheDescendants();
         initialized = true;
     }
 
