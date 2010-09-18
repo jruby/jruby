@@ -185,17 +185,23 @@ rb_io_set_nonblock(rb_io_t* io)
 
 extern "C" void
 rb_io_check_readable(rb_io_t* io) {
-    callMethod(io->obj, "read_nonblock", 1, rb_str_new_cstr(""));
+    if (!(io->mode & FMODE_READABLE)) {
+        rb_raise(rb_eIOError, "IO is not opened for reading");
+    }
 }
 
 extern "C" void
 rb_io_check_writable(rb_io_t* io) {
-    callMethod(io->obj, "write_nonblock", 1, rb_str_new_cstr(""));
+    if (!(io->mode & FMODE_WRITABLE)) {
+        rb_raise(rb_eIOError, "IO is not opened for writing");
+    }
 }
 
 extern "C" void
 rb_io_check_closed(rb_io_t* io) {
-    callMethod(io->obj, "closed?", 0);
+    if ((io->fd < 0) || callMethod(io->obj, "closed?", 0)) {
+        rb_raise(rb_eIOError, "IO is closed");
+    }
 }
 
 static int set_non_blocking(int fd) {
