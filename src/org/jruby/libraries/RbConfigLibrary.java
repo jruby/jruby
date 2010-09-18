@@ -271,6 +271,8 @@ public class RbConfigLibrary implements Library {
 
         String archflags = " -m" + (Platform.IS_64_BIT ? "64" : "32");
 
+        String hdr_dir = new NormalizedFile(normalizedHome, "lib/native/include/").getPath();
+
         // A few platform specific values
         if (Platform.IS_WINDOWS) {
             ldflags += " -L" + new NormalizedFile(normalizedHome, "lib/native/" + (Platform.IS_64_BIT ? "x86_64" : "i386") + "-Windows").getPath();
@@ -325,6 +327,9 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "RM", "rm -f");
         setConfig(mkmfHash, "CP", "cp ");
         setConfig(mkmfHash, "MAKEDIRS", "mkdir -p ");
+        setConfig(mkmfHash, "includedir", hdr_dir);
+        setConfig(mkmfHash, "rubyhdrdir", hdr_dir);
+        setConfig(mkmfHash, "archdir", hdr_dir);
         
         ruby.getObject().defineConstant("CROSS_COMPILING", ruby.getNil());
         

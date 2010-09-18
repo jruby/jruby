@@ -28,13 +28,12 @@ end
 # Some extconf.rb's rely on RUBY_PLATFORM to point to the native platform
 RUBY_PLATFORM = Config::MAKEFILE_CONFIG['RUBY_PLATFORM']
 
-$topdir     = File.expand_path("../../../native/include", __FILE__)
-$hdrdir     = File.expand_path("ruby", $topdir)
+$topdir     = Config::MAKEFILE_CONFIG['includedir']
+$hdrdir     = File.join($topdir, "ruby")
 $top_srcdir = $topdir
 $extmk      = false
 
 # JRuby's RbConfig::CONFIG and MAKEFILE_CONFIG are not complete.
-Config::CONFIG['archdir'] = $topdir
 Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
 Config::MAKEFILE_CONFIG = Config::CONFIG
 
