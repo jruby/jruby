@@ -2058,10 +2058,6 @@ public class Pack {
                            throw runtime.newArgumentError(sTooFew);
                        }
 
-                       if (runtime.is1_9()) {
-                           result.setEncoding(USASCII);
-                       }
-
                        IRubyObject from = list.eltInternal(idx++);
                        lCurElemString = from == runtime.getNil() ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
 
