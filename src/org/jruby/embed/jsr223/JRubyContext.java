@@ -82,6 +82,15 @@ class JRubyContext implements ScriptContext {
         if (jrubyContext == null || context == null) return;
         Bindings tmpBindings = jrubyContext.getEngineScopeBindings();
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+        updateBindings(tmpBindings, bindings);
+        tmpBindings = jrubyContext.getGlobalScopeBindings();
+        if (tmpBindings == null) return;
+        bindings = context.getBindings(ScriptContext.GLOBAL_SCOPE);
+        updateBindings(tmpBindings, bindings);
+    }
+
+    private static void updateBindings(Bindings tmpBindings, Bindings bindings) {
+        if (tmpBindings == bindings) return;
         Set<String> keys = tmpBindings.keySet();
         for (String key : keys) {
             Object value = tmpBindings.get(key);
@@ -121,8 +130,14 @@ class JRubyContext implements ScriptContext {
 
     private Object getAttributeFromScope(int priority, String name) {
         checkName(name);
+        Object value;
         if (priority == Scope.ENGINE.getPriority()) {
-            return engineMap.get(name);
+            value = engineMap.get(name);
+            if (value == null && Utils.isRubyVariable(container, name)) {
+                value = container.get(Utils.getReceiver(this), name);
+                engineMap.put(name, value);
+            }
+            return value;
         } else if (priority == Scope.GLOBAL.getPriority()) {
             if (globalMap == null) {
                 return null;
