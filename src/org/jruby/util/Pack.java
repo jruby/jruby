@@ -41,14 +41,17 @@ import java.nio.ByteOrder;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.platform.Platform;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,6 +62,7 @@ public class Pack {
     private static final int IS_STAR = -1;
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final USASCIIEncoding USASCII = USASCIIEncoding.INSTANCE;
+    private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
     /** Native pack type.
      **/
     private static final String NATIVE_CODES = "sSiIlL";
@@ -1718,6 +1722,8 @@ public class Pack {
         int idx = 0;
         ByteList lCurElemString;
 
+        int enc_info = 1;
+
         mainLoop: while (next != 0) {
             type = next;
             next = safeGet(format);
@@ -1776,6 +1782,21 @@ public class Pack {
                         occurrences = occurrences * 10 + Character.digit((char)(next & 0xFF), 10);
                         next = safeGet(format);
                     } while (next != 0 && ASCII.isDigit(next));
+                }
+            }
+
+            if (runtime.is1_9()) {
+                switch (type) {
+                    case 'U':
+                        if (enc_info == 1) enc_info = 2;
+                        break;
+                    case 'm':
+                    case 'M':
+                    case 'u':
+                        break;
+                    default:
+                        enc_info = 0;
+                        break;
                 }
             }
 
@@ -2037,6 +2058,10 @@ public class Pack {
                            throw runtime.newArgumentError(sTooFew);
                        }
 
+                       if (runtime.is1_9()) {
+                           result.setEncoding(USASCII);
+                       }
+
                        IRubyObject from = list.eltInternal(idx++);
                        lCurElemString = from == runtime.getNil() ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
 
@@ -2123,14 +2148,26 @@ public class Pack {
 
                     break;
             }
-        }
-        if (runtime.is1_9() && formatString.length() == 0) {
-            result.setEncoding(USASCII);
-        }
+        }        
 
         RubyString output = runtime.newString(result);
         if(taintOutput) {
             output.taint(runtime.getCurrentContext());
+        }
+
+        if (runtime.is1_9()) {
+            switch (enc_info)
+            {
+                case 1:
+                    output.setEncodingAndCodeRange(USASCII, RubyObject.USER8_F);
+                    break;
+                case 2:
+                    output.force_encoding(runtime.getCurrentContext(),
+                            RubyEncoding.convertEncodingToRubyEncoding(runtime, UTF8));
+                    break;
+                default:
+                    /* do nothing, keep ASCII-8BIT */
+            }
         }
 
         return output;
