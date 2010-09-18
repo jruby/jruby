@@ -1757,10 +1757,12 @@ public class Pack {
             // Determine how many of type are needed (default: 1)
             int occurrences = 1;
             boolean isStar = false;
+            boolean ignoreStar = false;
             if (next != 0) {
                 if (next == '*') {
                     if ("@XxumM".indexOf(type) != -1) {
                         occurrences = 0;
+                        ignoreStar = true;
                     } else {
                         occurrences = list.size() - idx;
                         isStar = true;
@@ -2009,12 +2011,13 @@ public class Pack {
                         lCurElemString = from == runtime.getNil() ?
                             ByteList.EMPTY_BYTELIST :
                             from.convertToString().getByteList();
-                        if (runtime.is1_9() && occurrences == 0 && type == 'm') {
+                        if (runtime.is1_9() && occurrences == 0 && type == 'm' && !ignoreStar) {
                             encodes(runtime, result, lCurElemString.getUnsafeBytes(),
                                     lCurElemString.getBegin(), lCurElemString.length(),
                                     lCurElemString.length(), (byte)type, false);
                             break;
                         }
+
                         occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
                         if (lCurElemString.length() == 0) break;
 
