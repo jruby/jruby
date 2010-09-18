@@ -174,7 +174,7 @@ Java_org_jruby_cext_Native_newFloatHandle(JNIEnv* env, jobject self, jobject obj
 }
 
 extern "C" JNIEXPORT jlong JNICALL
-Java_org_jruby_cext_Native_newIOHandle(JNIEnv* env, jobject self, jobject obj, jint fileno, jstring mode)
+Java_org_jruby_cext_Native_newIOHandle(JNIEnv* env, jobject self, jobject obj, jint fileno, jint mode)
 {
     return jruby::p2j(new RubyIO(env, obj, fileno, mode));
 }

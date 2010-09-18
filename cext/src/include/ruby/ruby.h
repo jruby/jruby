@@ -160,7 +160,8 @@ struct RArray {
 struct RIO {
     int fd;
     FILE* f;
-    VALUE io_obj;
+    int mode; /* mode flags: FMODE_XXXs */
+    VALUE obj;
 };
 
 typedef struct RIO rb_io_t;
@@ -169,6 +170,11 @@ typedef struct RIO rb_io_t;
     typedef struct RIO OpenFile; // 1.8 compat
 #endif
 #define HAVE_RB_IO_T 1
+#define FMODE_READABLE              1
+#define FMODE_WRITABLE              2
+#define FMODE_READWRITE             3
+#define FMODE_BINMODE               4
+#define FMODE_APPEND                64
 
 struct RFloat {
     struct RBasic basic;

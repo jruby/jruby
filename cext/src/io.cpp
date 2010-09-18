@@ -54,34 +54,27 @@ RubyIO::toRIO()
     return &rio;
 }
 
-RubyIO::RubyIO(FILE* native_file, int native_fd, const char* native_mode)
+RubyIO::RubyIO(FILE* native_file, int native_fd, int mode_)
 {
     JLocalEnv env;
     setType(T_FILE);
     rio.fd = native_fd;
     rio.f = native_file;
-    strncpy(mode, native_mode, 4);
-    mode[4] = '\0';
+    rio.mode = mode_;
+    rio.obj = (VALUE)this;
 
-    obj = valueToObject(env, callMethod(rb_cIO, "new", 2, INT2FIX(native_fd), rb_str_new_cstr(mode)));
+    obj = valueToObject(env, callMethod(rb_cIO, "new", 2, INT2FIX(native_fd), INT2FIX(mode_)));
 }
 
-RubyIO::RubyIO(JNIEnv* env, jobject obj_, jint fileno, jstring mode_): Handle(env, obj_, T_FILE) {
+RubyIO::RubyIO(JNIEnv* env, jobject obj_, jint fileno, jint mode_): Handle(env, obj_, T_FILE) {
     obj = obj_;
     rio.fd = (int)fileno;
-    rio.f = NULL;
-
-    const char* utf = env->GetStringUTFChars(mode_, NULL);
-    strncpy(mode, utf, 4);
-    mode[4] = '\0';
-    env->ReleaseStringUTFChars(mode_, utf);
+    rio.f = fileno < 0 ? NULL : fdopen(fileno, "r+");
+    rio.mode = mode_;
+    rio.obj = (VALUE)this;
 }
 
 RubyIO::~RubyIO() {
-    // FIXME: For now, just don't close the file.
-    // if (rio.f) {
-    //     fclose(rio.f);
-    // }
 }
 
 extern "C" rb_io_t*
@@ -172,17 +165,17 @@ rb_io_set_nonblock(rb_io_t* io)
 
 extern "C" void
 rb_io_check_readable(rb_io_t* io) {
-    callMethod(io->io_obj, "read_nonblock", 1, INT2NUM(0));
+    callMethod(io->obj, "read_nonblock", 1, rb_str_new_cstr(""));
 }
 
 extern "C" void
 rb_io_check_writable(rb_io_t* io) {
-    callMethod(io->io_obj, "write_nonblock", 1, INT2NUM(0));
+    callMethod(io->obj, "write_nonblock", 1, rb_str_new_cstr(""));
 }
 
 extern "C" void
 rb_io_check_closed(rb_io_t* io) {
-    callMethod(io->io_obj, "closed?", 0);
+    callMethod(io->obj, "closed?", 0);
 }
 
 static int set_non_blocking(int fd) {
