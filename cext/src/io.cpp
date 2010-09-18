@@ -47,17 +47,20 @@ RubyIO::toRIO()
         switch (rio.mode & FMODE_READWRITE) {
         case FMODE_READABLE:
             strcpy(mode, "rb");
+            break;
         case FMODE_WRITABLE:
-            strcpy(mode, "wb");
+            strcpy(mode, "rb");
+            break;
         case FMODE_READWRITE:
             strcpy(mode, "rb+");
+            break;
         default:
-            strcpy(mode, "rb+");
+            throw JavaException(env, "java/lang/NullPointerException", "Invalid RubyIO mode %d", rio.mode);
         }
         rio.f = fdopen(rio.fd, mode);
         if (!rio.f)
             throw JavaException(env, "java/lang/NullPointerException",
-                "Invalid mode %s for %d (open with %d)", mode, rio.fd, rio.mode);
+                "Invalid RubyIO mode '%s' for %d (open with %d)", mode, rio.fd, rio.mode);
     }
 
     // If the file is not closed, sync
