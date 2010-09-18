@@ -813,11 +813,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         enterSleep();
         try {
             currentBlockingTask = task;
+            pollThreadEvents();
             task.run();
         } finally {
-            pollThreadEvents();
             exitSleep();
             currentBlockingTask = null;
+            pollThreadEvents();
         }
     }
 
@@ -1054,30 +1055,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             if (delay_ns > 0) {
                 long delay_ms = delay_ns / 1000000;
                 int delay_ns_remainder = (int)( delay_ns % 1000000 );
-                try {
-                    currentWaitObject = o;
-                    status = Status.SLEEP;
-                    pollThreadEvents();
-                    o.wait(delay_ms, delay_ns_remainder);
-                } finally {
-                    status = Status.RUN;
-                    currentWaitObject = null;
-                    pollThreadEvents();
-                }
+                executeBlockingTask(new SleepTask(o, delay_ms, delay_ns_remainder));
             }
             long end_ns = System.nanoTime();
             return ( end_ns - start_ns ) <= delay_ns;
         } else {
-            try {
-                currentWaitObject = o;
-                status = Status.SLEEP;
-                pollThreadEvents();
-                o.wait();
-            } finally {
-                status = Status.RUN;
-                currentWaitObject = null;
-                pollThreadEvents();
-            }
+            executeBlockingTask(new SleepTask(o, 0, 0));
             return true;
         }
     }
