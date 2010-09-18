@@ -177,7 +177,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
     }
 
     public Object get(String key) {
-        return jrubyContext.getEngineScopeBindings().get(key);
+        return jrubyContext.getAttribute(key, ScriptContext.ENGINE_SCOPE);
     }
 
     public void put(String key, Object value) {
