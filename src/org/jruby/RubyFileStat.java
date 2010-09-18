@@ -610,7 +610,16 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "world_readable?", compat = CompatVersion.RUBY1_9)
     public IRubyObject worldReadable(ThreadContext context) {
-        if ((stat.mode() & FileStat.S_IROTH) == FileStat.S_IROTH) {
+        return getWorldMode(context, FileStat.S_IROTH);
+    }
+
+    @JRubyMethod(name = "world_writable?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject worldWritable(ThreadContext context) {
+        return getWorldMode(context, FileStat.S_IWOTH);
+    }
+
+    private IRubyObject getWorldMode(ThreadContext context, int mode) {
+        if ((stat.mode() & mode) == mode) {
             return RubyNumeric.int2fix(context.getRuntime(),
                     (stat.mode() & (S_IRUGO | S_IWUGO | S_IXUGO) ));
         }
