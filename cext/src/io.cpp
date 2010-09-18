@@ -35,20 +35,31 @@ RubyIO::toRIO()
     JLocalEnv env;
 
     if (!rio.f) {
-        // open the file with the given descriptor
+        char mode[4] = "\0";
+        // open the file with the given descriptor in a compatible mode
+        switch (rio.mode & FMODE_READWRITE) {
+        case FMODE_READABLE:
+            strcpy(mode, "rb");
+        case FMODE_WRITABLE:
+            strcpy(mode, "wb");
+        case FMODE_READWRITE:
+            strcpy(mode, "rb+");
+        default:
+            strcpy(mode, "rb+");
+        }
         rio.f = fdopen(rio.fd, mode);
-        rio.io_obj = (VALUE)this;
+        if (!rio.f)
+            throw JavaException(env, "java/lang/NullPointerException",
+                "Invalid mode %s for %d (open with %d)", mode, rio.fd, rio.mode);
     }
 
+    // If the file is not closed, sync
     if (rio.fd > -1) {
         /* TODO: Synchronization of stream positions
         long int cpos = ftell(rio.f);
         long long rpos = NUM2LL(callMethod(this, "pos", 0));
         callMethod
         */
-    } else {
-        throw JavaException(env, "java/lang/NullPointerException",
-                "Invalid file descriptor %d\n", rio.fd);
     }
 
     return &rio;
@@ -67,10 +78,9 @@ RubyIO::RubyIO(FILE* native_file, int native_fd, int mode_)
 }
 
 RubyIO::RubyIO(JNIEnv* env, jobject obj_, jint fileno, jint mode_): Handle(env, obj_, T_FILE) {
-    obj = obj_;
     rio.fd = (int)fileno;
-    rio.f = fileno < 0 ? NULL : fdopen(fileno, "r+");
-    rio.mode = mode_;
+    rio.f = NULL;
+    rio.mode = (int)mode_;
     rio.obj = (VALUE)this;
 }
 
