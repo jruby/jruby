@@ -170,7 +170,7 @@ public class JRubyBindings implements Bindings {
                 keys.add(entry.getKey());
             }
         }
-        keys.addAll(container.getVarMap().keySet());
+        if (container.getVarMap().keySet() != null) keys.addAll(container.getVarMap().keySet());
         return keys;
     }
 

@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.Set;
 import javax.script.Bindings;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
@@ -83,7 +84,12 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (script == null || context == null) {
             throw new NullPointerException("either script or context is null");
         }
-        setContext(context);
+        return evaluate(context, script);
+    }
+
+    private Object evaluate(ScriptContext context, String script) throws ScriptException {
+        if (this.context != context) setContext(context);
+        injectGlobalBinsings(context);
         container.setScriptFilename(Utils.getFilename(this));
         try {
             EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
@@ -94,6 +100,21 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         } finally {
             if(isTerminationOn()) {
                 container.terminate();
+            }
+        }
+    }
+
+    private void injectGlobalBinsings(ScriptContext context) {
+        Bindings globalMap = context.getBindings(ScriptContext.GLOBAL_SCOPE);
+        if (globalMap == null) return;
+
+        Set<String> engineKeys = (Set<String>)context.getBindings(ScriptContext.ENGINE_SCOPE).keySet();
+        Set<String> globalKeys = globalMap.keySet();
+        for (String key : globalKeys) {
+            if (engineKeys.contains(key)) continue;
+            Object value = context.getBindings(ScriptContext.GLOBAL_SCOPE).get(key);
+            if (value != null) {
+                container.put(key, value);
             }
         }
     }
@@ -129,7 +150,12 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (reader == null || context == null) {
             throw new NullPointerException("either reader or context is null");
         }
-        setContext(context);
+        return evaluate(context, reader);
+    }
+
+    private Object evaluate(ScriptContext context, Reader reader) throws ScriptException {
+        if (this.context != context) setContext(context);
+        injectGlobalBinsings(context);
         String filename = Utils.getFilename(this);
         try {
             EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
@@ -148,36 +174,14 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         if (script == null) {
             throw new NullPointerException("script is null");
         }
-        container.setScriptFilename(Utils.getFilename(this));
-        try {
-            EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            if(isTerminationOn()) {
-                container.terminate();
-            }
-        }
+        return evaluate(this.context, script);
     }
 
     public Object eval(Reader reader) throws ScriptException {
         if (reader == null) {
             throw new NullPointerException("reader is null");
         }
-        String filename = Utils.getFilename(this);
-        try {
-            EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            if(isTerminationOn()) {
-                container.terminate();
-            }
-        }
+        return evaluate(this.context, reader);
     }
 
     public Object eval(String script, Bindings bindings) throws ScriptException {
@@ -185,18 +189,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             throw new NullPointerException("either script or bindings is null");
         }
         getContext().setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        container.setScriptFilename(Utils.getFilename(this));
-        try {
-            EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            if(isTerminationOn()) {
-                container.terminate();
-            }
-        }
+        return evaluate(this.context, script);
     }
 
     public Object eval(Reader reader, Bindings bindings) throws ScriptException {
@@ -204,18 +197,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             throw new NullPointerException("either reader or bindings is null");
         }
         getContext().setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-        String filename = Utils.getFilename(this);
-        try {
-            EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
-            IRubyObject ret = unit.run();
-            return JavaEmbedUtils.rubyToJava(ret);
-        } catch (Exception e) {
-            throw wrapException(e);
-        } finally {
-            if(isTerminationOn()) {
-                container.terminate();
-            }
-        }
+        return evaluate(this.context, reader);
     }
 
     public Object get(String key) {
