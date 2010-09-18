@@ -1,4 +1,3 @@
-fails:Array#pack with the empty format returns an empty String in US-ASCII
 fails:Array#pack with format 'M' returns an US-ASCII string
 fails:Array#pack with format 'm' returns an US-ASCII string
 fails:Array#pack with format 'U' returns a UTF-8 string

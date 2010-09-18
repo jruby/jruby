@@ -40,6 +40,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.platform.Platform;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -57,6 +58,7 @@ public class Pack {
     private static final byte[] sNil10 = "\000\000\000\000\000\000\000\000\000\000".getBytes();
     private static final int IS_STAR = -1;
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
+    private static final USASCIIEncoding USASCII = USASCIIEncoding.INSTANCE;
     /** Native pack type.
      **/
     private static final String NATIVE_CODES = "sSiIlL";
@@ -2122,6 +2124,10 @@ public class Pack {
                     break;
             }
         }
+        if (runtime.is1_9() && formatString.length() == 0) {
+            result.setEncoding(USASCII);
+        }
+
         RubyString output = runtime.newString(result);
         if(taintOutput) {
             output.taint(runtime.getCurrentContext());
