@@ -18,7 +18,7 @@ module Config
         key = key.gsub(/#{Regexp.quote(pat)}(?=\s|\z)/n) {sub} if pat
         key
       else
-        var
+        " "
       end
     end
     val
