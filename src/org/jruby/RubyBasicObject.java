@@ -107,8 +107,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final int USER5_F = (1<<(FL_USHIFT+5));
     public static final int USER6_F = (1<<(FL_USHIFT+6));
     public static final int USER7_F = (1<<(FL_USHIFT+7));
+    public static final int USER8_F = (1<<(FL_USHIFT+8));
 
-    public static final int COMPARE_BY_IDENTITY_F = (1<<(FL_USHIFT+8));
+    public static final int COMPARE_BY_IDENTITY_F = USER8_F;
 
     /**
      *  A value that is used as a null sentinel in among other places

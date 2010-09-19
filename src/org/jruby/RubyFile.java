@@ -40,7 +40,6 @@ import org.jcodings.Encoding;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -387,15 +386,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (context.getRuntime().getDebug().isTrue()) {
                     ioe.printStackTrace(System.err);
                 }
-                // Return false here
             } catch (java.nio.channels.OverlappingFileLockException ioe) {
                 if (context.getRuntime().getDebug().isTrue()) {
                     ioe.printStackTrace(System.err);
                 }
-                // Return false here
             }
-
-            return context.getRuntime().getFalse();
+            return (lockMode & LOCK_EX) == 0 ? RubyFixnum.zero(context.getRuntime()) : context.getRuntime().getFalse();
         } else {
             // We're not actually a real file, so we can't flock
             return context.getRuntime().getFalse();
@@ -1041,9 +1037,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param args 
      * @return Resulting absolute path as a String
      */
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return expandPathInternal(context, recv, args, true);
+    }
+
+    @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        RubyString path = (RubyString) expandPathInternal(context, recv, args, true);
+        path.force_encoding(context, RubyEncoding.getDefaultExternal(context.getRuntime()));
+
+        return path;
     }
 
 

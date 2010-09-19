@@ -44,6 +44,7 @@ import org.jruby.ext.posix.FileStat;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
@@ -54,7 +55,11 @@ import org.jruby.util.JRubyFile;
 @JRubyClass(name="File::Stat", include="Comparable")
 public class RubyFileStat extends RubyObject {
     private static final long serialVersionUID = 1L;
-    
+
+    private static final int S_IRUGO = (FileStat.S_IRUSR | FileStat.S_IRGRP | FileStat.S_IROTH);
+    private static final int S_IWUGO = (FileStat.S_IWUSR | FileStat.S_IWGRP | FileStat.S_IWOTH);
+    private static final int S_IXUGO = (FileStat.S_IXUSR | FileStat.S_IXGRP | FileStat.S_IXOTH);
+
     private JRubyFile file;
     private FileStat stat;
 
@@ -601,5 +606,23 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "zero?")
     public IRubyObject zero_p() {
         return getRuntime().newBoolean(stat.isEmpty());
+    }
+
+    @JRubyMethod(name = "world_readable?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject worldReadable(ThreadContext context) {
+        return getWorldMode(context, FileStat.S_IROTH);
+    }
+
+    @JRubyMethod(name = "world_writable?", compat = CompatVersion.RUBY1_9)
+    public IRubyObject worldWritable(ThreadContext context) {
+        return getWorldMode(context, FileStat.S_IWOTH);
+    }
+
+    private IRubyObject getWorldMode(ThreadContext context, int mode) {
+        if ((stat.mode() & mode) == mode) {
+            return RubyNumeric.int2fix(context.getRuntime(),
+                    (stat.mode() & (S_IRUGO | S_IWUGO | S_IXUGO) ));
+        }
+        return context.getRuntime().getNil();
     }
 }

@@ -40,14 +40,18 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.platform.Platform;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -57,6 +61,8 @@ public class Pack {
     private static final byte[] sNil10 = "\000\000\000\000\000\000\000\000\000\000".getBytes();
     private static final int IS_STAR = -1;
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
+    private static final USASCIIEncoding USASCII = USASCIIEncoding.INSTANCE;
+    private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
     /** Native pack type.
      **/
     private static final String NATIVE_CODES = "sSiIlL";
@@ -1716,6 +1722,8 @@ public class Pack {
         int idx = 0;
         ByteList lCurElemString;
 
+        int enc_info = 1;
+
         mainLoop: while (next != 0) {
             type = next;
             next = safeGet(format);
@@ -1757,10 +1765,12 @@ public class Pack {
             // Determine how many of type are needed (default: 1)
             int occurrences = 1;
             boolean isStar = false;
+            boolean ignoreStar = false;
             if (next != 0) {
                 if (next == '*') {
                     if ("@XxumM".indexOf(type) != -1) {
                         occurrences = 0;
+                        ignoreStar = true;
                     } else {
                         occurrences = list.size() - idx;
                         isStar = true;
@@ -1772,6 +1782,21 @@ public class Pack {
                         occurrences = occurrences * 10 + Character.digit((char)(next & 0xFF), 10);
                         next = safeGet(format);
                     } while (next != 0 && ASCII.isDigit(next));
+                }
+            }
+
+            if (runtime.is1_9()) {
+                switch (type) {
+                    case 'U':
+                        if (enc_info == 1) enc_info = 2;
+                        break;
+                    case 'm':
+                    case 'M':
+                    case 'u':
+                        break;
+                    default:
+                        enc_info = 0;
+                        break;
                 }
             }
 
@@ -2009,12 +2034,13 @@ public class Pack {
                         lCurElemString = from == runtime.getNil() ?
                             ByteList.EMPTY_BYTELIST :
                             from.convertToString().getByteList();
-                        if (runtime.is1_9() && occurrences == 0 && type == 'm') {
+                        if (runtime.is1_9() && occurrences == 0 && type == 'm' && !ignoreStar) {
                             encodes(runtime, result, lCurElemString.getUnsafeBytes(),
                                     lCurElemString.getBegin(), lCurElemString.length(),
                                     lCurElemString.length(), (byte)type, false);
                             break;
                         }
+
                         occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
                         if (lCurElemString.length() == 0) break;
 
@@ -2118,10 +2144,26 @@ public class Pack {
 
                     break;
             }
-        }
+        }        
+
         RubyString output = runtime.newString(result);
         if(taintOutput) {
             output.taint(runtime.getCurrentContext());
+        }
+
+        if (runtime.is1_9()) {
+            switch (enc_info)
+            {
+                case 1:
+                    output.setEncodingAndCodeRange(USASCII, RubyObject.USER8_F);
+                    break;
+                case 2:
+                    output.force_encoding(runtime.getCurrentContext(),
+                            RubyEncoding.convertEncodingToRubyEncoding(runtime, UTF8));
+                    break;
+                default:
+                    /* do nothing, keep ASCII-8BIT */
+            }
         }
 
         return output;
