@@ -1040,9 +1040,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param args 
      * @return Resulting absolute path as a String
      */
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return expandPathInternal(context, recv, args, true);
+    }
+
+    @JRubyMethod(name = "expand_path", required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject expand_path19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        RubyString path = (RubyString) expandPathInternal(context, recv, args, true);
+        path.force_encoding(context, RubyEncoding.getDefaultExternal(context.getRuntime()));
+
+        return path;
     }
 
 

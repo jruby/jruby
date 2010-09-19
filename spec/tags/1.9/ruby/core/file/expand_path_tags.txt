@@ -1,1 +1,0 @@
-fails:File.expand_path produces a String in the default external encoding
