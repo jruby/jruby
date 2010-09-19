@@ -302,6 +302,7 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "ARCH_FLAG", archflags);
         setConfig(mkmfHash, "LDFLAGS", ldflags);
         setConfig(mkmfHash, "DLDFLAGS", dldflags);
+        setConfig(mkmfHash, "DEFS", "");
         setConfig(mkmfHash, "LIBEXT", libext);
         setConfig(mkmfHash, "OBJEXT", objext);
         setConfig(mkmfHash, "LIBRUBYARG_STATIC", "");
