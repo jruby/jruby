@@ -1,2 +1,0 @@
-fails(in Mac Java 5):File#flock returns false if trying to lock an exclusively locked file
-fails(JRUBY-4386):File#flock returns 0 if trying to lock a non-exclusively locked file
