@@ -26,17 +26,24 @@ module Config
 end
 
 # Some extconf.rb's rely on RUBY_PLATFORM to point to the native platform
+Object.send(:remove_const, :RUBY_PLATFORM)
 RUBY_PLATFORM = Config::MAKEFILE_CONFIG['RUBY_PLATFORM']
+
+# JRuby's RbConfig::CONFIG and MAKEFILE_CONFIG are each not complete.
+Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
+Config::MAKEFILE_CONFIG.merge!(Config::CONFIG)
+
+# For environment overrides to work, the MAKEFILE_CONFIG hash needs to have these
+Config::MAKEFILE_CONFIG["CFLAGS"] += " $(cflags)"
+Config::MAKEFILE_CONFIG["CPPFLAGS"] += " $(DEFS) $(cppflags)"
+Config::MAKEFILE_CONFIG["CXXFLAGS"] += " $(cflags) $(cxxflags)"
 
 $topdir     = Config::MAKEFILE_CONFIG['includedir']
 $hdrdir     = File.join($topdir, "ruby")
 $top_srcdir = $topdir
 $extmk      = false
 
-# JRuby's RbConfig::CONFIG and MAKEFILE_CONFIG are not complete.
-Config::CONFIG.merge!(Config::MAKEFILE_CONFIG)
-Config::MAKEFILE_CONFIG = Config::CONFIG
-
+# Make sure the headers are extracted into the file-system
 unless File.exists?($hdrdir + "/ruby.h")
   abort "mkmf.rb can't find header files for ruby at #{$hdrdir}/ruby.h"
 end
