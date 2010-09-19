@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.FileDescriptor;
 import static org.jruby.RubyFile.get_path;
 import static org.jruby.RubyFile.file;
 
@@ -380,6 +381,39 @@ public class RubyFileTest {
         } else {
             return runtime.getFalse();
         }
+    }
+
+    @JRubyMethod(name = "world_readable?", required = 1, module = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject worldReadable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        RubyFileStat stat = getFileStat(context, filename);
+        if (stat == null) return context.getRuntime().getNil();
+
+        return stat.worldReadable(context);
+    }
+
+    @JRubyMethod(name = "world_writable?", required = 1, module = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject worldWritable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        RubyFileStat stat = getFileStat(context, filename);
+        if (stat == null) return context.getRuntime().getNil();
+
+        return stat.worldWritable(context);
+    }
+
+    private static RubyFileStat getFileStat(ThreadContext context, IRubyObject filename) {
+        Ruby runtime = context.getRuntime();
+
+        RubyFileStat stat = null;
+        if (!(filename instanceof RubyFile)) {
+            RubyString path = get_path(context, filename);
+            JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), path.getUnicodeValue());
+            if (file.exists()) {
+                stat = runtime.newFileStat(file.getPath(), false);
+            }
+        } else {
+            stat = (RubyFileStat) ((RubyFile) filename).stat(context);
+        }
+
+        return stat;
     }
 
     private static ZipEntry file_in_archive(IRubyObject path) {
