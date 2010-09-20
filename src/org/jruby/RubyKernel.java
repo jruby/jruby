@@ -1150,17 +1150,27 @@ public class RubyKernel {
         }
     }
 
-    @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        return rbThrowInternal(context, tag.asJavaString(), IRubyObject.NULL_ARRAY, block);
+        return rbThrowInternal(context, tag.asJavaString(), IRubyObject.NULL_ARRAY, block, uncaught18);
     }
 
-    @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject arg, Block block) {
-        return rbThrowInternal(context, tag.asJavaString(), new IRubyObject[] {arg}, block);
+        return rbThrowInternal(context, tag.asJavaString(), new IRubyObject[] {arg}, block, uncaught18);
     }
 
-    public static IRubyObject rbThrowInternal(ThreadContext context, String tag, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
+        return rbThrowInternal(context, tag.asJavaString(), IRubyObject.NULL_ARRAY, block, uncaught19);
+    }
+
+    @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject arg, Block block) {
+        return rbThrowInternal(context, tag.asJavaString(), new IRubyObject[] {arg}, block, uncaught19);
+    }
+
+    public static IRubyObject rbThrowInternal(ThreadContext context, String tag, IRubyObject[] args, Block block, Uncaught uncaught) {
         Ruby runtime = context.getRuntime();
 
         RubyContinuation.Continuation continuation = context.getActiveCatch(tag.intern());
@@ -1175,11 +1185,27 @@ public class RubyKernel {
         RubyThread currentThread = context.getThread();
 
         if (currentThread == runtime.getThreadService().getMainThread()) {
-            throw runtime.newNameError(message, tag);
+            throw uncaught.uncaughtThrow(runtime, message, tag);
         } else {
             throw runtime.newThreadError(message + " in thread 0x" + Integer.toHexString(RubyInteger.fix2int(currentThread.id())));
         }
     }
+
+    private static abstract class Uncaught {
+        public abstract RaiseException uncaughtThrow(Ruby runtime, String message, String tag);
+    }
+
+    private static final Uncaught uncaught18 = new Uncaught() {
+        public RaiseException uncaughtThrow(Ruby runtime, String message, String tag) {
+            return runtime.newNameError(message, tag);
+        }
+    };
+
+    private static final Uncaught uncaught19 = new Uncaught() {
+        public RaiseException uncaughtThrow(Ruby runtime, String message, String tag) {
+            return runtime.newArgumentError(message);
+        }
+    };
 
     @JRubyMethod(name = "trap", required = 1, frame = true, optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject trap(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
