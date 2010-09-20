@@ -273,7 +273,7 @@ public class RubyKernel {
         throw exception;
     }
 
-    @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         String arg = args[0].convertToString().toString();
         Ruby runtime = context.getRuntime();
@@ -285,6 +285,17 @@ public class RubyKernel {
         } 
 
         return RubyFile.open(context, runtime.getFile(), args, block);
+    }
+
+    @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.getRuntime();
+        if (args[0].respondsTo("to_open")) {
+            args[0] = args[0].callMethod(context, "to_open");
+            return RubyFile.open(context, runtime.getFile(), args, block);
+        } else {
+            return open(context, recv, args, block);
+        }
     }
 
     @JRubyMethod(name = "getc", module = true, visibility = PRIVATE)
