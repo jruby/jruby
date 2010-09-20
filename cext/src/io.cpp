@@ -44,23 +44,28 @@ RubyIO::toRIO()
     if (!rio.f) {
         char mode[4] = "\0";
         // open the file with the given descriptor in a compatible mode
-        switch (rio.mode & FMODE_READWRITE) {
-        case FMODE_READABLE:
-            strcpy(mode, "rb");
-            break;
-        case FMODE_WRITABLE:
-            strcpy(mode, "rb");
-            break;
-        case FMODE_READWRITE:
-            strcpy(mode, "rb+");
-            break;
-        default:
-            throw JavaException(env, "java/lang/NullPointerException", "Invalid RubyIO mode %d", rio.mode);
-        }
-        rio.f = fdopen(rio.fd, mode);
+        // switch (rio.mode & FMODE_READWRITE) {
+        // case FMODE_READABLE:
+        //     strcpy(mode, "rb");
+        //     break;
+        // case FMODE_WRITABLE:
+        //     strcpy(mode, "rb");
+        //     break;
+        // case FMODE_READWRITE:
+        //     strcpy(mode, "rb+");
+        //     break;
+        // default:
+        //     throw JavaException(env, "java/lang/NullPointerException", "Invalid RubyIO mode %d", rio.mode);
+        // }
+
+        /* FIXME: XXX: This is using a hammer to squash a fly. I'm not sure how the JVM open's
+           it's files and how that relates to the Ruby file modes, but the above case did not work */
+        rio.f = fdopen(rio.fd, "ab+");
+        if (!rio.f) rio.f = fdopen(rio.fd, "ab");
+        if (!rio.f) rio.f = fdopen(rio.fd, "rb");
         if (!rio.f)
             throw JavaException(env, "java/lang/NullPointerException",
-                "Invalid RubyIO mode '%s' for %d (open with %d)", mode, rio.fd, rio.mode);
+                "Invalid RubyIO mode for descriptor %d (opened with %d)", rio.fd, rio.mode);
     }
 
     // If the file is not closed, sync
