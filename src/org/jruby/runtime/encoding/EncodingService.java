@@ -79,8 +79,8 @@ public final class EncodingService {
         if (index < encodingIndex.length && (rubyEncoding = encodingIndex[index]) != null) {
             return rubyEncoding;
         }
-        loadEncoding(new ByteList(enc.getName(), false));
-        return encodingIndex[index];
+        enc = loadEncoding(new ByteList(enc.getName(), false));
+        return encodingIndex[enc.getIndex()];
     }
 
     private void defineEncodings() {
