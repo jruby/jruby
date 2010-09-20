@@ -1077,15 +1077,24 @@ public class RubyKernel {
         return runtime.getTrue();
     }
 
-    @JRubyMethod(name = "eval", required = 1, optional = 3, frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "eval", required = 1, optional = 3, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject eval(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return evalCommon(context, recv, args, block, evalBinding18);
+    }
+
+    @JRubyMethod(name = "eval", required = 1, optional = 3, frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject eval19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return evalCommon(context, recv, args, block, evalBinding19);
+    }
+
+    private static IRubyObject evalCommon(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block, EvalBinding evalBinding) {
         Ruby runtime = context.getRuntime();
         // string to eval
         RubyString src = args[0].convertToString();
         runtime.checkSafeString(src);
 
         boolean bindingGiven = args.length > 1 && !args[1].isNil();
-        Binding binding = bindingGiven ? convertToBinding(args[1]) : context.previousBinding();
+        Binding binding = bindingGiven ? evalBinding.convertToBinding(args[1]) : context.previousBinding();
         if (args.length > 2) {
             // file given, use it and force it into binding
             binding.setFile(args[2].convertToString().toString());
@@ -1106,22 +1115,39 @@ public class RubyKernel {
             // no binding given, use 0 for both
             binding.setLine(0);
         }
-        
+
         return ASTInterpreter.evalWithBinding(context, src, binding);
     }
 
-    private static Binding convertToBinding(IRubyObject scope) {
-        if (scope instanceof RubyBinding) {
-            return ((RubyBinding)scope).getBinding().clone();
-        } else {
-            if (scope instanceof RubyProc) {
-                return ((RubyProc) scope).getBlock().getBinding().clone();
+    private static abstract class EvalBinding {
+        public abstract Binding convertToBinding(IRubyObject scope);
+    }
+
+    private static EvalBinding evalBinding18 = new EvalBinding() {
+        public Binding convertToBinding(IRubyObject scope) {
+            if (scope instanceof RubyBinding) {
+                return ((RubyBinding)scope).getBinding().clone();
             } else {
-                // bomb out, it's not a binding or a proc
-                throw scope.getRuntime().newTypeError("wrong argument type " + scope.getMetaClass() + " (expected Proc/Binding)");
+                if (scope instanceof RubyProc) {
+                    return ((RubyProc) scope).getBlock().getBinding().clone();
+                } else {
+                    // bomb out, it's not a binding or a proc
+                    throw scope.getRuntime().newTypeError("wrong argument type " + scope.getMetaClass() + " (expected Proc/Binding)");
+                }
             }
         }
-    }
+    };
+
+    private static EvalBinding evalBinding19 = new EvalBinding() {
+        public Binding convertToBinding(IRubyObject scope) {
+            if (scope instanceof RubyBinding) {
+                return ((RubyBinding)scope).getBinding().clone();
+            } else {
+                throw scope.getRuntime().newTypeError("wrong argument type " + scope.getMetaClass() + " (expected Binding)");
+            }
+        }
+    };
+
 
     @JRubyMethod(name = "callcc", frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject callcc(ThreadContext context, IRubyObject recv, Block block) {
