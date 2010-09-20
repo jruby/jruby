@@ -205,13 +205,16 @@ rb_io_check_closed(rb_io_t* io) {
 }
 
 static int set_non_blocking(int fd) {
-  int flags;
+#ifndef JRUBY_WIN32
+    int flags;
 #if defined(O_NONBLOCK)
-  if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
-    flags = 0;
-  return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
+        flags = 0;
+    return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 #else
-  flags = 1;
-  return ioctl(fd, FIOBIO, &flags);
+    flags = 1;
+    return ioctl(fd, FIOBIO, &flags);
 #endif
+#endif
+    return 0; // Fake out on Win32 for now
 }
