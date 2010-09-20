@@ -1564,8 +1564,24 @@ public class RubyKernel {
         throw context.getRuntime().newNotImplementedError("Kernel#syscall is not implemented in JRuby");
     }
 
-    @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static RubyBoolean system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        return systemCommon(context, recv, args) == 0 ? runtime.getTrue() : runtime.getFalse();
+    }
+
+    @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        int resultCode = systemCommon(context, recv, args);
+        switch (resultCode) {
+            case 0: return runtime.getTrue();
+            case 127: return runtime.getNil();
+            default: return runtime.getFalse();
+        }
+    }
+
+    private static int systemCommon(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         int resultCode;
 
@@ -1573,7 +1589,7 @@ public class RubyKernel {
             if (! Platform.IS_WINDOWS && args[args.length -1].asJavaString().matches(".*[^&]&\\s*")) {
                 // looks like we need to send process to the background
                 ShellLauncher.runWithoutWait(runtime, args);
-                return runtime.newBoolean(true);
+                return 0;
             }
             resultCode = ShellLauncher.runAndWait(runtime, args);
         } catch (Exception e) {
@@ -1581,7 +1597,7 @@ public class RubyKernel {
         }
 
         context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, resultCode));
-        return runtime.newBoolean(resultCode == 0);
+        return resultCode;
     }
     
     @JRubyMethod(name = {"exec"}, required = 1, rest = true, module = true, visibility = PRIVATE)
