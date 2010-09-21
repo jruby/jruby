@@ -30,6 +30,8 @@
 #include <fcntl.h>
 #include <ctype.h>
 
+#include <st_sizes.h>
+
 // Some platform specific includes
 #if defined(__WIN32__) || defined(__MINGW32__)
 #   include "jruby_win32.h"
