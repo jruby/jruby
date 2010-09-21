@@ -104,9 +104,9 @@ public class RubyDir extends RubyObject {
      * <code>Dir</code> object returned, so a new <code>Dir</code> instance
      * must be created to reflect changes to the underlying file system.
      */
-    @JRubyMethod(name = "initialize", required = 1, frame = true)
-    public IRubyObject initialize(IRubyObject _newPath, Block unusedBlock) {
-        RubyString newPath = _newPath.convertToString();
+    @JRubyMethod(name = "initialize", required = 1, frame = true, compat = CompatVersion.RUBY1_8)
+    public IRubyObject initialize(IRubyObject arg, Block unusedBlock) {
+        RubyString newPath = arg.convertToString();
         path = newPath;
         pos = 0;
 
@@ -119,6 +119,14 @@ public class RubyDir extends RubyObject {
         snapshot = (String[]) snapshotList.toArray(new String[snapshotList.size()]);
 
         return this;
+    }
+
+    @JRubyMethod(name = "initialize", required = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject initialize19(IRubyObject arg, Block unusedBlock) {
+        if (arg.respondsTo("to_path")) {
+            arg = arg.callMethod(getRuntime().getCurrentContext(), "to_path");
+        }
+        return initialize(arg, unusedBlock);
     }
 
 // ----- Ruby Class Methods ----------------------------------------------------
