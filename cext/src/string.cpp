@@ -311,6 +311,11 @@ rb_str_buf_cat2(VALUE str, const char *ptr)
     return rb_str_buf_cat(str, ptr, ptr ? strlen(ptr) : 0);
 }
 
+VALUE
+rb_str_buf_append(VALUE str, VALUE str2)
+{
+    return callMethod(str, "concat", 1, str2);
+}
 
 extern "C" int
 rb_str_cmp(VALUE str1, VALUE str2)
