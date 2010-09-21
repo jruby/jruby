@@ -2664,7 +2664,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block, final boolean bang) {
         if (block.isGiven()) {
-            return gsubCommon(context, bang, getQuotedPattern(arg0), block, null, 0);
+            return gsubCommon(context, bang, arg0, block, null, 0);
         } else {
             String method = "gsub";
             if (bang) {
@@ -2676,12 +2676,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
         RubyString repl = arg1.convertToString();
-        return gsubCommon(context, bang, getQuotedPattern(arg0), block, repl, repl.flags);
+        return gsubCommon(context, bang, arg0, block, repl, repl.flags);
     }
 
-    private IRubyObject gsubCommon(ThreadContext context, final boolean bang, Regex pattern, Block block, RubyString repl, int tuFlags) {
+    private IRubyObject gsubCommon(ThreadContext context, final boolean bang, IRubyObject arg, Block block, RubyString repl, int tuFlags) {
         Ruby runtime = context.getRuntime();
         DynamicScope scope = context.getCurrentScope();
+        Regex pattern = getQuotedPattern(arg);
 
         int begin = value.getBegin();
         int slen = value.getRealSize();
@@ -2702,6 +2703,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         dest.setRealSize(blen);
         int offset = 0, buf = 0, bp = 0, cp = begin;
 
+        Encoding enc = getEncodingForKCodeDefault(runtime, pattern, arg);
+
         RubyMatchData match = null;
         while (beg >= 0) {
             final RubyString val;
@@ -2714,7 +2717,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 modifyCheck(bytes, slen);
                 if (bang) frozenCheck();
             } else {
-                val = RubyRegexp.regsub(repl, this, matcher, runtime.getKCode().getEncoding());
+                val = RubyRegexp.regsub(repl, this, matcher, enc);
             }
 
             tuFlags |= val.flags;
@@ -2737,7 +2740,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
             if (begz == endz) {
                 if (slen <= endz) break;
-                len = pattern.getEncoding().length(bytes, begin + endz, range);
+                len = enc.length(bytes, begin + endz, range);
                 System.arraycopy(bytes, begin + endz, dest.getUnsafeBytes(), bp, len);
                 bp += len;
                 offset = endz + len;
@@ -4215,7 +4218,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         RubyArray result = runtime.newArray();
         Encoding enc = getEncodingForKCodeDefault(runtime, pattern, pat);
-        
+
         boolean captures = pattern.numberOfCaptures() != 0;
 
         int end, beg = 0;

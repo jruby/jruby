@@ -1,1 +1,0 @@
-fails(JRUBY-4587):String#gsub with pattern and replacement respects $KCODE when the pattern collapses
