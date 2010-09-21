@@ -4214,7 +4214,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final Matcher matcher = pattern.matcher(bytes, begin, range);
 
         RubyArray result = runtime.newArray();
-        Encoding enc = pattern.getEncoding();
+        Encoding enc = getEncodingForKCodeDefault(runtime, pattern, pat);
+        
         boolean captures = pattern.numberOfCaptures() != 0;
 
         int end, beg = 0;
@@ -4249,6 +4250,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared(runtime, beg, len - beg));
         return result;
+    }
+
+    private Encoding getEncodingForKCodeDefault(Ruby runtime, Regex pattern, IRubyObject pat) {
+        Encoding enc = pattern.getEncoding();
+        if (enc != runtime.getKCode().getEncoding() && pat instanceof RubyRegexp) {
+            RubyRegexp regexp = (RubyRegexp) pat;
+            if (regexp.isKCodeDefault()) {
+                enc = runtime.getKCode().getEncoding();
+            }
+        }
+        return enc;
     }
 
     private void populateCapturesForSplit(Ruby runtime, RubyArray result, Matcher matcher, boolean is19) {
