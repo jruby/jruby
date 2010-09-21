@@ -7,10 +7,13 @@ import java.io.FileWriter;
 import junit.framework.TestCase;
 
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.RubyString;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static java.io.File.*;
 
 public class ShellLauncherTest extends TestCase {
 
@@ -101,5 +104,18 @@ public class ShellLauncherTest extends TestCase {
         } catch (Exception e) {
             // skip this one, probably no 'ls' (windows)
         }
+    }
+    public void testUsesRubyEnvPathToRunShellPrograms() {
+        RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
+        env.put("PATH", env.get("PATH") + File.pathSeparator + System.getProperty("jruby.home") + "/test/org/jruby/util");
+
+        String cmd = "shell_launcher_test";
+        if (Platform.IS_WINDOWS) {
+            cmd += ".bat";
+        }
+        int code = ShellLauncher.runAndWait(runtime, new IRubyObject[] {
+           RubyString.newString(runtime, cmd)
+        });
+        assertEquals(0, code);
     }
 }
