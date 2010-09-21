@@ -953,7 +953,7 @@ RUBY_DLLSPEC VALUE rb_inspect(VALUE obj);
 RUBY_DLLSPEC VALUE rb_obj_as_string(VALUE obj);
 RUBY_DLLSPEC void jruby_infect(VALUE object1, VALUE object2);
 RUBY_DLLSPEC VALUE rb_obj_dup(VALUE obj);
-
+RUBY_DLLSPEC VALUE rb_obj_id(VALUE obj);
 
 RUBY_DLLSPEC VALUE rb_attr_get(VALUE obj, ID id);
 
