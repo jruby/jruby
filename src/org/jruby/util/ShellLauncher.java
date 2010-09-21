@@ -75,7 +75,6 @@ public class ShellLauncher {
     private static final boolean DEBUG = false;
 
     private static final String PATH_ENV = "PATH";
-    private static final String HOME_ENV = "HOME";
 
     // from MRI -- note the unixy file separators
     private static final String[] DEFAULT_PATH =
@@ -330,7 +329,8 @@ public class ShellLauncher {
     }
 
     private static File findPathExecutable(Ruby runtime, String fname) {
-        String path = System.getenv(PATH_ENV);
+        RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
+        String path = env.get(PATH_ENV).toString();
         String[] pathNodes = null;
         if (path == null) {
             pathNodes = DEFAULT_PATH; // ASSUME: not modified by callee
