@@ -3967,6 +3967,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     final IRubyObject uptoCommon19(ThreadContext context, IRubyObject arg, boolean excl, Block block, boolean asASymbol) {
         Ruby runtime = context.getRuntime();
+        if (arg instanceof RubySymbol) {
+            throw runtime.newTypeError("can't convert Symbol into String");
+        }
         RubyString end = arg.convertToString();
         Encoding enc = checkEncoding(end);
 
@@ -3996,6 +3999,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             IRubyObject afterEnd = end.callMethod(context, "succ");
             RubyString current = this;
             while (!current.op_equal19(context, afterEnd).isTrue()) {
+                if (current.value.getRealSize() > end.value.getRealSize() || current.value.getRealSize() == 0) break;
                 IRubyObject argument = current;
                 if (asASymbol) {
                     argument = runtime.newSymbol(current.toString());
@@ -4004,7 +4008,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 if (!excl && current.op_equal19(context, end).isTrue()) break;
                 current = current.callMethod(context, "succ").convertToString();
                 if (excl && current.op_equal19(context, end).isTrue()) break;
-                if (current.value.getRealSize() > end.value.getRealSize() || current.value.getRealSize() == 0) break;
             }
         }
         return this;
