@@ -3,6 +3,15 @@
 JRUBY_BASEDIR = $(shell pwd)/../../
 JRUBY_CLASSES = $(JRUBY_BASEDIR)/build/classes/jruby/
 
+GCC_VERSION := $(strip $(shell gcc --version))
+ifneq ($(strip $(findstring 4.,$(GCC_VERSION))),)
+  ifeq ($(strip $(findstring 4.0,$(GCC_VERSION))),)
+    ifeq ($(strip $(findstring 4.1,$(GCC_VERSION))),)
+      SUPPORTED_GCC := $(GCC_VERSION)
+    endif
+  endif
+endif
+
 BUILD_OS := $(strip $(shell uname -s | tr '[:upper:]' '[:lower:]'))
 OS ?= $(BUILD_OS)
 ifeq ($(OS),sunos)
@@ -227,13 +236,20 @@ endif
 
 JAVA_HDRS = $(patsubst %.h, $(BUILD_DIR)/%.h, org_jruby_cext_JRuby.h org_jruby_cext_Native.h org_jruby_cext_GC.h  org_jruby_runtime_ClassIndex.h)
 
-all:	$(LIBCEXT)
+all:
+ifndef SUPPORTED_GCC
+	@echo "Only GCCs above or equal to 4.2 are supported for JRuby C extensions"
+	@echo "$(GCC_VERSION)"
+else
+	@$(MAKE) compile
+endif
 
-compile:	all
+
+compile:	$(LIBCEXT)
 
 debug : DBG_FLAGS=-DDEBUG -g -O0
 
-debug: all
+debug: compile
 	@echo OS="$(OS)"
 	@echo BUILD_OS="$(BUILD_OS)"
 	@echo BUILD_DIR="$(BUILD_DIR)"
