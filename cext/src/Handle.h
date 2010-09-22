@@ -230,9 +230,8 @@ namespace jruby {
     extern Symbol* resolveSymbolById(ID id);
 
     inline Symbol* lookupSymbolById(ID id) {
-        Symbol* sym;
-        if (likely(id < symbols.size() && (sym  = symbols[id]) != NULL)) {
-            return sym;
+        if (likely(id < symbols.size() && (symbols[id] != NULL))) {
+            return symbols[id];
         }
         return resolveSymbolById(id);
     }

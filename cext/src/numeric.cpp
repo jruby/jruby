@@ -162,10 +162,9 @@ jobject
 jruby::fixnumToObject(JNIEnv* env, VALUE v)
 {
     SIGNED_VALUE i  = RSHIFT((SIGNED_VALUE) v, 1);
-    jobject obj;
 
-    if (likely(i >= -CACHE_OFFSET && i < CACHE_OFFSET && (obj = fixnumCache[i + CACHE_OFFSET]) != NULL)) {
-        return obj;
+    if (likely(i >= -CACHE_OFFSET && i < CACHE_OFFSET && fixnumCache[i + CACHE_OFFSET] != NULL)) {
+        return fixnumCache[i + CACHE_OFFSET];
     }
 
     jvalue params[2];
