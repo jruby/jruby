@@ -8,6 +8,18 @@
 # This script selects the branch to use against with the version number, i.e: jruby-ruby_1_8_7 or jruby-ruby_1_9_2.
 #
 # usage: sync_ruby <tests|stdlib|all> <version(1_8_7|1_9_2)> <jruby ruby fork clone> <jruby dir>
+#
+# Example:
+# 
+# The JRuby ruby fork is in ../jruby-ruby, and jruby is in the current directory.
+# We want to sync both 1.8.7 standard libraries.
+# 
+# $ jruby tool/sync_ruby stdlib 1_8_7 ../jruby-ruby .
+# ~/projects/jruby ➔ jruby tool/sync_ruby stdlib 1_8_7 ../jruby-ruby .
+# Already on 'jruby-ruby_1_8_7'
+# cp -r ../jruby-ruby/lib/English.rb ./lib/ruby/1.8
+# cp -r ../jruby-ruby/lib/Env.rb ./lib/ruby/1.8
+# ...
 
 require 'fileutils'
 
