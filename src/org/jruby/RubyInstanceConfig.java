@@ -651,9 +651,11 @@ public class RubyInstanceConfig {
 
     public void tryProcessArgumentsWithRubyopts() {
         try {
-            String rubyopt = System.getenv("RUBYOPT");
-            if (rubyopt == null && environment != null && environment.containsKey("RUBYOPT")) {
+            String rubyopt = null;
+            if (environment != null && environment.containsKey("RUBYOPT")) {
                 rubyopt = environment.get("RUBYOPT").toString();
+            } else {
+                rubyopt = System.getenv("RUBYOPT");
             }
             if (rubyopt != null) {
                 String[] rubyoptArgs = rubyopt.split("\\s+");
