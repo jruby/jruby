@@ -978,6 +978,9 @@ typedef void rb_unblock_function_t(void *);
 RUBY_DLLSPEC VALUE rb_thread_blocking_region(rb_blocking_function_t func, void* data, rb_unblock_function_t, void*);
 /** Block other threads and wait until the system select returns */
 RUBY_DLLSPEC int rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct timeval *timeout);
+RUBY_DLLSPEC void rb_thread_wait_fd_rw(int fd, int read);
+RUBY_DLLSPEC void rb_thread_wait_fd(int f);
+RUBY_DLLSPEC int rb_thread_fd_writable(int f);
 
 /** The currently executing thread */
 RUBY_DLLSPEC VALUE rb_thread_current(void);

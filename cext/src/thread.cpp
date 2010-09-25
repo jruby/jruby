@@ -128,3 +128,44 @@ rb_thread_blocking_region(rb_blocking_function_t func, void* data, rb_unblock_fu
     return (VALUE)(j2p(jret));
 }
 
+extern "C" void
+rb_thread_wait_fd_rw(int fd, int read)
+{
+    int result = 0;
+
+    if (fd < 0) {
+        rb_raise(rb_eIOError, "closed stream");
+    }
+
+    if (rb_thread_alone()) return;
+
+    while (result <= 0) {
+        fd_set set;
+        FD_ZERO(&set);
+        FD_SET(fd, &set);
+
+        if (read) {
+            result = rb_thread_select(fd + 1, &set, 0, 0, 0);
+        } else {
+            result = rb_thread_select(fd + 1, 0, &set, 0, 0);
+        }
+
+        if (result < 0) {
+            rb_sys_fail(0);
+        }
+    }
+}
+
+extern "C" void
+rb_thread_wait_fd(int f)
+{
+    rb_thread_wait_fd_rw(f, 1);
+}
+
+extern "C" int
+rb_thread_fd_writable(int f)
+{
+    rb_thread_wait_fd_rw(f, 0);
+    return Qtrue;
+}
+
