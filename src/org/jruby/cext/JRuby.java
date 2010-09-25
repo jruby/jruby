@@ -299,10 +299,8 @@ public class JRuby {
         int lockCount = GIL.releaseAllLocks();
         try {
             thread.executeBlockingTask(task);
-        } catch (InterruptedException e) {
-        } finally {
-            GIL.acquire(lockCount);
-        }
+        } catch (InterruptedException e) {}
+        GIL.acquire(lockCount);
         return task.retval;
     }
 }
