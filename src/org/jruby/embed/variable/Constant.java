@@ -148,7 +148,7 @@ public class Constant extends AbstractVariable {
         if (rubyClass == null) rubyClass = runtime.getCurrentContext().getRubyClass();
         if (rubyClass == null) return;
         rubyClass.storeConstant(name, irubyObject);
-        rubyClass.invalidateCacheDescendants();
+        runtime.incrementConstantGeneration();
         initialized = true;
     }
 
