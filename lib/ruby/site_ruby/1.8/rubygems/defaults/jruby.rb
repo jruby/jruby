@@ -6,28 +6,47 @@ module Gem
   ConfigFile::PLATFORM_DEFAULTS['install'] = '--env-shebang'
   ConfigFile::PLATFORM_DEFAULTS['update']  = '--env-shebang'
 
-  @jar_paths = []
-
   class << self
     alias_method :original_ensure_gem_subdirectories, :ensure_gem_subdirectories
     def ensure_gem_subdirectories(gemdir)
       original_ensure_gem_subdirectories(gemdir) unless jarred_path? gemdir.to_s
     end
-
-    alias_method :original_set_paths, :set_paths
+    
+    JAR_URL_TOKEN = 'jar:file://'
+    URL_TOKEN = '://'
+    JAR_URL_MARKER = '__THIS_IS_A_JAR_URL__'
+    URL_MARKER = '__THIS_IS_A_URL__'
+    
+    # This is mostly a duplicate of stock RubyGems' set_paths
+    # but with logic to avoid damaging URLs in GEM_PATH.
     def set_paths(gpaths)
-      original_set_paths(gpaths)
-      @gem_path.reject! {|p| !readable_path? p }
-      @jar_paths.each {|p| @gem_path << p unless @gem_path.include?(p) } if @jar_paths
-    end
-
-    alias_method :original_default_path, :default_path
-    def default_path
-      paths = RbConfig::CONFIG["default_gem_path"]
-      paths = paths.split(':').reject {|p| p.empty? }.compact if paths
-      paths ||= original_default_path
-      @jar_paths = paths.select {|p| jarred_path? p }
-      paths.reject {|p| jarred_path? p }
+      if gpaths
+        
+        # hack to mask URLs so they don't split on :
+        new_gpaths = gpaths.gsub JAR_URL_TOKEN, JAR_URL_MARKER
+        new_gpaths = new_gpaths.gsub URL_TOKEN, URL_MARKER
+        
+        @gem_path = new_gpaths.split(File::PATH_SEPARATOR)
+        
+        if File::ALT_SEPARATOR then
+          @gem_path.map! do |path|
+            path.gsub File::ALT_SEPARATOR, File::SEPARATOR
+          end
+        end
+        
+        # put back URL structure
+        @gem_path.map! do |path|
+          path = path.gsub URL_MARKER, URL_TOKEN
+          path = path.gsub JAR_URL_MARKER, JAR_URL_TOKEN
+        end
+        
+        @gem_path << Gem.dir
+      else
+        # TODO: should this be Gem.default_path instead?
+        @gem_path = [Gem.dir]
+      end
+      
+      @gem_path.uniq!
     end
 
     alias_method :original_ruby, :ruby
@@ -37,10 +56,6 @@ module Gem
         ruby_path = "java -jar #{ruby_path.sub(/^file:/,"").sub(/!.*/,"")}"
       end
       ruby_path
-    end
-
-    def readable_path?(p)
-      p =~ /^file:/ || File.exists?(p)
     end
 
     def jarred_path?(p)
