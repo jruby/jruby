@@ -89,7 +89,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
 
     private Object evaluate(ScriptContext context, String script) throws ScriptException {
         if (this.context != context) setContext(context);
-        injectGlobalBinsings(context);
+        injectGlobalBindings(context);
         container.setScriptFilename(Utils.getFilename(this));
         try {
             EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(this));
@@ -104,7 +104,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         }
     }
 
-    private void injectGlobalBinsings(ScriptContext context) {
+    private void injectGlobalBindings(ScriptContext context) {
         Bindings globalMap = context.getBindings(ScriptContext.GLOBAL_SCOPE);
         if (globalMap == null) return;
 
@@ -155,7 +155,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
 
     private Object evaluate(ScriptContext context, Reader reader) throws ScriptException {
         if (this.context != context) setContext(context);
-        injectGlobalBinsings(context);
+        injectGlobalBindings(context);
         String filename = Utils.getFilename(this);
         try {
             EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(this));
