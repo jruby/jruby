@@ -485,6 +485,9 @@ JAVA
   end
 
   class RubyMethod
+    # How many arguments we can invoke without needing to box arguments
+    MAX_UNBOXED_ARITY_LENGTH = 3
+
     def initialize(ruby_class, name, java_signature = nil, annotations = [])
       @ruby_class = ruby_class
       @name = name
@@ -498,6 +501,10 @@ JAVA
 
     def constructor?
       false
+    end
+
+    def arity
+      typed_args.size
     end
 
     def to_s
@@ -524,7 +531,13 @@ JAVA
     end
 
     def conversion_string(var_names)
-      var_names.map { |a| "        IRubyObject ruby_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
+      if arity <= MAX_UNBOXED_ARITY_LENGTH
+        var_names.map { |a| "        IRubyObject ruby_#{a} = JavaUtil.convertJavaToRuby(__ruby__, #{a});"}.join("\n")
+      else
+        str =  "        IRubyObject ruby_args[] = new IRubyObject[#{arity}];\n"
+        var_names.each_with_index { |a, i| str += "        ruby_args[#{i}] = JavaUtil.convertJavaToRuby(__ruby__, #{a});\n" }
+        str
+      end
     end
 
     # FIXME: We should allow all valid modifiers
@@ -579,8 +592,12 @@ JAVA
     def passed_args
       return @passed_args if @passed_args
 
-      @passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
-      @passed_args = ', ' + @passed_args if args.size > 0
+      if arity <= MAX_UNBOXED_ARITY_LENGTH
+        @passed_args = var_names.map {|a| "ruby_#{a}"}.join(', ')
+        @passed_args = ', ' + @passed_args if args.size > 0
+      else
+        @passed_args = ", ruby_args";
+      end
     end
 
     def return_type
