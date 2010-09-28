@@ -24,14 +24,19 @@ import org.objectweb.asm.MethodVisitor;
 public class InvokeDynamicSupport {
     public static class JRubyCallSite extends CallSite {
         private final CallType callType;
+        private final MethodType type;
 
-        public JRubyCallSite(Class caller, String name, MethodType type, CallType callType) {
-            super(caller, name, type);
+        public JRubyCallSite(MethodType type, CallType callType) {
+            this.type = type;
             this.callType = callType;
         }
 
         public CallType callType() {
             return callType;
+        }
+
+        public MethodType type() {
+            return type;
         }
     }
 
@@ -39,12 +44,12 @@ public class InvokeDynamicSupport {
         JRubyCallSite site;
 
         if (name == "call") {
-            site = new JRubyCallSite(caller, name, type, CallType.NORMAL);
+            site = new JRubyCallSite(type, CallType.NORMAL);
         } else {
-            site = new JRubyCallSite(caller, name, type, CallType.FUNCTIONAL);
+            site = new JRubyCallSite(type, CallType.FUNCTIONAL);
         }
         
-        MethodType fallbackType = type.insertParameterType(0, JRubyCallSite.class);
+        MethodType fallbackType = type.insertParameterTypes(0, JRubyCallSite.class);
         MethodHandle myFallback = MethodHandles.insertArguments(
                 findStatic(InvokeDynamicSupport.class, "fallback",
                 fallbackType),
@@ -65,7 +70,7 @@ public class InvokeDynamicSupport {
         mv.invokestatic(p(InvokeDynamicSupport.class), "registerBootstrap", sig(void.class, Class.class));
     }
 
-    private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, CallSite site) {
+    private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
         MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry);
         MethodHandle myTarget = MethodHandles.insertArguments(target, 0, entry);
         MethodHandle myFallback = MethodHandles.insertArguments(fallback, 0, site);
@@ -301,12 +306,12 @@ public class InvokeDynamicSupport {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.getRuntime().getNil(), "retry outside of rescue not supported");
     }
 
-    private static final MethodType BOOTSTRAP_TYPE = MethodType.make(CallSite.class, Class.class, String.class, MethodType.class);
+    private static final MethodType BOOTSTRAP_TYPE = MethodType.methodType(CallSite.class, Class.class, String.class, MethodType.class);
     private static final MethodHandle BOOTSTRAP = findStatic(InvokeDynamicSupport.class, "bootstrap", BOOTSTRAP_TYPE);
 
     private static final MethodHandle GETMETHOD;
     static {
-        MethodHandle getMethod = findStatic(InvokeDynamicSupport.class, "getMethod", MethodType.make(DynamicMethod.class, CacheEntry.class));
+        MethodHandle getMethod = findStatic(InvokeDynamicSupport.class, "getMethod", MethodType.methodType(DynamicMethod.class, CacheEntry.class));
         getMethod = MethodHandles.dropArguments(getMethod, 0, RubyClass.class);
         getMethod = MethodHandles.dropArguments(getMethod, 2, ThreadContext.class, IRubyObject.class, IRubyObject.class);
         GETMETHOD = getMethod;
@@ -319,7 +324,7 @@ public class InvokeDynamicSupport {
     private static final MethodHandle PGC = MethodHandles.dropArguments(
             MethodHandles.dropArguments(
                 findStatic(InvokeDynamicSupport.class, "pollAndGetClass",
-                    MethodType.make(RubyClass.class, ThreadContext.class, IRubyObject.class)),
+                    MethodType.methodType(RubyClass.class, ThreadContext.class, IRubyObject.class)),
                 1,
                 IRubyObject.class),
             0,
@@ -327,7 +332,7 @@ public class InvokeDynamicSupport {
 
     private static final MethodHandle TEST = MethodHandles.dropArguments(
             findStatic(InvokeDynamicSupport.class, "test",
-                MethodType.make(boolean.class, CacheEntry.class, IRubyObject.class)),
+                MethodType.methodType(boolean.class, CacheEntry.class, IRubyObject.class)),
             1,
             ThreadContext.class, IRubyObject.class);
 
@@ -374,11 +379,11 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TARGET_0;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
+        target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class));
         target = MethodHandles.permuteArguments(
                 target,
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class),
+                MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class),
                 new int[] {0,3,5,1,6});
         // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String
         target = MethodHandles.foldArguments(target, GETMETHOD_0);
@@ -388,7 +393,7 @@ public class InvokeDynamicSupport {
         TARGET_0 = target;
     }
     private static final MethodHandle FALLBACK_0 = findStatic(InvokeDynamicSupport.class, "fallback",
-            MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
 
     private static final MethodHandle PGC_1 = dropNameAndArgs(PGC, 4, 1, false);
     private static final MethodHandle GETMETHOD_1 = dropNameAndArgs(GETMETHOD, 5, 1, false);
@@ -396,13 +401,13 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TARGET_1;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
         // IRubyObject, DynamicMethod, ThreadContext, IRubyObject, RubyModule, String, IRubyObject
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class));
+        target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class));
         // IRubyObject, DynamicMethod, ThreadContext, IRubyObject, RubyClass, String, IRubyObject
         target = MethodHandles.permuteArguments(
                 target,
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class),
+                MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class),
                 new int[] {0,3,5,1,6,7});
         // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, IRubyObject
         target = MethodHandles.foldArguments(target, GETMETHOD_1);
@@ -412,7 +417,7 @@ public class InvokeDynamicSupport {
         TARGET_1 = target;
     }
     private static final MethodHandle FALLBACK_1 = findStatic(InvokeDynamicSupport.class, "fallback",
-            MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
 
     private static final MethodHandle PGC_2 = dropNameAndArgs(PGC, 4, 2, false);
     private static final MethodHandle GETMETHOD_2 = dropNameAndArgs(GETMETHOD, 5, 2, false);
@@ -420,11 +425,11 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TARGET_2;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
+        target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class));
         target = MethodHandles.permuteArguments(
                 target,
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class),
+                MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class),
                 new int[] {0,3,5,1,6,7,8});
         // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
         target = MethodHandles.foldArguments(target, GETMETHOD_2);
@@ -434,7 +439,7 @@ public class InvokeDynamicSupport {
         TARGET_2 = target;
     }
     private static final MethodHandle FALLBACK_2 = findStatic(InvokeDynamicSupport.class, "fallback",
-            MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
 
     private static final MethodHandle PGC_3 = dropNameAndArgs(PGC, 4, 3, false);
     private static final MethodHandle GETMETHOD_3 = dropNameAndArgs(GETMETHOD, 5, 3, false);
@@ -442,11 +447,11 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TARGET_3;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
         target = MethodHandles.permuteArguments(
                 target,
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class),
+                MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class),
                 new int[] {0,3,5,1,6,7,8,9});
         // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
         target = MethodHandles.foldArguments(target, GETMETHOD_3);
@@ -456,7 +461,7 @@ public class InvokeDynamicSupport {
         TARGET_3 = target;
     }
     private static final MethodHandle FALLBACK_3 = findStatic(InvokeDynamicSupport.class, "fallback",
-            MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
     private static final MethodHandle PGC_N = dropNameAndArgs(PGC, 4, -1, false);
     private static final MethodHandle GETMETHOD_N = dropNameAndArgs(GETMETHOD, 5, -1, false);
@@ -464,11 +469,11 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TARGET_N;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class));
+        target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class));
         target = MethodHandles.permuteArguments(
                 target,
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class),
+                MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class),
                 new int[] {0,3,5,1,6,7});
         // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
         target = MethodHandles.foldArguments(target, GETMETHOD_N);
@@ -478,18 +483,18 @@ public class InvokeDynamicSupport {
         TARGET_N = target;
     }
     private static final MethodHandle FALLBACK_N = findStatic(InvokeDynamicSupport.class, "fallback",
-            MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
 
     private static final MethodHandle BREAKJUMP;
     static {
         MethodHandle breakJump = findStatic(
                 InvokeDynamicSupport.class,
                 "handleBreakJump",
-                MethodType.make(IRubyObject.class, JumpException.BreakJump.class, ThreadContext.class));
+                MethodType.methodType(IRubyObject.class, JumpException.BreakJump.class, ThreadContext.class));
         // BreakJump, ThreadContext
         breakJump = MethodHandles.permuteArguments(
                 breakJump,
-                MethodType.make(IRubyObject.class, JumpException.BreakJump.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class),
+                MethodType.methodType(IRubyObject.class, JumpException.BreakJump.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class),
                 new int[] {0,2});
         // BreakJump, CacheEntry, ThreadContext, IRubyObject, IRubyObject
         BREAKJUMP = breakJump;
@@ -500,11 +505,11 @@ public class InvokeDynamicSupport {
         MethodHandle retryJump = findStatic(
                 InvokeDynamicSupport.class,
                 "retryJumpError",
-                MethodType.make(IRubyObject.class, ThreadContext.class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class));
         // ThreadContext
         retryJump = MethodHandles.permuteArguments(
                 retryJump,
-                MethodType.make(IRubyObject.class, JumpException.RetryJump.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class),
+                MethodType.methodType(IRubyObject.class, JumpException.RetryJump.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class),
                 new int[] {2});
         // RetryJump, CacheEntry, ThreadContext, IRubyObject, IRubyObject
         RETRYJUMP = retryJump;
@@ -516,11 +521,11 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TARGET_0_B;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, Block.class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
+        target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, Block.class));
         target = MethodHandles.permuteArguments(
                 target,
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class),
+                MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class),
                 new int[] {0,3,5,1,6,7});
         // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
         target = MethodHandles.foldArguments(target, GETMETHOD_0_B);
@@ -536,7 +541,7 @@ public class InvokeDynamicSupport {
         TARGET_0_B = target;
     }
     private static final MethodHandle FALLBACK_0_B = findStatic(InvokeDynamicSupport.class, "fallback",
-            MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
 
     private static final MethodHandle PGC_1_B = dropNameAndArgs(PGC, 4, 1, true);
     private static final MethodHandle GETMETHOD_1_B = dropNameAndArgs(GETMETHOD, 5, 1, true);
@@ -544,11 +549,11 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TARGET_1_B;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, Block.class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
+        target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, Block.class));
         target = MethodHandles.permuteArguments(
                 target,
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class),
+                MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class),
                 new int[] {0,3,5,1,6,7,8});
         // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
         target = MethodHandles.foldArguments(target, GETMETHOD_1_B);
@@ -564,7 +569,7 @@ public class InvokeDynamicSupport {
         TARGET_1_B = target;
     }
     private static final MethodHandle FALLBACK_1_B = findStatic(InvokeDynamicSupport.class, "fallback",
-            MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
 
     private static final MethodHandle PGC_2_B = dropNameAndArgs(PGC, 4, 2, true);
     private static final MethodHandle GETMETHOD_2_B = dropNameAndArgs(GETMETHOD, 5, 2, true);
@@ -572,11 +577,11 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TARGET_2_B;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+        target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
         target = MethodHandles.permuteArguments(
                 target,
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class),
+                MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class),
                 new int[] {0,3,5,1,6,7,8,9});
         // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
         target = MethodHandles.foldArguments(target, GETMETHOD_2_B);
@@ -592,7 +597,7 @@ public class InvokeDynamicSupport {
         TARGET_2_B = target;
     }
     private static final MethodHandle FALLBACK_2_B = findStatic(InvokeDynamicSupport.class, "fallback",
-            MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
 
     private static final MethodHandle PGC_3_B = dropNameAndArgs(PGC, 4, 3, true);
     private static final MethodHandle GETMETHOD_3_B = dropNameAndArgs(GETMETHOD, 5, 3, true);
@@ -600,11 +605,11 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TARGET_3_B;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+        target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
         target = MethodHandles.permuteArguments(
                 target,
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class),
+                MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class),
                 new int[] {0,3,5,1,6,7,8,9,10});
         // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
         target = MethodHandles.foldArguments(target, GETMETHOD_3_B);
@@ -620,7 +625,7 @@ public class InvokeDynamicSupport {
         TARGET_3_B = target;
     }
     private static final MethodHandle FALLBACK_3_B = findStatic(InvokeDynamicSupport.class, "fallback",
-            MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
     private static final MethodHandle PGC_N_B = dropNameAndArgs(PGC, 4, -1, true);
     private static final MethodHandle GETMETHOD_N_B = dropNameAndArgs(GETMETHOD, 5, -1, true);
@@ -628,11 +633,11 @@ public class InvokeDynamicSupport {
     private static final MethodHandle TARGET_N_B;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                MethodType.make(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
-        target = MethodHandles.convertArguments(target, MethodType.make(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class, Block.class));
+                MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
+        target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class, Block.class));
         target = MethodHandles.permuteArguments(
                 target,
-                MethodType.make(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class),
+                MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class),
                 new int[] {0,3,5,1,6,7,8});
         // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
         target = MethodHandles.foldArguments(target, GETMETHOD_N_B);
@@ -648,7 +653,7 @@ public class InvokeDynamicSupport {
         TARGET_N_B = target;
     }
     private static final MethodHandle FALLBACK_N_B = findStatic(InvokeDynamicSupport.class, "fallback",
-                    MethodType.make(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
+                    MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
     
     private static MethodHandle findStatic(Class target, String name, MethodType type) {
         try {
