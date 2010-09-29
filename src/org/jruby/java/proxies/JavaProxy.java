@@ -39,6 +39,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.JRubyObjectInputStream;
 
 public class JavaProxy extends RubyObject {
     private static final boolean DEBUG = false;
@@ -374,7 +375,7 @@ public class JavaProxy extends RubyObject {
         try {
             ByteList byteList = str.convertToString().getByteList();
             ByteArrayInputStream bais = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-            ObjectInputStream ois = new ObjectInputStream(bais);
+            ObjectInputStream ois = new JRubyObjectInputStream(context.getRuntime(), bais);
 
             object = ois.readObject();
 
