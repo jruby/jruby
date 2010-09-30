@@ -186,7 +186,10 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
-    protected InetSocketAddress getLocalSocket() {
+    protected InetSocketAddress getLocalSocket(String caller) {
+        if (!openFile.isOpen()) {
+            throw getRuntime().newIOError("`"+ caller + "': closed stream");
+        }
         Channel socketChannel = openFile.getMainStream().getDescriptor().getChannel();
         if (socketChannel instanceof SocketChannel) {
             return (InetSocketAddress)((SocketChannel)socketChannel).socket().getLocalSocketAddress();
@@ -590,14 +593,24 @@ public class RubyBasicSocket extends RubyIO {
         return getsockname(getRuntime().getCurrentContext());
     }
 
-    @JRubyMethod(name = {"getsockname", "__getsockname"})
+    @JRubyMethod(name = "getsockname")
     public IRubyObject getsockname(ThreadContext context) {
-        SocketAddress sock = getLocalSocket();
+        return getSocknameCommon(context, "getsockname");
+    }
+
+    @JRubyMethod(name = "__getsockname")
+    public IRubyObject getsockname_u(ThreadContext context) {
+        return getSocknameCommon(context, "__getsockname");
+    }
+
+    protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
+        SocketAddress sock = getLocalSocket(caller);
         if(null == sock) {
             return RubySocket.pack_sockaddr_in(context, null, 0, "0.0.0.0");
         }
         return context.getRuntime().newString(sock.toString());
     }
+
     @Deprecated
     public IRubyObject getpeername() {
         return getpeername(getRuntime().getCurrentContext());

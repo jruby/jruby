@@ -88,7 +88,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     }
     @JRubyMethod
     public IRubyObject addr(ThreadContext context) {
-        InetSocketAddress address = getLocalSocket();
+        InetSocketAddress address = getLocalSocket("addr");
         if (address == null) {
             throw context.getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
         }
@@ -107,16 +107,16 @@ public class RubyIPSocket extends RubyBasicSocket {
         return addrFor(context, address);
     }
     @Override
-    public IRubyObject getsockname(ThreadContext context) {
-        InetSocketAddress sock = getLocalSocket();
+    protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
+        InetSocketAddress sock = getLocalSocket(caller);
         if (sock == null) {
             return RubySocket.pack_sockaddr_in(context, this, 0, "");
-	} else {
-	    String addr = sock.getAddress().getHostAddress();
-	    return RubySocket.pack_sockaddr_in(context, this,
-					       sock.getPort(),
-					       addr);
-	}
+        } else {
+            String addr = sock.getAddress().getHostAddress();
+            return RubySocket.pack_sockaddr_in(context, this,
+                               sock.getPort(),
+                               addr);
+        }
     }
     @Override
     public IRubyObject getpeername(ThreadContext context) {

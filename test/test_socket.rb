@@ -417,4 +417,13 @@ class ServerTest < Test::Unit::TestCase
   ensure
     socket.close
   end
+
+  # JRUBY-5111
+  def test_server_methods_with_closed_socket
+    socket = TCPServer.new("127.0.0.1", 7777)
+    socket.close
+    assert_raises(IOError) { socket.addr }
+    assert_raises(IOError) { socket.getsockname }
+    assert_raises(IOError) { socket.__getsockname }
+  end
 end
