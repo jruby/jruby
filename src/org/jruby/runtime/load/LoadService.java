@@ -677,6 +677,17 @@ public class LoadService {
                 searchFile = file;
             }
         }
+        
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(this.getClass().getName()).append(": ");
+            sb.append("library=").append(library.toString());
+            sb.append(", loadName=").append(loadName);
+            sb.append(", suffixType=").append(suffixType.toString());
+            sb.append(", searchFile=").append(searchFile);
+            return sb.toString();
+        }
     }
     
     protected boolean tryLoadingLibraryOrScript(Ruby runtime, SearchState state) {
