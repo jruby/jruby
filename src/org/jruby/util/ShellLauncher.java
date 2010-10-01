@@ -331,13 +331,14 @@ public class ShellLauncher {
 
     private static File findPathExecutable(Ruby runtime, String fname) {
         RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
-        String path = env.get(PATH_ENV).toString();
+        Object pathObject = env.get(PATH_ENV);
         String[] pathNodes = null;
-        if (path == null) {
+        if (pathObject == null) {
             pathNodes = DEFAULT_PATH; // ASSUME: not modified by callee
         }
         else {
             String pathSeparator = System.getProperty("path.separator");
+            String path = pathObject.toString();
             if (Platform.IS_WINDOWS) {
                 // Windows-specific behavior
                 path = "." + pathSeparator + path;
