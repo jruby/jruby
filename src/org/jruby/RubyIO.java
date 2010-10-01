@@ -2388,16 +2388,31 @@ public class RubyIO extends RubyObject {
      * 
      * @param number to push back
      */
-    @JRubyMethod(name = "ungetc", required = 1)
+    @JRubyMethod(name = "ungetc", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject ungetc(IRubyObject number) {
-        int ch = RubyNumeric.fix2int(number);
-        
         OpenFile myOpenFile = getOpenFileChecked();
         
         if (!myOpenFile.isReadBuffered()) {
             throw getRuntime().newIOError("unread stream");
         }
-        
+
+        return ungetcCommon(number, myOpenFile);
+    }
+
+    @JRubyMethod(name = "ungetc", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject ungetc19(IRubyObject number) {
+        OpenFile myOpenFile = getOpenFileChecked();
+
+        if (!myOpenFile.isReadBuffered()) {
+            return getRuntime().getNil();
+        }
+
+        return ungetcCommon(number, myOpenFile);
+    }
+
+    private IRubyObject ungetcCommon(IRubyObject number, OpenFile myOpenFile) {
+        int ch = RubyNumeric.fix2int(number);
+
         try {
             myOpenFile.checkReadable(getRuntime());
             myOpenFile.setReadBuffered();
