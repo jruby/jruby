@@ -3025,12 +3025,37 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "each_char", frame = true)
     public IRubyObject each_char19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_char(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+        return eachCharCommon(context, block, "each_char");
     }
 
     @JRubyMethod(name = "chars", frame = true)
     public IRubyObject chars19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_char(context, block) : enumeratorize(context.getRuntime(), this, "chars");
+        return eachCharCommon(context, block, "chars");
+    }
+
+    @JRubyMethod(name = "codepoints", frame = true)
+    public IRubyObject codepoints(final ThreadContext context, final Block block) {
+        return eachCodePointCommon(context, block, "codepoints");
+    }
+
+    @JRubyMethod(name = "each_codepoint", frame = true)
+    public IRubyObject each_codepoint(final ThreadContext context, final Block block) {
+        return eachCodePointCommon(context, block, "each_codepoint");
+    }
+
+    private IRubyObject eachCharCommon(final ThreadContext context, final Block block, final String methodName) {
+        return block.isGiven() ? each_char(context, block) : enumeratorize(context.getRuntime(), this, methodName);
+    }
+
+    private IRubyObject eachCodePointCommon(final ThreadContext context, final Block block, final String methodName) {
+        Ruby runtime = context.getRuntime();
+        if (!block.isGiven()) return enumeratorize(runtime, this, methodName);
+        IRubyObject ch;
+
+        while(!(ch = getc()).isNil()) {
+            block.yield(context, ch);
+        }
+        return this;
     }
 
     /** 
