@@ -2988,9 +2988,15 @@ public class RubyIO extends RubyObject {
         return enumeratorize(context.getRuntime(), this, "each_byte");
     }
 
-    @JRubyMethod(name = "lines")
-    public IRubyObject lines(final ThreadContext context) {
+    @JRubyMethod(name = "lines", compat = CompatVersion.RUBY1_8)
+    public IRubyObject lines(final ThreadContext context, Block block) {
         return enumeratorize(context.getRuntime(), this, "each_line");
+    }
+
+    @JRubyMethod(name = "lines", compat = CompatVersion.RUBY1_9)
+    public IRubyObject lines19(final ThreadContext context, Block block) {
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_line");
+        return each_line19(context, NULL_ARRAY, block);
     }
 
     public IRubyObject each_char(final ThreadContext context, final Block block) {
@@ -3033,7 +3039,7 @@ public class RubyIO extends RubyObject {
     public RubyIO each_line(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         ByteList separator = getSeparatorForGets(runtime, args);
-        
+
         ByteListCache cache = new ByteListCache();
         for (IRubyObject line = getline(runtime, separator); !line.isNil(); 
 		line = getline(runtime, separator, cache)) {
