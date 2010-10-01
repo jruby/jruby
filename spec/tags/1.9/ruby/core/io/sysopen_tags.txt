@@ -1,2 +1,1 @@
 fails:IO.sysopen works on directories
-fails:IO.sysopen calls #to_path on first argument

@@ -1099,11 +1099,25 @@ public class RubyIO extends RubyObject {
         return io;
     }
 
-    @JRubyMethod(name = "sysopen", required = 1, optional = 2, frame = true, meta = true)
+    @JRubyMethod(name = "sysopen", required = 1, optional = 2, frame = true, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject sysopen(IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-
         IRubyObject pathString = args[0].convertToString();
+        return sysopenCommon(recv, args, block, pathString);
+    }
+    
+    @JRubyMethod(name = "sysopen", required = 1, optional = 2, frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject sysopen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        IRubyObject pathString;
+        if (!(args[0] instanceof RubyString) && args[0].respondsTo("to_path")) {
+            pathString = args[0].callMethod(context, "to_path");
+        } else {
+            pathString = args[0].convertToString();
+        }
+        return sysopenCommon(recv, args, block, pathString);
+    }
+
+    private static IRubyObject sysopenCommon(IRubyObject recv, IRubyObject[] args, Block block, IRubyObject pathString) {
+        Ruby runtime = recv.getRuntime();
         runtime.checkSafeString(pathString);
         String path = pathString.toString();
 
