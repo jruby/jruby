@@ -1,6 +1,4 @@
 fails:IO::foreach converts second parameter to string and uses as separator, with each to_str calling for each lines of the IOs
 fails:IO::foreach calls #to_path on non-String arguments
-fails:IO.foreach with an object as the separator argument calls #to_str once for each line read to convert it to a String
-fails:IO.foreach with an object as the separator argument calls #to_path on non-String arguments
 fails:IO.foreach when the filename starts with | gets data from the standard out of the subprocess
 fails:IO.foreach when the filename starts with | gets data from a fork when passed -

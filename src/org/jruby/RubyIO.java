@@ -3129,21 +3129,22 @@ public class RubyIO extends RubyObject {
     */
     public static IRubyObject foreach(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
-        int count = args.length;
         IRubyObject filename = args[0].convertToString();
         runtime.checkSafeString(filename);
-       
-        ByteList separator = getSeparatorFromArgs(runtime, args, 1);
 
         RubyIO io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
         
         ByteListCache cache = new ByteListCache();
         if (!io.isNil()) {
             try {
+                ByteList separator = getSeparatorFromArgs(runtime, args, 1);
                 IRubyObject str = io.getline(runtime, separator, cache);
                 while (!str.isNil()) {
                     block.yield(context, str);
                     str = io.getline(runtime, separator, cache);
+                    if (runtime.is1_9()) {
+                        separator = getSeparatorFromArgs(runtime, args, 1);
+                    }
                 }
             } finally {
                 io.close();
@@ -3155,7 +3156,13 @@ public class RubyIO extends RubyObject {
     
     @JRubyMethod(name = "foreach", required = 1, optional = 1, frame = true, meta = true)
     public static IRubyObject foreach19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        return block.isGiven() ? foreach(context, recv, args, block) : enumeratorize(context.getRuntime(), recv, "foreach", args);
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), recv, "foreach", args);
+
+        if (!(args[0] instanceof RubyString) && args[0].respondsTo("to_path")) {
+            args[0] = args[0].callMethod(context, "to_path");
+        }
+
+        return foreach(context, recv, args, block);
     }
 
     private static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
