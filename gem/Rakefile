@@ -62,5 +62,6 @@ Hoe.plugin :gemcutter
 Hoe.spec('jruby-jars') do |p|
   p.version = JRUBY_SRC_VERSION.downcase
   p.rubyforge_name = 'jruby-extras'
+  p.url = 'http://github.com/jruby/jruby/tree/master/gem/'
   p.developer('Charles Oliver Nutter', 'headius@headius.com')
 end
