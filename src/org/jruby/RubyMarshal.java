@@ -148,18 +148,22 @@ public class RubyMarshal {
 
             InputStream rawInput;
             boolean tainted = false;
-            if (in != null && in.respondsTo("read")) {
+            IRubyObject v = in.checkStringType();
+            if (!v.isNil()) {
                 tainted = in.isTaint();
+                ByteList bytes = ((RubyString) v).getByteList();
+                rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(),
+                        bytes.length());
+            } else if (in.respondsTo("getc") && in.respondsTo("read")) {
+                if (in.respondsTo("binmode")) {
+                    RuntimeHelpers.invoke(context, in, "binmode");
+                }
+                tainted = true;
                 rawInput = inputStream(in);
-            } else if (in != null && in.respondsTo("to_str")) {
-                tainted = in.isTaint();
-                RubyString inString = (RubyString) RuntimeHelpers.invoke(context, in, "to_str");
-                ByteList bytes = inString.getByteList();
-                rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             } else {
                 throw recv.getRuntime().newTypeError("instance of IO needed");
             }
-            
+
             UnmarshalStream input = new UnmarshalStream(recv.getRuntime(), rawInput, proc, tainted);
 
             return input.unmarshalObject();
