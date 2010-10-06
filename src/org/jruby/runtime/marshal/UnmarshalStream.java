@@ -86,13 +86,36 @@ public class UnmarshalStream extends InputStream {
         }
     }
 
+    // r_object
     public IRubyObject unmarshalObject() throws IOException {
+        return unmarshalObject(new MarshalState(false));
+    }
+
+    // introduced for keeping ivar read state recursively.
+    private class MarshalState {
+        private boolean ivarWaiting;
+        
+        MarshalState(boolean ivarWaiting) {
+            this.ivarWaiting = ivarWaiting;
+        }
+        
+        boolean isIvarWaiting() {
+            return ivarWaiting;
+        }
+        
+        void setIvarWaiting(boolean ivarWaiting) {
+            this.ivarWaiting = ivarWaiting;
+        }
+    }
+    
+    // r_object0
+    public IRubyObject unmarshalObject(MarshalState state) throws IOException {
         int type = readUnsignedByte();
-        IRubyObject result;
+        IRubyObject result = null;
         if (cache.isLinkType(type)) {
             result = cache.readLink(this, type);
         } else {
-            result = unmarshalObjectDirectly(type);
+            result = unmarshalObjectDirectly(type, state);
         }
 
         if(taint) {
@@ -119,18 +142,15 @@ public class UnmarshalStream extends InputStream {
         if (!value.isClass()) throw runtime.newArgumentError(path + " does not refer class");
         return (RubyClass)value;
     }
-
-    private int ivarBlocksWaiting = 0;
-
-    private IRubyObject unmarshalObjectDirectly(int type) throws IOException {
+    
+    private IRubyObject unmarshalObjectDirectly(int type, MarshalState state) throws IOException {
         IRubyObject rubyObj = null;
         switch (type) {
             case 'I':
-                ++ivarBlocksWaiting;
-                rubyObj = unmarshalObject();
-                if (ivarBlocksWaiting > 0) {
+                MarshalState childState = new MarshalState(true);
+                rubyObj = unmarshalObject(childState);
+                if (childState.isIvarWaiting()) {
                     defaultVariablesUnmarshal(rubyObj);
-                    --ivarBlocksWaiting;
                 }
                 break;
             case '0' :
@@ -200,7 +220,7 @@ public class UnmarshalStream extends InputStream {
                 rubyObj = defaultObjectUnmarshal();
                 break;
             case 'u' :
-                rubyObj = userUnmarshal();
+                rubyObj = userUnmarshal(state);
                 break;
             case 'U' :
                 rubyObj = userNewUnmarshal();
@@ -329,7 +349,7 @@ public class UnmarshalStream extends InputStream {
         return result;
     }
 
-    private IRubyObject userUnmarshal() throws IOException {
+    private IRubyObject userUnmarshal(MarshalState state) throws IOException {
         String className = unmarshalObject().asJavaString();
         ByteList marshaled = unmarshalString();
         RubyModule classInstance = findClass(className);
@@ -337,9 +357,9 @@ public class UnmarshalStream extends InputStream {
             throw runtime.newTypeError("class " + classInstance.getName() + " needs to have method `_load'");
         }
         RubyString data = RubyString.newString(getRuntime(), marshaled);
-        if (ivarBlocksWaiting > 0) {
+        if (state.isIvarWaiting()) {
             defaultVariablesUnmarshal(data);
-            --ivarBlocksWaiting;
+            state.setIvarWaiting(false);
         }
         IRubyObject result = classInstance.callMethod(getRuntime().getCurrentContext(),
             "_load", data);
