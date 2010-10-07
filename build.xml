@@ -112,7 +112,7 @@
       <os family="windows"/>
     </condition>
     <exec executable="/bin/sh" osfamily="unix">
-      <arg line="-c 'test -f ${basedir}/bin/jruby || cp ${basedir}/bin/jruby.sh ${basedir}/bin/jruby'"/>
+      <arg line="-c 'test -f &quot;${basedir}/bin/jruby&quot; || cp &quot;${basedir}/bin/jruby.sh&quot; &quot;${basedir}/bin/jruby&quot;'"/>
     </exec>
     <chmod perm="755" file="${basedir}/bin/jruby"/>
   </target>
