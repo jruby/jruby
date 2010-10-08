@@ -403,8 +403,8 @@ public class RubyKernel {
     @JRubyMethod(name = "Integer", required = 1, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object) {
         if (object instanceof RubyFloat) {
-            double val = ((RubyFloat)object).getDoubleValue(); 
-            if (val > (double) RubyFixnum.MAX && val < (double) RubyFixnum.MIN) {
+            double val = ((RubyFloat)object).getDoubleValue();
+            if (val >= (double) RubyFixnum.MAX || val < (double) RubyFixnum.MIN) {
                 return RubyNumeric.dbl2num(context.getRuntime(),((RubyFloat)object).getDoubleValue());
             }
         } else if (object instanceof RubyFixnum || object instanceof RubyBignum) {
@@ -412,7 +412,7 @@ public class RubyKernel {
         } else if (object instanceof RubyString) {
             return RubyNumeric.str2inum(context.getRuntime(),(RubyString)object,0,true);
         }
-        
+
         IRubyObject tmp = TypeConverter.convertToType(object, context.getRuntime().getInteger(), "to_int", false);
         if (tmp.isNil()) return object.convertToInteger("to_i");
         return tmp;
