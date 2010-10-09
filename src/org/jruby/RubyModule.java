@@ -112,6 +112,8 @@ public class RubyModule extends RubyObject {
             "module_eval",
             "class_eval",
             "instance_eval",
+            "module_exec",
+            "class_exec",
             "instance_exec",
             "binding",
             "local_variables"
@@ -2075,6 +2077,23 @@ public class RubyModule extends RubyObject {
     @Deprecated
     public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
         return specificEval(context, this, args, block);
+    }
+
+    @JRubyMethod(name = {"module_exec", "class_exec"}, frame = true)
+    public IRubyObject module_exec(ThreadContext context, Block block) {
+        if (block.isGiven()) {
+            return yieldUnder(context, this, block);
+        } else {
+            throw context.getRuntime().newLocalJumpErrorNoBlock();
+        }
+    }
+    @JRubyMethod(name = {"module_exec", "class_exec"}, rest = true, frame = true)
+    public IRubyObject module_exec(ThreadContext context, IRubyObject[] args, Block block) {
+        if (block.isGiven()) {
+            return yieldUnder(context, this, args, block);
+        } else {
+            throw context.getRuntime().newLocalJumpErrorNoBlock();
+        }
     }
 
     @JRubyMethod(name = "remove_method", required = 1, rest = true, visibility = PRIVATE)
