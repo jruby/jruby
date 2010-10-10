@@ -27,13 +27,13 @@ class TestUnmarshal < Test::Unit::TestCase
     # need to be big enough for reading unbuffered bytes from ChannelStream.
     obj = Array.new(2000, 60803)
     dump = Marshal.dump(obj)
-    IO.pipe do |piper, pipew|
-      pipew << dump
-      pipew.close
-      Marshal.load(piper).each do |e|
-        assert_equal(60803, e, 'JRUBY-5064')
-      end
+    piper, pipew = IO.pipe
+    pipew << dump
+    pipew.close
+    Marshal.load(piper).each do |e|
+      assert_equal(60803, e, 'JRUBY-5064')
     end
+    piper.close
   end
 
   # TYPE_IVAR from built-in class
