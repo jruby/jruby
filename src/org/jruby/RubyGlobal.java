@@ -62,21 +62,14 @@ import org.jruby.util.KCode;
 public class RubyGlobal {
     
     /**
-     * Obligate string-keyed and string-valued hash, used for ENV and ENV_JAVA
+     * Obligate string-keyed and string-valued hash, used for ENV.
+     * On Windows, the keys are case-insensitive for ENV
      * 
      */
-    public static class StringOnlyRubyHash extends RubyHash {
+    public static class CaseInsensitiveStringOnlyRubyHash extends StringOnlyRubyHash {
         
-        public StringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+        public CaseInsensitiveStringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
             super(runtime, valueMap, defaultValue);
-        }
-
-        @Override
-        public RubyHash to_hash() {
-            Ruby runtime = getRuntime();
-            RubyHash hash = RubyHash.newHash(runtime);
-            hash.replace(runtime.getCurrentContext(), this);
-            return hash;
         }
 
         @Override
@@ -105,28 +98,10 @@ public class RubyGlobal {
                     value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, "to_str"));
         }
 
-        @Override
-        public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
-            return op_aset(context, key, value);
-        }
-        
         @JRubyMethod
         @Override
         public IRubyObject to_s(){
             return getRuntime().newString("ENV");
-        }
-
-        @Override
-        // On Windows, ENV and JAVA_ENV keys are case-insensitive
-        public Object get(Object key) {
-            if (! Platform.IS_WINDOWS)
-                return super.get(key);
-            for (Object k: keys()) {
-                String lowercase_key = k.toString().toLowerCase();
-                if (key.toString().toLowerCase().equals(lowercase_key))
-                    return super.get(k);
-            }
-            return super.get(key);
         }
 
         private RubyString getCorrectKey(IRubyObject key, ThreadContext context) {
@@ -147,6 +122,49 @@ public class RubyGlobal {
             }
             return actualKey;
         }
+    }
+
+    /**
+     * A Pseudo-hash whose keys and values are required to be Strings.
+     * On all platforms, the keys are case-sensitive.
+     * Used for ENV_JAVA.
+     */
+    public static class StringOnlyRubyHash extends RubyHash {
+        public StringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+            super(runtime, valueMap, defaultValue);
+        }
+
+        @Override
+        public RubyHash to_hash() {
+            Ruby runtime = getRuntime();
+            RubyHash hash = RubyHash.newHash(runtime);
+            hash.replace(runtime.getCurrentContext(), this);
+            return hash;
+        }
+
+        @Override
+        public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
+            if (!key.respondsTo("to_str")) {
+                throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
+            }
+            if (!value.respondsTo("to_str") && !value.isNil()) {
+                throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
+            }
+
+            if (value.isNil()) {
+                return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
+            }
+
+            //return super.aset(getRuntime().newString("sadfasdF"), getRuntime().newString("sadfasdF"));
+            return super.op_aset(context, RuntimeHelpers.invoke(context, key, "to_str"),
+                    value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, "to_str"));
+        }
+
+        @Override
+        public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
+            return op_aset(context, key, value);
+        }
+
     }
     
     public static void createGlobals(ThreadContext context, Ruby runtime) {
@@ -320,9 +338,9 @@ public class RubyGlobal {
     		environmentVariableMap = new HashMap();
     	}
 
-        StringOnlyRubyHash h1 = new StringOnlyRubyHash(runtime,
+        CaseInsensitiveStringOnlyRubyHash h1 = new CaseInsensitiveStringOnlyRubyHash(runtime,
                                                        environmentVariableMap, runtime.getNil());
-        h1.getSingletonClass().defineAnnotatedMethods(StringOnlyRubyHash.class);
+        h1.getSingletonClass().defineAnnotatedMethods(CaseInsensitiveStringOnlyRubyHash.class);
         runtime.defineGlobalConstant("ENV", h1);
 
         // Define System.getProperties() in ENV_JAVA
