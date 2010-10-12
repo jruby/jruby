@@ -111,6 +111,19 @@ public class RubyGlobal {
             return getRuntime().newString("ENV");
         }
 
+        @Override
+        // On Windows, ENV and JAVA_ENV keys are case-insensitive
+        public Object get(Object key) {
+            if (! Platform.IS_WINDOWS)
+                return super.get(key);
+            for (Object k: keys()) {
+                String lowercase_key = k.toString().toLowerCase();
+                if (key.toString().toLowerCase().equals(lowercase_key))
+                    return super.get(k);
+            }
+            return super.get(key);
+        }
+
         private RubyString getCorrectKey(IRubyObject key, ThreadContext context) {
             RubyString originalKey = key.convertToString();
             RubyString actualKey = originalKey;
