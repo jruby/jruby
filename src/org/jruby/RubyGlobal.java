@@ -74,34 +74,79 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-            RubyString actualKey = getCorrectKey(key, context);
-            return super.op_aref(context, actualKey);
+            return case_aware_op_aref(context, key, false);
         }
 
         @Override
         public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
-            if (!key.respondsTo("to_str")) {
-                throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
-            }
-            if (!value.respondsTo("to_str") && !value.isNil()) {
-                throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
-            }
-            
-            RubyString actualKey = getCorrectKey(key, context);
-
-            if (value.isNil()) {
-                return super.delete(context, actualKey, org.jruby.runtime.Block.NULL_BLOCK);
-            }
-            
-            //return super.aset(getRuntime().newString("sadfasdF"), getRuntime().newString("sadfasdF"));
-            return super.op_aset(context, RuntimeHelpers.invoke(context, actualKey, "to_str"),
-                    value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, "to_str"));
+            return case_aware_op_aset(context, key, value, false);
         }
 
         @JRubyMethod
         @Override
         public IRubyObject to_s(){
             return getRuntime().newString("ENV");
+        }
+
+    }
+
+    /**
+     * A Pseudo-hash whose keys and values are required to be Strings.
+     * On all platforms, the keys are case-sensitive.
+     * Used for ENV_JAVA.
+     */
+    public static class StringOnlyRubyHash extends RubyHash {
+        public StringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+            super(runtime, valueMap, defaultValue);
+        }
+
+        @Override
+        public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
+            return case_aware_op_aref(context, key, true);
+        }
+
+        @Override
+        public RubyHash to_hash() {
+            Ruby runtime = getRuntime();
+            RubyHash hash = RubyHash.newHash(runtime);
+            hash.replace(runtime.getCurrentContext(), this);
+            return hash;
+        }
+
+        @Override
+        public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
+            return case_aware_op_aset(context, key, value, true);
+        }
+
+        @Override
+        public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
+            return op_aset(context, key, value);
+        }
+
+        protected IRubyObject case_aware_op_aref(ThreadContext context, IRubyObject key, boolean caseSensitive) {
+            if (! caseSensitive)
+                key = getCorrectKey(key, context);
+            return super.op_aref(context, key);
+        }
+
+        protected IRubyObject case_aware_op_aset(ThreadContext context, IRubyObject key, IRubyObject value, boolean caseSensitive) {
+            if (!key.respondsTo("to_str")) {
+                throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
+            }
+            if (!value.respondsTo("to_str") && !value.isNil()) {
+                throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
+            }
+
+            if (! caseSensitive)
+                key = getCorrectKey(key, context);
+
+            if (value.isNil()) {
+                return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
+            }
+
+            //return super.aset(getRuntime().newString("sadfasdF"), getRuntime().newString("sadfasdF"));
+            return super.op_aset(context, RuntimeHelpers.invoke(context, key, "to_str"),
+                    value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, "to_str"));
         }
 
         private RubyString getCorrectKey(IRubyObject key, ThreadContext context) {
@@ -122,49 +167,6 @@ public class RubyGlobal {
             }
             return actualKey;
         }
-    }
-
-    /**
-     * A Pseudo-hash whose keys and values are required to be Strings.
-     * On all platforms, the keys are case-sensitive.
-     * Used for ENV_JAVA.
-     */
-    public static class StringOnlyRubyHash extends RubyHash {
-        public StringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
-            super(runtime, valueMap, defaultValue);
-        }
-
-        @Override
-        public RubyHash to_hash() {
-            Ruby runtime = getRuntime();
-            RubyHash hash = RubyHash.newHash(runtime);
-            hash.replace(runtime.getCurrentContext(), this);
-            return hash;
-        }
-
-        @Override
-        public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
-            if (!key.respondsTo("to_str")) {
-                throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
-            }
-            if (!value.respondsTo("to_str") && !value.isNil()) {
-                throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
-            }
-
-            if (value.isNil()) {
-                return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
-            }
-
-            //return super.aset(getRuntime().newString("sadfasdF"), getRuntime().newString("sadfasdF"));
-            return super.op_aset(context, RuntimeHelpers.invoke(context, key, "to_str"),
-                    value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, "to_str"));
-        }
-
-        @Override
-        public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
-            return op_aset(context, key, value);
-        }
-
     }
     
     public static void createGlobals(ThreadContext context, Ruby runtime) {
