@@ -1011,10 +1011,11 @@ public class ShellLauncher {
                      switch (ptr) {
                      case '\'':
                      case '\"':
-                         if (quote == '\0')
+                         if (quote == '\0') {
                              quote = ptr;
-                         else if (quote == ptr)
+                         } else if (quote == ptr) {
                              quote = '\0';
+                         }
                          idx++;
                          break;
                      case '>':

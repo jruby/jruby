@@ -346,8 +346,7 @@ public class IntHashMap {
 
         @Override
 		public boolean contains(Object o) {
-			if (!(o instanceof Entry))
-			{
+			if (!(o instanceof Entry)) {
 				return false;
 			}
 			Entry e = (Entry)o;

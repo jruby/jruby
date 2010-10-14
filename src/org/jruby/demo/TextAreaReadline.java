@@ -199,7 +199,7 @@ public class TextAreaReadline implements KeyListener {
         area.addKeyListener(this);
         
         // No editing before startPos
-        if (area.getDocument() instanceof AbstractDocument)
+        if (area.getDocument() instanceof AbstractDocument) {
             ((AbstractDocument) area.getDocument()).setDocumentFilter(
                 new DocumentFilter() {
                     public void insertString(DocumentFilter.FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
@@ -215,6 +215,7 @@ public class TextAreaReadline implements KeyListener {
                     }
                 }
             );
+        }
         
         promptStyle = new SimpleAttributeSet();
         StyleConstants.setForeground(promptStyle, new Color(0xa4, 0x00, 0x00));
@@ -324,8 +325,9 @@ public class TextAreaReadline implements KeyListener {
         int position = Readline.getCompletor(Readline.getHolder(runtime)).complete(bufstr, cursor, candidates);
         
         // no candidates? Fail.
-        if (candidates.isEmpty())
+        if (candidates.isEmpty()) {
             return;
+        }
         
         if (candidates.size() == 1) {
             replaceText(startPos + position, area.getCaretPosition(), (String) candidates.get(0));
@@ -341,10 +343,11 @@ public class TextAreaReadline implements KeyListener {
         int cutoff = bufstr.substring(position).lastIndexOf('.') + 1;
         start += cutoff;
 
-        if (candidates.size() < 10)
+        if (candidates.size() < 10) {
             completePopup.getList().setVisibleRowCount(candidates.size());
-        else
+        } else {
             completePopup.getList().setVisibleRowCount(10);
+        }
 
         completeCombo.removeAllItems();
         for (Iterator i = candidates.iterator(); i.hasNext();) {
@@ -357,8 +360,9 @@ public class TextAreaReadline implements KeyListener {
     }
 
     protected void backAction(KeyEvent event) {
-        if (area.getCaretPosition() <= startPos)
+        if (area.getCaretPosition() <= startPos) {
             event.consume();
+        }
     }
     
     protected void upAction(KeyEvent event) {
@@ -371,10 +375,11 @@ public class TextAreaReadline implements KeyListener {
             return;
         }
         
-        if (!Readline.getHistory(Readline.getHolder(runtime)).next()) // at end
-            currentLine = getLine();
-        else
-            Readline.getHistory(Readline.getHolder(runtime)).previous(); // undo check
+        if (!Readline.getHistory(Readline.getHolder(runtime)).next()) {
+            currentLine = getLine(); // at end
+        } else {
+            Readline.getHistory(Readline.getHolder(runtime)).previous(); //undo check
+        }
         
         if (!Readline.getHistory(Readline.getHolder(runtime)).previous()) return;
         
@@ -395,9 +400,9 @@ public class TextAreaReadline implements KeyListener {
         if (!Readline.getHistory(Readline.getHolder(runtime)).next()) return;
         
         String oldLine;
-        if (!Readline.getHistory(Readline.getHolder(runtime)).next()) // at end
-            oldLine = currentLine;
-        else {
+        if (!Readline.getHistory(Readline.getHolder(runtime)).next()) {
+            oldLine = currentLine; // at end
+        } else {
             Readline.getHistory(Readline.getHolder(runtime)).previous(); // undo check
             oldLine = Readline.getHistory(Readline.getHolder(runtime)).current().trim();
         }
@@ -427,8 +432,9 @@ public class TextAreaReadline implements KeyListener {
         event.consume();
         
         if (completePopup.isVisible()) {
-            if (completeCombo.getSelectedItem() != null)
+            if (completeCombo.getSelectedItem() != null) {
                 replaceText(start, end, (String) completeCombo.getSelectedItem());
+            }
             completePopup.setVisible(false);
             return;
         }

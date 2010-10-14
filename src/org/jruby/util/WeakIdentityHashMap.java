@@ -169,8 +169,9 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
         int idx = index(hash);
         expunge();
         for (Entry ent = table[idx]; ent != null; ent = ent.next) {
-            if (ent.sameKey(hash, masked_key))
+            if (ent.sameKey(hash, masked_key)) {
                 return ent.value;
+            }
         }
 
         return null;
@@ -188,8 +189,9 @@ public class WeakIdentityHashMap extends GenericMap implements Map {
         int idx = index(hash);
         expunge();
         for (Entry ent = table[idx]; ent != null; ent = ent.next) {
-            if (ent.sameKey(hash, masked_key))
+            if (ent.sameKey(hash, masked_key)) {
                 return true;
+            }
         }
 
         return false;

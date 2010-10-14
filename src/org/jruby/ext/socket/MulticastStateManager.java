@@ -48,8 +48,7 @@ public class MulticastStateManager {
 
     public void addMembership(byte [] ipaddr_buf) throws IOException {
         String ipString = "";
-        if (ipaddr_buf.length >= 4)
-        {
+        if (ipaddr_buf.length >= 4) {
             ipString += String.valueOf((int) ipaddr_buf[0] & 0xff);
             ipString += ".";
             ipString += String.valueOf((int) ipaddr_buf[1] & 0xff);
@@ -77,8 +76,9 @@ public class MulticastStateManager {
     }
 
     private void updateMemberships() throws IOException {
-        if (multicastSocket == null)
+        if (multicastSocket == null) {
             return;
+        }
 
         for (int i = 0; i < membershipGroups.size(); i++) {
             String ipString = (String) membershipGroups.get(i);

@@ -82,8 +82,9 @@ public abstract class ObjectProxyCache<T,A> {
         this.segmentMask = ssize - 1;
         this.segments = Segment.newArray(ssize);
     
-        if (initialSegCapacity > MAX_CAPACITY)
+        if (initialSegCapacity > MAX_CAPACITY) {
             initialSegCapacity = MAX_CAPACITY;
+        }
         int cap = 1;
         while (cap < initialSegCapacity) cap <<= 1;
     

@@ -99,8 +99,9 @@ public class IRBConsole extends JFrame {
                 break;
             }
         }
-        if (font == null)
+        if (font == null) {
             font = new Font(otherwise, style, size);
+        }
         return font;
     }
 

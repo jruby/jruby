@@ -144,16 +144,18 @@ public class RubyNKF {
         Charset charset = decoder.detectedCharset();
         String name = charset.name();
 //        System.out.println("detect: " + name + "\n");
-        if ("Shift_JIS".equals(name))
+        if ("Shift_JIS".equals(name)) {
             return runtime.newFixnum(SJIS.getValue());
-        if ("windows-31j".equals(name))
+        }
+        if ("windows-31j".equals(name)) {
             return runtime.newFixnum(SJIS.getValue());
-        else if ("EUC-JP".equals(name))
+        } else if ("EUC-JP".equals(name)) {
             return runtime.newFixnum(EUC.getValue());
-        else if ("ISO-2022-JP".equals(name))
+        } else if ("ISO-2022-JP".equals(name)) {
             return runtime.newFixnum(JIS.getValue());
-        else
+        } else {
             return runtime.newFixnum(UNKNOWN.getValue());
+        }
     }
 
     @JRubyMethod(name = "guess1", required = 1, module = true)
@@ -251,12 +253,13 @@ public class RubyNKF {
             case 'w': // UTF-8
             {
                 int n = optionUTF(s, i);
-                if (n == 32)
+                if (n == 32) {
                     options.put("output", UTF32);
-                else if (n == 16)
+                } else if (n == 16) {
                     options.put("output", UTF16);
-                else
+                } else {
                     options.put("output", UTF8);
+                }
             }
                 break;
             case 'J': // iso-2022-jp

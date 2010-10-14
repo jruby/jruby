@@ -93,8 +93,9 @@ public class ObjectSpace {
         synchronized (identities) {
             cleanIdentities();
             IdReference reference = (IdReference) identities.get(Long.valueOf(id));
-            if (reference == null)
+            if (reference == null) {
                 return null;
+            }
             return (IRubyObject) reference.get();
         }
     }

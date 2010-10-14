@@ -169,10 +169,11 @@ public class RubyMarshal {
             return input.unmarshalObject();
 
         } catch (EOFException ee) {
-          if (in != null && in.respondsTo("to_str"))
-            throw recv.getRuntime().newArgumentError("marshal data too short");
-          else
-            throw recv.getRuntime().newEOFError();
+          if (in != null && in.respondsTo("to_str")) {
+              throw recv.getRuntime().newArgumentError("marshal data too short");
+          } else {
+              throw recv.getRuntime().newEOFError();
+          }
         } catch (IOException ioe) {
             throw recv.getRuntime().newIOErrorFromException(ioe);
         }

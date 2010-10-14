@@ -1256,15 +1256,17 @@ public class RubyInstanceConfig {
                 // try cwd first
                 File fullName = JRubyFile.create(currentDirectory, scriptName);
                 if (fullName.exists() && fullName.isFile()) {
-                    if (DEBUG_SCRIPT_RESOLUTION)
+                    if (DEBUG_SCRIPT_RESOLUTION) {
                         error.println("Found: " + fullName.getAbsolutePath());
+                    }
                     return scriptName;
                 }
 
                 fullName = JRubyFile.create(getJRubyHome(), "bin/" + scriptName);
                 if (fullName.exists() && fullName.isFile()) {
-                    if (DEBUG_SCRIPT_RESOLUTION)
+                    if (DEBUG_SCRIPT_RESOLUTION) {
                         error.println("Found: " + fullName.getAbsolutePath());
+                    }
                     return fullName.getAbsolutePath();
                 }
 
@@ -1275,8 +1277,9 @@ public class RubyInstanceConfig {
                         for (int i = 0; i < paths.length; i++) {
                             fullName = JRubyFile.create(paths[i], scriptName);
                             if (fullName.exists() && fullName.isFile()) {
-                                if (DEBUG_SCRIPT_RESOLUTION)
+                                if (DEBUG_SCRIPT_RESOLUTION) {
                                     error.println("Found: " + fullName.getAbsolutePath());
+                                }
                                 return fullName.getAbsolutePath();
                             }
                         }

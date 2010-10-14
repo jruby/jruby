@@ -900,9 +900,10 @@ public class RubyRational extends RubyNumeric {
 
         if (args.length == 0) return to_r(context);
 
-        if (f_negative_p(context, this))
+        if (f_negative_p(context, this)) {
             return f_negate(context,
                     ((RubyRational) f_abs(context, this)).rationalize(context, args));
+        }
 
         IRubyObject eps = f_abs(context, args[0]);
         a = f_sub(context, this, eps);

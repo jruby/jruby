@@ -23,8 +23,9 @@ public class JRubyPOSIXHelper {
             String name = errno.name();
             String msg  = errno.toString();
             RubyClass errnoClass = runtime.getErrno().fastGetClass(name);
-            if (errnoClass != null)
+            if (errnoClass != null) {
                 throw new RaiseException(runtime, errnoClass, msg, true);
+            }
         }
     }
 

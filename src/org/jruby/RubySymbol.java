@@ -563,8 +563,7 @@ public class RubySymbol extends RubyObject {
 
         int length = s.length();
         char c = s.charAt(0);
-        if (isSymbolNameCommon(s, c, length)
-                || (c == '!' && (length == 1 ||
+        if (isSymbolNameCommon(s, c, length) || (c == '!' && (length == 1 ||
                     (length == 2 && (s.charAt(1) == '~' || s.charAt(1) == '=')) ) )) {
             return true;
         }
@@ -867,10 +866,9 @@ public class RubySymbol extends RubyObject {
                     int idx = e.hash & sizeMask;
 
                     //  Single node on list
-                    if (next == null)
+                    if (next == null) {
                         newTable[idx] = e;
-
-                    else {
+                    } else {
                         // Reuse trailing consecutive sequence at same slot
                         SymbolEntry lastRun = e;
                         int lastIdx = idx;

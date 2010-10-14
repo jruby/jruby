@@ -240,8 +240,9 @@ public class RubyIconv extends RubyObject {
 
     @JRubyMethod(name = "close")
     public IRubyObject close() {
-        if (toEncoding == null && fromEncoding == null)
+        if (toEncoding == null && fromEncoding == null) {
             return getRuntime().getNil();
+        }
         toEncoding = null;
         fromEncoding = null;
         return RubyString.newEmptyString(getRuntime());
@@ -343,8 +344,8 @@ public class RubyIconv extends RubyObject {
                         (arr[0] == (byte)0xff && arr[1] == (byte)0xfe)) {
                     start = 2;
                 }
-            } else if (toEncoding.charset().displayName().toLowerCase().startsWith("utf-32")
-                    && arr.length >= 4) {
+            } else if (toEncoding.charset().displayName().toLowerCase().startsWith("utf-32") &&
+                    arr.length >= 4) {
                 if ((arr[0] == (byte)0x00 && arr[1] == (byte)0x00 && arr[2] == (byte)0xfe && arr[3] == (byte)0xff) ||
                         (arr[0] == (byte)0xff && arr[1] == (byte)0xfe && arr[2] == (byte)0x00 && arr[3] == (byte)0x00)) {
                     start = 4;

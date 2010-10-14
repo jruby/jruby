@@ -285,8 +285,9 @@ public class JavaClass extends JavaObject {
             if (aliases == null) {
                 aliases = new ArrayList<String>(4);
             }
-            if (!aliases.contains(alias))
+            if (!aliases.contains(alias)) {
                 aliases.add(alias);
+            }
         }
 
         // modified only by addMethod; no synchronization required

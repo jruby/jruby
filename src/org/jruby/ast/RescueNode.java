@@ -149,8 +149,9 @@ public class RescueNode extends Node {
                 }
             } finally {
                 // clear exception when handled or retried
-                if (!anotherExceptionRaised)
+                if (!anotherExceptionRaised) {
                     runtime.getGlobalVariables().set("$!", globalExceptionState);
+                }
             }
         }
 

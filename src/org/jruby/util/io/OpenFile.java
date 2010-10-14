@@ -93,8 +93,8 @@ public class OpenFile {
             throw runtime.newIOError("not opened for reading");
         }
 
-        if (((mode & WBUF) != 0 || (mode & (SYNCWRITE | RBUF)) == SYNCWRITE)
-                && !mainStream.feof() && pipeStream == null) {
+        if (((mode & WBUF) != 0 || (mode & (SYNCWRITE | RBUF)) == SYNCWRITE) &&
+                !mainStream.feof() && pipeStream == null) {
             try {
                 // seek to force underlying buffer to flush
                 seek(0, Stream.SEEK_CUR);

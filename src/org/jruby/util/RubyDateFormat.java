@@ -542,8 +542,8 @@ public class RubyDateFormat extends DateFormat {
             dtCalendar.setFirstDayOfWeek(firstDayOfWeek);
             dtCalendar.setMinimalDaysInFirstWeek(7);
             int value = dtCalendar.get(java.util.Calendar.WEEK_OF_YEAR);
-            if ((value == 52 || value == 53)
-                    && (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
+            if ((value == 52 || value == 53) &&
+                    (dtCalendar.get(Calendar.MONTH) == Calendar.JANUARY )) {
                 // MRI behavior: Week values are monotonous.
                 // So, weeks that effectively belong to previous year,
                 // will get the value of 0, not 52 or 53, as in Java.

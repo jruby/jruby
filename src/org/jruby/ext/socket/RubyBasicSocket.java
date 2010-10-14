@@ -277,8 +277,7 @@ public class RubyBasicSocket extends RubyIO {
                 multicastStateManager = new MulticastStateManager();
             }
 
-            if (val instanceof RubyString)
-            {
+            if (val instanceof RubyString) {
                 byte [] ipaddr_buf = val.convertToString().getBytes();
                 multicastStateManager.addMembership(ipaddr_buf);
             }
@@ -674,8 +673,8 @@ public class RubyBasicSocket extends RubyIO {
         case 0:
             socketChannel = openFile.getMainStream().getDescriptor().getChannel();
             try {
-                if (socketChannel instanceof SocketChannel
-                        || socketChannel instanceof DatagramChannel) {
+                if (socketChannel instanceof SocketChannel ||
+                        socketChannel instanceof DatagramChannel) {
                     asSocket().shutdownInput();
                 } else if (socketChannel instanceof Shutdownable) {
                     ((Shutdownable)socketChannel).shutdownInput();
@@ -692,8 +691,8 @@ public class RubyBasicSocket extends RubyIO {
         case 1:
             socketChannel = openFile.getMainStream().getDescriptor().getChannel();
             try {
-                if (socketChannel instanceof SocketChannel
-                        || socketChannel instanceof DatagramChannel) {
+                if (socketChannel instanceof SocketChannel ||
+                        socketChannel instanceof DatagramChannel) {
                     asSocket().shutdownOutput();
                 } else if (socketChannel instanceof Shutdownable) {
                     ((Shutdownable)socketChannel).shutdownOutput();

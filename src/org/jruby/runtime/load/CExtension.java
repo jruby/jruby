@@ -78,8 +78,9 @@ public class CExtension implements Library {
                     throw runtime.newLoadError("Error loading file -- " + resource.getName());
                 } finally {
                     try {
-                        if (os != null) 
+                        if (os != null)  {
                             os.close();
+                        }
                         is.close();
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);

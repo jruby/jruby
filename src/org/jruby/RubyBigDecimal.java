@@ -994,8 +994,9 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "floor", optional =1, compat = CompatVersion.RUBY1_9)
     public IRubyObject floor19(IRubyObject[] args) {
-        if (isNaN || isInfinity())
+        if (isNaN || isInfinity()) {
             throw getRuntime().newFloatDomainError("Computation results to '" + to_s(args).asJavaString() + "'");
+        }
         return floor(args);
     }
  
@@ -1592,8 +1593,9 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private void checkFloatDomain() {
-        if (isNaN)
+        if (isNaN) {
             throw this.getRuntime().newFloatDomainError("NaN");
+        }
         if (infinitySign != 0) {
             if (infinitySign == -1) {
                 throw getRuntime().newFloatDomainError("-Infinity");

@@ -106,8 +106,9 @@ private static final int SIZE_THRESHOLD = 16;
 
         while (!stack.isEmpty() || entry != null) {
 
-            if (entry == null)
+            if (entry == null) {
                 entry = stack.remove(stack.size() - 1);
+            }
             lo = entry[0];
             hi = entry[1];
 

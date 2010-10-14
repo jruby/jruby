@@ -422,8 +422,9 @@ public class Numeric {
         short sign = 1;
         long exponent = 0;
 
-        if (Double.isInfinite(mantissa) || Double.isNaN(mantissa))
+        if (Double.isInfinite(mantissa) || Double.isNaN(mantissa)) {
             return mantissa;
+        }
 
         if (mantissa != 0.0) {
             if (mantissa < 0) {
@@ -616,7 +617,8 @@ public class Numeric {
     }
 
     public static void checkInteger(ThreadContext context, IRubyObject obj) {
-        if (!(obj instanceof RubyInteger))
+        if (!(obj instanceof RubyInteger)) {
             throw context.getRuntime().newTypeError("not an integer");
+        }
     }
 }

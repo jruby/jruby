@@ -54,9 +54,9 @@ public class OSEnvironment {
         }
 
         // fall back on empty env when security disallows environment var access (like in an applet)
-        if (Ruby.isSecurityRestricted())
+        if (Ruby.isSecurityRestricted()) {
             envs = new HashMap();
-        else {
+        } else {
             Map variables = System.getenv();
             envs = getAsMapOfRubyStrings(runtime,  variables.entrySet());
         }
@@ -71,10 +71,11 @@ public class OSEnvironment {
      * @return the java system properties as a Map<RubyString,RubyString>.
      */
     public Map getSystemPropertiesMap(Ruby runtime) {
-        if (Ruby.isSecurityRestricted())
-           return new HashMap();
-       else
-           return getAsMapOfRubyStrings(runtime, System.getProperties().entrySet());
+        if (Ruby.isSecurityRestricted()) {
+            return new HashMap();
+        } else {
+            return getAsMapOfRubyStrings(runtime, System.getProperties().entrySet());
+        }
     }
     
 	private static Map getAsMapOfRubyStrings(Ruby runtime, Set<Map.Entry<Object, Object>> entrySet) {

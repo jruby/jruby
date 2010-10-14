@@ -133,10 +133,9 @@ public class RubyUDPSocket extends RubyIPSocket {
                 addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), RubyNumeric.fix2int(port));
             }
 
-            if (this.multicastStateManager == null)
+            if (this.multicastStateManager == null) {
                 ((DatagramChannel) this.getChannel()).socket().bind(addr);
-            else
-            {
+            } else {
                 this.multicastStateManager.rebindToPort(RubyNumeric.fix2int(port));
             }
 
@@ -189,14 +188,11 @@ public class RubyUDPSocket extends RubyIPSocket {
             byte[] buf2 = new byte[length];
             DatagramPacket recv = new DatagramPacket(buf2, buf2.length);
 
-            if (this.multicastStateManager == null)
-            {
+            if (this.multicastStateManager == null) {
                 ((DatagramChannel) this.getChannel()).configureBlocking(false);
                 context.getThread().select(this, SelectionKey.OP_READ);
                 sender = (InetSocketAddress) ((DatagramChannel) this.getChannel()).receive(buf);
-            }
-            else
-            {
+            } else {
                 MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
                 ms.receive(recv);
                 sender = (InetSocketAddress) recv.getSocketAddress();
@@ -216,10 +212,9 @@ public class RubyUDPSocket extends RubyIPSocket {
 
             IRubyObject result = null;
 
-            if (this.multicastStateManager == null)
+            if (this.multicastStateManager == null) {
                 result = context.getRuntime().newString(new ByteList(buf.array(), 0, buf.position()));
-            else
-            {
+            } else {
                 result = context.getRuntime().newString(new ByteList(recv.getData(), 0, recv.getLength()));
             }
 

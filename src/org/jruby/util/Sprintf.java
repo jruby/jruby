@@ -644,8 +644,8 @@ public class Sprintf {
                     buf.append(bytes,first,numlen);
 
                     if (width > 0) buf.fill(' ',width);
-                    if (len < precision && fchar == 'd' && negative && !usePrefixForZero
-                            && (flags & FLAG_MINUS) != 0) {
+                    if (len < precision && fchar == 'd' && negative && 
+                            !usePrefixForZero && (flags & FLAG_MINUS) != 0) {
                         buf.fill(' ', precision - len);
                     }
                                         
@@ -875,10 +875,11 @@ public class Sprintf {
                             // in the exponent. Use 3 digits
                             // only when necessary.
                             // See comment for writeExp method for more details.
-                            if (exponent > 99)
+                            if (exponent > 99) {
                             	len += 5; // 5 -> e+nnn / e-nnn
-                            else
+                            } else {
                             	len += 4; // 4 -> e+nn / e-nn
+                            }
 
                             if (isSharp) {
                             	// in this mode, '.' is always printed
@@ -1137,10 +1138,11 @@ public class Sprintf {
                         // in the exponent. Use 3 digits
                         // only when necessary.
                         // See comment for writeExp method for more details.
-                        if (exponent > 99)
+                        if (exponent > 99) {
                             len += 5; // 5 -> e+nnn / e-nnn
-                        else
+                        } else {
                             len += 4; // 4 -> e+nn / e-nn
+                        }
 
                         if (precision > 0) {
                             // '.' and all precision digits printed

@@ -124,8 +124,9 @@ public class RubyGlobal {
         }
 
         protected IRubyObject case_aware_op_aref(ThreadContext context, IRubyObject key, boolean caseSensitive) {
-            if (! caseSensitive)
+            if (! caseSensitive) {
                 key = getCorrectKey(key, context);
+            }
             return super.op_aref(context, key);
         }
 
@@ -137,8 +138,9 @@ public class RubyGlobal {
                 throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
             }
 
-            if (! caseSensitive)
+            if (! caseSensitive) {
                 key = getCorrectKey(key, context);
+            }
 
             if (value.isNil()) {
                 return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);

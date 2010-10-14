@@ -175,16 +175,18 @@ public class Pack {
         // single precision, native
         Converter tmp = new Converter(4) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     return RubyFloat.newFloat(runtime, decodeFloatBigEndian(enc));
-                else
+                } else {
                     return RubyFloat.newFloat(runtime, decodeFloatLittleEndian(enc));
+                }
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     encodeFloatBigEndian(result, obj2flt(runtime, o));
-                else
+                } else {
                     encodeFloatLittleEndian(result, obj2flt(runtime, o));
+                }
             }
         };
         converters['F'] = tmp; // single precision, native
@@ -211,16 +213,18 @@ public class Pack {
         // double precision, native
         tmp = new Converter(8) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     return RubyFloat.newFloat(runtime, decodeDoubleBigEndian(enc));
-                else
+                } else {
                     return RubyFloat.newFloat(runtime, decodeDoubleLittleEndian(enc));
+                }
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     encodeDoubleBigEndian(result, obj2dbl(runtime, o));
-                else
+                } else {
                     encodeDoubleLittleEndian(result, obj2dbl(runtime, o));
+                }
             }
         };
         converters['D'] = tmp; // double precision, native
@@ -344,17 +348,19 @@ public class Pack {
         // unsigned int, native
         tmp = new Converter(4) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     return runtime.newFixnum(decodeIntUnsignedBigEndian(enc));
-                else
+                } else {
                     return runtime.newFixnum(decodeIntUnsignedLittleEndian(enc));
+                }
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 int s = o == runtime.getNil() ? 0 : (int) RubyNumeric.num2long(o);
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     encodeIntBigEndian(result, s);
-                else
+                } else {
                     encodeIntLittleEndian(result, s);
+                }
             }
         };
         converters['I'] = tmp; // unsigned int, native
@@ -363,17 +369,19 @@ public class Pack {
         // int, native
         tmp = new Converter(4) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     return runtime.newFixnum(decodeIntBigEndian(enc));
-                else
+                } else {
                     return runtime.newFixnum(decodeIntLittleEndian(enc));
+                }
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 int s = o == runtime.getNil() ? 0 : (int)RubyNumeric.num2long(o);
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     encodeIntBigEndian(result, s);
-                else
+                } else {
                     encodeIntLittleEndian(result, s);
+                }
             }
         };
         converters['i'] = tmp; // int, native
@@ -383,10 +391,11 @@ public class Pack {
         converters['Q'] = new QuadConverter(8) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 long l;
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     l = decodeLongBigEndian(enc);
-                else
+                } else {
                     l = decodeLongLittleEndian(enc);
+                }
                 return RubyBignum.bignorm(runtime,BigInteger.valueOf(l).and(
                         new BigInteger("FFFFFFFFFFFFFFFF", 16)));
             }
@@ -403,10 +412,11 @@ public class Pack {
         // 64-bit number, native (as fixnum)
         converters['q'] = new QuadConverter(8) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     return runtime.newFixnum(decodeLongBigEndian(enc));
-                else
+                } else {
                     return runtime.newFixnum(decodeLongLittleEndian(enc));
+                }
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 long l = num2quad(o);
@@ -934,10 +944,11 @@ public class Pack {
                         int bits = 0;
                         byte[] lElem = new byte[occurrences];
                         for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                            if ((lCurByte & 7) != 0)
+                            if ((lCurByte & 7) != 0) {
                                 bits <<= 1;
-                            else
+                            } else {
                                 bits = encode.get();
+                            }
                             lElem[lCurByte] = (bits & 128) != 0 ? (byte)'1' : (byte)'0';
                         }
 
@@ -970,10 +981,11 @@ public class Pack {
                         int bits = 0;
                         byte[] lElem = new byte[occurrences];
                         for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                            if ((lCurByte & 1) != 0)
+                            if ((lCurByte & 1) != 0) {
                                 bits <<= 4;
-                            else
+                            } else {
                                 bits = encode.get();
+                            }
                             lElem[lCurByte] = sHexDigits[(bits >>> 4) & 15];
                         }
                         result.append(RubyString.newString(runtime, new ByteList(lElem, false)));
@@ -1030,10 +1042,12 @@ public class Pack {
                             for (int i = 0; i < mlen; i++) lElem[index++] = hunk[i];
                             len -= mlen;
                         }
-                        if (s == '\r')
+                        if (s == '\r') {
                             s = safeGet(encode);
-                        if (s == '\n')
+                        }
+                        if (s == '\n') {
                             s = safeGet(encode);
+                        }
                         else if (encode.hasRemaining()) {
                             if (safeGet(encode) == '\n') {
                                 safeGet(encode); // Possible Checksum Byte
@@ -1466,17 +1480,19 @@ public class Pack {
         }
 
         protected void encodeShortByByteOrder(ByteList result, int s) {
-            if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+            if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                 encodeShortBigEndian(result, s);
-            else
+            } else {
                 encodeShortLittleEndian(result, s);
+            }
         }
 
         protected void encodeLongByByteOrder(ByteList result, long l) {
-            if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN)
+            if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                 encodeLongBigEndian(result, l);
-            else
+            } else {
                 encodeLongLittleEndian(result, l);
+            }
         }
     }
 
@@ -2122,10 +2138,11 @@ public class Pack {
                             int left = 0;
                             int right = buf.getRealSize() - 1;
 
-                            if(right >= 0)
+                            if(right >= 0) {
                                 buf.getUnsafeBytes()[0] &= 0x7F;
-                            else
+                            } else {
                                 buf.append(0);
+                            }
 
                             while(left < right) {
                                 byte tmp = buf.getUnsafeBytes()[left];

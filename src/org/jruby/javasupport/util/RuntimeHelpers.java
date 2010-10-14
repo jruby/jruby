@@ -929,8 +929,8 @@ public class RuntimeHelpers {
     }
 
     private static boolean checkJavaException(Throwable throwable, IRubyObject catchable, ThreadContext context) {
-        if (context.getRuntime().getException().op_ge(catchable).isTrue()
-                || context.getRuntime().getObject() == catchable) {
+        if (context.getRuntime().getException().op_ge(catchable).isTrue() ||
+                context.getRuntime().getObject() == catchable) {
             if (throwable instanceof RaiseException) {
                 return isExceptionHandled(((RaiseException)throwable).getException(), catchable, context).isTrue();
             }
@@ -1109,9 +1109,8 @@ public class RuntimeHelpers {
         for (int j = 0,k = expressions.getLength(); j < k; j++) {
             IRubyObject condition = expressions.eltInternal(j);
 
-            if ((expression != null && condition.callMethod(context, "===", expression)
-                    .isTrue())
-                    || (expression == null && condition.isTrue())) {
+            if ((expression != null && condition.callMethod(context, "===", expression).isTrue()) ||
+                    (expression == null && condition.isTrue())) {
                 return context.getRuntime().getTrue();
             }
         }

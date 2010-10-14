@@ -115,8 +115,8 @@ public class WhenNode extends Node {
         for (int j = 0,k = expressions.getLength(); j < k; j++) {
             IRubyObject test = expressions.eltInternal(j);
 
-            if ((value != null && eqq.call(context, self, test, value).isTrue())
-                    || (value == null && test.isTrue())) {
+            if ((value != null && eqq.call(context, self, test, value).isTrue()) ||
+                    (value == null && test.isTrue())) {
                 return bodyNode.interpret(runtime, context, self, aBlock);
             }
         }

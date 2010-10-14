@@ -125,8 +125,8 @@ public class RubyTime extends RubyObject {
                 
             // GMT+00:00 --> Etc/GMT, see "MRI behavior"
             // comment below.
-            if (("00".equals(hours) || "0".equals(hours))
-                    && (minutes == null || ":00".equals(minutes) || ":0".equals(minutes))) {
+            if (("00".equals(hours) || "0".equals(hours)) &&
+                    (minutes == null || ":00".equals(minutes) || ":0".equals(minutes))) {
                 zone = "Etc/GMT";
             } else {
                 // Invert the sign, since TZ format and Java format

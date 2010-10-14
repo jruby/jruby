@@ -656,8 +656,9 @@ public class RubySocket extends RubyBasicSocket {
 
             }
 
-            if (addrs == null)
+            if (addrs == null) {
                 addrs = InetAddress.getAllByName(emptyHost ? (is_ipv6 ? "[::1]" : null) : host.convertToString().toString());
+            }
 
             List<IRubyObject> l = new ArrayList<IRubyObject>();
             for(int i = 0; i < addrs.length; i++) {
