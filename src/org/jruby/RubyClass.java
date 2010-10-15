@@ -30,6 +30,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.sig;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SUPER;
+import static org.objectweb.asm.Opcodes.ACC_VARARGS;
+
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -43,12 +52,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-
-import org.jruby.exceptions.RaiseException;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.codegen.RealClassGenerator;
@@ -67,15 +74,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.CodegenUtils;
-import org.jruby.util.JRubyClassLoader;
-import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.collections.WeakHashSet;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodVisitor;
-
-import static org.objectweb.asm.Opcodes.*;
 
 /**
  *
@@ -1271,6 +1273,75 @@ public class RubyClass extends RubyModule {
 
             m.end();
         }
+        
+        for (Map.Entry<String,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
+            String methodName = methodEntry.getKey();
+            String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
+            Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(methodName);
+            List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(methodName);
+            Class[] methodSignature = getMetaClass().getMethodSignatures().get(methodName);
+
+            if (methodSignature == null) {
+                // non-signature signature with just IRubyObject
+                switch (methodEntry.getValue().getArity().getValue()) {
+                case 0:
+                    mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(IRubyObject.class), null, null);
+                    m = new SkinnyMethodAdapter(mv);
+                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                    m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+                    m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
+                    m.ldc(methodName); // Method name
+                    m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
+                    break;
+                default:
+                    mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(IRubyObject.class, IRubyObject[].class), null, null);
+                    m = new SkinnyMethodAdapter(mv);
+                    generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                    m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+                    m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
+                    m.ldc(methodName); // Method name
+                    m.aload(0);
+                    m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
+                }
+                m.areturn();
+            } else {
+                // generate a real method signature for the method, with to/from coercions
+
+                // indices for temp values
+                Class[] params = new Class[methodSignature.length - 1];
+                System.arraycopy(methodSignature, 1, params, 0, params.length);
+                int baseIndex = 1;
+                for (Class paramType : params) {
+                    if (paramType == double.class || paramType == long.class) {
+                        baseIndex += 2;
+                    } else {
+                        baseIndex += 1;
+                    }
+                }
+                int rubyIndex = baseIndex;
+
+                mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(methodSignature[0], params), null, null);
+                m = new SkinnyMethodAdapter(mv);
+                generateMethodAnnotations(methodAnnos, m, parameterAnnos);
+
+                m.getstatic(javaPath, "ruby", ci(Ruby.class));
+                m.astore(rubyIndex);
+
+                m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
+                m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
+                
+                m.ldc(methodName); // method name
+                RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
+                m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
+
+                RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
+            }
+
+            m.end();
+        }
+
 
         cw.visitEnd();
         byte[] classBytes = cw.toByteArray();
