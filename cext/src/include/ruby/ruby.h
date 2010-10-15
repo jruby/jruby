@@ -492,6 +492,13 @@ INT2FIX(int i)
     return (((SIGNED_VALUE) i) << 1) | FIXNUM_FLAG;
 }
 
+/** Convert char to a Ruby Integer. */
+static inline VALUE
+CHR2FIX(char chr)
+{
+    return INT2FIX((long)((chr) & 0xff));
+}
+
 /** Convert unsigned int to a Ruby Integer. */
 static inline VALUE
 UINT2FIX(unsigned int i)
