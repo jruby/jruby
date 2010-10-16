@@ -204,9 +204,9 @@ public class RubyNKF {
         RubyString result = converter.convert(bstr);
 
         if (options.get("mime-encode") == BASE64) {
-            result = Converter.encodeMimeString(runtime, result, "m"); // BASE64
+            result = Converter.encodeMimeString(runtime, result, PACK_BASE64);
         } else if (options.get("mime-encode") == QENCODE) {
-            result = Converter.encodeMimeString(runtime, result, "M"); // quoted-printable
+            result = Converter.encodeMimeString(runtime, result, PACK_QENCODE);
         }
 
         return result;
@@ -381,9 +381,9 @@ public class RubyNKF {
             return true;
         }
 
-        private static RubyString encodeMimeString(Ruby runtime, RubyString str, String format) {
+        private static RubyString encodeMimeString(Ruby runtime, RubyString str, ByteList format) {
             RubyArray array = RubyArray.newArray(runtime, str);
-            return Pack.pack(runtime, array, new ByteList(ByteList.plain(format))).chomp(runtime.getCurrentContext());
+            return Pack.pack(runtime, array, format).chomp(runtime.getCurrentContext());
         }
 
         abstract RubyString convert(ByteList str);
