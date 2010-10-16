@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2007 Koichiro Ohba <koichiro@meadowy.org>
+ * Copyright (C) 2007-2010 Koichiro Ohba <koichiro@meadowy.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -39,6 +39,8 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -352,9 +354,13 @@ public class RubyIconv extends RubyObject {
                 }
             }
         }
-        
+
         count++;
-        return getRuntime().newString(new ByteList(arr, start, buf.limit() - start));
+
+        ByteList r = new ByteList(arr, start, buf.limit() - start);
+        Encoding charset = EncodingDB.getEncodings().get(toEncoding.charset().displayName().getBytes()).getEncoding();
+        r.setEncoding(charset);
+        return getRuntime().newString(r);
     }
 
     @JRubyMethod(name = "iconv", required = 2, rest = true, meta = true, backtrace = true)

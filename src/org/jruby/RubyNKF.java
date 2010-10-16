@@ -37,11 +37,13 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JRubyModule;
 
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jcodings.specific.ASCIIEncoding;
 
+import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -409,8 +411,11 @@ public class RubyNKF {
                 throw context.getRuntime().newArgumentError("invalid encoding");
             }
             byte[] arr = buf.array();
+            ByteList r = new ByteList(arr, 0, buf.limit());
+            Encoding charset = EncodingDB.getEncodings().get(decodeCharset.getBytes()).getEncoding();
+            r.setEncoding(charset);
 
-            return new ByteList(arr, 0, buf.limit());
+            return r;
         }
     }
 
