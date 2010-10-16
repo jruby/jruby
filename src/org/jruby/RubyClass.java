@@ -1285,22 +1285,19 @@ public class RubyClass extends RubyModule {
                 // non-signature signature with just IRubyObject
                 switch (methodEntry.getValue().getArity().getValue()) {
                 case 0:
-                    mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(IRubyObject.class), null, null);
-                    m = new SkinnyMethodAdapter(mv);
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(IRubyObject.class), null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                    m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
+                    //m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
                     m.ldc(methodName); // Method name
                     m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
                     break;
                 default:
-                    mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(IRubyObject.class, IRubyObject[].class), null, null);
-                    m = new SkinnyMethodAdapter(mv);
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(IRubyObject.class, IRubyObject[].class), null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                    m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
                     m.ldc(methodName); // Method name
                     m.aload(0);
                     m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
@@ -1322,15 +1319,13 @@ public class RubyClass extends RubyModule {
                 }
                 int rubyIndex = baseIndex;
 
-                mv = cw.visitMethod(ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(methodSignature[0], params), null, null);
-                m = new SkinnyMethodAdapter(mv);
+                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(methodSignature[0], params), null, null);
                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                 m.getstatic(javaPath, "ruby", ci(Ruby.class));
                 m.astore(rubyIndex);
 
                 m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
                 
                 m.ldc(methodName); // method name
                 RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
