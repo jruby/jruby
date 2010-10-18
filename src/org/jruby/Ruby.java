@@ -1475,6 +1475,12 @@ public final class Ruby {
                 runtime.getLoadService().require("jruby/openssl/stub");
             }
         });
+
+        addBuiltinIfAllowed("win32ole.jar", new Library() {
+            public void load(Ruby runtime, boolean wrap) throws IOException {
+                runtime.getLoadService().require("jruby/win32ole/stub");
+            }
+        });
         
         String[] builtins = {"yaml", 
                              "yaml/yecht", "yaml/baseemitter", "yaml/basenode", 
