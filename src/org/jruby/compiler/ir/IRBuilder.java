@@ -128,7 +128,7 @@ import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
 import org.jruby.compiler.ir.instructions.PUT_GLOBAL_VAR_Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
-import org.jruby.compiler.ir.instructions.RECV_CLOSURE_Instr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.RESCUED_BODY_START_MARKER_Instr;
@@ -1644,7 +1644,7 @@ public class IRBuilder {
             // This is so that the *arg can be encoded as 'rest of the array'.  This
             // won't work if the block argument hasn't been received yet!
         if (argsNode.getBlock() != null)
-            s.addInstr(new RECV_CLOSURE_Instr(s.getLocalVariable(argsNode.getBlock().getName())));
+            s.addInstr(new ReceiveClosureInstr(s.getLocalVariable(argsNode.getBlock().getName())));
 
             // Now for the rest
         if (opt > 0 || rest > -1) {

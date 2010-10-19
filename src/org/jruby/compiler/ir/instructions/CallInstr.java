@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+import org.jruby.RubyProc;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -292,7 +293,8 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     private Block prepareBlock(InterpreterContext interp) {
-        return (Block) _closure.retrieve(interp);
+        Object value = _closure.retrieve(interp);
+        return value instanceof RubyProc ? ((RubyProc) value).getBlock() : (Block) value;
     }
 
     public IRubyObject[] prepareArguments(InterpreterContext interp) {

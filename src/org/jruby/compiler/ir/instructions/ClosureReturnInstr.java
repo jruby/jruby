@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -16,6 +17,7 @@ public class ClosureReturnInstr extends OneOperandInstr {
         throw new RuntimeException("Not implemented yet!");
     }
 
+    @Interp
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
         interp.setReturnValue(getArg().retrieve(interp));

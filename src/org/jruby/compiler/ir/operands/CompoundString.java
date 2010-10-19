@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -12,35 +13,41 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this string operand could get converted to calls
 // that appends the components of the compound string into a single string object
-public class CompoundString extends Operand
-{
-    final public List<Operand> _pieces;
+public class CompoundString extends Operand {
 
-    public CompoundString(List<Operand> pieces) { _pieces = pieces; }
+    final public List<Operand> pieces;
 
-    public boolean isConstant() 
-    {
-       if (_pieces != null) {
-          for (Operand o: _pieces)
-             if (!o.isConstant())
-                return false;
-       }
-
-       return true;
+    public CompoundString(List<Operand> pieces) {
+        this.pieces = pieces;
     }
 
-    public String toString() { 
-       return "COMPOUND_STRING" + (_pieces == null ? "" : java.util.Arrays.toString(_pieces.toArray()));
+    @Override
+    public boolean isConstant() {
+        if (pieces != null) {
+            for (Operand o : pieces) {
+                if (!o.isConstant()) return false;
+            }
+        }
+
+        return true;
     }
 
-    public boolean isNonAtomicValue() { return true; }
+    @Override
+    public String toString() {
+        return "COMPOUND_STRING" + (pieces == null ? "" : java.util.Arrays.toString(pieces.toArray()));
+    }
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
-    {
+    @Override
+    public boolean isNonAtomicValue() {
+        return true;
+    }
+
+    @Override
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
         int i = 0;
-        for (Operand p: _pieces) {
-           _pieces.set(i, p.getSimplifiedOperand(valueMap));
-           i++;
+        for (Operand p : pieces) {
+            pieces.set(i, p.getSimplifiedOperand(valueMap));
+            i++;
         }
 
         return this;
@@ -48,22 +55,32 @@ public class CompoundString extends Operand
 
     /** Append the list of variables used in this operand to the input list */
     @Override
-    public void addUsedVariables(List<Variable> l)
-    {
-        for (Operand o: _pieces)
+    public void addUsedVariables(List<Variable> l) {
+        for (Operand o : pieces) {
             o.addUsedVariables(l);
+        }
     }
 
+    @Override
     public Operand cloneForInlining(InlinerInfo ii) {
-        if (isConstant()) {
-            return this;
+        if (isConstant()) return this;
+
+        List<Operand> newPieces = new java.util.ArrayList<Operand>();
+        for (Operand p : pieces) {
+            newPieces.add(p.cloneForInlining(ii));
         }
-        else {
-            List<Operand> newPieces = new java.util.ArrayList<Operand>();
-            for (Operand p: _pieces) {
-                newPieces.add(p.cloneForInlining(ii));
-            }
-            return new CompoundString(newPieces);
+
+        return new CompoundString(newPieces);
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        StringBuilder buf = new StringBuilder();
+
+        for (Operand p : pieces) {
+            buf.append(p.retrieve(interp));
         }
+
+        return interp.getContext().getRuntime().newString(buf.toString());
     }
 }

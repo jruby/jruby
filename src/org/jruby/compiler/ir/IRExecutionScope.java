@@ -12,7 +12,7 @@ import java.util.TreeSet;
 
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.RECV_CLOSURE_Instr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.RUBY_INTERNALS_CALL_Instr;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
@@ -198,7 +198,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         // but potentially at a later time after doing ssa generation and constant propagation
         boolean receivesClosureArg = false;
         for (Instr i: getInstrs()) {
-            if (i instanceof RECV_CLOSURE_Instr)
+            if (i instanceof ReceiveClosureInstr)
                 receivesClosureArg = true;
 
             // SSS FIXME: Should we build a ZSUPER IR Instr rather than have this code here?
