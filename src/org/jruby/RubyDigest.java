@@ -213,16 +213,13 @@ public class RubyDigest {
         RubyModule mDigest = runtime.fastGetModule("Digest");
         RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_SHA2_256 = mDigest.defineClassUnder("SHA256",cDigestBase,cDigestBase.getAllocator());
-        RubyClass cDigest_SHA2_META = mDigest.defineClassUnder("SHA2",cDigestBase,cDigestBase.getAllocator());
         Metadata sha256Metadata = new Metadata("SHA-256", 64);
         cDigest_SHA2_256.setInternalVariable("metadata", sha256Metadata);
-        cDigest_SHA2_META.setInternalVariable("metadata", sha256Metadata);
         RubyClass cDigest_SHA2_384 = mDigest.defineClassUnder("SHA384",cDigestBase,cDigestBase.getAllocator());
         cDigest_SHA2_384.setInternalVariable("metadata", new Metadata("SHA-384", 128));
         RubyClass cDigest_SHA2_512 = mDigest.defineClassUnder("SHA512",cDigestBase,cDigestBase.getAllocator());
         cDigest_SHA2_512.setInternalVariable("metadata", new Metadata("SHA-512", 128));
     }
-
 
     @JRubyModule(name = "Digest::Instance")
     public static class DigestInstance {
@@ -439,14 +436,6 @@ public class RubyDigest {
             }
 
             return null;
-        }
-        
-        @JRubyMethod(optional = 1, frame = true)
-        public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-            if(args.length > 0 && !args[0].isNil()) {
-                update(args[0]);
-            }
-            return this;
         }
 
         @JRubyMethod(required = 1)
