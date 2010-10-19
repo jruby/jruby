@@ -61,9 +61,9 @@ abstract class Cleaner extends WeakReference<IRubyObject> {
 
         public void run() {
             while (true) {
-                Reference<? extends IRubyObject> ref;
+                Reference ref; // routing around generics here: IBM J9 doesn't like it
                 try {
-                     ref = queue.remove();
+                     ref = (Reference) queue.remove();
                 } catch (InterruptedException ex) {
                     break;
                 }
@@ -98,7 +98,7 @@ abstract class Cleaner extends WeakReference<IRubyObject> {
     };
 
     static {
-        Thread t = new Thread(reaper);
+        Thread t = new Thread(reaper, "Cext reference reaper");
         t.setPriority(Thread.MAX_PRIORITY);
         t.setDaemon(true);
         t.start();
