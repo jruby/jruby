@@ -513,7 +513,7 @@ module FileUtils
         end
         begin
           File.rename s, d
-        rescue Errno::EXDEV
+        rescue Errno::EXDEV, Errno::EACCES
           copy_entry s, d, true
           if options[:secure]
             remove_entry_secure s, options[:force]
