@@ -215,7 +215,7 @@ public class ByteArrayLexerSource extends LexerSource {
             if (index >= region.length) {
                 return forward(RubyYaccLexer.EOF);
             }
-            return forward(region[index++]);
+            return 0xff & forward(region[index++]);
         }
         public void unread(int c) {
             if (index > 0 && region[index - 1] == c) {
@@ -231,7 +231,7 @@ public class ByteArrayLexerSource extends LexerSource {
             if (location >= region.length || location < 0) {
                 return RubyYaccLexer.EOF;
             }
-            return region[location];
+            return 0xff & region[location];
         }
     }
 
@@ -248,7 +248,7 @@ public class ByteArrayLexerSource extends LexerSource {
                 readCursor = parent;
                 return parent.read();
             }
-            int c = region.get(index);
+            int c = 0xff & region.get(index);
             region.setRealSize(index);
             return forward(c);
         }
@@ -262,7 +262,7 @@ public class ByteArrayLexerSource extends LexerSource {
             } else if (offset >= region.length()) {
                 return parent.at(offset - region.length());
             } else {
-                return region.get(region.length() - offset - 1);
+                return 0xff & region.get(region.length() - offset - 1);
             }
         }
     }
