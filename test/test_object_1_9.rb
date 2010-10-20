@@ -22,4 +22,16 @@ class TestObject19 < Test::Unit::TestCase
       "str".tap
     end
   end
+
+  # JRUBY-5141
+  def test_not_equal
+    o = Object.new
+    def o.==(rhs)
+      true # always true
+    end
+    assert_equal(true, (o == o)) # always true
+    assert_equal(true, (o == 1)) # always true
+    assert_equal(false, (o != o)) # always false
+    assert_equal(false, (o != 1)) # always false
+  end
 end
