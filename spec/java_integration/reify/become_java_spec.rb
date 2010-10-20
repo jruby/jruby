@@ -35,4 +35,20 @@ describe "JRuby class reification" do
       ReifyInterfacesClass1::ReifyInterfacesClass2.new
     end.should_not raise_error
   end
+  
+  it "creates static methods for Ruby class methods" do
+    cls = Class.new do
+      class << self
+        def blah
+        end
+      end
+    end
+    
+    java_class = cls.become_java!
+    
+    method = java_class.declared_methods.select {|m| m.name == "blah"}[0]
+    method.name.should == "blah"
+    method.return_type.should == org.jruby.runtime.builtin.IRubyObject.java_class
+    method.parameter_types.length.should == 0
+  end
 end
