@@ -25,6 +25,8 @@ import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
 import org.jruby.java.invokers.InstanceMethodInvoker;
 import org.jruby.java.invokers.MethodInvoker;
+import org.jruby.java.invokers.StaticFieldGetter;
+import org.jruby.java.invokers.StaticFieldSetter;
 import org.jruby.java.invokers.StaticMethodInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
@@ -193,10 +195,18 @@ public class JavaProxy extends RubyObject {
                 
                 String asName = entry.getValue();
 
-                if (asReader) module.addMethod(asName, new InstanceFieldGetter(key, module, field));
-                if (asWriter) {
-                    if (isFinal) throw context.getRuntime().newSecurityError("Cannot change final field '" + field.getName() + "'");
-                    module.addMethod(asName + "=", new InstanceFieldSetter(key, module, field));
+                if (Modifier.isStatic(field.getModifiers())) {
+                    if (asReader) module.getSingletonClass().addMethod(asName, new StaticFieldGetter(key, module, field));
+                    if (asWriter) {
+                        if (isFinal) throw context.getRuntime().newSecurityError("Cannot change final field '" + field.getName() + "'");
+                        module.getSingletonClass().addMethod(asName + "=", new StaticFieldSetter(key, module, field));
+                    }
+                } else {
+                    if (asReader) module.addMethod(asName, new InstanceFieldGetter(key, module, field));
+                    if (asWriter) {
+                        if (isFinal) throw context.getRuntime().newSecurityError("Cannot change final field '" + field.getName() + "'");
+                        module.addMethod(asName + "=", new InstanceFieldSetter(key, module, field));
+                    }
                 }
                 
                 iter.remove();
