@@ -730,16 +730,16 @@ public class JavaUtil {
         return true;
     }
     private static boolean isLongByteable(long value) {
-        return value >= Byte.MIN_VALUE && value <= 0xFF;
+        return value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE;
     }
     private static boolean isLongShortable(long value) {
-        return value >= Short.MIN_VALUE && value <= 0xFFFF;
+        return value >= Short.MIN_VALUE && value <= Short.MAX_VALUE;
     }
     private static boolean isLongCharable(long value) {
         return value >= Character.MIN_VALUE && value <= Character.MAX_VALUE;
     }
     private static boolean isLongIntable(long value) {
-        return value >= Integer.MIN_VALUE && value <= 0xFFFFFFFFL;
+        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
     }
     
     private static Map<Class, NumericConverter> NUMERIC_CONVERTERS = new HashMap<Class, NumericConverter>();
