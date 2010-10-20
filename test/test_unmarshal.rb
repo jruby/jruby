@@ -23,6 +23,24 @@ class TestUnmarshal < Test::Unit::TestCase
     flunk "Unmarshalling failed with EOF error at " + result + " string."
   end
 
+  # TYPE_IVAR from built-in class
+  class C
+    def _dump(depth)
+      "foo"
+    end
+
+    def self._load(str)
+      new
+    end
+  end
+
+  def test_ivar_in_built_in_class
+    (o = "").instance_variable_set("@ivar", C.new)
+    assert_nothing_raised do
+      Marshal.load(Marshal.dump(o))
+    end
+  end
+
   # JRUBY-5123: nested TYPE_IVAR from _dump
   class D
     def initialize(ivar = nil)
