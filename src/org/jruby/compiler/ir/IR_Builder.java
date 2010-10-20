@@ -284,8 +284,8 @@ public class IR_Builder
     }
 
     /* -----------------------------------------------------------------------------------
-     * Every ensure block has a start label and end label, and at the end, it will execute
-     * an jump to an address stored in a return address variable.
+     * Every ensure block has a start label and end label, and at the end, it will jump
+     * to an address stored in a return address variable.
      *
      * This ruby code will translate to the IR shown below
      * -----------------
@@ -346,8 +346,13 @@ public class IR_Builder
         }
     }
 
-    private int _lastProcessedLineNum = -1;
+    // Stack encoding nested ensure blocks
     private Stack<EnsureBlockInfo> _ensureBlockStack = new Stack<EnsureBlockInfo>();
+
+    // Stack encoding nested rescue blocks -- this just tracks the start label of the blocks
+    private Stack<Label> _rescueBlockLabelStack = new Stack<Label>();
+
+    private int _lastProcessedLineNum = -1;
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
@@ -468,7 +473,7 @@ public class IR_Builder
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
             case RESCUENODE: return buildRescue(node, m); // done
-//            case RETRYNODE: return buildRetry(node, m); // DEFERRED
+            case RETRYNODE: return buildRetry(node, m); // done
             case RETURNNODE: return buildReturn((ReturnNode) node, m); // done
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
@@ -2570,6 +2575,9 @@ public class IR_Builder
         Label   rEndLabel   = noEnsure ? m.getNewLabel() : _ensureBlockStack.peek().end; // Label marking end of the begin-rescue(-ensure)-end block
         Label   elseLabel   = rescueNode.getElseNode() == null ? null : m.getNewLabel();
 
+        // Add the start label to the stack of rescue blocks
+        _rescueBlockLabelStack.push(rBeginLabel);
+
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
         List<Label> rescueBlockLabels = new ArrayList<Label>();
         m.addInstr(new LABEL_Instr(rBeginLabel));
@@ -2623,6 +2631,9 @@ public class IR_Builder
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
         if (noEnsure)
             m.addInstr(new LABEL_Instr(rEndLabel));
+
+        // Pop this block's label
+        _rescueBlockLabelStack.pop();
 
         return rv;
     }
@@ -2680,15 +2691,39 @@ public class IR_Builder
         }
     }
 
-/**
+    /**
+     *
+     *  JRuby only supports retry when present in rescue blocks.  1.9 doesn't support retry anywhere else.
+     *  So, the generated IR is going to support retry only in this contexts.
+     *  Semantically, it is just a jump to the beginning of the rescued block. See ruby code example below
+     *
+     *  def foo(n)
+     *    a = nil
+     *    begin
+     *      n = 50 if a.nil?
+     *      puts "#{a+n}"
+     *    rescue
+     *      a = 50
+     *      retry
+     *    end
+     *  end
+     *
+     *  foo(10) outputs 100
+     *
+     */
+
     public Operand buildRetry(Node node, IR_Scope s) {
-        // JRuby only supports retry when present in rescue blocks!
-        // 1.9 doesn't support retry anywhere else.
         s.addInstr(new THREAD_POLL_Instr());
-        s.addInstr(new RETRY_Instr());
+
+        // Jump back to the innermost rescue block
+        if (_rescueBlockLabelStack.empty()) {
+            throw new RuntimeException("Retry instruction <" + node + "> found outside of rescue clause!");
+        }
+        else {
+          s.addInstr(new JUMP_Instr(_rescueBlockLabelStack.peek()));
+        }
         return Nil.NIL;
     }
-**/
 
     public Operand buildReturn(ReturnNode returnNode, IR_Scope m) {
         Operand retVal = (returnNode.getValueNode() == null) ? Nil.NIL : build(returnNode.getValueNode(), m);
