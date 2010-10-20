@@ -541,7 +541,12 @@ public class RubyObject extends RubyBasicObject {
     private int nonFixnumHashCode(IRubyObject hashValue) {
         Ruby runtime = getRuntime();
         if (runtime.is1_9()) {
-            return (int)hashValue.convertToInteger().getLongValue();
+            RubyInteger integer = hashValue.convertToInteger();
+            if (integer instanceof RubyBignum) {
+                return (int)integer.getBigIntegerValue().intValue();
+            } else {
+                return (int)integer.getLongValue();
+            }
         } else {
             hashValue = hashValue.callMethod(runtime.getCurrentContext(), "%", RubyFixnum.newFixnum(runtime, 536870923L));
             if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
