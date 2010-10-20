@@ -164,6 +164,8 @@ public class JavaClass extends JavaObject {
     static {
         RESERVED_NAMES.put("__id__", new AssignedName("__id__", Priority.RESERVED));
         RESERVED_NAMES.put("__send__", new AssignedName("__send__", Priority.RESERVED));
+        // JRUBY-5132: java.awt.Component.instance_of?() expects 2 args
+        RESERVED_NAMES.put("instance_of?", new AssignedName("instance_of?", Priority.RESERVED));
     }
     private static final Map<String, AssignedName> STATIC_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
     static {
