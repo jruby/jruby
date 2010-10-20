@@ -19,6 +19,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.threading.DaemonThreadFactory;
@@ -50,7 +51,7 @@ public class Timeout implements Library {
     private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
 
     public static class TimeoutToplevel {
-        @JRubyMethod(required = 1, optional = 1)
+        @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
         public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             RubyModule timeout = context.getRuntime().getModule("Timeout");
             

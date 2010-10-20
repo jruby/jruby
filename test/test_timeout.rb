@@ -97,4 +97,16 @@ class TestTimeout < Test::Unit::TestCase
       end
     end
   end
+
+  # JRUBY-5099: Built-in timeout method added to wrong class
+  def test_timeout_toplevel_method
+    cls = Class.new do
+      def method_missing(name, *args)
+        if name == :timeout
+          42
+        end
+      end
+    end
+    assert cls.new.timeout, "timeout should have returned 42"
+  end
 end
