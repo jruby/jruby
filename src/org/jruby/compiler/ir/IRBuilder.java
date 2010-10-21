@@ -136,7 +136,7 @@ import org.jruby.compiler.ir.instructions.RESCUED_BODY_END_MARKER_Instr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.RUBY_INTERNALS_CALL_Instr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
-import org.jruby.compiler.ir.instructions.THREAD_POLL_Instr;
+import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Array;
@@ -1770,7 +1770,7 @@ public class IRBuilder {
     }
 
     public Operand buildFalse(Node node, IRScope s) {
-        s.addInstr(new THREAD_POLL_Instr());
+        s.addInstr(new ThreadPollInstr());
         return BooleanLiteral.FALSE; 
     }
 
@@ -2192,7 +2192,7 @@ public class IRBuilder {
     public Operand buildNext(final NextNode nextNode, IRExecutionScope s) {
         Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
         // SSS FIXME: 1. Is the ordering correct? (poll before next)
-        s.addInstr(new THREAD_POLL_Instr());
+        s.addInstr(new ThreadPollInstr());
         // If a closure, the next is simply a return from the closure!
         // If a regular loop, the next is simply a jump to the end of the iteration
         s.addInstr((s instanceof IRClosure) ? new ClosureReturnInstr(rv) : new JumpInstr(s.getCurrentLoop().iterEndLabel));
@@ -2204,7 +2204,7 @@ public class IRBuilder {
     }
 
     public Operand buildNil(Node node, IRScope m) {
-        m.addInstr(new THREAD_POLL_Instr());
+        m.addInstr(new ThreadPollInstr());
         return Nil.NIL;
     }
 
@@ -2255,7 +2255,7 @@ public class IRBuilder {
         s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
         build(andNode.getSecondNode(), s);  // This does the assignment!
         s.addInstr(new LABEL_Instr(l));
-        s.addInstr(new THREAD_POLL_Instr());
+        s.addInstr(new ThreadPollInstr());
         return v1;
     }
 
@@ -2289,7 +2289,7 @@ public class IRBuilder {
         }
         build(orNode.getSecondNode(), s); // This does the assignment!
         s.addInstr(new LABEL_Instr(l1));
-        s.addInstr(new THREAD_POLL_Instr());
+        s.addInstr(new ThreadPollInstr());
         return v1;
     }
 
@@ -2776,7 +2776,7 @@ public class IRBuilder {
     }
 
     public Operand buildTrue(Node node, IRScope m) {
-        m.addInstr(new THREAD_POLL_Instr());
+        m.addInstr(new ThreadPollInstr());
         return BooleanLiteral.TRUE; 
     }
 
@@ -2818,7 +2818,7 @@ public class IRBuilder {
             }
 
                 // SSS FIXME: Is this correctly placed ... at the end of the loop iteration?
-            s.addInstr(new THREAD_POLL_Instr());
+            s.addInstr(new ThreadPollInstr());
 
             s.addInstr(new LABEL_Instr(loop.iterEndLabel));
             if (isLoopHeadCondition) {
