@@ -2154,14 +2154,15 @@ public class IRBuilder {
         final ListNode sourceArray = multipleAsgnNode.getHeadNode();
 
         // First, build assignments for specific named arguments
-        int i = 0;
+        int i = 1; // Start at 1 since 0 is self
         if (sourceArray != null) {
             ListNode headNode = (ListNode) sourceArray;
             for (Node an: headNode.childNodes()) {
-                if (values == null)
+                if (values == null) {
                     buildBlockArgsAssignment(an, s, i, false);
-                else
+                } else {
                     buildAssignment(an, s, values, i, false);
+                }
                 i++;
             }
         }
