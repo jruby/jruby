@@ -82,7 +82,11 @@ revert the gem.
       end
 
       # TODO use installer options
-      installer = Gem::Installer.new gem, :wrappers => true, :force => true
+      # Modified for JRUBY-5031, to propagate --env-shebang if set
+      installer = Gem::Installer.new gem,
+        :wrappers => true,
+        :force => true,
+        :env_shebang => !Gem::ConfigFile::PLATFORM_DEFAULTS['install'].to_s['--env-shebang'].nil?
       installer.install
 
       say "Restored #{spec.full_name}"
