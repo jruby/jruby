@@ -57,6 +57,8 @@
 require 'thread'
 
 class Generator
+  include Enumerable
+  
   # Returns true if the generator has not reached the end yet.
   def next?()
     !end?
@@ -104,6 +106,8 @@ class Generator
     end
 
     def each
+      return enum_for(:each) unless block_given?
+      
       for i in 0...@ary.size
         yield @indexer.call(i)
       end
@@ -243,6 +247,8 @@ class Generator
 
     # Rewinds the generator and enumerates the elements.
     def each
+      return enum_for(:each) unless block_given?
+      
       rewind
 
       until end?
