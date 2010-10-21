@@ -2,68 +2,92 @@ package org.jruby.compiler.ir.operands;
 
 import java.util.List;
 import java.util.Map;
+import org.jruby.Ruby;
+import org.jruby.RubyHash;
 
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents a hash { _ =>_, _ => _ .. } in ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this hash could get converted to calls
 // that actually build the hash
-public class Hash extends Operand
-{
-    final public List<KeyValuePair> _pairs;
+public class Hash extends Operand {
+    final public List<KeyValuePair> pairs;
 
-    public Hash(List<KeyValuePair> pairs) { _pairs = pairs; }
-
-    public boolean isBlank() { return _pairs == null || _pairs.size() == 0; }
-
-    public boolean isConstant() 
-    {
-       for (KeyValuePair kp: _pairs)
-          if (!kp._key.isConstant() || !kp._value.isConstant())
-             return false;
-
-       return true;
+    public Hash(List<KeyValuePair> pairs) {
+        this.pairs = pairs;
     }
 
-    public boolean isNonAtomicValue() { return true; }
+    public boolean isBlank() {
+        return pairs == null || pairs.isEmpty();
+    }
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
-    {
+    @Override
+    public boolean isConstant() {
+        for (KeyValuePair pair : pairs) {
+            if (!pair.getKey().isConstant() || !pair.getValue().isConstant()) return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean isNonAtomicValue() {
+        return true;
+    }
+
+    @Override
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
         int i = 0;
-        for (KeyValuePair kv: _pairs) {
-           kv._key   = kv._key.getSimplifiedOperand(valueMap);
-           kv._value = kv._value.getSimplifiedOperand(valueMap);
-           i++;
+        for (KeyValuePair pair : pairs) {
+            pair.setKey(pair.getKey().getSimplifiedOperand(valueMap));
+            pair.setValue(pair.getValue().getSimplifiedOperand(valueMap));
+            i++;
         }
 
         return this;
     }
 
-    public IRClass getTargetClass() { return IRClass.getCoreClass("Hash"); }
+    @Override
+    public IRClass getTargetClass() {
+        return IRClass.getCoreClass("Hash");
+    }
 
     /** Append the list of variables used in this operand to the input list */
     @Override
-    public void addUsedVariables(List<Variable> l)
-    {
-        for (KeyValuePair kv: _pairs) {
-            kv._key.addUsedVariables(l);
-            kv._value.addUsedVariables(l);
+    public void addUsedVariables(List<Variable> l) {
+        for (KeyValuePair pair : pairs) {
+            pair.getKey().addUsedVariables(l);
+            pair.getValue().addUsedVariables(l);
         }
     }
 
-    public Operand cloneForInlining(InlinerInfo ii) { 
-        if (isConstant()) {
-            return this;
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        if (isConstant()) return this;
+
+        List<KeyValuePair> newPairs = new java.util.ArrayList<KeyValuePair>();
+        for (KeyValuePair pair : pairs) {
+            newPairs.add(new KeyValuePair(pair.getKey().cloneForInlining(ii),
+                    pair.getValue().cloneForInlining(ii)));
         }
-        else {
-            List<KeyValuePair> newPairs = new java.util.ArrayList<KeyValuePair>();
-            for (KeyValuePair kv: _pairs) {
-                newPairs.add(new KeyValuePair(kv._key.cloneForInlining(ii), kv._value.cloneForInlining(ii)));
-            }
-            return new Hash(newPairs);
+        return new Hash(newPairs);
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        Ruby runtime = interp.getContext().getRuntime();
+        RubyHash hash = RubyHash.newHash(runtime);
+
+        for (KeyValuePair pair : pairs) {
+            hash.fastASetCheckString(runtime, (IRubyObject) pair.getKey().retrieve(interp),
+                    (IRubyObject) pair.getValue().retrieve(interp));
         }
+
+        return hash;
     }
 }
