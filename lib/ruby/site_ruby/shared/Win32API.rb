@@ -10,7 +10,7 @@ class Win32API
     extend FFI::DataConverter
     native_type FFI::Type::POINTER
     
-    def to_native(value, ctx)
+    def self.to_native(value, ctx)
       if value.kind_of?(Integer)
         FFI::Pointer.new(value)
       else
@@ -18,7 +18,7 @@ class Win32API
       end
     end
 
-    def from_native(value, ctx)
+    def self.from_native(value, ctx)
       if !value.null?
         value.get_string(0)
       else
