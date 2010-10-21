@@ -78,6 +78,29 @@ public class InterpretedIRBlockBody extends BlockBody {
         context.postYield(binding, lastFrame);
     }
 
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
+        IRubyObject self = context.getFrameSelf(); // Should not need this and this should probably come from elsewhere
+        if (scope.getNumberOfVariables() > 1 && args.length == 1 && args[0] instanceof RubyArray) {
+            System.out.println("ARRAY to multi");
+            RubyArray array = (RubyArray) args[0];
+            int size = array.getLength();
+            System.out.println("Creating n variables: " + scope.getNumberOfVariables());
+            args = new IRubyObject[scope.getNumberOfVariables()];
+            
+            int i = 0;
+            for (;i < scope.getNumberOfVariables() && i < size; i++) {
+                args[i] = array.eltInternal(i);
+            }
+            
+            for (; i < size; i++) {
+                args[i] = context.getRuntime().getNil();
+            }
+        }
+        InterpreterContext interp = new NaiveInterpreterContext(context, self, closure.getTemporaryVariableSize(), args, scope, Block.NULL_BLOCK);
+
+        return Interpreter.interpret(context, closure.getCFG(), interp);
+    }
+
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
         // FIXME: null self?!?!?!
