@@ -172,15 +172,21 @@ namespace :spec do
     t.spec_files = FileList['spec/compiler/**/*_spec.rb']
   end
 
-  desc "Runs FFI specs"
+  desc "Runs FFI Specs"
   Spec::Rake::SpecTask.new("ffi" => "build/jruby-test-classes.jar") do |t|
     t.spec_files = FileList['spec/ffi/**/*_spec.rb']
   end
 
+  desc "Runs Java Signature Parser Specs"
   Spec::Rake::SpecTask.new("java_signature_parser") do |t|
     t.spec_opts ||= []
 #    t.spec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
     t.spec_files = FileList['spec/grammar/**/*_spec.rb']
+  end
+
+  desc "Runs Regression Specs"
+  Spec::Rake::SpecTask.new("regression") do |t|
+    t.spec_files = FileList['spec/regression/**/*_spec.rb']
   end
 
   # Complimentary tasks for running specs
