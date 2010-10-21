@@ -31,6 +31,7 @@ public class ReceiveClosureArgInstr extends NoOperandInstr {
     }
 
     @Interp
+    @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
         getResult().store(interp, interp.getParameter(argIndex));
     }
