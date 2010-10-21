@@ -229,7 +229,7 @@ public class Constant extends AbstractVariable {
         if (rubyModule == null) return;
 
         rubyModule.storeConstant(name, irubyObject);
-        rubyModule.invalidateCacheDescendants();
+        receiver.getRuntime().incrementConstantGeneration();
         initialized = true;
     }
 
