@@ -147,7 +147,7 @@ jruby_float_value(VALUE v)
 extern "C" VALUE
 rb_Float(VALUE obj)
 {
-    return likely(TYPE(obj) == T_FLOAT) ? obj : callMethodA(obj, "to_f", 0, NULL);
+    return rb_convert_type(obj, T_FLOAT, "Float", "to_f");
 }
 
 extern "C" double
