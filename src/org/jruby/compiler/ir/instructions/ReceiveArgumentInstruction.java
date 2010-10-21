@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -45,8 +46,9 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
             interpretAsRestArg(interp, self);
             return;
         }
-        
-        getResult().store(interp, interp.getParameter(argIndex));
+
+        Operand destination = getResult(); // result is a confusing name
+        destination.store(interp, interp.getParameter(argIndex));
     }
 
     @Interp
