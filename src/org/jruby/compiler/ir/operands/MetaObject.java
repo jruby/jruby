@@ -5,8 +5,10 @@ import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRScopeImpl;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -65,9 +67,19 @@ public class MetaObject extends Operand {
 
             return new Block(body, binding);
         }
-        
-        System.out.println("METAOOBJECT RETRIEVE: " + scope + ", C: " + scope.getClass().getSimpleName());
+
+        // Otherwise it is a module/script/class/sclass
+        IRScopeImpl scopeImpl = (IRScopeImpl) scope;
+
+        Object module = scopeImpl.getStaticScope().getModule();
+        if (module == null) return module;
+
         return null;
+    }
+
+    @Override
+    public Object store(InterpreterContext interp, Object value) {
+        return super.store(interp, value);
     }
 
 

@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
+import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
@@ -16,6 +16,7 @@ import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
+import org.jruby.parser.StaticScope;
 
 /**
  * Right now, this class abstracts 5 different scopes: Script, Module, Class, 
@@ -72,7 +73,9 @@ public abstract class IRScopeImpl implements IRScope {
     // Keeps track of types of prefix indexes for variables and labels
     private Map<String, Integer> nextVarIndex;
 
-    private void init(IRScope lexicalParent, Operand container) {
+    private StaticScope staticScope;
+
+    private void init(IRScope lexicalParent, Operand container, StaticScope staticScope) {
         this.lexicalParent = lexicalParent;
         this.container = container;
         nextVarIndex = new HashMap<String, Integer>();
@@ -80,10 +83,11 @@ public abstract class IRScopeImpl implements IRScope {
         aliases = new HashMap<String, String>();
         nextMethodIndex = 0;
         nextClosureIndex = 0;
+        this.staticScope = staticScope;
     }
 
-    public IRScopeImpl(IRScope lexicalParent, Operand container) {
-        init(lexicalParent, container);
+    public IRScopeImpl(IRScope lexicalParent, Operand container, StaticScope staticScope) {
+        init(lexicalParent, container, staticScope);
     }
 
     // Returns the containing scope!
@@ -170,6 +174,10 @@ public abstract class IRScopeImpl implements IRScope {
         return new SelfVariable();
     }
 
+    public StaticScope getStaticScope() {
+        return staticScope;
+    }
+
     public void addModule(IRModule m) {
         setConstantValue(m.name, new MetaObject(m));
         modules.add(m);
@@ -246,7 +254,7 @@ public abstract class IRScopeImpl implements IRScope {
         if (val.isConstant()) contants.put(constRef, val);
 
         if (this instanceof IRModule) {
-            ((IRModule) this).getRootMethod().addInstr(new PUT_CONST_Instr(this, constRef, val));
+            ((IRModule) this).getRootMethod().addInstr(new PutConstInstr(this, constRef, val));
         }
     }
 

@@ -28,8 +28,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private CFG              cfg;      // Control flow graph for this scope
     private List<IRClosure> closures; // List of (nested) closures in this scope
 
-    protected StaticScope staticScope;
-
     /* *****************************************************************************************************
      * Does this execution scope (applicable only to methods) receive a block and use it in such a way that
      * all of the caller's local variables need to be stored in a heap frame?
@@ -104,8 +102,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         requiresFrame = true;
     }
 
-    public IRExecutionScope(IRScope lexicalParent, Operand container) {
-        super(lexicalParent, container);
+    public IRExecutionScope(IRScope lexicalParent, Operand container, StaticScope staticScope) {
+        super(lexicalParent, container, staticScope);
         init();
     }
 
@@ -165,10 +163,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     // Get the control flow graph for this scope
     public CFG getCFG() {
         return cfg;
-    }
-
-    public StaticScope getStaticScope() {
-        return staticScope;
     }
 
 /**
@@ -373,7 +367,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
         if (variable == null) {
             // We use addVariable here because variable inlining may add new lvars
-            variable = new LocalVariable(name, staticScope.addVariable(name));
+            variable = new LocalVariable(name, getStaticScope().addVariable(name));
 
             localVariables.put(name, variable);
         }

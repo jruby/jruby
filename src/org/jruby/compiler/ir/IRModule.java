@@ -14,6 +14,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.parser.LocalStaticScope;
+import org.jruby.parser.StaticScope;
 
 public class IRModule extends IRScopeImpl {
     // The "root" method of a class -- the scope in which all definitions, and class code executes, equivalent to java clinit
@@ -29,8 +30,8 @@ public class IRModule extends IRScopeImpl {
         bootStrap();
     }
 
-    static private IRClass addCoreClass(String name, IRScope parent, String[] coreMethods) {
-        IRClass c = new IRClass(parent, null, null, name);
+    static private IRClass addCoreClass(String name, IRScope parent, String[] coreMethods, StaticScope staticScope) {
+        IRClass c = new IRClass(parent, null, null, name, staticScope);
         coreClasses.put(c.getName(), c);
         if (coreMethods != null) {
             for (String m : coreMethods) {
@@ -47,15 +48,15 @@ public class IRModule extends IRScopeImpl {
     // These are just placeholders for now .. this needs to be updated with *real* class objects later!
     static public void bootStrap() {
         coreClasses = new HashMap<String, IRClass>();
-        IRClass obj = addCoreClass("Object", null, null);
-        addCoreClass("Class", addCoreClass("Module", obj, null), null);
-        addCoreClass("Fixnum", obj, new String[]{"+", "-", "/", "*"});
-        addCoreClass("Float", obj, new String[]{"+", "-", "/", "*"});
-        addCoreClass("Array", obj, new String[]{"[]", "each", "inject"});
-        addCoreClass("Range", obj, new String[]{"each"});
-        addCoreClass("Hash", obj, new String[]{"each"});
-        addCoreClass("String", obj, null);
-        addCoreClass("Proc", obj, null);
+        IRClass obj = addCoreClass("Object", null, null, null);
+        addCoreClass("Class", addCoreClass("Module", obj, null, null), null, null);
+        addCoreClass("Fixnum", obj, new String[]{"+", "-", "/", "*"}, null);
+        addCoreClass("Float", obj, new String[]{"+", "-", "/", "*"}, null);
+        addCoreClass("Array", obj, new String[]{"[]", "each", "inject"}, null);
+        addCoreClass("Range", obj, new String[]{"each"}, null);
+        addCoreClass("Hash", obj, new String[]{"each"}, null);
+        addCoreClass("String", obj, null, null);
+        addCoreClass("Proc", obj, null, null);
     }
 
     public static IRClass getCoreClass(String n) {
@@ -112,10 +113,10 @@ public class IRModule extends IRScopeImpl {
         return this;
     }
 
-    public IRModule(IRScope lexicalParent, Operand container, String name) {
+    public IRModule(IRScope lexicalParent, Operand container, String name, StaticScope scope) {
         // SSS FIXME: container could be a meta-object which means we can record the constant statically!
         // Add in this opt!
-        super(lexicalParent, container);
+        super(lexicalParent, container, scope);
         this.name = name;
         addRootMethod();
         updateVersion();

@@ -3,15 +3,16 @@ package org.jruby.compiler.ir;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
+import org.jruby.parser.StaticScope;
 
 public class IRScript extends IRScopeImpl {
     public final String fileName;    // SSS FIXME: Should this be a string literal or a string?
     public final IRClass dummyClass;  // Dummy class for the script
 
-    public IRScript(String className, String sourceName) {
-        super((IRScope) null, null);
+    public IRScript(String className, String sourceName, StaticScope staticScope) {
+        super((IRScope) null, null, staticScope);
         fileName = sourceName;
-        dummyClass = new IRClass(this, null, null, "__SCRIPT_ROOT__");
+        dummyClass = new IRClass(this, null, null, "__SCRIPT_ROOT__", staticScope);
         addClass(dummyClass);
     }
 

@@ -27,13 +27,12 @@ public class IRMethod extends IRExecutionScope {
     private List<Operand> callArgs;
 
     public IRMethod(IRScope lexicalParent, Operand container, String name, boolean isInstanceMethod, StaticScope staticScope) {
-        super(lexicalParent, container);
+        super(lexicalParent, container, staticScope);
         this.name = name;
         this.isInstanceMethod = isInstanceMethod;
         startLabel = getNewLabel("_METH_START");
         endLabel = getNewLabel("_METH_END");
         callArgs = new ArrayList<Operand>();
-        this.staticScope = staticScope;
         updateVersion();
     }
 

@@ -23,12 +23,11 @@ public class IRClosure extends IRExecutionScope {
     private final BlockBody body;
 
     public IRClosure(IRScope lexicalParent, StaticScope staticScope, Arity arity, int argumentType) {
-        super(lexicalParent, new MetaObject(lexicalParent));
+        super(lexicalParent, new MetaObject(lexicalParent), staticScope);
         startLabel = getNewLabel("_CLOSURE_START");
         endLabel = getNewLabel("_CLOSURE_END");
         closureId = getNextClosureId();
         name = "_CLOSURE_" + closureId;
-        this.staticScope = staticScope;
 
         this.body = new InterpretedIRBlockBody(this, arity, argumentType);
     }

@@ -7,6 +7,7 @@ import java.util.Date;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
+import org.jruby.ast.RootNode;
 import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
@@ -50,7 +51,7 @@ public class Interpreter {
             long t1 = new Date().getTime();
             Node ast = buildAST(runtime, isCommandLineScript, args[i]);
             long t2 = new Date().getTime();
-            IRScope scope = new IRBuilder().buildRoot(ast);
+            IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
             long t3 = new Date().getTime();
             if (isDebug) {
                 System.out.println("## Before local optimization pass");

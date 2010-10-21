@@ -122,7 +122,7 @@ import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
-import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
+import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
 import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
@@ -228,7 +228,7 @@ public class IRBuilder {
            long t1 = new Date().getTime();
            Node ast = buildAST(isCommandLineScript, args[i]);
            long t2 = new Date().getTime();
-           IRScope scope = new IRBuilder().buildRoot(ast);
+           IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
            long t3 = new Date().getTime();
            if (isDebug) {
                System.out.println("################## Before local optimization pass ##################");
@@ -471,7 +471,7 @@ public class IRBuilder {
             case RETURNNODE: return buildReturn((ReturnNode) node, m); // done
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
-            case SCLASSNODE: return buildSClass(node, m); // done
+            case SCLASSNODE: return buildSClass((SClassNode) node, m); // done
             case SELFNODE: return buildSelf((SelfNode) node, m); // done
             case SPLATNODE: return buildSplat((SplatNode) node, m); // done
             case STRNODE: return buildStr((StrNode) node, m); // done
@@ -913,10 +913,10 @@ public class IRBuilder {
 
             // Build a new class and add it to the current scope (could be a script / module / class)
         String   className = cpathNode.getName();
-        IRClass c = new IRClass(s, container, superClass, className);
+        IRClass c = new IRClass(s, container, superClass, className, classNode.getScope());
         s.addClass(c);
         if (container != null)
-            s.addInstr(new PUT_CONST_Instr(container, className, new MetaObject(c)));
+            s.addInstr(new PutConstInstr(container, className, new MetaObject(c)));
 
             // Build the class body!
         if (classNode.getBodyNode() != null)
@@ -925,8 +925,7 @@ public class IRBuilder {
         return null;
     }
 
-    public Operand buildSClass(Node node, IRScope s) {
-        final SClassNode sclassNode = (SClassNode) node;
+    public Operand buildSClass(SClassNode sclassNode, IRScope s) {
         //  class Foo
         //  ...
         //    class << self
@@ -938,7 +937,7 @@ public class IRBuilder {
         // Here, the class << self declaration is in Foo's root method.
         // Foo is the class in whose context this is being defined.
         Operand receiver = build(sclassNode.getReceiverNode(), s);
-        IRClass mc = new IRMetaClass(s, receiver);
+        IRClass mc = new IRMetaClass(s, receiver, sclassNode.getScope());
 
         // Record the new class as being lexically defined in scope s
         s.addClass(mc);
@@ -980,9 +979,9 @@ public class IRBuilder {
             s.setConstantValue(constDeclNode.getName(), val);
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
-            s.addInstr(new PUT_CONST_Instr(module, constDeclNode.getName(), val));
+            s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            s.addInstr(new PUT_CONST_Instr(s.getSelf(), constDeclNode.getName(), val));
+            s.addInstr(new PutConstInstr(s.getSelf(), constDeclNode.getName(), val));
         }
 
         return val;
@@ -1595,7 +1594,7 @@ public class IRBuilder {
         }
         else {
             // Add 'm' to the meta class of the receiver!
-            IRMetaClass mc = new IRMetaClass(m.getLexicalParent(), receiver);
+            IRMetaClass mc = new IRMetaClass(m.getLexicalParent(), receiver, defnNode.getScope()); // ENEBO right scope?
             mc.addMethod(m);
         }
     }
@@ -2130,10 +2129,10 @@ public class IRBuilder {
 
         // Build the new module
         String    moduleName = moduleNode.getCPath().getName();
-        IRModule m = new IRModule(s, container, moduleName);
+        IRModule m = new IRModule(s, container, moduleName, moduleNode.getScope());
         s.addModule(m);
         if (container != null)
-            s.addInstr(new PUT_CONST_Instr(container, moduleName, new MetaObject(m)));
+            s.addInstr(new PutConstInstr(container, moduleName, new MetaObject(m)));
 
         // Build the module body
         if (moduleNode.getBodyNode() != null)
@@ -2721,20 +2720,20 @@ public class IRBuilder {
         return null;
     }
 
-    public IRScope buildRoot(Node node) {
+    public IRScope buildRoot(RootNode rootNode) {
+        String file = rootNode.getPosition().getFile();
         // Top-level script!
-        IRScript script = new IRScript("__file__", node.getPosition().getFile());
+        IRScript script = new IRScript("__file__", file, rootNode.getStaticScope());
         IRClass  rootClass = script.dummyClass;
         IRMethod rootMethod = rootClass.getRootMethod();
 
         // Debug info: record file name
-        rootMethod.addInstr(new FilenameInstr(node.getPosition().getFile()));
+        rootMethod.addInstr(new FilenameInstr(file));
 
         // add a "self" recv here
         // TODO: is this right?
         rootMethod.addInstr(new ReceiveArgumentInstruction(rootClass.getSelf(), 0));
 
-        RootNode rootNode = (RootNode) node;
         build(rootNode.getBodyNode(), rootMethod);
 
         return script;
