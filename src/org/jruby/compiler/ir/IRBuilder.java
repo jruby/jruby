@@ -125,7 +125,7 @@ import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.PUT_CONST_Instr;
 import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
-import org.jruby.compiler.ir.instructions.PUT_GLOBAL_VAR_Instr;
+import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
@@ -591,7 +591,7 @@ public class IRBuilder {
                 buildConstDeclAssignment((ConstDeclNode) node, s, v);
                 break;
             case GLOBALASGNNODE:
-                s.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), v));
+                s.addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(), v));
                 break;
             case INSTASGNNODE:
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
@@ -655,7 +655,7 @@ public class IRBuilder {
             case GLOBALASGNNODE:
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
-                s.addInstr(new PUT_GLOBAL_VAR_Instr(((GlobalAsgnNode)node).getName(), v));
+                s.addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(), v));
                 break;
             case INSTASGNNODE:
                 v = s.getNewTemporaryVariable();
@@ -1947,7 +1947,7 @@ public class IRBuilder {
 
     public Operand buildGlobalAsgn(GlobalAsgnNode globalAsgnNode, IRScope m) {
         Operand value = build(globalAsgnNode.getValueNode(), m);
-        m.addInstr(new PUT_GLOBAL_VAR_Instr(globalAsgnNode.getName(), value));
+        m.addInstr(new PutGlobalVarInstr(globalAsgnNode.getName(), value));
         return value;
     }
 

@@ -28,6 +28,14 @@ public abstract class PutInstr extends Instr {
         return ref;
     }
 
+    public Operand getTarget() {
+        return operands[TARGET];
+    }
+
+    public Operand getValue() {
+        return operands[VALUE];
+    }
+
     @Override
     public String toString() {
         return super.toString() + "(" + operands[TARGET] +
