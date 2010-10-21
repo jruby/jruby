@@ -2606,6 +2606,36 @@ public class ScriptingContainerTest {
 
         instance = null;
     }
+    
+    public void testEmbedEvalUnitCompileModes() {
+        org.jruby.embed.ScriptingContainer container = new org.jruby.embed.ScriptingContainer();
+        container.setCompileMode(CompileMode.OFF);
+        EmbedEvalUnit evalUnit1 = container.parse("$one = \"script 1: success\"");
+        EmbedEvalUnit evalUnit2 = container.parse("def script2() ; $two = \"script 2: success\"; end; script2()");
+        evalUnit1.run();
+        evalUnit2.run();
+        assertEquals("script 1: success", container.get("$one").toString());
+        assertEquals("script 2: success", container.get("$two").toString());
+
+        container = new org.jruby.embed.ScriptingContainer();
+        container.setCompileMode(CompileMode.JIT);
+        evalUnit1 = container.parse("$one = \"script 1: success\"");
+        evalUnit2 = container.parse("def script2() ; $two = \"script 2: success\"; end; script2()");
+        evalUnit1.run();
+        evalUnit2.run();
+        assertEquals("script 1: success", container.get("$one").toString());
+        assertEquals("script 2: success", container.get("$two").toString());
+
+        container = new org.jruby.embed.ScriptingContainer();
+        container.setCompileMode(CompileMode.FORCE);
+        evalUnit1 = container.parse("$one = \"script 1: success\"");
+        evalUnit2 = container.parse("def script2() ; $two = \"script 2: success\"; end; script2()");
+        evalUnit1.run();
+        evalUnit2.run();
+        assertEquals("script 1: success", container.get("$one").toString());
+        assertEquals("script 2: success", container.get("$two").toString());
+    }
+
 
     /**
      * Test of clear method, of class ScriptingContainer.

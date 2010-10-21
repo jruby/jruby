@@ -235,6 +235,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
 
         //push dummy scope, especially for the second and later parsing.
         StaticScope topStaticScope = new LocalStaticScope(null);
+        topStaticScope.setModule(runtime.getObject());
         context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
 
         DynamicScope currentScope = context.getCurrentScope();
