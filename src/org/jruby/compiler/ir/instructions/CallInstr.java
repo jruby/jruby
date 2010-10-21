@@ -298,13 +298,12 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public IRubyObject[] prepareArguments(InterpreterContext interp) {
-        Operand[] operands = getOperands();
-        int closureOffset = _closure == null ? 0 : 1;
-        IRubyObject[] args = new IRubyObject[operands.length - 2 - closureOffset];
-        int length = args.length - closureOffset;
+        Operand[] operands = getCallArgs();
+        IRubyObject[] args = new IRubyObject[operands.length - 1]; // Ignore self
+        int length = args.length;
 
         for (int i = 0; i < length; i++) {
-            args[i] = (IRubyObject) operands[i + 2].retrieve(interp);
+            args[i] = (IRubyObject) operands[i + 1].retrieve(interp);
         }
 
         System.out.println("ARGS>LENGTH " + args.length);
