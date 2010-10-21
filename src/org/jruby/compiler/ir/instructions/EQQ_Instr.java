@@ -12,6 +12,6 @@ public class EQQ_Instr extends TwoOperandInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new EQQ_Instr(ii.getRenamedVariable(result), _arg1.cloneForInlining(ii), _arg2.cloneForInlining(ii));
+        return new EQQ_Instr(ii.getRenamedVariable(result), operand1.cloneForInlining(ii), operand2.cloneForInlining(ii));
     }
 }

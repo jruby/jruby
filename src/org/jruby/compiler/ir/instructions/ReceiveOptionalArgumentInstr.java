@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.interpreter.Jump;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Assign the 'index' argument to 'dest'.
@@ -18,9 +19,9 @@ public class ReceiveOptionalArgumentInstr extends TwoOperandInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        Operand callArg = ii.getCallArg(((ArgIndex)_arg1)._index);
+        Operand callArg = ii.getCallArg(((ArgIndex)operand1).index);
         if (callArg == null) {// FIXME: Or should we also have a check for Nil.NIL?
-            return new JumpInstr(ii.getRenamedLabel((Label)_arg2));
+            return new JumpInstr(ii.getRenamedLabel((Label)operand2));
         }
         
         return new CopyInstr(ii.getRenamedVariable(result), callArg);
@@ -28,6 +29,12 @@ public class ReceiveOptionalArgumentInstr extends TwoOperandInstr {
 
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        System.out.println("TODO: Optional Argument");
+        int index = ((Integer) getOperand1().retrieve(interp)).intValue(); // ENEBO: A little silly
+        Object value = interp.getParameterCount() > (index - 1)/* 1-index is killing */ ? interp.getParameter(index) : null;
+
+        if (value != null) {
+            getResult().store(interp, value);
+            throw new Jump((Label) getOperand2());
+        }
     }
 }

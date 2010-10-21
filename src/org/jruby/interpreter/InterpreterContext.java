@@ -24,6 +24,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public interface InterpreterContext {
     // Section: Return value, Local Variables, Temporary Variables
     public Object getParameter(int offset);
+    public int getParameterCount(); // How many parameters were passed into a call
     public Object getReturnValue();
     public void setReturnValue(Object returnValue);
 

@@ -19,6 +19,6 @@ public class ALU_Instr extends TwoOperandInstr
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ALU_Instr(operation, ii.getRenamedVariable(result), _arg1.cloneForInlining(ii), _arg2 != null ? _arg2.cloneForInlining(ii) : null);
+        return new ALU_Instr(operation, ii.getRenamedVariable(result), operand1.cloneForInlining(ii), operand2 != null ? operand2.cloneForInlining(ii) : null);
     }
 }

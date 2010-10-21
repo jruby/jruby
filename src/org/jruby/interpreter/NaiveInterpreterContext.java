@@ -82,6 +82,10 @@ public class NaiveInterpreterContext implements InterpreterContext {
             return parameters[offset - 1];
         }
 
+        public int getParameterCount() {
+            return parameters.length;
+        }
+
         public Object setLocalVariable(int location, Object value) {
             int depth = location >> 16;
             int offset = location & 0xffff;

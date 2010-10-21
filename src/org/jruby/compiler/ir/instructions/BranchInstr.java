@@ -18,6 +18,6 @@ public abstract class BranchInstr extends TwoOperandInstr {
 
     @Override
     public String toString() {
-        return "\t" + operation + "(" + _arg1 + ", " + _arg2 + ", " + target + ")";
+        return "\t" + operation + "(" + operand1 + ", " + operand2 + ", " + target + ")";
     }
 }
