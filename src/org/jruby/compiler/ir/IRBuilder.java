@@ -114,7 +114,7 @@ import org.jruby.compiler.ir.instructions.GET_ARRAY_Instr;
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
 import org.jruby.compiler.ir.instructions.GET_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.GET_FIELD_Instr;
-import org.jruby.compiler.ir.instructions.GET_GLOBAL_VAR_Instr;
+import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.IS_TRUE_Instr;
 import org.jruby.compiler.ir.instructions.JRUBY_IMPL_CALL_Instr;
@@ -1953,7 +1953,7 @@ public class IRBuilder {
 
     public Operand buildGlobalVar(GlobalVarNode node, IRScope m) {
         Variable rv  = m.getNewTemporaryVariable();
-        m.addInstr(new GET_GLOBAL_VAR_Instr(rv, node.getName()));
+        m.addInstr(new GetGlobalVariableInstr(rv, node.getName()));
         return rv;
     }
 

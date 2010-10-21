@@ -22,6 +22,10 @@ public abstract class GetInstr extends Instr {
         return new Operand[] { source };
     }
 
+    public Operand getSource() {
+        return source;
+    }
+
     @Override
     public String toString() { 
         return super.toString() + "(" + source + (ref == null ? "" : ", " + ref) + ")";
