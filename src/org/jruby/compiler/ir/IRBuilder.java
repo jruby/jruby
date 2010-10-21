@@ -1681,7 +1681,7 @@ public class IRBuilder {
     }
 
     public Operand buildDot(final DotNode dotNode, IRScope s) {
-        return new Range(build(dotNode.getBeginNode(), s), build(dotNode.getEndNode(), s));
+        return new Range(build(dotNode.getBeginNode(), s), build(dotNode.getEndNode(), s), dotNode.isExclusive());
     }
 
     public Operand buildDRegexp(DRegexpNode dregexpNode, IRScope s) {
