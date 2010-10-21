@@ -239,6 +239,7 @@ public class RubyTempfile extends RubyFile {
         if (!tmpFile.exists() || tmpFile.delete()) {
             referenceSet.remove(reaper);
             reaper.released = true;
+            path = null;
         }
         return context.getRuntime().getNil();
     }
