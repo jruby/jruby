@@ -689,14 +689,14 @@ public class RubyIO extends RubyObject {
                             } catch (EOFException e) {
                                 n = -1;
                             }
-
-                            if (n == -1) {
-                                if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
-                                    checkDescriptor(runtime, ((ChannelStream) readStream).getDescriptor());
-                                    continue;
-                                } else {
-                                    break;
-                                }
+                            
+                            // CRuby checks ferror(f) and retry getc for
+                            // non-blocking IO.
+                            if (n == 0) {
+                                waitReadable(readStream.getChannel());
+                                continue;
+                            } else if (n == -1) {
+                                break;
                             }
 
                             update = true;
@@ -800,15 +800,14 @@ public class RubyIO extends RubyObject {
                     n = -1;
                 }
 
-                if (n == -1) {
-                    if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
-                        checkDescriptor(runtime, ((ChannelStream)readStream).getDescriptor());
-                        continue;
-                    } else {
-                        break;
-                    }
+                // CRuby checks ferror(f) and retry getc for non-blocking IO.
+                if (n == 0) {
+                    waitReadable(readStream.getChannel());
+                    continue;
+                } else if (n == -1) {
+                    break;
                 }
-
+                
                 update = true;
             } while (c != delim);
 
@@ -1285,106 +1284,23 @@ public class RubyIO extends RubyObject {
             throw runtime.newErrnoEPIPEError();
         }
     }
-
-    protected boolean waitWritable(ChannelDescriptor descriptor) throws IOException {
-        Channel channel = descriptor.getChannel();
-        if (channel == null || !(channel instanceof SelectableChannel)) {
-            return false;
-        }
-
-        SelectableChannel selectable = (SelectableChannel)channel;
-        Selector selector = null;
-        synchronized (selectable.blockingLock()) {
-            boolean oldBlocking = selectable.isBlocking();
-            try {
-                selector = SelectorFactory.openWithRetryFrom(getRuntime(), SelectorProvider.provider());
-
-                selectable.configureBlocking(false);
-                int real_ops = selectable.validOps() & SelectionKey.OP_WRITE;
-                SelectionKey key = selectable.keyFor(selector);
-
-                if (key == null) {
-                    selectable.register(selector, real_ops, descriptor);
-                } else {
-                    key.interestOps(key.interestOps()|real_ops);
-                }
-
-                while(selector.select() == 0) {}
-
-                for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
-                    SelectionKey skey = (SelectionKey) i.next();
-                    if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
-                        if(skey.attachment() == descriptor) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            } finally {
-                if (selector != null) {
-                    try {
-                        selector.close();
-                    } catch (Exception e) {
-                    }
-                }
-                selectable.configureBlocking(oldBlocking);
-            }
-        }
-    }
-
-    /*
-     * Throw bad file descriptor is we can not read on supplied descriptor.
-     */
-    private void checkDescriptor(Ruby runtime, ChannelDescriptor descriptor) throws IOException {
-        if (!(waitReadable(descriptor))) throw runtime.newIOError("bad file descriptor: " + openFile.getPath());
-    }
-
-    protected boolean waitReadable(ChannelDescriptor descriptor) throws IOException {
-        Channel channel = descriptor.getChannel();
-        if (channel == null || !(channel instanceof SelectableChannel)) {
-            return false;
-        }
-
-        SelectableChannel selectable = (SelectableChannel)channel;
-        Selector selector = null;
-        synchronized (selectable.blockingLock()) {
-            boolean oldBlocking = selectable.isBlocking();
-            try {
-                selector = SelectorFactory.openWithRetryFrom(getRuntime(), SelectorProvider.provider());
-
-                selectable.configureBlocking(false);
-                int real_ops = selectable.validOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
-                SelectionKey key = selectable.keyFor(selector);
-
-                if (key == null) {
-                    selectable.register(selector, real_ops, descriptor);
-                } else {
-                    key.interestOps(key.interestOps()|real_ops);
-                }
-
-                while(selector.select() == 0);
-
-                for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
-                    SelectionKey skey = (SelectionKey) i.next();
-                    if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0) {
-                        if(skey.attachment() == descriptor) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            } finally {
-                if (selector != null) {
-                    try {
-                        selector.close();
-                    } catch (Exception e) {
-                    }
-                }
-                selectable.configureBlocking(oldBlocking);
-            }
-        }
-    }
     
+    private boolean waitWritable(Channel ch) {
+        if (ch instanceof SelectableChannel) {
+            getRuntime().getCurrentContext().getThread().select(ch, this, SelectionKey.OP_WRITE);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean waitReadable(Channel ch) {
+        if (ch instanceof SelectableChannel) {
+            getRuntime().getCurrentContext().getThread().select(ch, this, SelectionKey.OP_READ);
+            return true;
+        }
+        return false;
+    }
+
     protected int fwrite(ByteList buffer) {
         int n, r, l, offset = 0;
         boolean eagain = false;
@@ -1420,7 +1336,7 @@ public class RubyIO extends RubyObject {
                         eagain = true;
                     }
 
-                    if(eagain && waitWritable(writeStream.getDescriptor())) {
+                    if(eagain && waitWritable(writeStream.getChannel())) {
                         openFile.checkClosed(getRuntime());
                         if(offset >= buffer.length()) {
                             return -1;
@@ -1848,6 +1764,7 @@ public class RubyIO extends RubyObject {
             }
             
             readCheck(myOpenFile.getMainStream());
+            waitReadable(myOpenFile.getMainStream().getChannel());
             
             myOpenFile.getMainStream().clearerr();
             
@@ -2362,21 +2279,18 @@ public class RubyIO extends RubyObject {
             Stream stream = myOpenFile.getMainStream();
             
             readCheck(stream);
+            waitReadable(stream.getChannel());
             stream.clearerr();
-        
+            
             int c = myOpenFile.getMainStream().fgetc();
             
             if (c == -1) {
-                // TODO: check for ferror, clear it, and try once more up above readCheck
-//                if (ferror(f)) {
-//                    clearerr(f);
-//                    if (!rb_io_wait_readable(fileno(f)))
-//                        rb_sys_fail(fptr->path);
-//                    goto retry;
-//                }
+                // CRuby checks ferror(f) and retry getc for non-blocking IO
+                // read. We checks readability first if possible so retry should
+                // not be needed I believe.
                 return getRuntime().getNil();
             }
-        
+            
             return getRuntime().newFixnum(c);
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
@@ -2956,19 +2870,13 @@ public class RubyIO extends RubyObject {
             while (true) {
                 myOpenFile.checkReadable(runtime);
                 myOpenFile.setReadBuffered();
-
-                // TODO: READ_CHECK from MRI
+                waitReadable(myOpenFile.getMainStream().getChannel());
                 
                 int c = myOpenFile.getMainStream().fgetc();
                 
+                // CRuby checks ferror(f) and retry getc for
+                // non-blocking IO.
                 if (c == -1) {
-                    // TODO: check for error, clear it, and wait until readable before trying once more
-//                    if (ferror(f)) {
-//                        clearerr(f);
-//                        if (!rb_io_wait_readable(fileno(f)))
-//                            rb_sys_fail(fptr->path);
-//                        continue;
-//                    }
                     break;
                 }
                 
@@ -2976,8 +2884,6 @@ public class RubyIO extends RubyObject {
                 block.yield(context, getRuntime().newFixnum(c));
             }
 
-            // TODO: one more check for error
-//            if (ferror(f)) rb_sys_fail(fptr->path);
             return this;
         } catch (PipeException ex) {
             throw runtime.newErrnoEPIPEError();
