@@ -39,6 +39,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -109,25 +110,30 @@ public class RubyTCPSocket extends RubyIPSocket {
             if (localHost != null) {
                 socket.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
             }
+            boolean success = false;
             try {
                 channel.configureBlocking(false);
                 channel.connect( new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort) );
                 context.getThread().select(channel, this, SelectionKey.OP_CONNECT);
                 channel.finishConnect();
+                success = true;
+            } catch (NoRouteToHostException nrthe) {
+                throw context.getRuntime().newErrnoEHOSTUNREACHError("SocketChannel.connect");
+            } catch(ConnectException e) {
+                throw context.getRuntime().newErrnoECONNREFUSEDError();
+            } catch(UnknownHostException e) {
+                throw sockerr(context.getRuntime(), "initialize: name or service not known");
             } finally {
-                channel.configureBlocking(true);
+                // only try to set blocking back if we succeeded to finish connecting
+                if (success) channel.configureBlocking(true);
             }
             initSocket(context.getRuntime(), new ChannelDescriptor(channel, new ModeFlags(ModeFlags.RDWR)));
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
-        } catch(ConnectException e) {
-            throw context.getRuntime().newErrnoECONNREFUSEDError();
         } catch (ClosedChannelException cce) {
             throw context.getRuntime().newErrnoECONNREFUSEDError();
-        } catch(UnknownHostException e) {
-            throw sockerr(context.getRuntime(), "initialize: name or service not known");
         } catch(IOException e) {
-            throw sockerr(context.getRuntime(), "initialize: name or service not known");
+            throw sockerr(context.getRuntime(), e.getLocalizedMessage());
         } catch (IllegalArgumentException iae) {
             throw sockerr(context.getRuntime(), iae.getMessage());
         }
