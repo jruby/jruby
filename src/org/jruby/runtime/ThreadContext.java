@@ -653,7 +653,8 @@ public final class ThreadContext {
     }
     
     private static void addBackTraceElement(Ruby runtime, RubyArray backtrace, RubyStackTraceElement frame, RubyStackTraceElement previousFrame) {
-        if (frame != previousFrame && // happens with native exceptions, should not filter those out
+        if (!backtrace.getRuntime().is1_9() &&
+                frame != previousFrame && // happens with native exceptions, should not filter those out
                 frame.getLineNumber() == previousFrame.getLineNumber() &&
                 frame.getMethodName() != null &&
                 frame.getMethodName().equals(previousFrame.getMethodName()) &&
@@ -675,7 +676,9 @@ public final class ThreadContext {
     }
     
     private static void addBackTraceElement(RubyArray backtrace, RubyStackTraceElement frame, RubyStackTraceElement previousFrame, FrameType frameType) {
-        if (frame != previousFrame && // happens with native exceptions, should not filter those out
+        // filter out recursive calls only in 1.8 mode
+        if (!backtrace.getRuntime().is1_9() &&
+                frame != previousFrame && // happens with native exceptions, should not filter those out
                 frame.getMethodName() != null && 
                 frame.getMethodName().equals(previousFrame.getMethodName()) &&
                 frame.getFileName().equals(previousFrame.getFileName()) &&
