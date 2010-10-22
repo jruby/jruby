@@ -117,7 +117,7 @@ import org.jruby.compiler.ir.instructions.GET_FIELD_Instr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.IS_TRUE_Instr;
-import org.jruby.compiler.ir.instructions.JRUBY_IMPL_CALL_Instr;
+import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
@@ -2092,7 +2092,7 @@ public class IRBuilder {
     public Operand buildMatch(MatchNode matchNode, IRScope m) {
         Variable ret    = m.getNewTemporaryVariable();
         Operand  regexp = build(matchNode.getRegexpNode(), m);
-        m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.MATCH, new Operand[]{regexp}));
+        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH, new Operand[]{regexp}));
         return ret;
     }
 
@@ -2100,7 +2100,7 @@ public class IRBuilder {
         Variable  ret       = m.getNewTemporaryVariable();
         Operand   receiver  = build(matchNode.getReceiverNode(), m);
         Operand   value     = build(matchNode.getValueNode(), m);
-        m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.MATCH2, new Operand[]{receiver, value}));
+        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH2, new Operand[]{receiver, value}));
         return ret;
     }
 
@@ -2108,7 +2108,7 @@ public class IRBuilder {
         Variable  ret       = m.getNewTemporaryVariable();
         Operand   receiver  = build(matchNode.getReceiverNode(), m);
         Operand   value     = build(matchNode.getValueNode(), m);
-        m.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.MATCH3, new Operand[]{receiver, value}));
+        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH3, new Operand[]{receiver, value}));
         return ret;
     }
 
@@ -2770,7 +2770,7 @@ public class IRBuilder {
     public Operand buildToAry(ToAryNode node, IRScope s) {
         Operand  array = build(node.getValue(), s);
         Variable ret   = s.getNewTemporaryVariable();
-        s.addInstr(new JRUBY_IMPL_CALL_Instr(ret, MethAddr.TO_ARY, new Operand[]{array}));
+        s.addInstr(new JRubyImplCallInstr(ret, MethAddr.TO_ARY, new Operand[]{array}));
         return  ret;
     }
 

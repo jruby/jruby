@@ -25,6 +25,7 @@ public class StringLiteral extends Constant
 
     @Override
     public Object retrieve(InterpreterContext interp) {
+        // ENEBO: This is not only used for full RubyStrings, but also for bytelist retrieval....extra wrapping
         return interp.getContext().getRuntime().newString(_bl_value);
     }
 }
