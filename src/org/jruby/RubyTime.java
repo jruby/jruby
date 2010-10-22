@@ -654,8 +654,9 @@ public class RubyTime extends RubyObject {
 
     public RubyObject mdump(final IRubyObject[] args) {
         RubyTime obj = (RubyTime)args[0];
-        DateTime dateTime = obj.dt;
+        DateTime dateTime = obj.dt.toDateTime(DateTimeZone.UTC);
         byte dumpValue[] = new byte[8];
+        
         int pe = 
             0x1                                 << 31 |
             ((obj.gmt().isTrue())? 0x1 : 0x0)   << 30 |
@@ -817,7 +818,7 @@ public class RubyTime extends RubyObject {
     protected static RubyTime s_mload(IRubyObject recv, RubyTime time, IRubyObject from) {
         Ruby runtime = recv.getRuntime();
 
-        DateTime dt = new DateTime(getLocalTimeZone(runtime));
+        DateTime dt = new DateTime(DateTimeZone.UTC);
 
         byte[] fromAsBytes = null;
         fromAsBytes = from.convertToString().getBytes();
@@ -832,12 +833,13 @@ public class RubyTime extends RubyObject {
         for (int i = 4; i < 8; i++) {
             s |= ((int)fromAsBytes[i] & 0xFF) << (8 * (i - 4));
         }
+        boolean utc = false;
         if ((p & (1<<31)) == 0) {
             dt = dt.withMillis(p * 1000L);
             time.setUSec((s & 0xFFFFF) % 1000);
         } else {
             p &= ~(1<<31);
-            if((p >>> 30 & 0x1) == 0x1) dt = dt.withZone(DateTimeZone.UTC);
+            utc = ((p >>> 30 & 0x1) == 0x1);
             dt = dt.withYear(((p >>> 14) & 0xFFFF) + 1900);
             dt = dt.withMonthOfYear(((p >>> 10) & 0xF) + 1);
             dt = dt.withDayOfMonth(((p >>> 5)  & 0x1F));
@@ -849,6 +851,7 @@ public class RubyTime extends RubyObject {
             time.setUSec((s & 0xFFFFF) % 1000);
         }
         time.setDateTime(dt);
+        if (!utc) time.localtime();
 
         from.getInstanceVariables().copyInstanceVariablesInto(time);
         return time;
