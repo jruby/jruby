@@ -1,41 +1,66 @@
 package org.jruby.compiler.ir.operands;
+
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.List;
 import java.util.Map;
+import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
+import org.jruby.interpreter.InterpreterContext;
 
 // Represents a regexp from ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, this regexp operand could get converted to calls
 // that actually build the Regexp object
-public class Regexp extends Operand
-{
-    final public int _opts;
-    Operand _re;
+public class Regexp extends Operand {
+    final public int options;
+    Operand regexp;
 
-    public Regexp(Operand re, int opts) { _re = re; _opts = opts; }
+    public Regexp(Operand regexp, int options) {
+        this.regexp = regexp;
+        this.options = options;
+    }
 
-    public boolean isConstant() { return _re.isConstant(); }
+    @Override
+    public boolean isConstant() {
+        return regexp.isConstant();
+    }
 
-    public String toString() { return "RE:|" + _re + "|" + _opts; }
+    @Override
+    public String toString() {
+        return "RE:|" + regexp + "|" + options;
+    }
 
-    public boolean isNonAtomicValue() { return true; }
+    @Override
+    public boolean isNonAtomicValue() {
+        return true;
+    }
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
-    {
-        _re = _re.getSimplifiedOperand(valueMap);
+    @Override
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
+        regexp = regexp.getSimplifiedOperand(valueMap);
         return this;
     }
 
     /** Append the list of variables used in this operand to the input list */
     @Override
-    public void addUsedVariables(List<Variable> l)
-    {
-        _re.addUsedVariables(l);
+    public void addUsedVariables(List<Variable> l) {
+        regexp.addUsedVariables(l);
     }
 
-    public Operand cloneForInlining(InlinerInfo ii) { 
-        return isConstant() ? this : new Regexp(_re.cloneForInlining(ii), _opts);
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return isConstant() ? this : new Regexp(regexp.cloneForInlining(ii), options);
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        RubyRegexp reg = RubyRegexp.newRegexp(interp.getContext().getRuntime(),
+                ((RubyString) regexp.retrieve(interp)).getByteList(), options);
+
+        reg.setLiteral();
+
+        return reg;
     }
 }
