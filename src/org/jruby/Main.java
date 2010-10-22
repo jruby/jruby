@@ -214,104 +214,107 @@ public class Main {
         if (args.length > 0) {
             config.processArguments(args);
         }
+        
         Ruby runtime     = Ruby.newInstance(config);
 
-        // set thread context JRuby classloader here, for the main thread
         try {
-            Thread.currentThread().setContextClassLoader(runtime.getJRubyClassLoader());
-        } catch (SecurityException se) {
-            // can't set TC classloader
-            if (runtime.getInstanceConfig().isVerbose()) {
-                config.getError().println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
-            }
-        }
-
-        if (in == null) {
-            // no script to run, return success below
-        } else if (config.isxFlag() && !config.hasShebangLine()) {
-            // no shebang was found and x option is set
-            throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
-        } else if (config.isShouldCheckSyntax()) {
-            int status = 0;
+            // set thread context JRuby classloader here, for the main thread
             try {
-                runtime.parseFromMain(in, filename);
-                config.getOutput().println("Syntax OK for " + filename);
-            } catch (RaiseException re) {
-                status = -1;
-                if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
-                    config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
-                } else {
-                    throw re;
+                Thread.currentThread().setContextClassLoader(runtime.getJRubyClassLoader());
+            } catch (SecurityException se) {
+                // can't set TC classloader
+                if (runtime.getInstanceConfig().isVerbose()) {
+                    config.getError().println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
                 }
             }
-            
-            if (config.getArgv().length > 0) {
-                for (String arg : config.getArgv()) {
-                    File argFile = new File(arg);
-                    if (argFile.exists()) {
-                        try {
-                            runtime.parseFromMain(new FileInputStream(argFile), arg);
-                            config.getOutput().println("Syntax OK for " + arg);
-                        } catch (FileNotFoundException fnfe) {
-                            status = -1;
-                            config.getOutput().println("File not found: " + arg);
-                        } catch (RaiseException re) {
-                            status = -1;
-                            if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
-                                config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
-                            } else {
-                                throw re;
-                            }
-                        }
+
+            if (in == null) {
+                // no script to run, return success below
+            } else if (config.isxFlag() && !config.hasShebangLine()) {
+                // no shebang was found and x option is set
+                throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
+            } else if (config.isShouldCheckSyntax()) {
+                int status = 0;
+                try {
+                    runtime.parseFromMain(in, filename);
+                    config.getOutput().println("Syntax OK for " + filename);
+                } catch (RaiseException re) {
+                    status = -1;
+                    if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
+                        config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
                     } else {
-                        status = -1;
-                        config.getOutput().println("File not found: " + arg);
+                        throw re;
                     }
                 }
-            }
-            return new Status(status);
-        } else {
-            long now = -1;
 
-            try {
-                if (config.isBenchmarking()) {
-                    now = System.currentTimeMillis();
+                if (config.getArgv().length > 0) {
+                    for (String arg : config.getArgv()) {
+                        File argFile = new File(arg);
+                        if (argFile.exists()) {
+                            try {
+                                runtime.parseFromMain(new FileInputStream(argFile), arg);
+                                config.getOutput().println("Syntax OK for " + arg);
+                            } catch (FileNotFoundException fnfe) {
+                                status = -1;
+                                config.getOutput().println("File not found: " + arg);
+                            } catch (RaiseException re) {
+                                status = -1;
+                                if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
+                                    config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+                                } else {
+                                    throw re;
+                                }
+                            }
+                        } else {
+                            status = -1;
+                            config.getOutput().println("File not found: " + arg);
+                        }
+                    }
                 }
-
-                if (config.isSamplingEnabled()) {
-                    SimpleSampler.startSampleThread();
-                }
+                return new Status(status);
+            } else {
+                long now = -1;
 
                 try {
-                    runtime.runFromMain(in, filename);
-                } finally {
-                    runtime.tearDown();
-
                     if (config.isBenchmarking()) {
-                        config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
+                        now = System.currentTimeMillis();
                     }
 
                     if (config.isSamplingEnabled()) {
-                        org.jruby.util.SimpleSampler.report();
+                        SimpleSampler.startSampleThread();
                     }
-                }
-            } catch (RaiseException rj) {
-                RubyException raisedException = rj.getException();
-                if (runtime.getSystemExit().isInstance(raisedException)) {
-                    IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
 
-                    if (status != null && !status.isNil()) {
-                        return new Status(RubyNumeric.fix2int(status));
-                    } else {
-                        return new Status(0);
+                    try {
+                        runtime.runFromMain(in, filename);
+                    } finally {
+                        if (config.isBenchmarking()) {
+                            config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
+                        }
+
+                        if (config.isSamplingEnabled()) {
+                            org.jruby.util.SimpleSampler.report();
+                        }
                     }
-                } else {
-                    runtime.printError(raisedException);
-                    return new Status(1);
+                } catch (RaiseException rj) {
+                    RubyException raisedException = rj.getException();
+                    if (runtime.getSystemExit().isInstance(raisedException)) {
+                        IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
+
+                        if (status != null && !status.isNil()) {
+                            return new Status(RubyNumeric.fix2int(status));
+                        } else {
+                            return new Status(0);
+                        }
+                    } else {
+                        runtime.printError(raisedException);
+                        return new Status(1);
+                    }
                 }
             }
+            return new Status();
+        } finally {
+            runtime.tearDown();
         }
-        return new Status();
     }
 
     private void showVersion() {

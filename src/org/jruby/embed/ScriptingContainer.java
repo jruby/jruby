@@ -1674,7 +1674,25 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         return getError();
     }
 
+    /**
+     * Cleanly shut down this ScriptingContainer and any JRuby resources it holds.
+     * All ScriptingContainer instances should be terminated when you are done with
+     * them, rather then leaving them for GC to finalize.
+     *
+     * @since JRuby 1.6.0
+     */
     public void terminate() {
         getProvider().getRuntime().tearDown(false);
+    }
+
+    /**
+     * Ensure this ScriptingContainer instance is terminated when nobody holds any
+     * references to it (and GC wants to reclaim it).
+     * 
+     * @throws Throwable
+     */
+    public void finalize() throws Throwable {
+        super.finalize();
+        terminate();
     }
 }
