@@ -122,7 +122,7 @@ import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
-import org.jruby.compiler.ir.instructions.NOT_Instr;
+import org.jruby.compiler.ir.instructions.NotInstr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
@@ -2210,7 +2210,7 @@ public class IRBuilder {
 
     public Operand buildNot(NotNode node, IRScope m) {
         Variable ret = m.getNewTemporaryVariable();
-        m.addInstr(new NOT_Instr(ret, build(node.getConditionNode(), m)));
+        m.addInstr(new NotInstr(ret, build(node.getConditionNode(), m)));
         return ret;
     }
 
