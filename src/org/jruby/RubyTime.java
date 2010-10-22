@@ -61,6 +61,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormat;
+import static org.jruby.CompatVersion.*;
 
 /** The Time class.
  * 
@@ -782,6 +783,11 @@ public class RubyTime extends RubyObject {
         return createTime(recv, args, false);
     }
 
+    @JRubyMethod(name = "new", required = 1, optional = 9, meta = true, compat = RUBY1_9)
+    public static RubyTime new19(IRubyObject recv, IRubyObject[] args) {
+        return createTime(recv, args, false);
+    }
+
     @JRubyMethod(name = {"utc", "gm"}, required = 1, optional = 9, meta = true)
     public static RubyTime new_utc(IRubyObject recv, IRubyObject[] args) {
         return createTime(recv, args, true);
@@ -955,10 +961,12 @@ public class RubyTime extends RubyObject {
             }
         }
 
-        if (0 <= year && year < 39) {
-            year += 2000;
-        } else if (69 <= year && year < 139) {
-            year += 1900;
+        if (!runtime.is1_9()) {
+            if (0 <= year && year < 39) {
+                year += 2000;
+            } else if (69 <= year && year < 139) {
+                year += 1900;
+            }
         }
 
         DateTime dt;
