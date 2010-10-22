@@ -1,7 +1,6 @@
 STDLIB_FILES = %w[
   English.rb
   README
-  Win32API.rb
   abbrev.rb
   base64.rb
   benchmark.rb
