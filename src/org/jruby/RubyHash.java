@@ -929,7 +929,11 @@ public class RubyHash extends RubyObject implements Map {
         Ruby runtime = context.getRuntime();
 
         if (!(other instanceof RubyHash)) {
-            return runtime.getFalse();
+            if (!other.respondsTo("to_hash")) {
+                return runtime.getFalse();
+            } else {
+                return RuntimeHelpers.rbEqual(context, other, this);
+            }
         }
 
         final RubyHash otherHash = (RubyHash) other;
@@ -964,7 +968,7 @@ public class RubyHash extends RubyObject implements Map {
      * 
      */
     @JRubyMethod(name = "==")
-    public IRubyObject op_equal19(final ThreadContext context, IRubyObject other) {
+    public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
         return RecursiveComparator.compare(context, "==", this, other, null);
     }
 
