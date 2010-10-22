@@ -783,8 +783,11 @@ public class RubyTime extends RubyObject {
         return createTime(recv, args, false);
     }
 
-    @JRubyMethod(name = "new", required = 1, optional = 9, meta = true, compat = RUBY1_9)
-    public static RubyTime new19(IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(name = "new", optional = 10, meta = true, compat = RUBY1_9)
+    public static IRubyObject new19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        if (args.length == 0) {
+            return newInstance(context, recv);
+        }
         return createTime(recv, args, false);
     }
 
