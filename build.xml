@@ -481,7 +481,6 @@
         <fileset dir="${jruby.classes.dir}"/>
         <fileset dir="${build.dir}/jar-complete">
           <exclude name="META-INF/jruby.home/lib/ruby/site_ruby/shared/builtin/**"/>
-          <exclude name="META-INF/jruby.home/lib/ruby/1.9/**"/>
         </fileset>
         <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
         <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
