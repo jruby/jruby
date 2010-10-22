@@ -966,8 +966,10 @@ public class LoadService {
 
             if (foundResource != null) {
                 state.loadName = resolveLoadName(foundResource, foundResource.getName());
-                return foundResource;
             }
+
+            // not found, don't bother with load path
+            return foundResource;
         }
 
         // if it's a ~/ baseName use HOME logic
@@ -976,8 +978,10 @@ public class LoadService {
 
             if (foundResource != null) {
                 state.loadName = resolveLoadName(foundResource, foundResource.getName());
-                return foundResource;
             }
+
+            // not found, don't bother with load path
+            return foundResource;
         }
 
         // if given path is absolute, just try it as-is (with extensions) and no load path
@@ -1019,8 +1023,6 @@ public class LoadService {
 
                     if (looksLikeJarURL) {
                         foundResource = tryResourceFromJarURLWithLoadPath(namePlusSuffix, loadPathEntry);
-                    } else if(namePlusSuffix.startsWith("./")) {
-                        throw runtime.newLoadError("");
                     } else {
                         foundResource = tryResourceFromLoadPath(namePlusSuffix, loadPathEntry);
                     }

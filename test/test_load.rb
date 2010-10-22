@@ -219,4 +219,12 @@ DEPS
       assert $jruby3977
     }
   end
+
+  # JRUBY-5045
+  def test_cwd_plus_dotdot_jar_loading
+    $hello = nil
+    require './test/../test/jar_with_ruby_files'
+    require 'hello_from_jar'
+    assert "hi", $hello
+  end
 end
