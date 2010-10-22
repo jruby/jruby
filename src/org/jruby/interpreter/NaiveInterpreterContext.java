@@ -107,6 +107,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
             this.frame = frame;
         }
 
+        // FIXME: We have this as a var somewhere else
         private IRubyObject[] NO_PARAMS = new IRubyObject[0];
 
         public IRubyObject[] getParametersFrom(int argIndex) {
