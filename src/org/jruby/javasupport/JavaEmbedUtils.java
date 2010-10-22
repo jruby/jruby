@@ -279,7 +279,6 @@ public class JavaEmbedUtils {
      * @return the converted object
      */
     public static Object rubyToJava(IRubyObject value) {
-        Ruby runtime = value.getRuntime();
         return value.toJava(Object.class);
     }
 

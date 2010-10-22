@@ -195,11 +195,13 @@ public class ASTInterpreter {
             if (bodyNode == null) return runtime.getNil();
             return bodyNode.interpret(runtime, context, type, block);
         } finally {
-            if (runtime.hasEventHooks()) {
-                callTraceFunction(runtime, context, RubyEvent.END);
+            try {
+                if (runtime.hasEventHooks()) {
+                    callTraceFunction(runtime, context, RubyEvent.END);
+                }
+            } finally {
+                context.postClassEval();
             }
-            
-            context.postClassEval();
         }
     }
 
