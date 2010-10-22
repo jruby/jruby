@@ -69,7 +69,12 @@ public class Main {
     private final RubyInstanceConfig config;
 
     public Main(RubyInstanceConfig config) {
+        this(config, false);
+    }
+
+    private Main(RubyInstanceConfig config, boolean hardExit) {
         this.config = config;
+        config.setHardExit(hardExit);
     }
 
     public Main(final InputStream in, final PrintStream out, final PrintStream err) {
@@ -84,6 +89,17 @@ public class Main {
         this(new RubyInstanceConfig());
     }
 
+    private Main(boolean hardExit) {
+        this(new RubyInstanceConfig(), hardExit);
+    }
+
+    /**
+     * This is the command-line entry point for JRuby, and should ONLY be used by
+     * Java when starting up JRuby from a command-line. Use other mechanisms when
+     * embedding JRuby into another application.
+     *
+     * @param args command-line args, provided by the JVM.
+     */
     public static void main(String[] args) {
         // Ensure we're not running on GCJ, since it's not supported and leads to weird errors
         if (Platform.IS_GCJ) {
@@ -91,7 +107,7 @@ public class Main {
             System.exit(1);
         }
         
-        Main main = new Main();
+        Main main = new Main(true);
         
         try {
             Status status = main.run(args);

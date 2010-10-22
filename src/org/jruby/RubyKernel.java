@@ -858,7 +858,11 @@ public class RubyKernel {
         }
 
         if (hard) {
-            throw new MainExitException(status, true);
+            if (runtime.getInstanceConfig().isHardExit()) {
+                System.exit(status);
+            } else {
+                throw new MainExitException(status, true);
+            }
         } else {
             throw runtime.newSystemExit(status);
         }

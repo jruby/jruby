@@ -207,6 +207,7 @@ public class RubyInstanceConfig {
     private String inPlaceBackupExtension = null;
     private boolean parserDebug = false;
     private String threadDumpSignal = null;
+    private boolean hardExit = false;
 
     private int safeLevel = 0;
 
@@ -1590,5 +1591,13 @@ public class RubyInstanceConfig {
 
     public String getThreadDumpSignal() {
         return threadDumpSignal;
+    }
+
+    public boolean isHardExit() {
+        return hardExit;
+    }
+
+    public void setHardExit(boolean hardExit) {
+        this.hardExit = hardExit;
     }
 }
