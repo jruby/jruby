@@ -39,20 +39,20 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
 
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
+        Operand destination = getResult(); // result is a confusing name
+
         // All interpretation already has self so we have no need to receive it.
-        if (getResult() instanceof SelfVariable) return;
+        if (destination instanceof SelfVariable) return;
 
         if (restOfArgArray) {
-            interpretAsRestArg(interp, self);
-            return;
+            interpretAsRestArg(destination, interp);
+        } else {
+            destination.store(interp, interp.getParameter(argIndex));
         }
-
-        Operand destination = getResult(); // result is a confusing name
-        destination.store(interp, interp.getParameter(argIndex));
     }
 
     @Interp
-    private void  interpretAsRestArg(InterpreterContext interp, IRubyObject self) {
-        getResult().store(interp, interp.getContext().getRuntime().newArray(interp.getParametersFrom(argIndex)));
+    private void  interpretAsRestArg(Operand destination, InterpreterContext interp) {
+        destination.store(interp, interp.getContext().getRuntime().newArray(interp.getParametersFrom(argIndex)));
     }
 }
