@@ -330,14 +330,8 @@ public class RubyException extends RubyObject {
 
             for (int i = 1; i < elements.length; i++) {
                 IRubyObject stackTraceLine = elements[i];
-                    if (stackTraceLine instanceof RubyString) {
+                if (stackTraceLine instanceof RubyString) {
                     printStackTraceLine(errorStream, stackTraceLine);
-                }
-
-                if (!debug && TRACE_TYPE != RAW && i == RubyException.TRACE_HEAD && elements.length > RubyException.TRACE_MAX) {
-                    int hiddenLevels = elements.length - RubyException.TRACE_HEAD - RubyException.TRACE_TAIL;
-                            errorStream.print("\t ... " + hiddenLevels + " levels...\n");
-                    i = elements.length - RubyException.TRACE_TAIL;
                 }
             }
         }
