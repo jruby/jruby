@@ -2725,7 +2725,7 @@ public class IRBuilder {
         String file = rootNode.getPosition().getFile();
         // Top-level script!
         IRScript script = new IRScript("__file__", file, rootNode.getStaticScope());
-        IRClass  rootClass = script.dummyClass;
+        IRClass  rootClass = script.getRootClass();
         IRMethod rootMethod = rootClass.getRootMethod();
 
         // Debug info: record file name

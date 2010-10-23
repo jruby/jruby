@@ -6,7 +6,7 @@ import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.parser.StaticScope;
 
 public class IRScript extends IRScopeImpl {
-    public final IRClass dummyClass;  // Dummy class for the script
+    private final IRClass dummyClass;  // Dummy class for the script
 
     public IRScript(String className, String sourceName, StaticScope staticScope) {
         super((IRScope) null, null, sourceName, staticScope);
