@@ -201,7 +201,7 @@ public class CallInstr extends MultiOperandInstr {
 
             IRScope c = ((MetaObject) receiver).scope;
 
-            if ((c instanceof IRClass) && (((IRClass) c).name.equals("Proc"))) return true;
+            if ((c instanceof IRClass) && c.getName().equals("Proc")) return true;
         }
         
         return false;  // All checks done -- dont need one

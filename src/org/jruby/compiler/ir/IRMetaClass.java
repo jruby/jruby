@@ -23,4 +23,9 @@ public class IRMetaClass extends IRClass {
             methodClassedObject = receiver;
         }
     }
+
+    @Override
+    public String getScopeName() {
+        return "MetaClass";
+    }
 }

@@ -32,6 +32,6 @@ public class DefineClassMethodInstr extends NoOperandInstr {
     public void interpret(InterpreterContext interp, IRubyObject self) {
         RubyModule clazz = self.getMetaClass();
 
-        clazz.addMethod(method.name, new InterpretedIRMethod(method, clazz));
+        clazz.addMethod(method.getName(), new InterpretedIRMethod(method, clazz));
     }
 }

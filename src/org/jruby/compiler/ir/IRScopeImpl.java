@@ -54,6 +54,8 @@ public abstract class IRScopeImpl implements IRScope {
     Operand container;       // Parent container for this context
     IRScope lexicalParent;  // Lexical parent scope
 
+    private String name;
+
     // ENEBO: These collections are initliazed on construction, but the rest
     //   are init()'d.  This can't be right can it?  They are also final...
     
@@ -75,7 +77,7 @@ public abstract class IRScopeImpl implements IRScope {
 
     private StaticScope staticScope;
 
-    private void init(IRScope lexicalParent, Operand container, StaticScope staticScope) {
+    private void init(IRScope lexicalParent, Operand container, String name, StaticScope staticScope) {
         this.lexicalParent = lexicalParent;
         this.container = container;
         nextVarIndex = new HashMap<String, Integer>();
@@ -83,11 +85,12 @@ public abstract class IRScopeImpl implements IRScope {
         aliases = new HashMap<String, String>();
         nextMethodIndex = 0;
         nextClosureIndex = 0;
+        this.name = name;
         this.staticScope = staticScope;
     }
 
-    public IRScopeImpl(IRScope lexicalParent, Operand container, StaticScope staticScope) {
-        init(lexicalParent, container, staticScope);
+    public IRScopeImpl(IRScope lexicalParent, Operand container, String name, StaticScope staticScope) {
+        init(lexicalParent, container, name, staticScope);
     }
 
     // Returns the containing scope!
@@ -136,6 +139,16 @@ public abstract class IRScopeImpl implements IRScope {
         return getPrefixCountSize("%v");
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) { // This is for IRClosure ;(
+        this.name = name;
+    }
+    
+    public abstract String getScopeName();
+
     public Label getNewLabel(String prefix) {
         return new Label(prefix + "_" + allocateNextPrefixedName(prefix));
     }
@@ -179,12 +192,12 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     public void addModule(IRModule m) {
-        setConstantValue(m.name, new MetaObject(m));
+        setConstantValue(m.getName(), new MetaObject(m));
         modules.add(m);
     }
 
     public void addClass(IRClass c) {
-        setConstantValue(c.name, new MetaObject(c));
+        setConstantValue(c.getName(), new MetaObject(c));
         classes.add(c);
     }
 
@@ -264,7 +277,8 @@ public abstract class IRScopeImpl implements IRScope {
 
     @Override
     public String toString() {
-        return (contants.isEmpty() ? "" : "\n  constants: " + contants);
+        return getScopeName() + " " + getName() +
+                (contants.isEmpty() ? "" : "\n  constants: " + contants);
     }
 
     protected void runCompilerPassOnNestedScopes(CompilerPass p) {

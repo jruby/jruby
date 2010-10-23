@@ -18,16 +18,15 @@ public class IRClosure extends IRExecutionScope {
     public final Label startLabel; // Label for the start of the closure (used to implement redo)
     public final Label endLabel;   // Label for the end of the closure (used to implement retry)
     public final int closureId;  // Unique id for this closure within the nearest ancestor method.
-    public final String name;       // Name useful for debugging and reading ir output
 
     private final BlockBody body;
 
     public IRClosure(IRScope lexicalParent, StaticScope staticScope, Arity arity, int argumentType) {
-        super(lexicalParent, new MetaObject(lexicalParent), staticScope);
+        super(lexicalParent, new MetaObject(lexicalParent), null, staticScope);
         startLabel = getNewLabel("_CLOSURE_START");
         endLabel = getNewLabel("_CLOSURE_END");
-        closureId = getNextClosureId();
-        name = "_CLOSURE_" + closureId;
+        closureId = lexicalParent.getNextClosureId();
+        setName("_CLOSURE_" + closureId);
 
         this.body = new InterpretedIRBlockBody(this, arity, argumentType);
     }
@@ -52,19 +51,18 @@ public class IRClosure extends IRExecutionScope {
         return getNewLabel("CL" + closureId + "_LBL");
     }
 
+    public String getScopeName() {
+        return "Closure";
+    }
+
     @Override
     public void setConstantValue(String constRef, Operand val) {
         throw new org.jruby.compiler.NotCompilableException("Unexpected: Encountered set constant value in a closure!");
     }
 
-    @Override
-    public String toString() {
-        return name;
-    }
-
     public String toStringBody() {
         StringBuilder buf = new StringBuilder();
-        buf.append(name).append(" = { \n");
+        buf.append(getName()).append(" = { \n");
         org.jruby.compiler.ir.representations.CFG c = getCFG();
         if (c != null) {
             buf.append("\nCFG:\n").append(c.getGraph().toString());

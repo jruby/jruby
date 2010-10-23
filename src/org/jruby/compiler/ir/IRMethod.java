@@ -12,7 +12,6 @@ import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 
 public class IRMethod extends IRExecutionScope {
-    public final String  name;     // Ruby name
     public final boolean isInstanceMethod;
 
     public final Label startLabel; // Label for the start of the method
@@ -27,8 +26,7 @@ public class IRMethod extends IRExecutionScope {
     private List<Operand> callArgs;
 
     public IRMethod(IRScope lexicalParent, Operand container, String name, boolean isInstanceMethod, StaticScope staticScope) {
-        super(lexicalParent, container, staticScope);
-        this.name = name;
+        super(lexicalParent, container, name, staticScope);
         this.isInstanceMethod = isInstanceMethod;
         startLabel = getNewLabel("_METH_START");
         endLabel = getNewLabel("_METH_END");
@@ -38,6 +36,10 @@ public class IRMethod extends IRExecutionScope {
 
     public void updateVersion() {
         version = CodeVersion.getClassVersionToken();
+    }
+
+    public String getScopeName() {
+        return "Method";
     }
 
     public CodeVersion getVersion() {
@@ -77,10 +79,6 @@ public class IRMethod extends IRExecutionScope {
 
     public IRModule getDefiningModule() {
         return (container instanceof MetaObject) ? (IRModule)((MetaObject)container).scope : null;
-    }
-
-    public String getName() {
-        return name;
     }
 
     @Override

@@ -8,12 +8,11 @@ public class IRClass extends IRModule {
 
     public IRClass(IRScope lexicalParent, Operand container, Operand superClass, String className, StaticScope staticScope) {
         super(lexicalParent, container, className, staticScope);
-
         this.superClass = superClass;
     }
 
     @Override
-    public String toString() {
-        return "Class: " + name + super.toString();
+    public String getScopeName() {
+        return "Class";
     }
 }

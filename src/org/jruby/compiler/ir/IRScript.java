@@ -6,18 +6,21 @@ import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.parser.StaticScope;
 
 public class IRScript extends IRScopeImpl {
-    public final String fileName;    // SSS FIXME: Should this be a string literal or a string?
     public final IRClass dummyClass;  // Dummy class for the script
 
     public IRScript(String className, String sourceName, StaticScope staticScope) {
-        super((IRScope) null, null, staticScope);
-        fileName = sourceName;
+        super((IRScope) null, null, sourceName, staticScope);
         dummyClass = new IRClass(this, null, null, "__SCRIPT_ROOT__", staticScope);
         addClass(dummyClass);
     }
 
     public Operand getFileName() {
-        return new StringLiteral(fileName);
+        return new StringLiteral(getName());
+    }
+
+    @Override
+    public String getScopeName() {
+        return "Script";
     }
 
     public IRMethod getRootMethod() {

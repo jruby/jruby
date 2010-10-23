@@ -102,8 +102,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         requiresFrame = true;
     }
 
-    public IRExecutionScope(IRScope lexicalParent, Operand container, StaticScope staticScope) {
-        super(lexicalParent, container, staticScope);
+    public IRExecutionScope(IRScope lexicalParent, Operand container, String name, StaticScope staticScope) {
+        super(lexicalParent, container, name, staticScope);
         init();
     }
 

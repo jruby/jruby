@@ -73,6 +73,8 @@ public interface IRScope {
      */
     public LocalVariable getLocalVariable(String name);
 
+    public String getName();
+
     /**
      *  Get a new label using the provided label prefix
      */

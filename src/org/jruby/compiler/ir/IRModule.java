@@ -21,7 +21,6 @@ public class IRModule extends IRScopeImpl {
     private final static String ROOT_METHOD_PREFIX = ":_ROOT_:";
     private static Map<String, IRClass> coreClasses;
 
-    public final String name;
     private IRMethod rootMethod; // Dummy top-level method for the class
     private CodeVersion version;    // Current code version for this module
     final public List<IRMethod> methods = new ArrayList<IRMethod>();
@@ -79,7 +78,7 @@ public class IRModule extends IRScopeImpl {
         //      def m2; ...; end
         //    end
         //
-        String n = ROOT_METHOD_PREFIX + name;
+        String n = ROOT_METHOD_PREFIX + getName();
         rootMethod = new IRMethod(this, new MetaObject(this), n, false, new LocalStaticScope(null));
         rootMethod.addInstr(new ReceiveArgumentInstruction(rootMethod.getSelf(), 0));	// Set up self!
     }
@@ -116,14 +115,17 @@ public class IRModule extends IRScopeImpl {
     public IRModule(IRScope lexicalParent, Operand container, String name, StaticScope scope) {
         // SSS FIXME: container could be a meta-object which means we can record the constant statically!
         // Add in this opt!
-        super(lexicalParent, container, scope);
-        this.name = name;
+        super(lexicalParent, container, name, scope);
         addRootMethod();
         updateVersion();
     }
 
     public void updateVersion() {
         version = CodeVersion.getClassVersionToken();
+    }
+
+    public String getScopeName() {
+        return "Module";
     }
 
     public CodeVersion getVersion() {
@@ -144,7 +146,7 @@ public class IRModule extends IRScopeImpl {
 
     public IRMethod getClassMethod(String name) {
         for (IRMethod m : methods) {
-            if (!m.isInstanceMethod && this.name.equals(name)) return m;
+            if (!m.isInstanceMethod && getName().equals(name)) return m;
         }
 
         return null;
@@ -152,15 +154,6 @@ public class IRModule extends IRScopeImpl {
 
     public boolean isCoreClass(String className) {
         return this == IRClass.getCoreClass(className);
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String toString() {
-        return "Module: " + getName() + super.toString();
     }
 
     public LocalVariable getLocalVariable(String name) {
