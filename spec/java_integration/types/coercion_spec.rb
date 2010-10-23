@@ -1,4 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
+require 'rational'
+require 'complex'
 
 import "java_integration.fixtures.CoreTypeMethods"
 import "java_integration.fixtures.JavaFields"
@@ -788,5 +790,37 @@ describe "Time\"to_java" do
       d = t.to_java(java.lang.Object)
       d.class.should == java.util.Date
     end
+  end
+end
+
+describe "A Rational object" do
+  before :each do
+    @rational = Rational(1,2)
+  end
+  
+  it "is left uncoerced with to_java" do
+    @rational.to_java.should == @rational
+  end
+  
+  it "fails to coerce to types not assignable from the given type" do
+    lambda do
+      @rational.to_java(java.lang.String)
+    end.should raise_error
+  end
+end
+
+describe "A Complex object" do
+  before :each do
+    @complex = Complex(1,2)
+  end
+
+  it "is left uncoerced with to_java" do
+    @complex.to_java.should == @complex
+  end
+  
+  it "fails to coerce to types not assignable from the given type" do
+    lambda do
+      @complex.to_java(java.lang.String)
+    end.should raise_error
   end
 end

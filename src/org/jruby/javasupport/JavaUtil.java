@@ -718,6 +718,11 @@ public class JavaUtil {
     };
     private static NumericConverter NUMERIC_TO_OTHER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
+            if (target.isAssignableFrom(numeric.getClass())) {
+                // just return as-is, since we can't do any coercion
+                return numeric;
+            }
+            // otherwise, error; no conversion available
             throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
         }
     };
