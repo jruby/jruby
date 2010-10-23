@@ -3765,7 +3765,14 @@ public class RubyIO extends RubyObject {
         return ChannelDescriptor.getNewFileno();
     }
 
+<<<<<<< HEAD
     @Deprecated
+=======
+    /**
+     * @deprecated
+     * @return
+     */
+>>>>>>> Move fields and deprecated methods to bottom of RubyIO.java.
     public boolean writeDataBuffered() {
         return openFile.getMainStream().writeDataBuffered();
     }
