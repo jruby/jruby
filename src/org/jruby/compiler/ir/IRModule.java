@@ -99,11 +99,9 @@ public class IRModule extends IRScopeImpl {
     protected void runCompilerPassOnNestedScopes(CompilerPass p) {
         super.runCompilerPassOnNestedScopes(p);
 
-		  getRootMethod().runCompilerPass(p);
-        if (!methods.isEmpty()) {
-            for (IRScope meth : methods) {
-                meth.runCompilerPass(p);
-            }
+        getRootMethod().runCompilerPass(p);
+        for (IRScope meth : methods) {
+            meth.runCompilerPass(p);
         }
     }
 
