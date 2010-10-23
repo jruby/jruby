@@ -63,34 +63,25 @@ public abstract class IRScopeImpl implements IRScope {
     // cases, the lexical scoping and class/method hierarchies are the same.
     final public List<IRModule> modules = new ArrayList<IRModule>();
     final public List<IRClass> classes = new ArrayList<IRClass>();
-    private Map<String, String> aliases; // oldName -> newName for methods
+    // oldName -> newName for methods
+    private Map<String, String> aliases = new HashMap<String, String>();
 
     // ENEBO: This is also only for lexical score too right?
-    private Map<String, Operand> contants;
+    private Map<String, Operand> contants = new HashMap<String, Operand>();
 
     // Index values to guarantee we don't assign same internal index twice
-    private int nextMethodIndex; // ENEBO: dead?
-    private int nextClosureIndex;
+    private int nextClosureIndex = 0;
 
     // Keeps track of types of prefix indexes for variables and labels
-    private Map<String, Integer> nextVarIndex;
+    private Map<String, Integer> nextVarIndex = new HashMap<String, Integer>();
 
     private StaticScope staticScope;
 
-    private void init(IRScope lexicalParent, Operand container, String name, StaticScope staticScope) {
+    public IRScopeImpl(IRScope lexicalParent, Operand container, String name, StaticScope staticScope) {
         this.lexicalParent = lexicalParent;
         this.container = container;
-        nextVarIndex = new HashMap<String, Integer>();
-        contants = new HashMap<String, Operand>();
-        aliases = new HashMap<String, String>();
-        nextMethodIndex = 0;
-        nextClosureIndex = 0;
         this.name = name;
         this.staticScope = staticScope;
-    }
-
-    public IRScopeImpl(IRScope lexicalParent, Operand container, String name, StaticScope staticScope) {
-        init(lexicalParent, container, name, staticScope);
     }
 
     // Returns the containing scope!
@@ -172,13 +163,6 @@ public abstract class IRScopeImpl implements IRScope {
         if (index == null) return 0;
 
         return index.intValue();
-    }
-
-    // ENEBO: Appears to be dead code?
-    public int getAndIncrementMethodIndex() {
-        nextMethodIndex++;
-        
-        return nextMethodIndex;
     }
 
     // ENEBO: Can this always be the same variable?  Then SELF comparison could
