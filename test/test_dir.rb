@@ -118,14 +118,7 @@ class TestDir < Test::Unit::TestCase
   end
 
   def test_glob_inside_jar_file
-    require 'test/dir with spaces/test_jar.jar'
-    require 'inside_jar'
-
-    prefix = WINDOWS ? "file:/" : "file:"
-    
-    first = File.expand_path(File.join(File.dirname(__FILE__), '..'))
-    
-    jar_file = prefix + File.join(first, "test", "dir with spaces", "test_jar.jar") + "!"
+    jar_file = jar_file_with_spaces
 
     ["#{jar_file}/abc", "#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
       assert $__glob_value.include?(f)
@@ -134,6 +127,32 @@ class TestDir < Test::Unit::TestCase
       assert $__glob_value2.include?(f)
     end
     assert_equal ["#{jar_file}/abc"], Dir["#{jar_file}/abc"]
+  end
+
+  # JRUBY-5155
+  def test_glob_with_magic_inside_jar_file
+    jar_file = jar_file_with_spaces
+
+    aref = Dir["#{jar_file}/[a-z]*_jar.rb"]
+    glob = Dir.glob("#{jar_file}/[a-z]*_jar.rb")
+
+    [aref, glob].each do |collect|
+      ["#{jar_file}/inside_jar.rb", "#{jar_file}/second_jar.rb"].each do |f|
+        assert collect.include?(f)
+      end
+      assert !collect.include?("#{jar_file}/abc/foo.rb")
+    end
+  end
+
+  def jar_file_with_spaces
+    require 'test/dir with spaces/test_jar.jar'
+    require 'inside_jar'
+
+    prefix = WINDOWS ? "file:/" : "file:"
+
+    first = File.expand_path(File.join(File.dirname(__FILE__), '..'))
+
+    prefix + File.join(first, "test", "dir with spaces", "test_jar.jar") + "!"
   end
 
   # JRUBY-4177
