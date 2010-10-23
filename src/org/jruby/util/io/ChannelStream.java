@@ -962,7 +962,7 @@ public class ChannelStream implements Stream, Finalizable {
                 int bytesToRead = Math.min(BULK_READ_SIZE, dst.remaining());
                 if (bytesToRead < dst.remaining()) {
                     tmpDst = dst.duplicate();
-                    tmpDst.limit(bytesToRead);
+                    tmpDst.limit(tmpDst.position() + bytesToRead);
                 }
             }
             int n = descriptor.read(tmpDst);
