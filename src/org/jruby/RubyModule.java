@@ -1081,7 +1081,7 @@ public class RubyModule extends RubyObject {
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
 
         Ruby runtime = getRuntime();
-        IRubyObject classObj = getConstantAt(name);
+        IRubyObject classObj = getConstantAtSpecial(name);
         RubyClass clazz;
 
         if (classObj != null) {
@@ -1117,7 +1117,7 @@ public class RubyModule extends RubyObject {
     public RubyModule defineOrGetModuleUnder(String name) {
         // This method is intended only for defining new modules in Ruby code
         Ruby runtime = getRuntime();
-        IRubyObject moduleObj = getConstantAt(name);
+        IRubyObject moduleObj = getConstantAtSpecial(name);
         RubyModule module;
         if (moduleObj != null) {
             if (!moduleObj.isModule()) throw runtime.newTypeError(name + " is not a module");
@@ -2593,9 +2593,27 @@ public class RubyModule extends RubyObject {
     ////////////////// CONSTANT API METHODS ////////////////
     //
 
+    /**
+     * This version searches superclasses if we're starting with Object. This
+     * corresponds to logic in rb_const_defined_0 that recurses for Object only.
+     *
+     * @param name the constant name to find
+     * @return the constant, or null if it was not found
+     */
+    public IRubyObject getConstantAtSpecial(String name) {
+        IRubyObject value;
+        if (this == getRuntime().getObject()) {
+            value = getConstantNoConstMissing(name);
+        } else {
+            value = fetchConstant(name);
+        }
+        
+        return value == UNDEF ? resolveUndefConstant(getRuntime(), name) : value;
+    }
+    
     public IRubyObject getConstantAt(String name) {
         IRubyObject value = fetchConstant(name);
-        
+
         return value == UNDEF ? resolveUndefConstant(getRuntime(), name) : value;
     }
 
