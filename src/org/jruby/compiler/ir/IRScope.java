@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.parser.StaticScope;
 
 /**
  * IRScope is the interface for all lexically scoped constructs: Script, Module,
@@ -65,6 +66,10 @@ public interface IRScope {
      *  create a new temporary variable
      */
     public Variable getNewTemporaryVariable();
+
+    /**
+     */
+    public StaticScope getStaticScope();
 
     /**
      * How many temporary variables are in this scope?
