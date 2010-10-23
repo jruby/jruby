@@ -26,8 +26,8 @@ module Syslog
     LOG_LOCAL7 = 184
     LOG_LPR = 48
     LOG_MAIL = 16
+    LOG_NDELAY = 8
     LOG_NEWS = 56
-    # LOG_NODELAY not available
     LOG_NOTICE = 5
     LOG_NOWAIT = 16
     # LOG_NTP not available
