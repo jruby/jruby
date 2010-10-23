@@ -636,7 +636,7 @@ public class JavaUtil {
         JAVA_CONVERTERS.put(BigInteger.class, JAVA_BIGINTEGER_CONVERTER);
     }
 
-    private static NumericConverter NUMERIC_TO_BYTE = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_BYTE = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
             if (isLongByteable(value)) {
@@ -645,7 +645,7 @@ public class JavaUtil {
             throw numeric.getRuntime().newRangeError("too big for byte: " + numeric);
         }
     };
-    private static NumericConverter NUMERIC_TO_SHORT = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_SHORT = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
             if (isLongShortable(value)) {
@@ -654,7 +654,7 @@ public class JavaUtil {
             throw numeric.getRuntime().newRangeError("too big for short: " + numeric);
         }
     };
-    private static NumericConverter NUMERIC_TO_CHARACTER = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_CHARACTER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
             if (isLongCharable(value)) {
@@ -663,7 +663,7 @@ public class JavaUtil {
             throw numeric.getRuntime().newRangeError("too big for char: " + numeric);
         }
     };
-    private static NumericConverter NUMERIC_TO_INTEGER = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_INTEGER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             long value = numeric.getLongValue();
             if (isLongIntable(value)) {
@@ -672,12 +672,12 @@ public class JavaUtil {
             throw numeric.getRuntime().newRangeError("too big for int: " + numeric);
         }
     };
-    private static NumericConverter NUMERIC_TO_LONG = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_LONG = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             return Long.valueOf(numeric.getLongValue());
         }
     };
-    private static NumericConverter NUMERIC_TO_FLOAT = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_FLOAT = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             double value = numeric.getDoubleValue();
             // many cases are ok to convert to float; if not one of these, error
@@ -688,17 +688,17 @@ public class JavaUtil {
             }
         }
     };
-    private static NumericConverter NUMERIC_TO_DOUBLE = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_DOUBLE = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             return Double.valueOf(numeric.getDoubleValue());
         }
     };
-    private static NumericConverter NUMERIC_TO_BIGINTEGER = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_BIGINTEGER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             return numeric.getBigIntegerValue();
         }
     };
-    private static NumericConverter NUMERIC_TO_OBJECT = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_OBJECT = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             // for Object, default to natural wrapper type
             if (numeric instanceof RubyFixnum) {
@@ -716,7 +716,7 @@ public class JavaUtil {
             }
         }
     };
-    private static NumericConverter NUMERIC_TO_OTHER = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_OTHER = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             if (target.isAssignableFrom(numeric.getClass())) {
                 // just return as-is, since we can't do any coercion
@@ -726,7 +726,7 @@ public class JavaUtil {
             throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
         }
     };
-    private static NumericConverter NUMERIC_TO_VOID = new NumericConverter() {
+    private static final NumericConverter NUMERIC_TO_VOID = new NumericConverter() {
         public Object coerce(RubyNumeric numeric, Class target) {
             return null;
         }
@@ -747,7 +747,7 @@ public class JavaUtil {
         return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
     }
     
-    private static Map<Class, NumericConverter> NUMERIC_CONVERTERS = new HashMap<Class, NumericConverter>();
+    private static final Map<Class, NumericConverter> NUMERIC_CONVERTERS = new HashMap<Class, NumericConverter>();
 
     static {
         NUMERIC_CONVERTERS.put(Byte.TYPE, NUMERIC_TO_BYTE);
