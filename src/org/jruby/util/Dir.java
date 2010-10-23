@@ -649,7 +649,8 @@ public class Dir {
                         st = new JavaSecuredFile(cwd, newStringFromUTF8(dir));
                     }
 
-                    if((jf != null && ("".equals(jar) || (jf.getJarEntry(jar) != null && jf.getJarEntry(jar).isDirectory()))) || st.isDirectory()) {
+                    if((jf != null && ("".equals(jar) || (jf.getJarEntry(jar) != null &&
+                            jf.getJarEntry(jar).isDirectory()))) || st.isDirectory()) {
                         if(m != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
                             int n = base.length;
                             recursive = true;
@@ -681,7 +682,8 @@ public class Dir {
                                 buf.append(base);
                                 buf.append( BASE(base) ? SLASH : EMPTY );
                                 buf.append(getBytesInUTF8(dirp[i]));
-                                if (buf.getUnsafeBytes()[0] == '/' || (DOSISH && 2<buf.getRealSize() && buf.getUnsafeBytes()[1] == ':' && isdirsep(buf.getUnsafeBytes()[2]))) {
+                                if (buf.getUnsafeBytes()[0] == '/' || (DOSISH && 2<buf.getRealSize() &&
+                                        buf.getUnsafeBytes()[1] == ':' && isdirsep(buf.getUnsafeBytes()[2]))) {
                                     st = new JavaSecuredFile(newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
                                 } else {
                                     st = new JavaSecuredFile(cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
@@ -729,11 +731,15 @@ public class Dir {
                                 }
                             }
                             for(JarEntry je : dirp) {
-                                byte[] bs = getBytesInUTF8(je.getName());
+                                String basename = (new File(je.getName())).getName();
+                                byte[] bs = getBytesInUTF8(basename);
+                                byte[] absoluteName = getBytesInUTF8(je.getName());
                                 int len = bs.length;
+                                int absoluteLen = absoluteName.length;
 
                                 if(je.isDirectory()) {
                                     len--;
+                                    absoluteLen--;
                                 }
 
                                 if(recursive) {
@@ -743,7 +749,7 @@ public class Dir {
                                     buf.length(0);
                                     buf.append(base, 0, base.length - jar.length());
                                     buf.append( BASE(base) ? SLASH : EMPTY );
-                                    buf.append(bs, 0, len);
+                                    buf.append(absoluteName, 0, absoluteLen);
 
                                     if(je.isDirectory()) {
                                         int t = buf.getRealSize();
@@ -765,7 +771,7 @@ public class Dir {
                                     buf.length(0);
                                     buf.append(base, 0, base.length - jar.length());
                                     buf.append( BASE(base) ? SLASH : EMPTY );
-                                    buf.append(bs, 0, len);
+                                    buf.append(absoluteName, 0, absoluteLen);
 
                                     buf = fixBytesForJarInUTF8(buf.getUnsafeBytes(), 0, buf.getRealSize());
                                     if(m == -1) {
