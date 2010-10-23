@@ -23,7 +23,7 @@ import org.jruby.parser.StaticScope;
  * Method, and Closure.
  *
  * Script, Module, and Class are containers and "non-execution" scopes.
- * Method and Clsoure are the only two "execution" scopes.
+ * Method and Closure are the only two "execution" scopes.
  *
  * In the compiler-land, IR_* versions of these scopes encapsulate only as much 
  * information as is required to convert Ruby code into equivalent Java code.
@@ -282,16 +282,12 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     protected void runCompilerPassOnNestedScopes(CompilerPass p) {
-        if (!modules.isEmpty()) {
-            for (IRScope m : modules) {
-                m.runCompilerPass(p);
-            }
+        for (IRScope m : modules) {
+            m.runCompilerPass(p);
         }
 
-        if (!classes.isEmpty()) {
-            for (IRScope c : classes) {
-                c.runCompilerPass(p);
-            }
+        for (IRScope c : classes) {
+            c.runCompilerPass(p);
         }
     }
 
