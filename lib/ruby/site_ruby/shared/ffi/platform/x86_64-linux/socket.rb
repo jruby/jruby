@@ -24,7 +24,7 @@ module Platform::Socket
   # AF_LAT not available
   # AF_LINK not available
   AF_LOCAL = 1
-  AF_MAX = 35
+  AF_MAX = 37
   # AF_NATM not available
   # AF_NDRV not available
   # AF_NETBIOS not available
@@ -83,7 +83,7 @@ module Platform::Socket
   # PF_LAT not available
   # PF_LINK not available
   PF_LOCAL = 1
-  PF_MAX = 35
+  PF_MAX = 37
   # PF_NATM not available
   # PF_NDRV not available
   # PF_NETBIOS not available
