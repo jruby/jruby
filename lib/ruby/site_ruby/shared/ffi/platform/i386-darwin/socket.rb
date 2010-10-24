@@ -24,7 +24,7 @@ module Platform::Socket
   AF_LAT = 14
   AF_LINK = 18
   AF_LOCAL = 1
-  AF_MAX = 37
+  AF_MAX = 38
   AF_NATM = 31
   AF_NDRV = 27
   AF_NETBIOS = 33
@@ -83,7 +83,7 @@ module Platform::Socket
   PF_LAT = 14
   PF_LINK = 18
   PF_LOCAL = 1
-  PF_MAX = 37
+  PF_MAX = 38
   PF_NATM = 31
   PF_NDRV = 27
   PF_NETBIOS = 33
