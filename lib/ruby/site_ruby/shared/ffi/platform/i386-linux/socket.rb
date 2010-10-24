@@ -19,12 +19,12 @@ module Platform::Socket
   AF_INET = 2
   AF_INET6 = 10
   AF_IPX = 4
-  # AF_ISDN not available
+  AF_ISDN = 34
   # AF_ISO not available
   # AF_LAT not available
   # AF_LINK not available
   AF_LOCAL = 1
-  AF_MAX = 34
+  AF_MAX = 37
   # AF_NATM not available
   # AF_NDRV not available
   # AF_NETBIOS not available
@@ -77,13 +77,13 @@ module Platform::Socket
   PF_INET = 2
   PF_INET6 = 10
   PF_IPX = 4
-  # PF_ISDN not available
+  PF_ISDN = 34
   # PF_ISO not available
   PF_KEY = 15
   # PF_LAT not available
   # PF_LINK not available
   PF_LOCAL = 1
-  PF_MAX = 34
+  PF_MAX = 37
   # PF_NATM not available
   # PF_NDRV not available
   # PF_NETBIOS not available

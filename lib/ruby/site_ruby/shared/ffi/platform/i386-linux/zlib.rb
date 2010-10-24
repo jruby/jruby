@@ -83,7 +83,7 @@
 
 module Zlib
 
-  ZLIB_VERSION = "1.2.3.3"
+  ZLIB_VERSION = "1.2.3.4"
   BEST_COMPRESSION = 9
   BEST_SPEED = 1
   BLOCK = 5
