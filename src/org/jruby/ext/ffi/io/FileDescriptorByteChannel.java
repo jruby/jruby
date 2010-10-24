@@ -115,7 +115,7 @@ public class FileDescriptorByteChannel implements ByteChannel {
     /**
      * The native library functions used to access the file descriptor.
      */
-    private static interface LibC {
+    public static interface LibC {
         int read(int fd, @Out ByteBuffer dst, int len);
         int write(int fd, @In ByteBuffer src, int len);
         int close(int fd);
