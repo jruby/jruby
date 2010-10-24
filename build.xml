@@ -112,7 +112,7 @@
       <os family="windows"/>
     </condition>
     <exec executable="/bin/sh" osfamily="unix">
-      <arg line="-c 'test -f &quot;${basedir}/bin/jruby&quot; || cp &quot;${basedir}/bin/jruby.sh&quot; &quot;${basedir}/bin/jruby&quot;'"/>
+      <arg line="-c 'test -f &quot;${basedir}/bin/jruby&quot; || cp &quot;${basedir}/bin/jruby.bash&quot; &quot;${basedir}/bin/jruby&quot;'"/>
     </exec>
     <chmod perm="755" file="${basedir}/bin/jruby"/>
   </target>
@@ -1315,8 +1315,8 @@
       </fileset>
     </copy>
     <!-- dist-bin by default does not come w/ unix native launcher, so -->
-    <!-- move ${dist.stage.bin.dir}/jruby.sh to ${dist.stage.bin.dir}/jruby -->
-    <move file="${dist.stage.bin.dir}/bin/jruby.sh" tofile="${dist.stage.bin.dir}/bin/jruby"/>
+    <!-- move ${dist.stage.bin.dir}/jruby.bash to ${dist.stage.bin.dir}/jruby -->
+    <move file="${dist.stage.bin.dir}/bin/jruby.bash" tofile="${dist.stage.bin.dir}/bin/jruby"/>
     <mkdir dir="${dist.stage.bin.dir}/lib/native"/>
     <unzip-native-libs destination.dir="${dist.stage.bin.dir}/lib/native"/>
     <fixEOLs dist-stage-dir="${dist.stage.bin.dir}"/>

@@ -1,6 +1,6 @@
-#! /bin/sh
+#!/bin/bash
 # -----------------------------------------------------------------------------
-# jruby.sh - Start Script for the JRuby interpreter
+# jruby.bash - Start Script for the JRuby interpreter
 #
 # Environment Variable Prequisites
 #
@@ -11,14 +11,16 @@
 #
 # -----------------------------------------------------------------------------
 
-# ********************************** NOTE *************************************
-# This script is provided as a convenience for users on systems that do not
-# have the "bash" shell available. It does not support all the flags the bash
-# and native executables do, but should be complete enough for most users.
-# Improvements are welcome.
-# *****************************************************************************
+cygwin=false
+
+# ----- Identify OS we are running under --------------------------------------
+case "`uname`" in
+  CYGWIN*) cygwin=true;;
+  Darwin) darwin=true;;
+esac
 
 # ----- Verify and Set Required Environment Variables -------------------------
+JAVA_VM=-client
 
 ## resolve links - $0 may be a link to  home
 PRG=$0
@@ -70,14 +72,49 @@ for opt in ${JRUBY_OPTS[@]}; do
             esac
         fi
     done
+    if [ $opt == "-server" ]; then # JRUBY-4204
+        JAVA_VM="-server"
+    fi
 done
 JRUBY_OPTS=${JRUBY_OPTS_TEMP}
 
 if [ -z "$JAVA_HOME" ] ; then
   JAVA_CMD='java'
 else
+  if $cygwin; then
+    JAVA_HOME=`cygpath -u "$JAVA_HOME"`
+  fi
   JAVA_CMD="$JAVA_HOME/bin/java"
 fi
+
+if [ -z "$JAVA_MEM" ] ; then
+  JAVA_MEM=-Xmx500m
+fi
+
+if [ -z "$JAVA_STACK" ] ; then
+  JAVA_STACK=-Xss1024k
+fi
+
+# process JAVA_OPTS
+unset JAVA_OPTS_TEMP
+JAVA_OPTS_TEMP=""
+for opt in ${JAVA_OPTS[@]}; do
+  case $opt in
+    -server)
+      JAVA_VM="-server";;
+    -Xmx*)
+      JAVA_MEM=$opt;;
+    -Xms*)
+      JAVA_MEM_MIN=$opt;;
+    -Xss*)
+      JAVA_STACK=$opt;;
+    *)
+      JAVA_OPTS_TEMP="${JAVA_OPTS_TEMP} $opt";;
+  esac
+done
+
+JAVA_OPTS=$JAVA_OPTS_TEMP
+
 
 # If you're seeing odd exceptions, you may have a bad JVM install.
 # Uncomment this and report the version to the JRuby team along with error.
@@ -105,6 +142,9 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     JRUBY_ALREADY_ADDED=true
 done
 
+if $cygwin; then
+    JRUBY_CP=`cygpath -p -w "$JRUBY_CP"`
+fi
 
 # ----- Set Up The System Classpath -------------------------------------------
 
@@ -127,29 +167,27 @@ else
         fi
     done
 
+    if $cygwin; then
+        CP=`cygpath -p -w "$CP"`
+    fi
 fi
 
+if $cygwin; then
+    # switch delimiter only after building Unix style classpaths
+    CP_DELIMITER=";"
+fi
 
 # ----- Execute The Requested Command -----------------------------------------
-
-if [ -z "$JAVA_MEM" ] ; then
-  JAVA_MEM=-Xmx500m
-fi
-
-if [ -z "$JAVA_STACK" ] ; then
-  JAVA_STACK=-Xss1024k
-fi
-
-JAVA_VM=-client
 JAVA_ENCODING=""
 
-#declare -a java_args
-#declare -a ruby_args
+declare -a java_args
+declare -a ruby_args
 
 java_class=org.jruby.Main
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
+set -- $JRUBY_OPTS "$@"
 while [ $# -gt 0 ]
 do
     case "$1" in
@@ -158,6 +196,8 @@ do
         val=${1:2}
         if [ "${val:0:4}" = "-Xmx" ]; then
             JAVA_MEM=$val
+        elif [ "${val:0:4}" = "-Xms" ]; then
+            JAVA_MEM_MIN=$val
         elif [ "${val:0:4}" = "-Xss" ]; then
             JAVA_STACK=$val
         elif [ "${val}" = "" ]; then
@@ -182,41 +222,44 @@ do
             elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
                 JAVA_ENCODING=$val
             fi
-            java_args="${java_args} ${1:2}"
+            java_args=("${java_args[@]}" "${1:2}")
         fi
         ;;
      # Match switches that take an argument
-     -C|-e|-I|-S) ruby_args="${ruby_args} $1 $2"; shift ;;
+     -C|-e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
      # Match same switches with argument stuck together
-     -e*|-I*|-S*) ruby_args="${ruby_args} $1" ;;
+     -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
      # Run with the instrumented profiler: http://jiprof.sourceforge.net/
      --profile) 
        PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile-ruby.properties"
-       JRUBY_OPTS="${JRUBY_OPTS} -X+C"
+       JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C")
        VERIFY_JRUBY="yes"
        ;;
      # Run with the instrumented profiler: http://jiprof.sourceforge.net/
      --profile-all) 
        PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile-all.properties"
-       JRUBY_OPTS="${JRUBY_OPTS} -X+C"
+       JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C")
        VERIFY_JRUBY="yes"
        ;;
      # Run with JMX management enabled
      --manage)
-        java_args="${java_args} -Dcom.sun.management.jmxremote"
-        java_args="${java_args} -Djruby.management.enabled=true" ;;
+        java_args=("${java_args[@]}" "-Dcom.sun.management.jmxremote")
+        java_args=("${java_args[@]}" "-Djruby.management.enabled=true") ;;
      # Don't launch a GUI window, no matter what
      --headless)
-        java_args="${java_args} -Djava.awt.headless=true" ;;
+        java_args=("${java_args[@]}" "-Djava.awt.headless=true") ;;
      # Run under JDB
      --jdb)
         if [ -z "$JAVA_HOME" ] ; then
           JAVA_CMD='jdb'
         else
+          if $cygwin; then
+            JAVA_HOME=`cygpath -u "$JAVA_HOME"`
+          fi
           JAVA_CMD="$JAVA_HOME/bin/jdb"
         fi 
-        java_args="${java_args} -sourcepath $JRUBY_HOME/lib/ruby/1.8:."
-        JRUBY_OPTS="${JRUBY_OPTS} -X+C" ;;
+        java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.8:.")
+        JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
      --client)
         JAVA_VM=-client ;;
      --server)
@@ -224,7 +267,7 @@ do
      --noclient)         # JRUBY-4296
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
-        java_args="${java_args} -Xprof" ;;
+        java_args=("${java_args[@]}" "-Xprof") ;;
      --ng-server)
         # Start up as Nailgun server
         java_class=com.martiansoftware.nailgun.NGServer
@@ -235,7 +278,7 @@ do
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby
-     -*) ruby_args="${ruby_args} $1" ;;
+     -*) ruby_args=("${ruby_args[@]}" "$1") ;;
      # Abort processing on first non-opt arg
      *) break ;;
     esac
@@ -243,20 +286,20 @@ do
 done
 
 # Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
-if [[ -z "$JAVA_ENCODING" ]]; then
-  java_args="${java_args} -Dfile.encoding=UTF-8"
+if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
+  java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
 fi
 
 # Add a property to report memory max
-JAVA_OPTS="$JAVA_OPTS $JAVA_VM -Djruby.memory.max=${JAVA_MEM} -Djruby.stack.max=${JAVA_STACK}"
+JAVA_OPTS="$JAVA_OPTS $JAVA_VM -Djruby.memory.max=${JAVA_MEM:4} -Djruby.stack.max=${JAVA_STACK:4}"
 
 # Append the rest of the arguments
-ruby_args="${ruby_args} $@"
+ruby_args=("${ruby_args[@]}" "$@")
 
 # Put the ruby_args back into the position arguments $1, $2 etc
-set -- "${ruby_args}"
+set -- "${ruby_args[@]}"
 
-JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
+JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
 
 JFFI_BOOT=""
 if [ -d $JRUBY_HOME/lib/native/ ]; then
@@ -270,10 +313,28 @@ if [ -d $JRUBY_HOME/lib/native/ ]; then
 fi
 JFFI_OPTS="-Djffi.boot.library.path=$JFFI_BOOT"
 
+if $cygwin; then
+  JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
+  JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
+  
+  if [[ ( "${1:0:1}" = "/" ) && ( ( -f "$1" ) || ( -d "$1" )) ]]; then
+    win_arg=`cygpath -w "$1"`
+    shift
+    win_args=("$win_arg" "$@")
+    set -- "${win_args[@]}"
+  fi
+
+  # fix JLine to use UnixTerminal
+  stty -icanon min 1 -echo > /dev/null 2>&1
+  if [ $? = 0 ]; then
+    JAVA_OPTS="$JAVA_OPTS -Djline.terminal=jline.UnixTerminal"
+  fi
+
+fi
 
 if [ "$nailgun_client" != "" ]; then
   if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
-    exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $JRUBY_OPTS "$@"
+    exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain "$@"
   else
     echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
     exit 1
@@ -288,7 +349,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
-    $java_class $JRUBY_OPTS "$@"
+    $java_class "$@"
 
   # Record the exit status immediately, or it will be overridden.
   JRUBY_STATUS=$?
@@ -299,14 +360,33 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       rm profile.txt
   fi
 
+  if $cygwin; then
+    stty icanon echo > /dev/null 2>&1
+  fi
 
   exit $JRUBY_STATUS
 else
-  exec $JAVA_CMD $JAVA_OPTS $JFFI_OPTS ${java_args} -Xbootclasspath/a:$JRUBY_CP -classpath $CP$CP_DELIMITER$CLASSPATH \
-      -Djruby.home=$JRUBY_HOME \
-      -Djruby.lib=$JRUBY_HOME/lib -Djruby.script=jruby \
-      -Djruby.shell=$JRUBY_SHELL \
-      $java_class $JRUBY_OPTS $@
+  if $cygwin; then
+    # exec doed not work correctly with cygwin bash
+    "$JAVA_CMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+      "-Djruby.home=$JRUBY_HOME" \
+      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
+      "-Djruby.shell=$JRUBY_SHELL" \
+      $java_class "$@"
+
+    # Record the exit status immediately, or it will be overridden.
+    JRUBY_STATUS=$?
+
+    stty icanon echo > /dev/null 2>&1
+
+    exit $JRUBY_STATUS
+  else
+    exec "$JAVA_CMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+      "-Djruby.home=$JRUBY_HOME" \
+      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
+      "-Djruby.shell=$JRUBY_SHELL" \
+      $java_class "$@"
+  fi
 fi
 fi
 
