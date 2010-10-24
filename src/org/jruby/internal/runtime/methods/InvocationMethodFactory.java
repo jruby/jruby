@@ -1174,17 +1174,23 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
     private Class tryClass(String name, Class targetClass) {
+        Class c = null;
         try {
-            Class c = null;
             if (classLoader == null) {
                 c = Class.forName(name, true, classLoader);
             } else {
                 c = classLoader.loadClass(name);
             }
+        } catch(Exception e) {
+            seenUndefinedClasses = true;
+            return null;
+        }
 
-            // For JRUBY-5038, try getting constructor to ensure classloaders are lining up right
+        try {
+            // For JRUBY-5038, try getting call method to ensure classloaders are lining up right
             // If this fails, it usually means we loaded an invoker from a higher-up classloader
-            c.getConstructor(new Class[]{RubyModule.class, Visibility.class});
+            c.getMethod("call", new Class[]{ThreadContext.class, IRubyObject.class, RubyModule.class,
+            String.class, IRubyObject[].class, Block.class});
             
             if (c != null && seenUndefinedClasses && !haveWarnedUser) {
                 haveWarnedUser = true;
@@ -1194,6 +1200,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             
             return c;
         } catch(Exception e) {
+            e.printStackTrace();
             seenUndefinedClasses = true;
             return null;
         }
