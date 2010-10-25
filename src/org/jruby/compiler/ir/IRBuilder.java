@@ -125,7 +125,7 @@ import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.NotInstr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
-import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
+import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
@@ -597,7 +597,7 @@ public class IRBuilder {
                 break;
             case INSTASGNNODE:
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
+                s.addInstr(new PutFieldInstr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
@@ -663,7 +663,7 @@ public class IRBuilder {
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                s.addInstr(new PUT_FIELD_Instr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
+                s.addInstr(new PutFieldInstr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
@@ -2053,7 +2053,7 @@ public class IRBuilder {
     public Operand buildInstAsgn(final InstAsgnNode instAsgnNode, IRScope s) {
         Operand val = build(instAsgnNode.getValueNode(), s);
         // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-        s.addInstr(new PUT_FIELD_Instr(s.getSelf(), instAsgnNode.getName(), val));
+        s.addInstr(new PutFieldInstr(s.getSelf(), instAsgnNode.getName(), val));
         return val;
     }
 

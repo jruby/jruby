@@ -25,7 +25,7 @@ import org.jruby.compiler.ir.instructions.GET_FIELD_Instr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
-import org.jruby.compiler.ir.instructions.PUT_FIELD_Instr;
+import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.operands.FieldRef;
@@ -205,7 +205,7 @@ public class JVM implements CompilerTarget {
         case LABEL:
             emitLABEL((LABEL_Instr)instr); break;
         case PUT_FIELD:
-            emitPUT_FIELD((PUT_FIELD_Instr)instr); break;
+            emitPUT_FIELD((PutFieldInstr)instr); break;
         case GET_FIELD:
             emitGET_FIELD((GET_FIELD_Instr)instr); break;
         case RECV_ARG:
@@ -281,7 +281,7 @@ public class JVM implements CompilerTarget {
         method().mark(getLabel(lbl._lbl));
     }
 
-    public void emitPUT_FIELD(PUT_FIELD_Instr putField) {
+    public void emitPUT_FIELD(PutFieldInstr putField) {
         String field = ((FieldRef)putField.getOperands()[1])._refName;
         declareField(field);
         emit(putField.getOperands()[0]);
