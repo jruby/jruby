@@ -110,7 +110,7 @@ import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
 import org.jruby.compiler.ir.instructions.EQQ_Instr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
-import org.jruby.compiler.ir.instructions.GET_ARRAY_Instr;
+import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
 import org.jruby.compiler.ir.instructions.GET_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.GET_FIELD_Instr;
@@ -577,7 +577,7 @@ public class IRBuilder {
     // This method is called to build assignments for a multiple-assignment instruction
     public void buildAssignment(Node node, IRScope s, Operand values, int argIndex, boolean isSplat) {
         Variable v = s.getNewTemporaryVariable();
-        s.addInstr(new GET_ARRAY_Instr(v, values, argIndex, isSplat));
+        s.addInstr(new GetArrayInstr(v, values, argIndex, isSplat));
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
                 buildAttrAssignAssignment(node, s, v);
