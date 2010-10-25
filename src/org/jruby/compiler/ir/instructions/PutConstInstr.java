@@ -24,13 +24,11 @@ public class PutConstInstr extends PutInstr {
 
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        RubyModule module = ((RubyModule) getTarget().retrieve(interp));
-        System.out.println("V: " + getValue().getClass());
         IRubyObject value = (IRubyObject) getValue().retrieve(interp);
-        
-        System.out.println("MODULE IS " + module);
-        System.out.println("CNAME: " + getName() + ", VALUE: " + value);
+        RubyModule module = (RubyModule) getTarget().retrieve(interp);
 
-        module.setConstant(getName(), value);
+        assert module != null : "MODULE should always be something";
+
+        if (!((MetaObject) getValue()).isClass()) module.setConstant(getName(), value);
     }
 }

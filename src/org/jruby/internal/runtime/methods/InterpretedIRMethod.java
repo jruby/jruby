@@ -2,12 +2,8 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.interpreter.Jump;
 import org.jruby.interpreter.NaiveInterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -27,8 +23,10 @@ public class InterpretedIRMethod extends DynamicMethod {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        InterpreterContext interp = new NaiveInterpreterContext(context, self, temporaryVariableSize, args, method.getStaticScope(), block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
+            IRubyObject[] args, Block block) {
+        InterpreterContext interp = new NaiveInterpreterContext(context, self,
+                temporaryVariableSize, args, method.getStaticScope(), block);
 //        Arity.checkArgumentCount(context.getRuntime(), args.length, requiredArgsCount, method.get???);
 
         return Interpreter.interpret(context, method.getCFG(), interp);

@@ -122,7 +122,16 @@ public class Interpreter {
             return;
         }
 
-        IRMethod rootMethod = ((IRScript) scope).getRootClass().getRootMethod();
+        IRScript root = (IRScript) scope;
+
+        // We get the live object ball rolling here.  This give a valid value for the top
+        // of this lexical tree.  All new scope can then retrieve and set based on lexical
+        // parent.
+        if (root.getStaticScope().getModule() == null) { // If an eval this may already be setup.
+            root.getStaticScope().setModule(runtime.getObject());
+        }
+
+        IRMethod rootMethod = root.getRootClass().getRootMethod();
         RubyModule metaclass = self.getMetaClass();
 
         InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, metaclass);

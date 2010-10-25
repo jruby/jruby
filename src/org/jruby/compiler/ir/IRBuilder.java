@@ -165,6 +165,7 @@ import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Symbol;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.util.ByteList;
@@ -2723,6 +2724,8 @@ public class IRBuilder {
 
     public IRScope buildRoot(RootNode rootNode) {
         String file = rootNode.getPosition().getFile();
+        StaticScope staticScope = rootNode.getStaticScope();
+
         // Top-level script!
         IRScript script = new IRScript("__file__", file, rootNode.getStaticScope());
         IRClass  rootClass = script.getRootClass();

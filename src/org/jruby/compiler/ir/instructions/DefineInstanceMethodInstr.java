@@ -30,7 +30,8 @@ public class DefineInstanceMethodInstr extends NoOperandInstr {
 
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        RubyModule clazz = self.getMetaClass();
+        // If this is a class/module body the the clazz is self otherwise we get the meta class.
+        RubyModule clazz = self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
 
         clazz.addMethod(method.getName(), new InterpretedIRMethod(method, clazz));
     }
