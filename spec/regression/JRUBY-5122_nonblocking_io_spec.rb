@@ -64,12 +64,56 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value.should == ["foo\r\n", "bar\r\n"]
   end
 
+  it "should not block for read" do
+    server = TCPServer.new(0)
+    value = nil
+    t = Thread.new {
+      sock = accept(server)
+      value = sock.read
+    }
+    s = connect(server)
+    wait_for_sleep_and_terminate(t) do
+      s.write("foo\r\nbar\r\nbaz")
+      s.close
+    end
+    value.should == "foo\r\nbar\r\nbaz"
+  end
+
+  it "should not block for read(n)" do
+    server = TCPServer.new(0)
+    value = nil
+    t = Thread.new {
+      sock = accept(server)
+      value = sock.read(2)
+    }
+    s = connect(server)
+    wait_for_sleep_and_terminate(t) do
+      t.alive?.should == true
+      s.write("foo\r\n")
+    end
+    value.should == "fo"
+  end
+
+  it "should not block for readpartial" do
+    server = TCPServer.new(0)
+    value = nil
+    t = Thread.new {
+      sock = accept(server)
+      value = sock.readpartial(2)
+    }
+    s = connect(server)
+    wait_for_sleep_and_terminate(t) do
+      t.alive?.should == true
+      s.write("foo\r\n")
+    end
+    value.should == "fo"
+  end
+
   it "should not block for sysread" do
     server = TCPServer.new(0)
     value = nil
     t = Thread.new {
       sock = accept(server)
-      # TODO: it raises EAGAIN when it's a single thread. How can I test that?
       value = sock.sysread(2)
     }
     s = connect(server)
@@ -78,6 +122,17 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
       s.write("foo\r\n")
     end
     value.should == "fo"
+  end
+
+  it "should not block for sysread in ST condition" do
+    server = TCPServer.new(0)
+    client = TCPSocket.new('localhost', server.addr[1])
+    sock = accept(server)
+    begin
+      sock.read_nonblock(5)
+    rescue SystemCallError => e
+      [Errno::EAGAIN, Errno::EWOULDBLOCK].include?(e.class).should == true
+    end
   end
 
   it "should not block for each_byte" do
@@ -154,13 +209,13 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
   end
 
   def wait_for_sleep(t)
-    timeout(100) do
+    timeout(1) do
       sleep 0.1 while t.status == 'run'
     end
   end
 
   def wait_for_terminate(t)
-    timeout(100) do
+    timeout(1) do
       sleep 0.1 while t.alive?
     end
   end
