@@ -22,6 +22,6 @@ public class GET_CVAR_Instr extends GetInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GET_CVAR_Instr(ii.getRenamedVariable(result), source.cloneForInlining(ii), ref);
+        return new GET_CVAR_Instr(ii.getRenamedVariable(result), getSource().cloneForInlining(ii), getName());
     }
 }

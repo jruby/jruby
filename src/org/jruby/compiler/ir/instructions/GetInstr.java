@@ -8,14 +8,18 @@ import org.jruby.compiler.ir.operands.Variable;
 
 // Represents result = source.ref or result = source where source is not a stack variable
 public abstract class GetInstr extends Instr {
-    Operand source;
-    String  ref;
+    private Operand source;
+    private String  ref;
 
     public GetInstr(Operation op, Variable dest, Operand source, String ref) {
         super(op, dest);
         
         this.source = source;
         this.ref = ref;
+    }
+
+    public String getName() {
+        return ref;
     }
 
     public Operand[] getOperands() { 

@@ -13,7 +13,7 @@ public class GetGlobalVariableInstr extends GetInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetGlobalVariableInstr(ii.getRenamedVariable(result), ((GlobalVariable)source).name);
+        return new GetGlobalVariableInstr(ii.getRenamedVariable(result), ((GlobalVariable)getSource()).name);
     }
 
     @Override

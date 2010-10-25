@@ -113,7 +113,7 @@ import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
 import org.jruby.compiler.ir.instructions.GET_CVAR_Instr;
-import org.jruby.compiler.ir.instructions.GET_FIELD_Instr;
+import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.IS_TRUE_Instr;
@@ -2059,7 +2059,7 @@ public class IRBuilder {
 
     public Operand buildInstVar(InstVarNode node, IRScope m) {
         Variable ret = m.getNewTemporaryVariable();
-        m.addInstr(new GET_FIELD_Instr(ret, m.getSelf(), node.getName()));
+        m.addInstr(new GetFieldInstr(ret, m.getSelf(), node.getName()));
         return ret;
     }
 

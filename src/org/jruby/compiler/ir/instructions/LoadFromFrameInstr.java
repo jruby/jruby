@@ -37,11 +37,11 @@ public class LoadFromFrameInstr extends GetInstr {
 
     @Override
     public String toString() {
-        return "\t" + result + " = FRAME(" + source + ")." + ref;
+        return "\t" + result + " = FRAME(" + getSource() + ")." + getName();
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new LoadFromFrameInstr(ii.getRenamedVariable(result), (IRExecutionScope)((MetaObject)source).scope, ref);
+        return new LoadFromFrameInstr(ii.getRenamedVariable(result), (IRExecutionScope)((MetaObject)getSource()).scope, getName());
     }
 
     @Interp
