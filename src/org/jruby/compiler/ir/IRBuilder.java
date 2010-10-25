@@ -111,7 +111,7 @@ import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
 import org.jruby.compiler.ir.instructions.EQQ_Instr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
-import org.jruby.compiler.ir.instructions.GET_CONST_Instr;
+import org.jruby.compiler.ir.instructions.GetConstInstr;
 import org.jruby.compiler.ir.instructions.GET_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
@@ -994,7 +994,7 @@ public class IRBuilder {
         Operand cv = s.getConstantValue(name);
         if (cv == null) {
             Variable v = currScope.getNewTemporaryVariable();
-            currScope.addInstr(new GET_CONST_Instr(v, s, name));
+            currScope.addInstr(new GetConstInstr(v, s, name));
             cv = v;
         }
         return cv;
@@ -1020,7 +1020,7 @@ public class IRBuilder {
             }
             else {
                 Variable constVal = s.getNewTemporaryVariable();
-                s.addInstr(new GET_CONST_Instr(constVal, module, name));
+                s.addInstr(new GetConstInstr(constVal, module, name));
                 return constVal;
             }
         }
@@ -1039,7 +1039,7 @@ public class IRBuilder {
     public Operand buildColon3(Colon3Node node, IRScope s) {
         Variable cv = s.getNewTemporaryVariable();
         // SSS FIXME: Is this correct?
-        s.addInstr(new GET_CONST_Instr(cv, s.getSelf(), node.getName()));
+        s.addInstr(new GetConstInstr(cv, s.getSelf(), node.getName()));
         return cv;
     }
 

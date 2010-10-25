@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRScript;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.interpreter.InterpreterContext;
@@ -74,6 +75,10 @@ public class MetaObject extends Operand {
                 module = createClass(interp, interp.getContext(), interp.getContext().getRuntime());
             } else if (isModule()) {
                 module = createModule(interp, interp.getContext(), interp.getContext().getRuntime());
+            } else if (scope instanceof IRScript) {
+                assert false : "I don't think we can ever see this";
+            } else if (scope instanceof IRMethod) {
+                module = ((IRMethod) scope).getDefiningModule().getStaticScope().getModule();
             }
         }
         return module;
