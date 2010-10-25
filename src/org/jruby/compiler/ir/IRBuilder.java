@@ -1927,7 +1927,7 @@ public class IRBuilder {
 
     public Operand buildForIter(final ForNode forNode, IRExecutionScope s) {
             // Create a new closure context
-        IRClosure closure = new IRClosure(s, forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
+        IRClosure closure = new IRClosure(s, null, Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
         s.addClosure(closure);
 
             // Build args
@@ -2155,12 +2155,12 @@ public class IRBuilder {
         final ListNode sourceArray = multipleAsgnNode.getHeadNode();
 
         // First, build assignments for specific named arguments
-        int i = 1; // Start at 1 since 0 is self
+        int i = 0; 
         if (sourceArray != null) {
             ListNode headNode = (ListNode) sourceArray;
             for (Node an: headNode.childNodes()) {
                 if (values == null) {
-                    buildBlockArgsAssignment(an, s, i, false);
+                    buildBlockArgsAssignment(an, s, i + 1, false); // Add 1 since 0 is self for argument processing
                 } else {
                     buildAssignment(an, s, values, i, false);
                 }
