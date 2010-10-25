@@ -29,6 +29,6 @@ public class PutConstInstr extends PutInstr {
 
         assert module != null : "MODULE should always be something";
 
-        if (!((MetaObject) getValue()).isClass()) module.setConstant(getName(), value);
+        if (!((MetaObject) getValue()).isModule()) module.setConstant(getName(), value);
     }
 }

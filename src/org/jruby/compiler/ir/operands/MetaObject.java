@@ -37,6 +37,11 @@ public class MetaObject extends Operand {
         return scope instanceof IRClass;
     }
 
+    // Note: This will also return true for an IRClass
+    public boolean isModule() {
+        return scope instanceof IRModule;
+    }
+
     public boolean isClosure() {
         return scope instanceof IRClosure;
     }
@@ -64,24 +69,47 @@ public class MetaObject extends Operand {
         RubyModule module = scope.getStaticScope().getModule();
 
         if (module == null) {
-            if (isClass()) module = createClass(interp, interp.getContext(), interp.getContext().getRuntime());
+            // TODO: Consolidate these two since they are nearly identical
+            if (isClass()) {
+                module = createClass(interp, interp.getContext(), interp.getContext().getRuntime());
+            } else if (isModule()) {
+                module = createModule(interp, interp.getContext(), interp.getContext().getRuntime());
+            }
         }
         return module;
     }
 
+    private RubyModule createModule(InterpreterContext interp, ThreadContext context, Ruby runtime) {
+        RubyModule container = getContainer(interp, runtime);
+
+        RubyModule module = container.defineOrGetModuleUnder(scope.getName());
+
+        scope.getStaticScope().setModule(module);
+        IRMethod rootMethod = ((IRModule) scope).getRootMethod();
+        DynamicMethod method = new InterpretedIRMethod(rootMethod, module.getMetaClass());
+
+        method.call(context, module, module.getMetaClass(), "", new IRubyObject[]{});
+
+        return module;
+    }
+
     private RubyModule createClass(InterpreterContext interp, ThreadContext context, Ruby runtime) {
-        RubyModule container = scope.getContainer() != null ?
-            (RubyModule) scope.getContainer().retrieve(interp) : runtime.getObject();
+        RubyModule container = getContainer(interp, runtime);
 
         // TODO: Get superclass
         RubyModule clazz = container.defineOrGetClassUnder(scope.getName(), runtime.getObject());
         scope.getStaticScope().setModule(clazz);
-        IRMethod rootMethod = ((IRClass) scope).getRootMethod();
+        IRMethod rootMethod = ((IRModule) scope).getRootMethod();
         DynamicMethod method = new InterpretedIRMethod(rootMethod, clazz.getMetaClass());
 
         method.call(context, clazz, clazz.getMetaClass(), "", new IRubyObject[]{});
 
         return clazz;
+    }
+
+    private RubyModule getContainer(InterpreterContext interp, Ruby runtime) {
+        return scope.getContainer() != null ?
+            (RubyModule) scope.getContainer().retrieve(interp) : runtime.getObject();
     }
 
     @Override
@@ -98,6 +126,4 @@ public class MetaObject extends Operand {
 
         return super.store(interp, value);
     }
-
-
 }
