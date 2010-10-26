@@ -12,6 +12,8 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
+import org.jruby.compiler.ir.operands.ClassMetaObject;
+import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
@@ -176,12 +178,12 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     public void addModule(IRModule m) {
-        setConstantValue(m.getName(), new MetaObject(m));
+        setConstantValue(m.getName(), new ModuleMetaObject(m));
         modules.add(m);
     }
 
     public void addClass(IRClass c) {
-        setConstantValue(c.getName(), new MetaObject(c));
+        setConstantValue(c.getName(), new ClassMetaObject(c));
         classes.add(c);
     }
 
@@ -239,7 +241,7 @@ public abstract class IRScopeImpl implements IRScope {
 //                System.out.println("Looking for core class: " + constRef);
                 IRClass coreClass = IRModule.getCoreClass(constRef);
 
-                return coreClass != null ? new MetaObject(coreClass) : null;
+                return coreClass != null ? new ClassMetaObject(coreClass) : null;
             }
             cv = ((MetaObject) p).scope.getConstantValue(constRef);
         }

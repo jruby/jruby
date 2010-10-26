@@ -27,7 +27,7 @@ public class AllocateFrameInstr extends Instr {
 
     // ENEBO: Should we be reallocing this every time?
     public Operand[] getOperands() { 
-        return new Operand[] { new MetaObject(scope) };
+        return new Operand[] { MetaObject.create(scope) };
     }
 
     public void simplifyOperands(Map<Operand, Operand> valueMap) {}

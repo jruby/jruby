@@ -144,6 +144,8 @@ import org.jruby.compiler.ir.operands.Backref;
 import org.jruby.compiler.ir.operands.BacktickString;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.BreakResult;
+import org.jruby.compiler.ir.operands.ClassMetaObject;
+import org.jruby.compiler.ir.operands.ClosureMetaObject;
 import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.CompoundString;
 import org.jruby.compiler.ir.operands.DynamicSymbol;
@@ -154,6 +156,7 @@ import org.jruby.compiler.ir.operands.KeyValuePair;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
+import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.NthRef;
 import org.jruby.compiler.ir.operands.Operand;
@@ -570,10 +573,10 @@ public class IRBuilder {
                 break;
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
-                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
-                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 buildConstDeclAssignment((ConstDeclNode) node, s, v);
@@ -628,12 +631,12 @@ public class IRBuilder {
             case CLASSVARASGNNODE:
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
-                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
-                s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 v = s.getNewTemporaryVariable();
@@ -675,7 +678,7 @@ public class IRBuilder {
         String oldName = "";//TODO: FIX breakage....alias.getOldName();
         Operand[] args = new Operand[] { new MethAddr(newName), new MethAddr(oldName) };
         s.recordMethodAlias(newName, oldName);
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(null, MethAddr.DEFINE_ALIAS, new MetaObject(s), args));
+        s.addInstr(new RUBY_INTERNALS_CALL_Instr(null, MethAddr.DEFINE_ALIAS, MetaObject.create(s), args));
 
             // SSS FIXME: Can this return anything other than nil?
         return Nil.NIL;
@@ -897,7 +900,7 @@ public class IRBuilder {
             if (leftNode != null)
                 container = build(leftNode, s);
         } else if (cpathNode instanceof Colon3Node) {
-            container = new MetaObject(IRClass.getCoreClass("Object"));
+            container = new ClassMetaObject(IRClass.getCoreClass("Object"));
         }
 
             // Build a new class and add it to the current scope (could be a script / module / class)
@@ -905,7 +908,7 @@ public class IRBuilder {
         IRClass c = new IRClass(s, container, superClass, className, classNode.getScope());
         s.addClass(c);
         if (container != null)
-            s.addInstr(new PutConstInstr(container, className, new MetaObject(c)));
+            s.addInstr(new PutConstInstr(container, className, new ClassMetaObject(c)));
 
             // Build the class body!
         if (classNode.getBodyNode() != null)
@@ -939,20 +942,20 @@ public class IRBuilder {
 
     public Operand buildClassVar(ClassVarNode node, IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new GET_CVAR_Instr(ret, new MetaObject(s), node.getName()));
+        s.addInstr(new GET_CVAR_Instr(ret, MetaObject.create(s), node.getName()));
         return ret;
     }
 
     // SSS FIXME: Where is this set up?  How is this diff from ClassVarDeclNode??
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode, IRScope s) {
         Operand val = build(classVarAsgnNode.getValueNode(), s);
-        s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), classVarAsgnNode.getName(), val));
+        s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), classVarAsgnNode.getName(), val));
         return val;
     }
 
     public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode, IRScope s) {
         Operand val = build(classVarDeclNode.getValueNode(), s);
-        s.addInstr(new PUT_CVAR_Instr(new MetaObject(s), classVarDeclNode.getName(), val));
+        s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), classVarDeclNode.getName(), val));
         return val;
     }
 
@@ -1560,7 +1563,7 @@ public class IRBuilder {
     private void defineNewMethod(MethodDefNode defnNode, IRScope s, Operand receiver, boolean isInstanceMethod) {
         IRMethod m;
         if (isInstanceMethod) {
-            m = new IRMethod(s, new MetaObject(s), defnNode.getName(), isInstanceMethod, defnNode.getScope());
+            m = new IRMethod(s, MetaObject.create(s), defnNode.getName(), isInstanceMethod, defnNode.getScope());
         } else {
             m = new IRMethod(s, receiver, defnNode.getName(), isInstanceMethod, defnNode.getScope());
         }
@@ -1933,7 +1936,7 @@ public class IRBuilder {
         if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
-        return new MetaObject(closure);
+        return new ClosureMetaObject(closure);
     }
 
     public Operand buildGlobalAsgn(GlobalAsgnNode globalAsgnNode, IRScope m) {
@@ -2067,7 +2070,7 @@ public class IRBuilder {
         if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
-        return new MetaObject(closure);
+        return new ClosureMetaObject(closure);
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode, IRScope s) {
@@ -2116,7 +2119,7 @@ public class IRBuilder {
             if (leftNode != null)
                 container = build(leftNode, s);
         } else if (cpathNode instanceof Colon3Node) {
-            container = new MetaObject(IRClass.getCoreClass("Object"));
+            container = new ClassMetaObject(IRClass.getCoreClass("Object"));
         }
 
         // Build the new module
@@ -2124,7 +2127,7 @@ public class IRBuilder {
         IRModule m = new IRModule(s, container, moduleName, moduleNode.getScope());
         s.addModule(m);
         if (container != null)
-            s.addInstr(new PutConstInstr(container, moduleName, new MetaObject(m)));
+            s.addInstr(new PutConstInstr(container, moduleName, new ModuleMetaObject(m)));
 
         // Build the module body
         if (moduleNode.getBodyNode() != null)

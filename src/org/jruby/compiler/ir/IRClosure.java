@@ -22,7 +22,7 @@ public class IRClosure extends IRExecutionScope {
     private final BlockBody body;
 
     public IRClosure(IRScope lexicalParent, StaticScope staticScope, Arity arity, int argumentType) {
-        super(lexicalParent, new MetaObject(lexicalParent), null, staticScope);
+        super(lexicalParent, MetaObject.create(lexicalParent), null, staticScope);
         startLabel = getNewLabel("_CLOSURE_START");
         endLabel = getNewLabel("_CLOSURE_END");
         closureId = lexicalParent.getNextClosureId();

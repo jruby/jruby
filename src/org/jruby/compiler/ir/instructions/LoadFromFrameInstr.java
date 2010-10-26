@@ -24,7 +24,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class LoadFromFrameInstr extends GetInstr {
     public LoadFromFrameInstr(Variable v, IRExecutionScope scope, String slotName) {
-        super(Operation.FRAME_LOAD, v, new MetaObject(getClosestMethodAncestor(scope)), slotName);
+        super(Operation.FRAME_LOAD, v, MetaObject.create(getClosestMethodAncestor(scope)), slotName);
     }
 
     private static IRMethod getClosestMethodAncestor(IRExecutionScope scope) {

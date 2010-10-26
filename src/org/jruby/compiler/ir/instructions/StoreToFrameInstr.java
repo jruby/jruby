@@ -11,7 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class StoreToFrameInstr extends PutInstr {
     public StoreToFrameInstr(IRExecutionScope scope, String slotName, Operand value) {
-        super(Operation.FRAME_STORE, new MetaObject(getClosestMethodAncestor(scope)), slotName, value);
+        super(Operation.FRAME_STORE, MetaObject.create(getClosestMethodAncestor(scope)), slotName, value);
     }
 
     private static IRMethod getClosestMethodAncestor(IRExecutionScope scope) {

@@ -11,7 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class PutConstInstr extends PutInstr {
     public PutConstInstr(IRScope scope, String constName, Operand val) {
-        super(Operation.PUT_CONST, new MetaObject(scope), constName, val);
+        super(Operation.PUT_CONST, MetaObject.create(scope), constName, val);
     }
 
     public PutConstInstr(Operand scopeOrObj, String constName, Operand val) {
