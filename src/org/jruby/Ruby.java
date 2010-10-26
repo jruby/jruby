@@ -125,6 +125,8 @@ import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.ast.RootNode;
@@ -411,6 +413,9 @@ public final class Ruby {
             }
         } finally {
             context.setFileAndLine(oldFile, oldLine);
+            if (config.isProfiling()) {
+                context.getProfileData().printProfile(context, profiledNames, profiledMethods, System.out);
+            }
         }
     }
 
@@ -3791,6 +3796,32 @@ public final class Ruby {
         return selectorPool;
     }
 
+    /**
+     * Add a method and its name to the profiling arrays, so it can be printed out
+     * later.
+     *
+     * @param name the name of the method
+     * @param method
+     */
+    public void addProfiledMethod(String name, DynamicMethod method) {
+        if (!config.isProfiling()) return;
+        if (method.isUndefined()) return;
+        if (method.getSerialNumber() > MAX_PROFILE_METHODS) return;
+
+        int index = (int)method.getSerialNumber();
+        if (profiledMethods.length <= index) {
+            int newSize = Math.min((int)index * 2 + 1, MAX_PROFILE_METHODS);
+            String[] newProfiledNames = new String[newSize];
+            System.arraycopy(profiledNames, 0, newProfiledNames, 0, profiledNames.length);
+            profiledNames = newProfiledNames;
+            DynamicMethod[] newProfiledMethods = new DynamicMethod[newSize];
+            System.arraycopy(profiledMethods, 0, newProfiledMethods, 0, profiledMethods.length);
+            profiledMethods = newProfiledMethods;
+        }
+        profiledNames[index] = name;
+        profiledMethods[index] = method;
+    }
+
     private volatile int constantGeneration = 1;
     private final ThreadService threadService;
     
@@ -3979,4 +4010,13 @@ public final class Ruby {
 
     // A soft pool of selectors for blocking IO operations
     private final SelectorPool selectorPool = new SelectorPool();
+
+    // The maximum number of methods we will track for profiling purposes
+    private static final int MAX_PROFILE_METHODS = 100000;
+
+    // The list of method names associated with method serial numbers
+    private String[] profiledNames = new String[0];
+
+    // The method objects for serial numbers
+    private DynamicMethod[] profiledMethods = new DynamicMethod[0];
 }
