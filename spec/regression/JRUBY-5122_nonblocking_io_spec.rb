@@ -79,7 +79,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value.should == "foo\r\nbar\r\nbaz"
   end
 
-  it "should not block for read(n)" do
+  it "should not block for read(n) where n is shorter than the buffer" do
     server = TCPServer.new(0)
     value = nil
     t = Thread.new {
@@ -92,6 +92,23 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
       s.write("foo\r\n")
     end
     value.should == "fo"
+  end
+
+  it "should not block for read(n) where n is longer than the buffer" do
+    server = TCPServer.new(0)
+    value = nil
+    t = Thread.new {
+      sock = accept(server)
+      value = sock.read(4)
+    }
+    s = connect(server)
+    wait_for_sleep_and_terminate(t) do
+      t.alive?.should == true
+      s.write("f")
+      t.alive?.should == true
+      s.write("oo\r\n")
+    end
+    value.should == "foo\r"
   end
 
   it "should not block for readpartial" do
@@ -209,13 +226,13 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
   end
 
   def wait_for_sleep(t)
-    timeout(1) do
+    timeout(2) do
       sleep 0.1 while t.status == 'run'
     end
   end
 
   def wait_for_terminate(t)
-    timeout(1) do
+    timeout(2) do
       sleep 0.1 while t.alive?
     end
   end
