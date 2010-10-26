@@ -99,7 +99,6 @@ import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.ir.instructions.ALU_Instr;
 import org.jruby.compiler.ir.instructions.ATTR_ASSIGN_Instr;
 import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
@@ -529,21 +528,8 @@ public class IRBuilder {
         }
     }
 
-    public List<Operand> setupCallArgs(Node receiver, Node args, IRScope s) {
-        List<Operand> argsList = new ArrayList<Operand>();
-        argsList.add(build(receiver, s)); // SSS FIXME: Is this correct?
-        if (args != null) {
-           // unwrap newline nodes to get their actual type
-           args = skipOverNewlines(s, args);
-           buildArgs(argsList, args, s);
-        }
-
-        return argsList;
-    }
-
     public List<Operand> setupCallArgs(Node args, IRScope s) {
         List<Operand> argsList = new ArrayList<Operand>();
-        argsList.add(s.getSelf()); // SSS FIXME: Is this correct?
         if (args != null) {
            // unwrap newline nodes to get their actual type
            args = skipOverNewlines(s, args);
@@ -687,9 +673,9 @@ public class IRBuilder {
     public Operand buildAlias(final AliasNode alias, IRScope s) {
         String newName = "";//TODO: FIX breakage....alias.getNewName();
         String oldName = "";//TODO: FIX breakage....alias.getOldName();
-        Operand[] args = new Operand[] { new MetaObject(s), new MethAddr(newName), new MethAddr(oldName) };
+        Operand[] args = new Operand[] { new MethAddr(newName), new MethAddr(oldName) };
         s.recordMethodAlias(newName, oldName);
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(null, MethAddr.DEFINE_ALIAS, args));
+        s.addInstr(new RUBY_INTERNALS_CALL_Instr(null, MethAddr.DEFINE_ALIAS, new MetaObject(s), args));
 
             // SSS FIXME: Can this return anything other than nil?
         return Nil.NIL;
@@ -800,10 +786,11 @@ public class IRBuilder {
     public Operand buildCall(CallNode callNode, IRScope s) {
         Node          callArgsNode = callNode.getArgsNode();
         Node          receiverNode = callNode.getReceiverNode();
-        List<Operand> args         = setupCallArgs(receiverNode, callArgsNode, s);
+        List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr      callInstr    = new CallInstr(callResult, new MethAddr(callNode.getName()), args.toArray(new Operand[args.size()]), block);
+        Instr      callInstr    = new CallInstr(callResult, new MethAddr(callNode.getName()),
+                build(receiverNode, s), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -1029,7 +1016,8 @@ public class IRBuilder {
             List<Operand> args       = setupCallArgs(null, s);
             Operand       block      = setupCallClosure(null, s);
             Variable      callResult = s.getNewTemporaryVariable();
-            Instr      callInstr  = new CallInstr(callResult, new MethAddr(c2mNode.getName()), args.toArray(new Operand[args.size()]), block);
+            Instr      callInstr  = new CallInstr(callResult, new MethAddr(c2mNode.getName()), 
+                    null, args.toArray(new Operand[args.size()]), block);
             s.addInstr(callInstr);
             return callResult;
         }
@@ -1780,7 +1768,8 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr      callInstr    = new CallInstr(callResult, new MethAddr(fcallNode.getName()), args.toArray(new Operand[args.size()]), block);
+        Instr      callInstr    = new CallInstr(callResult, new MethAddr(fcallNode.getName()), 
+                s.getSelf(), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -1921,7 +1910,8 @@ public class IRBuilder {
         Variable ret      = m.getNewTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode(), m);
         Operand  forBlock = buildForIter(forNode, m);     
-        m.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.FOR_EACH, new Operand[]{receiver}, forBlock));
+        m.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.FOR_EACH, receiver,
+                new Operand[]{}, forBlock));
         return ret;
     }
 
@@ -2094,7 +2084,7 @@ public class IRBuilder {
     public Operand buildMatch(MatchNode matchNode, IRScope m) {
         Variable ret    = m.getNewTemporaryVariable();
         Operand  regexp = build(matchNode.getRegexpNode(), m);
-        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH, new Operand[]{regexp}));
+        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH, regexp, new Operand[]{}));
         return ret;
     }
 
@@ -2102,7 +2092,7 @@ public class IRBuilder {
         Variable  ret       = m.getNewTemporaryVariable();
         Operand   receiver  = build(matchNode.getReceiverNode(), m);
         Operand   value     = build(matchNode.getValueNode(), m);
-        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH2, new Operand[]{receiver, value}));
+        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH2, receiver, new Operand[]{value}));
         return ret;
     }
 
@@ -2110,7 +2100,7 @@ public class IRBuilder {
         Variable  ret       = m.getNewTemporaryVariable();
         Operand   receiver  = build(matchNode.getReceiverNode(), m);
         Operand   value     = build(matchNode.getValueNode(), m);
-        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH3, new Operand[]{receiver, value}));
+        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH3, receiver, new Operand[]{value}));
         return ret;
     }
 
@@ -2223,18 +2213,21 @@ public class IRBuilder {
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode(), s);
         Variable      getResult   = s.getNewTemporaryVariable();
-        Instr      callInstr    = new CallInstr(getResult, new MethAddr(opAsgnNode.getVariableName()), new Operand[] {v1}, null);
+        Instr callInstr = new CallInstr(getResult, new MethAddr(opAsgnNode.getVariableName()), v1,
+                new Operand[]{}, null);
         s.addInstr(callInstr);
 
         // call operator
         Operand  v2 = build(opAsgnNode.getValueNode(), s);
         Variable      setValue   = s.getNewTemporaryVariable();
-        callInstr    = new CallInstr(setValue, new MethAddr(opAsgnNode.getOperatorName()), new Operand[] {getResult, v2}, null);
+        callInstr = new CallInstr(setValue, new MethAddr(opAsgnNode.getOperatorName()), getResult,
+                new Operand[]{v2}, null);
         s.addInstr(callInstr);
 
         // set attr
         Variable      setResult   = s.getNewTemporaryVariable();
-        callInstr    = new CallInstr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), new Operand[] {v1, setValue}, null);
+        callInstr    = new CallInstr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()),
+                v1, new Operand[] {setValue}, null);
         s.addInstr(callInstr);
 
         return setResult;
@@ -2437,26 +2430,24 @@ public class IRBuilder {
         Label    l     = s.getNewLabel();
         Variable elt   = s.getNewTemporaryVariable();
         Variable f     = s.getNewTemporaryVariable();
-        Operand[] allArgs = new Operand[args.size()+1];
-        int i = 1;
-        allArgs[0] = array;
+        Operand[] allArgs = new Operand[args.size()];
+        int i = 0;
         for (Operand x: args) {
             allArgs[i] = x;
             i++;
         }
-        s.addInstr(new CallInstr(elt, new MethAddr("[]"), allArgs, null));
+        s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, allArgs, null));
         s.addInstr(new IS_TRUE_Instr(f, elt));
         s.addInstr(new BEQInstr(f, BooleanLiteral.TRUE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
-        allArgs = new Operand[args.size()+2];
-        i = 1;
-        allArgs[0] = array;
+        allArgs = new Operand[args.size()+1];
+        i = 0;
         for (Operand x: args) {
             allArgs[i] = x;
             i++;
         }
         allArgs[i] = value;
-        s.addInstr(new CallInstr(elt, new MethAddr("[]="), allArgs, null));
+        s.addInstr(new CallInstr(elt, new MethAddr("[]="), array, allArgs, null));
         s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
@@ -2470,26 +2461,24 @@ public class IRBuilder {
         Label    l     = s.getNewLabel();
         Variable elt   = s.getNewTemporaryVariable();
         Variable f     = s.getNewTemporaryVariable();
-        Operand[] allArgs = new Operand[args.size()+1];
-        int i = 1;
-        allArgs[0] = array;
+        Operand[] allArgs = new Operand[args.size()];
+        int i = 0;
         for (Operand x: args) {
             allArgs[i] = x;
             i++;
         }
-        s.addInstr(new CallInstr(elt, new MethAddr("[]"), allArgs, null));
+        s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, allArgs, null));
         s.addInstr(new IS_TRUE_Instr(f, elt));
         s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
-        allArgs = new Operand[args.size()+2];
-        i = 1;
-        allArgs[0] = array;
+        allArgs = new Operand[args.size()+1];
+        i = 0;
         for (Operand x: args) {
             allArgs[i] = x;
             i++;
         }
         allArgs[i] = value;
-        s.addInstr(new CallInstr(elt, new MethAddr("[]="), allArgs, null));
+        s.addInstr(new CallInstr(elt, new MethAddr("[]="), array, allArgs, null));
         s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
@@ -2759,7 +2748,8 @@ public class IRBuilder {
         List<Operand> args  = setupCallArgs(superNode.getArgsNode(), s);
         Operand       block = setupCallClosure(superNode.getIterNode(), s);
         Variable      ret   = s.getNewTemporaryVariable();
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, args.toArray(new Operand[args.size()]), block));
+        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, s.getSelf(),
+                args.toArray(new Operand[args.size()]), block));
         return ret;
     }
 
@@ -2774,7 +2764,7 @@ public class IRBuilder {
     public Operand buildToAry(ToAryNode node, IRScope s) {
         Operand  array = build(node.getValue(), s);
         Variable ret   = s.getNewTemporaryVariable();
-        s.addInstr(new JRubyImplCallInstr(ret, MethAddr.TO_ARY, new Operand[]{array}));
+        s.addInstr(new JRubyImplCallInstr(ret, MethAddr.TO_ARY, array, new Operand[]{}));
         return  ret;
     }
 
@@ -2854,7 +2844,7 @@ public class IRBuilder {
     public Operand buildVCall(VCallNode node, IRScope s) {
         List<Operand> args       = new ArrayList<Operand>(); args.add(s.getSelf());
         Variable      callResult = s.getNewTemporaryVariable();
-        Instr      callInstr  = new CallInstr(callResult, new MethAddr(node.getName()), args.toArray(new Operand[args.size()]), null);
+        Instr      callInstr  = new CallInstr(callResult, new MethAddr(node.getName()), s.getSelf(), new Operand[]{}, null);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -2892,7 +2882,8 @@ public class IRBuilder {
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
         Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
         Variable   ret   = s.getNewTemporaryVariable();
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.ZSUPER, ((IRMethod)s).getCallArgs(), block));
+        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.ZSUPER, s.getSelf(),
+                ((IRMethod)s).getCallArgs(), block));
         return ret;
     }
 

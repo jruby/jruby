@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
@@ -11,12 +10,13 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JRubyImplCallInstr extends CallInstr {
-    public JRubyImplCallInstr(Variable result, Operand methAddr, Operand[] args) {
-        super(Operation.JRUBY_IMPL, result, methAddr, args, null);
+    public JRubyImplCallInstr(Variable result, Operand methAddr, Operand receiver, Operand[] args) {
+        super(Operation.JRUBY_IMPL, result, methAddr, receiver, args, null);
     }
 
-    public JRubyImplCallInstr(Variable result, Operand methAddr, Operand[] args, Operand closure) {
-        super(result, methAddr, args, closure);
+    public JRubyImplCallInstr(Variable result, Operand methAddr, Operand receiver, Operand[] args,
+            Operand closure) {
+        super(result, methAddr, receiver, args, closure);
     }
 
     @Override
@@ -26,7 +26,9 @@ public class JRubyImplCallInstr extends CallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new JRubyImplCallInstr(ii.getRenamedVariable(result), _methAddr.cloneForInlining(ii), super.cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
+        return new JRubyImplCallInstr(ii.getRenamedVariable(result), _methAddr.cloneForInlining(ii), 
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
+                _closure == null ? null : _closure.cloneForInlining(ii));
     }
 
     @Override
@@ -35,7 +37,7 @@ public class JRubyImplCallInstr extends CallInstr {
 
         if (getMethodAddr() == MethAddr.MATCH3) {
             getResult().store(interp, ((RubyRegexp) receiver).op_match(interp.getContext(),
-                    (IRubyObject) getCallArgs()[1].retrieve(interp)));
+                    (IRubyObject) getCallArgs()[0].retrieve(interp)));
         } else {
             super.interpret(interp, self);
         }

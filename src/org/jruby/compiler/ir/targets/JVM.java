@@ -250,6 +250,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitCALL(CallInstr call) {
+        emit(call.getReceiver());
         for (Operand operand : call.getCallArgs()) {
             emit(operand);
         }

@@ -9,12 +9,14 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 // Rather than building a zillion instructions that capture calls to ruby implementation internals,
 // we are building one that will serve as a placeholder for internals-specific call optimizations.
 public class RUBY_INTERNALS_CALL_Instr extends CallInstr {
-    public RUBY_INTERNALS_CALL_Instr(Variable result, Operand methAddr, Operand[] args) {
-        super(Operation.RUBY_INTERNALS, result, methAddr, args, null);
+    public RUBY_INTERNALS_CALL_Instr(Variable result, Operand methAddr, Operand receiver,
+            Operand[] args) {
+        super(Operation.RUBY_INTERNALS, result, methAddr, receiver, args, null);
     }
 
-    public RUBY_INTERNALS_CALL_Instr(Variable result, Operand methAddr, Operand[] args, Operand closure) {
-        super(result, methAddr, args, closure);
+    public RUBY_INTERNALS_CALL_Instr(Variable result, Operand methAddr, Operand receiver,
+            Operand[] args, Operand closure) {
+        super(result, methAddr, receiver, args, closure);
     }
 
     @Override
@@ -39,7 +41,10 @@ public class RUBY_INTERNALS_CALL_Instr extends CallInstr {
         return null;
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new RUBY_INTERNALS_CALL_Instr(ii.getRenamedVariable(result), _methAddr.cloneForInlining(ii), super.cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
+        return new RUBY_INTERNALS_CALL_Instr(ii.getRenamedVariable(result), 
+                _methAddr.cloneForInlining(ii), getReceiver().cloneForInlining(ii),
+                cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
     }
 }

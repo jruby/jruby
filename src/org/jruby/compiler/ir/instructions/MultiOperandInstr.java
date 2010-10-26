@@ -16,7 +16,7 @@ public abstract class MultiOperandInstr extends Instr {
 
     public MultiOperandInstr(Operation opType, Variable result, Operand[] args) {
         super(opType, result);
-        
+
         _args = args;
     }
 

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jruby.compiler.ir.IRExecutionScope;
 
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.operands.Array;

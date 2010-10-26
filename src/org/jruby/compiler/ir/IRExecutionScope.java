@@ -207,7 +207,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
                 // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
                 // it could be using the closure as a binding -- which means it could be using pretty much any
                 // variable from the caller's frame!
-                if (receivesClosureArg && call.canBeEval() && (call.getNumArgs() > 1))
+                if (receivesClosureArg && call.canBeEval() && (call.getCallArgs().length > 1))
                     canCaptureCallersFrame = true;
             }
         }

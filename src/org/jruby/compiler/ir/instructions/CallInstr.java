@@ -24,32 +24,39 @@ import org.jruby.runtime.builtin.IRubyObject;
  * args field: [self, reciever, *args]
  */
 public class CallInstr extends MultiOperandInstr {
+    private Operand receiver;
+    private Operand[] arguments;
     Operand _methAddr;
     Operand _closure;
     
     private boolean _flagsComputed;
     private boolean _canBeEval;
     private boolean _requiresFrame;
-    private int _numArgs;
 
-    public CallInstr(Variable result, Operand methAddr, Operand[] args, Operand closure) {
-        super(Operation.CALL, result, buildAllArgs(methAddr, closure, args));
+    public CallInstr(Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
+        super(Operation.CALL, result, buildAllArgs(methAddr, closure, receiver, args));
+
+        this.receiver = receiver;
+        this.arguments = args;
+
         _methAddr = methAddr;
         _closure = closure;
         _flagsComputed = false;
         _canBeEval = true;
         _requiresFrame = true;
-        _numArgs = args.length;
     }
 
-    public CallInstr(Operation op, Variable result, Operand methAddr, Operand[] args, Operand closure) {
-        super(op, result, buildAllArgs(methAddr, closure, args));
+    public CallInstr(Operation op, Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
+        super(op, result, buildAllArgs(methAddr, closure, receiver, args));
+
+        this.receiver = receiver;
+        this.arguments = args;
+        
         _methAddr = methAddr;
         _closure = closure;
         _flagsComputed = false;
         _canBeEval = true;
         _requiresFrame = true;
-        _numArgs = args.length;
     }
 
     public Operand getMethodAddr() {
@@ -61,30 +68,19 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public Operand getReceiver() {
-        return _args[1];
+        return receiver;
     }
 
-    public int getNumArgs() {
-        return _numArgs;
-    }
-
-    // ENEBO: Can be System.arraycopy
-    // Beware: Expensive call since a new array is allocated on each call.
     public Operand[] getCallArgs() {
-        Operand[] callArgs = new Operand[_numArgs];
-        
-        for (int i = 0; i < _numArgs; i++) {
-            callArgs[i] = _args[i + 1];
-        }
-
-        return callArgs;
+        return arguments;
     }
 
     public Operand[] cloneCallArgs(InlinerInfo ii) {
-        Operand[] clonedArgs = new Operand[_numArgs];
+        int length = arguments.length;
+        Operand[] clonedArgs = new Operand[length];
 
-        for (int i = 0; i < _numArgs; i++) {
-            clonedArgs[i] = _args[i + 1].cloneForInlining(ii);
+        for (int i = 0; i < length; i++) {
+            clonedArgs[i] = arguments[i].cloneForInlining(ii);
         }
 
         return clonedArgs;
@@ -156,7 +152,7 @@ public class CallInstr extends MultiOperandInstr {
             if (mname.equals("send")) {
                 Operand[] args = getCallArgs();
                 if (args.length >= 2) {
-                    Operand meth = args[1];
+                    Operand meth = args[0];
                     if (!(meth instanceof StringLiteral)) return true; // We don't know
 
                     // But why?  Why are you killing yourself (and us) doing this?
@@ -194,12 +190,12 @@ public class CallInstr extends MultiOperandInstr {
         if (mname.equals("lambda")) return true;
 
         if (mname.equals("new")) {
-            Operand receiver = getReceiver();
+            Operand object = getReceiver();
 
             // Unknown receiver -- could be Proc!!
-            if (!(receiver instanceof MetaObject)) return true;
+            if (!(object instanceof MetaObject)) return true;
 
-            IRScope c = ((MetaObject) receiver).scope;
+            IRScope c = ((MetaObject) object).scope;
 
             if ((c instanceof IRClass) && c.getName().equals("Proc")) return true;
         }
@@ -254,39 +250,47 @@ public class CallInstr extends MultiOperandInstr {
     public String toString() {
         return "\t"
                 + (result == null ? "" : result + " = ")
-                + operation + "(" + _methAddr + ", " + java.util.Arrays.toString(getCallArgs())
+                + operation + "(" + _methAddr + ", " + receiver + ", " +
+                java.util.Arrays.toString(getCallArgs())
                 + (_closure == null ? "" : ", &" + _closure) + ")";
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CallInstr(ii.getRenamedVariable(result), _methAddr.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
+        return new CallInstr(ii.getRenamedVariable(result), _methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
 	}
 
 // --------------- Private methods ---------------
 
-    private static Operand[] buildAllArgs(Operand methAddr, Operand closure, Operand[] callArgs) {
-        Operand[] allArgs = new Operand[callArgs.length + 1 + ((closure != null) ? 1 : 0)];
+    private static Operand[] buildAllArgs(Operand methAddr, Operand closure, Operand receiver, Operand[] callArgs) {
+        Operand[] allArgs = new Operand[callArgs.length + 2 + ((closure != null) ? 1 : 0)];
+
+        assert methAddr != null : "METHADDR is null";
+        assert receiver != null : "RECEIVER is null";
+
 
         allArgs[0] = methAddr;
+        allArgs[1] = receiver;
         for (int i = 0; i < callArgs.length; i++) {
-            allArgs[i + 1] = callArgs[i];
+            assert callArgs[i] != null : "ARG " + i + " is null";
+            
+            allArgs[i + 2] = callArgs[i];
         }
         
-        if (closure != null) allArgs[callArgs.length + 1] = closure;
+        if (closure != null) allArgs[callArgs.length + 2] = closure;
 
         return allArgs;
     }
 
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        IRubyObject receiver = (IRubyObject) getReceiver().retrieve(interp);
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
         String name = (String) _methAddr.retrieve(interp);        // TODO: What happens when _methAddr is not actually a name?
         Object resultValue;
 
         if (_closure == null) {
-            resultValue = receiver.callMethod(interp.getContext(), name, prepareArguments(interp));
+            resultValue = object.callMethod(interp.getContext(), name, prepareArguments(interp));
         } else {
-            resultValue = receiver.callMethod(interp.getContext(), name, prepareArguments(interp), prepareBlock(interp));
+            resultValue = object.callMethod(interp.getContext(), name, prepareArguments(interp), prepareBlock(interp));
         }
 
         getResult().store(interp, resultValue);
@@ -299,15 +303,13 @@ public class CallInstr extends MultiOperandInstr {
 
     public IRubyObject[] prepareArguments(InterpreterContext interp) {
         Operand[] operands = getCallArgs();
-        IRubyObject[] args = new IRubyObject[operands.length - 1]; // Ignore self
-        int length = args.length;
+        int length = operands.length;
+        IRubyObject[] args = new IRubyObject[length];
 
         for (int i = 0; i < length; i++) {
-            args[i] = (IRubyObject) operands[i + 1].retrieve(interp);
+            args[i] = (IRubyObject) operands[i].retrieve(interp);
         }
 
-        System.out.println("ARGS>LENGTH " + args.length);
-        System.out.println("ARGS: " + java.util.Arrays.toString(args));
         return args;
     }
 }
