@@ -4003,7 +4003,7 @@ public final class Ruby {
     private final Object hierarchyLock = new Object();
 
     // An atomic long for generating DynamicMethod serial numbers
-    private final AtomicLong dynamicMethodSerial = new AtomicLong(0);
+    private final AtomicLong dynamicMethodSerial = new AtomicLong(1);
 
     // An atomic int for generating class generation numbers
     private final AtomicInteger moduleGeneration = new AtomicInteger(1);
