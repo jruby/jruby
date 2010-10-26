@@ -1511,8 +1511,8 @@ public final class ThreadContext {
      * @return the serial number of the previous method being profiled
      */
     public int profileEnter(int nextMethod) {
-        ensureProfileSize(current);
-        profileCounts[current]++;
+        ensureProfileSize(Math.max(current, nextMethod));
+        profileCounts[nextMethod]++;
         return aggregateProfileTime(nextMethod);
     }
 
@@ -1523,7 +1523,7 @@ public final class ThreadContext {
      * @return the serial number of the previous method being profiled
      */
     public int profileExit(int nextMethod) {
-        ensureProfileSize(current);
+        ensureProfileSize(Math.max(current, nextMethod));
         return aggregateProfileTime(nextMethod);
     }
 
