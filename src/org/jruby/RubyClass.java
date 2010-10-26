@@ -920,7 +920,7 @@ public class RubyClass extends RubyModule {
         setSuperClass(superClass);
     }
     
-    public Collection subclasses(boolean includeDescendants) {
+    public Collection<RubyClass> subclasses(boolean includeDescendants) {
         Set<RubyClass> mySubclasses = subclasses;
         if (mySubclasses != null) {
             Collection<RubyClass> mine = new ArrayList<RubyClass>(mySubclasses);
