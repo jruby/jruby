@@ -35,10 +35,17 @@ import org.jruby.util.ByteList;
 
 
 public class Interpreter {
-    private Ruby runtime;
+    public static IRubyObject interpret(Ruby runtime, Node rootNode) {
+        IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
 
-    public Interpreter(Ruby runtime) {
-        this.runtime = runtime;
+        scope.runCompilerPass(new LocalOptimizationPass());
+        scope.runCompilerPass(new CFG_Builder());
+        scope.runCompilerPass(new DominatorTreeBuilder());
+        scope.runCompilerPass(new LiveVariableAnalysis());
+        scope.runCompilerPass(new DeadCodeElimination());
+        scope.runCompilerPass(new AddFrameInstructions());
+        
+        return Interpreter.interpretTop(runtime, scope);
     }
 
     public static void main(String[] args) {
@@ -75,7 +82,7 @@ public class Interpreter {
             scope.runCompilerPass(new AddFrameInstructions());
             long t9 = new Date().getTime();
             if (isDebug) scope.runCompilerPass(new IR_Printer());
-            new Interpreter(runtime).interpretTop(scope);
+            Interpreter.interpretTop(runtime, scope);
             long t10 = new Date().getTime();
 
             System.out.println("Time to build AST         : " + (t2 - t1));
@@ -114,13 +121,10 @@ public class Interpreter {
         }
     }*/
 
-    public void interpretTop(IRScope scope) {
+    public static IRubyObject interpretTop(Ruby runtime, IRScope scope) {
         IRubyObject self = runtime.getTopSelf();
 
-        if (!(scope instanceof IRScript)) {
-            System.out.println("BONED (not IR_Script)");
-            return;
-        }
+        assert scope instanceof IRScript : "Must be an IRScript scope at Top!!!";
 
         IRScript root = (IRScript) scope;
 
@@ -136,7 +140,7 @@ public class Interpreter {
 
         InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, metaclass);
 
-        method.call(runtime.getCurrentContext(), self, metaclass, "", new IRubyObject[]{});
+        return method.call(runtime.getCurrentContext(), self, metaclass, "", new IRubyObject[]{});
     }
 
     public void interpretMethod(IRubyObject self, IRMethod method) {

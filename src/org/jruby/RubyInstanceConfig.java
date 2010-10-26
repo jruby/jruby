@@ -121,7 +121,7 @@ public class RubyInstanceConfig {
     }
 
     public enum CompileMode {
-        JIT, FORCE, OFF;
+        JIT, FORCE, OFF, OFFIR;
 
         public boolean shouldPrecompileCLI() {
             switch (this) {
@@ -1151,6 +1151,8 @@ public class RubyInstanceConfig {
                         objectSpaceEnabled = true;
                     } else if (extendedOption.equals("-C")) {
                         compileMode = CompileMode.OFF;
+                    } else if (extendedOption.equals("-CIR")) {
+                        compileMode = CompileMode.OFFIR;
                     } else if (extendedOption.equals("+C")) {
                         compileMode = CompileMode.FORCE;
                     } else {

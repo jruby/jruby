@@ -129,9 +129,11 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.RootNode;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.interpreter.Interpreter;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
@@ -709,7 +711,11 @@ public final class Ruby {
         assert scriptNode != null : "scriptNode is not null";
         
         try {
-            return scriptNode.interpret(this, context, getTopSelf(), Block.NULL_BLOCK);
+            if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+                return Interpreter.interpret(this, scriptNode);
+            } else {
+                return scriptNode.interpret(this, context, getTopSelf(), Block.NULL_BLOCK);
+            }
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
@@ -720,16 +726,10 @@ public final class Ruby {
      * already-prepared, already-pushed scope for the script body.
      */
     public IRubyObject runInterpreterBody(Node scriptNode) {
-        ThreadContext context = getCurrentContext();
-
         assert scriptNode != null : "scriptNode is not null";
         assert scriptNode instanceof RootNode : "scriptNode is not a RootNode";
 
-        try {
-            return ((RootNode)scriptNode).getBodyNode().interpret(this, context, getTopSelf(), Block.NULL_BLOCK);
-        } catch (JumpException.ReturnJump rj) {
-            return (IRubyObject) rj.getValue();
-        }
+        return runInterpreter(((RootNode) scriptNode).getBodyNode());
     }
 
     public Parser getParser() {
