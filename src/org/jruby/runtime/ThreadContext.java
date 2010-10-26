@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.IncludedModuleWrapper;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import org.jruby.Ruby;
@@ -1518,6 +1519,10 @@ public final class ThreadContext {
     }
 
     public static class ProfileData {
+        private static final int SERIAL_OFFSET = 0;
+        private static final int SELFTIME_OFFSET = 1;
+        private static final int COUNT_OFFSET = 2;
+        private static final int AGGREGATETIME_OFFSET = 3;
         /**
          * Begin profiling a new method, aggregating the current time diff in the previous
          * method's profile slot.
@@ -1543,17 +1548,20 @@ public final class ThreadContext {
         }
 
         private int aggregateProfileTime(int newMethod, boolean entry) {
+            long now = System.nanoTime();
             if (entry) {
                 profileRecursions[newMethod]++;
-                profileAggregateStarts[newMethod] = System.nanoTime();
+                if (profileRecursions[newMethod] == 1) {
+                    profileAggregateStarts[newMethod] = now;
+                }
             } else {
                 profileRecursions[current]--;
                 if (profileRecursions[current] == 0) {
-                    profileAggregateTimes[current] += System.nanoTime() - profileAggregateStarts[current];
+                    profileAggregateTimes[current] += (now - profileAggregateStarts[current]);
                 }
             }
-            profileSelfTimes[current] += System.nanoTime() - lastTime;
-            lastTime = System.nanoTime();
+            profileSelfTimes[current] += now - lastTime;
+            lastTime = now;
             int oldCurrent = current;
             current = newMethod;
             return oldCurrent;
@@ -1579,11 +1587,11 @@ public final class ThreadContext {
                 System.arraycopy(profileAggregateStarts, 0, newProfileAggregateStarts, 0, profileAggregateStarts.length);
                 profileAggregateStarts = newProfileAggregateStarts;
 
-                int[] newProfileCounts = new int[(int)method * 2 + 1];
+                int[] newProfileCounts = new int[method * 2 + 1];
                 System.arraycopy(profileCounts, 0, newProfileCounts, 0, profileCounts.length);
                 profileCounts = newProfileCounts;
                 
-                int[] newProfileRecursions = new int[(int)method * 2 + 1];
+                int[] newProfileRecursions = new int[method * 2 + 1];
                 System.arraycopy(profileRecursions, 0, newProfileRecursions, 0, profileRecursions.length);
                 profileRecursions = newProfileRecursions;
             }
@@ -1601,7 +1609,7 @@ public final class ThreadContext {
             }
             Arrays.sort(tuples, new Comparator<long[]>() {
                 public int compare(long[] o1, long[] o2) {
-                    return ((Long)o2[1]).compareTo(o1[1]);
+                    return ((Long)o2[SELFTIME_OFFSET]).compareTo(o1[SELFTIME_OFFSET]);
                 }
             });
             int longestName = 0;
@@ -1609,40 +1617,57 @@ public final class ThreadContext {
                 String name = profiledNames[i];
                 if (name == null) continue;
                 DynamicMethod method = profiledMethods[i];
-                String displayName = method.getImplementationClass().getName() + "#" + name;
+                String displayName = moduleHashMethod(method.getImplementationClass(), name);
                 longestName = Math.max(longestName, displayName.length());
             }
-            out.print("    #");
-            out.print("          calls");
-            out.print("           self");
-            out.print("      aggregate");
-            out.println("method name");
+            out.print("    #  ");
+            out.print("          calls  ");
+            out.print("           self  ");
+            out.print("      aggregate  ");
+            out.println("method");
             int lines = 0;
             for (long[] tuple : tuples) {
+                if (tuple[SELFTIME_OFFSET] == 0) break; // if we start hitting zeros, bail out
+                
                 lines++;
-                int index = (int)tuple[0];
+                int index = (int)tuple[SERIAL_OFFSET];
                 String name = profiledNames[index];
                 DynamicMethod method = profiledMethods[index];
-                String displayName = method.getImplementationClass().getName() + '#' + name;
-                String selfTime = Double.toString((double)tuple[1] / 1000000000.0) + 's';
-                String aggregateTime = Double.toString((double)tuple[2] / 1000000000.0) + 's';
-                String count = Long.toString(tuple[2]);
-                String linesStr = Integer.toString(lines);
-                for (int i = 0; i < 5 - linesStr.length(); i++) out.print(' ');
-                out.print(linesStr);
+                String displayName = moduleHashMethod(method.getImplementationClass(), name);
+
+                pad(out, 5, Integer.toString(lines));
                 out.print("  ");
-                for (int i = 0; i < 15 - count.length(); i++) out.print(' ');
-                out.print(count);
+                pad(out, 15, Long.toString(tuple[COUNT_OFFSET]));
                 out.print("  ");
-                for (int i = 0; i < 15 - selfTime.length(); i++) out.print(' ');
-                out.print(selfTime);
+                pad(out, 15, nanoString(tuple[SELFTIME_OFFSET]));
                 out.print("  ");
-                for (int i = 0; i < 15 - aggregateTime.length(); i++) out.print(' ');
-                out.print(aggregateTime);
+                pad(out, 15, nanoString(tuple[AGGREGATETIME_OFFSET]));
                 out.print("  ");
                 out.println(displayName);
                 
                 if (lines == 50) break;
+            }
+        }
+
+        private void pad(PrintStream out, int size, String body) {
+            pad(out, size, body, true);
+        }
+
+        private void pad(PrintStream out, int size, String body, boolean front) {
+            if (front) for (int i = 0; i < size - body.length(); i++) out.print(' ');
+            out.print(body);
+            if (!front) for (int i = 0; i < size - body.length(); i++) out.print(' ');
+        }
+
+        private String nanoString(long nanoTime) {
+            return Double.toString((double)nanoTime / 1000000000.0) + 's';
+        }
+
+        private String moduleHashMethod(RubyModule module, String name) {
+            if (module.isSingleton()) {
+                return ((RubyClass)module).getRealClass().getName() + "(singleton)#" + name;
+            } else {
+                return module.getName() + "#" + name;
             }
         }
 
