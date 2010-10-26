@@ -1523,6 +1523,7 @@ public final class ThreadContext {
         private static final int SELFTIME_OFFSET = 1;
         private static final int COUNT_OFFSET = 2;
         private static final int AGGREGATETIME_OFFSET = 3;
+        
         /**
          * Begin profiling a new method, aggregating the current time diff in the previous
          * method's profile slot.
@@ -1560,7 +1561,10 @@ public final class ThreadContext {
                     profileAggregateTimes[current] += (now - profileAggregateStarts[current]);
                 }
             }
-            profileSelfTimes[current] += now - lastTime;
+
+            if (current != 0) {
+                profileSelfTimes[current] += now - lastTime;
+            }
             lastTime = now;
             int oldCurrent = current;
             current = newMethod;
@@ -1677,6 +1681,6 @@ public final class ThreadContext {
         private int[] profileCounts = new int[0];
         private int[] profileRecursions = new int[0];
         private int current;
-        private long lastTime = System.nanoTime();
+        private long lastTime = 0;
     }
 }
