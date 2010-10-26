@@ -1624,11 +1624,8 @@ public final class ThreadContext {
                 String displayName = moduleHashMethod(method.getImplementationClass(), name);
                 longestName = Math.max(longestName, displayName.length());
             }
-            out.print("    #  ");
-            out.print("          calls  ");
-            out.print("           self  ");
-            out.print("      aggregate  ");
-            out.println("method");
+            out.println("    #            calls             self        aggregate  method");
+            out.println("----------------------------------------------------------------");
             int lines = 0;
             for (long[] tuple : tuples) {
                 if (tuple[SELFTIME_OFFSET] == 0) break; // if we start hitting zeros, bail out
