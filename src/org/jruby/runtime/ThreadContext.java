@@ -51,7 +51,6 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException.ReturnJump;
-import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -67,11 +66,6 @@ public final class ThreadContext {
 
         return context;
     }
-    
-    private long[] profileTimes = new long[0];
-    private int[] profileCounts = new int[0];
-    private int current;
-    private long lastTime = System.nanoTime();
     
     private final static int INITIAL_SIZE = 10;
     private final static int INITIAL_FRAMES_SIZE = 10;
@@ -113,6 +107,9 @@ public final class ThreadContext {
     
     // Line where current executing unit is being evaluated
     private int line = 0;
+
+    // The profile data for this thread (TODO: don't create if we're not profiling)
+    private final ProfileData profileData = new ProfileData();
 
     // In certain places, like grep, we don't use real frames for the
     // call blocks. This has the effect of not setting the backref in
@@ -1504,73 +1501,103 @@ public final class ThreadContext {
     }
 
     /**
-     * Begin profiling a new method, aggregating the current time diff in the previous
-     * method's profile slot.
-     *
-     * @param nextMethod the serial number of the next method to profile
-     * @return the serial number of the previous method being profiled
-     */
-    public int profileEnter(int nextMethod) {
-        ensureProfileSize(Math.max(current, nextMethod));
-        profileCounts[nextMethod]++;
-        return aggregateProfileTime(nextMethod);
-    }
-
-    /**
-     * Fall back to previously profiled method after current method has returned.
-     *
-     * @param nextMethod the serial number of the next method to profile
-     * @return the serial number of the previous method being profiled
-     */
-    public int profileExit(int nextMethod) {
-        ensureProfileSize(Math.max(current, nextMethod));
-        return aggregateProfileTime(nextMethod);
-    }
-
-    private int aggregateProfileTime(int newMethod) {
-        profileTimes[current] += System.nanoTime() - lastTime;
-        lastTime = System.nanoTime();
-        int oldCurrent = current;
-        current = newMethod;
-        return oldCurrent;
-    }
-
-    /**
-     * Ensure the profile times array is large enough to support the given method's
-     * serial number.
-     *
-     * @param method the profiled method's serial number
-     */
-    private void ensureProfileSize(int method) {
-        if (profileTimes.length <= method) {
-            long[] newProfileData = new long[method * 2 + 1];
-            System.arraycopy(profileTimes, 0, newProfileData, 0, profileTimes.length);
-            profileTimes = newProfileData;
-            int[] newProfileCounts = new int[(int)method * 2 + 1];
-            System.arraycopy(profileCounts, 0, newProfileCounts, 0, profileCounts.length);
-            profileCounts = newProfileCounts;
-        }
-    }
-
-    /**
      * Get the profile data for this thread (ThreadContext).
      *
      * @return the thread's profile data
      */
     public ProfileData getProfileData() {
-        return new ProfileData();
+        return profileData;
     }
 
-    public class ProfileData {
+    public int profileEnter(int nextMethod) {
+        return profileData.profileEnter(nextMethod);
+    }
+
+    public int profileExit(int nextMethod) {
+        return profileData.profileExit(nextMethod);
+    }
+
+    public static class ProfileData {
+        /**
+         * Begin profiling a new method, aggregating the current time diff in the previous
+         * method's profile slot.
+         *
+         * @param nextMethod the serial number of the next method to profile
+         * @return the serial number of the previous method being profiled
+         */
+        public int profileEnter(int nextMethod) {
+            ensureProfileSize(Math.max(current, nextMethod));
+            profileCounts[nextMethod]++;
+            return aggregateProfileTime(nextMethod, true);
+        }
+
+        /**
+         * Fall back to previously profiled method after current method has returned.
+         *
+         * @param nextMethod the serial number of the next method to profile
+         * @return the serial number of the previous method being profiled
+         */
+        public int profileExit(int nextMethod) {
+            ensureProfileSize(Math.max(current, nextMethod));
+            return aggregateProfileTime(nextMethod, false);
+        }
+
+        private int aggregateProfileTime(int newMethod, boolean entry) {
+            if (entry) {
+                profileRecursions[newMethod]++;
+                profileAggregateStarts[newMethod] = System.nanoTime();
+            } else {
+                profileRecursions[current]--;
+                if (profileRecursions[current] == 0) {
+                    profileAggregateTimes[current] += System.nanoTime() - profileAggregateStarts[current];
+                }
+            }
+            profileSelfTimes[current] += System.nanoTime() - lastTime;
+            lastTime = System.nanoTime();
+            int oldCurrent = current;
+            current = newMethod;
+            return oldCurrent;
+        }
+
+        /**
+         * Ensure the profile times array is large enough to support the given method's
+         * serial number.
+         *
+         * @param method the profiled method's serial number
+         */
+        private void ensureProfileSize(int method) {
+            if (profileSelfTimes.length <= method) {
+                long[] newProfileSelfTimes = new long[method * 2 + 1];
+                System.arraycopy(profileSelfTimes, 0, newProfileSelfTimes, 0, profileSelfTimes.length);
+                profileSelfTimes = newProfileSelfTimes;
+
+                long[] newProfileAggregateTimes = new long[method * 2 + 1];
+                System.arraycopy(profileAggregateTimes, 0, newProfileAggregateTimes, 0, profileAggregateTimes.length);
+                profileAggregateTimes = newProfileAggregateTimes;
+
+                long[] newProfileAggregateStarts = new long[method * 2 + 1];
+                System.arraycopy(profileAggregateStarts, 0, newProfileAggregateStarts, 0, profileAggregateStarts.length);
+                profileAggregateStarts = newProfileAggregateStarts;
+
+                int[] newProfileCounts = new int[(int)method * 2 + 1];
+                System.arraycopy(profileCounts, 0, newProfileCounts, 0, profileCounts.length);
+                profileCounts = newProfileCounts;
+                
+                int[] newProfileRecursions = new int[(int)method * 2 + 1];
+                System.arraycopy(profileRecursions, 0, newProfileRecursions, 0, profileRecursions.length);
+                profileRecursions = newProfileRecursions;
+            }
+        }
+        
         /**
          * Process the profile data for a given thread (context).
          *
          * @param context the thread (context) for which to dump profile data
          */
         public void printProfile(ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out) {
-            long[][] tuples = new long[profileTimes.length][];
-            for (int i = 0; i < profileTimes.length; i++) {
-                tuples[i] = new long[] {i, profileTimes[i], profileCounts[i]};
+            long[][] tuples = new long[profileSelfTimes.length][];
+            for (int i = 0; i < profileSelfTimes.length; i++) {
+                tuples[i] = new long[] {i, profileSelfTimes[i], profileCounts[i], profileAggregateTimes[i]};
             }
             Arrays.sort(tuples, new Comparator<long[]>() {
                 public int compare(long[] o1, long[] o2) {
@@ -1585,6 +1612,11 @@ public final class ThreadContext {
                 String displayName = method.getImplementationClass().getName() + "#" + name;
                 longestName = Math.max(longestName, displayName.length());
             }
+            out.print("    #");
+            out.print("          calls");
+            out.print("           self");
+            out.print("      aggregate");
+            out.println("method name");
             int lines = 0;
             for (long[] tuple : tuples) {
                 lines++;
@@ -1592,7 +1624,8 @@ public final class ThreadContext {
                 String name = profiledNames[index];
                 DynamicMethod method = profiledMethods[index];
                 String displayName = method.getImplementationClass().getName() + '#' + name;
-                String time = Double.toString((double)tuple[1] / 1000000000.0) + 's';
+                String selfTime = Double.toString((double)tuple[1] / 1000000000.0) + 's';
+                String aggregateTime = Double.toString((double)tuple[2] / 1000000000.0) + 's';
                 String count = Long.toString(tuple[2]);
                 String linesStr = Integer.toString(lines);
                 for (int i = 0; i < 5 - linesStr.length(); i++) out.print(' ');
@@ -1601,13 +1634,24 @@ public final class ThreadContext {
                 for (int i = 0; i < 15 - count.length(); i++) out.print(' ');
                 out.print(count);
                 out.print("  ");
-                for (int i = 0; i < 15 - time.length(); i++) out.print(' ');
-                out.print(time);
+                for (int i = 0; i < 15 - selfTime.length(); i++) out.print(' ');
+                out.print(selfTime);
+                out.print("  ");
+                for (int i = 0; i < 15 - aggregateTime.length(); i++) out.print(' ');
+                out.print(aggregateTime);
                 out.print("  ");
                 out.println(displayName);
                 
                 if (lines == 50) break;
             }
         }
+
+        private long[] profileSelfTimes = new long[0];
+        private long[] profileAggregateTimes = new long[0];
+        private long[] profileAggregateStarts = new long[0];
+        private int[] profileCounts = new int[0];
+        private int[] profileRecursions = new int[0];
+        private int current;
+        private long lastTime = System.nanoTime();
     }
 }
