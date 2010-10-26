@@ -35,6 +35,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -49,6 +52,7 @@ import org.jruby.RubyThread;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
@@ -63,6 +67,11 @@ public final class ThreadContext {
 
         return context;
     }
+    
+    private long[] profileTimes = new long[0];
+    private int[] profileCounts = new int[0];
+    private int current;
+    private long lastTime = System.nanoTime();
     
     private final static int INITIAL_SIZE = 10;
     private final static int INITIAL_FRAMES_SIZE = 10;
@@ -1492,5 +1501,113 @@ public final class ThreadContext {
         Frame frame = getPreviousFrame();
         Frame current = getCurrentFrame();
         return new Binding(self, frame, frame.getVisibility(), getPreviousRubyClass(), getCurrentScope(), current.getFile(), current.getLine());
+    }
+
+    /**
+     * Begin profiling a new method, aggregating the current time diff in the previous
+     * method's profile slot.
+     *
+     * @param nextMethod the serial number of the next method to profile
+     * @return the serial number of the previous method being profiled
+     */
+    public int profileEnter(int nextMethod) {
+        ensureProfileSize(current);
+        profileCounts[current]++;
+        return aggregateProfileTime(nextMethod);
+    }
+
+    /**
+     * Fall back to previously profiled method after current method has returned.
+     *
+     * @param nextMethod the serial number of the next method to profile
+     * @return the serial number of the previous method being profiled
+     */
+    public int profileExit(int nextMethod) {
+        ensureProfileSize(current);
+        return aggregateProfileTime(nextMethod);
+    }
+
+    private int aggregateProfileTime(int newMethod) {
+        profileTimes[current] += System.nanoTime() - lastTime;
+        lastTime = System.nanoTime();
+        int oldCurrent = current;
+        current = newMethod;
+        return oldCurrent;
+    }
+
+    /**
+     * Ensure the profile times array is large enough to support the given method's
+     * serial number.
+     *
+     * @param method the profiled method's serial number
+     */
+    private void ensureProfileSize(int method) {
+        if (profileTimes.length <= method) {
+            long[] newProfileData = new long[method * 2 + 1];
+            System.arraycopy(profileTimes, 0, newProfileData, 0, profileTimes.length);
+            profileTimes = newProfileData;
+            int[] newProfileCounts = new int[(int)method * 2 + 1];
+            System.arraycopy(profileCounts, 0, newProfileCounts, 0, profileCounts.length);
+            profileCounts = newProfileCounts;
+        }
+    }
+
+    /**
+     * Get the profile data for this thread (ThreadContext).
+     *
+     * @return the thread's profile data
+     */
+    public ProfileData getProfileData() {
+        return new ProfileData();
+    }
+
+    public class ProfileData {
+        /**
+         * Process the profile data for a given thread (context).
+         *
+         * @param context the thread (context) for which to dump profile data
+         */
+        public void printProfile(ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out) {
+            long[][] tuples = new long[profileTimes.length][];
+            for (int i = 0; i < profileTimes.length; i++) {
+                tuples[i] = new long[] {i, profileTimes[i], profileCounts[i]};
+            }
+            Arrays.sort(tuples, new Comparator<long[]>() {
+                public int compare(long[] o1, long[] o2) {
+                    return ((Long)o2[1]).compareTo(o1[1]);
+                }
+            });
+            int longestName = 0;
+            for (int i = 0; i < profiledNames.length; i++) {
+                String name = profiledNames[i];
+                if (name == null) continue;
+                DynamicMethod method = profiledMethods[i];
+                String displayName = method.getImplementationClass().getName() + "#" + name;
+                longestName = Math.max(longestName, displayName.length());
+            }
+            int lines = 0;
+            for (long[] tuple : tuples) {
+                lines++;
+                int index = (int)tuple[0];
+                String name = profiledNames[index];
+                DynamicMethod method = profiledMethods[index];
+                String displayName = method.getImplementationClass().getName() + '#' + name;
+                String time = Double.toString((double)tuple[1] / 1000000000.0) + 's';
+                String count = Long.toString(tuple[2]);
+                String linesStr = Integer.toString(lines);
+                for (int i = 0; i < 5 - linesStr.length(); i++) out.print(' ');
+                out.print(linesStr);
+                out.print("  ");
+                for (int i = 0; i < 15 - count.length(); i++) out.print(' ');
+                out.print(count);
+                out.print("  ");
+                for (int i = 0; i < 15 - time.length(); i++) out.print(' ');
+                out.print(time);
+                out.print("  ");
+                out.println(displayName);
+                
+                if (lines == 50) break;
+            }
+        }
     }
 }

@@ -114,4 +114,9 @@ public class AliasMethod extends DynamicMethod {
     public DynamicMethod getRealMethod() {
         return oldMethod.getRealMethod();
     }
+
+    @Override
+    public long getSerialNumber() {
+        return oldMethod.getSerialNumber();
+    }
 }
