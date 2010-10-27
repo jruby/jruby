@@ -1921,7 +1921,7 @@ public class IRBuilder {
 
     public Operand buildForIter(final ForNode forNode, IRExecutionScope s) {
             // Create a new closure context
-        IRClosure closure = new IRClosure(s, null, Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
+        IRClosure closure = new IRClosure(s, forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
         s.addClosure(closure);
 
             // Build args

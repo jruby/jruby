@@ -1135,7 +1135,7 @@ primary         : literal
                     lexer.getConditionState().end();
                 } compstmt kEND {
                       // ENEBO: Lots of optz in 1.9 parser here
-                    $$ = new ForNode($1.getPosition(), $2, $8, $5);
+                    $$ = new ForNode($1.getPosition(), $2, $8, $5, support.getCurrentScope());
                 }
                 | kCLASS cpath superclass {
                     if (support.isInDef() || support.isInSingle()) {

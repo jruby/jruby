@@ -1170,7 +1170,7 @@ primary       : literal
               } expr_value do {
                   lexer.getConditionState().end();
               } compstmt kEND {
-                  $$ = new ForNode($1.getPosition(), $2, $8, $5);
+                  $$ = new ForNode($1.getPosition(), $2, $8, $5, support.getCurrentScope());
               }
               | kCLASS cpath superclass {
                   if (support.isInDef() || support.isInSingle()) {

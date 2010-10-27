@@ -1832,9 +1832,9 @@ states[439] = new ParserState() {
                      /* DStrNode: :"some text #{some expression}"*/
                      /* StrNode: :"some text"*/
                      /* EvStrNode :"#{some expression}"*/
-                     /* Ruby 1.9 allows empty strings as symbols */
+                     /* Ruby 1.9 allows empty strings as symbols*/
                      if (((Node)yyVals[-1+yyTop]) == null) {
-                       yyVal = new SymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), "");
+                         yyVal = new SymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), "");
                      } else if (((Node)yyVals[-1+yyTop]) instanceof DStrNode) {
                          yyVal = new DSymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), ((DStrNode)yyVals[-1+yyTop]));
                      } else if (((Node)yyVals[-1+yyTop]) instanceof StrNode) {
@@ -3963,7 +3963,7 @@ states[96] = new ParserState() {
 states[297] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                       /* ENEBO: Lots of optz in 1.9 parser here*/
-                    yyVal = new ForNode(((Token)yyVals[-8+yyTop]).getPosition(), ((Node)yyVals[-7+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[-4+yyTop]));
+                    yyVal = new ForNode(((Token)yyVals[-8+yyTop]).getPosition(), ((Node)yyVals[-7+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[-4+yyTop]), support.getCurrentScope());
     return yyVal;
   }
 };
@@ -4221,7 +4221,7 @@ states[267] = new ParserState() {
   }
 };
 }
-					// line 2029 "Ruby19Parser.y"
+					// line 2022 "Ruby19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4254,4 +4254,4 @@ states[267] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8052 "-"
+					// line 8045 "-"

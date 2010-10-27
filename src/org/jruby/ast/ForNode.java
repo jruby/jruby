@@ -37,6 +37,7 @@ import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
@@ -55,18 +56,19 @@ public class ForNode extends IterNode {
 
     private Node iterNode;
 
-    public ForNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
+    public ForNode(ISourcePosition position, Node varNode, Node bodyNode, Node iterNode, StaticScope scope) {
         // For nodes do not have their own scope so we pass null to indicate this.
         // 'For's are implemented as blocks in evaluation, but they have no scope so we
         // just deal with this lack of scope throughout its lifespan.  We should probably
         // change the way this works to get rid of multiple null checks.
-        super(position, varNode, null, null, bodyNode);
+        super(position, varNode, null, scope, bodyNode);
         
         assert iterNode != null : "iterNode is not null";
         
         this.iterNode = iterNode;
     }
 
+    @Override
     public NodeType getNodeType() {
         return NodeType.FORNODE;
     }
