@@ -85,6 +85,7 @@ import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.RescueNode;
 import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.DXStrNode;
+import org.jruby.ast.DefsNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
@@ -425,7 +426,7 @@ public class IRBuilder {
             case DASGNNODE: return buildDAsgn((DAsgnNode) node, m); // done
 //            case DEFINEDNODE: return buildDefined(node, m); // Incomplete
             case DEFNNODE: return buildDefn((MethodDefNode) node, m); // done
-            case DEFSNODE: return buildDefs((MethodDefNode) node, m); // done
+            case DEFSNODE: return buildDefs((DefsNode) node, m); // done
             case DOTNODE: return buildDot((DotNode) node, m); // done
             case DREGEXPNODE: return buildDRegexp((DRegexpNode) node, m); // done
             case DSTRNODE: return buildDStr((DStrNode) node, m); // done
@@ -494,7 +495,7 @@ public class IRBuilder {
             case YIELDNODE: return buildYield((YieldNode) node, m); // done
             case ZARRAYNODE: return buildZArray(node, m); // done
             case ZSUPERNODE: return buildZSuper((ZSuperNode) node, m); // done
-            default: throw new NotCompilableException("Unknown node encountered in builder: " + node);
+            default: new Exception().printStackTrace(); throw new NotCompilableException("Unknown node encountered in builder: " + node);
         }
     }
 
@@ -1598,9 +1599,9 @@ public class IRBuilder {
         return null;
     }
 
-    public Operand buildDefs(MethodDefNode node, IRScope s) {
+    public Operand buildDefs(DefsNode node, IRScope s) {
         // Class method
-        Operand receiver = build(node.getNameNode(), s);
+        Operand receiver = build(node.getReceiverNode(), s);
         defineNewMethod(node, s, receiver, false);
         return null;
     }
