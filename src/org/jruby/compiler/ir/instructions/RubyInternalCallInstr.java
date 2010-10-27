@@ -8,13 +8,13 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // Rather than building a zillion instructions that capture calls to ruby implementation internals,
 // we are building one that will serve as a placeholder for internals-specific call optimizations.
-public class RUBY_INTERNALS_CALL_Instr extends CallInstr {
-    public RUBY_INTERNALS_CALL_Instr(Variable result, Operand methAddr, Operand receiver,
+public class RubyInternalCallInstr extends CallInstr {
+    public RubyInternalCallInstr(Variable result, Operand methAddr, Operand receiver,
             Operand[] args) {
         super(Operation.RUBY_INTERNALS, result, methAddr, receiver, args, null);
     }
 
-    public RUBY_INTERNALS_CALL_Instr(Variable result, Operand methAddr, Operand receiver,
+    public RubyInternalCallInstr(Variable result, Operand methAddr, Operand receiver,
             Operand[] args, Operand closure) {
         super(result, methAddr, receiver, args, closure);
     }
@@ -29,12 +29,6 @@ public class RUBY_INTERNALS_CALL_Instr extends CallInstr {
         return true;
     }
 
-    // SSS FIXME: Who is the receiver in these cases??
-    @Override
-    public Operand getReceiver() {
-        return null;
-    }
-
     // SSS FIXME: Dont optimize these yet!
     @Override
     public IRMethod getTargetMethodWithReceiver(Operand receiver) {
@@ -43,7 +37,7 @@ public class RUBY_INTERNALS_CALL_Instr extends CallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new RUBY_INTERNALS_CALL_Instr(ii.getRenamedVariable(result), 
+        return new RubyInternalCallInstr(ii.getRenamedVariable(result),
                 _methAddr.cloneForInlining(ii), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
     }

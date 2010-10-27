@@ -13,7 +13,7 @@ import java.util.TreeSet;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
-import org.jruby.compiler.ir.instructions.RUBY_INTERNALS_CALL_Instr;
+import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -196,7 +196,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
                 receivesClosureArg = true;
 
             // SSS FIXME: Should we build a ZSUPER IR Instr rather than have this code here?
-            if ((i instanceof RUBY_INTERNALS_CALL_Instr) && (((CallInstr) i).getMethodAddr() == MethAddr.ZSUPER))
+            if ((i instanceof RubyInternalCallInstr) && (((CallInstr) i).getMethodAddr() == MethAddr.ZSUPER))
                 canCaptureCallersFrame = true;
 
             if (i instanceof CallInstr) {

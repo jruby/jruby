@@ -135,7 +135,7 @@ import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.RESCUED_BODY_START_MARKER_Instr;
 import org.jruby.compiler.ir.instructions.RESCUED_BODY_END_MARKER_Instr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
-import org.jruby.compiler.ir.instructions.RUBY_INTERNALS_CALL_Instr;
+import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
@@ -679,7 +679,7 @@ public class IRBuilder {
         String oldName = "";//TODO: FIX breakage....alias.getOldName();
         Operand[] args = new Operand[] { new MethAddr(newName), new MethAddr(oldName) };
         s.recordMethodAlias(newName, oldName);
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(null, MethAddr.DEFINE_ALIAS, MetaObject.create(s), args));
+        s.addInstr(new RubyInternalCallInstr(null, MethAddr.DEFINE_ALIAS, MetaObject.create(s), args));
 
             // SSS FIXME: Can this return anything other than nil?
         return Nil.NIL;
@@ -1914,7 +1914,7 @@ public class IRBuilder {
         Variable ret      = m.getNewTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode(), m);
         Operand  forBlock = buildForIter(forNode, m);     
-        m.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.FOR_EACH, receiver,
+        m.addInstr(new RubyInternalCallInstr(ret, MethAddr.FOR_EACH, receiver,
                 new Operand[]{}, forBlock));
         return ret;
     }
@@ -2752,7 +2752,7 @@ public class IRBuilder {
         List<Operand> args  = setupCallArgs(superNode.getArgsNode(), s);
         Operand       block = setupCallClosure(superNode.getIterNode(), s);
         Variable      ret   = s.getNewTemporaryVariable();
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.SUPER, s.getSelf(),
+        s.addInstr(new RubyInternalCallInstr(ret, MethAddr.SUPER, s.getSelf(),
                 args.toArray(new Operand[args.size()]), block));
         return ret;
     }
@@ -2886,7 +2886,7 @@ public class IRBuilder {
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
         Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
         Variable   ret   = s.getNewTemporaryVariable();
-        s.addInstr(new RUBY_INTERNALS_CALL_Instr(ret, MethAddr.ZSUPER, s.getSelf(),
+        s.addInstr(new RubyInternalCallInstr(ret, MethAddr.ZSUPER, s.getSelf(),
                 ((IRMethod)s).getCallArgs(), block));
         return ret;
     }
