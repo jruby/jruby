@@ -78,12 +78,16 @@ public class IRMethod extends IRExecutionScope {
     }
 
     public IRModule getDefiningModule() {
-        return (container instanceof MetaObject) ? (IRModule)((MetaObject)container).scope : null;
-    }
+        if (!(container instanceof MetaObject)) return null;
 
-    @Override
-    public String toString() {
-        return "Method: " + getName() + super.toString();
+        IRScope scope = ((MetaObject) container).scope;
+
+        // FIXME: This is a hot mess and probably should be a while loop...but perhaps bigger change is needed
+        if (scope instanceof IRMethod) {
+            scope = ((MetaObject) ((IRMethod) scope).container).scope;
+        }
+
+        return (IRModule) scope;
     }
 
     @Override
