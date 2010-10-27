@@ -100,7 +100,7 @@ import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.ir.instructions.ATTR_ASSIGN_Instr;
+import org.jruby.compiler.ir.instructions.AttrAssignInstr;
 import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
@@ -739,7 +739,7 @@ public class IRBuilder {
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode, IRScope s) {
         List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
-        s.addInstr(new ATTR_ASSIGN_Instr(obj, new StringLiteral(attrAssignNode.getName()), args.get(0)));
+        s.addInstr(new AttrAssignInstr(obj, new StringLiteral(attrAssignNode.getName()), args.get(0)));
         return args.get(0);
     }
 
@@ -747,7 +747,7 @@ public class IRBuilder {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
-        s.addInstr(new ATTR_ASSIGN_Instr(obj, new StringLiteral(attrAssignNode.getName()), value));
+        s.addInstr(new AttrAssignInstr(obj, new StringLiteral(attrAssignNode.getName()), value));
         return value;
     }
 
