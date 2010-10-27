@@ -665,7 +665,7 @@ public class RubyIO extends RubyObject {
                             // CRuby checks ferror(f) and retry getc for
                             // non-blocking IO.
                             if (n == 0) {
-                                waitReadable(readStream.getChannel());
+                                waitReadable(readStream);
                                 continue;
                             } else if (n == -1) {
                                 break;
@@ -774,7 +774,7 @@ public class RubyIO extends RubyObject {
 
                 // CRuby checks ferror(f) and retry getc for non-blocking IO.
                 if (n == 0) {
-                    waitReadable(readStream.getChannel());
+                    waitReadable(readStream);
                     continue;
                 } else if (n == -1) {
                     break;
@@ -1257,7 +1257,8 @@ public class RubyIO extends RubyObject {
         }
     }
     
-    private boolean waitWritable(Channel ch) {
+    private boolean waitWritable(Stream stream) {
+        Channel ch = stream.getChannel();
         if (ch instanceof SelectableChannel) {
             getRuntime().getCurrentContext().getThread().select(ch, this, SelectionKey.OP_WRITE);
             return true;
@@ -1265,7 +1266,8 @@ public class RubyIO extends RubyObject {
         return false;
     }
 
-    private boolean waitReadable(Channel ch) {
+    private boolean waitReadable(Stream stream) {
+        Channel ch = stream.getChannel();
         if (ch instanceof SelectableChannel) {
             getRuntime().getCurrentContext().getThread().select(ch, this, SelectionKey.OP_READ);
             return true;
@@ -1308,7 +1310,7 @@ public class RubyIO extends RubyObject {
                         eagain = true;
                     }
 
-                    if(eagain && waitWritable(writeStream.getChannel())) {
+                    if(eagain && waitWritable(writeStream)) {
                         openFile.checkClosed(getRuntime());
                         if(offset >= buffer.length()) {
                             return -1;
@@ -1728,7 +1730,7 @@ public class RubyIO extends RubyObject {
             }
             
             readCheck(myOpenFile.getMainStream());
-            waitReadable(myOpenFile.getMainStream().getChannel());
+            waitReadable(myOpenFile.getMainStream());
             
             myOpenFile.getMainStream().clearerr();
             
@@ -2233,7 +2235,7 @@ public class RubyIO extends RubyObject {
             Stream stream = myOpenFile.getMainStream();
             
             readCheck(stream);
-            waitReadable(stream.getChannel());
+            waitReadable(stream);
             stream.clearerr();
             
             int c = myOpenFile.getMainStream().fgetc();
@@ -2378,7 +2380,7 @@ public class RubyIO extends RubyObject {
             }
             // TODO: We cannot expect waitReadable works for readpartial at first time. Initialization issue?
 //            if (!isNonblocking) {
-//                waitReadable(stream.getChannel());
+//                waitReadable(stream);
 //            }
 
             if (!string.isEmpty()) {
@@ -2386,14 +2388,14 @@ public class RubyIO extends RubyObject {
             }
 
             ByteList buf = null;
-            again : while (true) {
+            while (true) {
                 ByteList newBuffer = isNonblocking ? stream.readnonblock(length) : stream.readpartial(length);
                 if (!isNonblocking && !stream.feof() && (newBuffer == null || newBuffer.length() == 0)) {
-                    waitReadable(stream.getChannel());
+                    waitReadable(stream);
                     if (!string.isEmpty()) {
                         throw getRuntime().newRuntimeError("buffer string modified");
                     }
-                    continue again;
+                    continue;
                 }
                 if (buf == null) {
                     buf = newBuffer;
@@ -2630,7 +2632,7 @@ public class RubyIO extends RubyObject {
 
             // READ_CHECK from MRI io.c
             readCheck(myOpenFile.getMainStream());
-            waitReadable(myOpenFile.getMainStream().getChannel());
+            waitReadable(myOpenFile.getMainStream());
             
             if (!str.isEmpty()) {
                 throw getRuntime().newRuntimeError("buffer string modified");
@@ -2858,7 +2860,7 @@ public class RubyIO extends RubyObject {
         Stream stream = openFile.getMainStream();
         Ruby runtime = getRuntime();
         while (rest > 0) {
-            waitReadable(stream.getChannel());
+            waitReadable(stream);
             openFile.checkClosed(runtime);
             stream.clearerr();
             ByteList newBuffer = stream.fread(rest);
@@ -2869,7 +2871,7 @@ public class RubyIO extends RubyObject {
             if (newBuffer.length() == 0) {
                 // TODO: warn?
                 // rb_warning("nonblocking IO#read is obsolete; use IO#readpartial or IO#sysread")
-                waitReadable(stream.getChannel());
+                waitReadable(stream);
                 continue;
             }
             if (buf == null) {
@@ -2916,7 +2918,7 @@ public class RubyIO extends RubyObject {
             while (true) {
                 myOpenFile.checkReadable(runtime);
                 myOpenFile.setReadBuffered();
-                waitReadable(myOpenFile.getMainStream().getChannel());
+                waitReadable(myOpenFile.getMainStream());
                 
                 int c = myOpenFile.getMainStream().fgetc();
                 

@@ -196,7 +196,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
       sock = accept(server)
       begin
         sock.write(BIG_CHUNK) # this blocks; [ruby-dev:26405]
-      rescue
+      rescue RuntimeError
         value = true
       end
     }
@@ -205,6 +205,20 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
       t.raise # help thread termination
     end
     value.should == true
+  end
+
+  it "should not block for write_nonblock" do
+    server = TCPServer.new(0)
+    value = nil
+    t = Thread.new {
+      sock = accept(server)
+      value = sock.write_nonblock(BIG_CHUNK)
+    }
+    s = connect(server)
+    wait_for_sleep_and_terminate(t) do
+      t.alive?.should == false
+    end
+    value.should > 0
   end
 
   def accept(server)
