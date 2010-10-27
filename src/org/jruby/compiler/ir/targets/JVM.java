@@ -283,7 +283,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitPUT_FIELD(PutFieldInstr putField) {
-        String field = ((FieldRef)putField.getOperands()[1])._refName;
+        String field = ((FieldRef)putField.getOperands()[1]).getName();
         declareField(field);
         emit(putField.getOperands()[0]);
         emit(putField.getOperands()[2]);
@@ -291,7 +291,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitGET_FIELD(GetFieldInstr putField) {
-        String field = ((FieldRef)putField.getOperands()[1])._refName;
+        String field = ((FieldRef)putField.getOperands()[1]).getName();
         declareField(field);
         emit(putField.getOperands()[0]);
         method().getField(Type.getType(Object.class), field, Type.getType(Object.class));

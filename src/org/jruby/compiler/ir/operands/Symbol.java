@@ -1,6 +1,14 @@
 package org.jruby.compiler.ir.operands;
 
-public class Symbol extends Reference
-{
-   public Symbol(String n) { super(n); }
+import org.jruby.interpreter.InterpreterContext;
+
+public class Symbol extends Reference {
+    public Symbol(String name) {
+        super(name);
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return interp.getContext().getRuntime().newSymbol(getName());
+    }
 }

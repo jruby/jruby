@@ -1,10 +1,18 @@
 package org.jruby.compiler.ir.operands;
 
-public class Reference extends Operand
-{
-    final public String _refName;
+public class Reference extends Operand {
+    final private String name;
 
-    public Reference(String n) { _refName = n; }
+    public Reference(String name) {
+        this.name = name;
+    }
 
-    public String toString() { return _refName; }
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

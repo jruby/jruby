@@ -29,15 +29,6 @@ public class MethAddr extends Reference {
         super(name);
     }
 
-    public String getName() {
-        return _refName;
-    }
-
-    @Override
-    public String toString() {
-        return _refName;
-    }
-
     @Override
     public Object retrieve(InterpreterContext interp) {
         return getName();
