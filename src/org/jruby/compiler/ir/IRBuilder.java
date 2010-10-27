@@ -116,7 +116,7 @@ import org.jruby.compiler.ir.instructions.GET_CVAR_Instr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.IS_TRUE_Instr;
+import org.jruby.compiler.ir.instructions.IsTrueInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
@@ -2249,7 +2249,7 @@ public class IRBuilder {
         Label    l  = s.getNewLabel();
         Operand  v1 = build(andNode.getFirstNode(), s);
         Variable f  = s.getNewTemporaryVariable();
-        s.addInstr(new IS_TRUE_Instr(f, v1));
+        s.addInstr(new IsTrueInstr(f, v1));
         s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
         build(andNode.getSecondNode(), s);  // This does the assignment!
         s.addInstr(new LABEL_Instr(l));
@@ -2282,7 +2282,7 @@ public class IRBuilder {
 **/
         } else {
             v1 = build(orNode.getFirstNode(), s);
-            s.addInstr(new IS_TRUE_Instr(f, v1));
+            s.addInstr(new IsTrueInstr(f, v1));
             s.addInstr(new BEQInstr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done!
         }
         build(orNode.getSecondNode(), s); // This does the assignment!
@@ -2441,7 +2441,7 @@ public class IRBuilder {
             i++;
         }
         s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, allArgs, null));
-        s.addInstr(new IS_TRUE_Instr(f, elt));
+        s.addInstr(new IsTrueInstr(f, elt));
         s.addInstr(new BEQInstr(f, BooleanLiteral.TRUE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
         allArgs = new Operand[args.size()+1];
@@ -2472,7 +2472,7 @@ public class IRBuilder {
             i++;
         }
         s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, allArgs, null));
-        s.addInstr(new IS_TRUE_Instr(f, elt));
+        s.addInstr(new IsTrueInstr(f, elt));
         s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
         allArgs = new Operand[args.size()+1];

@@ -8,30 +8,35 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 //    is_true(a) = (!a.nil? && a != false) 
 //
 // Only nil and false compute to false
 //
-public class IS_TRUE_Instr extends OneOperandInstr
-{
-    public IS_TRUE_Instr(Variable result, Operand arg)
-    {
+public class IsTrueInstr extends OneOperandInstr {
+    public IsTrueInstr(Variable result, Operand arg) {
         super(Operation.IS_TRUE, result, arg);
     }
 
-    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap)
-    {
+    @Override
+    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
         if (argument.isConstant()) {
             return (argument == Nil.NIL || argument == BooleanLiteral.FALSE) ? BooleanLiteral.FALSE : BooleanLiteral.TRUE;
-        }
-        else {
+        } else {
             return null;
         }
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new IS_TRUE_Instr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));
+        return new IsTrueInstr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));
+    }
+
+    @Override
+    public void interpret(InterpreterContext interp, IRubyObject self) {
+        getResult().store(interp, ((IRubyObject) getArg().retrieve(interp)).isTrue());
     }
 }
