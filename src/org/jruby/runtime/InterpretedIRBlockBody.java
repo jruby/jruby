@@ -45,21 +45,8 @@ public class InterpretedIRBlockBody extends BlockBody {
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-        IRubyObject self = prepareSelf(binding);
-
-        IRubyObject realArg = setupBlockArg(context.getRuntime(), value, self);
-        Visibility oldVis = binding.getFrame().getVisibility();
-        Frame lastFrame = pre(context, null, binding);
-
-        try {
-//            return callback.call(context, self, realArg);
-            return null;
-        } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return handleNextJump(context, nj, type);
-        } finally {
-            post(context, binding, oldVis, lastFrame);
-        }
+        // FIXME: auto wrapping not quite right
+        return call(context, new IRubyObject[] { value }, binding, type);
     }
 
     private IRubyObject prepareSelf(Binding binding) {
