@@ -4,7 +4,10 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // Rather than building a zillion instructions that capture calls to ruby implementation internals,
 // we are building one that will serve as a placeholder for internals-specific call optimizations.
@@ -40,5 +43,17 @@ public class RubyInternalCallInstr extends CallInstr {
         return new RubyInternalCallInstr(ii.getRenamedVariable(result),
                 _methAddr.cloneForInlining(ii), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
+    }
+
+    @Override
+    public void interpret(InterpreterContext interp, IRubyObject self) {
+        if (getMethodAddr() == MethAddr.DEFINE_ALIAS) {
+            Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
+
+            self.getMetaClass().defineAlias((String) args[0].retrieve(interp),
+                    (String) args[1].retrieve(interp));
+        } else {
+            super.interpret(interp, self);
+        }
     }
 }
