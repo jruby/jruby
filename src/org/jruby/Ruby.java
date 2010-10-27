@@ -704,21 +704,23 @@ public final class Ruby {
             return (IRubyObject) rj.getValue();
         }
     }
-    
-    public IRubyObject runInterpreter(Node scriptNode) {
-        ThreadContext context = getCurrentContext();
-        
-        assert scriptNode != null : "scriptNode is not null";
-        
+
+    public IRubyObject runInterpreter(ThreadContext context, Node rootNode, IRubyObject self) {
+        assert rootNode != null : "scriptNode is not null";
+
         try {
             if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
-                return Interpreter.interpret(this, scriptNode);
+                return Interpreter.interpret(this, rootNode, self);
             } else {
-                return scriptNode.interpret(this, context, getTopSelf(), Block.NULL_BLOCK);
+                return rootNode.interpret(this, context, self, Block.NULL_BLOCK);
             }
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
+    }
+    
+    public IRubyObject runInterpreter(Node scriptNode) {
+        return runInterpreter(getCurrentContext(), scriptNode, getTopSelf());
     }
 
     /**
@@ -2554,7 +2556,7 @@ public final class Ruby {
             context.setFile(scriptName);
             context.preNodeEval(objectClass, self, scriptName);
 
-            parseFile(in, scriptName, null).interpret(this, context, self, Block.NULL_BLOCK);
+            runInterpreter(context, parseFile(in, scriptName, null), self);
         } catch (JumpException.ReturnJump rj) {
             return;
         } finally {

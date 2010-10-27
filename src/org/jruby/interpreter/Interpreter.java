@@ -35,7 +35,7 @@ import org.jruby.util.ByteList;
 
 
 public class Interpreter {
-    public static IRubyObject interpret(Ruby runtime, Node rootNode) {
+    public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
         IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
 
         scope.runCompilerPass(new LocalOptimizationPass());
@@ -45,7 +45,7 @@ public class Interpreter {
         scope.runCompilerPass(new DeadCodeElimination());
         scope.runCompilerPass(new AddFrameInstructions());
         
-        return Interpreter.interpretTop(runtime, scope);
+        return Interpreter.interpretTop(runtime, scope, self);
     }
 
     public static void main(String[] args) {
@@ -82,7 +82,7 @@ public class Interpreter {
             scope.runCompilerPass(new AddFrameInstructions());
             long t9 = new Date().getTime();
             if (isDebug) scope.runCompilerPass(new IR_Printer());
-            Interpreter.interpretTop(runtime, scope);
+            Interpreter.interpretTop(runtime, scope, runtime.getTopSelf());
             long t10 = new Date().getTime();
 
             System.out.println("Time to build AST         : " + (t2 - t1));
@@ -121,9 +121,7 @@ public class Interpreter {
         }
     }*/
 
-    public static IRubyObject interpretTop(Ruby runtime, IRScope scope) {
-        IRubyObject self = runtime.getTopSelf();
-
+    public static IRubyObject interpretTop(Ruby runtime, IRScope scope, IRubyObject self) {
         assert scope instanceof IRScript : "Must be an IRScript scope at Top!!!";
 
         IRScript root = (IRScript) scope;
