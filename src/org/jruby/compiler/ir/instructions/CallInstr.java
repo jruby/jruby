@@ -34,7 +34,7 @@ public class CallInstr extends MultiOperandInstr {
     private boolean _requiresFrame;
 
     public CallInstr(Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
-        super(Operation.CALL, result, buildAllArgs(methAddr, closure, receiver, args));
+        super(Operation.CALL, result, buildAllArgs(methAddr, receiver, args, closure));
 
         this.receiver = receiver;
         this.arguments = args;
@@ -47,7 +47,7 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public CallInstr(Operation op, Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
-        super(op, result, buildAllArgs(methAddr, closure, receiver, args));
+        super(op, result, buildAllArgs(methAddr, receiver, args, closure));
 
         this.receiver = receiver;
         this.arguments = args;
@@ -261,7 +261,7 @@ public class CallInstr extends MultiOperandInstr {
 
 // --------------- Private methods ---------------
 
-    private static Operand[] buildAllArgs(Operand methAddr, Operand closure, Operand receiver, Operand[] callArgs) {
+    private static Operand[] buildAllArgs(Operand methAddr, Operand receiver, Operand[] callArgs, Operand closure) {
         Operand[] allArgs = new Operand[callArgs.length + 2 + ((closure != null) ? 1 : 0)];
 
         assert methAddr != null : "METHADDR is null";
