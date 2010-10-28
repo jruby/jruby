@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jcodings.Encoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
@@ -101,6 +102,33 @@ import static org.jruby.RubyEnumerator.enumeratorize;
  */
 @JRubyClass(name="IO", include="Enumerable")
 public class RubyIO extends RubyObject {
+    protected OpenFile openFile;
+    protected List<RubyThread> blockingThreads;
+    protected IRubyObject externalEncoding;
+    protected IRubyObject internalEncoding;
+
+    @Deprecated
+    public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
+    }
+
+    @Deprecated
+    public void registerDescriptor(ChannelDescriptor descriptor) {
+    }
+
+    @Deprecated
+    public void unregisterDescriptor(int aFileno) {
+    }
+
+    @Deprecated
+    public ChannelDescriptor getDescriptorByFileno(int aFileno) {
+        return ChannelDescriptor.getDescriptorByFileno(aFileno);
+    }
+
+    @Deprecated
+    public static int getNewFileno() {
+        return ChannelDescriptor.getNewFileno();
+    }
+
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
     public RubyIO(Ruby runtime, RubyClass type) {
@@ -1440,6 +1468,14 @@ public class RubyIO extends RubyObject {
         return context.getRuntime().newFixnum(pid); 
     }
     
+    /**
+     * @deprecated
+     * @return
+     */
+    public boolean writeDataBuffered() {
+        return openFile.getMainStream().writeDataBuffered();
+    }
+    
     @JRubyMethod(name = {"pos", "tell"})
     public RubyFixnum pos(ThreadContext context) {
         try {
@@ -1989,6 +2025,11 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
+    @Deprecated
+    public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
+        return args.length == 0 ? gets(context) : gets(context, args[0]);
+    }
+
     /** Read a line.
      * 
      */
@@ -2198,6 +2239,11 @@ public class RubyIO extends RubyObject {
         } finally {
             context.getRuntime().unregisterInspecting(array);
         }
+    }
+
+    @Deprecated
+    public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
+        return args.length == 0 ? readline(context) : readline(context, args[0]);
     }
 
     /** Read a line.
@@ -3884,49 +3930,4 @@ public class RubyIO extends RubyObject {
             break;
         }
     }
-
-    @Deprecated
-    public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
-    }
-
-    @Deprecated
-    public void registerDescriptor(ChannelDescriptor descriptor) {
-    }
-
-    @Deprecated
-    public void unregisterDescriptor(int aFileno) {
-    }
-
-    @Deprecated
-    public ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        return ChannelDescriptor.getDescriptorByFileno(aFileno);
-    }
-
-    @Deprecated
-    public static int getNewFileno() {
-        return ChannelDescriptor.getNewFileno();
-    }
-
-    /**
-     * @deprecated
-     * @return
-     */
-    public boolean writeDataBuffered() {
-        return openFile.getMainStream().writeDataBuffered();
-    }
-
-    @Deprecated
-    public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
-        return args.length == 0 ? gets(context) : gets(context, args[0]);
-    }
-
-    @Deprecated
-    public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
-        return args.length == 0 ? readline(context) : readline(context, args[0]);
-    }
-    
-    protected OpenFile openFile;
-    protected List<RubyThread> blockingThreads;
-    protected IRubyObject externalEncoding;
-    protected IRubyObject internalEncoding;
 }
