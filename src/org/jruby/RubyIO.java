@@ -1267,6 +1267,9 @@ public class RubyIO extends RubyObject {
     }
 
     private boolean waitReadable(Stream stream) {
+        if (stream.readDataBuffered()) {
+            return true;
+        }
         Channel ch = stream.getChannel();
         if (ch instanceof SelectableChannel) {
             getRuntime().getCurrentContext().getThread().select(ch, this, SelectionKey.OP_READ);
@@ -2355,7 +2358,6 @@ public class RubyIO extends RubyObject {
     // implements io_getpartial in io.c
     private IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean isNonblocking) {
         Ruby runtime = context.getRuntime();
-        ChannelStream stream = (ChannelStream) openFile.getMainStream();
 
         // Length to read
         int length = RubyNumeric.fix2int(args[0]);
@@ -2368,45 +2370,34 @@ public class RubyIO extends RubyObject {
         string.setTaint(true);
         
         try {
-            openFile.checkReadable(runtime);
-
+            OpenFile myOpenFile = getOpenFileChecked();
+            myOpenFile.checkReadable(runtime);
+            
             if (length == 0) {
                 return string;
             }
 
-            openFile.checkClosed(runtime);
-            if (!(openFile.getMainStream() instanceof ChannelStream)) { // cryptic for the uninitiated...
+            if (!(myOpenFile.getMainStream() instanceof ChannelStream)) { // cryptic for the uninitiated...
                 throw runtime.newNotImplementedError("readpartial only works with Nio based handlers");
             }
-            // TODO: We cannot expect waitReadable works for readpartial at first time. Initialization issue?
-//            if (!isNonblocking) {
-//                waitReadable(stream);
-//            }
+            ChannelStream stream = (ChannelStream) myOpenFile.getMainStream();
 
             if (!string.isEmpty()) {
                 throw getRuntime().newRuntimeError("buffer string modified");
             }
 
             ByteList buf = null;
-            while (true) {
-                ByteList newBuffer = isNonblocking ? stream.readnonblock(length) : stream.readpartial(length);
-                if (!isNonblocking && !stream.feof() && (newBuffer == null || newBuffer.length() == 0)) {
+            if (isNonblocking) {
+                buf = stream.readnonblock(length);
+            } else {
+                while ((buf == null || buf.length() == 0) && !stream.feof()) {
                     waitReadable(stream);
-                    if (!string.isEmpty()) {
-                        throw getRuntime().newRuntimeError("buffer string modified");
-                    }
-                    continue;
+                    buf = stream.readpartial(length);
                 }
-                if (buf == null) {
-                    buf = newBuffer;
-                } else {
-                    buf.append(newBuffer);
-                }
-                break;
             }
             boolean empty = buf == null || buf.length() == 0;
 
-            string.view(empty ? ByteList.EMPTY_BYTELIST : buf);
+            string.view(empty ? ByteList.EMPTY_BYTELIST.dup() : buf);
 
             if (stream.feof() && empty) return runtime.getNil();
 
@@ -2882,7 +2873,7 @@ public class RubyIO extends RubyObject {
             rest -= newBuffer.length();
         }
         if (buf == null) {
-            return ByteList.EMPTY_BYTELIST;
+            return ByteList.EMPTY_BYTELIST.dup();
         } else {
             return buf;
         }

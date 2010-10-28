@@ -160,7 +160,7 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public boolean readDataBuffered() {
-        return reading && buffer.hasRemaining();
+        return reading && (ungotc != -1 || buffer.hasRemaining());
     }
 
     public boolean writeDataBuffered() {
