@@ -2452,20 +2452,16 @@ public class RubyIO extends RubyObject {
             
             // TODO: Ruby locks the string here
             
+            waitReadable(myOpenFile.getMainStream());
             myOpenFile.checkClosed(getRuntime());
-            
-            // TODO: Ruby re-checks that the buffer string hasn't been modified
-
-            // select until read is ready
-            context.getThread().beforeBlockingCall();
-            context.getThread().select(this, SelectionKey.OP_READ);
+            if (!str.isEmpty()) {
+                throw getRuntime().newRuntimeError("buffer string modified");
+            }
 
             int bytesRead = myOpenFile.getMainStream().getDescriptor().read(len, str.getByteList());
             
             // TODO: Ruby unlocks the string here
-            
-            // TODO: Ruby truncates string to specific size here, but our bytelist should handle this already?
-            
+
             if (bytesRead == -1 || (bytesRead == 0 && len > 0)) {
                 throw getRuntime().newEOFError();
             }
@@ -2484,8 +2480,6 @@ public class RubyIO extends RubyObject {
     	} catch (IOException e) {
             synthesizeSystemCallError(e);
             return null;
-    	} finally {
-            context.getThread().afterBlockingCall();
         }
     }
 
@@ -2529,7 +2523,7 @@ public class RubyIO extends RubyObject {
             myOpenFile.checkReadable(runtime);
             myOpenFile.setReadBuffered();
 
-            return readAll(context.getRuntime().getNil());
+            return readAll(null);
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
@@ -2567,12 +2561,15 @@ public class RubyIO extends RubyObject {
     public IRubyObject read(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         OpenFile myOpenFile = getOpenFileChecked();
         
+        RubyString str = null;
         if (arg0.isNil()) {
             try {
                 myOpenFile.checkReadable(getRuntime());
                 myOpenFile.setReadBuffered();
-
-                return readAll(arg1);
+                if (!arg1.isNil()) {
+                    str = arg1.convertToString();
+                }
+                return readAll(str);
             } catch (PipeException ex) {
                 throw getRuntime().newErrnoEPIPEError();
             } catch (InvalidValueException ex) {
@@ -2591,8 +2588,7 @@ public class RubyIO extends RubyObject {
         if (length < 0) {
             throw getRuntime().newArgumentError("negative length " + length + " given");
         }
-        
-        RubyString str = null;
+
         if (arg1.isNil()) {
             str = RubyString.newEmptyString(getRuntime());
             str.setTaint(true);
@@ -2676,26 +2672,14 @@ public class RubyIO extends RubyObject {
     }
     
     // implements read_all() in io.c
-    protected IRubyObject readAll(IRubyObject buffer) throws BadDescriptorException, EOFException, IOException {
+    protected IRubyObject readAll(RubyString str) throws BadDescriptorException, EOFException, IOException {
         Ruby runtime = getRuntime();
         // TODO: handle writing into original buffer better
         
-        RubyString str = null;
-        if (buffer instanceof RubyString) {
-            str = (RubyString)buffer;
-        }
-        
-        // TODO: ruby locks the string here
-        
-        // READ_CHECK from MRI io.c
-        if (openFile.getMainStream().readDataBuffered()) {
-            openFile.checkClosed(runtime);
-        }
-
-        // ChannelStream#readall knows what size should be allocated at first. Just use it.
         ByteList buf = null;
         ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
         try {
+            // ChannelStream#readall knows what size should be allocated at first. Just use it.
             if (descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel) {
                 buf = openFile.getMainStream().readall();
             } else if (descriptor == null) {
@@ -2703,8 +2687,11 @@ public class RubyIO extends RubyObject {
             } else {
                 try {
                     while (true) {
+                        // TODO: ruby locks the string here
+                        readCheck(openFile.getMainStream());
                         openFile.checkReadable(getRuntime());
                         ByteList read = fread(ChannelStream.BUFSIZE);
+                        // TODO: Ruby unlocks the string here
                         if (read.length() == 0) {
                             break;
                         }
@@ -2720,25 +2707,6 @@ public class RubyIO extends RubyObject {
                     throw runtime.newErrnoEINVALError();
                 }
             }
-            /*
-            ByteList newBuffer = openFile.getMainStream().readall();
-
-            // TODO same zero-length checks as file above
-
-            if (str == null) {
-                if (newBuffer == null) {
-                    str = RubyString.newEmptyString(runtime);
-                } else {
-                    str = RubyString.newString(runtime, newBuffer);
-                }
-            } else {
-                if (newBuffer == null) {
-                    str.empty();
-                } else {
-                    str.setValue(newBuffer);
-                }
-            }
-            */
         } catch (NonReadableChannelException ex) {
             throw runtime.newIOError("not opened for reading");
         }
@@ -2759,90 +2727,7 @@ public class RubyIO extends RubyObject {
         str.setTaint(true);
 
         return str;
-//        long bytes = 0;
-//        long n;
-//
-//        if (siz == 0) siz = BUFSIZ;
-//        if (NIL_P(str)) {
-//            str = rb_str_new(0, siz);
-//        }
-//        else {
-//            rb_str_resize(str, siz);
-//        }
-//        for (;;) {
-//            rb_str_locktmp(str);
-//            READ_CHECK(fptr->f);
-//            n = io_fread(RSTRING(str)->ptr+bytes, siz-bytes, fptr);
-//            rb_str_unlocktmp(str);
-//            if (n == 0 && bytes == 0) {
-//                if (!fptr->f) break;
-//                if (feof(fptr->f)) break;
-//                if (!ferror(fptr->f)) break;
-//                rb_sys_fail(fptr->path);
-//            }
-//            bytes += n;
-//            if (bytes < siz) break;
-//            siz += BUFSIZ;
-//            rb_str_resize(str, siz);
-//        }
-//        if (bytes != siz) rb_str_resize(str, bytes);
-//        OBJ_TAINT(str);
-//
-//        return str;
     }
-    
-    // TODO: There's a lot of complexity here due to error handling and
-    // nonblocking IO; much of this goes away, but for now I'm just
-    // having read call ChannelStream.fread directly.
-//    protected int fread(int len, ByteList buffer) {
-//        long n = len;
-//        int c;
-//        int saved_errno;
-//
-//        while (n > 0) {
-//            c = read_buffered_data(ptr, n, fptr->f);
-//            if (c < 0) goto eof;
-//            if (c > 0) {
-//                ptr += c;
-//                if ((n -= c) <= 0) break;
-//            }
-//            rb_thread_wait_fd(fileno(fptr->f));
-//            rb_io_check_closed(fptr);
-//            clearerr(fptr->f);
-//            TRAP_BEG;
-//            c = getc(fptr->f);
-//            TRAP_END;
-//            if (c == EOF) {
-//              eof:
-//                if (ferror(fptr->f)) {
-//                    switch (errno) {
-//                      case EINTR:
-//    #if defined(ERESTART)
-//                      case ERESTART:
-//    #endif
-//                        clearerr(fptr->f);
-//                        continue;
-//                      case EAGAIN:
-//    #if defined(EWOULDBLOCK) && EWOULDBLOCK != EAGAIN
-//                      case EWOULDBLOCK:
-//    #endif
-//                        if (len > n) {
-//                            clearerr(fptr->f);
-//                        }
-//                        saved_errno = errno;
-//                        rb_warning("nonblocking IO#read is obsolete; use IO#readpartial or IO#sysread");
-//                        errno = saved_errno;
-//                    }
-//                    if (len == n) return 0;
-//                }
-//                break;
-//            }
-//            *ptr++ = c;
-//            n--;
-//        }
-//        return len - n;
-//        
-//    }
 
     // implements io_fread in io.c
     private ByteList fread(int length) throws IOException, BadDescriptorException {
@@ -3898,10 +3783,7 @@ public class RubyIO extends RubyObject {
         return ChannelDescriptor.getNewFileno();
     }
 
-    /**
-     * @deprecated
-     * @return
-     */
+    @Deprecated
     public boolean writeDataBuffered() {
         return openFile.getMainStream().writeDataBuffered();
     }
