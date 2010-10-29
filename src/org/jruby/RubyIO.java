@@ -2382,9 +2382,8 @@ public class RubyIO extends RubyObject {
             }
             ChannelStream stream = (ChannelStream) myOpenFile.getMainStream();
 
-            if (!string.isEmpty()) {
-                throw getRuntime().newRuntimeError("buffer string modified");
-            }
+            // We don't check RubyString modification since JRuby doesn't have
+            // GIL. Other threads are free to change anytime.
 
             ByteList buf = null;
             if (isNonblocking) {
@@ -2454,9 +2453,9 @@ public class RubyIO extends RubyObject {
             
             waitReadable(myOpenFile.getMainStream());
             myOpenFile.checkClosed(getRuntime());
-            if (!str.isEmpty()) {
-                throw getRuntime().newRuntimeError("buffer string modified");
-            }
+
+            // We don't check RubyString modification since JRuby doesn't have
+            // GIL. Other threads are free to change anytime.
 
             int bytesRead = myOpenFile.getMainStream().getDescriptor().read(len, str.getByteList());
             
@@ -2619,10 +2618,9 @@ public class RubyIO extends RubyObject {
 
             // READ_CHECK from MRI io.c
             readCheck(myOpenFile.getMainStream());
-            
-            if (!str.isEmpty()) {
-                throw getRuntime().newRuntimeError("buffer string modified");
-            }
+
+            // We don't check RubyString modification since JRuby doesn't have
+            // GIL. Other threads are free to change anytime.
 
             ByteList newBuffer = fread(length);
 
