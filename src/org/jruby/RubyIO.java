@@ -2550,8 +2550,7 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newArgumentError("negative length " + length + " given");
         }
         
-        RubyString str = RubyString.newEmptyString(getRuntime());
-        str.setTaint(true);
+        RubyString str = null;
 
         return readNotAll(context, myOpenFile, length, str);
     }
@@ -2589,8 +2588,7 @@ public class RubyIO extends RubyObject {
         }
 
         if (arg1.isNil()) {
-            str = RubyString.newEmptyString(getRuntime());
-            str.setTaint(true);
+            str = null;
         } else {
             str = arg1.convertToString();
             str.empty();
@@ -2608,10 +2606,6 @@ public class RubyIO extends RubyObject {
 
             if (myOpenFile.getMainStream().feof()) {
                 return runtime.getNil();
-            }
-
-            if (length == 0) {
-                return str;
             }
 
             // TODO: Ruby locks the string here
@@ -2633,7 +2627,9 @@ public class RubyIO extends RubyObject {
 
                 if (myOpenFile.getMainStream().feof()) {
                     // truncate buffer string to zero, if provided
-                    str.setValue(ByteList.EMPTY_BYTELIST.dup());
+                    if (str != null) {
+                        str.setValue(ByteList.EMPTY_BYTELIST.dup());
+                    }
                     return runtime.getNil();
                 }
 
@@ -2647,7 +2643,11 @@ public class RubyIO extends RubyObject {
 //                }
             }
 
-            str.setValue(newBuffer);
+            if (str == null) {
+                str = RubyString.newString(runtime, newBuffer);
+            } else {
+                str.setValue(newBuffer);
+            }
             str.setTaint(true);
 
             return str;
