@@ -2619,7 +2619,6 @@ public class RubyIO extends RubyObject {
 
             // READ_CHECK from MRI io.c
             readCheck(myOpenFile.getMainStream());
-            waitReadable(myOpenFile.getMainStream());
             
             if (!str.isEmpty()) {
                 throw getRuntime().newRuntimeError("buffer string modified");
@@ -2629,7 +2628,7 @@ public class RubyIO extends RubyObject {
 
             // TODO: Ruby unlocks the string here
 
-            if (newBuffer == null || newBuffer.length() == 0) {
+            if (newBuffer.length() == 0) {
                 if (myOpenFile.getMainStream() == null) {
                     return runtime.getNil();
                 }
@@ -2650,11 +2649,7 @@ public class RubyIO extends RubyObject {
 //                }
             }
 
-            if (newBuffer == null) {
-                str.empty();
-            } else {
-                str.setValue(newBuffer);
-            }
+            str.setValue(newBuffer);
             str.setTaint(true);
 
             return str;
@@ -2731,23 +2726,25 @@ public class RubyIO extends RubyObject {
 
     // implements io_fread in io.c
     private ByteList fread(int length) throws IOException, BadDescriptorException {
-        int rest = length;
-        ByteList buf = null;
         Stream stream = openFile.getMainStream();
-        Ruby runtime = getRuntime();
+        ByteList buf = stream.fread(length);
+        if (buf != null && buf.length() == length) {
+            return buf;
+        }
+        int rest = length;
         while (rest > 0) {
             waitReadable(stream);
-            openFile.checkClosed(runtime);
+            openFile.checkClosed(getRuntime());
             stream.clearerr();
             ByteList newBuffer = stream.fread(rest);
             if (newBuffer == null) {
                 // means EOF
                 break;
             }
-            if (newBuffer.length() == 0) {
+            int len = newBuffer.length();
+            if (len == 0) {
                 // TODO: warn?
                 // rb_warning("nonblocking IO#read is obsolete; use IO#readpartial or IO#sysread")
-                waitReadable(stream);
                 continue;
             }
             if (buf == null) {
@@ -2755,7 +2752,7 @@ public class RubyIO extends RubyObject {
             } else {
                 buf.append(newBuffer);
             }
-            rest -= newBuffer.length();
+            rest -= len;
         }
         if (buf == null) {
             return ByteList.EMPTY_BYTELIST.dup();
