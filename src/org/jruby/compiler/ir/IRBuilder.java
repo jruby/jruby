@@ -70,6 +70,7 @@ import org.jruby.ast.SplatNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SuperNode;
 import org.jruby.ast.SymbolNode;
+import org.jruby.ast.VAliasNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.ast.YieldNode;
@@ -486,8 +487,8 @@ public class IRBuilder {
             case TOARYNODE: return buildToAry((ToAryNode) node, m); // done
             case TRUENODE: return buildTrue(node, m); // done
 //            case UNDEFNODE: return buildUndef(node, m); // DEFERRED
-            case UNTILNODE: return buildUntil((UntilNode) node, (IRExecutionScope)m); // done
-//            case VALIASNODE: return buildVAlias(node, m); // DEFERRED
+            case UNTILNODE: return buildUntil((UntilNode) node, (IR_ExecutionScope)m); // done
+            case VALIASNODE: return buildVAlias(node, m); // done -- see FIXME
             case VCALLNODE: return buildVCall((VCallNode) node, m); // done
             case WHILENODE: return buildWhile((WhileNode) node, (IRExecutionScope)m); // done
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; return null;
@@ -674,14 +675,13 @@ public class IRBuilder {
         }
     }
 
-    public Operand buildAlias(final AliasNode alias, IRScope s) {
-        String newName = "";//TODO: FIX breakage....alias.getNewName();
-        String oldName = "";//TODO: FIX breakage....alias.getOldName();
-        Operand[] args = new Operand[] { new MethAddr(newName), new MethAddr(oldName) };
-        s.recordMethodAlias(newName, oldName);
-        s.addInstr(new RubyInternalCallInstr(null, MethAddr.DEFINE_ALIAS, MetaObject.create(s), args));
-
-            // SSS FIXME: Can this return anything other than nil?
+    // SSS FIXME: Got a little lazy?  We could/should define a special instruction ALIAS_METHOD_Instr probably
+	 // Is this a ruby-internals or a jruby-internals call?
+    public Operand buildAlias(final AliasNode alias, IR_Scope s) {
+        Operand newName = build(alias.getNewName(), s);
+        Operand oldName = build(alias.getOldName(), s);
+        Operand[] args = new Operand[] { newName, oldName };
+        s.addInstr(new RubyInternalCallInstr(null, MethAddr.DEFINE_ALIAS, new MetaObject(s), args));
         return Nil.NIL;
     }
 
@@ -878,9 +878,6 @@ public class IRBuilder {
         caseInstr.setLabels(labels);
         caseInstr.setVariables(variables);
 
-        // CON FIXME: I don't know how to make case be an expression...does that
-        // logic need to go here?
-
         return result;
     }
 
@@ -1061,8 +1058,8 @@ public class IRBuilder {
         case FCALLNODE:
         case CLASSVARNODE:
             // these are all simple cases that don't require the heavier defined logic
-            buildGetDefinition(node, m);
-            break;
+            return buildGetDefinition(node, m);
+
         default:
             BranchCallback reg = new BranchCallback() {
 
@@ -1725,9 +1722,13 @@ public class IRBuilder {
         //     ensure
         //        .. something else ..
         //     end
+        //
 
         if (ebi.noFallThru)
             m.addInstr(new LABEL_Instr(ebi.start));
+
+        // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
+        _ensureBlockStack.pop();
 
         // Two cases:
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
@@ -1741,8 +1742,6 @@ public class IRBuilder {
             if (ebi.endLabelNeeded)
                m.addInstr(new LABEL_Instr(ebi.end));
         }
-
-        _ensureBlockStack.pop();
 
         return rv;
     }
@@ -1904,8 +1903,8 @@ public class IRBuilder {
         Variable ret      = m.getNewTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode(), m);
         Operand  forBlock = buildForIter(forNode, m);     
-        m.addInstr(new RubyInternalCallInstr(ret, MethAddr.FOR_EACH, receiver,
-                new Operand[]{}, forBlock));
+        // SSS FIXME: Really?  Why the internal call?
+        m.addInstr(new RubyInternalCallInstr(ret, MethAddr.FOR_EACH, receiver, new Operand[]{}, forBlock));
         return ret;
     }
 
@@ -2614,7 +2613,6 @@ public class IRBuilder {
             rv = null;
         }
 
-
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
         // let us discover the edge of the region during linear traversal of instructions during cfg construction.
         RESCUED_BODY_END_MARKER_Instr rbEndInstr = new RESCUED_BODY_END_MARKER_Instr();
@@ -2686,15 +2684,22 @@ public class IRBuilder {
         }
     }
 
-/**
     public Operand buildRetry(Node node, IR_Scope s) {
         // JRuby only supports retry when present in rescue blocks!
         // 1.9 doesn't support retry anywhere else.
         s.addInstr(new THREAD_POLL_Instr());
-        s.addInstr(new RETRY_Instr());
+
+        // Jump back to the innermost rescue block
+        // We either find it, or we add code to throw a runtime exception
+        if (_rescueBlockLabelStack.empty()) {
+            StringLiteral exc = new StringLiteral("retry found outside of rescue clause!");
+            s.addInstr(new THROW_EXCEPTION_Instr(exc));
+        }
+        else {
+            s.addInstr(new JUMP_Instr(_rescueBlockLabelStack.peek()));
+        }
         return Nil.NIL;
     }
-**/
 
     public Operand buildReturn(ReturnNode returnNode, IRScope m) {
         Operand retVal = (returnNode.getValueNode() == null) ? Nil.NIL : build(returnNode.getValueNode(), m);
@@ -2828,12 +2833,14 @@ public class IRBuilder {
         return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, untilNode.evaluateAtStart());
     }
 
-/**
+    // SSS FIXME: Got a little lazy?  We could/should define a special instruction ALIAS_GLOBAL_VAR_Instr probably
+	 // Is this a ruby-internals or a jruby-internals call?
     public Operand buildVAlias(Node node, IR_Scope m) {
         VAliasNode valiasNode = (VAliasNode) node;
-        m.aliasGlobal(valiasNode.getNewName(), valiasNode.getOldName());
+        Operand[] args = new Operand[] { new StringLiteral(valiasNode.getOldName()) };
+        m.addInstr(new RubyInternalCallInstr(null, MethAddr.GVAR_ALIAS, new new StringLiteral(valiasNode.getNewName()), args));
+        return Nil.NIL;
     }
-**/
 
     public Operand buildVCall(VCallNode node, IRScope s) {
         List<Operand> args       = new ArrayList<Operand>(); args.add(s.getSelf());
