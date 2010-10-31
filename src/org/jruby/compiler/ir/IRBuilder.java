@@ -71,6 +71,7 @@ import org.jruby.ast.SplatNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SuperNode;
 import org.jruby.ast.SymbolNode;
+import org.jruby.ast.UndefNode;
 import org.jruby.ast.VAliasNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
@@ -410,7 +411,7 @@ public class IRBuilder {
             throw new NotCompilableException("Unknown node encountered in builder: " + node);
         }
         switch (node.getNodeType()) {
-            case ALIASNODE: return buildAlias((AliasNode) node, m); // done
+            case ALIASNODE: return buildAlias((AliasNode) node, m); // done -- see FIXME
             case ANDNODE: return buildAnd((AndNode) node, m); // done
             case ARGSCATNODE: return buildArgsCat((ArgsCatNode) node, m); // done
             case ARGSPUSHNODE: return buildArgsPush((ArgsPushNode) node, m); // Nothing to do for 1.8
@@ -493,7 +494,7 @@ public class IRBuilder {
             case SYMBOLNODE: return buildSymbol((SymbolNode) node, m); // done
             case TOARYNODE: return buildToAry((ToAryNode) node, m); // done
             case TRUENODE: return buildTrue(node, m); // done
-//            case UNDEFNODE: return buildUndef(node, m); // DEFERRED
+            case UNDEFNODE: return buildUndef(node, m); // done
             case UNTILNODE: return buildUntil((UntilNode) node, (IRExecutionScope)m); // done
             case VALIASNODE: return buildVAlias(node, m); // done -- see FIXME
             case VCALLNODE: return buildVCall((VCallNode) node, m); // done
@@ -2783,11 +2784,10 @@ public class IRBuilder {
         return BooleanLiteral.TRUE; 
     }
 
-/**
     public Operand buildUndef(Node node, IRScope m) {
-        m.undefMethod(((UndefNode) node).getName());
+		  Operand methName = build(((UndefNode) node).getName(), m);
+        return generateJRubyUtilityCall(m, MethAddr.UNDEF_METHOD, methName, new Operand[]{});
     }
-**/
 
     private Operand buildConditionalLoop(IRExecutionScope s, Node conditionNode, Node bodyNode, boolean isWhile, boolean isLoopHeadCondition)
     {

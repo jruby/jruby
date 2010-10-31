@@ -25,6 +25,7 @@ public class MethAddr extends Reference {
     // Ex: http://gist.github.com/163551
     public final static MethAddr TO_ARY            = new MethAddr("aryToAry");
     public final static MethAddr GET_FILE_NAME     = new MethAddr("getFileName");
+    public final static MethAddr UNDEF_METHOD      = new MethAddr("undefMethod");
 
     public MethAddr(String name) {
         super(name);
