@@ -32,6 +32,7 @@ import org.jruby.ast.ConstNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DVarNode;
+import org.jruby.ast.DefinedNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.EnsureNode;
@@ -394,6 +395,12 @@ public class IRBuilder {
         return n;
     }
 
+    public Operand generateJRubyUtilityCall(IRScope m, MethAddr meth, Operand reciever, Operand[] args) {
+        Variable ret = m.getNewTemporaryVariable();
+        m.addInstr(new JRubyImplCallInstr(ret, meth, receiver, args));
+        return ret;
+    }
+
     public Operand build(Node node, IRScope m) {
         if (node == null) {
             return null;
@@ -425,7 +432,7 @@ public class IRBuilder {
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, m); // done
             case CONSTNODE: return buildConst((ConstNode) node, m); // done
             case DASGNNODE: return buildDAsgn((DAsgnNode) node, m); // done
-//            case DEFINEDNODE: return buildDefined(node, m); // Incomplete
+            case DEFINEDNODE: return buildDefined(node, m); // SSS FIXME: Incomplete
             case DEFNNODE: return buildDefn((MethodDefNode) node, m); // done
             case DEFSNODE: return buildDefs((DefsNode) node, m); // done
             case DOTNODE: return buildDot((DotNode) node, m); // done
@@ -463,7 +470,7 @@ public class IRBuilder {
             case NOTNODE: return buildNot((NotNode) node, m); // done
             case OPASGNANDNODE: return buildOpAsgnAnd((OpAsgnAndNode) node, m); // done
             case OPASGNNODE: return buildOpAsgn((OpAsgnNode) node, m); // done
-            case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, m); // done -- partially
+            case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, m); // done
             case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // done
             case ORNODE: return buildOr((OrNode) node, m); // done
 //            case POSTEXENODE: return buildPostExe(node, m); // DEFERRED
@@ -487,7 +494,7 @@ public class IRBuilder {
             case TOARYNODE: return buildToAry((ToAryNode) node, m); // done
             case TRUENODE: return buildTrue(node, m); // done
 //            case UNDEFNODE: return buildUndef(node, m); // DEFERRED
-            case UNTILNODE: return buildUntil((UntilNode) node, (IR_ExecutionScope)m); // done
+            case UNTILNODE: return buildUntil((UntilNode) node, (IRExecutionScope)m); // done
             case VALIASNODE: return buildVAlias(node, m); // done -- see FIXME
             case VCALLNODE: return buildVCall((VCallNode) node, m); // done
             case WHILENODE: return buildWhile((WhileNode) node, (IRExecutionScope)m); // done
@@ -676,8 +683,8 @@ public class IRBuilder {
     }
 
     // SSS FIXME: Got a little lazy?  We could/should define a special instruction ALIAS_METHOD_Instr probably
-	 // Is this a ruby-internals or a jruby-internals call?
-    public Operand buildAlias(final AliasNode alias, IR_Scope s) {
+    // Is this a ruby-internals or a jruby-internals call?
+    public Operand buildAlias(final AliasNode alias, IRScope s) {
         Operand newName = build(alias.getNewName(), s);
         Operand oldName = build(alias.getOldName(), s);
         Operand[] args = new Operand[] { newName, oldName };
@@ -963,7 +970,7 @@ public class IRBuilder {
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, IRScope s, Operand val) {
-        Node          constNode     = constDeclNode.getConstNode();
+        Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
             s.setConstantValue(constDeclNode.getName(), val);
@@ -1032,8 +1039,7 @@ public class IRBuilder {
         return cv;
     }
 
-/**
-    public Operand buildGetDefinitionBase(final Node node, IR_Scope m) {
+    public Operand buildGetDefinitionBase(final Node node, IRScope m) {
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE:
         case CLASSVARDECLNODE:
@@ -1057,33 +1063,38 @@ public class IRBuilder {
         case CONSTNODE:
         case FCALLNODE:
         case CLASSVARNODE:
-            // these are all simple cases that don't require the heavier defined logic
+            // these are all "simple" cases that don't require the heavier defined logic
             return buildGetDefinition(node, m);
-
+        default:
+            throw new NotCompilableException(node + " is not yet IR-compilable ..");
+/**
+ * SSS FIXME: To be completed
+ *
         default:
             BranchCallback reg = new BranchCallback() {
 
-                        public void branch(IR_Scope m) {
+                        public void branch(IRScope m) {
                             m.inDefined();
                             buildGetDefinition(node, m);
                         }
                     };
             BranchCallback out = new BranchCallback() {
 
-                        public void branch(IR_Scope m) {
+                        public void branch(IRScope m) {
                             m.outDefined();
                         }
                     };
             m.protect(reg, out, String.class);
+**/
         }
     }
 
-    public Operand buildDefined(final Node node, IR_Scope m) {
-        buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
-        m.stringOrNil();
+    public Operand buildDefined(final Node node, IRScope m) {
+        return buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
     }
 
-    public Operand buildGetArgumentDefinition(final Node node, IR_Scope m, String type) {
+/*
+    public Operand buildGetArgumentDefinition(final Node node, IRScope m, String type) {
         if (node == null) {
             return new StringLiteral(type);
         } else if (node instanceof ArrayNode) {
@@ -1111,8 +1122,9 @@ public class IRBuilder {
             m.setEnding(realToken);
         }
     }
+*/
 
-    public Operand buildGetDefinition(final Node node, IR_Scope m) {
+    public Operand buildGetDefinition(final Node node, IRScope m) {
         switch (node.getNodeType()) {
             case CLASSVARASGNNODE:
             case CLASSVARDECLNODE:
@@ -1122,12 +1134,11 @@ public class IRBuilder {
             case LOCALASGNNODE:
             case MULTIPLEASGNNODE:
             case OPASGNNODE:
+            case OPASGNANDNODE:
+            case OPASGNORNODE:
             case OPELEMENTASGNNODE:
+            case INSTASGNNODE: // simple assignment cases
                 return new StringLiteral("assignment");
-            case BACKREFNODE:
-                    // SSS FIXME!
-                Operand x = m.backref();
-                return x instanceof RubyMatchData.class ? new StringLiteral("$" + ((BackRefNode) node).getType()) : Nil.NIL;
             case DVARNODE:  
                 return new StringLiteral("local-variable(in-block)");
             case FALSENODE:
@@ -1141,43 +1152,52 @@ public class IRBuilder {
                 return new StringLiteral("method");
             case NILNODE: 
                 return new StringLiteral("nil");
+            case SELFNODE:
+                return new StringLiteral("self");
+            default:
+                throw new NotCompilableException(node + " is not yet IR-compilable ..");
+/**
+ *  SSS FIXME: To be completed
+ *
+            case BACKREFNODE:
+                    // SSS FIXME!
+                Operand x = m.backref();
+                return x instanceof RubyMatchData.class ? new StringLiteral("$" + ((BackRefNode) node).getType()) : Nil.NIL;
             case NTHREFNODE:
                 m.isCaptured(((NthRefNode) node).getMatchNumber(),
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return new StringLiteral("$" + ((NthRefNode) node).getMatchNumber());
                             }
                         },
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return Nil.NIL;
                             }
                         });
                 break;
-            case SELFNODE:
-                return new StringLiteral("self");
             case VCALLNODE:
                 m.loadSelf();
                 m.isMethodBound(((VCallNode) node).getName(),
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return new StringLiteral("method");
                             }
                         },
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return Nil.NIL;
                             }
                         });
                 break;
             case YIELDNODE:
                 m.hasBlock(new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return new StringLiteral("yield");
                             }
                         },
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return Nil.NIL;
                             }
                         });
@@ -1185,12 +1205,12 @@ public class IRBuilder {
             case GLOBALVARNODE:
                 m.isGlobalDefined(((GlobalVarNode) node).getName(),
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return new StringLiteral("global-variable");
                             }
                         },
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return Nil.NIL;
                             }
                         });
@@ -1198,12 +1218,12 @@ public class IRBuilder {
             case INSTVARNODE:
                 m.isInstanceVariableDefined(((InstVarNode) node).getName(),
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return new StringLiteral("instance-variable");
                             }
                         },
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return Nil.NIL;
                             }
                         });
@@ -1211,12 +1231,12 @@ public class IRBuilder {
             case CONSTNODE:
                 m.isConstantDefined(((ConstNode) node).getName(),
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return new StringLiteral("constant");
                             }
                         },
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return Nil.NIL;
                             }
                         });
@@ -1225,12 +1245,12 @@ public class IRBuilder {
                 m.loadSelf();
                 m.isMethodBound(((FCallNode) node).getName(),
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), m, "method");
                             }
                         },
                         new BranchCallback() {
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 return Nil.NIL;
                             }
                         });
@@ -1244,7 +1264,7 @@ public class IRBuilder {
 
                     BranchCallback setup = new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                     if (iVisited instanceof Colon2Node) {
                                         final Node leftNode = ((Colon2Node) iVisited).getLeftNode();
                                         build(leftNode, m,true);
@@ -1255,18 +1275,18 @@ public class IRBuilder {
                             };
                     BranchCallback isConstant = new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                     return new StringLiteral("constant");
                                 }
                             };
                     BranchCallback isMethod = new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                     return new StringLiteral("method");
                                 }
                             };
                     BranchCallback none = new BranchCallback() {
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                     return Nil.NIL;
                                 }
                             };
@@ -1283,7 +1303,7 @@ public class IRBuilder {
 
                     m.rescue(new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                     build(iVisited.getReceiverNode(), m,true); //[IRubyObject]
                                     m.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
                                     m.metaclass(); //[IRubyObject, RubyClass]
@@ -1302,13 +1322,13 @@ public class IRBuilder {
 
                                     m.isMethodBound(iVisited.getName(), new BranchCallback() {
 
-                                                public void branch(IR_Scope m) {
+                                                public void branch(IRScope m) {
                                                     buildGetArgumentDefinition(iVisited.getArgsNode(), m, "method");
                                                 }
                                             },
                                             new BranchCallback() {
 
-                                                public void branch(IR_Scope m) {
+                                                public void branch(IRScope m) {
                                                     m.go(isfalse);
                                                 }
                                             });
@@ -1320,7 +1340,7 @@ public class IRBuilder {
                             }, JumpException.class,
                             new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                     m.pushNull();
                                 }
                             }, String.class);
@@ -1352,7 +1372,7 @@ public class IRBuilder {
                     m.isClassVarDefined(iVisited.getName(),
                             new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                     m.consumeCurrentValue();
                                     Operand sl = new StringLiteral("class variable");
                                     m.go(ending);
@@ -1360,7 +1380,7 @@ public class IRBuilder {
                             },
                             new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                 }
                             });
                     m.setEnding(second);  //[RubyClass]
@@ -1368,7 +1388,7 @@ public class IRBuilder {
                     m.isClassVarDefined(iVisited.getName(),
                             new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                     m.consumeCurrentValue();
                                     Operand sl = new StringLiteral("class variable");
                                     m.go(ending);
@@ -1376,7 +1396,7 @@ public class IRBuilder {
                             },
                             new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                 }
                             });
                     m.setEnding(third); //[RubyClass]
@@ -1460,7 +1480,7 @@ public class IRBuilder {
 
                     m.rescue(new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                     build(iVisited.getReceiverNode(), m,true); //[IRubyObject]
                                     m.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
                                     m.metaclass(); //[IRubyObject, RubyClass]
@@ -1479,13 +1499,13 @@ public class IRBuilder {
 
                                     m.isMethodBound(iVisited.getName(), new BranchCallback() {
 
-                                                public void branch(IR_Scope m) {
+                                                public void branch(IRScope m) {
                                                     buildGetArgumentDefinition(iVisited.getArgsNode(), m, "assignment");
                                                 }
                                             },
                                             new BranchCallback() {
 
-                                                public void branch(IR_Scope m) {
+                                                public void branch(IRScope m) {
                                                     m.go(isfalse);
                                                 }
                                             });
@@ -1497,7 +1517,7 @@ public class IRBuilder {
                             }, JumpException.class,
                             new BranchCallback() {
 
-                                public void branch(IR_Scope m) {
+                                public void branch(IRScope m) {
                                     m.pushNull();
                                 }
                             }, String.class);
@@ -1511,7 +1531,7 @@ public class IRBuilder {
             default:
                 m.rescue(new BranchCallback() {
 
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 build(node, m,true);
                                 m.consumeCurrentValue();
                                 m.pushNull();
@@ -1519,15 +1539,15 @@ public class IRBuilder {
                         }, JumpException.class,
                         new BranchCallback() {
 
-                            public void branch(IR_Scope m) {
+                            public void branch(IRScope m) {
                                 m.pushNull();
                             }
                         }, String.class);
                 m.consumeCurrentValue();
                 //MPS_FIXME: new StringLiteral("expression");
+**/
         }
     }
-**/
 
     public Operand buildDAsgn(final DAsgnNode dasgnNode, IRScope s) {
         // SSS: Looks like we receive the arg in buildBlockArgsAssignment via the IterNode
@@ -1541,7 +1561,7 @@ public class IRBuilder {
         return arg;
     }
     
-    // ENEBO: On IR_Scope?
+    // ENEBO: On IRScope?
     private IRScope getScopeNDown(IRScope current, int depth) {
         for (int i = 0; i < depth; i++) {
             current.getLexicalParent();
@@ -1552,7 +1572,7 @@ public class IRBuilder {
 
 /**
  * SSS FIXME: Used anywhere?  I don't see calls to this anywhere
-    public Operand buildDAsgnAssignment(Node node, IR_Scope s) {
+    public Operand buildDAsgnAssignment(Node node, IRScope s) {
         DAsgnNode dasgnNode = (DAsgnNode) node;
         s.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
     }
@@ -1792,7 +1812,7 @@ public class IRBuilder {
     }
 
 /**
-    public Operand buildFlip(Node node, IR_Scope m) {
+    public Operand buildFlip(Node node, IRScope m) {
         final FlipNode flipNode = (FlipNode) node;
 
         m.getVariableCompiler().retrieveLocalVariable(flipNode.getIndex(), flipNode.getDepth());
@@ -1800,24 +1820,24 @@ public class IRBuilder {
         if (flipNode.isExclusive()) {
             m.performBooleanBranch(new BranchCallback() {
 
-                public void branch(IR_Scope m) {
+                public void branch(IRScope m) {
                     build(flipNode.getEndNode(), m,true);
                     m.performBooleanBranch(new BranchCallback() {
 
-                        public void branch(IR_Scope m) {
+                        public void branch(IRScope m) {
                             m.loadFalse();
                             m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
                         }
                     }, new BranchCallback() {
 
-                        public void branch(IR_Scope m) {
+                        public void branch(IRScope m) {
                         }
                     });
                     m.loadTrue();
                 }
             }, new BranchCallback() {
 
-                public void branch(IR_Scope m) {
+                public void branch(IRScope m) {
                     build(flipNode.getBeginNode(), m,true);
                     becomeTrueOrFalse(m);
                     m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), true);
@@ -1826,28 +1846,28 @@ public class IRBuilder {
         } else {
             m.performBooleanBranch(new BranchCallback() {
 
-                public void branch(IR_Scope m) {
+                public void branch(IRScope m) {
                     build(flipNode.getEndNode(), m,true);
                     m.performBooleanBranch(new BranchCallback() {
 
-                        public void branch(IR_Scope m) {
+                        public void branch(IRScope m) {
                             m.loadFalse();
                             m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
                         }
                     }, new BranchCallback() {
 
-                        public void branch(IR_Scope m) {
+                        public void branch(IRScope m) {
                         }
                     });
                     m.loadTrue();
                 }
             }, new BranchCallback() {
 
-                public void branch(IR_Scope m) {
+                public void branch(IRScope m) {
                     build(flipNode.getBeginNode(), m,true);
                     m.performBooleanBranch(new BranchCallback() {
 
-                        public void branch(IR_Scope m) {
+                        public void branch(IRScope m) {
                             build(flipNode.getEndNode(), m,true);
                             flipTrueOrFalse(m);
                             m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
@@ -1855,7 +1875,7 @@ public class IRBuilder {
                         }
                     }, new BranchCallback() {
 
-                        public void branch(IR_Scope m) {
+                        public void branch(IRScope m) {
                             m.loadFalse();
                         }
                     });
@@ -1866,29 +1886,29 @@ public class IRBuilder {
         if (!expr) m.consumeCurrentValue();
     }
 
-    private void becomeTrueOrFalse(IR_Scope m) {
+    private void becomeTrueOrFalse(IRScope m) {
         m.performBooleanBranch(new BranchCallback() {
 
-                    public void branch(IR_Scope m) {
+                    public void branch(IRScope m) {
                         m.loadTrue();
                     }
                 }, new BranchCallback() {
 
-                    public void branch(IR_Scope m) {
+                    public void branch(IRScope m) {
                         m.loadFalse();
                     }
                 });
     }
 
-    private void flipTrueOrFalse(IR_Scope m) {
+    private void flipTrueOrFalse(IRScope m) {
         m.performBooleanBranch(new BranchCallback() {
 
-                    public void branch(IR_Scope m) {
+                    public void branch(IRScope m) {
                         m.loadFalse();
                     }
                 }, new BranchCallback() {
 
-                    public void branch(IR_Scope m) {
+                    public void branch(IRScope m) {
                         m.loadTrue();
                     }
                 });
@@ -2075,26 +2095,20 @@ public class IRBuilder {
     }
 
     public Operand buildMatch(MatchNode matchNode, IRScope m) {
-        Variable ret    = m.getNewTemporaryVariable();
-        Operand  regexp = build(matchNode.getRegexpNode(), m);
-        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH, regexp, new Operand[]{}));
-        return ret;
+        Operand regexp = build(matchNode.getRegexpNode(), m);
+        return generateJRubyUtilityCall(m, MethAddr.MATCH, regexp, new Operand[]{});
     }
 
     public Operand buildMatch2(Match2Node matchNode, IRScope m) {
-        Variable  ret       = m.getNewTemporaryVariable();
-        Operand   receiver  = build(matchNode.getReceiverNode(), m);
-        Operand   value     = build(matchNode.getValueNode(), m);
-        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH2, receiver, new Operand[]{value}));
-        return ret;
+        Operand receiver = build(matchNode.getReceiverNode(), m);
+        Operand value    = build(matchNode.getValueNode(), m);
+        return generateJRubyUtilityCall(m, MethAddr.MATCH2, receiver, new Operand[]{value});
     }
 
     public Operand buildMatch3(Match3Node matchNode, IRScope m) {
-        Variable  ret       = m.getNewTemporaryVariable();
-        Operand   receiver  = build(matchNode.getReceiverNode(), m);
-        Operand   value     = build(matchNode.getValueNode(), m);
-        m.addInstr(new JRubyImplCallInstr(ret, MethAddr.MATCH3, receiver, new Operand[]{value}));
-        return ret;
+        Operand receiver = build(matchNode.getReceiverNode(), m);
+        Operand value    = build(matchNode.getValueNode(), m);
+        return generateJRubyUtilityCall(m, MethAddr.MATCH3, receiver, new Operand[]{value});
     }
 
     public Operand buildModule(ModuleNode moduleNode, IRScope s) {
@@ -2246,37 +2260,36 @@ public class IRBuilder {
         return v1;
     }
 
-    // Translate "x || y" --> "x = (is_true(x) ? x : y)" -->
+    // Translate "x ||= y" --> "x = (is_defined(x) && is_true(x) ? x : y)" -->
     // 
-    //    x = -- build(x) should return a variable! --
-    //    f = is_true(x)
+    //    v = -- build(x) should return a variable! --
+    //    f = is_true(v)
     //    beq(f, true, L)
-    //    x = -- build(y) --
+    //    -- build(x = y) --
     // L:
     //
     public Operand buildOpAsgnOr(final OpAsgnOrNode orNode, IRScope s) {
         Label    l1 = s.getNewLabel();
-        Variable f  = s.getNewTemporaryVariable();
+        Label    l2 = null;
+        Variable f = s.getNewTemporaryVariable();
         Operand  v1;
-        if (needsDefinitionCheck(orNode.getFirstNode())) {
-            throw new NotCompilableException(orNode + "is not yet compilable since the first node of the OR requires 'defined?' to be implemented");
-/**
-            Label    l2 = s.getNewLabel();
-            s.addInstr(new IS_DEFINED_Instr(f, v1));
-            s.addInstr(new BEQ_Instr(f, BooleanLiteral.FALSE, l2)); // if v1 is undefined, go to v2's computation
-            Operand v1 = build(orNode.getFirstNode(), s);
-            s.addInstr(new IS_TRUE_Instr(f, v1));
-            s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
-            s.addInstr(new LABEL_Instr(l2));
-**/
-        } else {
-            v1 = build(orNode.getFirstNode(), s);
-            s.addInstr(new IsTrueInstr(f, v1));
-            s.addInstr(new BEQInstr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done!
+        boolean  needsDefnCheck = needsDefinitionCheck(orNode.getFirstNode());
+        if (needsDefnCheck) {
+            l2 = s.getNewLabel();
+            v1 = buildGetDefinitionBase(orNode.getFirstNode(), s);
+            s.addInstr(new BEQ_Instr(v1, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
         }
-        build(orNode.getSecondNode(), s); // This does the assignment!
+        v1 = build(orNode.getFirstNode(), s); // build of 'x'
+        s.addInstr(new IS_TRUE_Instr(f, v1));
+        s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
+        if (needsDefnCheck) {
+            s.addInstr(new LABEL_Instr(l2));
+        }
+        build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
         s.addInstr(new LABEL_Instr(l1));
         s.addInstr(new ThreadPollInstr());
+
+        // Return value of x ||= y is always 'x'
         return v1;
     }
 
@@ -2314,7 +2327,7 @@ public class IRBuilder {
     }
 
 /**
-    public Operand buildOpAsgn(Node node, IR_Scope m) {
+    public Operand buildOpAsgn(Node node, IRScope m) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
 
         Operand ret;
@@ -2330,21 +2343,21 @@ public class IRBuilder {
         return ret;
     }
 
-    public Operand buildOpAsgnWithOr(Node node, IR_Scope s) {
+    public Operand buildOpAsgnWithOr(Node node, IRScope s) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
         Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
         List<Operand> args = setupCallArgs(opAsgnNode.getValueNode(), s);
         m.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
     }
 
-    public Operand buildOpAsgnWithAnd(Node node, IR_Scope s) {
+    public Operand buildOpAsgnWithAnd(Node node, IRScope s) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
         Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
         List<Operand> args = setupCallArgs(opAsgnNode.getValueNode(), s);
         m.getInvocationCompiler().invokeOpAsgnWithAnd(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
     }
 
-    public Operand buildOpAsgnWithMethod(Node node, IR_Scope s) {
+    public Operand buildOpAsgnWithMethod(Node node, IRScope s) {
         final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
         Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
         // eval new value, call operator on old value, and assign
@@ -2393,7 +2406,7 @@ public class IRBuilder {
             }
         }
 
-        public void call(IR_Scope m) {
+        public void call(IRScope m) {
             if (getArity() == 1) {
                 // if arity 1, just build the one element to save us the array cost
                 build(((ArrayNode)node).get(0), m,true);
@@ -2517,13 +2530,13 @@ public class IRBuilder {
     }
 
 /**
-    public Operand buildPostExe(Node node, IR_Scope m) {
+    public Operand buildPostExe(Node node, IRScope m) {
         final PostExeNode postExeNode = (PostExeNode) node;
 
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
 
-                    public void call(IR_Scope m) {
+                    public void call(IRScope m) {
                         if (postExeNode.getBodyNode() != null) {
                             build(postExeNode.getBodyNode(), m, true);
                         } else {
@@ -2534,13 +2547,13 @@ public class IRBuilder {
         m.createNewEndBlock(closureBody);
     }
 
-    public Operand buildPreExe(Node node, IR_Scope m) {
+    public Operand buildPreExe(Node node, IRScope m) {
         final PreExeNode preExeNode = (PreExeNode) node;
 
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
 
-                    public void call(IR_Scope m) {
+                    public void call(IRScope m) {
                         if (preExeNode.getBodyNode() != null) {
                             build(preExeNode.getBodyNode(), m,true);
                         } else {
@@ -2684,7 +2697,7 @@ public class IRBuilder {
         }
     }
 
-    public Operand buildRetry(Node node, IR_Scope s) {
+    public Operand buildRetry(Node node, IRScope s) {
         // JRuby only supports retry when present in rescue blocks!
         // 1.9 doesn't support retry anywhere else.
         s.addInstr(new THREAD_POLL_Instr());
@@ -2759,12 +2772,10 @@ public class IRBuilder {
     public Operand buildSymbol(SymbolNode node, IRScope s) {
         return new Symbol(node.getName());
     }    
-    
+
     public Operand buildToAry(ToAryNode node, IRScope s) {
         Operand  array = build(node.getValue(), s);
-        Variable ret   = s.getNewTemporaryVariable();
-        s.addInstr(new JRubyImplCallInstr(ret, MethAddr.TO_ARY, array, new Operand[]{}));
-        return  ret;
+        return generateJRubyUtilityCall(s, MethAddr.TO_ARY, array, new Operand[]{});
     }
 
     public Operand buildTrue(Node node, IRScope m) {
@@ -2773,7 +2784,7 @@ public class IRBuilder {
     }
 
 /**
-    public Operand buildUndef(Node node, IR_Scope m) {
+    public Operand buildUndef(Node node, IRScope m) {
         m.undefMethod(((UndefNode) node).getName());
     }
 **/
@@ -2834,8 +2845,8 @@ public class IRBuilder {
     }
 
     // SSS FIXME: Got a little lazy?  We could/should define a special instruction ALIAS_GLOBAL_VAR_Instr probably
-	 // Is this a ruby-internals or a jruby-internals call?
-    public Operand buildVAlias(Node node, IR_Scope m) {
+    // Is this a ruby-internals or a jruby-internals call?
+    public Operand buildVAlias(Node node, IRScope m) {
         VAliasNode valiasNode = (VAliasNode) node;
         Operand[] args = new Operand[] { new StringLiteral(valiasNode.getOldName()) };
         m.addInstr(new RubyInternalCallInstr(null, MethAddr.GVAR_ALIAS, new new StringLiteral(valiasNode.getNewName()), args));
