@@ -21,8 +21,8 @@ class TestEnv < Test::Unit::TestCase
     end
 
     def test_env_java_case_sensitivity_on_windows
-      bit = ENV_JAVA['sun.arch.data.model']       # 32 or 64
-      cased_bit = ENV_JAVA['SUN.ARCH.DATA.MODEL'] # nil
+      bit = ENV_JAVA['java.home']
+      cased_bit = ENV_JAVA['Java.Home']
 
       assert_not_equal(bit, cased_bit)
     end
