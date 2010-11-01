@@ -29,72 +29,151 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * 
- * @author jpetersen
- */
-public class WrapperMethod extends DynamicMethod {
-    private DynamicMethod method;
+public abstract class DelegatingDynamicMethod extends DynamicMethod {
+    protected final DynamicMethod delegate;
 
-    /**
-     * Constructor for WrapperCallable.
-     * @param visibility
-     */
-    public WrapperMethod(RubyModule implementationClass, DynamicMethod method, Visibility visibility) {
-        super(implementationClass, visibility, null);
-        this.method = method;
+    public DelegatingDynamicMethod(DynamicMethod delegate) {
+        super(delegate.getImplementationClass(), delegate.getVisibility(), delegate.getCallConfig());
+        this.delegate = delegate;
+    }
+
+    public DynamicMethod getDelegate() {
+        return delegate;
     }
     
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        return method.call(context, self, klazz, name);
+        return delegate.call(context, self, klazz, name);
     }
     
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
-        return method.call(context, self, klazz, name, arg);
+        return delegate.call(context, self, klazz, name, arg);
     }
     
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
-        return method.call(context, self, klazz, name, arg1, arg2);
+        return delegate.call(context, self, klazz, name, arg1, arg2);
     }
     
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return method.call(context, self, klazz, name, arg1, arg2, arg3);
+        return delegate.call(context, self, klazz, name, arg1, arg2, arg3);
     }
     
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
-        return method.call(context, self, klazz, name, args);
+        return delegate.call(context, self, klazz, name, args);
     }
     
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
-        return method.call(context, self, klazz, name, block);
+        return delegate.call(context, self, klazz, name, block);
     }
     
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
-        return method.call(context, self, klazz, name, arg1, block);
+        return delegate.call(context, self, klazz, name, arg1, block);
     }
     
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return method.call(context, self, klazz, name, arg1, arg2, block);
+        return delegate.call(context, self, klazz, name, arg1, arg2, block);
     }
     
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        return method.call(context, self, klazz, name, arg1, arg2, arg3, block);
+        return delegate.call(context, self, klazz, name, arg1, arg2, arg3, block);
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        return method.call(context, self, klazz, name, args, block);
-    }
-    
-    public DynamicMethod dup() {
-        return new WrapperMethod(getImplementationClass(), method, getVisibility());
+        return delegate.call(context, self, klazz, name, args, block);
     }
 
+    @Override
+    public void setVisibility(Visibility visibility) {
+        delegate.setVisibility(visibility);
+    }
+
+    @Override
+    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
+        delegate.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik);
+    }
+
+    @Override
+    public void setIsBuiltin(boolean isBuiltin) {
+        delegate.setIsBuiltin(isBuiltin);
+    }
+
+    @Override
+    public void setImplementationClass(RubyModule implClass) {
+        delegate.setImplementationClass(implClass);
+    }
+
+    @Override
+    public void setCallConfig(CallConfiguration callConfig) {
+        delegate.setCallConfig(callConfig);
+    }
+
+    @Override
+    public boolean isNative() {
+        return delegate.isNative();
+    }
+
+    @Override
+    public boolean isCallableFrom(IRubyObject caller, CallType callType) {
+        return delegate.isCallableFrom(caller, callType);
+    }
+
+    @Override
+    public boolean isBuiltin() {
+        return delegate.isBuiltin();
+    }
+
+    @Override
+    public Visibility getVisibility() {
+        return delegate.getVisibility();
+    }
+
+    @Override
     public long getSerialNumber() {
-        return method.getSerialNumber();
+        return delegate.getSerialNumber();
+    }
+
+    @Override
+    public DynamicMethod getRealMethod() {
+        return delegate.getRealMethod();
+    }
+
+    @Override
+    protected RubyModule getProtectedClass() {
+        return delegate.getProtectedClass();
+    }
+
+    @Override
+    public NativeCall getNativeCall() {
+        return delegate.getNativeCall();
+    }
+
+    @Override
+    public RubyModule getImplementationClass() {
+        return delegate.getImplementationClass();
+    }
+
+    @Override
+    public CallConfiguration getCallConfig() {
+        return delegate.getCallConfig();
+    }
+
+    @Override
+    public Arity getArity() {
+        return delegate.getArity();
     }
 }
