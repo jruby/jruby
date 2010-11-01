@@ -623,6 +623,27 @@ class TestFile < Test::Unit::TestCase
         File.delete("build.xml.link")
       end
     end
+    def test_require_symlink
+      # Create a ruby file that sets a global variable to its view of __FILE__
+      f = File.open("real_file.rb", "w")
+      f.write("$test_require_symlink_filename=__FILE__")
+      f.close()
+      system("ln -s real_file.rb linked_file.rb")
+      assert(File.symlink?("linked_file.rb"))
+      # JRUBY-5167 - Test that symlinks don't effect __FILE__ during load or require
+      # Note: This bug only manifests for absolute paths that point to symlinks.
+      abs_path = File.join(Dir.pwd, "real_file.rb")
+      require abs_path
+      assert_equal($test_require_symlink_filename, abs_path)
+      abs_path_linked = File.join(Dir.pwd, "linked_file.rb")
+      require abs_path_linked
+      assert_equal($test_require_symlink_filename, abs_path_linked)
+      load abs_path_linked
+      assert_equal($test_require_symlink_filename, abs_path_linked)
+    ensure
+      File.delete("real_file.rb")
+      File.delete("linked_file.rb")
+    end
   end
 
   def test_file_times
