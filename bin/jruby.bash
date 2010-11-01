@@ -82,9 +82,10 @@ if [ -z "$JAVA_HOME" ] ; then
   JAVA_CMD='java'
 else
   if $cygwin; then
-    JAVA_HOME=`cygpath -u "$JAVA_HOME"`
+    JAVA_CMD="`cygpath -u "$JAVA_HOME"`/bin/java"
+  else
+    JAVA_CMD="$JAVA_HOME/bin/java"
   fi
-  JAVA_CMD="$JAVA_HOME/bin/java"
 fi
 
 if [ -z "$JAVA_MEM" ] ; then
@@ -248,9 +249,10 @@ do
           JAVA_CMD='jdb'
         else
           if $cygwin; then
-            JAVA_HOME=`cygpath -u "$JAVA_HOME"`
+            JAVA_CMD="`cygpath -u "$JAVA_HOME"`/bin/jdb"
+          else
+            JAVA_CMD="$JAVA_HOME/bin/jdb"
           fi
-          JAVA_CMD="$JAVA_HOME/bin/jdb"
         fi 
         java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.8:.")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
