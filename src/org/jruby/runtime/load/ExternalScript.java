@@ -35,6 +35,7 @@ import java.io.InputStream;
 import org.jruby.Ruby;
 
 import static org.jruby.util.JRubyFile.normalizeSeps;
+import static org.jruby.RubyFile.canonicalize;
 
 public class ExternalScript implements Library {
     private final LoadServiceResource resource;
@@ -55,7 +56,11 @@ public class ExternalScript implements Library {
                 java.io.File path = resource.getPath();
 
                 if(path != null && !resource.isAbsolute()) {
-                    name = normalizeSeps(path.getCanonicalPath());
+                    // Note: We use RubyFile's canonicalize rather than Java's,
+                    // because Java's will follow symlinks and result in __FILE__
+                    // being set to the target of the symlink rather than the
+                    // filename provided.
+                    name = normalizeSeps(canonicalize(path.getPath()));
                 }
 
                 runtime.loadFile(name, in, wrap);
