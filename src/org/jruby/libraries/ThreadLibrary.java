@@ -98,6 +98,7 @@ public class ThreadLibrary implements Library {
                     return new Mutex(runtime, klass);
                 }
             });
+            cMutex.setReifiedClass(Mutex.class);
             cMutex.defineAnnotatedMethods(Mutex.class);
         }
 
@@ -218,7 +219,8 @@ public class ThreadLibrary implements Library {
                     return new ConditionVariable(runtime, klass);
                 }
             });
-            
+
+            cConditionVariable.setReifiedClass(ConditionVariable.class);
             cConditionVariable.defineAnnotatedMethods(ConditionVariable.class);
         }
 
@@ -311,7 +313,8 @@ public class ThreadLibrary implements Library {
                     return new Queue(runtime, klass);
                 }
             });
-            
+
+            cQueue.setReifiedClass(Queue.class);
             cQueue.defineAnnotatedMethods(Queue.class);
         }
 
@@ -411,7 +414,8 @@ public class ThreadLibrary implements Library {
                     return new SizedQueue(runtime, klass);
                 }
             });
-            
+
+            cSizedQueue.setReifiedClass(SizedQueue.class);
             cSizedQueue.defineAnnotatedMethods(SizedQueue.class);
         }
 
