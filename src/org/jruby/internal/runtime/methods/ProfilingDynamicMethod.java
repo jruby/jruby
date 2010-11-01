@@ -36,7 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * A DynamicMethod wrapper that performs timed profiling for each call.
  */
-public class ProfilingDynamicMethod extends WrapperMethod {
+public class ProfilingDynamicMethod extends DelegatingDynamicMethod {
     public ProfilingDynamicMethod(DynamicMethod delegate) {
         super(delegate);
     }

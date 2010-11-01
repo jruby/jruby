@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author headius
  */
-public class SynchronizedDynamicMethod extends WrapperMethod {
+public class SynchronizedDynamicMethod extends DelegatingDynamicMethod {
     public SynchronizedDynamicMethod(DynamicMethod delegate) {
         super(delegate);
     }
