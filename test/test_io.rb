@@ -473,4 +473,18 @@ class TestIO < Test::Unit::TestCase
   def ensure_files(*files)
     files.each {|f| File.open(f, "w") {|g| g << " " } }
   end
+  private :ensure_files
+  
+  # JRUBY-4908
+  unless WINDOWS
+    def test_sh_used_appropriately
+      # should not use sh
+      p, o, i, e = IO.popen4("/bin/ps -a")
+      assert_match p.to_s, i.read.lines.grep(/\/bin\/ps/).first
+      
+      # should use sh
+      p, o, i, e = IO.popen4("/bin/ps -a | grep ps'")
+      assert_no_match Regexp.new(p.to_s), i.read.grep(/\/bin\/ps/).first
+    end
+  end
 end
