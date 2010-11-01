@@ -37,12 +37,72 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author headius
  */
-public class SynchronizedDynamicMethod extends DynamicMethod {
-    private final DynamicMethod delegate;
-
+public class SynchronizedDynamicMethod extends WrapperMethod {
     public SynchronizedDynamicMethod(DynamicMethod delegate) {
-        super(delegate.getImplementationClass(), delegate.getVisibility(), delegate.getCallConfig());
-        this.delegate = delegate;
+        super(delegate);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        synchronized (self) {
+            return delegate.call(context, self, clazz, name);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        synchronized (self) {
+            return delegate.call(context, self, clazz, name, arg0);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        synchronized (self) {
+            return delegate.call(context, self, clazz, name, arg0, arg1);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        synchronized (self) {
+            return delegate.call(context, self, clazz, name, arg0, arg1, arg2);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        synchronized (self) {
+            return delegate.call(context, self, clazz, name, args);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        synchronized (self) {
+            return delegate.call(context, self, clazz, name, block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        synchronized (self) {
+            return delegate.call(context, self, clazz, name, arg0, block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        synchronized (self) {
+            return delegate.call(context, self, clazz, name, arg0, arg1, block);
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        synchronized (self) {
+            return delegate.call(context, self, clazz, name, arg0, arg1, arg2, block);
+        }
     }
 
     @Override
@@ -54,7 +114,7 @@ public class SynchronizedDynamicMethod extends DynamicMethod {
 
     @Override
     public DynamicMethod dup() {
-        return new SynchronizedDynamicMethod(delegate);
+        return new SynchronizedDynamicMethod(delegate.dup());
     }
 
 }
