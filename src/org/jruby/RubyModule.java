@@ -211,7 +211,7 @@ public class RubyModule extends RubyObject {
         setFlag(USER7_F, !isClass());
         generation = runtime.getNextModuleGeneration();
         if (runtime.getInstanceConfig().isProfiling()) {
-            cacheEntryFactory = ProfilingCacheEntryFactory;
+            cacheEntryFactory = new ProfilingCacheEntryFactory(NormalCacheEntryFactory);
         } else {
             cacheEntryFactory = NormalCacheEntryFactory;
         }
@@ -903,6 +903,49 @@ public class RubyModule extends RubyObject {
     
     protected static abstract class CacheEntryFactory {
         public abstract CacheEntry newCacheEntry(DynamicMethod method, int token);
+
+        /**
+         * Test all WrapperCacheEntryFactory instances in the chain for assignability
+         * from the given class.
+         *
+         * @param cacheEntryFactoryClass the class from which to test assignability
+         * @return whether the given class is assignable from any factory in the chain
+         */
+        public boolean hasCacheEntryFactory(Class cacheEntryFactoryClass) {
+            CacheEntryFactory current = this;
+            while (current instanceof WrapperCacheEntryFactory) {
+                if (cacheEntryFactoryClass.isAssignableFrom(current.getClass())) {
+                    return true;
+                }
+                current = ((WrapperCacheEntryFactory)current).getPrevious();
+            }
+            if (cacheEntryFactoryClass.isAssignableFrom(current.getClass())) {
+                return true;
+            }
+            return false;
+        }
+    }
+
+    /**
+     * A wrapper CacheEntryFactory, for delegating cache entry creation along a chain.
+     */
+    protected static abstract class WrapperCacheEntryFactory extends CacheEntryFactory {
+        /** The CacheEntryFactory being wrapped. */
+        protected final CacheEntryFactory previous;
+
+        /**
+         * Construct a new WrapperCacheEntryFactory using the given CacheEntryFactory as
+         * the "previous" wrapped factory.
+         *
+         * @param previous the wrapped factory
+         */
+        public WrapperCacheEntryFactory(CacheEntryFactory previous) {
+            this.previous = previous;
+        }
+
+        public CacheEntryFactory getPrevious() {
+            return previous;
+        }
     }
 
     protected static final CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
@@ -911,31 +954,43 @@ public class RubyModule extends RubyObject {
         }
     };
 
-    protected static final CacheEntryFactory SynchronizedCacheEntryFactory = new CacheEntryFactory() {
-        public CacheEntry newCacheEntry(DynamicMethod method, int token) {
-            return new CacheEntry(new SynchronizedDynamicMethod(method), token);
+    protected static class SynchronizedCacheEntryFactory extends WrapperCacheEntryFactory {
+        public SynchronizedCacheEntryFactory(CacheEntryFactory previous) {
+            super(previous);
         }
-    };
+        public CacheEntry newCacheEntry(DynamicMethod method, int token) {
+            if (method.isUndefined()) {
+                return new CacheEntry(method, token);
+            }
+            // delegate up the chain
+            CacheEntry delegated = previous.newCacheEntry(method, token);
+            return new CacheEntry(new SynchronizedDynamicMethod(delegated.method), delegated.token);
+        }
+    }
 
-    protected static final CacheEntryFactory ProfilingCacheEntryFactory = new CacheEntryFactory() {
+    protected static class ProfilingCacheEntryFactory extends WrapperCacheEntryFactory {
+        public ProfilingCacheEntryFactory(CacheEntryFactory previous) {
+            super(previous);
+        }
         @Override
         public CacheEntry newCacheEntry(DynamicMethod method, int token) {
             if (method.isUndefined()) {
                 return new CacheEntry(method, token);
             }
-            return new CacheEntry(new ProfilingDynamicMethod(method), token);
+            CacheEntry delegated = previous.newCacheEntry(method, token);
+            return new CacheEntry(new ProfilingDynamicMethod(delegated.method), delegated.token);
         }
-    };
+    }
 
     private volatile CacheEntryFactory cacheEntryFactory;
 
     // modifies this class only; used to make the Synchronized module synchronized
     public void becomeSynchronized() {
-        cacheEntryFactory = SynchronizedCacheEntryFactory;
+        cacheEntryFactory = new SynchronizedCacheEntryFactory(cacheEntryFactory);
     }
 
     public boolean isSynchronized() {
-        return cacheEntryFactory == SynchronizedCacheEntryFactory;
+        return cacheEntryFactory.hasCacheEntryFactory(SynchronizedCacheEntryFactory.class);
     }
 
     private CacheEntry addToCache(String name, DynamicMethod method, int token) {

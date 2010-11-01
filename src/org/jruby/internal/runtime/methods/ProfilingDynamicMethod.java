@@ -28,28 +28,17 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.exceptions.JumpException.BreakJump;
-import org.jruby.exceptions.JumpException.ReturnJump;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
- * @author headius
+ * A DynamicMethod wrapper that performs timed profiling for each call.
  */
-public class ProfilingDynamicMethod extends DynamicMethod {
-    private final DynamicMethod delegate;
-
+public class ProfilingDynamicMethod extends WrapperMethod {
     public ProfilingDynamicMethod(DynamicMethod delegate) {
-        super(delegate.getImplementationClass(), delegate.getVisibility(), delegate.getCallConfig());
-        this.delegate = delegate;
+        super(delegate);
     }
 
     @Override
@@ -155,85 +144,5 @@ public class ProfilingDynamicMethod extends DynamicMethod {
     @Override
     public DynamicMethod dup() {
         return new ProfilingDynamicMethod(delegate.dup());
-    }
-
-    @Override
-    public void setVisibility(Visibility visibility) {
-        delegate.setVisibility(visibility);
-    }
-
-    @Override
-    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
-        delegate.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik);
-    }
-
-    @Override
-    public void setIsBuiltin(boolean isBuiltin) {
-        delegate.setIsBuiltin(isBuiltin);
-    }
-
-    @Override
-    public void setImplementationClass(RubyModule implClass) {
-        delegate.setImplementationClass(implClass);
-    }
-
-    @Override
-    public void setCallConfig(CallConfiguration callConfig) {
-        delegate.setCallConfig(callConfig);
-    }
-
-    @Override
-    public boolean isNative() {
-        return delegate.isNative();
-    }
-
-    @Override
-    public boolean isCallableFrom(IRubyObject caller, CallType callType) {
-        return delegate.isCallableFrom(caller, callType);
-    }
-
-    @Override
-    public boolean isBuiltin() {
-        return delegate.isBuiltin();
-    }
-
-    @Override
-    public Visibility getVisibility() {
-        return delegate.getVisibility();
-    }
-
-    @Override
-    public long getSerialNumber() {
-        return delegate.getSerialNumber();
-    }
-
-    @Override
-    public DynamicMethod getRealMethod() {
-        return delegate.getRealMethod();
-    }
-
-    @Override
-    protected RubyModule getProtectedClass() {
-        return delegate.getProtectedClass();
-    }
-
-    @Override
-    public NativeCall getNativeCall() {
-        return delegate.getNativeCall();
-    }
-
-    @Override
-    public RubyModule getImplementationClass() {
-        return delegate.getImplementationClass();
-    }
-
-    @Override
-    public CallConfiguration getCallConfig() {
-        return delegate.getCallConfig();
-    }
-
-    @Override
-    public Arity getArity() {
-        return delegate.getArity();
     }
 }
