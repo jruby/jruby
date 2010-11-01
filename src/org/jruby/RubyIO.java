@@ -3502,7 +3502,7 @@ public class RubyIO extends RubyObject {
         }
     }
    
-    @JRubyMethod(required = 1, rest = true, frame = true, meta = true)
+    @JRubyMethod(rest = true, frame = true, meta = true)
     public static IRubyObject popen3(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
 
@@ -3528,7 +3528,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    @JRubyMethod(required = 1, rest = true, frame = true, meta = true)
+    @JRubyMethod(rest = true, frame = true, meta = true)
     public static IRubyObject popen4(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
 
