@@ -1120,7 +1120,9 @@ public class RubyKernel {
             binding.setLine(0);
         }
 
-        return ASTInterpreter.evalWithBinding(context, src, binding);
+        if (bindingGiven) recv = binding.getSelf();
+
+        return ASTInterpreter.evalWithBinding(context, recv, src, binding);
     }
 
     private static abstract class EvalBinding {
