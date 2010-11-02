@@ -619,8 +619,9 @@ public class RubyIO extends RubyObject {
             if (isParagraph) swallow('\n');
             
             if (separator == null && limit < 0) {
-                IRubyObject str = readAll(null);
-                if (((RubyString)str).getByteList().length() == 0) {
+                RubyString str = RubyString.newEmptyString(runtime);
+                readAll(str);
+                if (str.getByteList().length() == 0) {
                     return runtime.getNil();
                 }
                 incrementLineno(runtime, myOpenFile);
@@ -2521,8 +2522,8 @@ public class RubyIO extends RubyObject {
         try {
             myOpenFile.checkReadable(runtime);
             myOpenFile.setReadBuffered();
-
-            return readAll(null);
+            RubyString str = RubyString.newEmptyString(runtime);
+            return readAll(str);
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
@@ -2550,7 +2551,7 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newArgumentError("negative length " + length + " given");
         }
         
-        RubyString str = null;
+        RubyString str = RubyString.newEmptyString(getRuntime());
 
         return readNotAll(context, myOpenFile, length, str);
     }
@@ -2564,7 +2565,9 @@ public class RubyIO extends RubyObject {
             try {
                 myOpenFile.checkReadable(getRuntime());
                 myOpenFile.setReadBuffered();
-                if (!arg1.isNil()) {
+                if (arg1.isNil()) {
+                    str = RubyString.newEmptyString(getRuntime());;
+                } else {
                     str = arg1.convertToString();
                 }
                 return readAll(str);
@@ -2588,7 +2591,7 @@ public class RubyIO extends RubyObject {
         }
 
         if (arg1.isNil()) {
-            str = null;
+            str = RubyString.newEmptyString(getRuntime());;
         } else {
             str = arg1.convertToString();
             str.empty();
@@ -2627,9 +2630,7 @@ public class RubyIO extends RubyObject {
 
                 if (myOpenFile.getMainStream().feof()) {
                     // truncate buffer string to zero, if provided
-                    if (str != null) {
-                        str.setValue(ByteList.EMPTY_BYTELIST.dup());
-                    }
+                    str.empty();
                     return runtime.getNil();
                 }
 
@@ -2643,11 +2644,7 @@ public class RubyIO extends RubyObject {
 //                }
             }
 
-            if (str == null) {
-                str = RubyString.newString(runtime, newBuffer);
-            } else {
-                str.setValue(newBuffer);
-            }
+            str.setValue(newBuffer);
             str.setTaint(true);
 
             return str;
@@ -2703,22 +2700,12 @@ public class RubyIO extends RubyObject {
         } catch (NonReadableChannelException ex) {
             throw runtime.newIOError("not opened for reading");
         }
-        if (str == null) {
-            if (buf == null) {
-                str = RubyString.newEmptyString(runtime);
-            } else {
-                str = RubyString.newString(runtime, buf);
-            }
+        if (buf == null) {
+            str.empty();
         } else {
-            if (buf == null) {
-                str.empty();
-            } else {
-                str.setValue(buf);
-            }
+            str.setValue(buf);
         }
-
         str.setTaint(true);
-
         return str;
     }
 
