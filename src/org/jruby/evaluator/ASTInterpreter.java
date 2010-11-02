@@ -70,18 +70,22 @@ public class ASTInterpreter {
             throw runtime.newSystemStackError("stack level too deep", soe);
         }
     }
+
+    @Deprecated
+    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject src, Binding binding) {
+        return evalWithBinding(context, binding.getSelf(), src, binding);
+    }
     
     /**
      * Evaluate the given string under the specified binding object. If the binding is not a Proc or Binding object
      * (RubyProc or RubyBinding) throw an appropriate type error.
-     * @param context TODO
-     * @param evalString The string containing the text to be evaluated
+     * @param context the thread context for the current thread
+     * @param self the self against which eval was called; used as self in the eval in 1.9 mode
+     * @param src The string containing the text to be evaluated
      * @param binding The binding object under which to perform the evaluation
-     * @param file The filename to use when reporting errors during the evaluation
-     * @param lineNumber is the line number to pretend we are starting from
      * @return An IRubyObject result from the evaluation
      */
-    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject src, Binding binding) {
+    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
         Ruby runtime = src.getRuntime();
         DynamicScope evalScope = binding.getDynamicScope().getEvalScope();
         
@@ -91,11 +95,10 @@ public class ASTInterpreter {
         Frame lastFrame = context.preEvalWithBinding(binding);
         try {
             // Binding provided for scope, use it
-            IRubyObject newSelf = binding.getSelf();
             RubyString source = src.convertToString();
             Node node = runtime.parseEval(source.getByteList(), binding.getFile(), evalScope, binding.getLine());
 
-            return node.interpret(runtime, context, newSelf, binding.getFrame().getBlock());
+            return node.interpret(runtime, context, self, binding.getFrame().getBlock());
         } catch (JumpException.BreakJump bj) {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
         } catch (JumpException.RedoJump rj) {
