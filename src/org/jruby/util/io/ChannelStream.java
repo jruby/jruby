@@ -72,7 +72,7 @@ public class ChannelStream implements Stream, Finalizable {
      * choose a value based on platform(??), but for now I am reducing it along
      * with changes for the "large read" patch from JRUBY-2657.
      */
-    final static int BUFSIZE = 4 * 1024;
+    public final static int BUFSIZE = 4 * 1024;
 
     /**
      * The size at which a single read should turn into a chunkier bulk read.
@@ -160,7 +160,7 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public boolean readDataBuffered() {
-        return reading && buffer.hasRemaining();
+        return reading && (ungotc != -1 || buffer.hasRemaining());
     }
 
     public boolean writeDataBuffered() {
@@ -336,6 +336,11 @@ public class ChannelStream implements Stream, Finalizable {
         return totalRead;
     }
 
+    /**
+     * @deprecated readall do busy loop for the IO which has NONBLOCK bit. You
+     *             should implement the logic by yourself with fread().
+     */
+    @Deprecated
     public synchronized ByteList readall() throws IOException, BadDescriptorException {
         final long fileSize = descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel
                 ? ((FileChannel) descriptor.getChannel()).size() : 0;

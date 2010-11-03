@@ -619,8 +619,8 @@ public class RubyIO extends RubyObject {
             if (isParagraph) swallow('\n');
             
             if (separator == null && limit < 0) {
-                IRubyObject str = readAll(null);
-                if (((RubyString)str).getByteList().length() == 0) {
+                RubyString str = readAll();
+                if (str.getByteList().length() == 0) {
                     return runtime.getNil();
                 }
                 incrementLineno(runtime, myOpenFile);
@@ -661,14 +661,14 @@ public class RubyIO extends RubyObject {
                             } catch (EOFException e) {
                                 n = -1;
                             }
-
-                            if (n == -1) {
-                                if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
-                                    checkDescriptor(runtime, ((ChannelStream) readStream).getDescriptor());
-                                    continue;
-                                } else {
-                                    break;
-                                }
+                            
+                            // CRuby checks ferror(f) and retry getc for
+                            // non-blocking IO.
+                            if (n == 0) {
+                                waitReadable(readStream);
+                                continue;
+                            } else if (n == -1) {
+                                break;
                             }
 
                             update = true;
@@ -772,15 +772,14 @@ public class RubyIO extends RubyObject {
                     n = -1;
                 }
 
-                if (n == -1) {
-                    if (!readStream.isBlocking() && (readStream instanceof ChannelStream)) {
-                        checkDescriptor(runtime, ((ChannelStream)readStream).getDescriptor());
-                        continue;
-                    } else {
-                        break;
-                    }
+                // CRuby checks ferror(f) and retry getc for non-blocking IO.
+                if (n == 0) {
+                    waitReadable(readStream);
+                    continue;
+                } else if (n == -1) {
+                    break;
                 }
-
+                
                 update = true;
             } while (c != delim);
 
@@ -1257,106 +1256,28 @@ public class RubyIO extends RubyObject {
             throw runtime.newErrnoEPIPEError();
         }
     }
-
-    protected boolean waitWritable(ChannelDescriptor descriptor) throws IOException {
-        Channel channel = descriptor.getChannel();
-        if (channel == null || !(channel instanceof SelectableChannel)) {
-            return false;
-        }
-
-        SelectableChannel selectable = (SelectableChannel)channel;
-        Selector selector = null;
-        synchronized (selectable.blockingLock()) {
-            boolean oldBlocking = selectable.isBlocking();
-            try {
-                selector = SelectorFactory.openWithRetryFrom(getRuntime(), SelectorProvider.provider());
-
-                selectable.configureBlocking(false);
-                int real_ops = selectable.validOps() & SelectionKey.OP_WRITE;
-                SelectionKey key = selectable.keyFor(selector);
-
-                if (key == null) {
-                    selectable.register(selector, real_ops, descriptor);
-                } else {
-                    key.interestOps(key.interestOps()|real_ops);
-                }
-
-                while(selector.select() == 0) {}
-
-                for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
-                    SelectionKey skey = (SelectionKey) i.next();
-                    if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_WRITE)) != 0) {
-                        if(skey.attachment() == descriptor) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            } finally {
-                if (selector != null) {
-                    try {
-                        selector.close();
-                    } catch (Exception e) {
-                    }
-                }
-                selectable.configureBlocking(oldBlocking);
-            }
-        }
-    }
-
-    /*
-     * Throw bad file descriptor is we can not read on supplied descriptor.
-     */
-    private void checkDescriptor(Ruby runtime, ChannelDescriptor descriptor) throws IOException {
-        if (!(waitReadable(descriptor))) throw runtime.newIOError("bad file descriptor: " + openFile.getPath());
-    }
-
-    protected boolean waitReadable(ChannelDescriptor descriptor) throws IOException {
-        Channel channel = descriptor.getChannel();
-        if (channel == null || !(channel instanceof SelectableChannel)) {
-            return false;
-        }
-
-        SelectableChannel selectable = (SelectableChannel)channel;
-        Selector selector = null;
-        synchronized (selectable.blockingLock()) {
-            boolean oldBlocking = selectable.isBlocking();
-            try {
-                selector = SelectorFactory.openWithRetryFrom(getRuntime(), SelectorProvider.provider());
-
-                selectable.configureBlocking(false);
-                int real_ops = selectable.validOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
-                SelectionKey key = selectable.keyFor(selector);
-
-                if (key == null) {
-                    selectable.register(selector, real_ops, descriptor);
-                } else {
-                    key.interestOps(key.interestOps()|real_ops);
-                }
-
-                while(selector.select() == 0);
-
-                for (Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
-                    SelectionKey skey = (SelectionKey) i.next();
-                    if ((skey.interestOps() & skey.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0) {
-                        if(skey.attachment() == descriptor) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            } finally {
-                if (selector != null) {
-                    try {
-                        selector.close();
-                    } catch (Exception e) {
-                    }
-                }
-                selectable.configureBlocking(oldBlocking);
-            }
-        }
-    }
     
+    private boolean waitWritable(Stream stream) {
+        Channel ch = stream.getChannel();
+        if (ch instanceof SelectableChannel) {
+            getRuntime().getCurrentContext().getThread().select(ch, this, SelectionKey.OP_WRITE);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean waitReadable(Stream stream) {
+        if (stream.readDataBuffered()) {
+            return true;
+        }
+        Channel ch = stream.getChannel();
+        if (ch instanceof SelectableChannel) {
+            getRuntime().getCurrentContext().getThread().select(ch, this, SelectionKey.OP_READ);
+            return true;
+        }
+        return false;
+    }
+
     protected int fwrite(ByteList buffer) {
         int n, r, l, offset = 0;
         boolean eagain = false;
@@ -1392,7 +1313,7 @@ public class RubyIO extends RubyObject {
                         eagain = true;
                     }
 
-                    if(eagain && waitWritable(writeStream.getDescriptor())) {
+                    if(eagain && waitWritable(writeStream)) {
                         openFile.checkClosed(getRuntime());
                         if(offset >= buffer.length()) {
                             return -1;
@@ -1812,6 +1733,7 @@ public class RubyIO extends RubyObject {
             }
             
             readCheck(myOpenFile.getMainStream());
+            waitReadable(myOpenFile.getMainStream());
             
             myOpenFile.getMainStream().clearerr();
             
@@ -2316,21 +2238,18 @@ public class RubyIO extends RubyObject {
             Stream stream = myOpenFile.getMainStream();
             
             readCheck(stream);
+            waitReadable(stream);
             stream.clearerr();
-        
+            
             int c = myOpenFile.getMainStream().fgetc();
             
             if (c == -1) {
-                // TODO: check for ferror, clear it, and try once more up above readCheck
-//                if (ferror(f)) {
-//                    clearerr(f);
-//                    if (!rb_io_wait_readable(fileno(f)))
-//                        rb_sys_fail(fptr->path);
-//                    goto retry;
-//                }
+                // CRuby checks ferror(f) and retry getc for non-blocking IO
+                // read. We checks readability first if possible so retry should
+                // not be needed I believe.
                 return getRuntime().getNil();
             }
-        
+            
             return getRuntime().newFixnum(c);
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
@@ -2436,6 +2355,7 @@ public class RubyIO extends RubyObject {
         return value;
     }
 
+    // implements io_getpartial in io.c
     private IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean isNonblocking) {
         Ruby runtime = context.getRuntime();
 
@@ -2444,27 +2364,49 @@ public class RubyIO extends RubyObject {
         if (length < 0) throw runtime.newArgumentError("negative length " + length + " given");
 
         // String/Buffer to read it into
-        IRubyObject stringArg = args.length > 1 ? args[1] : RubyString.newEmptyString(runtime);
+        IRubyObject stringArg = args.length > 1 ? args[1] : runtime.getNil();
         RubyString string = stringArg.isNil() ? RubyString.newEmptyString(runtime) : stringArg.convertToString();
-        
-        openFile.checkClosed(runtime);
-
-        if (!(openFile.getMainStream() instanceof ChannelStream)) { // cryptic for the uninitiated...
-            throw runtime.newNotImplementedError("readpartial only works with Nio based handlers");
-        }
+        string.empty();
+        string.setTaint(true);
         
         try {
-            ChannelStream stream = (ChannelStream) openFile.getMainStream();
-            ByteList buf = isNonblocking ? stream.readnonblock(length) : stream.readpartial(length);
+            OpenFile myOpenFile = getOpenFileChecked();
+            myOpenFile.checkReadable(runtime);
+            
+            if (length == 0) {
+                return string;
+            }
+
+            if (!(myOpenFile.getMainStream() instanceof ChannelStream)) { // cryptic for the uninitiated...
+                throw runtime.newNotImplementedError("readpartial only works with Nio based handlers");
+            }
+            ChannelStream stream = (ChannelStream) myOpenFile.getMainStream();
+
+            // We don't check RubyString modification since JRuby doesn't have
+            // GIL. Other threads are free to change anytime.
+
+            ByteList buf = null;
+            if (isNonblocking) {
+                buf = stream.readnonblock(length);
+            } else {
+                while ((buf == null || buf.length() == 0) && !stream.feof()) {
+                    waitReadable(stream);
+                    buf = stream.readpartial(length);
+                }
+            }
             boolean empty = buf == null || buf.length() == 0;
 
-            string.view(empty ? ByteList.EMPTY_BYTELIST : buf);
+            string.view(empty ? ByteList.EMPTY_BYTELIST.dup() : buf);
 
             if (stream.feof() && empty) return runtime.getNil();
 
             return string;
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
+        } catch (InvalidValueException e) {
+            throw getRuntime().newErrnoEINVALError();
+        } catch (PipeException e) {
+            throw getRuntime().newErrnoEPIPEError();
         } catch (EOFException e) {
             throw runtime.newEOFError(e.getMessage());
         } catch (IOException e) {
@@ -2509,20 +2451,16 @@ public class RubyIO extends RubyObject {
             
             // TODO: Ruby locks the string here
             
+            waitReadable(myOpenFile.getMainStream());
             myOpenFile.checkClosed(getRuntime());
-            
-            // TODO: Ruby re-checks that the buffer string hasn't been modified
 
-            // select until read is ready
-            context.getThread().beforeBlockingCall();
-            context.getThread().select(this, SelectionKey.OP_READ);
+            // We don't check RubyString modification since JRuby doesn't have
+            // GIL. Other threads are free to change anytime.
 
             int bytesRead = myOpenFile.getMainStream().getDescriptor().read(len, str.getByteList());
             
             // TODO: Ruby unlocks the string here
-            
-            // TODO: Ruby truncates string to specific size here, but our bytelist should handle this already?
-            
+
             if (bytesRead == -1 || (bytesRead == 0 && len > 0)) {
                 throw getRuntime().newEOFError();
             }
@@ -2541,8 +2479,6 @@ public class RubyIO extends RubyObject {
     	} catch (IOException e) {
             synthesizeSystemCallError(e);
             return null;
-    	} finally {
-            context.getThread().afterBlockingCall();
         }
     }
 
@@ -2585,8 +2521,7 @@ public class RubyIO extends RubyObject {
         try {
             myOpenFile.checkReadable(runtime);
             myOpenFile.setReadBuffered();
-
-            return readAll(context.getRuntime().getNil());
+            return readAll();
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
@@ -2614,8 +2549,8 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newArgumentError("negative length " + length + " given");
         }
         
-        RubyString str = null;
-        
+        RubyString str = RubyString.newEmptyString(getRuntime());
+
         return readNotAll(context, myOpenFile, length, str);
     }
     
@@ -2623,12 +2558,16 @@ public class RubyIO extends RubyObject {
     public IRubyObject read(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         OpenFile myOpenFile = getOpenFileChecked();
         
+        RubyString str = null;
         if (arg0.isNil()) {
             try {
                 myOpenFile.checkReadable(getRuntime());
                 myOpenFile.setReadBuffered();
-
-                return readAll(arg1);
+                if (arg1.isNil()) {
+                    return readAll();
+                } else {
+                    return readAll(arg1.convertToString());
+                }
             } catch (PipeException ex) {
                 throw getRuntime().newErrnoEPIPEError();
             } catch (InvalidValueException ex) {
@@ -2647,100 +2586,81 @@ public class RubyIO extends RubyObject {
         if (length < 0) {
             throw getRuntime().newArgumentError("negative length " + length + " given");
         }
-        
-        RubyString str = null;
-//        ByteList buffer = null;
+
         if (arg1.isNil()) {
-//            buffer = new ByteList(length);
-//            str = RubyString.newString(getRuntime(), buffer);
+            return readNotAll(context, myOpenFile, length);
         } else {
-            str = arg1.convertToString();
-            str.modify(length);
-
-            if (length == 0) {
-                return str;
-            }
-
-//            buffer = str.getByteList();
+            // this readNotAll empties the string for us
+            return readNotAll(context, myOpenFile, length, arg1.convertToString());
         }
-        
-        return readNotAll(context, myOpenFile, length, str);
     }
     
+    // implements latter part of io_read in io.c
     private IRubyObject readNotAll(ThreadContext context, OpenFile myOpenFile, int length, RubyString str) {
         Ruby runtime = context.getRuntime();
-        
+        str.empty();
+
+        try {
+            ByteList newBuffer = readNotAllCommon(context, myOpenFile, length);
+
+            if (emptyBufferOrEOF(newBuffer, myOpenFile)) {
+                return runtime.getNil();
+            }
+
+            str.setValue(newBuffer);
+            str.setTaint(true);
+
+            return str;
+        } catch (EOFException ex) {
+            throw runtime.newEOFError();
+        } catch (IOException ex) {
+            throw runtime.newIOErrorFromException(ex);
+        } catch (BadDescriptorException ex) {
+            throw runtime.newErrnoEBADFError();
+        }
+    }
+
+    // implements latter part of io_read in io.c
+    private IRubyObject readNotAll(ThreadContext context, OpenFile myOpenFile, int length) {
+        Ruby runtime = context.getRuntime();
+
+        try {
+            ByteList newBuffer = readNotAllCommon(context, myOpenFile, length);
+
+            if (emptyBufferOrEOF(newBuffer, myOpenFile)) {
+                return runtime.getNil();
+            }
+
+            RubyString str = RubyString.newString(runtime, newBuffer);
+            str.setTaint(true);
+
+            return str;
+        } catch (EOFException ex) {
+            throw runtime.newEOFError();
+        } catch (IOException ex) {
+            throw runtime.newIOErrorFromException(ex);
+        } catch (BadDescriptorException ex) {
+            throw runtime.newErrnoEBADFError();
+        }
+    }
+
+    private ByteList readNotAllCommon(ThreadContext context, OpenFile myOpenFile, int length) {
+        Ruby runtime = context.getRuntime();
+
         try {
             myOpenFile.checkReadable(runtime);
             myOpenFile.setReadBuffered();
 
             if (myOpenFile.getMainStream().feof()) {
-                return runtime.getNil();
+                return null;
             }
-
-            // TODO: Ruby locks the string here
 
             // READ_CHECK from MRI io.c
             readCheck(myOpenFile.getMainStream());
 
-            // TODO: check buffer length again?
-    //        if (RSTRING(str)->len != len) {
-    //            rb_raise(rb_eRuntimeError, "buffer string modified");
-    //        }
+            ByteList newBuffer = fread(length);
 
-            // TODO: read into buffer using all the fread logic
-    //        int read = openFile.getMainStream().fread(buffer);
-            ByteList newBuffer = myOpenFile.getMainStream().fread(length);
-
-            // TODO: Ruby unlocks the string here
-
-            // TODO: change this to check number read into buffer once that's working
-    //        if (read == 0) {
-            
-            if (newBuffer == null || newBuffer.length() == 0) {
-                if (myOpenFile.getMainStream() == null) {
-                    return runtime.getNil();
-                }
-
-                if (myOpenFile.getMainStream().feof()) {
-                    // truncate buffer string to zero, if provided
-                    if (str != null) {
-                        str.setValue(ByteList.EMPTY_BYTELIST.dup());
-                    }
-                
-                    return runtime.getNil();
-                }
-
-                // Removed while working on JRUBY-2386, since fixes for that
-                // modified EOF logic such that this check is not really valid.
-                // We expect that an EOFException will be thrown now in EOF
-                // cases.
-//                if (length > 0) {
-//                    // I think this is only partly correct; sys fail based on errno in Ruby
-//                    throw getRuntime().newEOFError();
-//                }
-            }
-
-
-            // TODO: Ruby truncates string to specific size here, but our bytelist should handle this already?
-
-            // FIXME: I don't like the null checks here
-            if (str == null) {
-                if (newBuffer == null) {
-                    str = RubyString.newEmptyString(runtime);
-                } else {
-                    str = RubyString.newString(runtime, newBuffer);
-                }
-            } else {
-                if (newBuffer == null) {
-                    str.empty();
-                } else {
-                    str.setValue(newBuffer);
-                }
-            }
-            str.setTaint(true);
-
-            return str;
+            return newBuffer;
         } catch (EOFException ex) {
             throw runtime.newEOFError();
         } catch (PipeException ex) {
@@ -2753,133 +2673,131 @@ public class RubyIO extends RubyObject {
             throw runtime.newErrnoEBADFError();
         }
     }
+
+    protected static boolean emptyBufferOrEOF(ByteList buffer, OpenFile myOpenFile) throws BadDescriptorException, IOException {
+        if (buffer == null) {
+            return true;
+        } else if (buffer.length() == 0) {
+            if (myOpenFile.getMainStream() == null) {
+                return true;
+            }
+
+            if (myOpenFile.getMainStream().feof()) {
+                return true;
+            }
+        }
+        return false;
+    }
     
-    protected IRubyObject readAll(IRubyObject buffer) throws BadDescriptorException, EOFException, IOException {
+    // implements read_all() in io.c
+    protected RubyString readAll(RubyString str) throws BadDescriptorException, EOFException, IOException {
         Ruby runtime = getRuntime();
+
         // TODO: handle writing into original buffer better
+        ByteList buf = readAllCommon(runtime);
         
-        RubyString str = null;
-        if (buffer instanceof RubyString) {
-            str = (RubyString)buffer;
+        if (buf == null) {
+            str.empty();
+        } else {
+            str.setValue(buf);
         }
-        
-        // TODO: ruby locks the string here
-        
-        // READ_CHECK from MRI io.c
-        if (openFile.getMainStream().readDataBuffered()) {
-            openFile.checkClosed(runtime);
+        str.setTaint(true);
+        return str;
+    }
+
+    // implements read_all() in io.c
+    protected RubyString readAll() throws BadDescriptorException, EOFException, IOException {
+        Ruby runtime = getRuntime();
+
+        // TODO: handle writing into original buffer better
+        ByteList buf = readAllCommon(runtime);
+
+        RubyString str;
+        if (buf == null) {
+            str = RubyString.newEmptyString(runtime);
+        } else {
+            str = RubyString.newString(runtime, buf);
         }
-        
+        str.setTaint(true);
+        return str;
+    }
+
+    protected ByteList readAllCommon(Ruby runtime) throws BadDescriptorException, EOFException, IOException {
+        ByteList buf = null;
+        ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
         try {
-            ByteList newBuffer = openFile.getMainStream().readall();
-
-            // TODO same zero-length checks as file above
-
-            if (str == null) {
-                if (newBuffer == null) {
-                    str = RubyString.newEmptyString(runtime);
-                } else {
-                    str = RubyString.newString(runtime, newBuffer);
-                }
+            // ChannelStream#readall knows what size should be allocated at first. Just use it.
+            if (descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel) {
+                buf = openFile.getMainStream().readall();
+            } else if (descriptor == null) {
+                buf = null;
             } else {
-                if (newBuffer == null) {
-                    str.empty();
-                } else {
-                    str.setValue(newBuffer);
+                try {
+                    while (true) {
+                        // TODO: ruby locks the string here
+                        readCheck(openFile.getMainStream());
+                        openFile.checkReadable(runtime);
+                        ByteList read = fread(ChannelStream.BUFSIZE);
+                        // TODO: Ruby unlocks the string here
+                        if (read.length() == 0) {
+                            break;
+                        }
+                        if (buf == null) {
+                            buf = read;
+                        } else {
+                            buf.append(read);
+                        }
+                    }
+                } catch (PipeException ex) {
+                    throw runtime.newErrnoEPIPEError();
+                } catch (InvalidValueException ex) {
+                    throw runtime.newErrnoEINVALError();
                 }
             }
         } catch (NonReadableChannelException ex) {
             throw runtime.newIOError("not opened for reading");
         }
 
-        str.taint(runtime.getCurrentContext());
+        return buf;
+    }
 
-        return str;
-//        long bytes = 0;
-//        long n;
-//
-//        if (siz == 0) siz = BUFSIZ;
-//        if (NIL_P(str)) {
-//            str = rb_str_new(0, siz);
-//        }
-//        else {
-//            rb_str_resize(str, siz);
-//        }
-//        for (;;) {
-//            rb_str_locktmp(str);
-//            READ_CHECK(fptr->f);
-//            n = io_fread(RSTRING(str)->ptr+bytes, siz-bytes, fptr);
-//            rb_str_unlocktmp(str);
-//            if (n == 0 && bytes == 0) {
-//                if (!fptr->f) break;
-//                if (feof(fptr->f)) break;
-//                if (!ferror(fptr->f)) break;
-//                rb_sys_fail(fptr->path);
-//            }
-//            bytes += n;
-//            if (bytes < siz) break;
-//            siz += BUFSIZ;
-//            rb_str_resize(str, siz);
-//        }
-//        if (bytes != siz) rb_str_resize(str, bytes);
-//        OBJ_TAINT(str);
-//
-//        return str;
+    // implements io_fread in io.c
+    private ByteList fread(int length) throws IOException, BadDescriptorException {
+        Stream stream = openFile.getMainStream();
+        ByteList buf = stream.fread(length);
+        if (buf != null && buf.length() == length) {
+            return buf;
+        }
+        int rest = length;
+        while (rest > 0) {
+            waitReadable(stream);
+            openFile.checkClosed(getRuntime());
+            stream.clearerr();
+            ByteList newBuffer = stream.fread(rest);
+            if (newBuffer == null) {
+                // means EOF
+                break;
+            }
+            int len = newBuffer.length();
+            if (len == 0) {
+                // TODO: warn?
+                // rb_warning("nonblocking IO#read is obsolete; use IO#readpartial or IO#sysread")
+                continue;
+            }
+            if (buf == null) {
+                buf = newBuffer;
+            } else {
+                buf.append(newBuffer);
+            }
+            rest -= len;
+        }
+        if (buf == null) {
+            return ByteList.EMPTY_BYTELIST.dup();
+        } else {
+            return buf;
+        }
     }
     
-    // TODO: There's a lot of complexity here due to error handling and
-    // nonblocking IO; much of this goes away, but for now I'm just
-    // having read call ChannelStream.fread directly.
-//    protected int fread(int len, ByteList buffer) {
-//        long n = len;
-//        int c;
-//        int saved_errno;
-//
-//        while (n > 0) {
-//            c = read_buffered_data(ptr, n, fptr->f);
-//            if (c < 0) goto eof;
-//            if (c > 0) {
-//                ptr += c;
-//                if ((n -= c) <= 0) break;
-//            }
-//            rb_thread_wait_fd(fileno(fptr->f));
-//            rb_io_check_closed(fptr);
-//            clearerr(fptr->f);
-//            TRAP_BEG;
-//            c = getc(fptr->f);
-//            TRAP_END;
-//            if (c == EOF) {
-//              eof:
-//                if (ferror(fptr->f)) {
-//                    switch (errno) {
-//                      case EINTR:
-//    #if defined(ERESTART)
-//                      case ERESTART:
-//    #endif
-//                        clearerr(fptr->f);
-//                        continue;
-//                      case EAGAIN:
-//    #if defined(EWOULDBLOCK) && EWOULDBLOCK != EAGAIN
-//                      case EWOULDBLOCK:
-//    #endif
-//                        if (len > n) {
-//                            clearerr(fptr->f);
-//                        }
-//                        saved_errno = errno;
-//                        rb_warning("nonblocking IO#read is obsolete; use IO#readpartial or IO#sysread");
-//                        errno = saved_errno;
-//                    }
-//                    if (len == n) return 0;
-//                }
-//                break;
-//            }
-//            *ptr++ = c;
-//            n--;
-//        }
-//        return len - n;
-//        
-//    }
-
     /** Read a byte. On EOF throw EOFError.
      * 
      */
@@ -2910,19 +2828,13 @@ public class RubyIO extends RubyObject {
             while (true) {
                 myOpenFile.checkReadable(runtime);
                 myOpenFile.setReadBuffered();
-
-                // TODO: READ_CHECK from MRI
+                waitReadable(myOpenFile.getMainStream());
                 
                 int c = myOpenFile.getMainStream().fgetc();
                 
+                // CRuby checks ferror(f) and retry getc for
+                // non-blocking IO.
                 if (c == -1) {
-                    // TODO: check for error, clear it, and wait until readable before trying once more
-//                    if (ferror(f)) {
-//                        clearerr(f);
-//                        if (!rb_io_wait_readable(fileno(f)))
-//                            rb_sys_fail(fptr->path);
-//                        continue;
-//                    }
                     break;
                 }
                 
@@ -2930,8 +2842,6 @@ public class RubyIO extends RubyObject {
                 block.yield(context, getRuntime().newFixnum(c));
             }
 
-            // TODO: one more check for error
-//            if (ferror(f)) rb_sys_fail(fptr->path);
             return this;
         } catch (PipeException ex) {
             throw runtime.newErrnoEPIPEError();
@@ -3907,10 +3817,7 @@ public class RubyIO extends RubyObject {
         return ChannelDescriptor.getNewFileno();
     }
 
-    /**
-     * @deprecated
-     * @return
-     */
+    @Deprecated
     public boolean writeDataBuffered() {
         return openFile.getMainStream().writeDataBuffered();
     }
