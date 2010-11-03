@@ -215,9 +215,8 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
       value = sock.write_nonblock(BIG_CHUNK)
     }
     s = connect(server)
-    wait_for_sleep_and_terminate(t) do
-      t.alive?.should == false
-    end
+    wait_for_sleep_and_terminate(t)
+    t.alive?.should == false
     value.should > 0
   end
 
@@ -235,7 +234,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
 
   def wait_for_sleep_and_terminate(server_thread)
     wait_for_sleep(server_thread)
-    yield
+    yield if block_given?
     wait_for_terminate(server_thread)
   end
 
