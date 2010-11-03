@@ -7,6 +7,7 @@
 require 'rubygems/version'
 require 'rubygems/requirement'
 require 'rubygems/platform'
+require 'rubygems/maven_gemify'
 
 # :stopdoc:
 class Date; end # for ruby_code if date.rb wasn't required
