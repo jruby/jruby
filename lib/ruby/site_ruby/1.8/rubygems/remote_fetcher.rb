@@ -4,6 +4,7 @@ require 'time'
 require 'uri'
 
 require 'rubygems'
+require 'rubygems/maven_gemify'
 
 ##
 # RemoteFetcher handles the details of fetching gems and gem information from
@@ -86,6 +87,11 @@ class Gem::RemoteFetcher
 
     FileUtils.mkdir_p cache_dir rescue nil unless File.exist? cache_dir
 
+    # if it's a maven artifact, use maven to fetch it
+    if Gem::Specification.maven_name? spec.name
+      return download_maven(spec, local_gem_path)
+    end
+    
    # Always escape URI's to deal with potential spaces and such
     unless URI::Generic === source_uri
       source_uri = URI.parse(URI.const_defined?(:DEFAULT_PARSER) ?
