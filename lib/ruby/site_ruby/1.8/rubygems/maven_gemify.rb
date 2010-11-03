@@ -105,6 +105,8 @@ if defined?(JRUBY_VERSION)
       private
       
       def self.create_maven
+        init
+        
         class_world = ClassWorld.new("plexus.core", java.lang.Thread.currentThread().getContextClassLoader());
         config = DefaultContainerConfiguration.new
         config.set_class_world class_world
@@ -129,6 +131,8 @@ if defined?(JRUBY_VERSION)
       end
       
       def self.execute(goal, gemname, version, props = {})
+        init
+        
         r = DefaultMavenExecutionRequest.new
         r.set_show_errors true
         r.user_properties.put("gemify.skipDependencies", "true")
@@ -155,6 +159,8 @@ if defined?(JRUBY_VERSION)
       public
       
       def self.get_versions(gemname)
+        init
+        
         #        p "versions"
         #        p gemname
         result = execute("#{BASE_GOAL}:versions", gemname, nil)
@@ -163,6 +169,8 @@ if defined?(JRUBY_VERSION)
       end
       
       def self.generate_spec(gemname, version)
+        init
+        
         #     puts "generate spec"
         #     p gemname
         #     p version
@@ -179,6 +187,7 @@ if defined?(JRUBY_VERSION)
       end
       
       def self.generate_gem(gemname, version)
+        init
         #    p "generate gem"
         #    p gemname
         #    p version.to_s
@@ -197,6 +206,4 @@ if defined?(JRUBY_VERSION)
       end
     end
   end
-  
-  Gem::Maven::Gemify.init
 end
