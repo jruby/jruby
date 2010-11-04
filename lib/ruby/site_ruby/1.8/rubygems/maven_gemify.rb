@@ -45,10 +45,9 @@ if defined?(JRUBY_VERSION)
     class Gemify
       BASE_GOAL = "de.saumya.mojo:gemify-maven-plugin:0.22.0"
       
-      def self.init
-        return if @initialized
-        
-        @initialized = true
+      private
+      
+      def self.create_maven
         bin = nil
         if ENV['M2_HOME'] # use M2_HOME if set
           bin = File.join(ENV['M2_HOME'], "bin")
@@ -72,14 +71,17 @@ if defined?(JRUBY_VERSION)
           end
         end
         bin = "/usr/share/maven2/bin" if bin.nil? # OK let's try debian default
-        if File.exists?(bin) &&
-          Dir.glob(File.join(bin, "..", "lib", "maven-core-3.*jar")).size == 0
-          begin
-            gem 'ruby-maven', ">=0"
-            bin = File.dirname(Gem.bin_path('ruby-maven', "rmvn"))
-          rescue LoadError
-            bin = nil
+        if File.exists?(bin)
+          if Dir.glob(File.join(bin, "..", "lib", "maven-core-3.*jar")).size == 0
+            begin
+              gem 'ruby-maven', ">=0"
+              bin = File.dirname(Gem.bin_path('ruby-maven', "rmvn"))
+            rescue LoadError
+              bin = nil
+            end
           end
+        else
+          bin = nil
         end
         raise "can not find maven3 installation. install ruby-maven with\n\n\tjruby -S gem install ruby-maven --pre\n\n" if bin.nil?
         warn "Installing from Maven using install at #{bin}"
@@ -100,13 +102,7 @@ if defined?(JRUBY_VERSION)
         java_import "org.codehaus.plexus.DefaultPlexusContainer"
         java_import "org.apache.maven.Maven"
         java_import "org.apache.maven.execution.DefaultMavenExecutionRequest"
-      end
-      
-      private
-      
-      def self.create_maven
-        init
-        
+
         class_world = ClassWorld.new("plexus.core", java.lang.Thread.currentThread().getContextClassLoader());
         config = DefaultContainerConfiguration.new
         config.set_class_world class_world
@@ -115,7 +111,7 @@ if defined?(JRUBY_VERSION)
         container.lookup(Maven.java_class)
       end
       
-      def self.maven
+      def self.maven_get
         @maven ||= create_maven
       end
       
@@ -131,8 +127,7 @@ if defined?(JRUBY_VERSION)
       end
       
       def self.execute(goal, gemname, version, props = {})
-        init
-        
+        maven = maven_get
         r = DefaultMavenExecutionRequest.new
         r.set_show_errors true
         r.user_properties.put("gemify.skipDependencies", "true")
@@ -159,8 +154,6 @@ if defined?(JRUBY_VERSION)
       public
       
       def self.get_versions(gemname)
-        init
-        
         #        p "versions"
         #        p gemname
         result = execute("#{BASE_GOAL}:versions", gemname, nil)
@@ -168,9 +161,7 @@ if defined?(JRUBY_VERSION)
         result.gsub(/\n/, '').sub(/.*\[/, "").sub(/\]/, '').gsub(/ /, '').split(',')
       end
       
-      def self.generate_spec(gemname, version)
-        init
-        
+      def self.generate_spec(gemname, version)        
         #     puts "generate spec"
         #     p gemname
         #     p version
@@ -187,7 +178,6 @@ if defined?(JRUBY_VERSION)
       end
       
       def self.generate_gem(gemname, version)
-        init
         #    p "generate gem"
         #    p gemname
         #    p version.to_s
