@@ -189,18 +189,6 @@ do
      -C|-e|-I|-S) ruby_args="${ruby_args} $1 $2"; shift ;;
      # Match same switches with argument stuck together
      -e*|-I*|-S*) ruby_args="${ruby_args} $1" ;;
-     # Run with the instrumented profiler: http://jiprof.sourceforge.net/
-     --profile) 
-       PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile-ruby.properties"
-       JRUBY_OPTS="${JRUBY_OPTS} -X+C"
-       VERIFY_JRUBY="yes"
-       ;;
-     # Run with the instrumented profiler: http://jiprof.sourceforge.net/
-     --profile-all) 
-       PROFILE_ARGS="-javaagent:$JRUBY_HOME/lib/profile.jar -Dprofile.properties=$JRUBY_HOME/lib/profile-all.properties"
-       JRUBY_OPTS="${JRUBY_OPTS} -X+C"
-       VERIFY_JRUBY="yes"
-       ;;
      # Run with JMX management enabled
      --manage)
         java_args="${java_args} -Dcom.sun.management.jmxremote"
