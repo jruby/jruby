@@ -35,8 +35,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.IncludedModuleWrapper;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import org.jruby.Ruby;
@@ -49,6 +53,8 @@ import org.jruby.RubyThread;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
 import org.jruby.parser.BlockStaticScope;
@@ -100,6 +106,9 @@ public final class ThreadContext {
     
     // Line where current executing unit is being evaluated
     private int line = 0;
+
+    // The profile data for this thread (TODO: don't create if we're not profiling)
+    private final ProfileData profileData = new ProfileData();
 
     // In certain places, like grep, we don't use real frames for the
     // call blocks. This has the effect of not setting the backref in
@@ -1484,5 +1493,185 @@ public final class ThreadContext {
         Frame frame = getPreviousFrame();
         Frame current = getCurrentFrame();
         return new Binding(self, frame, frame.getVisibility(), getPreviousRubyClass(), getCurrentScope(), current.getFile(), current.getLine());
+    }
+
+    /**
+     * Get the profile data for this thread (ThreadContext).
+     *
+     * @return the thread's profile data
+     */
+    public ProfileData getProfileData() {
+        return profileData;
+    }
+
+    public int profileEnter(int nextMethod) {
+        return profileData.profileEnter(nextMethod);
+    }
+
+    public int profileExit(int nextMethod) {
+        return profileData.profileExit(nextMethod);
+    }
+
+    public static class ProfileData {
+        private static final int SERIAL_OFFSET = 0;
+        private static final int SELFTIME_OFFSET = 1;
+        private static final int COUNT_OFFSET = 2;
+        private static final int AGGREGATETIME_OFFSET = 3;
+        
+        /**
+         * Begin profiling a new method, aggregating the current time diff in the previous
+         * method's profile slot.
+         *
+         * @param nextMethod the serial number of the next method to profile
+         * @return the serial number of the previous method being profiled
+         */
+        public int profileEnter(int nextMethod) {
+            ensureProfileSize(Math.max(current, nextMethod));
+            profileCounts[nextMethod]++;
+            return aggregateProfileTime(nextMethod, true);
+        }
+
+        /**
+         * Fall back to previously profiled method after current method has returned.
+         *
+         * @param nextMethod the serial number of the next method to profile
+         * @return the serial number of the previous method being profiled
+         */
+        public int profileExit(int nextMethod) {
+            ensureProfileSize(Math.max(current, nextMethod));
+            return aggregateProfileTime(nextMethod, false);
+        }
+
+        private int aggregateProfileTime(int newMethod, boolean entry) {
+            long now = System.nanoTime();
+            if (entry) {
+                profileRecursions[newMethod]++;
+                if (profileRecursions[newMethod] == 1) {
+                    profileAggregateStarts[newMethod] = now;
+                }
+            } else {
+                profileRecursions[current]--;
+                if (profileRecursions[current] == 0) {
+                    profileAggregateTimes[current] += (now - profileAggregateStarts[current]);
+                }
+            }
+
+            if (current != 0) {
+                profileSelfTimes[current] += now - lastTime;
+            }
+            lastTime = now;
+            int oldCurrent = current;
+            current = newMethod;
+            return oldCurrent;
+        }
+
+        /**
+         * Ensure the profile times array is large enough to support the given method's
+         * serial number.
+         *
+         * @param method the profiled method's serial number
+         */
+        private void ensureProfileSize(int method) {
+            if (profileSelfTimes.length <= method) {
+                long[] newProfileSelfTimes = new long[method * 2 + 1];
+                System.arraycopy(profileSelfTimes, 0, newProfileSelfTimes, 0, profileSelfTimes.length);
+                profileSelfTimes = newProfileSelfTimes;
+
+                long[] newProfileAggregateTimes = new long[method * 2 + 1];
+                System.arraycopy(profileAggregateTimes, 0, newProfileAggregateTimes, 0, profileAggregateTimes.length);
+                profileAggregateTimes = newProfileAggregateTimes;
+
+                long[] newProfileAggregateStarts = new long[method * 2 + 1];
+                System.arraycopy(profileAggregateStarts, 0, newProfileAggregateStarts, 0, profileAggregateStarts.length);
+                profileAggregateStarts = newProfileAggregateStarts;
+
+                int[] newProfileCounts = new int[method * 2 + 1];
+                System.arraycopy(profileCounts, 0, newProfileCounts, 0, profileCounts.length);
+                profileCounts = newProfileCounts;
+                
+                int[] newProfileRecursions = new int[method * 2 + 1];
+                System.arraycopy(profileRecursions, 0, newProfileRecursions, 0, profileRecursions.length);
+                profileRecursions = newProfileRecursions;
+            }
+        }
+        
+        /**
+         * Process the profile data for a given thread (context).
+         *
+         * @param context the thread (context) for which to dump profile data
+         */
+        public void printProfile(ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out) {
+            long[][] tuples = new long[profileSelfTimes.length][];
+            for (int i = 0; i < profileSelfTimes.length; i++) {
+                tuples[i] = new long[] {i, profileSelfTimes[i], profileCounts[i], profileAggregateTimes[i]};
+            }
+            Arrays.sort(tuples, new Comparator<long[]>() {
+                public int compare(long[] o1, long[] o2) {
+                    return ((Long)o2[SELFTIME_OFFSET]).compareTo(o1[SELFTIME_OFFSET]);
+                }
+            });
+            int longestName = 0;
+            for (int i = 0; i < profiledNames.length; i++) {
+                String name = profiledNames[i];
+                if (name == null) continue;
+                DynamicMethod method = profiledMethods[i];
+                String displayName = moduleHashMethod(method.getImplementationClass(), name);
+                longestName = Math.max(longestName, displayName.length());
+            }
+            out.println("    #            calls             self        aggregate  method");
+            out.println("----------------------------------------------------------------");
+            int lines = 0;
+            for (long[] tuple : tuples) {
+                if (tuple[SELFTIME_OFFSET] == 0) break; // if we start hitting zeros, bail out
+                
+                lines++;
+                int index = (int)tuple[SERIAL_OFFSET];
+                String name = profiledNames[index];
+                DynamicMethod method = profiledMethods[index];
+                String displayName = moduleHashMethod(method.getImplementationClass(), name);
+
+                pad(out, 5, Integer.toString(lines));
+                out.print("  ");
+                pad(out, 15, Long.toString(tuple[COUNT_OFFSET]));
+                out.print("  ");
+                pad(out, 15, nanoString(tuple[SELFTIME_OFFSET]));
+                out.print("  ");
+                pad(out, 15, nanoString(tuple[AGGREGATETIME_OFFSET]));
+                out.print("  ");
+                out.println(displayName);
+                
+                if (lines == 50) break;
+            }
+        }
+
+        private void pad(PrintStream out, int size, String body) {
+            pad(out, size, body, true);
+        }
+
+        private void pad(PrintStream out, int size, String body, boolean front) {
+            if (front) for (int i = 0; i < size - body.length(); i++) out.print(' ');
+            out.print(body);
+            if (!front) for (int i = 0; i < size - body.length(); i++) out.print(' ');
+        }
+
+        private String nanoString(long nanoTime) {
+            return Double.toString((double)nanoTime / 1000000000.0) + 's';
+        }
+
+        private String moduleHashMethod(RubyModule module, String name) {
+            if (module.isSingleton()) {
+                return ((RubyClass)module).getRealClass().getName() + "(singleton)#" + name;
+            } else {
+                return module.getName() + "#" + name;
+            }
+        }
+
+        private long[] profileSelfTimes = new long[0];
+        private long[] profileAggregateTimes = new long[0];
+        private long[] profileAggregateStarts = new long[0];
+        private int[] profileCounts = new int[0];
+        private int[] profileRecursions = new int[0];
+        private int current;
+        private long lastTime = 0;
     }
 }

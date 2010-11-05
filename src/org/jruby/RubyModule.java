@@ -75,6 +75,7 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.internal.runtime.methods.MethodMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.internal.runtime.methods.ProfilingDynamicMethod;
 import org.jruby.internal.runtime.methods.SimpleCallbackMethod;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
@@ -217,10 +218,15 @@ public class RubyModule extends RubyObject {
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
         generation = new Generation();
+        if (runtime.getInstanceConfig().isProfiling()) {
+            cacheEntryFactory = ProfilingCacheEntryFactory;
+        } else {
+            cacheEntryFactory = NormalCacheEntryFactory;
+        }
     }
 
     /** separate path for MetaClass construction
-     * 
+     *
      */
     protected RubyModule(Ruby runtime, RubyClass metaClass, Generation generation, boolean objectSpace) {
         super(runtime, metaClass, objectSpace);
@@ -229,6 +235,11 @@ public class RubyModule extends RubyObject {
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
         this.generation = generation;
+        if (runtime.getInstanceConfig().isProfiling()) {
+            cacheEntryFactory = ProfilingCacheEntryFactory;
+        } else {
+            cacheEntryFactory = NormalCacheEntryFactory;
+        }
     }
     
     /** used by MODULE_ALLOCATOR and RubyClass constructors
@@ -359,6 +370,8 @@ public class RubyModule extends RubyObject {
     // functionality here should be made there as well 
     private void putMethod(String name, DynamicMethod method) {
         getMethodsForWrite().put(name, method);
+
+        getRuntime().addProfiledMethod(name, method);
     }
 
     /**
@@ -830,6 +843,8 @@ public class RubyModule extends RubyObject {
      */
     public void addMethodAtBootTimeOnly(String name, DynamicMethod method) {
         getMethodsForWrite().put(name, method);
+
+        getRuntime().addProfiledMethod(name, method);
     }
 
     public void removeMethod(ThreadContext context, String name) {
@@ -937,7 +952,17 @@ public class RubyModule extends RubyObject {
         }
     };
 
-    private volatile CacheEntryFactory cacheEntryFactory = NormalCacheEntryFactory;
+    protected static final CacheEntryFactory ProfilingCacheEntryFactory = new CacheEntryFactory() {
+        @Override
+        public CacheEntry newCacheEntry(DynamicMethod method, Object token) {
+            if (method.isUndefined()) {
+                return new CacheEntry(method, token);
+            }
+            return new CacheEntry(new ProfilingDynamicMethod(method), token);
+        }
+    };
+
+    private volatile CacheEntryFactory cacheEntryFactory;
 
     // modifies this class only; used to make the Synchronized module synchronized
     public void becomeSynchronized() {
