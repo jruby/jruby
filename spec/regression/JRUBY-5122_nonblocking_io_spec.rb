@@ -195,16 +195,18 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     t = Thread.new {
       sock = accept(server)
       begin
+        value = 1
         sock.write(BIG_CHUNK) # this blocks; [ruby-dev:26405]
       rescue RuntimeError
-        value = true
+        value = 2
       end
     }
     s = connect(server)
+    Thread.pass until value == 1
     wait_for_sleep_and_terminate(t) do
       t.raise # help thread termination
     end
-    value.should == true
+    value.should == 2
   end
 
   it "should not block for write_nonblock" do
