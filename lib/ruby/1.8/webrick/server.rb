@@ -146,7 +146,8 @@ module WEBrick
       begin
         sock = svr.accept
         sock.sync = true
-        Utils::set_non_blocking(sock)
+        # JRUBY-5122: It is a one-off change for jruby-1_5.
+        # Utils::set_non_blocking(sock)
         Utils::set_close_on_exec(sock)
       rescue Errno::ECONNRESET, Errno::ECONNABORTED, Errno::EPROTO => ex
         # TCP connection was established but RST segment was sent
