@@ -479,11 +479,11 @@ class TestIO < Test::Unit::TestCase
   unless WINDOWS
     def test_sh_used_appropriately
       # should not use sh
-      p, o, i, e = IO.popen4("/bin/ps -a -x -f")
-      assert_match p.to_s, i.read.lines.grep(/\/bin\/ps -a -x -f/).first
+      p, o, i, e = IO.popen4("/bin/ps -a -f")
+      assert_match p.to_s, i.read.lines.grep(/\/bin\/ps/).first
       
       # should use sh
-      p, o, i, e = IO.popen4("/bin/ps -a -x -f | grep [/]bin/ps'")
+      p, o, i, e = IO.popen4("/bin/ps -a -f | grep ps'")
       assert_no_match Regexp.new(p.to_s), i.read.grep(/\/bin\/ps/).first
     end
   end
