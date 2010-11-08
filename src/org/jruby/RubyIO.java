@@ -3347,16 +3347,10 @@ public class RubyIO extends RubyObject {
         IRubyObject cmdObj = null;
         if (Platform.IS_WINDOWS) {
             String[] tokens = args[0].convertToString().toString().split(" ", 2);
-            if (tokens.length > 1) {
-                cmdObj = new RubyString(runtime, (RubyClass) recv,
-                        (tokens[0].replace('/', '\\') + ' ' + tokens[1]));
-            }
-            else {
-                cmdObj = new RubyString(runtime, (RubyClass) recv,
-                        (tokens[0].replace('/','\\')));
-            }
-        }
-        else {
+            String commandString = tokens[0].replace('/', '\\') +
+                    (tokens.length > 1 ? ' ' + tokens[1] : "");
+            cmdObj = runtime.newString(commandString);
+        } else {
             cmdObj = args[0].convertToString();
         }
         runtime.checkSafeString(cmdObj);
@@ -3375,7 +3369,7 @@ public class RubyIO extends RubyObject {
             }
 
             ModeFlags modes = new ModeFlags(mode);
-        
+
             ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, modes);
 
             // Yes, this is gross. java.lang.Process does not appear to be guaranteed
