@@ -345,19 +345,7 @@ public class JavaInterfaceTemplate {
 
     @JRubyMethod(name = "[]", rest = true, backtrace = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        // array-of-interface-type creation/identity
-        if (args.length == 0) {
-            // keep this variant for kind_of? testing
-            return JavaUtilities.get_proxy_class(self,
-                    ((JavaClass)RuntimeHelpers.invoke(context, self, "java_class")).array_class());
-        } else {
-            // array creation should use this variant
-            RubyClass arrayJavaProxyCreator = context.getRuntime().getClass("ArrayJavaProxyCreator");
-            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-            System.arraycopy(args, 0, newArgs, 1, args.length);
-            newArgs[0] = RuntimeHelpers.invoke(context, self, "java_class");
-            return RuntimeHelpers.invoke(context, arrayJavaProxyCreator, "new", newArgs);
-        }
+        return JavaProxy.op_aref(context, self, args);
     }
 
     @JRubyMethod(rest = true, backtrace = true)

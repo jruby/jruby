@@ -99,6 +99,7 @@ public class JavaSupport {
     private RubyClass javaClassClass;
     private RubyClass javaArrayClass;
     private RubyClass javaProxyClass;
+    private RubyClass arrayJavaProxyCreatorClass;
     private RubyClass javaFieldClass;
     private RubyClass javaMethodClass;
     private RubyClass javaConstructorClass;
@@ -289,6 +290,12 @@ public class JavaSupport {
         RubyClass clazz;
         if ((clazz = javaProxyClass) != null) return clazz;
         return javaProxyClass = runtime.fastGetClass("JavaProxy");
+    }
+
+    public RubyClass getArrayJavaProxyCreatorClass() {
+        RubyClass clazz;
+        if ((clazz = arrayJavaProxyCreatorClass) != null) return clazz;
+        return arrayJavaProxyCreatorClass = runtime.fastGetClass("ArrayJavaProxyCreator");
     }
     
     public RubyClass getConcreteProxyClass() {

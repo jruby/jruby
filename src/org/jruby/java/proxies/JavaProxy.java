@@ -131,10 +131,9 @@ public class JavaProxy extends RubyObject {
         IRubyObject javaClass = RuntimeHelpers.invoke(context, recv, "java_class");
         if (args.length > 0) {
             // construct new array proxy (ArrayJavaProxy)
-            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-            newArgs[0] = javaClass;
-            System.arraycopy(args, 0, newArgs, 1, args.length);
-            return context.getRuntime().fastGetClass("ArrayJavaProxyCreator").newInstance(context, newArgs, Block.NULL_BLOCK);
+            ArrayJavaProxyCreator ajpc = new ArrayJavaProxyCreator(context.runtime);
+            ajpc.setup(context, javaClass, args);
+            return ajpc;
         } else {
             return Java.get_proxy_class(javaClass, RuntimeHelpers.invoke(context, javaClass, "array_class"));
         }
