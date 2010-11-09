@@ -34,7 +34,9 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.anno.JRubyModule;
+import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 /**
@@ -83,6 +85,14 @@ public class JavaArrayUtilities {
             throw runtime.newTypeError(string, runtime.getString());
         }
         return JavaUtil.convertJavaToUsableRubyObject(runtime, ((RubyString)string).getBytes());
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject java_to_ruby(ThreadContext context, IRubyObject recv, IRubyObject ary) {
+        if (!(ary instanceof ArrayJavaProxy)) {
+            throw context.runtime.newTypeError(ary, context.runtime.getJavaSupport().getArrayProxyClass());
+        }
+        return ((ArrayJavaProxy)ary).to_a(context);
     }
 
 }

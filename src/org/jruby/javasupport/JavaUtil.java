@@ -34,6 +34,7 @@
 package org.jruby.javasupport;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -46,6 +47,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBigDecimal;
 import org.jruby.RubyBignum;
@@ -63,6 +65,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
@@ -85,6 +88,20 @@ public class JavaUtil {
             rubyObjects[i] = convertJavaToUsableRubyObject(runtime, objects[i]);
         }
         return rubyObjects;
+    }
+
+    public static RubyArray convertJavaArrayToRubyWithNesting(ThreadContext context, Object array) {
+        int length = Array.getLength(array);
+        RubyArray outer = context.runtime.newArray(length);
+        for (int i = 0; i < length; i++) {
+            Object element = Array.get(array, i);
+            if (element instanceof ArrayJavaProxy) {
+                outer.append(convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy)element).getObject()));
+            } else {
+                outer.append(JavaUtil.convertJavaToUsableRubyObject(context.runtime, element));
+            }
+        }
+        return outer;
     }
 
     public static JavaConverter getJavaConverter(Class clazz) {

@@ -35,7 +35,6 @@
 
 require 'builtin/javasupport/java'
 require 'builtin/javasupport/utilities/base'
-require 'builtin/javasupport/utilities/array'
 require 'builtin/javasupport/core_ext'
 
 require 'builtin/java/java.lang'

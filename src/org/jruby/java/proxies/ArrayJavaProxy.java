@@ -1,6 +1,8 @@
 package org.jruby.java.proxies;
 
+import java.lang.reflect.Array;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
@@ -130,8 +132,7 @@ public class ArrayJavaProxy extends JavaProxy {
     
     @JRubyMethod(name = {"to_a","to_ary"}, backtrace = true)
     public IRubyObject to_a(ThreadContext context) {
-        RubyModule javaArrayUtilities = context.getRuntime().getJavaSupport().getJavaArrayUtilitiesModule();
-        return RuntimeHelpers.invoke(context, javaArrayUtilities, "java_to_ruby", this);
+        return JavaUtil.convertJavaArrayToRubyWithNesting(context, this.getObject());
     }
     
     public IRubyObject getRange(ThreadContext context, IRubyObject[] args) {
