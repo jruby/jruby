@@ -227,7 +227,13 @@ public class RubyRational extends RubyNumeric {
     static void intCheck(ThreadContext context, IRubyObject num) {
         if (num instanceof RubyFixnum || num instanceof RubyBignum) return;
         if (!(num instanceof RubyNumeric) || !num.callMethod(context, "integer?").isTrue()) {
-            throw num.getRuntime().newArgumentError("not an integer");
+            Ruby runtime = num.getRuntime();
+            if (runtime.is1_9()) {
+                throw runtime.newTypeError("can't convert "
+                        + num.getMetaClass().getName() + " into Rational");
+            } else {
+                throw runtime.newArgumentError("not an integer");
+            }
         }
     }
 
@@ -339,6 +345,10 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1) {
+        if (a1.isNil()) {
+            throw context.getRuntime().newTypeError("can't convert nil into Rational");
+        }
+        
         return convertCommon(context, recv, a1, context.getRuntime().getNil());
     }
 
@@ -347,6 +357,10 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
+        if (a1.isNil() || a2.isNil()) {
+            throw context.getRuntime().newTypeError("can't convert nil into Rational");
+        }
+        
         return convertCommon(context, recv, a1, a2);
     }
     

@@ -1,1 +1,0 @@
-fails:Rational() raises a TypeError if the arguments are not Integers
