@@ -650,6 +650,7 @@ public class JavaMethod extends JavaCallable {
         return "#<" + getType().toString() + "/" + method.getName() + "(";
     }
 
+    @JRubyMethod(name = "static?")
     public RubyBoolean static_p() {
         return getRuntime().newBoolean(isStatic());
     }
