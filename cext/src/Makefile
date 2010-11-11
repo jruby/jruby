@@ -74,7 +74,7 @@ LIBNAME = jruby-cext
 # Compiler/linker flags from:
 #   http://weblogs.java.net/blog/kellyohair/archive/2006/01/compilation_of_1.html
 JFLAGS = -fno-omit-frame-pointer -fno-strict-aliasing
-DBG_FLAGS = -DNDEBUG -O2
+DBG_FLAGS = -DNDEBUG
 OFLAGS = $(DBG_FLAGS) $(JFLAGS)
 
 WFLAGS = -W -Wall -Wno-unused -Wno-parentheses -Werror
