@@ -177,8 +177,11 @@ public class RubyTime extends RubyObject {
     private static ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             DateTimeZone dtz = getLocalTimeZone(runtime);
-            DateTime dt = new DateTime(0, dtz);
-            return  new RubyTime(runtime, klass, dt);
+            DateTime dt = new DateTime(dtz);
+            RubyTime rt =  new RubyTime(runtime, klass, dt);
+            rt.setUSec(0);
+
+            return rt;
         }
     };
 
