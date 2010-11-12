@@ -574,10 +574,10 @@ public class IRBuilder {
                 break;
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
-                s.addInstr(new PutClassVariableInstr(MetaObject.create(s), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
-                s.addInstr(new PutClassVariableInstr(MetaObject.create(s), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 buildConstDeclAssignment((ConstDeclNode) node, s, v);
@@ -632,12 +632,12 @@ public class IRBuilder {
             case CLASSVARASGNNODE:
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
-                s.addInstr(new PutClassVariableInstr(MetaObject.create(s), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
-                s.addInstr(new PutClassVariableInstr(MetaObject.create(s), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 v = s.getNewTemporaryVariable();
@@ -950,13 +950,13 @@ public class IRBuilder {
     // SSS FIXME: Where is this set up?  How is this diff from ClassVarDeclNode??
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode, IRScope s) {
         Operand val = build(classVarAsgnNode.getValueNode(), s);
-        s.addInstr(new PutClassVariableInstr(MetaObject.create(s), classVarAsgnNode.getName(), val));
+        s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), classVarAsgnNode.getName(), val));
         return val;
     }
 
     public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode, IRScope s) {
         Operand val = build(classVarDeclNode.getValueNode(), s);
-        s.addInstr(new PutClassVariableInstr(MetaObject.create(s), classVarDeclNode.getName(), val));
+        s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), classVarDeclNode.getName(), val));
         return val;
     }
 
