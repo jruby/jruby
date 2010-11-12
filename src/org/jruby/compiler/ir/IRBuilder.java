@@ -112,7 +112,7 @@ import org.jruby.compiler.ir.instructions.EQQ_Instr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.GetConstInstr;
-import org.jruby.compiler.ir.instructions.GET_CVAR_Instr;
+import org.jruby.compiler.ir.instructions.GetClassVariableInstr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -943,7 +943,7 @@ public class IRBuilder {
 
     public Operand buildClassVar(ClassVarNode node, IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new GET_CVAR_Instr(ret, MetaObject.create(s).getNearestClass(), node.getName()));
+        s.addInstr(new GetClassVariableInstr(ret, MetaObject.create(s).getNearestClass(), node.getName()));
         return ret;
     }
 
