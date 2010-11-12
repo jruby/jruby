@@ -18,7 +18,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
-import org.jruby.compiler.ir.instructions.CASE_Instr;
+import org.jruby.compiler.ir.instructions.CaseInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
@@ -283,7 +283,7 @@ public class CFG {
                     bbEndedWithControlXfer = true;
                 } // CASE IR instructions are dummy instructions
                 // -- all when/then clauses have been converted into if-then-else blocks
-                else if (i instanceof CASE_Instr) {
+                else if (i instanceof CaseInstr) {
                     tgt = null;
                 } // SSS FIXME: To be done
                 else if (i instanceof BREAK_Instr) {

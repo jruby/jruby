@@ -104,7 +104,7 @@ import org.jruby.compiler.ir.instructions.AttrAssignInstr;
 import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.CASE_Instr;
+import org.jruby.compiler.ir.instructions.CaseInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
@@ -806,7 +806,7 @@ public class IRBuilder {
         // the CASE instruction
         Label endLabel = m.getNewLabel();
         Variable result = m.getNewTemporaryVariable();
-        CASE_Instr caseInstr = new CASE_Instr(result, value, endLabel);
+        CaseInstr caseInstr = new CaseInstr(result, value, endLabel);
         m.addInstr(caseInstr);
 
         // lists to aggregate variables and bodies for whens

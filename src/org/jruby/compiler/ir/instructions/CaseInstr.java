@@ -12,13 +12,13 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 // SSS NOTE: 'variables' are used only during optimizations -- they don't contribute to
 // the list of inputs to the case statement during dataflow analyses.
 // This is just a dummy placeholder instruction -- nothing to do during interpretation or code generation.
-public class CASE_Instr extends OneOperandInstr {
+public class CaseInstr extends OneOperandInstr {
     Label[] labels;
     Operand[] variables;
     Label endLabel;
     Label elseLabel;
 
-    public CASE_Instr(Variable result, Operand arg, Label endLabel) {
+    public CaseInstr(Variable result, Operand arg, Label endLabel) {
         super(Operation.CASE, result, arg);
         this.endLabel = endLabel;
     }
@@ -35,10 +35,12 @@ public class CASE_Instr extends OneOperandInstr {
         this.elseLabel = elseLabel;
     }
 
+    @Override
     public String toString() {
        return "\t" + result + " = CASE(" + argument + ", ELSE: " + elseLabel + ")";
     }
 
+    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         super.simplifyOperands(valueMap);
 
@@ -49,6 +51,7 @@ public class CASE_Instr extends OneOperandInstr {
         }
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
 		 throw new RuntimeException("Not implemented yet!");
 	 }
