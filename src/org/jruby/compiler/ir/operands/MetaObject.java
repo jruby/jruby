@@ -52,6 +52,22 @@ public class MetaObject extends Operand {
         return false;
     }
 
+    /**
+     * Find the closest ClassMetaObject that contains this metaobject.  Note that it
+     * may be itself a class and return itself.
+     * @return
+     */
+    public Operand getNearestClass() {
+        if (isClass()) return this;
+        
+        Operand parent = getContainer();
+        while ((parent instanceof MetaObject) && !(((MetaObject)parent).isClass())) {
+            parent = ((MetaObject)parent).getContainer();
+        }
+
+        return parent;
+    }
+
     public Operand getContainer() {
         return scope.getContainer();
     }
