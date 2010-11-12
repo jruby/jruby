@@ -124,7 +124,7 @@ import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.NotInstr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
-import org.jruby.compiler.ir.instructions.PUT_CVAR_Instr;
+import org.jruby.compiler.ir.instructions.PutClassVariableInstr;
 import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
@@ -574,10 +574,10 @@ public class IRBuilder {
                 break;
             // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
-                s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(MetaObject.create(s), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
-                s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(MetaObject.create(s), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 buildConstDeclAssignment((ConstDeclNode) node, s, v);
@@ -632,12 +632,12 @@ public class IRBuilder {
             case CLASSVARASGNNODE:
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
-                s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(MetaObject.create(s), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
-                s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(MetaObject.create(s), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 v = s.getNewTemporaryVariable();
@@ -950,13 +950,13 @@ public class IRBuilder {
     // SSS FIXME: Where is this set up?  How is this diff from ClassVarDeclNode??
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode, IRScope s) {
         Operand val = build(classVarAsgnNode.getValueNode(), s);
-        s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), classVarAsgnNode.getName(), val));
+        s.addInstr(new PutClassVariableInstr(MetaObject.create(s), classVarAsgnNode.getName(), val));
         return val;
     }
 
     public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode, IRScope s) {
         Operand val = build(classVarDeclNode.getValueNode(), s);
-        s.addInstr(new PUT_CVAR_Instr(MetaObject.create(s), classVarDeclNode.getName(), val));
+        s.addInstr(new PutClassVariableInstr(MetaObject.create(s), classVarDeclNode.getName(), val));
         return val;
     }
 
