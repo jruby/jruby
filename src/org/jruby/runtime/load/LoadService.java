@@ -356,6 +356,10 @@ public class LoadService {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
 
+        if (featureAlreadyLoaded(RubyString.newString(runtime, file))) {
+            return false;
+        }
+
         long startTime = loadTimer.startLoad(file);
         try {
             return smartLoad(file);
@@ -695,7 +699,7 @@ public class LoadService {
         RubyString loadNameRubyString = RubyString.newString(runtime, state.loadName);
         try {
             synchronized (loadedFeaturesInternal) {
-                if (loadedFeaturesInternal.contains(loadNameRubyString)) {
+                if (featureAlreadyLoaded(loadNameRubyString)) {
                     return false;
                 } else {
                     addLoadedFeature(loadNameRubyString);
