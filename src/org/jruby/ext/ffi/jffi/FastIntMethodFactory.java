@@ -55,7 +55,6 @@ public class FastIntMethodFactory extends MethodFactory {
                     return true;
                 case POINTER:
                 case STRING:
-                case STRPTR:
                     return Platform.getPlatform().addressSize() == 32;
                 case LONG:
                 case ULONG:
@@ -208,11 +207,6 @@ public class FastIntMethodFactory extends MethodFactory {
                     return StringResultConverter.INSTANCE;
                 }
                 throw new IllegalArgumentException(":string is too big for int result");
-            case STRPTR:
-                if (Platform.getPlatform().addressSize() == 32) {
-                    return StrptrResultConverter.INSTANCE;
-                }
-                throw new IllegalArgumentException(":strptr is too big for int result");
             default:
                 throw new IllegalArgumentException("Unknown type " + type);
         }
@@ -302,17 +296,6 @@ public class FastIntMethodFactory extends MethodFactory {
         public final IRubyObject fromNative(ThreadContext context, int value) {
             long address = ((long) value) & PointerResultConverter.ADDRESS_MASK;
             return FFIUtil.getString(context.getRuntime(), address);
-        }
-    }
-
-    static final class StrptrResultConverter implements IntResultConverter {
-        public static final IntResultConverter INSTANCE = new StrptrResultConverter();
-
-        public final IRubyObject fromNative(ThreadContext context, int value) {
-            long address = ((long) value) & PointerResultConverter.ADDRESS_MASK;
-            return RubyArray.newArray(context.getRuntime(),
-                    FFIUtil.getString(context.getRuntime(), address),
-                    new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address)));
         }
     }
 

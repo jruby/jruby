@@ -1,3 +1,24 @@
+#
+# Copyright (C) 2009, 2010 Wayne Meissner
+# Copyright (C) 2009 Luc Heinrich
+#
+# All rights reserved.
+#
+# This file is part of ruby-ffi.
+#
+# This code is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License version 3 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+# version 3 for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 module FFI
 
   class Enums
@@ -26,12 +47,11 @@ module FFI
       @symbol_map[symbol]
     end
 
-    def to_hash
-      @symbol_map
-    end
   end
   
   class Enum
+    include DataConverter
+
     attr_reader :tag
 
     def initialize(info, tag=nil)
@@ -74,8 +94,25 @@ module FFI
     def symbol_map
       @kv_map
     end
+
     alias to_h symbol_map
     alias to_hash symbol_map
+
+    def native_type
+      Type::INT
+    end
+
+    def to_native(val, ctx)
+      @kv_map[val] || if val.is_a?(Integer)
+        val
+      else
+        raise ArgumentError, "invalid enum value: #{val.inspect}"
+      end
+    end
+
+    def from_native(val, ctx)
+      @vk_map[val]
+    end
 
   end
 

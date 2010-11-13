@@ -221,7 +221,7 @@ namespace :spec do
       clean_spec_dirs
       git_clone('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
     else
-      git_fetch('rubyspec', RUBYSPEC_DIR)
+      git_fetch('rubyspec', RUBYSPEC_DIR, ignore_error = true)
     end
   end
 
@@ -230,7 +230,7 @@ namespace :spec do
     unless git_repo_exists? MSPEC_DIR
       git_clone('mspec', MSPEC_GIT_REPO, MSPEC_DIR)
     else
-      git_fetch('mspec', MSPEC_DIR)
+      git_fetch('mspec', MSPEC_DIR, ignore_error = true)
     end
   end
 
