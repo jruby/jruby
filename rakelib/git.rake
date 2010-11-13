@@ -15,24 +15,28 @@ def git_clone(label, git_repository, local_directory, shallow = false)
   Dir.chdir(local_directory) { yield } if block_given?
 end
 
-def git_simple_command(command, label, local_directory, ignore_result = false)
+def git_simple_command(command, label, local_directory, ignore_error = false)
   puts "#{label} repo found: `git #{command}` repo at #{local_directory}"
   Dir.chdir(local_directory) do
     begin
       sh "git #{command}"
     rescue Exception => e
-      raise e unless ignore_result
+      unless ignore_error
+        raise e
+      else
+        puts "git #{command} failed, but ignored: #{e.message}"
+      end
     end
     yield if block_given?
   end 
 end
 
-def git_pull(label, local_directory, ignore_result = false)
-  git_simple_command("pull", label, local_directory, ignore_result)
+def git_pull(label, local_directory, ignore_error = false)
+  git_simple_command("pull", label, local_directory, ignore_error)
 end
 
-def git_fetch(label, local_directory, ignore_result = false)
-  git_simple_command("fetch", label, local_directory, ignore_result)
+def git_fetch(label, local_directory, ignore_error = false)
+  git_simple_command("fetch", label, local_directory, ignore_error)
 end
 
 def git_checkout(label, tag, local_directory)
