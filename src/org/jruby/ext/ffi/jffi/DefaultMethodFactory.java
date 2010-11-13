@@ -203,10 +203,7 @@ public final class DefaultMethodFactory {
                 return Float64Invoker.INSTANCE;
             case STRING:
                 return StringInvoker.INSTANCE;
-
-            case STRPTR:
-                return StrptrInvoker.INSTANCE;
-
+                
             default:
                 throw new IllegalArgumentException("Invalid return type: " + returnType);
         }
@@ -552,18 +549,6 @@ public final class DefaultMethodFactory {
                     context.getRuntime().fastGetModule("FFI").fastGetClass("Function"),
                     new CodeMemoryIO(context.getRuntime(), address), functionInfo, null);
         }
-    }
-
-    private static final class StrptrInvoker extends BaseInvoker {
-        public static final FunctionInvoker INSTANCE = new StrptrInvoker();
-
-        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            final long address = invoker.invokeAddress(function, args);
-            return RubyArray.newArray(context.getRuntime(),
-                    FFIUtil.getString(context.getRuntime(), address),
-                    new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address)));
-        }
-
     }
 
     /*------------------------------------------------------------------------*/

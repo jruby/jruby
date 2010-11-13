@@ -127,9 +127,6 @@ module FFI
   # Converts NUL-terminated C strings
   add_typedef(Type::STRING, :string)
 
-  # Returns a [ String, Pointer ] tuple so the C memory for the string can be freed
-  add_typedef(Type::STRPTR, :strptr)
-
   # Converts FFI::Buffer objects
   add_typedef(Type::BUFFER_IN, :buffer_in)
   add_typedef(Type::BUFFER_OUT, :buffer_out)
@@ -139,6 +136,19 @@ module FFI
 
   add_typedef(Type::BOOL, :bool)
 
+  # Returns a [ String, Pointer ] tuple so the C memory for the string can be freed
+  class StrPtrConverter
+    extend DataConverter
+    native_type Type::POINTER
+
+    def self.from_native(val, ctx)
+      [ val.null? ? Qnil : val.get_string(0), val ]
+    end
+
+  end
+
+  add_typedef(StrPtrConverter, :strptr)
+  
   TypeSizes = {
     1 => :char,
     2 => :short,

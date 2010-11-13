@@ -62,8 +62,6 @@ public enum NativeType implements NativeParam {
     STRING,
     /** A Rubinus :string arg - copies data both ways, and nul terminates */
     RBXSTRING,
-    /** A [ String, Pointer ] tuple */
-    STRPTR,
 
     VARARGS,
     // ARRAY and STRUCT are only used internally
