@@ -85,13 +85,18 @@ public class CRLFStreamWrapper implements Stream {
                 return new ByteList(0);
             }
         }
+        boolean eof = false;
         ByteList bl = new ByteList(number > ChannelStream.BUFSIZE ? ChannelStream.BUFSIZE : number);
         for (int i = 0; i < number; i++) {
             int c = fgetc();
             if (c == -1) {
+                eof = true;
                 break;
             }
             bl.append(c);
+        }
+        if (eof && bl.length() == 0) {
+            return null;
         }
         return bl;
     }
