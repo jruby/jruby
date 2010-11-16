@@ -41,11 +41,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * rather than with an ICallable. For lightweight block logic within
  * Java code.
  */
-public class CompiledBlock extends BlockBody {
+public class CompiledBlock extends ContextAwareBlockBody {
     protected final CompiledBlockCallback callback;
     protected final boolean hasMultipleArgsHead;
-    protected final Arity arity;
-    protected StaticScope scope;
     
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
@@ -66,9 +64,8 @@ public class CompiledBlock extends BlockBody {
     }
 
     protected CompiledBlock(Arity arity, StaticScope scope, CompiledBlockCallback callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(argumentType);
-        this.arity = arity;
-        this.scope = scope;
+        super(scope, arity, argumentType);
+        
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
     }
@@ -152,15 +149,6 @@ public class CompiledBlock extends BlockBody {
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
         return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
     }
-    
-    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preYieldSpecificBlock(binding, scope, klass);
-    }
-    
-    protected void post(ThreadContext context, Binding binding, Visibility vis, Frame lastFrame) {
-        binding.getFrame().setVisibility(vis);
-        context.postYield(binding, lastFrame);
-    }
 
     protected IRubyObject setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
         switch (argumentType) {
@@ -209,25 +197,6 @@ public class CompiledBlock extends BlockBody {
             return warnMultiReturnNil(ruby);
         }
         return value;
-    }
-    
-    public StaticScope getStaticScope() {
-        return scope;
-    }
-
-    public void setStaticScope(StaticScope newScope) {
-        this.scope = newScope;
-    }
-
-    public Block cloneBlock(Binding binding) {
-        binding = binding.clone();
-        
-        return new Block(this, binding);
-    }
-
-    @Override
-    public Arity arity() {
-        return arity;
     }
 
     private IRubyObject warnMultiReturnNil(Ruby ruby) {

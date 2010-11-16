@@ -41,11 +41,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * rather than with an ICallable. For lightweight block logic within
  * Java code.
  */
-public class CompiledBlock19 extends BlockBody {
+public class CompiledBlock19 extends ContextAwareBlockBody {
     protected final CompiledBlockCallback19 callback;
     protected final boolean hasMultipleArgsHead;
-    protected final Arity arity;
-    protected StaticScope scope;
     
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
@@ -66,9 +64,8 @@ public class CompiledBlock19 extends BlockBody {
     }
 
     protected CompiledBlock19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(argumentType);
-        this.arity = arity;
-        this.scope = scope;
+        super(scope, arity, argumentType);
+        
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
     }
@@ -92,6 +89,7 @@ public class CompiledBlock19 extends BlockBody {
         return yieldSpecificInternal(context, IRubyObject.NULL_ARRAY, binding, type);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
         IRubyObject[] args;
         if (arg0 instanceof RubyArray) {
@@ -102,10 +100,12 @@ public class CompiledBlock19 extends BlockBody {
         return yieldSpecificInternal(context, args, binding, type);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
         return yieldSpecificInternal(context, new IRubyObject[] {arg0, arg1}, binding, type);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
         return yieldSpecificInternal(context, new IRubyObject[] {arg0, arg1, arg2}, binding, type);
     }
@@ -148,6 +148,7 @@ public class CompiledBlock19 extends BlockBody {
         return yield(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
     }
     
+    @Override
     public IRubyObject yield(ThreadContext context, IRubyObject args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = prepareSelf(binding);
@@ -176,15 +177,6 @@ public class CompiledBlock19 extends BlockBody {
 
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
         return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
-    }
-    
-    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preYieldSpecificBlock(binding, scope, klass);
-    }
-    
-    protected void post(ThreadContext context, Binding binding, Visibility vis, Frame lastFrame) {
-        binding.getFrame().setVisibility(vis);
-        context.postYield(binding, lastFrame);
     }
 
     private IRubyObject[] setupBlockArgs(IRubyObject value) {
@@ -244,29 +236,5 @@ public class CompiledBlock19 extends BlockBody {
             return ((RubyArray)value).toJavaArray();
         }
         return new IRubyObject[] {value};
-    }
-
-    private IRubyObject[] warnMultiReturnNil(Ruby ruby) {
-        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
-        return IRubyObject.NULL_ARRAY;
-    }
-    
-    public StaticScope getStaticScope() {
-        return scope;
-    }
-
-    public void setStaticScope(StaticScope newScope) {
-        this.scope = newScope;
-    }
-
-    public Block cloneBlock(Binding binding) {
-        binding = binding.clone();
-        
-        return new Block(this, binding);
-    }
-
-    @Override
-    public Arity arity() {
-        return arity;
     }
 }

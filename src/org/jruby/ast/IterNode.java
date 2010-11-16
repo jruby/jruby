@@ -79,7 +79,7 @@ public class IterNode extends Node {
         this.blockVarNode = null; // This is only for 1.8 blocks
         this.bodyNode = body;
         this.scope = scope;
-        this.blockBody = new Interpreted19Block(this);
+        this.blockBody = Interpreted19Block.newBlockBody(this);
     }
 
     public int getArgumentType() {
@@ -101,7 +101,7 @@ public class IterNode extends Node {
     public Node getBlockVarNode() {
         return blockVarNode;
     }
-    
+
     public StaticScope getScope() {
         return scope;
     }

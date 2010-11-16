@@ -42,7 +42,6 @@ import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.exceptions.JumpException;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.assigner.Assigner;
 import org.jruby.runtime.assigner.Pre0Rest0Post0Assigner;
 import org.jruby.runtime.assigner.Pre0Rest0Post0BlockAssigner;
@@ -76,7 +75,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @see SharedScopeBlock, CompiledBlock
  */
-public class InterpretedBlock extends BlockBody {
+public class InterpretedBlock extends ContextAwareBlockBody {
     /** This block has no arguments at all (simple secondary optimization @see assignerFor for an
      * explanation).
      */
@@ -85,12 +84,6 @@ public class InterpretedBlock extends BlockBody {
     /** The body of the block, pulled out of bodyNode */
     private final Node bodyNode;
     
-    /** The static scope for the block body */
-    private StaticScope scope;
-    
-    /** The arity of the block */
-    private final Arity arity;
-
     /** Logic for assigning the blocks local variables */
     protected Assigner assigner;
 
@@ -207,20 +200,10 @@ public class InterpretedBlock extends BlockBody {
     }
     
     public InterpretedBlock(IterNode iterNode, Arity arity, int argumentType) {
-        super(argumentType);
-        this.arity = arity;
+        super(iterNode.getScope(), arity, argumentType);
+        
         this.bodyNode = iterNode.getBodyNode() == null ? NilImplicitNode.NIL : iterNode.getBodyNode();
-        this.scope = iterNode.getScope();
         assignerFor(iterNode);
-    }
-    
-    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preYieldSpecificBlock(binding, scope, klass);
-    }
-    
-    protected void post(ThreadContext context, Binding binding, Visibility vis, Frame lastFrame) {
-        binding.getFrame().setVisibility(vis);
-        context.postYield(binding, lastFrame);
     }
 
     @Override
@@ -390,34 +373,8 @@ public class InterpretedBlock extends BlockBody {
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
         return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
     }
-    
-    public StaticScope getStaticScope() {
-        return scope;
-    }
-
-    public void setStaticScope(StaticScope newScope) {
-        this.scope = newScope;
-    }
-
-    public Block cloneBlock(Binding binding) {
-        // We clone dynamic scope because this will be a new instance of a block.  Any previously
-        // captured instances of this block may still be around and we do not want to start
-        // overwriting those values when we create a new one.
-        // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        binding = binding.clone();
-        return new Block(this, binding);
-    }
 
     public Node getBodyNode() {
         return bodyNode;
-    }
-
-    /**
-     * What is the arity of this block?
-     * 
-     * @return the arity
-     */
-    public Arity arity() {
-        return arity;
     }
 }

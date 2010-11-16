@@ -40,24 +40,18 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public abstract class MethodBlock extends BlockBody {
+public abstract class MethodBlock extends ContextAwareBlockBody {
     private final RubyMethod method;
     
-    private final Arity arity;
-     
-    // This is a dummy scope; we should find a way to make that more explicit
-    private StaticScope staticScope;
-
     public static Block createMethodBlock(ThreadContext context, IRubyObject self, DynamicScope dynamicScope, MethodBlock body) {
         Binding binding = context.currentBinding(self, dynamicScope);
         return new Block(body, binding);
     }
 
     public MethodBlock(RubyMethod method, StaticScope staticScope) {
-        super(BlockBody.SINGLE_RESTARG);
+        super(staticScope, Arity.createArity((int) method.arity().getLongValue()), BlockBody.SINGLE_RESTARG);
+        
         this.method = method;
-        this.arity = Arity.createArity((int) method.arity().getLongValue());
-        this.staticScope = staticScope;
     }
 
     public abstract IRubyObject callback(IRubyObject value, IRubyObject method, IRubyObject self, Block block);
@@ -67,26 +61,32 @@ public abstract class MethodBlock extends BlockBody {
         return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
     }
     
+    @Override
     protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
         return context.preYieldNoScope(binding, klass);
     }
     
-    protected void post(ThreadContext context, Binding binding, Frame lastFrame) {
+    @Override
+    protected void post(ThreadContext context, Binding binding, Visibility visibility, Frame lastFrame) {
         context.postYieldNoScope(lastFrame);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
         return yield(context, null, binding, type);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
         return yield(context, arg0, binding, type);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
         return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
     }
 
+    @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
         return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
     }
@@ -133,33 +133,11 @@ public abstract class MethodBlock extends BlockBody {
             // A 'next' is like a local return from the block, ending this call or yield.
             return (IRubyObject)nj.getValue();
         } finally {
-            post(context, binding, lastFrame);
+            post(context, binding, null, lastFrame);
         }
     }
     
-    public StaticScope getStaticScope() {
-        // TODO: This is actually now returning the scope of whoever called Method#to_proc
-        // which is obviously wrong; but there's no scope to provide for many methods.
-        // It fixes JRUBY-2237, but needs a better solution.
-        return staticScope;
-    }
-
-    public void setStaticScope(StaticScope newScope) {
-        this.staticScope = newScope;
-    }
-
-    public Block cloneBlock(Binding binding) {
-        binding = binding.clone();
-
-        return new Block(this, binding);
-    }
-
-    /**
-     * What is the arity of this block?
-     * 
-     * @return the arity
-     */
-    public Arity arity() {
-        return arity;
-    }
+    // TODO: This is actually now returning the scope of whoever called Method#to_proc
+    // which is obviously wrong; but there's no scope to provide for many methods.
+    // It fixes JRUBY-2237, but needs a better solution. <--- We inherit get/setScope from superclass
 }

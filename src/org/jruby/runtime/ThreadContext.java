@@ -544,7 +544,6 @@ public final class ThreadContext {
         // FIXME: this seems like a good assertion, but it breaks compiled code and the code seems
         // to run without it...
         //assert currentModule != null : "Can't push null RubyClass";
-        
         int index = ++parentIndex;
         RubyModule[] stack = parentStack;
         stack[index] = currentModule;

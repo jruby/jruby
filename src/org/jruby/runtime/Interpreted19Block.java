@@ -45,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class Interpreted19Block  extends BlockBody {
+public class Interpreted19Block  extends ContextAwareBlockBody {
     private static final boolean ALREADY_ARRAY = true;
 
     /** The argument list, pulled out of iterNode */
@@ -54,44 +54,32 @@ public class Interpreted19Block  extends BlockBody {
     /** The body of the block, pulled out of bodyNode */
     private final Node body;
 
-    /** The static scope for the block body */
-    private StaticScope scope;
-
-    /** The arity of the block */
-    private final Arity arity;
-
     public static Block newInterpretedClosure(ThreadContext context, BlockBody body, IRubyObject self) {
         Binding binding = context.currentBinding(self);
         return new Block(body, binding);
     }
 
-    public Interpreted19Block(IterNode iter) {
-        super(-1); // We override that the logic which uses this
-
+    // ENEBO: Some of this logic should be put back into the Nodes themselves, but the more
+    // esoteric features of 1.9 make this difficult to know how to do this yet.
+    public static BlockBody newBlockBody(IterNode iter) {
         if (iter instanceof LambdaNode) {
             LambdaNode lambda = (LambdaNode) iter;
-            
-            this.arity = lambda.getArgs().getArity();
-            this.args = lambda.getArgs();
-            this.body = lambda.getBody() == null ? NilImplicitNode.NIL : lambda.getBody();
-            this.scope = lambda.getScope();
+
+            return new Interpreted19Block(iter.getScope(), lambda.getArgs().getArity(),
+                    lambda.getArgs(), lambda.getBody() == null ? NilImplicitNode.NIL : lambda.getBody());
         } else {
             ArgsNode argsNode = (ArgsNode) iter.getVarNode();
 
-            this.arity = argsNode.getArity();
-            this.args = argsNode;
-            this.body = iter.getBodyNode() == null ? NilImplicitNode.NIL : iter.getBodyNode();
-            this.scope = iter.getScope();
+            return new Interpreted19Block(iter.getScope(), argsNode.getArity(),
+                    argsNode, iter.getBodyNode() == null ? NilImplicitNode.NIL : iter.getBodyNode());
         }
     }
 
-    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preYieldSpecificBlock(binding, scope, klass);
-    }
+    public Interpreted19Block(StaticScope scope, Arity arity, ArgsNode args, Node body) {
+        super(scope, arity, -1); // We override that the logic which uses this
 
-    protected void post(ThreadContext context, Binding binding, Visibility vis, Frame lastFrame) {
-        binding.getFrame().setVisibility(vis);
-        context.postYield(binding, lastFrame);
+        this.args = args;
+        this.body = body;
     }
 
     @Override
@@ -158,6 +146,7 @@ public class Interpreted19Block  extends BlockBody {
         return yield(context, value, self, klass, aValue, binding, type, Block.NULL_BLOCK);
 
     }
+    @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
             RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
@@ -271,33 +260,11 @@ public class Interpreted19Block  extends BlockBody {
         }
     }
 
-    public Block cloneBlock(Binding binding) {
-        // We clone dynamic scope because this will be a new instance of a block.  Any previously
-        // captured instances of this block may still be around and we do not want to start
-        // overwriting those values when we create a new one.
-        // ENEBO: Once we make self, lastClass, and lastMethod immutable we can remove duplicate
-        binding = binding.clone();
-
-        return new Block(this, binding);
-    }
-
     public ArgsNode getArgs() {
         return args;
     }
     
     public Node getBody() {
         return body;
-    }
-
-    public StaticScope getStaticScope() {
-        return scope;
-    }
-
-    public void setStaticScope(StaticScope newScope) {
-        this.scope = newScope;
-    }
-
-    public Arity arity() {
-        return arity;
     }
 }

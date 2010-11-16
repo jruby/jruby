@@ -57,6 +57,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.ContextAwareBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.assigner.Assigner;
@@ -438,9 +439,9 @@ public class RubySymbol extends RubyObject {
     
     @JRubyMethod(frame = true)
     public IRubyObject to_proc(ThreadContext context) {
-        BlockBody body = new BlockBody(BlockBody.SINGLE_RESTARG) {
-            private StaticScope scope = new LocalStaticScope(null);
-            
+        StaticScope scope = new LocalStaticScope(null);
+        
+        BlockBody body = new ContextAwareBlockBody(scope, Arity.OPTIONAL, BlockBody.SINGLE_RESTARG) {
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
                 RubyArray array = ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
@@ -462,22 +463,8 @@ public class RubySymbol extends RubyObject {
             }
 
             @Override
-            public StaticScope getStaticScope() {
-                return scope;
-            }
-
-            @Override
-            public void setStaticScope(StaticScope newScope) {
-            }
-
-            @Override
             public Block cloneBlock(Binding binding) {
                 return new Block(this, binding);
-            }
-
-            @Override
-            public Arity arity() {
-                return Arity.OPTIONAL;
             }
         };
         Block block = new Block(body, context.currentBinding());
