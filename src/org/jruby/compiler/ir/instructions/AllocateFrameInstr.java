@@ -13,6 +13,7 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.Map;
+import org.jruby.RubyModule;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -52,7 +53,17 @@ public class AllocateFrameInstr extends Instr {
 
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        interp.getContext().pushFrame();
+        // ENEBO: This is slightly better than pushFrame but at least we are pushing proper self, block,
+        // and static scope.  The impl class may or may not be correct.
+        RubyModule implementationClass = scope.getStaticScope().getModule();
+
+        if (implementationClass == null) {
+            implementationClass = interp.getContext().getRuntime().getObject();
+        }
+
+        interp.getContext().preMethodFrameAndScope(implementationClass, null, self,
+                interp.getBlock(), scope.getStaticScope());
+//        interp.getContext().pushFrame();
         interp.setFrame(interp.getContext().getCurrentFrame());
     }
 }
