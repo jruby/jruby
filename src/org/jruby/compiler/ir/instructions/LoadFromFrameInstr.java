@@ -6,6 +6,8 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Interp;
+import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -46,6 +48,15 @@ public class LoadFromFrameInstr extends GetInstr {
 
     @Interp
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        // ENEBO: Noop for now since we are depending on method and block's existing framing
+        Operand value = getResult();
+        if (value instanceof LocalVariable) {
+            LocalVariable variable = (LocalVariable) value;
+            int location = variable.getLocation();
+            int offset = location & 0xffff;
+            int depth = location >> 16;
+            System.out.println("VS: " + offset + ", L: "+ depth);
+            interp.setLocalVariable(variable.getLocation(), interp.getContext().getCurrentScope().getValue(offset, depth));
+            
+        }
     }
 }

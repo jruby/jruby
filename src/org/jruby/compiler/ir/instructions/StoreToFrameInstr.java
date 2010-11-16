@@ -5,6 +5,8 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -24,7 +26,7 @@ public class StoreToFrameInstr extends PutInstr {
 
     @Override
     public String toString() {
-        return "\tFRAME(" + operands[TARGET] + ")." + ref + " = " + operands[VALUE];
+        return "\tSTORE_TO_FRAME(" + operands[TARGET] + ")." + ref + " = " + operands[VALUE];
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
@@ -33,10 +35,13 @@ public class StoreToFrameInstr extends PutInstr {
 
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        if (getName().equals("self")) {
+        Operand value = getValue();
+        
+        if (value instanceof SelfVariable) {
             interp.getFrame().setSelf(self);
-        } else {
-            // Our lvars are actually using the same backign store as frame params
+        } else if (value instanceof LocalVariable) {
+            LocalVariable variable = (LocalVariable) value;
+            interp.getContext().getCurrentScope().setValue((IRubyObject) interp.getLocalVariable(variable.getLocation()), variable.getLocation(), 0);
         }
     }
 }
