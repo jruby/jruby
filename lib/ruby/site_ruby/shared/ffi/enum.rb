@@ -74,6 +74,8 @@ module FFI
             value = i+1
           end
         end
+
+        self.init_values(@kv_map)
       end
     end
 
@@ -105,13 +107,15 @@ module FFI
     def to_native(val, ctx)
       @kv_map[val] || if val.is_a?(Integer)
         val
+      elsif val.respond_to?(:to_int)
+        val.to_int
       else
-        raise ArgumentError, "invalid enum value: #{val.inspect}"
+        raise ArgumentError, "invalid enum value, #{val.inspect}"
       end
     end
 
     def from_native(val, ctx)
-      @vk_map[val]
+      @vk_map[val] || val
     end
 
   end

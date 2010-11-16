@@ -232,7 +232,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             com.kenai.jffi.Function function = new com.kenai.jffi.Function(((DirectMemoryIO) getMemoryIO()).getAddress(),
                     closureInfo.ffiReturnType, closureInfo.ffiParameterTypes);
             return MethodFactory.createDynamicMethod(getRuntime(), module, function,
-                    closureInfo.returnType, closureInfo.parameterTypes, closureInfo.convention);
+                    closureInfo.returnType, closureInfo.parameterTypes, closureInfo.convention, getRuntime().getNil());
         }
     }
 

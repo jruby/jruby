@@ -34,6 +34,7 @@ import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyHash;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -118,6 +119,21 @@ public final class Util {
         }
         throw parameter.getRuntime().newRangeError("Value "
                     + parameter + " is not an integer");
+    }
+
+    public static int intValue(IRubyObject obj, RubyHash enums) {
+        if (obj instanceof RubyInteger) {
+                return (int) ((RubyInteger) obj).getLongValue();
+
+        } else if (obj instanceof RubySymbol) {
+            IRubyObject value = enums.fastARef(obj);
+            if (value.isNil()) {
+                throw obj.getRuntime().newArgumentError("invalid enum value, " + obj.inspect());
+            }
+            return (int) longValue(value);
+        } else {
+            return (int) longValue(obj);
+        }
     }
 
     public static final IRubyObject newSigned8(Ruby runtime, byte value) {

@@ -7,14 +7,11 @@ import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.ArrayFlags;
-import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyHash;
-import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.Buffer;
@@ -126,7 +123,7 @@ public final class DefaultMethodFactory {
         IntResultConverter resultConverter = fastIntFactory.getIntResultConverter(returnType);
         IntParameterConverter[] intParameterConverters = new IntParameterConverter[parameterTypes.length];
         for (int i = 0; i < parameterTypes.length; ++i) {
-            intParameterConverters[i] = fastIntFactory.getIntParameterConverter(parameterTypes[i]);
+            intParameterConverters[i] = fastIntFactory.getIntParameterConverter(parameterTypes[i], enums);
         }
         switch (parameterTypes.length) {
             case 0:
@@ -222,7 +219,7 @@ public final class DefaultMethodFactory {
             return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
 
         } else if (type instanceof org.jruby.ext.ffi.Enum) {
-            return getEnumMarshaller(type, type.callMethod(type.getRuntime().getCurrentContext(), "to_hash"));
+            return new EnumMarshaller((org.jruby.ext.ffi.Enum) type);
 
         } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
             return new StructByValueMarshaller((org.jruby.ext.ffi.StructByValue) type);
@@ -251,13 +248,11 @@ public final class DefaultMethodFactory {
             case USHORT:
             case INT:
             case UINT:
-            case LONG_LONG:
-            case ULONG_LONG:
                 if (!(enums instanceof RubyHash)) {
                     throw type.getRuntime().newArgumentError("wrong argument type "
                             + enums.getMetaClass().getName() + " (expected Hash)");
                 }
-                return new EnumMarshaller(getMarshaller(type.getNativeType()), (RubyHash) enums);
+                return new IntOrEnumMarshaller((RubyHash) enums);
             default:
                 return getMarshaller(type.getNativeType());
         }
@@ -353,8 +348,7 @@ public final class DefaultMethodFactory {
         }
 
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return returnType.callMethod(context, "find",
-                    context.getRuntime().newFixnum(invoker.invokeInt(function, args)));
+            return returnType.symbolValue(invoker.invokeInt(function, args));
         }
     }
 
@@ -561,27 +555,41 @@ public final class DefaultMethodFactory {
             return false;
         }
     }
+
     /**
      * Converts a ruby Enum into an native integer.
      */
     static final class EnumMarshaller extends BaseMarshaller {
-        private final ParameterMarshaller marshaller;
-        private final RubyHash enums;
+        private final org.jruby.ext.ffi.Enum enums;
 
-        public EnumMarshaller(ParameterMarshaller marshaller, RubyHash enums) {
-            this.marshaller = marshaller;
+        public EnumMarshaller(org.jruby.ext.ffi.Enum enums) {
             this.enums = enums;
         }
 
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            if (parameter instanceof RubySymbol) {
-                parameter = enums.fastARef(parameter);
-                if (parameter.isNil()) {
-                    throw context.getRuntime().newArgumentError("wrong argument.  Could not locate enum value for " + parameter);
-                }
-            }
-            marshaller.marshal(context, buffer, parameter);
+            buffer.putInt(enums.intValue(parameter));
         }
+
+        public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
+            marshal(invocation.getThreadContext(), buffer, parameter);
+        }
+    }
+
+    /**
+     * Converts a ruby Enum into an native integer.
+     */
+    static final class IntOrEnumMarshaller extends BaseMarshaller {
+        private final RubyHash enums;
+
+        public IntOrEnumMarshaller(RubyHash enums) {
+            this.enums = enums;
+        }
+
+        public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
+            buffer.putInt(Util.intValue(parameter, enums));
+        }
+
+
         public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
             marshal(invocation.getThreadContext(), buffer, parameter);
         }

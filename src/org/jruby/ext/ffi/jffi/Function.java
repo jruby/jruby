@@ -160,13 +160,8 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
-        if (enums == null || enums.isNil()) {
-            return MethodFactory.createDynamicMethod(getRuntime(), module, function,
-                    functionInfo.returnType, functionInfo.parameterTypes, functionInfo.convention);
-        } else {
-            return DefaultMethodFactory.getFactory().createMethod(module,
-                    function, functionInfo.returnType, functionInfo.parameterTypes, functionInfo.convention, enums);
-        }
+        return MethodFactory.createDynamicMethod(getRuntime(), module, function,
+                    functionInfo.returnType, functionInfo.parameterTypes, functionInfo.convention, enums);
     }
     
 }

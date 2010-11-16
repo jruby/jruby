@@ -120,11 +120,8 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
 
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
-        return (enums == null || enums.isNil())
-            ? MethodFactory.createDynamicMethod(getRuntime(), module, function,
-                    returnType, parameterTypes, convention)
-            : DefaultMethodFactory.getFactory().createMethod(module,
-                    function, returnType, parameterTypes, convention, enums);
+        return MethodFactory.createDynamicMethod(getRuntime(), module, function,
+                    returnType, parameterTypes, convention, enums);
     }
     
 }
