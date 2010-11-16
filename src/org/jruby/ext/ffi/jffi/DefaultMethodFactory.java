@@ -80,7 +80,7 @@ public final class DefaultMethodFactory {
         // This just applies to buffer/pointer types.
         //
         FastIntMethodFactory fastIntFactory = FastIntMethodFactory.getFactory();
-        boolean canBeFastInt = enums.isNil() && parameterTypes.length <= 3 
+        boolean canBeFastInt = parameterTypes.length <= 3 
                 && fastIntFactory.isFastIntResult(returnType) && convention == CallingConvention.DEFAULT;
         for (int i = 0; canBeFastInt && i < parameterTypes.length; ++i) {
             Type t = parameterTypes[i] instanceof MappedType
