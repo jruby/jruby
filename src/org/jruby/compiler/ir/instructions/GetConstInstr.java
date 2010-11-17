@@ -10,6 +10,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // NOTE: the scopeOrObj operand can be a dynamic scope.
@@ -43,7 +44,20 @@ public class GetConstInstr extends GetInstr {
 
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        getResult().store(interp, ((RubyModule) getSource().retrieve(interp)).getConstant(getName()));
+        Object source = getSource().retrieve(interp);
+        RubyModule module;
+
+        // Retrieving a MetaObject which is a closure returns a closure and not
+        // the module which contains it.  We could possible add to operand to have a generic
+        // scope() method or resort to if statements :)  So let's figure more out before
+        // fixing this.
+        if (source instanceof Block) {
+            module = ((Block) source).getBinding().getKlass();
+        } else {
+            module = (RubyModule) source;
+        }
+
+        getResult().store(interp, module.getConstant(getName()));
     }
 
 }
