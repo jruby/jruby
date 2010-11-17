@@ -42,7 +42,6 @@ import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 import org.jruby.runtime.EventHookTest;
 import org.jruby.util.JRubyThreadContextTest;
-import org.jruby.util.PlatformTest;
 import org.jruby.util.ShellLauncherTest;
 import org.jruby.util.TimeOutputFormatterTest;
 
@@ -74,7 +73,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestAdoptedThreading.class);
         suite.addTestSuite(TestRubyArray.class);
         suite.addTestSuite(TestRaiseException.class);
-        suite.addTestSuite(PlatformTest.class);
         suite.addTestSuite(ShellLauncherTest.class);
         suite.addTestSuite(TestRbConfigLibrary.class);
         suite.addTestSuite(TestParser.class);
