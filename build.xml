@@ -63,6 +63,24 @@
     </not>
   </condition>
 
+  <!-- test launching: force encoding to UTF-8 because of stupid Macroman on OS X -->
+  <condition property="test.sysprops.set" value="test.sysprops.mac">
+    <equals arg1="${java.vendor}" arg2="Apple Inc."/>
+  </condition>
+  <condition property="test.sysprops.set" value="test.sysprops.other">
+    <not><equals arg1="${java.vendor}" arg2="Apple Inc."/></not>
+  </condition>
+  <property name="mac.file.encoding" value="UTF-8"/>
+  <propertyset id="test.sysprops.mac">
+      <propertyref name="mac.file.encoding"/>
+  </propertyset>
+  <propertyset id="test.sysprops.other">
+  </propertyset>
+  <propertyset id="test.sysproperties">
+    <propertyset refid="${test.sysprops.set}"/>
+    <mapper type="glob" from="mac.*" to="*"/>
+  </propertyset>
+
   <!-- Initializes the build -->
   <target name="init">
     <tstamp><format property="build.date" pattern="yyyy-MM-dd"/></tstamp>
@@ -855,8 +873,7 @@
 	<sysproperty key="emma.coverage.out.merge" value="true" />
         <sysproperty key="emma.verbosity.level" value="silent" />
 
-        <!-- force encoding to UTF-8 because of stupid Macroman on OS X -->
-        <sysproperty key="file.encoding" value="UTF-8"/>
+        <syspropertyset refid="test.sysproperties"/>
 
         <!-- force client VM to improve test run times AND -->
         <!-- set a larger max permgen, since the tests load a lot of bytecode -->
@@ -910,8 +927,7 @@
 	<sysproperty key="emma.coverage.out.merge" value="true" />
         <sysproperty key="emma.verbosity.level" value="silent" />
 
-        <!-- force encoding to UTF-8 because of stupid Macroman on OS X -->
-        <sysproperty key="file.encoding" value="UTF-8"/>
+        <syspropertyset refid="test.sysproperties"/>
 
         <!-- force client VM to improve test run times AND -->
         <!-- set a larger max permgen, since the tests load a lot of bytecode -->	<jvmarg line="-ea ${run.jvm.model} -client -XX:MaxPermSize=128M"/>
@@ -1017,7 +1033,7 @@
       <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
       <junit jvm="${jruby.test.jvm}" fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="1800000">
         <classpath refid="test.class.path"/>
-        <jvmarg value="-Dfile.encoding=UTF-8"/>
+        <syspropertyset refid="test.sysproperties"/>
         <formatter type="xml"/>
         <formatter type="brief" usefile="false" />
         <batchtest fork="yes" todir="${test.results.dir}">
