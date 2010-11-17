@@ -1561,48 +1561,38 @@ public class IRBuilder {
     }
 **/
 
-    private void defineNewMethod(MethodDefNode defnNode, IRScope s, Operand receiver, boolean isInstanceMethod) {
-        IRMethod m;
-        if (isInstanceMethod) {
-            m = new IRMethod(s, MetaObject.create(s), defnNode.getName(), isInstanceMethod, defnNode.getScope());
+    private void defineNewMethod(MethodDefNode defNode, IRScope s, Operand container, boolean isInstanceMethod) {
+        IRMethod method = new IRMethod(s, container, defNode.getName(), isInstanceMethod, defNode.getScope());
+
+        // Build IR for arguments
+        receiveArgs(defNode.getArgsNode(), method);
+
+        // Build IR for body
+        if (defNode.getBodyNode() != null) {
+            Node bodyNode = defNode.getBodyNode();
+
+            // if root of method is rescue, build as a light rescue
+            Operand rv = (bodyNode instanceof RescueNode) ?
+                buildRescueInternal(bodyNode, method) : build(bodyNode, method);
+            if (rv != null) method.addInstr(new ReturnInstr(rv));
         } else {
-            m = new IRMethod(s, receiver, defnNode.getName(), isInstanceMethod, defnNode.getScope());
+            method.addInstr(new ReturnInstr(Nil.NIL));
         }
 
-            // Build IR for args
-        receiveArgs(defnNode.getArgsNode(), m);
-
-            // Build IR for body
-        if (defnNode.getBodyNode() != null) {
-               // if root of method is rescue, build as a light rescue
-            Node bodyNode = defnNode.getBodyNode();
-            Operand rv = (bodyNode instanceof RescueNode) ? buildRescueInternal(bodyNode, m) : build(bodyNode, m);
-            if (rv != null)
-               m.addInstr(new ReturnInstr(rv));
-        } else {
-            m.addInstr(new ReturnInstr(Nil.NIL));
-        }
-
-        if (isInstanceMethod) {
-            s.getNearestModule().addMethod(m);
-        }
-        else {
-            // Add 'm' to the meta class of the receiver!
-            IRMetaClass mc = new IRMetaClass(m.getLexicalParent(), receiver, defnNode.getScope()); // ENEBO right scope?
-            mc.addMethod(m);
-        }
+        // ENEBO: for module+class methods s.getNearestModule seems to be working...
+//        IRModule methodHolder = isInstanceMethod ? s.getNearestModule() :
+//            new IRMetaClass(method.getLexicalParent(), container, defNode.getScope());
+        IRModule methodHolder = s.getNearestModule();
+        methodHolder.addMethod(method);
     }
 
-    public Operand buildDefn(MethodDefNode node, IRScope s) {
-        // Instance method
-        defineNewMethod(node, s, null, true);
+    public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method
+        defineNewMethod(node, s, MetaObject.create(s), true);
         return null;
     }
 
-    public Operand buildDefs(DefsNode node, IRScope s) {
-        // Class method
-        Operand receiver = build(node.getReceiverNode(), s);
-        defineNewMethod(node, s, receiver, false);
+    public Operand buildDefs(DefsNode node, IRScope s) { // Class method
+        defineNewMethod(node, s, build(node.getReceiverNode(), s), false);
         return null;
     }
 
