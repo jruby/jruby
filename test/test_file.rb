@@ -21,7 +21,7 @@ class TestFile < Test::Unit::TestCase
   def jruby_specific_test
     flunk("JRuby specific test") unless defined?(JRUBY_VERSION)
   end
-  
+
   def test_file_separator_constants_defined
     assert(File::SEPARATOR)
     assert(File::PATH_SEPARATOR)
@@ -32,14 +32,14 @@ class TestFile < Test::Unit::TestCase
     assert_equal("a", File.basename("a"))
     assert_equal("b", File.basename("a/b"))
     assert_equal("c", File.basename("a/b/c"))
-    
+
     assert_equal("b", File.basename("a/b", ""))
     assert_equal("b", File.basename("a/bc", "c"))
     assert_equal("b", File.basename("a/b.c", ".c"))
     assert_equal("b", File.basename("a/b.c", ".*"))
     assert_equal(".c", File.basename("a/.c", ".*"))
-    
-    
+
+
     assert_equal("a", File.basename("a/"))
     assert_equal("b", File.basename("a/b/"))
     assert_equal("/", File.basename("/"))
@@ -55,7 +55,7 @@ class TestFile < Test::Unit::TestCase
 
     assert_equal(File.join(Dir.pwd, "x/y/z/a/b"), File.expand_path("a/b", "x/y/z"))
     assert_equal(File.join(Dir.pwd, "bin"), File.expand_path("../../bin", "tmp/x"))
-    
+
     # JRUBY-2143
     assert_nothing_raised {
       File.expand_path("../../bin", "/tmp/x")
@@ -135,7 +135,7 @@ class TestFile < Test::Unit::TestCase
       assert_equal("C:/two", File.expand_path("/two", "C:/one/.."))
       assert_equal("C:/", File.expand_path("/two/..", "C:/one/.."))
       assert_equal("C:/", File.expand_path("/two/..", "C:/one"))
-      
+
       assert_equal("//two", File.expand_path("//two", "/one"))
       assert_equal("//two", File.expand_path("//two", "//one"))
       assert_equal("//two", File.expand_path("//two", "///one"))
@@ -143,7 +143,7 @@ class TestFile < Test::Unit::TestCase
       assert_equal("//", File.expand_path("//", "//one"))
 
       # Corner cases that fail with JRuby on Windows (but pass with MRI 1.8.6)
-      # 
+      #
       ### assert_equal("///two", File.expand_path("///two", "/one"))
       ### assert_equal("///two", File.expand_path("///two/..", "/one"))
       ### assert_equal("////two", File.expand_path("////two", "/one"))
@@ -173,7 +173,7 @@ class TestFile < Test::Unit::TestCase
       rescue Exception => e
         assert(false)
       end
- 
+
       assert_equal("/bin", File.expand_path("../../bin", "/tmp/x"))
       assert_equal("/bin", File.expand_path("../../bin", "/tmp"))
       assert_equal("/bin", File.expand_path("../../bin", "/"))
@@ -196,7 +196,7 @@ class TestFile < Test::Unit::TestCase
       assert_equal("/file/abs", File.expand_path("/file/abs", '/abs/dir/here'))
 
       assert_equal("/", File.expand_path("/", nil))
-      
+
       assert_equal("//two", File.expand_path("//two", "//one"))
       assert_equal("/", File.expand_path("/two/..", "//one"))
 
@@ -285,7 +285,7 @@ class TestFile < Test::Unit::TestCase
     assert_equal(false, File.fnmatch("/*~",""))
     assert_equal(false, File.fnmatch("/.ht*","/favicon.ico"))
     assert_equal(false, File.fnmatch("/*~","/favicon.ico"))
-    
+
     # JRUBY-1986, make sure that fnmatch is sharing aware
     assert_equal(true, File.fnmatch("foobar"[/foo(.*)/, 1], "bar"))
   end
@@ -420,11 +420,11 @@ class TestFile < Test::Unit::TestCase
 
     assert_equal("foobarx\n", File.read("file:" + File.expand_path("test/test_jar2.jar") + "!/test_value.rb"))
 
-    assert_raises(Errno::ENOENT) do 
+    assert_raises(Errno::ENOENT) do
       File.read("file:" + File.expand_path("test/test_jar2.jar") + "!/inside_jar2.rb")
     end
 
-    assert_raises(Errno::ENOENT) do 
+    assert_raises(Errno::ENOENT) do
       File.read("file:" + File.expand_path("test/test_jar3.jar") + "!/inside_jar2.rb")
     end
 
@@ -443,7 +443,7 @@ class TestFile < Test::Unit::TestCase
 
     assert_equal "foobarx\n", values
   end
-  
+
   # JRUBY-2357
   def test_truncate_file_in_jar_file
     jruby_specific_test
@@ -492,7 +492,7 @@ class TestFile < Test::Unit::TestCase
     assert(!FileTest.exists?("file:/"))
     assert(!FileTest.exists?("file:/!"))
   end
-  
+
   # JRUBY-2524
   def test_file_stat_uri_prefixes
     assert_raise(Errno::ENOENT) do
@@ -501,7 +501,7 @@ class TestFile < Test::Unit::TestCase
     assert_raise(Errno::ENOENT) do
       File.lstat("file:!")
     end
-    
+
     assert_raise(Errno::ENOENT) do
       File.stat("file:")
     end
@@ -509,7 +509,7 @@ class TestFile < Test::Unit::TestCase
       File.stat("file:!")
     end
   end
-  
+
   # JRUBY-2524
   def test_file_time_uri_prefixes
     assert_raise(Errno::ENOENT) do
@@ -518,15 +518,15 @@ class TestFile < Test::Unit::TestCase
     assert_raise(Errno::ENOENT) do
       File.atime("file:!")
     end
-    
+
     assert_raise(Errno::ENOENT) do
       File.ctime("file:")
     end
     assert_raise(Errno::ENOENT) do
-      File.ctime("file:!") 
-    end    
+      File.ctime("file:!")
+    end
   end
-  
+
   def test_file_open_utime
     filename = "__test__file"
     File.open(filename, "w") {|f| }
@@ -538,7 +538,7 @@ class TestFile < Test::Unit::TestCase
     assert((time.to_i - File.mtime(filename).to_i).abs < 5)
     File.unlink(filename)
   end
-  
+
   def test_file_utime_nil
     filename = '__test__file'
     File.open(filename, 'w') {|f| }
@@ -549,7 +549,7 @@ class TestFile < Test::Unit::TestCase
     assert((File.mtime(filename).to_i - time.to_i) >= 2)
     File.unlink(filename)
   end
-  
+
   def test_file_utime_bad_time_raises_typeerror
     args = [ [], {}, '4000' ]
     filename = '__test__file'
@@ -564,13 +564,13 @@ class TestFile < Test::Unit::TestCase
     assert_raises(TypeError) {  File.utime(nil, time, filename) }
     File.unlink(filename)
   end
-  
+
   # JRUBY-1982 and JRUBY-1983
   def test_file_mtime_after_fileutils_touch
     filename = '__test__file'
     File.open(filename, 'w') {|f| }
     time = File.mtime(filename)
-    
+
     FileUtils.touch(filename)
     # File mtime resolution may not be sub-second on all platforms (e.g., windows)
     # allow for some slop
@@ -593,7 +593,7 @@ class TestFile < Test::Unit::TestCase
       # the goal here is to make sure that those "weird"
       # POSIX methods don't break JRuby, since there were
       # numerous regressions in this area
-      begin 
+      begin
         # TODO: See JRUBY-2818.
         File.readlink('build.xml')
       rescue NotImplementedError
@@ -672,7 +672,7 @@ class TestFile < Test::Unit::TestCase
 
   def test_more_constants
     jruby_specific_test
-    
+
     # FIXME: Not sure how I feel about pulling in Java here
     if Java::java.lang.System.get_property("file.separator") == '/'
       assert_equal(nil, File::ALT_SEPARATOR)
@@ -712,22 +712,22 @@ class TestFile < Test::Unit::TestCase
 
   def test_file_utf8
     # name contains a German "umlaut", maybe this should be encoded as Unicode integer (\u00FC) somehow
-    filename = 'jrüby'  
+    filename = 'jrüby'
     f = File.new(filename, File::CREAT)
     begin
       assert_equal(nil, f.read(1))
-      
+
       assert File.file?(filename)
       assert File.exist?(filename)
     ensure
       f.close
       File.delete(filename)
-      
+
       assert !File.file?(filename)
       assert !File.exist?(filename)
     end
   end
-  
+
   def test_file_create
     filename = '2nnever'
     f = File.new(filename, File::CREAT)
@@ -759,7 +759,7 @@ class TestFile < Test::Unit::TestCase
     assert !FileTest.directory?("")
     assert_raises(Errno::ENOENT) { File::Stat.new("") }
   end
-  
+
   def test_file_test
     assert(FileTest.file?('test/test_file.rb'))
     assert(! FileTest.file?('test'))
@@ -810,7 +810,7 @@ class TestFile < Test::Unit::TestCase
       File.delete(filename)
     end
   end
-  
+
   # JRUBY-2397
   unless(WINDOWS)
     def test_chown_accepts_nil_and_minus_one
@@ -834,35 +834,33 @@ class TestFile < Test::Unit::TestCase
     end
   end
 
-  # JRUBY-2491
-  def test_umask_noarg_does_not_zero
-    mask = 0200
-    orig_mask = File.umask(mask)
+  unless WINDOWS
+    # JRUBY-2491
+    def test_umask_noarg_does_not_zero
+      mask = 0200
+      orig_mask = File.umask(mask)
 
-    return if windows_64bit?
+      assert_equal(mask, File.umask)
+      # Subsequent calls should still return the same umask, not zero
+      assert_equal(mask, File.umask)
+    ensure
+      File.umask(orig_mask)
+    end
 
-    assert_equal(mask, File.umask)
-    # Subsequent calls should still return the same umask, not zero
-    assert_equal(mask, File.umask)
-  ensure
-    File.umask(orig_mask)
-  end
-  
-  # JRUBY-4937
-  def test_umask_respects_existing_umask_value
-    return if windows_64bit?
-    
-    orig_mask = File.umask
-    # Cleanup old test files just in case
-    FileUtils.rm_rf %w[ file_test_out.1.0644 file_test_out.2 ]
+    # JRUBY-4937
+    def test_umask_respects_existing_umask_value
+      orig_mask = File.umask
+      # Cleanup old test files just in case
+      FileUtils.rm_rf %w[ file_test_out.1.0644 file_test_out.2 ]
 
-    File.umask( 0172 ) # Set umask to fixed weird test value
-    open( "file_test_out.1.0644", 'w', 0707 ) { |f| assert_equal(0172, File.umask) }
-    open( "file_test_out.2",      'w'       ) { |f| assert_equal(0172, File.umask) }
-    
-  ensure
-    FileUtils.rm_rf %w[ file_test_out.1.0644 file_test_out.2 ]
-    File.umask(orig_mask)
+      File.umask( 0172 ) # Set umask to fixed weird test value
+      open( "file_test_out.1.0644", 'w', 0707 ) { |f| assert_equal(0172, File.umask) }
+      open( "file_test_out.2",      'w'       ) { |f| assert_equal(0172, File.umask) }
+
+    ensure
+      FileUtils.rm_rf %w[ file_test_out.1.0644 file_test_out.2 ]
+      File.umask(orig_mask)
+    end
   end
 
   def test_allow_override_of_make_tmpname
@@ -1022,30 +1020,26 @@ class TestFile < Test::Unit::TestCase
     Dir.rmdir("dir_tmp")
   end
 
-  # JRUBY-4927
-  def test_chmod_when_chdir
-    pwd = Dir.getwd
-    path = Tempfile.new("somewhere").path
-    FileUtils.rm_rf path
-    FileUtils.mkpath path
-    FileUtils.mkpath File.join(path, "src")
-    Dir.chdir path
+  unless WINDOWS
+    # JRUBY-4927
+    def test_chmod_when_chdir
+      pwd = Dir.getwd
+      path = Tempfile.new("somewhere").path
+      FileUtils.rm_rf path
+      FileUtils.mkpath path
+      FileUtils.mkpath File.join(path, "src")
+      Dir.chdir path
 
-    1.upto(4) do |i|
-      File.open("src/file#{i}", "w+") {|f| f.write "file#{i} raw"}
+      1.upto(4) do |i|
+        File.open("src/file#{i}", "w+") {|f| f.write "file#{i} raw"}
+      end
+      Dir['src/*'].each do |file|
+        File.chmod(0o755, file)
+        assert_equal 0o755, (File.stat(file).mode & 0o755)
+      end
+    ensure
+      FileUtils.rm_rf(path)
+      Dir.chdir(pwd)
     end
-    Dir['src/*'].each do |file|
-      File.chmod(0o755, file)
-      assert_equal 0o755, (File.stat(file).mode & 0o755)
-    end
-  ensure
-    FileUtils.rm_rf(path)
-    Dir.chdir(pwd)
   end
-  
-  def windows_64bit?
-    arch = java.lang.System.getProperty('sun.arch.data.model')
-    WINDOWS && arch == '64'
-  end
-  
 end
