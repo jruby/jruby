@@ -94,6 +94,7 @@ describe 'Dir globs (Dir.glob and Dir.[]) +' do
 end
 
 describe "File.expand_path in a jar" do
+  context "with spaces in the name" do
   before do
     Dir.mkdir 'spaces test' unless File.exist? 'spaces test'
     File.open('spaces_file.rb', 'w') do |file|
@@ -121,6 +122,7 @@ CODE
     require 'spaces test/test.jar'
     require 'spaces_file'
     $foo_dir.should_not match(/%20/)
+  end
   end
 
   it "expands the path relative to the jar" do
