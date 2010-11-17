@@ -95,34 +95,34 @@ end
 
 describe "File.expand_path in a jar" do
   context "with spaces in the name" do
-  before do
-    Dir.mkdir 'spaces test' unless File.exist? 'spaces test'
-    File.open('spaces_file.rb', 'w') do |file|
-      file << <<-CODE
+    before do
+      Dir.mkdir 'spaces test' unless File.exist? 'spaces test'
+      File.open('spaces_file.rb', 'w') do |file|
+        file << <<-CODE
       $foo_dir = File.expand_path(File.dirname(__FILE__))
 CODE
+      end
+      `jar -cf test.jar spaces_file.rb`
+
+      File.delete('spaces_file.rb')
+      FileUtils.move 'test.jar', 'spaces test'
     end
-    `jar -cf test.jar spaces_file.rb`
 
-    File.delete('spaces_file.rb')
-    FileUtils.move 'test.jar', 'spaces test'
-  end
-
-  after do
-    begin
-      File.delete('spaces test/test.jar')
-      Dir.rmdir 'spaces test'
-    rescue Errno::EACCES => e
-      puts "Couldn't delete 'spaces test/test.jar' - Windows bug with JarFile holding write-lock after closed"
+    after do
+      begin
+        File.delete('spaces test/test.jar')
+        Dir.rmdir 'spaces test'
+      rescue Errno::EACCES => e
+        puts "Couldn't delete 'spaces test/test.jar' - Windows bug with JarFile holding write-lock after closed"
+      end
+      $foo_dir = nil
     end
-    $foo_dir = nil
-  end
 
-  it "does not encode URIs for jars on a filesystem" do
-    require 'spaces test/test.jar'
-    require 'spaces_file'
-    $foo_dir.should_not match(/%20/)
-  end
+    it "does not encode URIs for jars on a filesystem" do
+      require 'spaces test/test.jar'
+      require 'spaces_file'
+      $foo_dir.should_not match(/%20/)
+    end
   end
 
   it "expands the path relative to the jar" do
