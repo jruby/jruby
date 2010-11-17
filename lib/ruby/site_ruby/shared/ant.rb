@@ -2,7 +2,7 @@ require 'java'
 
 class Ant
   def self.load_from_ant
-    IO.popen("ant -diagnostics") do |diag|
+    IO.popen("#{ant_script} -diagnostics") do |diag|
       classpath_jars = []
       listing_path = nil
       jar_path = nil
@@ -48,6 +48,11 @@ class Ant
 
   def self.load_if_exist(jar)
     $CLASSPATH << jar if File.exist?(jar)
+  end
+
+  def self.ant_script
+    require 'rbconfig'
+    Config::CONFIG['host_os'] =~ /Windows|mswin/ ? 'ant.bat' : 'ant'
   end
 
   load
