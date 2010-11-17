@@ -37,7 +37,7 @@ public class DataConverter {
         } else if (args.length == 1) {
             Type type = Util.findType(context, args[0]);
 
-            m.fastSetInstanceVariable("native_type", type);
+            m.fastSetInternalVariable("native_type", type);
 
             return type;
 
