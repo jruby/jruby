@@ -58,7 +58,7 @@ public class AllocateFrameInstr extends Instr {
         RubyModule implementationClass = scope.getStaticScope().getModule();
 
         if (implementationClass == null) {
-            implementationClass = interp.getContext().getRuntime().getObject();
+            implementationClass = interp.getRuntime().getObject();
         }
 
         interp.getContext().preMethodFrameAndScope(implementationClass, null, self,

@@ -56,7 +56,7 @@ public class Regexp extends Operand {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        RubyRegexp reg = RubyRegexp.newRegexp(interp.getContext().getRuntime(),
+        RubyRegexp reg = RubyRegexp.newRegexp(interp.getRuntime(),
                 ((RubyString) regexp.retrieve(interp)).getByteList(), options);
 
         reg.setLiteral();

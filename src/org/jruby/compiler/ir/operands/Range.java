@@ -77,7 +77,7 @@ public class Range extends Operand {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        return RubyRange.newRange(interp.getContext().getRuntime(), interp.getContext(),
+        return RubyRange.newRange(interp.getRuntime(), interp.getContext(),
                 (IRubyObject) begin.retrieve(interp), (IRubyObject) end.retrieve(interp), exclusive);
     }
 }

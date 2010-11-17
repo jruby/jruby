@@ -22,7 +22,7 @@ public class ClassMetaObject extends ModuleMetaObject {
 
         if (module != null) return module;
 
-        Ruby runtime = interp.getContext().getRuntime();
+        Ruby runtime = interp.getRuntime();
         RubyModule container = getContainer(interp, runtime);
         // TODO: Get superclass
         module = container.defineOrGetClassUnder(scope.getName(), runtime.getObject());

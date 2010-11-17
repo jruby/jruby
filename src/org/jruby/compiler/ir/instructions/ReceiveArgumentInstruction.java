@@ -53,6 +53,6 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
 
     @Interp
     private void  interpretAsRestArg(Operand destination, InterpreterContext interp) {
-        destination.store(interp, interp.getContext().getRuntime().newArray(interp.getParametersFrom(argIndex)));
+        destination.store(interp, interp.getRuntime().newArray(interp.getParametersFrom(argIndex)));
     }
 }

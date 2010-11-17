@@ -30,6 +30,6 @@ public class NotInstr extends OneOperandInstr {
     public void interpret(InterpreterContext interp, IRubyObject self) {
         boolean not = !((IRubyObject) getArg().retrieve(interp)).isTrue();
 
-        getResult().store(interp, interp.getContext().getRuntime().newBoolean(not));
+        getResult().store(interp, interp.getRuntime().newBoolean(not));
     }
 }

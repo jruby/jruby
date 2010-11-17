@@ -27,6 +27,6 @@ public class BooleanLiteral extends Constant {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        return interp.getContext().getRuntime().newBoolean(isTrue());
+        return interp.getRuntime().newBoolean(isTrue());
     }
 }

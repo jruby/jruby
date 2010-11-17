@@ -21,7 +21,7 @@ public class ModuleMetaObject extends MetaObject {
 
         if (module != null) return module;
 
-        Ruby runtime = interp.getContext().getRuntime();
+        Ruby runtime = interp.getRuntime();
         RubyModule container = getContainer(interp, runtime);
         module = container.defineOrGetModuleUnder(scope.getName());
 

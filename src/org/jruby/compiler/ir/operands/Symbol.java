@@ -9,6 +9,6 @@ public class Symbol extends Reference {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        return interp.getContext().getRuntime().newSymbol(getName());
+        return interp.getRuntime().newSymbol(getName());
     }
 }

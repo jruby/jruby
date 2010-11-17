@@ -80,7 +80,7 @@ public class Hash extends Operand {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        Ruby runtime = interp.getContext().getRuntime();
+        Ruby runtime = interp.getRuntime();
         RubyHash hash = RubyHash.newHash(runtime);
 
         for (KeyValuePair pair : pairs) {

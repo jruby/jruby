@@ -32,12 +32,12 @@ public class GlobalVariable extends Variable {
     @Interp
     @Override
     public Object retrieve(InterpreterContext interp) {
-        return interp.getContext().getRuntime().getGlobalVariables().get(getName());
+        return interp.getRuntime().getGlobalVariables().get(getName());
     }
 
     @Interp
     @Override
     public Object store(InterpreterContext interp, Object value) {
-        return interp.getContext().getRuntime().getGlobalVariables().set(getName(), (IRubyObject) value);
+        return interp.getRuntime().getGlobalVariables().set(getName(), (IRubyObject) value);
     }
 }

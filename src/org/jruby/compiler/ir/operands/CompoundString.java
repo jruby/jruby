@@ -81,6 +81,6 @@ public class CompoundString extends Operand {
             buf.append(p.retrieve(interp));
         }
 
-        return interp.getContext().getRuntime().newString(buf.toString());
+        return interp.getRuntime().newString(buf.toString());
     }
 }

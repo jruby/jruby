@@ -25,6 +25,6 @@ public class ReceiveClosureInstr extends NoOperandInstr {
     @Interp
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        getResult().store(interp, interp.getContext().getRuntime().newProc(Type.PROC, interp.getBlock()));
+        getResult().store(interp, interp.getRuntime().newProc(Type.PROC, interp.getBlock()));
     }
 }

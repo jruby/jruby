@@ -85,9 +85,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
     public Object getFrameVariable(Object frame, String name) {
         Object value = getFrameVariableMap(frame).get(name);
 
-        if (value == null) {
-            value = getContext().getRuntime().getNil();
-        }
+        if (value == null) value = getRuntime().getNil();
 
         return value;
     }
@@ -113,9 +111,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
     public Object getLocalVariable(String name) {
         Object value = localVariables.get(name);
 
-        if (value == null) {
-            value = getContext().getRuntime().getNil();
-        }
+        if (value == null) value = getRuntime().getNil();
 
         return value;
     }
