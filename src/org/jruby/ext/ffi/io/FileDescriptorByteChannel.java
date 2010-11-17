@@ -28,8 +28,11 @@
 
 package org.jruby.ext.ffi.io;
 
-import com.kenai.jaffl.annotations.In;
-import com.kenai.jaffl.annotations.Out;
+import org.jruby.Ruby;
+import org.jruby.ext.posix.LibC;
+import org.jruby.ext.posix.POSIX;
+import org.jruby.ext.posix.POSIXFactory;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
@@ -39,17 +42,31 @@ import java.nio.channels.ByteChannel;
  * file descriptor.
  */
 public class FileDescriptorByteChannel implements ByteChannel {
-    private final static LibC libc = com.kenai.jaffl.Library.loadLibrary("c", LibC.class);
+    private static LibC shared_libc;
+
+    private LibC libc;
     private final int fd;
     private volatile boolean isOpen = true;
+
+    private synchronized static LibC libc(Ruby runtime) {
+        if (shared_libc != null) {
+            return shared_libc;
+        }
+        shared_libc = runtime.getPosix().libc();
+        if (shared_libc == null) {
+            throw new IllegalStateException("native not enabled");
+        }
+        return shared_libc;
+    }
 
     /**
      * Creates a new <tt>FileDescriptorByteChannel</tt>.
      *
      * @param fd The native unix fd to read/write.
      */
-    public FileDescriptorByteChannel(int fd) {
+    public FileDescriptorByteChannel(Ruby runtime, int fd) {
         this.fd = fd;
+        this.libc = libc(runtime);
     }
 
     /**
@@ -110,14 +127,5 @@ public class FileDescriptorByteChannel implements ByteChannel {
         }
         isOpen = false;
         libc.close(fd);
-    }
-
-    /**
-     * The native library functions used to access the file descriptor.
-     */
-    public static interface LibC {
-        int read(int fd, @Out ByteBuffer dst, int len);
-        int write(int fd, @In ByteBuffer src, int len);
-        int close(int fd);
     }
 }
