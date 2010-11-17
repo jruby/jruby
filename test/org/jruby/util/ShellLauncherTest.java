@@ -11,6 +11,7 @@ import org.jruby.RubyHash;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.RubyString;
 import org.jruby.ext.posix.util.Platform;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static java.io.File.*;
@@ -107,7 +108,10 @@ public class ShellLauncherTest extends TestCase {
     }
     public void testUsesRubyEnvPathToRunShellPrograms() {
         RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
-        env.put("PATH", env.get("PATH") + File.pathSeparator + System.getProperty("jruby.home") + "/test/org/jruby/util");
+        RubyString path = runtime.newString("PATH");
+        RubyString utilPath = runtime.newString(System.getProperty("jruby.home") + "/test/org/jruby/util");
+        ThreadContext context = runtime.getCurrentContext();
+        env.op_aset(context, path, env.op_aref(context, path).convertToString().concat(runtime.newString(File.pathSeparator)).concat(utilPath));
 
         String cmd = "shell_launcher_test";
         if (Platform.IS_WINDOWS) {
