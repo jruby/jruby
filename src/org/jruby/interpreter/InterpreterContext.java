@@ -1,5 +1,6 @@
 package org.jruby.interpreter;
 
+import org.jruby.Ruby;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
@@ -30,8 +31,11 @@ public interface InterpreterContext {
 
     public Object getTemporaryVariable(int offset);
     public Object setTemporaryVariable(int offset, Object value);
-    public Object getLocalVariable(int location);
-    public Object setLocalVariable(int location, Object value);
+    public Object getLocalVariable(String name);
+    public Object setLocalVariable(String name, Object value);
+
+    public Object getFrameVariable(Object frame, String name);
+    public void setFrameVariable(Object frame, String name, Object value);
 
     public Block getBlock();
     public void setBlock(Block block);
@@ -40,6 +44,7 @@ public interface InterpreterContext {
     
     // Section: Runtime helpers
     public ThreadContext getContext();
+    public Ruby getRuntime();
 
     public void setFrame(Frame currentFrame);
     public Frame getFrame();

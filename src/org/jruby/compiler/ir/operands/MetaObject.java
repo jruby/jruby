@@ -52,6 +52,10 @@ public class MetaObject extends Operand {
         return false;
     }
 
+    public IRScope getScope() {
+        return scope;
+    }
+
     /**
      * Find the closest ClassMetaObject that contains this metaobject.  Note that it
      * may be itself a class and return itself.

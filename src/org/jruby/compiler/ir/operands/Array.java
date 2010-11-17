@@ -112,6 +112,6 @@ public class Array extends Operand {
             elements[i] = (IRubyObject) elts[i].retrieve(interp);
         }
 
-        return interp.getContext().getRuntime().newArray(elements);
+        return interp.getRuntime().newArray(elements);
     }
 }

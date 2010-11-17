@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
@@ -46,17 +47,20 @@ public class LoadFromFrameInstr extends GetInstr {
         return new LoadFromFrameInstr(ii.getRenamedVariable(result), (IRExecutionScope)((MetaObject)getSource()).scope, getName());
     }
 
+    private IRScope getIRScope(Operand scopeHolder) {
+        assert scopeHolder instanceof MetaObject : "Target should be a MetaObject";
+
+        return ((MetaObject) scopeHolder).getScope();
+    }
+
     @Interp
+    @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
         Operand value = getResult();
         if (value instanceof LocalVariable) {
-            LocalVariable variable = (LocalVariable) value;
-            int location = variable.getLocation();
-            int offset = location & 0xffff;
-            int depth = location >> 16;
-            System.out.println("VS: " + offset + ", L: "+ depth);
-            interp.setLocalVariable(variable.getLocation(), interp.getContext().getCurrentScope().getValue(offset, depth));
-            
+            String name = ((LocalVariable) value).getName();
+
+            interp.setLocalVariable(name, interp.getFrameVariable(getIRScope(getSource()), name));
         }
     }
 }

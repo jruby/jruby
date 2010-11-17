@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -33,6 +34,12 @@ public class StoreToFrameInstr extends PutInstr {
         return new StoreToFrameInstr((IRExecutionScope)((MetaObject)operands[TARGET]).scope, ref, operands[VALUE].cloneForInlining(ii));
     }
 
+    private IRScope getIRScope(Operand scopeHolder) {
+        assert scopeHolder instanceof MetaObject : "Target should be a MetaObject";
+
+        return ((MetaObject) scopeHolder).getScope();
+    }
+
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
         Operand value = getValue();
@@ -40,8 +47,9 @@ public class StoreToFrameInstr extends PutInstr {
         if (value instanceof SelfVariable) {
             interp.getFrame().setSelf(self);
         } else if (value instanceof LocalVariable) {
-            LocalVariable variable = (LocalVariable) value;
-            interp.getContext().getCurrentScope().setValue((IRubyObject) interp.getLocalVariable(variable.getLocation()), variable.getLocation(), 0);
+            String name = ((LocalVariable) value).getName();
+
+            interp.setFrameVariable(getIRScope(getTarget()), name, interp.getLocalVariable(name));
         }
     }
 }
