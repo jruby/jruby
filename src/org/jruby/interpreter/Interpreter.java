@@ -49,7 +49,9 @@ public class Interpreter {
     }
 
     public static void main(String[] args) {
+        long t_m1 = new Date().getTime();
         Ruby runtime = Ruby.getGlobalRuntime();
+        long t0 = new Date().getTime();
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int i = isDebug ? 1 : 0;
         boolean isCommandLineScript = args.length > i && args[i].equals("-e");
@@ -85,6 +87,8 @@ public class Interpreter {
             Interpreter.interpretTop(runtime, scope, runtime.getTopSelf());
             long t10 = new Date().getTime();
 
+            System.out.println("Time to get runtime       : " + (t0 - t_m1));
+            System.out.println("Time to parse args        : " + (t1 - t0));
             System.out.println("Time to build AST         : " + (t2 - t1));
             System.out.println("Time to build IR          : " + (t3 - t2));
             System.out.println("Time to run local opts    : " + (t4 - t3));
