@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'rbconfig'
+require 'java'
 
 class TestIO < Test::Unit::TestCase
   WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
@@ -491,5 +492,26 @@ class TestIO < Test::Unit::TestCase
       p, o, i, e = IO.popen4("/bin/ps -a -x -f | grep [/]bin/ps'")
       assert_no_match Regexp.new(p.to_s), i.read.grep(/\/bin\/ps/).first
     end
+  end
+  
+  # JRUBY-5114
+  def test_finalization_leaves_channels_open
+    channel = java.io.FileInputStream.new(__FILE__).channel
+    
+    # sanity check
+    io1 = channel.to_io
+    assert_equal "r", io1.sysread(1)
+    io2 = channel.to_io
+    assert_equal "e", io2.sysread(1)
+    
+    # dereference and force GC a few times to finalize
+    io1 = nil
+    5.times { java.lang.System.gc }
+    
+    # io2 and original channel should still be open and usable
+    assert_equal "q", io2.sysread(1)
+    assert !io2.closed?
+    
+    assert channel.open?
   end
 end
