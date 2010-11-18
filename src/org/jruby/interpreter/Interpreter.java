@@ -93,6 +93,7 @@ public class Interpreter {
             System.out.println("Time to run lva           : " + (t7 - t6));
             System.out.println("Time to run dead code elim: " + (t8 - t7));
             System.out.println("Time to add frame instrs  : " + (t9 - t8));
+            System.out.println("Time to interpret         : " + (t10 - t9));
             i++;
         }
     }
