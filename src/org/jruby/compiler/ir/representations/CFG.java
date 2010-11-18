@@ -785,8 +785,8 @@ public class CFG {
     }
 
     public void deleteOrphanedBlocks() {
-		  System.out.println("\nGraph:\n" + getGraph().toString());
-		  System.out.println("\nInstructions:\n" + toStringInstrs());
+		  // System.out.println("\nGraph:\n" + getGraph().toString());
+		  // System.out.println("\nInstructions:\n" + toStringInstrs());
 
         // FIXME: Quick and dirty implementation
         while (true) {
