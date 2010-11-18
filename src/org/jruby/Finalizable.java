@@ -29,11 +29,11 @@ package org.jruby;
 
 /**
  * An almost entirely useless interface for those objects that we _really_ want
- * to finalise.
+ * to finalize.
  * 
  * @author pldms
  *
  */
 public interface Finalizable {
-    public void finalize();
+    public void finalize() throws Throwable;
 }

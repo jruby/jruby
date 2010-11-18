@@ -586,17 +586,11 @@ public class ChannelStream implements Stream, Finalizable {
                 + descriptor.getFileno() + " closed by stream");
     }
 
-    /**
-     * Internal close, to safely work for finalizing.
-     * Silences possible exceptions.
-     */
-    private void closeForFinalize() {
+    private void finish() throws BadDescriptorException, IOException {
         try {
-            close();
-        } catch (BadDescriptorException ex) {
-            // silence
-        } catch (IOException ex) {
-            // silence
+            flushWrite();
+
+            descriptor.finish();
         } finally {
             // clear runtime so it doesn't get stuck in memory (JRUBY-2933)
             runtime = null;
@@ -1145,7 +1139,9 @@ public class ChannelStream implements Stream, Finalizable {
      * Ensure close (especially flush) when we're finished with.
      */
     @Override
-    public void finalize() {
+    public void finalize() throws Throwable {
+        super.finalize();
+        
         if (closedExplicitly) return;
 
         if (DEBUG) {
@@ -1154,7 +1150,8 @@ public class ChannelStream implements Stream, Finalizable {
 
         // FIXME: I got a bunch of NPEs when I didn't check for nulls here...HOW?!
         if (descriptor != null && descriptor.isOpen()) {
-            closeForFinalize(); // close without removing from finalizers
+            // tidy up
+            finish();
         }
     }
 

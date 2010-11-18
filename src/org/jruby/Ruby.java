@@ -2834,7 +2834,11 @@ public final class Ruby {
                 for (Iterator<Finalizable> finalIter = new ArrayList<Finalizable>(finalizers.keySet()).iterator(); finalIter.hasNext();) {
                     Finalizable f = finalIter.next();
                     if (f != null) {
-                        f.finalize();
+                        try {
+                            f.finalize();
+                        } catch (Throwable t) {
+                            // ignore
+                        }
                     }
                     finalIter.remove();
                 }
@@ -2847,7 +2851,11 @@ public final class Ruby {
                         internalFinalizers.keySet()).iterator(); finalIter.hasNext();) {
                     Finalizable f = finalIter.next();
                     if (f != null) {
-                        f.finalize();
+                        try {
+                            f.finalize();
+                        } catch (Throwable t) {
+                            // ignore
+                        }
                     }
                     finalIter.remove();
                 }
