@@ -83,7 +83,9 @@ public class Pointer extends AbstractMemory {
 
     @JRubyMethod(name = { "initialize" })
     public IRubyObject initialize(ThreadContext context, IRubyObject address) {
-        io = Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address));
+        io = address instanceof Pointer
+                ? ((Pointer) address).getMemoryIO()
+                : Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address));
         size = Long.MAX_VALUE;
         typeSize = 1;
 
@@ -92,7 +94,9 @@ public class Pointer extends AbstractMemory {
 
     @JRubyMethod(name = { "initialize" })
     public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject address) {
-        io = Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address));
+        io = address instanceof Pointer
+                ? ((Pointer) address).getMemoryIO()
+                : Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address));
         size = Long.MAX_VALUE;
         typeSize = calculateSize(context, type);
 
