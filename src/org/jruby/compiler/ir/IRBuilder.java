@@ -356,6 +356,9 @@ public class IRBuilder {
 	 private int _lastProcessedLineNum = -1;
     private Stack<EnsureBlockInfo> _ensureBlockStack = new Stack<EnsureBlockInfo>();
 
+    // Stack encoding nested rescue blocks -- this just tracks the start label of the blocks
+    private Stack<Label> _rescueBlockLabelStack = new Stack<Label>();
+
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
         if (isCommandLineScript) {
@@ -396,7 +399,7 @@ public class IRBuilder {
         return n;
     }
 
-    public Operand generateJRubyUtilityCall(IRScope m, MethAddr meth, Operand reciever, Operand[] args) {
+    public Operand generateJRubyUtilityCall(IRScope m, MethAddr meth, Operand receiver, Operand[] args) {
         Variable ret = m.getNewTemporaryVariable();
         m.addInstr(new JRubyImplCallInstr(ret, meth, receiver, args));
         return ret;
@@ -689,7 +692,7 @@ public class IRBuilder {
         Operand newName = build(alias.getNewName(), s);
         Operand oldName = build(alias.getOldName(), s);
         Operand[] args = new Operand[] { newName, oldName };
-        s.addInstr(new RubyInternalCallInstr(null, MethAddr.DEFINE_ALIAS, new MetaObject(s), args));
+        s.addInstr(new RubyInternalCallInstr(null, MethAddr.DEFINE_ALIAS, MetaObject.create(s), args));
         return Nil.NIL;
     }
 
@@ -2278,11 +2281,11 @@ public class IRBuilder {
         if (needsDefnCheck) {
             l2 = s.getNewLabel();
             v1 = buildGetDefinitionBase(orNode.getFirstNode(), s);
-            s.addInstr(new BEQ_Instr(v1, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
+            s.addInstr(new BEQInstr(v1, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
         }
         v1 = build(orNode.getFirstNode(), s); // build of 'x'
-        s.addInstr(new IS_TRUE_Instr(f, v1));
-        s.addInstr(new BEQ_Instr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
+        s.addInstr(new IsTrueInstr(f, v1));
+        s.addInstr(new BEQInstr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         if (needsDefnCheck) {
             s.addInstr(new LABEL_Instr(l2));
         }
@@ -2340,7 +2343,7 @@ public class IRBuilder {
             ret = buildOpAsgnWithMethod(opAsgnNode, m);
         }
 
-        m.addInstr(new THREAD_POLL_Instr());
+        m.addInstr(new ThreadPollInstr());
         return ret;
     }
 
@@ -2701,7 +2704,7 @@ public class IRBuilder {
     public Operand buildRetry(Node node, IRScope s) {
         // JRuby only supports retry when present in rescue blocks!
         // 1.9 doesn't support retry anywhere else.
-        s.addInstr(new THREAD_POLL_Instr());
+        s.addInstr(new ThreadPollInstr());
 
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
@@ -2710,7 +2713,7 @@ public class IRBuilder {
             s.addInstr(new THROW_EXCEPTION_Instr(exc));
         }
         else {
-            s.addInstr(new JUMP_Instr(_rescueBlockLabelStack.peek()));
+            s.addInstr(new JumpInstr(_rescueBlockLabelStack.peek()));
         }
         return Nil.NIL;
     }
@@ -2849,7 +2852,7 @@ public class IRBuilder {
     public Operand buildVAlias(Node node, IRScope m) {
         VAliasNode valiasNode = (VAliasNode) node;
         Operand[] args = new Operand[] { new StringLiteral(valiasNode.getOldName()) };
-        m.addInstr(new RubyInternalCallInstr(null, MethAddr.GVAR_ALIAS, new new StringLiteral(valiasNode.getNewName()), args));
+        m.addInstr(new RubyInternalCallInstr(null, MethAddr.GVAR_ALIAS, new StringLiteral(valiasNode.getNewName()), args));
         return Nil.NIL;
     }
 
