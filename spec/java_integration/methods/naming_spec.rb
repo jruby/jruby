@@ -13,11 +13,9 @@ describe "Java static method names" do
     methods.should include("camel_with_upper1")
     methods.should include("camelWITHUpper1")
     methods.should include("CAMELWithUpper1")
-    
-    pending("broken") do
-      methods.should_not include("camel_withupper1")
-      methods.should_not include("camelwith_upper1")
-    end
+
+    methods.should_not include("camel_withupper1")
+    methods.should_not include("camelwith_upper1")
   end
   
   it "should present javabean properties as attribute readers and writers" do
@@ -81,11 +79,9 @@ describe "Java instance method names" do
     methods.should include("camel_with_upper2")
     methods.should include("camelWITHUpper2")
     methods.should include("CAMELWithUpper2")
-    
-    pending("broken") do
-      methods.should_not include("camel_withupper2")
-      methods.should_not include("camelwith_upper2")
-    end
+
+    methods.should_not include("camel_withupper2")
+    methods.should_not include("camelwith_upper2")
   end
   
   it "should present javabean properties as attribute readers and writers" do
