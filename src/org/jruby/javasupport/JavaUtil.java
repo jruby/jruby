@@ -298,7 +298,7 @@ public class JavaUtil {
         return javaPropertyName;
     }
 
-    private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)([A-Z])");
+    private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("([A-Z]+|[a-z][0-9]*)([A-Z]|[A-Z][a-z])");
     public static String getRubyCasedName(String javaCasedName) {
         Matcher m = CAMEL_CASE_SPLITTER.matcher(javaCasedName);
         return m.replaceAll("$1_$2").toLowerCase();
