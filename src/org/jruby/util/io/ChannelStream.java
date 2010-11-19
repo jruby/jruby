@@ -577,23 +577,24 @@ public class ChannelStream implements Stream, Finalizable {
      * @throws BadDescriptorException
      */
     private void close() throws IOException, BadDescriptorException {
-        flushWrite();
-
-        descriptor.close();
-        buffer = EMPTY_BUFFER;
-
-        if (DEBUG) getLogger("ChannelStream").info("Descriptor for fileno "
-                + descriptor.getFileno() + " closed by stream");
+        // finish and close ourselves
+        finish(true);
     }
 
-    private void finish() throws BadDescriptorException, IOException {
+    private void finish(boolean close) throws BadDescriptorException, IOException {
         try {
             flushWrite();
 
-            descriptor.finish();
+            if (DEBUG) getLogger("ChannelStream").info("Descriptor for fileno "
+                    + descriptor.getFileno() + " closed by stream");
         } finally {
+            buffer = EMPTY_BUFFER;
+
             // clear runtime so it doesn't get stuck in memory (JRUBY-2933)
             runtime = null;
+
+            // finish descriptor
+            descriptor.finish(close);
         }
     }
 
@@ -1151,7 +1152,7 @@ public class ChannelStream implements Stream, Finalizable {
         // FIXME: I got a bunch of NPEs when I didn't check for nulls here...HOW?!
         if (descriptor != null && descriptor.isOpen()) {
             // tidy up
-            finish();
+            finish(false);
         }
     }
 

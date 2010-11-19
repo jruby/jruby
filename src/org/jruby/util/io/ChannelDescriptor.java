@@ -784,15 +784,11 @@ public class ChannelDescriptor {
      */
     public void close() throws BadDescriptorException, IOException {
         // tidy up
-        finish();
+        finish(true);
 
-        // if we're the last referrer, close the channel
-        if (refCounter.get() <= 0) {
-            channel.close();
-        }
     }
 
-    public void finish() throws BadDescriptorException {
+    void finish(boolean close) throws BadDescriptorException, IOException {
         synchronized (refCounter) {
             // if refcount is at or below zero, we're no longer valid
             if (refCounter.get() <= 0) {
@@ -810,7 +806,12 @@ public class ChannelDescriptor {
             if (DEBUG) getLogger("ChannelDescriptor").info("Descriptor for fileno " + internalFileno + " refs: " + count);
 
             if (count <= 0) {
-                unregisterDescriptor(internalFileno);
+                // if we're the last referrer, close the channel
+                try {
+                    if (close) channel.close();
+                } finally {
+                    unregisterDescriptor(internalFileno);
+                }
             }
         }
     }
