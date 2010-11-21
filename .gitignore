@@ -54,4 +54,4 @@ lib/ruby/cext/
 *.bundle
 *.[oa]
 dev_null
-
+.redcar
