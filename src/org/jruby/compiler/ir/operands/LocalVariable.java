@@ -44,6 +44,10 @@ public class LocalVariable extends Variable {
         return name.hashCode();
     }
 
+    public boolean isSelf() {
+        return name.equals("%self");  // SSS FIXME: This is potentially bug-prone.
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof LocalVariable)) return false;

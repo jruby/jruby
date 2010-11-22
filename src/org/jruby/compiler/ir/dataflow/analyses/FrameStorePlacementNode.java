@@ -21,7 +21,6 @@ import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ListIterator;
-import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
 
 public class FrameStorePlacementNode extends FlowGraphNode {
@@ -49,13 +48,13 @@ public class FrameStorePlacementNode extends FlowGraphNode {
     public void buildDataFlowVars(Instr i) {
         FrameStorePlacementProblem fsp = (FrameStorePlacementProblem) _prob;
         for (Variable v : i.getUsedVariables()) {
-            if ((v instanceof LocalVariable) || (v instanceof SelfVariable))
+            if (v instanceof LocalVariable)
                 fsp.recordUsedVar(v);
         }
 
         Variable v = i.getResult();
 
-        if ((v != null) && ((v instanceof LocalVariable) || (v instanceof SelfVariable))) fsp.recordDefVar(v);
+        if ((v != null) && (v instanceof LocalVariable)) fsp.recordDefVar(v);
     }
 
     public void initSolnForNode() {
@@ -118,7 +117,7 @@ public class FrameStorePlacementNode extends FlowGraphNode {
 
             Variable v = i.getResult();
 
-            if ((v != null) && ((v instanceof LocalVariable) || (v instanceof SelfVariable))) dirtyVars.add(v);
+            if ((v != null) && (v instanceof LocalVariable)) dirtyVars.add(v);
             if (i.operation.isReturn()) dirtyVars.clear();
         }
 
@@ -223,7 +222,7 @@ public class FrameStorePlacementNode extends FlowGraphNode {
 
             Variable v = i.getResult();
             
-            if ((v != null) && ((v instanceof LocalVariable) || (v instanceof SelfVariable))) dirtyVars.add(v);
+            if ((v != null) && (v instanceof LocalVariable)) dirtyVars.add(v);
         }
     }
 

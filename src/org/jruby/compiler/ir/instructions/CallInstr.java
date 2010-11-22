@@ -9,12 +9,12 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
-import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
@@ -116,7 +116,7 @@ public class CallInstr extends MultiOperandInstr {
         } // self.foo(..);
         // If this call instruction is in a class method, we'll fetch a class method
         // If this call instruction is in an instance method, we'll fetch an instance method
-        else if (receiver instanceof SelfVariable) {
+        else if ((receiver instanceof LocalVariable) && (((LocalVariable)receiver).isSelf())) {
             return null;
         } else {
             IRClass c = receiver.getTargetClass();

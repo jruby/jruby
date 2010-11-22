@@ -7,7 +7,6 @@ import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -42,14 +41,11 @@ public class StoreToFrameInstr extends PutInstr {
 
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        Operand value = getValue();
-        
-        if (value instanceof SelfVariable) {
-            interp.getFrame().setSelf(self);
-        } else if (value instanceof LocalVariable) {
-            String name = ((LocalVariable) value).getName();
+        Operand var = getValue();
 
-            interp.setFrameVariable(getIRScope(getTarget()), name, interp.getLocalVariable(name));
-        }
+        assert var instanceof LocalVariable;
+
+        String name = ((LocalVariable) var).getName();
+        interp.setFrameVariable(getIRScope(getTarget()), name, interp.getLocalVariable(name));
     }
 }

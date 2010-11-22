@@ -3,7 +3,6 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -40,9 +39,6 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
         Operand destination = getResult(); // result is a confusing name
-
-        // All interpretation already has self so we have no need to receive it.
-        if (destination instanceof SelfVariable) return;
 
         if (restOfArgArray) {
             interpretAsRestArg(destination, interp);

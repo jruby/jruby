@@ -44,7 +44,6 @@ public class InlinerInfo {
     }
 
     public Variable getRenamedVariable(Variable v) {
-        // SSS FIXME: What if 'v' is SelfVariable?
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
             newVar = this.callerCFG.getScope().getNewInlineVariable();

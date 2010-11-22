@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
-import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
 
 public class FrameLoadPlacementNode extends FlowGraphNode {
@@ -39,12 +38,12 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
     public void buildDataFlowVars(Instr i) {
         FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem) _prob;
         for (Variable v : i.getUsedVariables()) {
-            if ((v instanceof LocalVariable) || (v instanceof SelfVariable))
+            if (v instanceof LocalVariable)
                 flp.recordUsedVar(v);
         }
 
         Variable v = i.getResult();
-        if ((v != null) && ((v instanceof LocalVariable) || (v instanceof SelfVariable))) flp.recordDefVar(v);
+        if ((v != null) && (v instanceof LocalVariable)) flp.recordDefVar(v);
     }
 
     public void initSolnForNode() {
@@ -102,7 +101,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
 
             // The variables used as arguments will need to be loaded
             for (Variable x : i.getUsedVariables()) {
-                if ((x instanceof LocalVariable) || (x instanceof SelfVariable))
+                if (x instanceof LocalVariable)
                     reqdLoads.add(x);
             }
         }
@@ -175,7 +174,7 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
 
             // The variables used as arguments will need to be loaded
             for (Variable x : i.getUsedVariables()) {
-                if ((x instanceof LocalVariable) || (x instanceof SelfVariable))
+                if (x instanceof LocalVariable)
                     reqdLoads.add(x);
             }
         }

@@ -362,6 +362,11 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     @Interp
     protected abstract StaticScope constructStaticScope(StaticScope parent);
 
+    // ENEBO: Can this always be the same variable?  Then SELF comparison could compare against this?
+    public Variable getSelf() {
+        return getLocalVariable("%self");
+    }
+
     public LocalVariable getLocalVariable(String name) {
         LocalVariable variable = localVariables.get(name);
 

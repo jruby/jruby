@@ -14,7 +14,6 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.operands.ModuleMetaObject;
-import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
@@ -165,12 +164,6 @@ public abstract class IRScopeImpl implements IRScope {
         if (index == null) return 0;
 
         return index.intValue();
-    }
-
-    // ENEBO: Can this always be the same variable?  Then SELF comparison could
-    //    compare against this?
-    public Variable getSelf() {
-        return new SelfVariable();
     }
 
     public StaticScope getStaticScope() {

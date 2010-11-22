@@ -130,6 +130,7 @@ import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.PutClassVariableInstr;
 import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
+import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
@@ -353,7 +354,7 @@ public class IRBuilder {
         }
     }
 
-	 private int _lastProcessedLineNum = -1;
+    private int _lastProcessedLineNum = -1;
     private Stack<EnsureBlockInfo> _ensureBlockStack = new Stack<EnsureBlockInfo>();
 
     // Stack encoding nested rescue blocks -- this just tracks the start label of the blocks
@@ -385,13 +386,13 @@ public class IRBuilder {
 
     public Node skipOverNewlines(IRScope s, Node n) {
         if (n.getNodeType() == NodeType.NEWLINENODE) {
-				// Do not emit multiple line number instrs for the same line
-				int currLineNum = n.getPosition().getStartLine();
-				if (currLineNum != _lastProcessedLineNum) {
-					s.addInstr(new LineNumberInstr(s, currLineNum));
-					_lastProcessedLineNum = currLineNum;
-				}
-		  }
+            // Do not emit multiple line number instrs for the same line
+            int currLineNum = n.getPosition().getStartLine();
+            if (currLineNum != _lastProcessedLineNum) {
+               s.addInstr(new LineNumberInstr(s, currLineNum));
+               _lastProcessedLineNum = currLineNum;
+            }
+        }
 
         while (n.getNodeType() == NodeType.NEWLINENODE)
             n = ((NewlineNode)n).getNextNode();
@@ -599,7 +600,7 @@ public class IRBuilder {
                 break;
             case INSTASGNNODE:
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                s.addInstr(new PutFieldInstr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
+                s.addInstr(new PutFieldInstr(getSelf(s), ((InstAsgnNode)node).getName(), v));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
@@ -665,7 +666,7 @@ public class IRBuilder {
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                s.addInstr(new PutFieldInstr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
+                s.addInstr(new PutFieldInstr(getSelf(s), ((InstAsgnNode)node).getName(), v));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
@@ -982,7 +983,7 @@ public class IRBuilder {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            s.addInstr(new PutConstInstr(s.getSelf(), constDeclNode.getName(), val));
+            s.addInstr(new PutConstInstr(getSelf(s), constDeclNode.getName(), val));
         }
 
         return val;
@@ -1039,7 +1040,7 @@ public class IRBuilder {
     public Operand buildColon3(Colon3Node node, IRScope s) {
         Variable cv = s.getNewTemporaryVariable();
         // SSS FIXME: Is this correct?
-        s.addInstr(new GetConstInstr(cv, s.getSelf(), node.getName()));
+        s.addInstr(new GetConstInstr(cv, getSelf(s), node.getName()));
         return cv;
     }
 
@@ -1628,7 +1629,7 @@ public class IRBuilder {
         // s.getVariableCompiler().checkMethodArity(required, opt, rest);
 
             // self = args[0]
-        s.addInstr(new ReceiveArgumentInstruction(s.getSelf(), 0));
+        s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
 
             // Other args begin at index 1
         int argIndex = 1;
@@ -1786,7 +1787,7 @@ public class IRBuilder {
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
         Instr      callInstr    = new CallInstr(callResult, new MethAddr(fcallNode.getName()), 
-                s.getSelf(), args.toArray(new Operand[args.size()]), block);
+                getSelf(s), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -2060,13 +2061,13 @@ public class IRBuilder {
     public Operand buildInstAsgn(final InstAsgnNode instAsgnNode, IRScope s) {
         Operand val = build(instAsgnNode.getValueNode(), s);
         // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-        s.addInstr(new PutFieldInstr(s.getSelf(), instAsgnNode.getName(), val));
+        s.addInstr(new PutFieldInstr(getSelf(s), instAsgnNode.getName(), val));
         return val;
     }
 
     public Operand buildInstVar(InstVarNode node, IRScope m) {
         Variable ret = m.getNewTemporaryVariable();
-        m.addInstr(new GetFieldInstr(ret, m.getSelf(), node.getName()));
+        m.addInstr(new GetFieldInstr(ret, getSelf(m), node.getName()));
         return ret;
     }
 
@@ -2741,15 +2742,19 @@ public class IRBuilder {
 
         // add a "self" recv here
         // TODO: is this right?
-        rootMethod.addInstr(new ReceiveArgumentInstruction(rootClass.getSelf(), 0));
+        rootMethod.addInstr(new ReceiveSelfInstruction(getSelf(rootMethod)));
 
         build(rootNode.getBodyNode(), rootMethod);
 
         return script;
     }
 
+    private Variable getSelf(IRScope s) {
+        return ((IRExecutionScope)s).getSelf();
+    }
+
     public Operand buildSelf(Node node, IRScope s) {
-        return s.getSelf();
+        return getSelf(s);
     }
 
     public Operand buildSplat(SplatNode splatNode, IRScope s) {
@@ -2764,7 +2769,7 @@ public class IRBuilder {
         List<Operand> args  = setupCallArgs(superNode.getArgsNode(), s);
         Operand       block = setupCallClosure(superNode.getIterNode(), s);
         Variable      ret   = s.getNewTemporaryVariable();
-        s.addInstr(new RubyInternalCallInstr(ret, MethAddr.SUPER, s.getSelf(),
+        s.addInstr(new RubyInternalCallInstr(ret, MethAddr.SUPER, getSelf(s),
                 args.toArray(new Operand[args.size()]), block));
         return ret;
     }
@@ -2788,7 +2793,7 @@ public class IRBuilder {
     }
 
     public Operand buildUndef(Node node, IRScope m) {
-		  Operand methName = build(((UndefNode) node).getName(), m);
+        Operand methName = build(((UndefNode) node).getName(), m);
         return generateJRubyUtilityCall(m, MethAddr.UNDEF_METHOD, methName, new Operand[]{});
     }
 
@@ -2857,9 +2862,9 @@ public class IRBuilder {
     }
 
     public Operand buildVCall(VCallNode node, IRScope s) {
-        List<Operand> args       = new ArrayList<Operand>(); args.add(s.getSelf());
+        List<Operand> args       = new ArrayList<Operand>(); args.add(getSelf(s));
         Variable      callResult = s.getNewTemporaryVariable();
-        Instr      callInstr  = new CallInstr(callResult, new MethAddr(node.getName()), s.getSelf(), new Operand[]{}, null);
+        Instr      callInstr  = new CallInstr(callResult, new MethAddr(node.getName()), getSelf(s), new Operand[]{}, null);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -2897,7 +2902,7 @@ public class IRBuilder {
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
         Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
         Variable   ret   = s.getNewTemporaryVariable();
-        s.addInstr(new RubyInternalCallInstr(ret, MethAddr.ZSUPER, s.getSelf(),
+        s.addInstr(new RubyInternalCallInstr(ret, MethAddr.ZSUPER, getSelf(s),
                 ((IRMethod)s).getCallArgs(), block));
         return ret;
     }

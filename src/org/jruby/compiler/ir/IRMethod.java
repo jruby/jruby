@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
+import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
@@ -49,7 +50,8 @@ public class IRMethod extends IRExecutionScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate call arguments
-        if (i instanceof ReceiveArgumentInstruction) callArgs.add(i.result);
+		  // SSS FIXME: ReceiveSelf should inherit from ReceiveArg?
+        if ((i instanceof ReceiveArgumentInstruction) || (i instanceof ReceiveSelfInstruction)) callArgs.add(i.result);
 
         super.addInstr(i);
     }

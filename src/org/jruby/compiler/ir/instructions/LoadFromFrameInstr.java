@@ -56,11 +56,9 @@ public class LoadFromFrameInstr extends GetInstr {
     @Interp
     @Override
     public void interpret(InterpreterContext interp, IRubyObject self) {
-        Operand value = getResult();
-        if (value instanceof LocalVariable) {
-            String name = ((LocalVariable) value).getName();
-
-            interp.setLocalVariable(name, interp.getFrameVariable(getIRScope(getSource()), name));
-        }
+        Operand var = getResult();
+        assert var instanceof LocalVariable;
+        String name = ((LocalVariable) var).getName();
+        interp.setLocalVariable(name, interp.getFrameVariable(getIRScope(getSource()), name));
     }
 }
