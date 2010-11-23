@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Interp;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -55,10 +56,11 @@ public class LoadFromFrameInstr extends GetInstr {
 
     @Interp
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         Operand var = getResult();
         assert var instanceof LocalVariable;
         String name = ((LocalVariable) var).getName();
         interp.setLocalVariable(name, interp.getFrameVariable(getIRScope(getSource()), name));
+        return null;
     }
 }

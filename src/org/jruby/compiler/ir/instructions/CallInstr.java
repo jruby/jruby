@@ -4,6 +4,7 @@ import java.util.Map;
 import org.jruby.RubyProc;
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
@@ -282,7 +283,7 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
         String name = (String) _methAddr.retrieve(interp);        // TODO: What happens when _methAddr is not actually a name?
         Object resultValue;
@@ -294,6 +295,7 @@ public class CallInstr extends MultiOperandInstr {
         }
 
         getResult().store(interp, resultValue);
+        return null;
     }
 
     private Block prepareBlock(InterpreterContext interp) {
@@ -302,6 +304,7 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public IRubyObject[] prepareArguments(InterpreterContext interp) {
+		  // SSS FIXME: These 3 values could be memoized.
         Operand[] operands = getCallArgs();
         int length = operands.length;
         IRubyObject[] args = new IRubyObject[length];

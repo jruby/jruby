@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -37,7 +38,7 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         Operand destination = getResult(); // result is a confusing name
 
         if (restOfArgArray) {
@@ -45,6 +46,7 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
         } else {
             destination.store(interp, interp.getParameter(argIndex));
         }
+        return null;
     }
 
     @Interp

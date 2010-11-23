@@ -6,6 +6,7 @@ package org.jruby.compiler.ir.instructions;
  **/
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.IRExecutionScope;
@@ -52,7 +53,7 @@ public class AllocateFrameInstr extends Instr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         // ENEBO: This is slightly better than pushFrame but at least we are pushing proper self, block,
         // and static scope.  The impl class may or may not be correct.
         RubyModule implementationClass = scope.getStaticScope().getModule();
@@ -65,5 +66,6 @@ public class AllocateFrameInstr extends Instr {
                 interp.getBlock(), scope.getStaticScope());
 //        interp.getContext().pushFrame();
         interp.setFrame(interp.getContext().getCurrentFrame());
+        return null;
     }
 }

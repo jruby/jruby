@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IRMethod;
@@ -46,7 +47,7 @@ public class RubyInternalCallInstr extends CallInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         if (getMethodAddr() == MethAddr.DEFINE_ALIAS) {
             Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
 
@@ -55,5 +56,6 @@ public class RubyInternalCallInstr extends CallInstr {
         } else {
             super.interpret(interp, self);
         }
+        return null;
     }
 }

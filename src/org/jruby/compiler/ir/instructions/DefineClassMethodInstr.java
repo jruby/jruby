@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
@@ -29,9 +30,10 @@ public class DefineClassMethodInstr extends NoOperandInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         RubyModule clazz = self.getMetaClass();
 
         clazz.addMethod(method.getName(), new InterpretedIRMethod(method, clazz));
+        return null;
     }
 }

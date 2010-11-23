@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -19,7 +20,8 @@ public class ReturnInstr extends OneOperandInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         interp.setReturnValue(getArg().retrieve(interp));
+        return null;
     }
 }

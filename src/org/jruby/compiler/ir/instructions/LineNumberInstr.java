@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -24,7 +25,8 @@ public class LineNumberInstr extends NoOperandInstr
     public Instr cloneForInlining(InlinerInfo ii) { return this; }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         interp.getContext().setLine(lineNumber);
+        return null;
     }
 }

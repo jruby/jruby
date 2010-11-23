@@ -41,6 +41,6 @@ public abstract class MultiOperandInstr extends Instr {
             newArgs[i] = _args[i].cloneForInlining(ii);
         }
 
-		  return newArgs;
+        return newArgs;
     }
 }

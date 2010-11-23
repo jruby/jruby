@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -20,11 +21,12 @@ public class ReceiveClosureInstr extends NoOperandInstr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
-	}
+    }
 
     @Interp
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         getResult().store(interp, interp.getRuntime().newProc(Type.PROC, interp.getBlock()));
+        return null;
     }
 }

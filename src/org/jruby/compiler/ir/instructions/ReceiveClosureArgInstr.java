@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -32,7 +33,8 @@ public class ReceiveClosureArgInstr extends NoOperandInstr {
 
     @Interp
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         getResult().store(interp, interp.getParameter(argIndex));
+        return null;
     }
 }

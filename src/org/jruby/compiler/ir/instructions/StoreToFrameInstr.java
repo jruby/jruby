@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.IRExecutionScope;
@@ -40,12 +41,13 @@ public class StoreToFrameInstr extends PutInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         Operand var = getValue();
 
         assert var instanceof LocalVariable;
 
         String name = ((LocalVariable) var).getName();
         interp.setFrameVariable(getIRScope(getTarget()), name, interp.getLocalVariable(name));
+        return null;
     }
 }

@@ -6,6 +6,7 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Map;
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -30,8 +31,9 @@ public class CopyInstr extends OneOperandInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         getResult().store(interp, getArg().retrieve(interp));
+        return null;
     }
 
 }

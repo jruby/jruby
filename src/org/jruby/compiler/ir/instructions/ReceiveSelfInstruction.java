@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -25,9 +26,10 @@ public class ReceiveSelfInstruction extends NoOperandInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         Operand destination = getResult(); // result is a confusing name
         // SSS FIXME: Anything else to do here?? 
         destination.store(interp, self);
+        return null;
     }
 }

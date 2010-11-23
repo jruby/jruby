@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -23,7 +24,7 @@ public class PutConstInstr extends PutInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         IRubyObject value = (IRubyObject) getValue().retrieve(interp);
         RubyModule module = (RubyModule) getTarget().retrieve(interp);
 
@@ -33,5 +34,6 @@ public class PutConstInstr extends PutInstr {
         if (!(getValue() instanceof MetaObject && ((MetaObject) getValue()).isModule())) {
             module.setConstant(getName(), value);
         }
+        return null;
     }
 }

@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.RubyRegexp;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -32,7 +33,7 @@ public class JRubyImplCallInstr extends CallInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         Object receiver = getReceiver().retrieve(interp);
 
         if (getMethodAddr() == MethAddr.MATCH3) {
@@ -41,5 +42,6 @@ public class JRubyImplCallInstr extends CallInstr {
         } else {
             super.interpret(interp, self);
         }
+        return null;
     }
 }
