@@ -28,7 +28,7 @@ public class ReceiveOptionalArgumentInstr extends TwoOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        int index = ((Integer) getOperand1().retrieve(interp)).intValue(); // ENEBO: A little silly
+        int index = ((ArgIndex) getOperand1()).getIndex();
         Object value = interp.getParameterCount() > (index - 1)/* 1-index is killing */ ? interp.getParameter(index) : null;
 
         if (value != null) {
