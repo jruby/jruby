@@ -98,19 +98,21 @@ public class ChannelStream implements Stream, Finalizable {
     private volatile boolean closedExplicitly = false;
 
     private volatile boolean eof = false;
+    private volatile boolean autoclose = true;
 
-    private ChannelStream(Ruby runtime, ChannelDescriptor descriptor) {
+    private ChannelStream(Ruby runtime, ChannelDescriptor descriptor, boolean autoclose) {
         this.runtime = runtime;
         this.descriptor = descriptor;
         this.modes = descriptor.getOriginalModes();
         buffer = ByteBuffer.allocate(BUFSIZE);
         buffer.flip();
         this.reading = true;
+        this.autoclose = autoclose;
         runtime.addInternalFinalizer(this);
     }
 
-    private ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes) throws InvalidValueException {
-        this(runtime, descriptor);
+    private ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes, boolean autoclose) throws InvalidValueException {
+        this(runtime, descriptor, autoclose);
         descriptor.checkNewModes(modes);
         this.modes = modes;
     }
@@ -145,6 +147,14 @@ public class ChannelStream implements Stream, Finalizable {
 
     public void setBinmode() {
         // No-op here, no binmode handling needed.
+    }
+
+    public boolean isAutoclose() {
+        return autoclose;
+    }
+
+    public void setAutoclose(boolean autoclose) {
+        this.autoclose = autoclose;
     }
 
     /**
@@ -1152,7 +1162,7 @@ public class ChannelStream implements Stream, Finalizable {
         // FIXME: I got a bunch of NPEs when I didn't check for nulls here...HOW?!
         if (descriptor != null && descriptor.isOpen()) {
             // tidy up
-            finish(false);
+            finish(autoclose);
         }
     }
 
@@ -1413,12 +1423,20 @@ public class ChannelStream implements Stream, Finalizable {
         }
     }
 
-    public static final Stream open(Ruby runtime, ChannelDescriptor descriptor) {
-        return maybeWrapWithLineEndingWrapper(new ChannelStream(runtime, descriptor), descriptor.getOriginalModes());
+    public static Stream open(Ruby runtime, ChannelDescriptor descriptor) {
+        return maybeWrapWithLineEndingWrapper(new ChannelStream(runtime, descriptor, true), descriptor.getOriginalModes());
     }
 
     public static Stream fdopen(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes) throws InvalidValueException {
-        return maybeWrapWithLineEndingWrapper(new ChannelStream(runtime, descriptor, modes), modes);
+        return maybeWrapWithLineEndingWrapper(new ChannelStream(runtime, descriptor, modes, true), modes);
+    }
+
+    public static Stream open(Ruby runtime, ChannelDescriptor descriptor, boolean autoclose) {
+        return maybeWrapWithLineEndingWrapper(new ChannelStream(runtime, descriptor, autoclose), descriptor.getOriginalModes());
+    }
+
+    public static Stream fdopen(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes, boolean autoclose) throws InvalidValueException {
+        return maybeWrapWithLineEndingWrapper(new ChannelStream(runtime, descriptor, modes, autoclose), modes);
     }
 
     private static Stream maybeWrapWithLineEndingWrapper(Stream stream, ModeFlags modes) {

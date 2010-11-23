@@ -256,6 +256,8 @@ public class RubyIO extends RubyObject {
         }
         
         openFile.setMode(openFile.getMainStream().getModes().getOpenFileFlags());
+        // never autoclose stdio streams
+        openFile.setAutoclose(false);
     }
     
     public static RubyIO newIO(Ruby runtime, Channel channel) {
@@ -1128,6 +1130,25 @@ public class RubyIO extends RubyObject {
             throw runtime.newIOErrorFromException(ioe);
         }
         return runtime.newFixnum(fileno);
+    }
+
+    public boolean isAutoclose() {
+        return openFile.isAutoclose();
+    }
+
+    public void setAutoclose(boolean autoclose) {
+        openFile.setAutoclose(autoclose);
+    }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject autoclose(ThreadContext context) {
+        return context.runtime.newBoolean(openFile.isAutoclose());
+    }
+
+    @JRubyMethod(name = "autoclose=", compat = RUBY1_9)
+    public IRubyObject autoclose_set(ThreadContext context) {
+        openFile.setAutoclose(true);
+        return context.nil;
     }
 
     @JRubyMethod(name = "binmode")

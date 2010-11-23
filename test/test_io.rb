@@ -495,13 +495,13 @@ class TestIO < Test::Unit::TestCase
   end
   
   # JRUBY-5114
-  def test_finalization_leaves_channels_open
+  def test_autoclose_false_leaves_channels_open
     channel = java.io.FileInputStream.new(__FILE__).channel
     
     # sanity check
-    io1 = channel.to_io
+    io1 = channel.to_io(:autoclose => false)
     assert_equal "r", io1.sysread(1)
-    io2 = channel.to_io
+    io2 = channel.to_io(:autoclose => false)
     assert_equal "e", io2.sysread(1)
     
     # dereference and force GC a few times to finalize

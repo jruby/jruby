@@ -239,6 +239,20 @@ public class OpenFile {
         this.path = path;
     }
 
+    public boolean isAutoclose() {
+        boolean autoclose = true;
+        Stream myMain, myPipe;
+        if ((myMain = mainStream) != null) autoclose &= myMain.isAutoclose();
+        if ((myPipe = pipeStream) != null) autoclose &= myPipe.isAutoclose();
+        return autoclose;
+    }
+
+    public void setAutoclose(boolean autoclose) {
+        Stream myMain, myPipe;
+        if ((myMain = mainStream) != null) myMain.setAutoclose(autoclose);
+        if ((myPipe = pipeStream) != null) myPipe.setAutoclose(autoclose);
+    }
+
     public Finalizer getFinalizer() {
         return finalizer;
     }
