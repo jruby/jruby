@@ -1140,14 +1140,14 @@ public class RubyIO extends RubyObject {
         openFile.setAutoclose(autoclose);
     }
 
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject autoclose(ThreadContext context) {
-        return context.runtime.newBoolean(openFile.isAutoclose());
+        return context.runtime.newBoolean(isAutoclose());
     }
 
-    @JRubyMethod(name = "autoclose=", compat = RUBY1_9)
-    public IRubyObject autoclose_set(ThreadContext context) {
-        openFile.setAutoclose(true);
+    @JRubyMethod(name = "autoclose=")
+    public IRubyObject autoclose_set(ThreadContext context, IRubyObject autoclose) {
+        setAutoclose(autoclose.isTrue());
         return context.nil;
     }
 
