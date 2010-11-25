@@ -188,42 +188,50 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value.should == "baz"
   end
 
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
   BIG_CHUNK = "a" * 100_000_000
 
-  unless WINDOWS                # These two failing on Windows right now
-    it "should not block for write" do
-      server = TCPServer.new(0)
-      value = nil
-      t = Thread.new {
-        sock = accept(server)
-        begin
-          value = 1
-          sock.write(BIG_CHUNK) # this blocks; [ruby-dev:26405]
-        rescue RuntimeError
-          value = 2
-        end
-      }
-      s = connect(server)
-      Thread.pass until value == 1
-      wait_for_sleep_and_terminate(t) do
-        t.raise # help thread termination
+  it "should not block for write" do
+    server = TCPServer.new(0)
+    value = nil
+    t = Thread.new {
+      sock = accept(server)
+      begin
+        value = 1
+        # this could block; [ruby-dev:26405]  But Sun's JVM doesn't block
+        # on Windows, and looks to use memory as a buffer till OOM.
+        sock.write(BIG_CHUNK)
+        value = 2
+      rescue RuntimeError
+        value = 3
       end
-      value.should == 2
+    }
+    s = connect(server)
+    type = nil
+    wait_for_sleep_and_terminate(t) do
+      if value == 1
+        type = :blocked
+        t.raise # help thread termination
+      else
+        value.should == 2
+        t.status.should == false
+      end
     end
+    if type == :blocked
+      value.should == 3
+      t.status.should == false
+    end
+  end
 
-    it "should not block for write_nonblock" do
-      server = TCPServer.new(0)
-      value = nil
-      t = Thread.new {
-        sock = accept(server)
-        value = sock.write_nonblock(BIG_CHUNK)
-      }
-      s = connect(server)
-      wait_for_sleep_and_terminate(t)
-      t.alive?.should == false
-      value.should > 0
-    end
+  it "should not block for write_nonblock" do
+    server = TCPServer.new(0)
+    value = nil
+    t = Thread.new {
+      sock = accept(server)
+      value = sock.write_nonblock(BIG_CHUNK)
+    }
+    s = connect(server)
+    wait_for_terminate(t)
+    value.should > 0
   end
 
   def accept(server)
