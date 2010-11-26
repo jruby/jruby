@@ -188,7 +188,12 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value.should == "baz"
   end
 
-  BIG_CHUNK = "a" * 100_000_000
+  # On an Ubuntu 10.10(64) box:
+  #   Packaged OpenJDK6 block with > 152606 (?)
+  #   Oracle's build block with > 131072 (2**17)
+  # On a Windows 7(64) box:
+  #   Oracle's build does not block (use memory till OOMException)
+  SOCKET_CHANNEL_MIGHT_BLOCK = "a" * (65536 * 4)
 
   it "should not block for write" do
     server = TCPServer.new(0)
@@ -197,9 +202,8 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
       sock = accept(server)
       begin
         value = 1
-        # this could block; [ruby-dev:26405]  But Sun's JVM doesn't block
-        # on Windows, and looks to use memory as a buffer till OOM.
-        sock.write(BIG_CHUNK)
+        # this could block; [ruby-dev:26405]  But it doesn't block on Windows.
+        sock.write(SOCKET_CHANNEL_MIGHT_BLOCK)
         value = 2
       rescue RuntimeError
         value = 3
@@ -227,7 +231,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value = nil
     t = Thread.new {
       sock = accept(server)
-      value = sock.write_nonblock(BIG_CHUNK)
+      value = sock.write_nonblock(SOCKET_CHANNEL_MIGHT_BLOCK)
     }
     s = connect(server)
     wait_for_terminate(t)
