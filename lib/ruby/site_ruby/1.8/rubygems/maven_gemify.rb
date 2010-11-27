@@ -3,7 +3,12 @@ if defined?(JRUBY_VERSION)
   class Gem::Specification
     # return whether the spec name represents a maven artifact
     def self.maven_name?(name)
-      name =~ /\./
+      case name
+      when Regexp
+        name.source =~ /\./
+      else
+        name =~ /\./
+      end
     end
   end
   
@@ -27,14 +32,21 @@ if defined?(JRUBY_VERSION)
     # use maven to locate (generate) the specification for the dependency in question
     def find_matching_using_maven(dependency)
       specs_and_sources = []
-      
+      if dependency.name.is_a? Regexp
+        dep_name = dependency.name.source.sub(/\^/, '')
+      else
+        dep_name = dependency.name
+      end
+
       require 'rubygems/maven_gemify'
-      Gem::Maven::Gemify.get_versions(dependency.name).each do |version|
-        if dependency =~ Gem::Dependency.new(dependency.name, version)
-          specs_and_sources.push [[dependency.name, version, "java"], "http://maven/"]
+      Gem::Maven::Gemify.get_versions(dep_name).each do |version|
+        # maven-versions which start with an letter get "0.0.0." prepended to
+        # satisfy gem-version requirements
+        if dependency.requirement.satisfied_by? Gem::Version.new "#{version.sub(/^0.0.0./, '1.')}"
+          specs_and_sources.push [[dep_name, version, "java"], "http://maven/"]
         end
       end
-      
+
       [specs_and_sources, []]
     end
     private :find_matching_using_maven
@@ -72,10 +84,12 @@ if defined?(JRUBY_VERSION)
         end
         bin = "/usr/share/maven2/bin" if bin.nil? # OK let's try debian default
         if File.exists?(bin)
+          @mvn = File.join(bin, "mvn")
           if Dir.glob(File.join(bin, "..", "lib", "maven-core-3.*jar")).size == 0
             begin
               gem 'ruby-maven', ">=0"
               bin = File.dirname(Gem.bin_path('ruby-maven', "rmvn"))
+              @mvn = File.join(bin, "rmvn")
             rescue LoadError
               bin = nil
             end
@@ -84,7 +98,7 @@ if defined?(JRUBY_VERSION)
           bin = nil
         end
         raise "can not find maven3 installation. install ruby-maven with\n\n\tjruby -S gem install ruby-maven --pre\n\n" if bin.nil?
-        warn "Installing from Maven using install at #{bin}"
+        warn "Using Maven install at #{bin}"
         boot = File.join(bin, "..", "boot")
         lib = File.join(bin, "..", "lib")
         ext = File.join(bin, "..", "ext")
@@ -129,7 +143,7 @@ if defined?(JRUBY_VERSION)
       def self.execute(goal, gemname, version, props = {})
         maven = maven_get
         r = DefaultMavenExecutionRequest.new
-        r.set_show_errors true
+        r.set_show_errors false
         r.user_properties.put("gemify.skipDependencies", "true")
         r.user_properties.put("gemify.tempDir", temp_dir)
         r.user_properties.put("gemify.gemname", gemname)
@@ -140,25 +154,40 @@ if defined?(JRUBY_VERSION)
         r.set_goals [goal]
         r.set_logging_level 0
         
-        #p r.goals.to_s
-        #p r.getUserProperties.map
         out = java.lang.System.out
         string_io = java.io.ByteArrayOutputStream.new
         java.lang.System.setOut(java.io.PrintStream.new(string_io))
         result = maven.execute( r );
         java.lang.System.out = out
-        result.exceptions.each { |e| e.print_stack_trace }
+        if r.is_show_errors
+          puts "maven goals:"
+          r.goals.each { |g| puts "\t#{g}" }
+          puts "system properties:"
+          r.getUserProperties.map.each { |k,v| puts "\t#{k} => #{v}" }
+
+          result.exceptions.each do |e|
+            e.print_stack_trace
+            string_io.write(e.get_message.to_java_string.get_bytes)
+          end
+        end
         string_io.to_s
       end
       
       public
       
       def self.get_versions(gemname)
-        #        p "versions"
-        #        p gemname
+        verbose = false #true
+        gemname = gemname.source.sub(/\^/, '') if gemname.is_a? Regexp
+
         result = execute("#{BASE_GOAL}:versions", gemname, nil)
         
-        result.gsub(/\n/, '').sub(/.*\[/, "").sub(/\]/, '').gsub(/ /, '').split(',')
+        if result =~ /\[/ && result =~ /\]/
+          result = result.gsub(/\n/, '').sub(/.*\[/, "").sub(/\]/, '').gsub(/ /, '').split(',')
+          puts "versions: #{result.inspect}" if verbose
+          result
+        else
+          []
+        end
       end
       
       def self.generate_spec(gemname, version)        
@@ -185,13 +214,16 @@ if defined?(JRUBY_VERSION)
         result = execute("#{BASE_GOAL}:gemify", gemname, version)
         path = result.gsub(/\n/, '')
         if path =~ /gem: /
-          
+
           path = path.sub(/.*gem: /, '')
           if path.size > 0
             result = File.expand_path(path)
             java.io.File.new(result).deleteOnExit
             result
           end
+        else
+          warn result.sub(/.*Missing Artifacts:\s+/, '').gsub(/\tmvn/, "\t#{@mvn}")
+          raise "error gemify #{gemname}:#{version}"
         end
       end
     end
