@@ -18,6 +18,7 @@ import org.jruby.compiler.ir.compiler_pass.IR_Printer;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
+import org.jruby.compiler.ir.compiler_pass.CallSplitter;
 import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
@@ -43,6 +44,7 @@ public class Interpreter {
         scope.runCompilerPass(new LiveVariableAnalysis());
         scope.runCompilerPass(new DeadCodeElimination());
         scope.runCompilerPass(new AddFrameInstructions());
+        scope.runCompilerPass(new CallSplitter());
 
         return Interpreter.interpretTop(runtime, scope, self);
     }
@@ -219,7 +221,7 @@ public class Interpreter {
             while (basicBlock != null) {
                 Label jumpTarget = null;
                 for (Instr instruction : basicBlock.getInstrs()) {
-                    System.out.println("EXEC'ing: " + instruction);
+//                    System.out.println("EXEC'ing: " + instruction);
                     interpInstrsCount++;
                     jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
                 }

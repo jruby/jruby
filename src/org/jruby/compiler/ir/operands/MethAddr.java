@@ -35,4 +35,9 @@ public class MethAddr extends Reference {
     public Object retrieve(InterpreterContext interp) {
         return getName();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return (o instanceof MethAddr) && ((MethAddr)o).getName().equals(getName());
+    }
 }

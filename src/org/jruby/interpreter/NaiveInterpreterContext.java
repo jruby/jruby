@@ -103,7 +103,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
             maps.put(frame, map);
         }
 
-        System.out.println("MAP = " + map);
+//        System.out.println("MAP = " + map);
 
         return map;
     }

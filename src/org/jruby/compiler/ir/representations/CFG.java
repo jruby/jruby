@@ -24,6 +24,7 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
+import org.jruby.compiler.ir.instructions.MethodLookupInstr;
 import org.jruby.compiler.ir.instructions.RESCUED_BODY_START_MARKER_Instr;
 import org.jruby.compiler.ir.instructions.RESCUED_BODY_END_MARKER_Instr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -806,6 +807,36 @@ public class CFG {
                 break;
             else
                 removeBB(bbToRemove);
+        }
+    }
+
+    public void splitCalls() {
+        for (BasicBlock b: getNodes()) {
+            List<Instr> bInstrs = b.getInstrs();
+            for (ListIterator<Instr> it = ((ArrayList<Instr>)b.getInstrs()).listIterator(); it.hasNext(); ) {
+                Instr i = it.next();
+					 // Only user calls, not Ruby & JRuby internal calls
+                if (i.operation == Operation.CALL) {
+                    CallInstr call = (CallInstr)i;
+                    Operand   r    = call.getReceiver();
+                    Operand   m    = call.getMethodAddr();
+                    Variable  mh   = _scope.getNewTemporaryVariable();
+                    MethodLookupInstr mli = new MethodLookupInstr(mh, m, r);
+                    // insert method lookup at the right place
+                    it.previous();
+                    it.add(mli);
+                    it.next();
+                    // update call address
+                    call.setMethodAddr(mh);
+                }
+            }
+        }
+
+        List<IRClosure> closures = _scope.getClosures();
+        if (!closures.isEmpty()) {
+            for (IRClosure c : closures) {
+                c.getCFG().splitCalls();
+            }
         }
     }
 

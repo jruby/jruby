@@ -23,6 +23,7 @@ public enum Operation {
 	 RECV_EXCEPTION(OpType.recv_arg_op),
     CALL(OpType.call_op), JRUBY_IMPL(OpType.call_op), RUBY_INTERNALS(OpType.call_op),
     DECLARE_TYPE(OpType.declare_type_op),
+    METHOD_LOOKUP(OpType.dont_care),
 
 // closure instructions
     YIELD(OpType.dont_care),

@@ -1601,6 +1601,11 @@ public class IRBuilder {
             method.addInstr(new ReturnInstr(Nil.NIL));
         }
 
+        // SSS FIXME: Is this correct? This method belongs to 'container'
+        // If it is of type IRModule at IR-build time, we can do this.
+        // If not, this has to be be done at interpret/execute time.
+        // Also, this code could be adding a new method for an object in which case we will
+        // have to instantiate a new meta-class
         // ENEBO: for module+class methods s.getNearestModule seems to be working...
 //        IRModule methodHolder = isInstanceMethod ? s.getNearestModule() :
 //            new IRMetaClass(method.getLexicalParent(), container, defNode.getScope());
