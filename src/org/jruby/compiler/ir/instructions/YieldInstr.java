@@ -45,8 +45,8 @@ public class YieldInstr extends MultiOperandInstr {
             args[i] = (IRubyObject) operands[i].retrieve(interp);
         }
 
-        System.out.println("ARGS>LENGTH " + args.length);
-        System.out.println("ARGS: " + java.util.Arrays.toString(args));
+        //System.out.println("ARGS>LENGTH " + args.length);
+        //System.out.println("ARGS: " + java.util.Arrays.toString(args));
         return args;
     }
 }

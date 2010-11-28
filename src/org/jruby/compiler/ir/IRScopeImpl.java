@@ -131,6 +131,10 @@ public abstract class IRScopeImpl implements IRScope {
         return getPrefixCountSize("%v");
     }
 
+    public int getRenamedVariableSize() {
+        return getPrefixCountSize("%i");
+    }
+
     public String getName() {
         return name;
     }

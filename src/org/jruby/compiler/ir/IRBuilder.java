@@ -1636,8 +1636,8 @@ public class IRBuilder {
             // self = args[0]
         s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
 
-            // Other args begin at index 1
-        int argIndex = 1;
+            // Other args begin at index 0
+        int argIndex = 0;
 
             // Both for fixed arity and variable arity methods
         ListNode preArgs  = argsNode.getPre();
@@ -1948,7 +1948,7 @@ public class IRBuilder {
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
             if (argsNodeId != null)
-                buildBlockArgsAssignment(forNode.getVarNode(), closure, 1, false);
+                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, false); // SSS: Changed this from 1 to 0
         }
 
             // Build closure body and return the result of the closure
@@ -2083,7 +2083,7 @@ public class IRBuilder {
             // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
-            buildBlockArgsAssignment(iterNode.getVarNode(), closure, 1, false);
+            buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, false);  // SSS: Changed this from 1 to 0
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
@@ -2167,7 +2167,7 @@ public class IRBuilder {
             ListNode headNode = (ListNode) sourceArray;
             for (Node an: headNode.childNodes()) {
                 if (values == null) {
-                    buildBlockArgsAssignment(an, s, i + 1, false); // Add 1 since 0 is self for argument processing
+                    buildBlockArgsAssignment(an, s, i, false); // SSS FIXME: Changed this from i+1 to i// Add 1 since 0 is self for argument processing
                 } else {
                     buildAssignment(an, s, values, i, false);
                 }

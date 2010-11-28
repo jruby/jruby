@@ -70,7 +70,7 @@ public class CFG {
     LinkedList<BasicBlock>              _postOrderList; // Post order traversal list of the cfg
     Map<String, DataFlowProblem>        _dfProbs;       // Map of name -> dataflow problem
     Map<Label, BasicBlock>              _bbMap;         // Map of label -> basic blocks with that label
-    BasicBlock[]                        _bbArray;       // Array indexed by bb id
+    Map<Integer, BasicBlock>            _fallThruMap;   // Map of basic block id -> fall thru basic block
     List<BasicBlock>                    _linearizedBBList;  // Linearized list of bbs
     Map<BasicBlock, BasicBlock>         _bbRescuerMap;  // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
     List<RescuedRegion>                 _outermostRRs;  // Outermost rescued regions
@@ -131,12 +131,7 @@ public class CFG {
     // haven't been reordered around.  This code is there temporarily
     // to get Tom & Charlie started on the IR interpreter.
     public BasicBlock getFallThroughBB(BasicBlock bb) {
-        int id = bb.getID();
-
-        // FIXME: This fail easily and this is a bandaid since I think
-        if (id >= _bbArray.length) return null;
-
-        return _bbArray[id];
+        return _fallThruMap.get(bb.getID());
     }
 
     public BasicBlock getTargetBB(Label l) {
@@ -377,10 +372,27 @@ public class CFG {
         deleteOrphanedBlocks();
 
         // Set up the bb array
+        setupFallThruMap();
+    }
+
+/*
+    private void setupBBArray() {
         int n = getMaxNodeID();
         _bbArray = new BasicBlock[n];
         for (BasicBlock x : _bbMap.values()) {
             _bbArray[x.getID() - 1] = x;
+        }
+    }
+*/
+
+    private void setupFallThruMap() {
+        List<BasicBlock> bbs = linearize();
+        _fallThruMap = new HashMap<Integer, BasicBlock>();
+        BasicBlock prev = null;
+        for (BasicBlock b: bbs) {
+           if (prev != null)
+              _fallThruMap.put(prev.getID(), b);
+           prev = b;
         }
     }
 
@@ -597,6 +609,9 @@ public class CFG {
             Tuple t = (Tuple)yieldSites.get(0);
             inlineClosureAtYieldSite(ii, (IRClosure)((MetaObject)closureArg).scope, (BasicBlock)t.a, (YieldInstr)t.b);
         }
+
+        // Update the bb array
+        setupFallThruMap();
     }
 
     private void buildPostOrderTraversal() {

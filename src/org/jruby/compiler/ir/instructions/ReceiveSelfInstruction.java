@@ -17,7 +17,7 @@ public class ReceiveSelfInstruction extends NoOperandInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(0));
+        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallReceiver());
     }
 
     @Override

@@ -33,6 +33,9 @@ public interface InterpreterContext {
     public Object setTemporaryVariable(int offset, Object value);
     public Object getLocalVariable(String name);
     public Object setLocalVariable(String name, Object value);
+    public void   updateRenamedVariablesCount(int n);
+    public Object getRenamedVariable(int offset);
+    public Object setRenamedVariable(int offset, Object value);
 
     public Object getFrameVariable(Object frame, String name);
     public void setFrameVariable(Object frame, String name, Object value);

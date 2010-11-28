@@ -220,6 +220,7 @@ public class Interpreter {
             BasicBlock basicBlock = cfg.getEntryBB();
             while (basicBlock != null) {
                 Label jumpTarget = null;
+                Instr prev = null;
                 for (Instr instruction : basicBlock.getInstrs()) {
 //                    System.out.println("EXEC'ing: " + instruction);
                     interpInstrsCount++;
@@ -228,6 +229,61 @@ public class Interpreter {
 
                 // Explicit jump or implicit fall-through to next bb
                 basicBlock = (jumpTarget == null) ? cfg.getFallThroughBB(basicBlock) : cfg.getTargetBB(jumpTarget);
+            }
+
+            return (IRubyObject) interp.getReturnValue();
+        } finally {
+            if (interp.getFrame() != null) {
+                context.popFrame();
+                interp.setFrame(null);
+            }
+            context.postMethodScopeOnly();
+        }
+    }
+
+    public static IRubyObject interpret_with_inline(ThreadContext context, CFG cfg, InterpreterContext interp) {
+        try {
+            BasicBlock basicBlock = cfg.getEntryBB();
+            Instr skipTillInstr = null;
+            while (basicBlock != null) {
+                Label jumpTarget = null;
+                Instr prev = null;
+                for (Instr instruction : basicBlock.getInstrs()) {
+						  // Skip till we come back to previous execution point
+                    if (skipTillInstr != null && instruction != skipTillInstr)
+                        continue;
+
+                    skipTillInstr = null;
+
+//                    System.out.println("EXEC'ing: " + instruction);
+                    interpInstrsCount++;
+                    try {
+                        jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
+                    }
+                    catch (InlineMethodHint ih) {
+                        if (ih.inlineableMethod.getName() == "array_each") {
+                            System.out.println("Got inline method hint for: " + ih.inlineableMethod.getFullyQualifiedName() + ". inlining!");
+                            cfg.inlineMethod(ih.inlineableMethod, basicBlock, (CallInstr)instruction);
+									 interp.updateRenamedVariablesCount(cfg.getScope().getRenamedVariableSize());
+                            skipTillInstr = prev;
+/*
+									 System.out.println("--------------------");
+                            System.out.println("\nGraph:\n" + cfg.getGraph().toString());
+                            System.out.println("\nInstructions:\n" + cfg.toStringInstrs());
+									 System.out.println("--------------------");
+*/
+                            break;
+                        }
+                        else {
+                            jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
+                        }
+                    }
+                    prev = instruction;
+                }
+
+                // Explicit jump or implicit fall-through to next bb for the situation when we haven't inlined
+                if (skipTillInstr == null)
+                    basicBlock = (jumpTarget == null) ? cfg.getFallThroughBB(basicBlock) : cfg.getTargetBB(jumpTarget);
             }
 
             return (IRubyObject) interp.getReturnValue();

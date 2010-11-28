@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+import java.util.HashMap;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyProc;
@@ -21,6 +22,7 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -40,6 +42,7 @@ public class CallInstr extends MultiOperandInstr {
     private boolean _flagsComputed;
     private boolean _canBeEval;
     private boolean _requiresFrame;
+    public HashMap<DynamicMethod, Integer> _profile;
 
     public CallInstr(Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(Operation.CALL, result, buildAllArgs(methAddr, receiver, args, closure));
@@ -315,6 +318,59 @@ public class CallInstr extends MultiOperandInstr {
             else {
                ThreadContext tc = interp.getContext();
                RubyClass     rc = ro.getMetaClass();
+               resultValue = (block == null) ? m.call(tc, ro, rc, mn, args) : m.call(tc, ro, rc, mn, args, block);
+            }
+        }
+        else {
+           IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
+           String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
+
+           if (block == null) {
+               resultValue = object.callMethod(interp.getContext(), name, args);
+           } else {
+               resultValue = object.callMethod(interp.getContext(), name, args, block);
+           }
+        }
+
+        getResult().store(interp, resultValue);
+        return null;
+    }
+
+    public Label interpret_with_inline(InterpreterContext interp, IRubyObject self) {
+        Object        ma    = _methAddr.retrieve(interp);
+        IRubyObject[] args  = prepareArguments(interp);
+        Block         block = (_closure == null) ? null : prepareBlock(interp);
+        Object resultValue;
+        if (ma instanceof MethodHandle) {
+            MethodHandle  mh = (MethodHandle)ma;
+
+            assert mh.getMethodNameOperand() == getReceiver();
+
+            DynamicMethod m  = mh.getResolvedMethod();
+            String        mn = mh.getResolvedMethodName();
+            IRubyObject   ro = mh.getReceiverObj();
+            if (m.isUndefined()) {
+                resultValue = RuntimeHelpers.callMethodMissing(interp.getContext(), ro, m.getVisibility(), mn, CallType.FUNCTIONAL, args, block == null ? Block.NULL_BLOCK : block);
+            }
+            else {
+               ThreadContext tc = interp.getContext();
+               RubyClass     rc = ro.getMetaClass();
+               if (_profile == null) {
+                  _profile = new HashMap<DynamicMethod, Integer>();
+               }
+               Integer count = _profile.get(m);
+               if (count == null) {
+                  count = new Integer(1);
+               }
+               else {
+                  count = new Integer(count + 1);
+                  if ((count > 50) && (m instanceof InterpretedIRMethod) && (_profile.size() == 1)) {
+                     IRMethod inlineableMethod = ((InterpretedIRMethod)m).method;
+                     _profile.remove(m); // remove it because the interpreter might ignore this hint
+                     throw new org.jruby.interpreter.InlineMethodHint(inlineableMethod);
+                  }
+               }
+               _profile.put(m, count);
                resultValue = (block == null) ? m.call(tc, ro, rc, mn, args) : m.call(tc, ro, rc, mn, args, block);
             }
         }
