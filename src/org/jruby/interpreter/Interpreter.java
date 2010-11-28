@@ -249,7 +249,7 @@ public class Interpreter {
                 Label jumpTarget = null;
                 Instr prev = null;
                 for (Instr instruction : basicBlock.getInstrs()) {
-						  // Skip till we come back to previous execution point
+                    // Skip till we come back to previous execution point
                     if (skipTillInstr != null && instruction != skipTillInstr)
                         continue;
 
@@ -264,17 +264,16 @@ public class Interpreter {
                         if (ih.inlineableMethod.getName() == "array_each") {
                             System.out.println("Got inline method hint for: " + ih.inlineableMethod.getFullyQualifiedName() + ". inlining!");
                             cfg.inlineMethod(ih.inlineableMethod, basicBlock, (CallInstr)instruction);
-									 interp.updateRenamedVariablesCount(cfg.getScope().getRenamedVariableSize());
+                            interp.updateRenamedVariablesCount(cfg.getScope().getRenamedVariableSize());
                             skipTillInstr = prev;
 /*
-									 System.out.println("--------------------");
+                            System.out.println("--------------------");
                             System.out.println("\nGraph:\n" + cfg.getGraph().toString());
                             System.out.println("\nInstructions:\n" + cfg.toStringInstrs());
-									 System.out.println("--------------------");
+                            System.out.println("--------------------");
 */
                             break;
-                        }
-                        else {
+                        } else {
                             jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
                         }
                     }

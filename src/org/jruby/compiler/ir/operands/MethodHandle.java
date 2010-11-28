@@ -69,8 +69,7 @@ public class MethodHandle extends Operand {
 
         if (methodName instanceof MethAddr) {
             resolvedMethodName = ((MethAddr)methodName).getName();
-        }
-        else {
+        } else {
             IRubyObject mnameObj = (IRubyObject)methodName.retrieve(interp);
 
             // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!

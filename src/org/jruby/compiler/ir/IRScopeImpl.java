@@ -67,8 +67,8 @@ public abstract class IRScopeImpl implements IRScope {
     // oldName -> newName for methods
     private Map<String, String> aliases = new HashMap<String, String>();
 
-    // ENEBO: This is also only for lexical score too right?
-    private Map<String, Operand> contants = new HashMap<String, Operand>();
+    // ENEBO: This is also only for lexical scope too right?
+    private Map<String, Operand> constants = new HashMap<String, Operand>();
 
     // Index values to guarantee we don't assign same internal index twice
     private int nextClosureIndex = 0;
@@ -229,7 +229,7 @@ public abstract class IRScopeImpl implements IRScope {
     //
     public Operand getConstantValue(String constRef) {
 //        System.out.println("Looking in " + this + " for constant: " + constRef);
-        Operand cv = contants.get(constRef);
+        Operand cv = constants.get(constRef);
         Operand p = container;
         // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the container is a static scope
         if ((cv == null) && (p != null) && (p instanceof MetaObject)) {
@@ -247,7 +247,7 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     public void setConstantValue(String constRef, Operand val) {
-        if (val.isConstant()) contants.put(constRef, val);
+        if (val.isConstant()) constants.put(constRef, val);
 
         if (this instanceof IRModule) {
             ((IRModule) this).getRootMethod().addInstr(new PutConstInstr(this, constRef, val));
@@ -255,13 +255,13 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     public Map getConstants() {
-        return Collections.unmodifiableMap(contants);
+        return Collections.unmodifiableMap(constants);
     }
 
     @Override
     public String toString() {
         return getScopeName() + " " + getName() +
-                (contants.isEmpty() ? "" : "\n  constants: " + contants);
+                (constants.isEmpty() ? "" : "\n  constants: " + constants);
     }
 
     protected void runCompilerPassOnNestedScopes(CompilerPass p) {

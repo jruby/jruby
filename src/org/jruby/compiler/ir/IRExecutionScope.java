@@ -46,7 +46,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
      * There are 2 scenarios when this can happen (even this is conservative -- but, good enough for now)
      * 1. This method receives an explicit block argument (in this case, the block can be stored, passed around,
      *    eval'ed against, called, etc.).  
-	  *    CAVEAT: This is conservative ... it may not actually be stored & passed around, evaled, called, ...
+     *    CAVEAT: This is conservative ... it may not actually be stored & passed around, evaled, called, ...
      * 2. This method has a 'super' call (ZSuper AST node -- RUBY_INTERNALS_CALL_Instr(MethAddr.ZSUPER, ..) IR instr)
      *    In this case, the parent (in the inheritance hierarchy) can access the block and store it, etc.  So, in reality,
      *    rather than assume that the parent will always do this, we can query the parent, if we can precisely identify

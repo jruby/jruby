@@ -153,7 +153,7 @@ public class CallInstr extends MultiOperandInstr {
         return method == null ? true : method.modifiesCode();
     }
 
-	 // SSS FIXME: Are all bases covered?
+    // SSS FIXME: Are all bases covered?
     private boolean getEvalFlag() {
         Operand ma = getMethodAddr();
 
@@ -183,7 +183,7 @@ public class CallInstr extends MultiOperandInstr {
         return true; // Unknown method -- could be eval!
     }
 
-	 // SSS FIXME: Are all bases covered?
+    // SSS FIXME: Are all bases covered?
     private boolean getRequiresFrameFlag() {
         // This is an eval, or it has a closure that requires a frame
         if (canBeEval()) return true;
@@ -274,7 +274,7 @@ public class CallInstr extends MultiOperandInstr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CallInstr(ii.getRenamedVariable(result), _methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
-	}
+   }
 
 // --------------- Private methods ---------------
 
@@ -314,14 +314,12 @@ public class CallInstr extends MultiOperandInstr {
             IRubyObject   ro = mh.getReceiverObj();
             if (m.isUndefined()) {
                 resultValue = RuntimeHelpers.callMethodMissing(interp.getContext(), ro, m.getVisibility(), mn, CallType.FUNCTIONAL, args, block == null ? Block.NULL_BLOCK : block);
-            }
-            else {
+            } else {
                ThreadContext tc = interp.getContext();
                RubyClass     rc = ro.getMetaClass();
                resultValue = (block == null) ? m.call(tc, ro, rc, mn, args) : m.call(tc, ro, rc, mn, args, block);
             }
-        }
-        else {
+        } else {
            IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
            String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
 
@@ -351,8 +349,7 @@ public class CallInstr extends MultiOperandInstr {
             IRubyObject   ro = mh.getReceiverObj();
             if (m.isUndefined()) {
                 resultValue = RuntimeHelpers.callMethodMissing(interp.getContext(), ro, m.getVisibility(), mn, CallType.FUNCTIONAL, args, block == null ? Block.NULL_BLOCK : block);
-            }
-            else {
+            } else {
                ThreadContext tc = interp.getContext();
                RubyClass     rc = ro.getMetaClass();
                if (_profile == null) {
@@ -361,8 +358,7 @@ public class CallInstr extends MultiOperandInstr {
                Integer count = _profile.get(m);
                if (count == null) {
                   count = new Integer(1);
-               }
-               else {
+               } else {
                   count = new Integer(count + 1);
                   if ((count > 50) && (m instanceof InterpretedIRMethod) && (_profile.size() == 1)) {
                      IRMethod inlineableMethod = ((InterpretedIRMethod)m).method;
@@ -373,8 +369,7 @@ public class CallInstr extends MultiOperandInstr {
                _profile.put(m, count);
                resultValue = (block == null) ? m.call(tc, ro, rc, mn, args) : m.call(tc, ro, rc, mn, args, block);
             }
-        }
-        else {
+        } else {
            IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
            String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
 
@@ -395,7 +390,7 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public IRubyObject[] prepareArguments(InterpreterContext interp) {
-		  // SSS FIXME: These 3 values could be memoized.
+        // SSS FIXME: These 3 values could be memoized.
         Operand[] operands = getCallArgs();
         int length = operands.length;
         IRubyObject[] args = new IRubyObject[length];
