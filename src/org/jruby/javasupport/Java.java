@@ -717,7 +717,7 @@ public class Java implements Library {
                     }
                 }
                 if (forArity.size() == 0) {
-                    throw context.getRuntime().newArgumentError("wrong # of arguments for constructor");
+                    throw context.getRuntime().newArgumentError("wrong number of arguments for constructor");
                 }
                 JavaProxyConstructor matching = (JavaProxyConstructor)CallableSelector.matchingCallableArityN(
                         methodCache,

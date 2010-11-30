@@ -57,11 +57,11 @@ public abstract class InvocationCallback implements Callback {
     public IRubyObject execute(IRubyObject recv, IRubyObject[] oargs, Block block) {
         if (arityValue >= 0) {
             if (oargs.length != arityValue) {
-                throw recv.getRuntime().newArgumentError("wrong number of arguments(" + oargs.length + " for " + arityValue + ")");
+                throw recv.getRuntime().newArgumentError("wrong number of arguments (" + oargs.length + " for " + arityValue + ")");
             }
         } else {
             if (oargs.length < -(1 + arityValue)) {
-                throw recv.getRuntime().newArgumentError("wrong number of arguments(" + oargs.length + " for " + -(1 + arityValue) + ")");
+                throw recv.getRuntime().newArgumentError("wrong number of arguments (" + oargs.length + " for " + -(1 + arityValue) + ")");
             }
         }
         

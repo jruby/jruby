@@ -3054,7 +3054,7 @@ public final class Ruby {
     }
 
     public RaiseException newArgumentError(int got, int expected) {
-        return newRaiseException(getArgumentError(), "wrong # of arguments(" + got + " for " + expected + ")");
+        return newRaiseException(getArgumentError(), "wrong number of arguments (" + got + " for " + expected + ")");
     }
 
     public RaiseException newErrnoEBADFError() {

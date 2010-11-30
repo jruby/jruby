@@ -320,7 +320,7 @@ public class RubyObject extends RubyBasicObject {
         } else if (args.length > 3) {
             String lastFuncName = context.getFrameName();
             throw getRuntime().newArgumentError(
-                "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
+                "wrong number of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
         }
 
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)

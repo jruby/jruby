@@ -1455,7 +1455,7 @@ public class RubyModule extends RubyObject {
         case 2:
             return define_method(context, args[0], args[1], block);
         default:
-            throw context.getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 2)");
+            throw context.getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
         }
     }
     
