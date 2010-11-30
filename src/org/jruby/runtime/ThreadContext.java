@@ -35,7 +35,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.runtime.profile.ProfileData;
+import org.jruby.runtime.profile.IProfileData;
+import org.jruby.runtime.profile.FlatProfileData;
+import org.jruby.runtime.profile.GraphProfileData;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -105,9 +107,9 @@ public final class ThreadContext {
     // Line where current executing unit is being evaluated
     private int line = 0;
 
-    // The profile data for this thread (TODO: don't create if we're not profiling)
-    private final ProfileData profileData = new ProfileData();
-
+    // The flat profile data for this thread
+	private IProfileData profileData;
+	
     // In certain places, like grep, we don't use real frames for the
     // call blocks. This has the effect of not setting the backref in
     // the correct frame - this delta is activated to the place where
@@ -1501,15 +1503,17 @@ public final class ThreadContext {
      *
      * @return the thread's profile data
      */
-    public ProfileData getProfileData() {
+    public IProfileData getProfileData() {
+        if (profileData == null)
+            profileData = runtime.getInstanceConfig().makeProfileData();
         return profileData;
     }
 
     public int profileEnter(int nextMethod) {
-        return profileData.profileEnter(nextMethod);
+        return getProfileData().profileEnter(nextMethod);
     }
 
     public int profileExit(int nextMethod) {
-        return profileData.profileExit(nextMethod);
+        return getProfileData().profileExit(nextMethod);
     }
 }

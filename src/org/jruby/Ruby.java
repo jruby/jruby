@@ -108,6 +108,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.CompiledScriptLoader;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
+import org.jruby.runtime.profile.IProfileData;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.ByteList;
@@ -416,7 +417,7 @@ public final class Ruby {
         } finally {
             context.setFileAndLine(oldFile, oldLine);
             if (config.isProfiling()) {
-                context.getProfileData().printProfile(context, profiledNames, profiledMethods, System.out);
+                ((IProfileData) context.getProfileData()).printProfile(context, profiledNames, profiledMethods, System.out);
             }
         }
     }

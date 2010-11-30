@@ -57,6 +57,9 @@ import org.jruby.compiler.ASTCompiler19;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.profile.IProfileData;
+import org.jruby.runtime.profile.FlatProfileData;
+import org.jruby.runtime.profile.GraphProfileData;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadService19;
 import org.jruby.util.ClassCache;
@@ -169,8 +172,13 @@ public class RubyInstanceConfig {
     private int jitMaxSize;
     private final boolean samplingEnabled;
     private CompatVersion compatVersion;
-    private boolean profiling;
 
+    public enum ProfilingMode {
+		OFF, FLAT, GRAPH
+	}
+		
+    private ProfilingMode profilingMode = ProfilingMode.OFF;
+	
     private ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
     private ClassLoader loader = contextLoader == null ? RubyInstanceConfig.class.getClassLoader() : contextLoader;
 
@@ -489,7 +497,8 @@ public class RubyInstanceConfig {
                 .append("  --jdb           runs JRuby process under JDB\n")
                 .append("  --properties    List all configuration Java properties (pass -J-Dproperty=value)\n")
                 .append("  --sample        run with profiling using the JVM's sampling profiler\n")
-                .append("  --profile       run with instrumented (timed) profiling\n")
+                .append("  --profile       run with instrumented (timed) profiling, flat format\n")
+                .append("  --profile.graph run with instrumented (timed) profiling, graph format\n")
                 .append("  --client        use the non-optimizing \"client\" JVM (improves startup; default)\n")
                 .append("  --server        use the optimizing \"server\" JVM (improves perf)\n")
                 .append("  --manage        enable remote JMX management and monitoring of the VM and JRuby\n")
@@ -1213,7 +1222,10 @@ public class RubyInstanceConfig {
                         RubyException.TRACE_TYPE = RubyException.RUBY_COMPILED;
                         break FOR;
                     } else if (argument.equals("--profile")) {
-                        profiling = true;
+                        profilingMode = ProfilingMode.FLAT;
+                        break FOR;
+                    } else if (argument.equals("--profile.graph")) {
+                        profilingMode = ProfilingMode.GRAPH;
                         break FOR;
                     } else if (argument.equals("--1.9")) {
                         setCompatVersion(CompatVersion.RUBY1_9);
@@ -1609,10 +1621,20 @@ public class RubyInstanceConfig {
     }
 
     public boolean isProfiling() {
-        return profiling;
+        return profilingMode != ProfilingMode.OFF;
     }
 
-    public void setProfiling(boolean profiling) {
-        this.profiling = profiling;
+    public ProfilingMode getProfilingMode() {
+        return profilingMode;
+    }
+    
+    public IProfileData makeProfileData() {
+        if (profilingMode == ProfilingMode.FLAT) {
+            return new FlatProfileData();
+        }
+        else if (profilingMode == ProfilingMode.GRAPH) {
+            return new GraphProfileData();
+        }
+        return null;
     }
 }

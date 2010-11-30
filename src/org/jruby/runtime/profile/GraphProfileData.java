@@ -3,6 +3,7 @@ package org.jruby.runtime.profile;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -10,21 +11,19 @@ import org.jruby.runtime.ThreadContext;
 
 /**
  * Encapsulates the logic of recording and reporting profiled timings of
- * method invocations.
- *
- * Profile data is stored in a set of arrays, indexed by the serial number of
- * the method in question. This helps keep the cost of profiling to a minimum,
- * since only primitive int/long array read/writes are required to update the tally
- * for a given method.
+ * method invocations. This keeps track of aggregate values for callers and
+ * callees of each method.
  *
  * See ProfilingDynamicMethod for the "hook" end of profiling.
  */
-public class ProfileData {
+public class GraphProfileData implements IProfileData {
 
     private static final int SERIAL_OFFSET = 0;
     private static final int SELFTIME_OFFSET = 1;
     private static final int COUNT_OFFSET = 2;
     private static final int AGGREGATETIME_OFFSET = 3;
+	
+	private HashMap methods = new HashMap<Integer, GraphMethodData>();
 
     /**
      * Begin profiling a new method, aggregating the current time diff in the previous
@@ -144,6 +143,8 @@ public class ProfileData {
             out.print("  ");
             pad(out, 15, nanoString(tuple[AGGREGATETIME_OFFSET]));
             out.print("  ");
+			out.print(Integer.toString(index));
+			out.printf(" ");
             out.println(displayName);
             if (lines == 50) {
                 break;
