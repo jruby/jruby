@@ -68,25 +68,27 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     // esoteric features of 1.9 make this difficult to know how to do this yet.
     public static BlockBody newBlockBody(IterNode iter) {
         if (iter instanceof LambdaNode) {
-            LambdaNode lambda = (LambdaNode) iter;
-
-            return new Interpreted19Block(iter.getScope(), lambda.getArgs().getArity(),
-                    lambda.getArgs(), lambda.getBody() == null ? NilImplicitNode.NIL : lambda.getBody());
+            return new Interpreted19Block((LambdaNode) iter);
         } else {
-            ArgsNode argsNode = (ArgsNode) iter.getVarNode();
-
-            return new Interpreted19Block(iter.getScope(), argsNode.getArity(),
-                    argsNode, iter.getBodyNode() == null ? NilImplicitNode.NIL : iter.getBodyNode());
+            return new Interpreted19Block(iter);
         }
 
     }
 
-    public Interpreted19Block(StaticScope scope, Arity arity, ArgsNode args, Node body) {
-        super(scope, arity, -1); // We override that the logic which uses this
+    public Interpreted19Block(IterNode iterNode) {
+        super(iterNode.getScope(), ((ArgsNode)iterNode.getVarNode()).getArity(), -1); // We override that the logic which uses this
 
-        this.args = args;
-        this.body = body;
-        this.position = args.getPosition();
+        this.args = (ArgsNode)iterNode.getVarNode();
+        this.body = iterNode.getBodyNode() == null ? NilImplicitNode.NIL : iterNode.getBodyNode();
+        this.position = iterNode.getPosition();
+    }
+
+    public Interpreted19Block(LambdaNode lambdaNode) {
+        super(lambdaNode.getScope(), lambdaNode.getArgs().getArity(), -1); // We override that the logic which uses this
+
+        this.args = lambdaNode.getArgs();
+        this.body = lambdaNode.getBody() == null ? NilImplicitNode.NIL : lambdaNode.getBody();
+        this.position = lambdaNode.getPosition();
     }
 
     @Override
