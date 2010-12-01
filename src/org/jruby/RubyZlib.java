@@ -61,7 +61,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.Adler32Ext;
@@ -225,7 +225,7 @@ public class RubyZlib {
     @JRubyClass(name="Zlib::DataError", parent="Zlib::Error")
     public static class DataError extends Error {}
 
-    @JRubyMethod(name = "zlib_version", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "zlib_version", module = true, visibility = PRIVATE)
     public static IRubyObject zlib_version(IRubyObject recv) {
         RubyBasicObject res = (RubyBasicObject) ((RubyModule)recv).fastGetConstant("ZLIB_VERSION");
         // MRI behavior, enforced by tests
@@ -233,7 +233,7 @@ public class RubyZlib {
         return res;
     }
 
-    @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
         long crc = 0;
@@ -250,7 +250,7 @@ public class RubyZlib {
         return recv.getRuntime().newFixnum(ext.getValue());
     }
 
-    @JRubyMethod(name = "adler32", optional = 2, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "adler32", optional = 2, module = true, visibility = PRIVATE)
     public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
         int adler = 1;
@@ -289,7 +289,7 @@ public class RubyZlib {
         3401237130L, 1404277552L, 615818150L, 3134207493L, 3453421203L, 1423857449L, 601450431L, 3009837614L, 3294710456L, 1567103746L, 711928724L, 3020668471L, 
         3272380065L, 1510334235L, 755167117};
 
-    @JRubyMethod(name = "crc_table", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "crc_table", module = true, visibility = PRIVATE)
     public static IRubyObject crc_table(IRubyObject recv) {
         List<IRubyObject> ll = new ArrayList<IRubyObject>(crctab.length);
         for(int i=0;i<crctab.length;i++) {
@@ -334,17 +334,17 @@ public class RubyZlib {
             super(runtime, type);
         }
 
-        @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(visibility = PRIVATE)
         public IRubyObject initialize(Block unusedBlock) {
             return this;
         }
 
-        @JRubyMethod(name = "flush_next_out")
+        @JRubyMethod
         public IRubyObject flush_next_out(ThreadContext context) {
             return RubyString.newEmptyString(context.getRuntime());
         }
 
-        @JRubyMethod(name = "total_out")
+        @JRubyMethod
         public IRubyObject total_out() {
             checkClosed();
             return getRuntime().newFixnum(internalTotalOut());
@@ -493,7 +493,7 @@ public class RubyZlib {
             return result;
         }
 
-        @JRubyMethod(name = "initialize", optional = 1, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "initialize", optional = 1, visibility = PRIVATE)
         public IRubyObject _initialize(IRubyObject[] args) {
             int window_bits = MAX_WBITS;
 
@@ -732,7 +732,7 @@ public class RubyZlib {
             super(runtime, type);
         }
 
-        @JRubyMethod(name = "initialize", optional = 4, visibility = Visibility.PRIVATE, backtrace = true)
+        @JRubyMethod(name = "initialize", optional = 4, visibility = PRIVATE, backtrace = true)
         public IRubyObject _initialize(IRubyObject[] args) {
             args = Arity.scanArgs(getRuntime(), args, 0, 4);
             int level = -1;
@@ -766,7 +766,7 @@ public class RubyZlib {
         }
 
         @Override
-        @JRubyMethod(visibility = Visibility.PRIVATE)
+        @JRubyMethod(visibility = PRIVATE)
         public IRubyObject initialize_copy(IRubyObject other) {
             if (this == other) {
                 return this;
@@ -958,7 +958,7 @@ public class RubyZlib {
             return instance;
         }
         
-        @JRubyMethod(name = "wrap", required = 1, frame = true, meta = true)
+        @JRubyMethod(meta = true)
         public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) {
             Ruby runtime = recv.getRuntime();
             RubyGzipFile instance;
@@ -979,7 +979,7 @@ public class RubyZlib {
             }
         };
 
-        @JRubyMethod(name = "new", frame = true, meta = true)
+        @JRubyMethod(name = "new", meta = true)
         public static RubyGzipFile newInstance(IRubyObject recv, Block block) {
             RubyClass klass = (RubyClass)recv;
             
@@ -1118,7 +1118,7 @@ public class RubyZlib {
             }
         };
         
-        @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
+        @JRubyMethod(name = "new", rest = true, meta = true)
         public static RubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             RubyClass klass = (RubyClass)recv;
             RubyGzipReader result = (RubyGzipReader)klass.allocate();
@@ -1126,7 +1126,7 @@ public class RubyZlib {
             return result;
         }
 
-        @JRubyMethod(name = "open", required = 1, frame = true, meta = true)
+        @JRubyMethod(meta = true)
         public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject filename, Block block) {
             Ruby runtime = recv.getRuntime();
             IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", filename, runtime.newString("rb"));
@@ -1428,7 +1428,7 @@ public class RubyZlib {
             }
         }
 
-        @JRubyMethod(name = "initialize", required = 1, frame = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(visibility = PRIVATE)
         public IRubyObject initialize(IRubyObject arg, Block unusedBlock) {
             realIo = arg;
             line = 0;
@@ -1438,7 +1438,7 @@ public class RubyZlib {
             return this;
         }
 
-        @JRubyMethod(name = "rewind")
+        @JRubyMethod
         public IRubyObject rewind() {
             Ruby rt = getRuntime();
             // should invoke seek on realIo...
@@ -1633,19 +1633,19 @@ public class RubyZlib {
             return eof();
         }
 
-        @JRubyMethod(name = "unused")
+        @JRubyMethod
         public IRubyObject unused() {
             // TODO: implement
             return getRuntime().getNil();
         }
 
         @Override
-        @JRubyMethod(name = "crc")
+        @JRubyMethod
         public IRubyObject crc() {
             return getRuntime().newFixnum(io.crc());
         }
 
-        @JRubyMethod(name = "each", optional = 1, frame = true)
+        @JRubyMethod(optional = 1)
         public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
             ByteList sep = ((RubyString) getRuntime().getGlobalVariables().get("$/")).getByteList();
             if (args.length > 0 && !args[0].isNil()) {
@@ -1661,17 +1661,17 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
 
-        @JRubyMethod(name = "each_line", optional = 1, frame = true)
+        @JRubyMethod(optional = 1)
         public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
           return each(context, args, block);
         }
     
-        @JRubyMethod(name = "ungetc", required = 1)
+        @JRubyMethod
         public IRubyObject ungetc(IRubyObject arg) {
             return getRuntime().getNil();
         }
 
-        @JRubyMethod(name = "readlines", optional = 1)
+        @JRubyMethod(optional = 1)
         public IRubyObject readlines(IRubyObject[] args) {
             List<IRubyObject> array = new ArrayList<IRubyObject>();
             if (args.length != 0 && args[0].isNil()) {
@@ -1692,7 +1692,7 @@ public class RubyZlib {
             return getRuntime().newArray(array);
         }
 
-        @JRubyMethod(name = "each_byte", frame = true)
+        @JRubyMethod
         public IRubyObject each_byte(ThreadContext context, Block block) {
             try {
                 int value = bufferedStream.read();
@@ -1716,7 +1716,7 @@ public class RubyZlib {
             }
         };
         
-        @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
+        @JRubyMethod(name = "new", rest = true, meta = true)
         public static RubyGzipWriter newGzipWriter(IRubyObject recv, IRubyObject[] args, Block block) {
             RubyClass klass = (RubyClass)recv;
             
@@ -1725,7 +1725,7 @@ public class RubyZlib {
             return result;
         }
 
-        @JRubyMethod(name = "open", required = 1, optional = 2, frame = true, meta = true)
+        @JRubyMethod(required = 1, optional = 2, meta = true)
         public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
             Ruby runtime = recv.getRuntime();
             IRubyObject level = runtime.getNil();
@@ -1877,8 +1877,8 @@ public class RubyZlib {
 
         private HeaderModifyableGZIPOutputStream io;
         
-        @JRubyMethod(name = "initialize", required = 1, rest = true, frame = true, visibility = Visibility.PRIVATE)
-        public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) {
+        @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
+        public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
             realIo = (RubyObject) args[0];
             try {
                 io = new HeaderModifyableGZIPOutputStream(realIo);

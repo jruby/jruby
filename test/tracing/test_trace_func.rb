@@ -42,10 +42,10 @@ class TestTraceFunc < Test::Unit::TestCase
 
     line = __LINE__ - 7
     expected = ["line #{__FILE__}:#{line} test_block_and_vars TestTraceFunc",
-      "c-call #{__FILE__}:#{line} times Integer",
+      "c-call #{__FILE__}:#{line} times Fixnum",
       "line #{__FILE__}:#{line + 1} test_block_and_vars TestTraceFunc",
       "line #{__FILE__}:#{line + 2} test_block_and_vars TestTraceFunc",
-      "c-return #{__FILE__}:#{line} times Integer",
+      "c-return #{__FILE__}:#{line} times Fixnum",
       "line #{__FILE__}:#{line + 5} test_block_and_vars TestTraceFunc",
       "c-call #{__FILE__}:#{line + 5} set_trace_func Kernel"]
     assert_equal(expected, output)
@@ -72,7 +72,7 @@ class TestTraceFunc < Test::Unit::TestCase
                 "      line #{__FILE__}:#{line - 10}      sample_method  TestTraceFunc",
                 "    c-call #{__FILE__}:#{line - 10}                  +         Fixnum",
                 "  c-return #{__FILE__}:#{line - 10}                  +         Fixnum",
-                "    return #{__FILE__}:#{line - 9}      sample_method  TestTraceFunc",
+                "    return #{__FILE__}:#{line - 10}      sample_method  TestTraceFunc",
                 "      line #{__FILE__}:#{line + 2}  test_method_trace  TestTraceFunc",
                 "    c-call #{__FILE__}:#{line + 2}     set_trace_func         Kernel"];
     assert_equal(expected, output)
@@ -199,7 +199,7 @@ class TestTraceFunc < Test::Unit::TestCase
       "other.rb line 2 in_other Object",
       "other.rb c-call 2 sleep Kernel",
       "other.rb c-return 2 sleep Kernel",
-      "other.rb return 3 in_other Object",
+      "other.rb return 2 in_other Object",
       "test_trace_func.rb line #{line + 3} test_return TestTraceFunc",
       "test_trace_func.rb c-call #{line + 3} set_trace_func Kernel"]
 

@@ -42,8 +42,6 @@ public final class ClassIndex {
     public static final int GENERATOR = 24;
     public static final int YIELDER = 25;
     public static final int FILE = 26;
-    @Deprecated
-    public static final int MATCH = 27;
     public static final int MATCHDATA = 27;
     public static final int THREADGROUP = 28;
     public static final int THREAD = 29;

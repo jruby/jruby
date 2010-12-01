@@ -194,7 +194,7 @@ public class ASTInspector {
     }
 
     public CallConfiguration getCallConfig() {
-        if (hasFrameAwareMethods() || hasClosure() || !(noFrame() || RubyInstanceConfig.FRAMELESS_COMPILE_ENABLED)) {
+        if (hasFrameAwareMethods() || hasClosure() || !(noFrame() || RubyInstanceConfig.FULL_TRACE_ENABLED || !RubyInstanceConfig.FRAMELESS_COMPILE_ENABLED)) {
             // We're doing normal framed compilation or the method needs a frame
             if (hasClosure() || hasScopeAwareMethods()) {
                 // The method also needs a scope, do both
@@ -210,25 +210,12 @@ public class ASTInspector {
             }
         } else {
             if (hasClosure() || hasScopeAwareMethods()) {
-                // TODO: call config with scope but no frame
-                if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED) {
-                    return CallConfiguration.FrameNoneScopeFull;
-                } else {
-                    return CallConfiguration.FrameBacktraceScopeFull;
-                }
+                return CallConfiguration.FrameNoneScopeFull;
             } else {
                 if (hasConstant() || hasMethod() || hasClass() || hasClassVar()) {
-                    if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED || noFrame()) {
-                        return CallConfiguration.FrameNoneScopeDummy;
-                    } else {
-                        return CallConfiguration.FrameBacktraceScopeDummy;
-                    }
+                    return CallConfiguration.FrameNoneScopeDummy;
                 } else {
-                    if (RubyInstanceConfig.FASTEST_COMPILE_ENABLED || noFrame()) {
-                        return CallConfiguration.FrameNoneScopeNone;
-                    } else {
-                        return CallConfiguration.FrameBacktraceScopeNone;
-                    }
+                    return CallConfiguration.FrameNoneScopeNone;
                 }
             }
         }
@@ -698,6 +685,7 @@ public class ASTInspector {
             break;
         case SCLASSNODE:
             setFlag(node, CLASS);
+            setFlag(node, FRAME_AWARE);
             SClassNode sclassNode = (SClassNode)node;
             inspect(sclassNode.getReceiverNode());
             break;

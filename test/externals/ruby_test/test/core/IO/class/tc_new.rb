@@ -11,6 +11,7 @@ class TC_IO_New_ClassMethod < Test::Unit::TestCase
 
    def setup
       @stream = nil
+      @tmpstream = STDOUT.dup
    end
 
    def test_new_basic
@@ -19,22 +20,22 @@ class TC_IO_New_ClassMethod < Test::Unit::TestCase
    end
 
    def test_new
-      assert_nothing_raised{ @stream = IO.new(2) }
+      assert_nothing_raised{ @stream = IO.new(@tmpstream.fileno) }
       assert_kind_of(IO, @stream)
    end
 
    def test_for_fd
-      assert_nothing_raised{ @stream = IO.for_fd(2) }
+      assert_nothing_raised{ @stream = IO.for_fd(@tmpstream.fileno) }
       assert_kind_of(IO, @stream)
    end
 
    def test_new_with_modestring
-      assert_nothing_raised{ @stream = IO.new(2, 'w') }
+      assert_nothing_raised{ @stream = IO.new(@tmpstream.fileno, 'w') }
       assert_kind_of(IO, @stream)
    end
 
    def test_for_fd_with_modestring
-      assert_nothing_raised{ @stream = IO.for_fd(2, 'w') }
+      assert_nothing_raised{ @stream = IO.for_fd(@tmpstream.fileno, 'w') }
       assert_kind_of(IO, @stream)
    end
 

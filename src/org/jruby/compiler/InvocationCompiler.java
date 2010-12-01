@@ -99,4 +99,6 @@ public interface InvocationCompiler {
     public void invokeRecursive(String name, int moduleGeneration, ArgumentsCallback argsCallback, CompilerCallback closure, CallType callType, boolean iterator);
 
     public void invokeNative(String name, NativeCall nativeCall, int generation, CompilerCallback receiver, ArgumentsCallback args, CompilerCallback closure, CallType callType, boolean iterator);
+
+    public void invokeTrivial(String name, int generation, CompilerCallback body);
 }

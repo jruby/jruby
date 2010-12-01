@@ -365,6 +365,10 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
         tempVariableIndex--;
     }
 
+    public boolean isHeap() {
+        return false;
+    }
+
     protected void assignHeapLocal(CompilerCallback value, int depth, int index, boolean expr) {
         switch (index) {
         case 0:

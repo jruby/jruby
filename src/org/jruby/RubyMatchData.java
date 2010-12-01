@@ -293,7 +293,7 @@ public class RubyMatchData extends RubyObject {
         return to_a().values_at(args);
     }
 
-    @JRubyMethod(name = "select", frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(compat = CompatVersion.RUBY1_8)
     public IRubyObject select(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         final RubyArray result;

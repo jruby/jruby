@@ -157,14 +157,14 @@ public class RubyBigDecimal extends RubyNumeric {
         return recv.getRuntime().newString("1.0.1");
     }
 
-    @JRubyMethod(name = "_dump", optional = 1, frame = true)
+    @JRubyMethod(name = "_dump", optional = 1)
     public IRubyObject dump(IRubyObject[] args, Block unusedBlock) {
         RubyString precision = RubyString.newUnicodeString(getRuntime(), "0:");
 
         return precision.append(asString());
     }
         
-    @JRubyMethod(name = "_load", required = 1, frame = true, meta = true)
+    @JRubyMethod(name = "_load", required = 1, meta = true)
     public static RubyBigDecimal load(IRubyObject recv, IRubyObject from, Block block) {
         RubyBigDecimal rubyBigDecimal = (RubyBigDecimal) (((RubyClass)recv).allocate());
         String precisionAndValue = from.convertToString().asJavaString();
@@ -333,7 +333,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return null;
     }
 
-    @JRubyMethod(name = "induced_from", required = 1, frame = true, meta = true)
+    @JRubyMethod(name = "induced_from", required = 1, meta = true)
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject arg) {
         return getVpValue(arg, true);
     }
@@ -561,13 +561,13 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "+", required = 1, frame=true)
+    @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject b) {
         return addInternal(context, b, "add", getRuntime().fastGetClass("BigDecimal")
                 .searchInternalModuleVariable("vpPrecLimit"));
     }
 
-    @JRubyMethod(name = "add", required = 2, frame=true)
+    @JRubyMethod(name = "add")
     public IRubyObject add2(ThreadContext context, IRubyObject b, IRubyObject digits) {
         return addInternal(context, b, "add", digits);
     }

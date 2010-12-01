@@ -72,7 +72,7 @@ public class RubyMarshal {
         return module;
     }
 
-    @JRubyMethod(name = "dump", required = 1, optional = 2, frame = true, module = true)
+    @JRubyMethod(required = 1, optional = 2, module = true)
     public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         if (args.length < 1) {
             throw recv.getRuntime().newArgumentError("wrong # of arguments(at least 1)");
@@ -126,7 +126,7 @@ public class RubyMarshal {
         }
     }
 
-    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, frame = true, module = true)
+    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, module = true)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         IRubyObject in = null;
         IRubyObject proc = null;

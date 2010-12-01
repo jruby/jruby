@@ -61,7 +61,7 @@ public class NativeException extends RubyException {
         return exceptionClass;
     }
 
-    @JRubyMethod(frame = true)
+    @JRubyMethod
     public IRubyObject cause(Block unusedBlock) {
         return Java.getInstance(getRuntime(), cause);
     }

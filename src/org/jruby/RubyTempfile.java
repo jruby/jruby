@@ -39,7 +39,7 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ReferenceReaper;
@@ -104,7 +104,7 @@ public class RubyTempfile extends RubyFile {
         super(runtime, type);
     }
 
-    @JRubyMethod(required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
@@ -177,7 +177,7 @@ public class RubyTempfile extends RubyFile {
     /**
      * Compatibility with Tempfile#make_tmpname(basename, n) in MRI
      */
-    @JRubyMethod(frame = true, required = 2, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public IRubyObject make_tmpname(ThreadContext context, IRubyObject basename, IRubyObject n, Block block) {
         Ruby runtime = context.getRuntime();
         IRubyObject[] newargs = new IRubyObject[5];
@@ -202,7 +202,7 @@ public class RubyTempfile extends RubyFile {
         return callMethod(context, "sprintf", newargs);
     }
 
-    @JRubyMethod(frame = true, visibility = Visibility.PUBLIC)
+    @JRubyMethod(visibility = PUBLIC)
     public IRubyObject open() {
         if (!isClosed()) close();
         try {
@@ -214,18 +214,18 @@ public class RubyTempfile extends RubyFile {
         return this;
     }
 
-    @JRubyMethod(frame = true, visibility = Visibility.PROTECTED)
+    @JRubyMethod(visibility = PROTECTED)
     public IRubyObject _close(ThreadContext context) {
         return !isClosed() ? super.close() : context.getRuntime().getNil();
     }
 
-    @JRubyMethod(optional = 1, frame = true, visibility = Visibility.PUBLIC)
+    @JRubyMethod(optional = 1, visibility = PUBLIC)
     public IRubyObject close(ThreadContext context, IRubyObject[] args, Block block) {
         boolean unlink = args.length == 1 ? args[0].isTrue() : false;
         return unlink ? close_bang(context) : _close(context);
     }
 
-    @JRubyMethod(name = "close!", frame = true, visibility = Visibility.PUBLIC)
+    @JRubyMethod(name = "close!", visibility = PUBLIC)
     public IRubyObject close_bang(ThreadContext context) {
          referenceSet.remove(reaper);
          reaper.released = true;
@@ -234,7 +234,7 @@ public class RubyTempfile extends RubyFile {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = {"unlink", "delete"}, frame = true)
+    @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
         if (!tmpFile.exists() || tmpFile.delete()) {
             referenceSet.remove(reaper);
@@ -244,7 +244,7 @@ public class RubyTempfile extends RubyFile {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = {"size", "length"}, frame = true)
+    @JRubyMethod(name = {"size", "length"})
     public IRubyObject size(ThreadContext context) {
         if (!isClosed()) {
             flush();
@@ -254,7 +254,7 @@ public class RubyTempfile extends RubyFile {
         return RubyFixnum.zero(context.getRuntime());
     }
 
-    @JRubyMethod(required = 1, optional = 1, frame = true, meta = true)
+    @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         RubyClass klass = (RubyClass) recv;

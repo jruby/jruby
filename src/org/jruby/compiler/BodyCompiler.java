@@ -317,7 +317,7 @@ public interface BodyCompiler {
      * @param arity The arity of the block's argument list
      * @param body The callback which will generate the closure's body
      */
-    public void createNewClosure(int line, StaticScope scope, int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
+    public void createNewClosure(String file, int line, StaticScope scope, int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
 
     /**
      * Create a new closure (block) using the given lexical scope information, call arity, and
@@ -327,7 +327,7 @@ public interface BodyCompiler {
      * @param arity The arity of the block's argument list
      * @param body The callback which will generate the closure's body
      */
-    public void createNewClosure19(int line, StaticScope scope, int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
+    public void createNewClosure19(String file, int line, StaticScope scope, int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector);
     
     /**
      * Create a new closure (block) for a for loop with the given call arity and
@@ -630,4 +630,12 @@ public interface BodyCompiler {
     public String getNativeMethodName();
 
     public void preMultiAssign(int head, boolean args);
+
+    /**
+     * Return true if this method compiled is a "simple" root compiler, i.e.
+     * not chained and not a block/closure.
+     * 
+     * @return
+     */
+    public boolean isSimpleRoot();
 }

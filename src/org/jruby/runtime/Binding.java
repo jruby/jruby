@@ -45,6 +45,7 @@ public class Binding {
      * frame of method which defined this block
      */
     private final Frame frame;
+    private final ThreadContext.Backtrace backtrace;
     private final RubyModule klass;
 
     private Visibility visibility;
@@ -57,37 +58,32 @@ public class Binding {
      * A reference to all variable values (and names) that are in-scope for this block.
      */
     private final DynamicScope dynamicScope;
-
-    private String file;
-    private int line;
     
     public Binding(IRubyObject self, Frame frame,
-            Visibility visibility, RubyModule klass, DynamicScope dynamicScope, String file, int line) {
+            Visibility visibility, RubyModule klass, DynamicScope dynamicScope, ThreadContext.Backtrace backtrace) {
         this.self = self;
         this.frame = frame.duplicate();
         this.visibility = visibility;
         this.klass = klass;
         this.dynamicScope = dynamicScope;
-        this.file = file;
-        this.line = line;
+        this.backtrace = backtrace;
     }
     
-    public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope, String file, int line) {
+    public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope, ThreadContext.Backtrace backtrace) {
         this.self = frame.getSelf();
         this.frame = frame.duplicate();
         this.visibility = frame.getVisibility();
         this.klass = bindingClass;
         this.dynamicScope = dynamicScope;
-        this.file = file;
-        this.line = line;
+        this.backtrace = backtrace;
     }
 
     public Binding clone() {
-        return new Binding(self, frame, visibility, klass, dynamicScope, file, line);
+        return new Binding(self, frame, visibility, klass, dynamicScope, backtrace);
     }
 
     public Binding clone(Visibility visibility) {
-        return new Binding(self, frame, visibility, klass, dynamicScope, file, line);
+        return new Binding(self, frame, visibility, klass, dynamicScope, backtrace);
     }
 
     public Visibility getVisibility() {
@@ -143,19 +139,27 @@ public class Binding {
     }
 
     public String getFile() {
-        return file;
+        return backtrace.filename;
     }
 
     public void setFile(String file) {
-        this.file = file;
+        backtrace.filename = file;
     }
 
     public int getLine() {
-        return line;
+        return backtrace.line;
     }
 
     public void setLine(int line) {
-        this.line = line;
+        backtrace.line = line;
+    }
+
+    public String getMethod() {
+        return backtrace.method;
+    }
+
+    public void setMethod(String method) {
+        backtrace.method = method;
     }
 
     public boolean equals(Object other) {

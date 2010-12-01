@@ -77,7 +77,7 @@ public class RubyClassPathVariable extends RubyObject {
         return getRuntime().newFixnum(getRuntime().getJRubyClassLoader().getURLs().length);
     }
 
-    @JRubyMethod(name = "each", frame = true)
+    @JRubyMethod
     public IRubyObject each(Block block) {
         URL[] urls = getRuntime().getJRubyClassLoader().getURLs();
         ThreadContext ctx = getRuntime().getCurrentContext();
@@ -87,7 +87,7 @@ public class RubyClassPathVariable extends RubyObject {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod
     public IRubyObject to_s() {
         return callMethod(getRuntime().getCurrentContext(), "to_a").callMethod(getRuntime().getCurrentContext(), "to_s");
     }    

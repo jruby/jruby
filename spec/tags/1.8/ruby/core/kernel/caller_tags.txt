@@ -2,3 +2,6 @@ fails(JRUBY-2651):Kernel#caller in a Proc or eval returns the definition trace o
 fails(JRUBY-2651):Kernel#caller in a Proc or eval returns the definition trace of a Proc
 fails(JRUBY-2651):Kernel#caller in a Proc or eval returns the correct definition line for a complex Proc trace
 fails:Kernel.caller returns one entry per call, even for recursive methods
+fails(JRUBY-5176):Kernel#caller in a Proc or eval begins with (eval) for caller(0) in eval
+fails(JRUBY-5176):Kernel#caller in a Proc or eval begins with the eval's sender's sender for caller(1) in eval
+fails(JRUBY-5176):Kernel#caller in a Proc or eval shows the current line in the calling block twice when evaled

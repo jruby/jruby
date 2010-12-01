@@ -38,7 +38,9 @@ import org.jruby.ast.ArgsNoArgNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 /**
@@ -47,6 +49,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Interpreted19Block  extends ContextAwareBlockBody {
     private static final boolean ALREADY_ARRAY = true;
+
+    /** The position for the block */
+    private final ISourcePosition position;
 
     /** The argument list, pulled out of iterNode */
     private final ArgsNode args;
@@ -73,6 +78,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
             return new Interpreted19Block(iter.getScope(), argsNode.getArity(),
                     argsNode, iter.getBodyNode() == null ? NilImplicitNode.NIL : iter.getBodyNode());
         }
+
     }
 
     public Interpreted19Block(StaticScope scope, Arity arity, ArgsNode args, Node body) {
@@ -80,6 +86,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
 
         this.args = args;
         this.body = body;
+        this.position = args.getPosition();
     }
 
     @Override
@@ -123,7 +130,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         try {
             setupBlockArg(context, value, self, Block.NULL_BLOCK, type);
 
-            return evalBlockBody(context, self);
+            return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
@@ -160,7 +167,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
             setupBlockArgs(context, value, self, block, type, aValue);
 
             // This while loop is for restarting the block call in case a 'redo' fires.
-            return evalBlockBody(context, self);
+            return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
@@ -168,11 +175,11 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         }
     }
 
-    private IRubyObject evalBlockBody(ThreadContext context, IRubyObject self) {
+    private IRubyObject evalBlockBody(ThreadContext context, Binding binding, IRubyObject self) {
         // This while loop is for restarting the block call in case a 'redo' fires.
         while (true) {
             try {
-                return body.interpret(context.getRuntime(), context, self, Block.NULL_BLOCK);
+                return ASTInterpreter.INTERPRET_BLOCK(context.getRuntime(), context, body, binding.getMethod(), self, Block.NULL_BLOCK);
             } catch (JumpException.RedoJump rj) {
                 context.pollThreadEvents();
                 // do nothing, allow loop to redo
@@ -266,5 +273,13 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     
     public Node getBody() {
         return body;
+    }
+
+    public String getFile() {
+        return position.getFile();
+    }
+
+    public int getLine() {
+        return position.getLine();
     }
 }

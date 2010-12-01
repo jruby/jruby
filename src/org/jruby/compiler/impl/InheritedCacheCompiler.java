@@ -23,6 +23,7 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
@@ -66,16 +67,12 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public void cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
-        StringBuffer scopeNames = new StringBuffer();
-        for (int i = 0; i < scope.getVariables().length; i++) {
-            if (i != 0) scopeNames.append(';');
-            scopeNames.append(scope.getVariables()[i]);
-        }
+        String scopeString = RuntimeHelpers.encodeScope(scope);
 
         // retrieve scope from scopes array
         method.loadThis();
         method.loadThreadContext();
-        method.method.ldc(scopeNames.toString());
+        method.method.ldc(scopeString);
         if (scopeCount < AbstractScript.NUMBERED_SCOPE_COUNT) {
             // use numbered access method
             method.method.invokevirtual(scriptCompiler.getClassname(), "getScope" + scopeCount, sig(StaticScope.class, ThreadContext.class, String.class));
@@ -313,7 +310,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
     }
 
-    public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
+    public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
         // build scope names string
         StringBuffer scopeNames = new StringBuffer();
         for (int i = 0; i < scope.getVariables().length; i++) {
@@ -328,6 +325,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 scopeNames + ',' +
                 hasMultipleArgsHead + ',' +
                 BlockBody.asArgumentType(argsNodeId) + ',' +
+                file + "," +
+                line + "," +
                 !(inspector.hasClosure() || inspector.hasScopeAwareMethods());
 
         method.loadThis();
@@ -345,7 +344,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedBlockBodyCount++;
     }
 
-    public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
+    public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
         // build scope names string
         StringBuffer scopeNames = new StringBuffer();
         for (int i = 0; i < scope.getVariables().length; i++) {
@@ -360,6 +359,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 scopeNames + ',' +
                 hasMultipleArgsHead + ',' +
                 BlockBody.asArgumentType(argsNodeId) + ',' +
+                file + ',' +
+                line + ',' +
                 !(inspector.hasClosure() || inspector.hasScopeAwareMethods());
 
         method.loadThis();

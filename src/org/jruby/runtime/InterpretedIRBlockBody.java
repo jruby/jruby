@@ -140,4 +140,16 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         }
         return value;
     }
+
+    @Override
+    public String getFile() {
+        // FIXME: need to get position from IR somehow?
+        return "(unknown)";
+    }
+
+    @Override
+    public int getLine() {
+        // FIXME: need to get position from IR somehow?
+        return -1;
+    }
 }

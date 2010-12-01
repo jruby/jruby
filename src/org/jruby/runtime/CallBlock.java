@@ -119,4 +119,12 @@ public class CallBlock extends BlockBody {
     public Arity arity() {
         return arity;
     }
+
+    public String getFile() {
+        return "(internal)";
+    }
+
+    public int getLine() {
+        return -1;
+    }
 }

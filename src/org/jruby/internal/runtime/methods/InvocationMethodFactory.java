@@ -37,7 +37,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyKernel;
 import org.jruby.parser.StaticScope;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -355,6 +354,26 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         mv.visitCode();
         mv.line(-1);
 
+        // save off callNumber
+        mv.aload(1);
+        mv.getfield(p(ThreadContext.class), "callNumber", ci(int.class));
+        int callNumberIndex = -1;
+        if (specificArity) {
+            switch (scope.getRequiredArgs()) {
+            case -1:
+                callNumberIndex = ARGS_INDEX + 1/*args*/ + 1/*block*/ + 1;
+                break;
+            case 0:
+                callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
+                break;
+            default:
+                callNumberIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
+            }
+        } else {
+            callNumberIndex = ARGS_INDEX + 1/*block*/ + 1;
+        }
+        mv.istore(callNumberIndex);
+
         // invoke pre method stuff
         if (!callConfig.isNoop() || RubyInstanceConfig.FULL_TRACE_ENABLED) {
             if (specificArity) {
@@ -364,22 +383,23 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
 
+        // pre-call trace
         int traceBoolIndex = -1;
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // load and store trace enabled flag
             if (specificArity) {
                 switch (scope.getRequiredArgs()) {
                 case -1:
-                    traceBoolIndex = ARGS_INDEX + 1/*block*/ + 1;
+                    traceBoolIndex = ARGS_INDEX + 1/*args*/ + 1/*block*/ + 2;
                     break;
                 case 0:
-                    traceBoolIndex = ARGS_INDEX + 1/*block*/;
+                    traceBoolIndex = ARGS_INDEX + 1/*block*/ + 2;
                     break;
                 default:
-                    traceBoolIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 1;
+                    traceBoolIndex = ARGS_INDEX + scope.getRequiredArgs() + 1/*block*/ + 2;
                 }
             } else {
-                traceBoolIndex = ARGS_INDEX + 1/*block*/ + 1;
+                traceBoolIndex = ARGS_INDEX + 1/*block*/ + 2;
             }
 
             mv.aload(1);
@@ -398,8 +418,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Label catchReturnJump = new Label();
         Label catchRedoJump = new Label();
 
-        boolean heapScoped = callConfig.scoping() == Scoping.Full;
-        boolean framed = callConfig.framing() == Framing.Full;
+        boolean heapScoped = callConfig.scoping() != Scoping.None;
+        boolean framed = callConfig.framing() != Framing.None;
 
         if (framed || heapScoped)   mv.trycatch(tryBegin, tryEnd, catchReturnJump, p(JumpException.ReturnJump.class));
         if (framed)                 mv.trycatch(tryBegin, tryEnd, catchRedoJump, p(JumpException.RedoJump.class));
@@ -449,7 +469,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 mv.swap();
                 mv.aload(1);
                 mv.swap();
-                mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturn", sig(IRubyObject.class, ThreadContext.class, JumpException.ReturnJump.class));
+                mv.iload(callNumberIndex);
+                mv.invokevirtual(COMPILED_SUPER_CLASS, "handleReturn", sig(IRubyObject.class, ThreadContext.class, JumpException.ReturnJump.class, int.class));
                 mv.label(doReturnFinally);
 
                 // finally
@@ -506,8 +527,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             // rethrow exception
             mv.athrow(); // rethrow it
         }
+        mv.end();
 
-        return endCallOffline(cw,mv);
+        return endCallOffline(cw);
     }
     
     private static class DescriptorInfo {
@@ -527,8 +549,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             backtrace = false;
             rest = false;
             block = false;
+            boolean first = true;
+            boolean lastBlock = false;
 
             for (JavaMethodDescriptor desc: descs) {
+                // make sure we don't have some methods with blocks and others without
+                // the handle generation logic can't handle such cases yet
+                if (first) {
+                    first = false;
+                } else {
+                    if (lastBlock != desc.hasBlock) {
+                        throw new RuntimeException("Mismatched block parameters for method " + desc.declaringClassName + "." + desc.name);
+                    }
+                }
+                lastBlock = desc.hasBlock;
+                
                 int specificArity = -1;
                 if (desc.hasVarArgs) {
                     if (desc.optional == 0 && !desc.rest && desc.required == 0) {
@@ -737,7 +772,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    public CompiledBlockCallback getBlockCallback(String method, Object scriptObject) {
+    public CompiledBlockCallback getBlockCallback(String method, String file, int line, Object scriptObject) {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);
         String mname = typeClass.getName() + "BlockCallback$" + method + "xx1";
@@ -748,7 +783,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                         System.err.println("no generated handle in classloader for: " + mname);
                     }
-                    byte[] bytes = getBlockCallbackOffline(method, typePathString);
+                    byte[] bytes = getBlockCallbackOffline(method, file, line, typePathString);
                     c = endCallWithBytes(bytes, mname);
                 } else {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
@@ -768,7 +803,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     @Override
-    public byte[] getBlockCallbackOffline(String method, String classname) {
+    public byte[] getBlockCallbackOffline(String method, String file, int line, String classname) {
         String mnamePath = classname + "BlockCallback$" + method + "xx1";
         ClassWriter cw = createBlockCtor(mnamePath, classname);
         SkinnyMethodAdapter mv = startBlockCall(cw);
@@ -780,12 +815,24 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 IRubyObject.class, "L" + classname + ";", ThreadContext.class,
                         IRubyObject.class, IRubyObject.class, Block.class));
         mv.areturn();
+        mv.end();
 
-        mv.visitMaxs(2, 3);
-        return endCallOffline(cw, mv);
+        mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "getFile", sig(String.class), null, null);
+        mv.start();
+        mv.ldc(file);
+        mv.areturn();
+        mv.end();
+
+        mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "getLine", sig(int.class), null, null);
+        mv.start();
+        mv.ldc(line);
+        mv.ireturn();
+        mv.end();
+
+        return endCallOffline(cw);
     }
 
-    public CompiledBlockCallback19 getBlockCallback19(String method, Object scriptObject) {
+    public CompiledBlockCallback19 getBlockCallback19(String method, String file, int line, Object scriptObject) {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);
         String mname = typeClass.getName() + "BlockCallback$" + method + "xx1";
@@ -796,7 +843,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                         System.err.println("no generated handle in classloader for: " + mname);
                     }
-                    byte[] bytes = getBlockCallback19Offline(method, typePathString);
+                    byte[] bytes = getBlockCallback19Offline(method, file, line, typePathString);
                     c = endClassWithBytes(bytes, mname);
                 } else {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
@@ -816,7 +863,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     @Override
-    public byte[] getBlockCallback19Offline(String method, String classname) {
+    public byte[] getBlockCallback19Offline(String method, String file, int line, String classname) {
         String mnamePath = classname + "BlockCallback$" + method + "xx1";
         ClassWriter cw = createBlockCtor19(mnamePath, classname);
         SkinnyMethodAdapter mv = startBlockCall19(cw);
@@ -828,9 +875,21 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 IRubyObject.class, "L" + classname + ";", ThreadContext.class,
                         IRubyObject.class, IRubyObject[].class, Block.class));
         mv.areturn();
+        mv.end();
 
-        mv.visitMaxs(2, 3);
-        return endCallOffline(cw, mv);
+        mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "getFile", sig(String.class), null, null);
+        mv.start();
+        mv.ldc(file);
+        mv.areturn();
+        mv.end();
+
+        mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "getLine", sig(int.class), null, null);
+        mv.start();
+        mv.ldc(line);
+        mv.ireturn();
+        mv.end();
+        
+        return endCallOffline(cw);
     }
 
     private SkinnyMethodAdapter startBlockCall(ClassWriter cw) {
@@ -1046,7 +1105,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         case FrameFullScopeDummy: return "preFrameAndDummyScope";
         case FrameFullScopeNone: return "preFrameOnly";
         case FrameBacktraceScopeFull: return "preBacktraceAndScope";
-        case FrameBacktraceScopeDummy: return "preBacktraceDummyscope";
+        case FrameBacktraceScopeDummy: return "preBacktraceDummyScope";
         case FrameBacktraceScopeNone:  return "preBacktraceOnly";
         case FrameNoneScopeFull: return "preScopeOnly";
         case FrameNoneScopeDummy: return "preNoFrameDummyScope";
@@ -1076,7 +1135,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         case FrameFullScopeDummy: return "postFrameAndScope";
         case FrameFullScopeNone: return "postFrameOnly";
         case FrameBacktraceScopeFull: return "postBacktraceAndScope";
-        case FrameBacktraceScopeDummy: return "postBacktraceDummyscope";
+        case FrameBacktraceScopeDummy: return "postBacktraceDummyScope";
         case FrameBacktraceScopeNone:  return "postBacktraceOnly";
         case FrameNoneScopeFull: return "postScopeOnly";
         case FrameNoneScopeDummy: return "postNoFrameDummyScope";
@@ -1220,8 +1279,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    protected Class endCall(ClassWriter cw, MethodVisitor mv, String name) {
-        endMethod(mv);
+    protected Class endCall(ClassWriter cw, String name) {
         return endClass(cw, name);
     }
 
@@ -1229,14 +1287,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         return endClassWithBytes(classBytes, name);
     }
 
-    protected byte[] endCallOffline(ClassWriter cw, MethodVisitor mv) {
-        endMethod(mv);
+    protected byte[] endCallOffline(ClassWriter cw) {
         return endClassOffline(cw);
-    }
-
-    protected void endMethod(MethodVisitor mv) {
-        mv.visitMaxs(0,0);
-        mv.visitEnd();
     }
 
     protected Class endClass(ClassWriter cw, String name) {
@@ -1319,7 +1371,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
             createAnnotatedMethodInvocation(desc, mv, superClass, specificArity, hasBlock);
 
-            endMethod(mv);
+            mv.end();
         }
     }
 

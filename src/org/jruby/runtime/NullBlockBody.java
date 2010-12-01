@@ -141,4 +141,12 @@ public class NullBlockBody extends BlockBody {
     public Arity arity() {
         return null;
     }
+
+    public String getFile() {
+        return "(null)";
+    }
+
+    public int getLine() {
+        return -1;
+    }
 }

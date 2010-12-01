@@ -18,7 +18,7 @@ public class BenchFixnumFibRecursive {
     
     public static void main(String[] args) {
         int times = 5;
-        int n = 30;
+        int n = 35;
         if (args.length >= 1) {
             times = Integer.parseInt(args[0]);
             if (args.length >= 2) {
@@ -46,18 +46,18 @@ public class BenchFixnumFibRecursive {
     };
     
     public static RubyFixnum boxedFib(ThreadContext context, RubyFixnum n) {
-        if (n.op_lt(context, FIXNUM_CACHE[2]).isTrue()) {
+        if (n.op_lt(context, 2).isTrue()) {
             return n;
         } else {
             return (RubyFixnum)boxedFib(
                     context,
                     (RubyFixnum)n.op_minus(
                         context,
-                        FIXNUM_CACHE[2])).op_plus(
+                        2)).op_plus(
                             context,
                             boxedFib(
                                 context,
-                                (RubyFixnum)n.op_minus(context, FIXNUM_CACHE[1])));
+                                (RubyFixnum)n.op_minus(context, 1)));
         }
     }
 }

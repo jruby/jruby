@@ -57,7 +57,7 @@ public class MethodMethod extends DynamicMethod {
      * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        return method.bind(context, self, block).call(context, args, block);
+        return method.bind(context, self).call(context, args, block);
     }
     
     public DynamicMethod dup() {

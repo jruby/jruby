@@ -56,9 +56,9 @@ public class TraceableJittedMethod extends DynamicMethod {
     private final DefaultMethod realMethod;
     
     public TraceableJittedMethod(RubyModule implementationClass, StaticScope staticScope, Script jitCompiledScript,
-            CallConfiguration jitCallConfig, Visibility visibility, Arity arity, ISourcePosition position,
+            String name, CallConfiguration jitCallConfig, Visibility visibility, Arity arity, ISourcePosition position,
             DefaultMethod realMethod) {
-        super(implementationClass, visibility, jitCallConfig);
+        super(implementationClass, visibility, jitCallConfig, name);
         this.position = position;
         this.jitCompiledScript = jitCompiledScript;
         this.staticScope = staticScope;
@@ -78,13 +78,14 @@ public class TraceableJittedMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
+        int callNumber = context.callNumber;
         
         try {
             pre(context, self, name, block, args.length);
 
             return jitCompiledScript.__file__(context, self, args, block);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(context, rj);
+            return handleReturn(context, rj, callNumber);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } finally {
@@ -95,13 +96,14 @@ public class TraceableJittedMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
+        int callNumber = context.callNumber;
 
         try {
             pre(context, self, name, Block.NULL_BLOCK, args.length);
 
             return jitCompiledScript.__file__(context, self, args, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(context, rj);
+            return handleReturn(context, rj, callNumber);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } finally {
@@ -112,13 +114,14 @@ public class TraceableJittedMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         Ruby runtime = context.getRuntime();
+        int callNumber = context.callNumber;
 
         try {
             pre(context, self, name, Block.NULL_BLOCK, 0);
 
             return jitCompiledScript.__file__(context, self, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(context, rj);
+            return handleReturn(context, rj, callNumber);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } finally {
@@ -129,13 +132,14 @@ public class TraceableJittedMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         Ruby runtime = context.getRuntime();
+        int callNumber = context.callNumber;
 
         try {
             pre(context, self, name, block, 0);
 
             return jitCompiledScript.__file__(context, self, block);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(context, rj);
+            return handleReturn(context, rj, callNumber);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } finally {
@@ -146,13 +150,14 @@ public class TraceableJittedMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
         Ruby runtime = context.getRuntime();
+        int callNumber = context.callNumber;
 
         try {
             pre(context, self, name, Block.NULL_BLOCK, 1);
 
             return jitCompiledScript.__file__(context, self, arg0, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(context, rj);
+            return handleReturn(context, rj, callNumber);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } finally {
@@ -163,13 +168,14 @@ public class TraceableJittedMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         Ruby runtime = context.getRuntime();
+        int callNumber = context.callNumber;
 
         try {
             pre(context, self, name, block, 1);
 
             return jitCompiledScript.__file__(context, self, arg0, block);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(context, rj);
+            return handleReturn(context, rj, callNumber);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } finally {
@@ -180,13 +186,14 @@ public class TraceableJittedMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.getRuntime();
+        int callNumber = context.callNumber;
 
         try {
             pre(context, self, name, Block.NULL_BLOCK, 2);
 
             return jitCompiledScript.__file__(context, self, arg0, arg1, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(context, rj);
+            return handleReturn(context, rj, callNumber);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } finally {
@@ -197,13 +204,14 @@ public class TraceableJittedMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.getRuntime();
+        int callNumber = context.callNumber;
 
         try {
             pre(context, self, name, block, 2);
 
             return jitCompiledScript.__file__(context, self, arg0, arg1, block);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(context, rj);
+            return handleReturn(context, rj, callNumber);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } finally {
@@ -214,13 +222,14 @@ public class TraceableJittedMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.getRuntime();
+        int callNumber = context.callNumber;
 
         try {
             pre(context, self, name, Block.NULL_BLOCK, 3);
 
             return jitCompiledScript.__file__(context, self, arg0, arg1, arg2, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(context, rj);
+            return handleReturn(context, rj, callNumber);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } finally {
@@ -231,13 +240,14 @@ public class TraceableJittedMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         Ruby runtime = context.getRuntime();
+        int callNumber = context.callNumber;
 
         try {
             pre(context, self, name, block, 3);
 
             return jitCompiledScript.__file__(context, self, arg0, arg1, arg2, block);
         } catch (JumpException.ReturnJump rj) {
-            return handleReturn(context, rj);
+            return handleReturn(context, rj, callNumber);
         } catch (JumpException.RedoJump rj) {
             return handleRedo(runtime);
         } finally {
@@ -279,7 +289,7 @@ public class TraceableJittedMethod extends DynamicMethod {
     }
 
     public DynamicMethod dup() {
-        return new TraceableJittedMethod(getImplementationClass(), staticScope, jitCompiledScript, callConfig, getVisibility(), arity, position, realMethod);
+        return new TraceableJittedMethod(getImplementationClass(), staticScope, jitCompiledScript, name, callConfig, getVisibility(), arity, position, realMethod);
     }
 
 

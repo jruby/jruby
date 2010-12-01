@@ -189,6 +189,13 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         swap();
         invokevirtual(p(PrintStream.class), "println", sig(void.class, params(Object.class)));
     }
+
+    public void iprintln() {
+        dup();
+        getstatic(p(System.class), "out", ci(PrintStream.class));
+        swap();
+        invokevirtual(p(PrintStream.class), "println", sig(void.class, params(int.class)));
+    }
     
     public void areturn() {
         getMethodVisitor().visitInsn(ARETURN);

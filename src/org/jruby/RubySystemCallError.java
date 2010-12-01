@@ -12,7 +12,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
@@ -178,7 +178,7 @@ public class RubySystemCallError extends RubyException {
         return exceptionClass;
     }
     
-    @JRubyMethod(optional = 2, required=0, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional = 2, required=0, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
         RubyClass sCallErorrClass = runtime.getSystemCallError();

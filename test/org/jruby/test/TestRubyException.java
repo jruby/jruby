@@ -48,7 +48,7 @@ public class TestRubyException extends TestCase {
 		interpreter = Ruby.newInstance();
 		exception = new RubyException(interpreter, interpreter.getClass("StandardError"), "test");
 	}
-	
+
 	public void testPrintBacktrace() throws Exception {
 		setBackTrace(18);
 		

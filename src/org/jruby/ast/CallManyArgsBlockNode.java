@@ -56,7 +56,7 @@ public final class CallManyArgsBlockNode extends CallNode {
         Block block = RuntimeHelpers.getBlock(context, self, iterNode);
         
         try {
-            return callAdapter.call(context, self, receiver, args, block);
+            return callAdapter.callIter(context, self, receiver, args, block);
         } catch (JumpException.RetryJump rj) {
             throw runtime.newLocalJumpError(Reason.RETRY, self, "retry is not supported outside rescue");
         } finally {

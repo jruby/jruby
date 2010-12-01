@@ -182,7 +182,7 @@ public abstract class MethodFactory {
      * @param scriptObject The object in which the method can be found
      * @return A new CompiledBlockCallback for the method
      */
-    public abstract CompiledBlockCallback getBlockCallback(String method, Object scriptObject);
+    public abstract CompiledBlockCallback getBlockCallback(String method, String file, int line, Object scriptObject);
 
     /**
      * Get a CompiledBlockCallback for the specified block
@@ -191,7 +191,7 @@ public abstract class MethodFactory {
      * @param scriptObject The object in which the method can be found
      * @return A new CompiledBlockCallback for the method
      */
-    public abstract CompiledBlockCallback19 getBlockCallback19(String method, Object scriptObject);
+    public abstract CompiledBlockCallback19 getBlockCallback19(String method, String file, int line, Object scriptObject);
 
     /**
      * Get a CompiledBlockCallback for the specified block, returning the bytes
@@ -202,7 +202,7 @@ public abstract class MethodFactory {
      * @param classPath The /-based name of the class containing the method
      * @return The bytes of the class
      */
-    public byte[] getBlockCallbackOffline(String method, String classPath) {
+    public byte[] getBlockCallbackOffline(String method, String file, int line, String classPath) {
         return null;
     }
 
@@ -215,7 +215,7 @@ public abstract class MethodFactory {
      * @param classPath The /-based name of the class containing the method
      * @return The bytes of the class
      */
-    public byte[] getBlockCallback19Offline(String method, String classPath) {
+    public byte[] getBlockCallback19Offline(String method, String file, int line, String classPath) {
         return null;
     }
 

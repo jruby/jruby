@@ -217,7 +217,7 @@ public class RubyInstanceConfig {
     public static final boolean PEEPHOLE_OPTZ
             = SafePropertyAccessor.getBoolean("jruby.compile.peephole", true);
     public static boolean DYNOPT_COMPILE_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.compile.dynopt");
+            = SafePropertyAccessor.getBoolean("jruby.compile.dynopt", false);
     public static boolean NOGUARDS_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.noguards");
     public static boolean FASTEST_COMPILE_ENABLED
@@ -230,7 +230,7 @@ public class RubyInstanceConfig {
             || SafePropertyAccessor.getBoolean("jruby.compile.frameless");
     public static boolean POSITIONLESS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
-            || SafePropertyAccessor.getBoolean("jruby.compile.positionless");
+            || SafePropertyAccessor.getBoolean("jruby.compile.positionless", true);
     public static boolean THREADLESS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.threadless");
@@ -1181,6 +1181,7 @@ public class RubyInstanceConfig {
                         break FOR;
                     } else if (argument.equals("--debug")) {
                         FULL_TRACE_ENABLED = true;
+                        compileMode = CompileMode.OFF;
                         break FOR;
                     } else if (argument.equals("--jdb")) {
                         debug = true;

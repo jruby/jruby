@@ -168,7 +168,7 @@ public class RubyMethod extends RubyObject implements DataType {
     /** Create a Proc object.
      * 
      */
-    @JRubyMethod(name = "to_proc", frame = true)
+    @JRubyMethod
     public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
         Ruby runtime = context.getRuntime();
         DynamicScope currentScope = context.getCurrentScope();
@@ -228,8 +228,8 @@ public class RubyMethod extends RubyObject implements DataType {
         return ((RubyMethod) arg1).call(context, new IRubyObject[] { blockArg }, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "unbind", frame = true)
-    public RubyUnboundMethod unbind(Block unusedBlock) {
+    @JRubyMethod
+    public RubyUnboundMethod unbind() {
         RubyUnboundMethod unboundMethod =
         	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
         unboundMethod.infectBy(this);

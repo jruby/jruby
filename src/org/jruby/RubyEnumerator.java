@@ -37,6 +37,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import static org.jruby.CompatVersion.*;
+import static org.jruby.runtime.Visibility.*;
 
 /**
  * Implementation of Ruby's Enumerator module.
@@ -104,12 +106,12 @@ public class RubyEnumerator extends RubyObject {
         return new RubyEnumerator(runtime, object, runtime.fastNewSymbol(method), args); // TODO: make sure it's really safe to not to copy it
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject initialize(ThreadContext context) {
         throw context.getRuntime().newArgumentError(0, 1);
     }
 
-    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, Block block) {
         if(!block.isGiven()) {
             throw context.getRuntime().newArgumentError(0, 1);
@@ -119,37 +121,37 @@ public class RubyEnumerator extends RubyObject {
         return initialize19(context, obj, block);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject initialize(ThreadContext context, IRubyObject object) {
         return initialize(object, context.getRuntime().fastNewSymbol("each"), NULL_ARRAY);
     }
 
-    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject object, Block block) {
         return initialize(object, context.getRuntime().fastNewSymbol("each"), NULL_ARRAY);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method) {
         return initialize(object, method, NULL_ARRAY);
     }
 
-    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
         return initialize(object, method, NULL_ARRAY);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg) {
         return initialize(object, method, new IRubyObject[] { methodArg });
     }
 
-    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
         return initialize(object, method, new IRubyObject[] { methodArg });
     }
 
-    @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         IRubyObject[] methArgs = new IRubyObject[args.length - 2];
         System.arraycopy(args, 2, methArgs, 0, methArgs.length);
@@ -182,12 +184,12 @@ public class RubyEnumerator extends RubyObject {
      * Block may not be given and "each" should just ignore it and call on through to
      * underlying method.
      */
-    @JRubyMethod(name = "each", frame = true)
+    @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
         return object.callMethod(context, method, methodArgs, block);
     }
 
-    @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "inspect", compat = RUBY1_9)
     public IRubyObject inspect19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (runtime.isInspecting(this)) return inspect(context, true);
@@ -247,22 +249,22 @@ public class RubyEnumerator extends RubyObject {
     }
 
     public static final class RubyEnumeratorKernel {
-        @JRubyMethod(name = {"to_enum", "enum_for"}, frame = true)
+        @JRubyMethod(name = {"to_enum", "enum_for"})
         public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, Block block) {
             return newEnumerator(context, self);
         }
 
-        @JRubyMethod(name = {"to_enum", "enum_for"}, frame = true)
+        @JRubyMethod(name = {"to_enum", "enum_for"})
         public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
             return newEnumerator(context, self, arg);
         }
 
-        @JRubyMethod(name = {"to_enum", "enum_for"}, frame = true)
+        @JRubyMethod(name = {"to_enum", "enum_for"})
         public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
             return newEnumerator(context, self, arg0, arg1);
         }
 
-        @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true, frame = true)
+        @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true)
         public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
             IRubyObject[] newArgs = new IRubyObject[args.length + 1];
             newArgs[0] = self;
@@ -334,12 +336,12 @@ public class RubyEnumerator extends RubyObject {
             return block.isGiven() ? each_cons(context, self, arg, block) : enumeratorize(context.getRuntime(), self, "enum_cons", arg);
         }
 
-        @JRubyMethod(name = "each_with_object", frame = true, compat = CompatVersion.RUBY1_9)
+        @JRubyMethod(name = "each_with_object", compat = RUBY1_9)
         public static IRubyObject each_with_object(ThreadContext context, IRubyObject self, final IRubyObject arg, final Block block) {
             return with_object_common(context, self, arg, block, "each_with_object");
         }
 
-        @JRubyMethod(name = "with_object", frame = true, compat = CompatVersion.RUBY1_9)
+        @JRubyMethod(name = "with_object", compat = RUBY1_9)
         public static IRubyObject with_object(ThreadContext context, IRubyObject self, final IRubyObject arg, final Block block) {
             return with_object_common(context, self, arg, block, "with_object");
         }
@@ -393,33 +395,33 @@ public class RubyEnumerator extends RubyObject {
         return RubyEnumerable.callEach(runtime, context, self, args, new EachWithIndex(context, block, index));
     }
 
-    @JRubyMethod(name = "each_with_index", frame = true)
+    @JRubyMethod
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, final Block block) {
         return with_index_common(context, self, block, "each_with_index", context.getRuntime().getNil());
     }
 
-    @JRubyMethod(name = "with_index", frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(compat = RUBY1_8)
     public static IRubyObject with_index(ThreadContext context, IRubyObject self, final Block block) {
         return with_index_common(context, self, block, "with_index", context.getRuntime().getNil());
     }
 
-    @JRubyMethod(name = "with_index", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "with_index", compat = RUBY1_9)
     public static IRubyObject with_index19(ThreadContext context, IRubyObject self, final Block block) {
         return with_index_common(context, self, block, "with_index", context.getRuntime().getNil());
     }
 
-    @JRubyMethod(name = "with_index", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "with_index", compat = RUBY1_9)
     public static IRubyObject with_index19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         return with_index_common(context, self, block, "with_index", arg);
     }
 
-    @JRubyMethod(name = "next", frame = true)
+    @JRubyMethod
     public static IRubyObject next(ThreadContext context, IRubyObject self) {
         context.getRuntime().getLoadService().lockAndRequire("generator_internal");
         return self.callMethod(context, "next");
     }
 
-    @JRubyMethod(name = "rewind", frame = true)
+    @JRubyMethod
     public static IRubyObject rewind(ThreadContext context, IRubyObject self) {
         context.getRuntime().getLoadService().lockAndRequire("generator_internal");
         return self.callMethod(context, "rewind");

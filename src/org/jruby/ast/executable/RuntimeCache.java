@@ -34,7 +34,8 @@ public class RuntimeCache {
     public final StaticScope getScope(ThreadContext context, String varNamesDescriptor, int index) {
         StaticScope scope = scopes[index];
         if (scope == null) {
-            String[] varNames = varNamesDescriptor.split(";");
+            String[] scopeData = varNamesDescriptor.split(",");
+            String[] varNames = scopeData[0].split(";");
             for (int i = 0; i < varNames.length; i++) {
                 varNames[i] = varNames[i].intern();
             }
@@ -411,7 +412,7 @@ public class RuntimeCache {
                 secondSplit[i] = secondSplit[i].intern();
             }
         }
-        BlockBody body = RuntimeHelpers.createCompiledBlockBody(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), Boolean.valueOf(firstSplit[5]));
+        BlockBody body = RuntimeHelpers.createCompiledBlockBody(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), firstSplit[5], Integer.parseInt(firstSplit[6]), Boolean.valueOf(firstSplit[7]));
         return blockBodies[index] = body;
     }
 
@@ -427,22 +428,25 @@ public class RuntimeCache {
                 secondSplit[i] = secondSplit[i].intern();
             }
         }
-        BlockBody body = RuntimeHelpers.createCompiledBlockBody19(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), Boolean.valueOf(firstSplit[5]));
+        BlockBody body = RuntimeHelpers.createCompiledBlockBody19(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), firstSplit[5], Integer.parseInt(firstSplit[6]), Boolean.valueOf(firstSplit[7]));
         return blockBodies[index] = body;
     }
 
     private CompiledBlockCallback createCompiledBlockCallback(Object scriptObject, Ruby runtime, int index, String method) {
-        CompiledBlockCallback callback = RuntimeHelpers.createBlockCallback(runtime, scriptObject, method);
+        CompiledBlockCallback callback = RuntimeHelpers.createBlockCallback(runtime, scriptObject, method, "(internal)", -1);
         return blockCallbacks[index] = callback;
     }
 
-    public DynamicMethod getMethod(ThreadContext context, IRubyObject self, int index, String methodName) {
-        RubyClass selfType = pollAndGetClass(context, self);
+    public DynamicMethod getMethod(ThreadContext context, RubyClass selfType, int index, String methodName) {
         CacheEntry myCache = getCacheEntry(index);
         if (CacheEntry.typeOk(myCache, selfType)) {
             return myCache.method;
         }
         return cacheAndGet(context, selfType, index, methodName);
+    }
+
+    public DynamicMethod getMethod(ThreadContext context, IRubyObject self, int index, String methodName) {
+        return getMethod(context, pollAndGetClass(context, self), index, methodName);
     }
 
     private DynamicMethod cacheAndGet(ThreadContext context, RubyClass selfType, int index, String methodName) {

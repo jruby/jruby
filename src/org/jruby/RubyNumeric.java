@@ -746,46 +746,17 @@ public class RubyNumeric extends RubyObject {
         return convertToFloat().truncate();
     }
 
-    @Deprecated
-    public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-        case 0: throw context.getRuntime().newArgumentError(0, 1);
-        case 1: return step(context, args[0], block);
-        case 2: return step(context, args[0], args[1], block);
-        default: throw context.getRuntime().newArgumentError(args.length, 2);
-        }
-    }
-
+    @JRubyMethod
     public IRubyObject step(ThreadContext context, IRubyObject arg0, Block block) {
-        return step(context, arg0, RubyFixnum.one(context.getRuntime()), block);
+        return block.isGiven() ? stepCommon(context, arg0, RubyFixnum.one(context.getRuntime()), block) : enumeratorize(context.getRuntime(), this, "step", arg0);
     }
 
+    @JRubyMethod
     public IRubyObject step(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
-        Ruby runtime = context.getRuntime();
-        if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
-            fixnumStep(context, runtime, ((RubyFixnum)this).getLongValue(),
-                                         ((RubyFixnum)to).getLongValue(),
-                                         ((RubyFixnum)step).getLongValue(),
-                                          block);
-        } else if (this instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
-            floatStep(context, runtime, this, to, step, block);
-        } else {
-            duckStep(context, runtime, this, to, step, block);
-        }
-        return this;
+        return block.isGiven() ? stepCommon(context, to, step, block) : enumeratorize(context.getRuntime(), this, "step", new IRubyObject[] {to, step});
     }
 
-    @JRubyMethod(name = "step", frame = true)
-    public IRubyObject step19(ThreadContext context, IRubyObject arg0, Block block) {
-        return block.isGiven() ? stepCommon19(context, arg0, RubyFixnum.one(context.getRuntime()), block) : enumeratorize(context.getRuntime(), this, "step", arg0);
-    }
-
-    @JRubyMethod(name = "step", frame = true)
-    public IRubyObject step19(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
-        return block.isGiven() ? stepCommon19(context, to, step, block) : enumeratorize(context.getRuntime(), this, "step", new IRubyObject[] {to, step});
-    }
-
-    private IRubyObject stepCommon19(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
+    private IRubyObject stepCommon(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
         Ruby runtime = context.getRuntime();
         if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
             fixnumStep(context, runtime, ((RubyFixnum)this).getLongValue(),

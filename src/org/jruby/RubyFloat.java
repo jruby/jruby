@@ -486,6 +486,13 @@ public class RubyFloat extends RubyNumeric {
         return RubyBoolean.newBoolean(getRuntime(), value == other);
     }
 
+    public boolean fastEqual(RubyFloat other) {
+        if (Double.isNaN(value)) {
+            return false;
+        }
+        return value == ((RubyFloat)other).value;
+    }
+
     @Override
     public final int compareTo(IRubyObject other) {
         switch (other.getMetaClass().index) {

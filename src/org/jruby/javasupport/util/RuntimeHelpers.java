@@ -1,5 +1,7 @@
 package org.jruby.javasupport.util;
 
+import java.util.ArrayList;
+import java.util.StringTokenizer;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -147,36 +149,36 @@ public class RuntimeHelpers {
         return receiver0.isTrue() || receiver1.isTrue() || receiver2.isTrue();
     }
     
-    public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod) {
+    public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod, String file, int line) {
         Class scriptClass = scriptObject.getClass();
         ClassLoader scriptClassLoader = scriptClass.getClassLoader();
         MethodFactory factory = MethodFactory.createFactory(scriptClassLoader);
         
-        return factory.getBlockCallback(closureMethod, scriptObject);
+        return factory.getBlockCallback(closureMethod, file, line, scriptObject);
     }
 
-    public static CompiledBlockCallback19 createBlockCallback19(Ruby runtime, Object scriptObject, String closureMethod) {
+    public static CompiledBlockCallback19 createBlockCallback19(Ruby runtime, Object scriptObject, String closureMethod, String file, int line) {
         Class scriptClass = scriptObject.getClass();
         ClassLoader scriptClassLoader = scriptClass.getClassLoader();
         MethodFactory factory = MethodFactory.createFactory(scriptClassLoader);
 
-        return factory.getBlockCallback19(closureMethod, scriptObject);
+        return factory.getBlockCallback19(closureMethod, file, line, scriptObject);
     }
 
-    public static byte[] createBlockCallbackOffline(String classPath, String closureMethod) {
+    public static byte[] createBlockCallbackOffline(String classPath, String closureMethod, String file, int line) {
         MethodFactory factory = MethodFactory.createFactory(RuntimeHelpers.class.getClassLoader());
 
-        return factory.getBlockCallbackOffline(closureMethod, classPath);
+        return factory.getBlockCallbackOffline(closureMethod, file, line, classPath);
     }
 
-    public static byte[] createBlockCallback19Offline(String classPath, String closureMethod) {
+    public static byte[] createBlockCallback19Offline(String classPath, String closureMethod, String file, int line) {
         MethodFactory factory = MethodFactory.createFactory(RuntimeHelpers.class.getClassLoader());
 
-        return factory.getBlockCallback19Offline(closureMethod, classPath);
+        return factory.getBlockCallback19Offline(closureMethod, file, line, classPath);
     }
     
     public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity, 
-            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
+            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light) {
         StaticScope staticScope = 
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
@@ -184,18 +186,18 @@ public class RuntimeHelpers {
         if (light) {
             return CompiledBlockLight.newCompiledBlockLight(
                     Arity.createArity(arity), staticScope,
-                    createBlockCallback(context.getRuntime(), scriptObject, closureMethod),
+                    createBlockCallback(context.getRuntime(), scriptObject, closureMethod, file, line),
                     hasMultipleArgsHead, argsNodeType);
         } else {
             return CompiledBlock.newCompiledBlock(
                     Arity.createArity(arity), staticScope,
-                    createBlockCallback(context.getRuntime(), scriptObject, closureMethod),
+                    createBlockCallback(context.getRuntime(), scriptObject, closureMethod, file, line),
                     hasMultipleArgsHead, argsNodeType);
         }
     }
 
     public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String closureMethod, int arity,
-            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, boolean light) {
+            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light) {
         StaticScope staticScope =
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
@@ -203,12 +205,12 @@ public class RuntimeHelpers {
         if (light) {
             return CompiledBlockLight19.newCompiledBlockLight(
                     Arity.createArity(arity), staticScope,
-                    createBlockCallback19(context.getRuntime(), scriptObject, closureMethod),
+                    createBlockCallback19(context.getRuntime(), scriptObject, closureMethod, file, line),
                     hasMultipleArgsHead, argsNodeType);
         } else {
             return CompiledBlock19.newCompiledBlock(
                     Arity.createArity(arity), staticScope,
-                    createBlockCallback19(context.getRuntime(), scriptObject, closureMethod),
+                    createBlockCallback19(context.getRuntime(), scriptObject, closureMethod, file, line),
                     hasMultipleArgsHead, argsNodeType);
         }
     }
@@ -227,9 +229,8 @@ public class RuntimeHelpers {
                 body);
     }
     
-    public static IRubyObject runBeginBlock(ThreadContext context, IRubyObject self, String[] staticScopeNames, CompiledBlockCallback callback) {
-        StaticScope staticScope = 
-            new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+    public static IRubyObject runBeginBlock(ThreadContext context, IRubyObject self, String scopeString, CompiledBlockCallback callback) {
+        StaticScope staticScope = decodeBlockScope(context, scopeString);
         staticScope.determineModule();
         
         context.preScopedBody(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
@@ -252,8 +253,8 @@ public class RuntimeHelpers {
                 context.getCurrentScope(), callback, hasMultipleArgsHead, argsNodeType);
     }
     
-    public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String name, String javaName, String[] scopeNames,
-            int arity, int required, int optional, int rest, String filename, int line, CallConfiguration callConfig) {
+    public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String name, String javaName, String scopeString,
+            int arity, String filename, int line, CallConfiguration callConfig) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
         
@@ -261,8 +262,8 @@ public class RuntimeHelpers {
         Visibility visibility = context.getCurrentVisibility();
         
         performNormalMethodChecks(containingClass, runtime, name);
-        
-        StaticScope scope = creatScopeForClass(context, scopeNames, required, optional, rest);
+
+        StaticScope scope = createScopeForClass(context, scopeString);
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method = constructNormalMethod(
@@ -275,14 +276,14 @@ public class RuntimeHelpers {
         return runtime.getNil();
     }
     
-    public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String name, String javaName, String[] scopeNames,
-            int arity, int required, int optional, int rest, String filename, int line, CallConfiguration callConfig) {
+    public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String name, String javaName, String scopeString,
+            int arity, String filename, int line, CallConfiguration callConfig) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
 
         RubyClass rubyClass = performSingletonMethodChecks(runtime, receiver, name);
         
-        StaticScope scope = creatScopeForClass(context, scopeNames, required, optional, rest);
+        StaticScope scope = createScopeForClass(context, scopeString);
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method = constructSingletonMethod( factory, javaName, rubyClass, new SimpleSourcePosition(filename, line), arity, scope,scriptObject, callConfig);
@@ -1316,14 +1317,27 @@ public class RuntimeHelpers {
     
     public static void preLoad(ThreadContext context, String[] varNames) {
         StaticScope staticScope = new LocalStaticScope(null, varNames);
-        staticScope.setModule(context.getRuntime().getObject());
+        preLoadCommon(context, staticScope);
+    }
+
+    public static void preLoad(ThreadContext context, String scopeString) {
+        StaticScope staticScope = decodeRootScope(context, scopeString);
+        preLoadCommon(context, staticScope);
+    }
+
+    private static void preLoadCommon(ThreadContext context, StaticScope staticScope) {
+        RubyClass objectClass = context.getRuntime().getObject();
+        IRubyObject topLevel = context.getRuntime().getTopSelf();
+        staticScope.setModule(objectClass);
         DynamicScope scope = DynamicScope.newDynamicScope(staticScope);
-        
+
         // Each root node has a top-level scope that we need to push
         context.preScopedBody(scope);
+        context.preNodeEval(objectClass, topLevel);
     }
     
     public static void postLoad(ThreadContext context) {
+        context.postNodeEval();
         context.postScopedBody();
     }
     
@@ -1567,11 +1581,60 @@ public class RuntimeHelpers {
         }
     }
 
-    private static StaticScope creatScopeForClass(ThreadContext context, String[] scopeNames, int required, int optional, int rest) {
+    public static String encodeScope(StaticScope scope) {
+        StringBuilder namesBuilder = new StringBuilder();
 
-        StaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), scopeNames);
+        boolean first = true;
+        for (String name : scope.getVariables()) {
+            if (!first) namesBuilder.append(';');
+            first = false;
+            namesBuilder.append(name);
+        }
+        namesBuilder
+                .append(',')
+                .append(scope.getRequiredArgs())
+                .append(',')
+                .append(scope.getOptionalArgs())
+                .append(',')
+                .append(scope.getRestArg());
+
+        return namesBuilder.toString();
+    }
+
+    public static LocalStaticScope decodeRootScope(ThreadContext context, String scopeString) {
+        String[][] decodedScope = decodeScopeDescriptor(scopeString);
+        LocalStaticScope scope = new LocalStaticScope(null, decodedScope[1]);
+        setAritiesFromDecodedScope(scope, decodedScope[0]);
+        return scope;
+    }
+
+    public static LocalStaticScope decodeLocalScope(ThreadContext context, String scopeString) {
+        String[][] decodedScope = decodeScopeDescriptor(scopeString);
+        LocalStaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
+        setAritiesFromDecodedScope(scope, decodedScope[0]);
+        return scope;
+    }
+
+    public static BlockStaticScope decodeBlockScope(ThreadContext context, String scopeString) {
+        String[][] decodedScope = decodeScopeDescriptor(scopeString);
+        BlockStaticScope scope = new BlockStaticScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
+        setAritiesFromDecodedScope(scope, decodedScope[0]);
+        return scope;
+    }
+
+    private static String[][] decodeScopeDescriptor(String scopeString) {
+        String[] scopeElements = scopeString.split(",");
+        String[] scopeNames = scopeElements[0].length() == 0 ? new String[0] : getScopeNames(scopeElements[0]);
+        return new String[][] {scopeElements, scopeNames};
+    }
+
+    private static void setAritiesFromDecodedScope(StaticScope scope, String[] scopeElements) {
+        scope.setArities(Integer.parseInt(scopeElements[1]), Integer.parseInt(scopeElements[2]), Integer.parseInt(scopeElements[3]));
+    }
+
+    private static StaticScope createScopeForClass(ThreadContext context, String scopeString) {
+        StaticScope scope = decodeLocalScope(context, scopeString);
         scope.determineModule();
-        scope.setArities(required, optional, rest);
 
         return scope;
     }
@@ -1870,6 +1933,15 @@ public class RuntimeHelpers {
         return metaClass.getCacheToken() == generation;
     }
 
+    public static String[] getScopeNames(String scopeNames) {
+        StringTokenizer toker = new StringTokenizer(scopeNames, ";");
+        ArrayList list = new ArrayList(10);
+        while (toker.hasMoreTokens()) {
+            list.add(toker.nextToken().intern());
+        }
+        return (String[])list.toArray(new String[list.size()]);
+    }
+
     public static IRubyObject[] arraySlice1N(IRubyObject arrayish) {
         arrayish = aryToAry(arrayish);
         RubyArray arrayish2 = ensureMultipleAssignableRubyArray(arrayish, arrayish.getRuntime(), true);
@@ -1880,5 +1952,11 @@ public class RuntimeHelpers {
         arrayish = aryToAry(arrayish);
         RubyArray arrayish2 = ensureMultipleAssignableRubyArray(arrayish, arrayish.getRuntime(), true);
         return arrayEntryOrNilZero(arrayish2);
+    }
+
+    public static RubyClass metaclass(IRubyObject object) {
+        return object instanceof RubyBasicObject ?
+            ((RubyBasicObject)object).getMetaClass() :
+            object.getMetaClass();
     }
 }

@@ -49,12 +49,16 @@ import java.util.Set;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import static org.jruby.javasupport.util.RuntimeHelpers.metaclass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
+import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IdUtil;
 import org.jruby.runtime.marshal.DataType;
@@ -151,12 +155,12 @@ public class RubyObject extends RubyBasicObject {
      * @see RubyKernel
      */
     public static class ObjectMethods {
-        @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
+        @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_8)
         public static IRubyObject initialize(IRubyObject self) {
             return self.getRuntime().getNil();
         }
 
-        @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, rest = true, compat = CompatVersion.RUBY1_9)
+        @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true, compat = RUBY1_9)
         public static IRubyObject initialize19(IRubyObject self, IRubyObject[] args) {
             return self.getRuntime().getNil();
         }
@@ -245,32 +249,43 @@ public class RubyObject extends RubyBasicObject {
      * The actual method that checks frozen with the default frozen message from MRI.
      * If possible, call this instead of {@link #testFrozen}.
      */
-   protected void checkFrozen() {
-       testFrozen();
-   }
-
-    /** init_copy
-     *
-     * Initializes a copy with variable and special instance variable
-     * information, and then call the initialize_copy Ruby method.
-     */
-    private static void initCopy(IRubyObject clone, RubyObject original) {
-        assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName() + ") allocated";
-
-        original.copySpecialInstanceVariables(clone);
-
-        if (original.hasVariables()) clone.syncVariables(original.getVariableList());
-        if (original instanceof RubyModule) ((RubyModule) clone).syncConstants((RubyModule) original);
-
-        /* FIXME: finalizer should be dupped here */
-        clone.callMethod(clone.getRuntime().getCurrentContext(), "initialize_copy", original);
+    protected void checkFrozen() {
+        testFrozen();
     }
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject[] args, Block block) {
-        callMethod(getRuntime().getCurrentContext(), "initialize", args, block);
+        RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", args, block);
+    }
+
+    /**
+     * Call the Ruby initialize method with the supplied arguments and block.
+     */
+    public final void callInit(Block block) {
+        RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", block);
+    }
+
+    /**
+     * Call the Ruby initialize method with the supplied arguments and block.
+     */
+    public final void callInit(IRubyObject arg0, Block block) {
+        RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, block);
+    }
+
+    /**
+     * Call the Ruby initialize method with the supplied arguments and block.
+     */
+    public final void callInit(IRubyObject arg0, IRubyObject arg1, Block block) {
+        RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, arg1, block);
+    }
+
+    /**
+     * Call the Ruby initialize method with the supplied arguments and block.
+     */
+    public final void callInit(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, arg1, arg2, block);
     }
 
     /**
@@ -340,7 +355,7 @@ public class RubyObject extends RubyBasicObject {
      * Will by default use identity equality to compare objects. This
      * follows the Ruby semantics.
      */
-    @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "==", required = 1, compat = RUBY1_8)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         return super.op_equal_19(context, obj);
@@ -350,7 +365,7 @@ public class RubyObject extends RubyBasicObject {
      *
      * Will use Java identity equality.
      */
-    @JRubyMethod(name = "equal?", required = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "equal?", required = 1, compat = RUBY1_8)
     public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
         return this == obj ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
     }
@@ -376,7 +391,7 @@ public class RubyObject extends RubyBasicObject {
         return context.getRuntime().newBoolean(equalInternal(context, this, other));
     }
 
-    @JRubyMethod(name = "<=>", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "<=>", required = 1, compat = RUBY1_9)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
         if (this == other || this.callMethod(context, "==", other).isTrue()){
@@ -385,20 +400,51 @@ public class RubyObject extends RubyBasicObject {
         return runtime.getNil();
     }
 
+    protected static DynamicMethod _op_equal(ThreadContext context, RubyClass metaclass) {
+        if (metaclass.index >= ClassIndex.MAX_CLASSES) return metaclass.searchMethod("==");
+        return context.runtimeCache.getMethod(context, metaclass, metaclass.index * (MethodIndex.OP_EQUAL + 1), "==");
+    }
+
+    protected static DynamicMethod _eql(ThreadContext context, RubyClass metaclass) {
+        if (metaclass.index >= ClassIndex.MAX_CLASSES) return metaclass.searchMethod("eql?");
+        return context.runtimeCache.getMethod(context, metaclass, metaclass.index * (MethodIndex.EQL + 1), "eql?");
+    }
+
     /**
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "==" method.
      */
-    protected static boolean equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
-        return that == other || that.callMethod(context, "==", other).isTrue();
+    protected static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
+        if (a == b) {
+            return true;
+        } else if (a instanceof RubySymbol) {
+            return false;
+        } else if (a instanceof RubyFixnum && b instanceof RubyFixnum) {
+            return ((RubyFixnum)a).fastEqual((RubyFixnum)b);
+        } else if (a instanceof RubyFloat && b instanceof RubyFloat) {
+            return ((RubyFloat)a).fastEqual((RubyFloat)b);
+        } else {
+            RubyClass metaclass = metaclass(a);
+            return _op_equal(context, metaclass).call(context, a, metaclass, "==", b).isTrue();
+        }
     }
 
     /**
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "eql?" method.
      */
-    protected static boolean eqlInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
-        return that.callMethod(context, "eql?", other).isTrue();
+    protected static boolean eqlInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
+        if (a == b) {
+            return true;
+        } else if (a instanceof RubySymbol) {
+            return false;
+        } else if (a instanceof RubyNumeric) {
+            if (a.getClass() != b.getClass()) return false;
+            return equalInternal(context, a, b);
+        } else {
+            RubyClass metaclass = metaclass(a);
+            return _eql(context, metaclass).call(context, a, metaclass, "eql?", b).isTrue();
+        }
     }
 
     /** rb_obj_init_copy
@@ -409,7 +455,7 @@ public class RubyObject extends RubyBasicObject {
      * be possible to initialize an object with something totally
      * different.
      */
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
     public IRubyObject initialize_copy(IRubyObject original) {
         if (this == original) {
             return this;
@@ -440,13 +486,13 @@ public class RubyObject extends RubyBasicObject {
      * in both the compiler and the interpreter, the performance
      * benefit is important for this method.
      */
-    @JRubyMethod(name = "respond_to?", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "respond_to?", compat = RUBY1_8)
     public RubyBoolean respond_to_p(IRubyObject mname) {
         String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, true));
     }
 
-    @JRubyMethod(name = "respond_to?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "respond_to?", compat = RUBY1_9)
     public IRubyObject respond_to_p19(IRubyObject mname) {
         String name = mname.asJavaString();
         IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, true));
@@ -474,13 +520,13 @@ public class RubyObject extends RubyBasicObject {
      * in both the compiler and the interpreter, the performance
      * benefit is important for this method.
      */
-    @JRubyMethod(name = "respond_to?", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "respond_to?", compat = RUBY1_8)
     public RubyBoolean respond_to_p(IRubyObject mname, IRubyObject includePrivate) {
         String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
     }
 
-    @JRubyMethod(name = "respond_to?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "respond_to?", compat = RUBY1_9)
     public IRubyObject respond_to_p19(IRubyObject mname, IRubyObject includePrivate) {
         String name = mname.asJavaString();
         IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
@@ -582,7 +628,7 @@ public class RubyObject extends RubyBasicObject {
      * the object, then clone the singleton class, taint the object,
      * call initCopy and then copy frozen state.
      */
-    @JRubyMethod(name = "clone", frame = true)
+    @JRubyMethod(name = "clone")
     @Override
     public IRubyObject rbClone() {
         return super.rbClone();
@@ -596,7 +642,7 @@ public class RubyObject extends RubyBasicObject {
      * and then initialize that copy. It's different from {@link
      * #rbClone} in that it doesn't copy the singleton class.
      */
-    @JRubyMethod(name = "dup")
+    @JRubyMethod
     @Override
     public IRubyObject dup() {
         return super.dup();
@@ -735,7 +781,7 @@ public class RubyObject extends RubyBasicObject {
      *
      *  Returns <code>true</code> if the object is untrusted.
      */
-    @JRubyMethod(name = "untrusted?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "untrusted?", compat = RUBY1_9)
     public RubyBoolean untrusted_p(ThreadContext context) {
         return context.getRuntime().newBoolean(isUntrusted());
     }
@@ -746,7 +792,7 @@ public class RubyObject extends RubyBasicObject {
      *
      *  Marks <i>obj</i> as untrusted.
      */
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(compat = RUBY1_9)
     public IRubyObject untrust(ThreadContext context) {
         if (!isUntrusted() && !isImmediate()) {
             checkFrozen();
@@ -761,7 +807,7 @@ public class RubyObject extends RubyBasicObject {
      *
      *  Removes the untrusted mark from <i>obj</i>.
      */
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(compat = RUBY1_9)
     public IRubyObject trust(ThreadContext context) {
         if (isUntrusted() && !isImmediate()) {
             checkFrozen();
@@ -874,11 +920,11 @@ public class RubyObject extends RubyBasicObject {
      *                              "methods", "extend", "__send__", "instance_eval"]
      *     k.methods.length   #=> 42
      */
-    @JRubyMethod(name = "methods", optional = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "methods", optional = 1, compat = RUBY1_8)
     public IRubyObject methods(ThreadContext context, IRubyObject[] args) {
         return methods(context, args, false);
     }
-    @JRubyMethod(name = "methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "methods", optional = 1, compat = RUBY1_9)
     public IRubyObject methods19(ThreadContext context, IRubyObject[] args) {
         return methods(context, args, true);
     }
@@ -890,12 +936,12 @@ public class RubyObject extends RubyBasicObject {
         Set<String> seen = new HashSet<String>();
 
         if (getMetaClass().isSingleton()) {
-            getMetaClass().populateInstanceMethodNames(seen, methods, Visibility.PRIVATE, true, useSymbols, false);
+            getMetaClass().populateInstanceMethodNames(seen, methods, PRIVATE, true, useSymbols, false);
             if (all) {
-                getMetaClass().getSuperClass().populateInstanceMethodNames(seen, methods, Visibility.PRIVATE, true, useSymbols, true);
+                getMetaClass().getSuperClass().populateInstanceMethodNames(seen, methods, PRIVATE, true, useSymbols, true);
             }
         } else if (all) {
-            getMetaClass().populateInstanceMethodNames(seen, methods, Visibility.PRIVATE, true, useSymbols, true);
+            getMetaClass().populateInstanceMethodNames(seen, methods, PRIVATE, true, useSymbols, true);
         } else {
             // do nothing, leave empty
         }
@@ -912,12 +958,12 @@ public class RubyObject extends RubyBasicObject {
      *  the <i>all</i> parameter is set to <code>false</code>, only those methods
      *  in the receiver will be listed.
      */
-    @JRubyMethod(name = "public_methods", optional = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "public_methods", optional = 1, compat = RUBY1_8)
     public IRubyObject public_methods(ThreadContext context, IRubyObject[] args) {
         return getMetaClass().public_instance_methods(trueIfNoArgument(context, args));
     }
 
-    @JRubyMethod(name = "public_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "public_methods", optional = 1, compat = RUBY1_9)
     public IRubyObject public_methods19(ThreadContext context, IRubyObject[] args) {
         return getMetaClass().public_instance_methods19(trueIfNoArgument(context, args));
     }
@@ -934,12 +980,12 @@ public class RubyObject extends RubyBasicObject {
      *  Internally this implementation uses the
      *  {@link RubyModule#protected_instance_methods} method.
      */
-    @JRubyMethod(name = "protected_methods", optional = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "protected_methods", optional = 1, compat = RUBY1_8)
     public IRubyObject protected_methods(ThreadContext context, IRubyObject[] args) {
         return getMetaClass().protected_instance_methods(trueIfNoArgument(context, args));
     }
 
-    @JRubyMethod(name = "protected_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "protected_methods", optional = 1, compat = RUBY1_9)
     public IRubyObject protected_methods19(ThreadContext context, IRubyObject[] args) {
         return getMetaClass().protected_instance_methods19(trueIfNoArgument(context, args));
     }
@@ -956,12 +1002,12 @@ public class RubyObject extends RubyBasicObject {
      *  Internally this implementation uses the
      *  {@link RubyModule#private_instance_methods} method.
      */
-    @JRubyMethod(name = "private_methods", optional = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "private_methods", optional = 1, compat = RUBY1_8)
     public IRubyObject private_methods(ThreadContext context, IRubyObject[] args) {
         return getMetaClass().private_instance_methods(trueIfNoArgument(context, args));
     }
 
-    @JRubyMethod(name = "private_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "private_methods", optional = 1, compat = RUBY1_9)
     public IRubyObject private_methods19(ThreadContext context, IRubyObject[] args) {
         return getMetaClass().private_instance_methods19(trueIfNoArgument(context, args));
     }
@@ -1004,12 +1050,12 @@ public class RubyObject extends RubyBasicObject {
      *     a.singleton_methods         #=> ["two", "one", "three"]
      */
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
-    @JRubyMethod(name = "singleton_methods", optional = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "singleton_methods", optional = 1, compat = RUBY1_8)
     public RubyArray singleton_methods(ThreadContext context, IRubyObject[] args) {
         return singletonMethods(context, args, methodsCollector);
     }
 
-    @JRubyMethod(name = "singleton_methods", optional = 1 , compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "singleton_methods", optional = 1 , compat = RUBY1_9)
     public RubyArray singleton_methods19(ThreadContext context, IRubyObject[] args) {
         return singletonMethods(context, args, methodsCollector19);
     }
@@ -1119,7 +1165,7 @@ public class RubyObject extends RubyBasicObject {
      *
      *  The default to_a method is deprecated.
      */
-    @JRubyMethod(name = "to_a", visibility = Visibility.PUBLIC, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "to_a", visibility = PUBLIC, compat = RUBY1_8)
     public RubyArray to_a() {
         getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete", "to_a");
         return getRuntime().newArray(this);
@@ -1148,34 +1194,21 @@ public class RubyObject extends RubyBasicObject {
      *     k = Klass.new
      *     k.instance_eval { @secret }   #=> 99
      */
-    @JRubyMethod(name = "instance_eval", frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject instance_eval(ThreadContext context, Block block) {
         return specificEval(context, getInstanceEvalClass(), block);
     }
-    @JRubyMethod(name = "instance_eval", frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, block);
     }
-    @JRubyMethod(name = "instance_eval", frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, block);
     }
-    @JRubyMethod(name = "instance_eval", frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block);
-    }
-    @Deprecated
-    public IRubyObject instance_eval(ThreadContext context, IRubyObject[] args, Block block) {
-        RubyModule klazz;
-
-        if (isImmediate()) {
-            // Ruby uses Qnil here, we use "dummy" because we need a class
-            klazz = context.getRuntime().getDummy();
-        } else {
-            klazz = getSingletonClass();
-        }
-
-        return specificEval(context, klazz, args, block);
     }
 
     /** rb_obj_instance_exec
@@ -1196,7 +1229,7 @@ public class RubyObject extends RubyBasicObject {
      *     k = Klass.new
      *     k.instance_exec(5) {|x| @secret+x }   #=> 104
      */
-    @JRubyMethod(name = "instance_exec", optional = 3, rest = true, frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(optional = 3, rest = true, compat = RUBY1_8)
     public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) throw context.getRuntime().newArgumentError("block not supplied");
 
@@ -1285,29 +1318,29 @@ public class RubyObject extends RubyBasicObject {
      *
      * @return the result of invoking the method identified by aSymbol.
      */
-    @JRubyMethod(name = {"send", "__send__"}, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = {"send", "__send__"}, compat = RUBY1_8)
     public IRubyObject send(ThreadContext context, Block block) {
         throw context.getRuntime().newArgumentError(0, 1);
     }
-    @JRubyMethod(name = {"send", "__send__"}, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = {"send", "__send__"}, compat = RUBY1_8)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, block);
     }
-    @JRubyMethod(name = {"send", "__send__"}, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = {"send", "__send__"}, compat = RUBY1_8)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, arg1, block);
     }
-    @JRubyMethod(name = {"send", "__send__"}, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = {"send", "__send__"}, compat = RUBY1_8)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = arg0.asJavaString();
 
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"send", "__send__"}, rest = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = {"send", "__send__"}, rest = true, compat = RUBY1_8)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         String name = args[0].asJavaString();
         int newArgsLength = args.length - 1;
@@ -1323,27 +1356,27 @@ public class RubyObject extends RubyBasicObject {
         return getMetaClass().finvoke(context, this, name, newArgs, block);
     }
 
-    @JRubyMethod(name = {"send"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
     @Override
     public IRubyObject send19(ThreadContext context, Block block) {
         return super.send19(context, block);
     }
-    @JRubyMethod(name = {"send"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
     @Override
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
         return super.send19(context, arg0, block);
     }
-    @JRubyMethod(name = {"send"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
     @Override
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return super.send19(context, arg0, arg1, block);
     }
-    @JRubyMethod(name = {"send"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
     @Override
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return super.send19(context, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = {"send"}, rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"send"}, rest = true, compat = RUBY1_9)
     @Override
     public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
         return super.send19(context, args, block);
@@ -1371,17 +1404,17 @@ public class RubyObject extends RubyBasicObject {
      *  <code>Regexp</code> and <code>String</code>) to provide meaningful
      *  pattern-match semantics.
      */
-    @JRubyMethod(name = "=~", required = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "=~", required = 1, compat = RUBY1_8)
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
     	return context.getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "=~", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "=~", required = 1, compat = RUBY1_9)
     public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
     	return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "!~", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "!~", required = 1, compat = RUBY1_9)
     public IRubyObject op_not_match(ThreadContext context, IRubyObject arg) {
         return context.getRuntime().newBoolean(! callMethod(context, "=~", arg).isTrue());
     }
@@ -1494,7 +1527,7 @@ public class RubyObject extends RubyBasicObject {
      *     d.remove   #=> 99
      *     d.var      #=> nil
      */
-    @JRubyMethod(name = "remove_instance_variable", required = 1, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public IRubyObject remove_instance_variable(ThreadContext context, IRubyObject name, Block block) {
         ensureInstanceVariablesSettable();
         IRubyObject value;
@@ -1536,7 +1569,7 @@ public class RubyObject extends RubyBasicObject {
     }
 
     // In 1.9, return symbols
-    @JRubyMethod(name = "instance_variables", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "instance_variables", compat = RUBY1_9)
     public RubyArray instance_variables19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         List<String> nameList = getInstanceVariableNameList();

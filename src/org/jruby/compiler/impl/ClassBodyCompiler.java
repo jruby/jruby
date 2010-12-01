@@ -9,8 +9,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.*;
 
 public class ClassBodyCompiler extends RootScopedBodyCompiler {
-    public ClassBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, ASTInspector inspector, StaticScope scope) {
-        super(scriptCompiler, friendlyName, inspector, scope);
+    public ClassBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, String rubyName, ASTInspector inspector, StaticScope scope) {
+        super(scriptCompiler, friendlyName, rubyName, inspector, scope);
     }
 
     @Override
@@ -29,5 +29,9 @@ public class ClassBodyCompiler extends RootScopedBodyCompiler {
         loadThreadContext();
         invokeUtilityMethod("returnJump", sig(JumpException.ReturnJump.class, IRubyObject.class, ThreadContext.class));
         method.athrow();
+    }
+
+    public boolean isSimpleRoot() {
+        return false;
     }
 }

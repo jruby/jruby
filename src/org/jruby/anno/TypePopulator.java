@@ -7,6 +7,7 @@ package org.jruby.anno;
 
 import java.util.List;
 import java.util.Map;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.internal.runtime.methods.CallConfiguration;
@@ -43,6 +44,7 @@ public abstract class TypePopulator {
         public void populate(RubyModule clsmod, Class clazz) {
             // fallback on non-pregenerated logic
             MethodFactory methodFactory = MethodFactory.createFactory(clsmod.getRuntime().getJRubyClassLoader());
+            Ruby runtime = clsmod.getRuntime();
             
             RubyModule.MethodClumper clumper = new RubyModule.MethodClumper();
             clumper.clump(clazz);
@@ -63,26 +65,44 @@ public abstract class TypePopulator {
             
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
                 clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+                for (JavaMethodDescriptor desc : entry.getValue()) {
+                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName + "." + desc.name, entry.getKey());
+                }
             }
             
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
                 clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+                for (JavaMethodDescriptor desc : entry.getValue()) {
+                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName + "." + desc.name, entry.getKey());
+                }
             }
             
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods1_8().entrySet()) {
                 clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+                for (JavaMethodDescriptor desc : entry.getValue()) {
+                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName + "." + desc.name, entry.getKey());
+                }
             }
             
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods1_8().entrySet()) {
                 clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+                for (JavaMethodDescriptor desc : entry.getValue()) {
+                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName + "." + desc.name, entry.getKey());
+                }
             }
             
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods1_9().entrySet()) {
                 clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+                for (JavaMethodDescriptor desc : entry.getValue()) {
+                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName + "." + desc.name, entry.getKey());
+                }
             }
             
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods1_9().entrySet()) {
                 clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);
+                for (JavaMethodDescriptor desc : entry.getValue()) {
+                    if (!desc.anno.omit()) runtime.addBoundMethod(desc.declaringClassName + "." + desc.name, entry.getKey());
+                }
             }
         }
     }

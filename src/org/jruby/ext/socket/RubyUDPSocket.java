@@ -306,7 +306,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         return open(recv.getRuntime().getCurrentContext(), recv, args, block);
     }
-    @JRubyMethod(rest = true, frame = true, meta = true)
+    @JRubyMethod(rest = true, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyUDPSocket sock = (RubyUDPSocket) recv.callMethod(context, "new", args);
         if (!block.isGiven()) {

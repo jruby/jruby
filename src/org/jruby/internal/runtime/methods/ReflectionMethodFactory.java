@@ -38,7 +38,6 @@ import java.util.List;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
-import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -145,7 +144,7 @@ public class ReflectionMethodFactory extends MethodFactory {
         }
     }
 
-    public CompiledBlockCallback getBlockCallback(String method, final Object scriptObject) {
+    public CompiledBlockCallback getBlockCallback(String method, final String file, final int line, final Object scriptObject) {
         try {
             Class scriptClass = scriptObject.getClass();
             final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
@@ -168,13 +167,21 @@ public class ReflectionMethodFactory extends MethodFactory {
                         }
                     }
                 }
+
+                public String getFile() {
+                    return file;
+                }
+
+                public int getLine() {
+                    return line;
+                }
             };
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
     }
 
-    public CompiledBlockCallback19 getBlockCallback19(String method, final Object scriptObject) {
+    public CompiledBlockCallback19 getBlockCallback19(String method, final String file, final int line, final Object scriptObject) {
         try {
             Class scriptClass = scriptObject.getClass();
             final Method blockMethod = scriptClass.getMethod(method, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
@@ -196,6 +203,14 @@ public class ReflectionMethodFactory extends MethodFactory {
                             throw new RuntimeException(ex);
                         }
                     }
+                }
+
+                public String getFile() {
+                    return file;
+                }
+
+                public int getLine() {
+                    return line;
                 }
             };
         } catch (NoSuchMethodException nsme) {

@@ -23,8 +23,9 @@ class TC_Exception_Backtrace_InstanceMethod < Test::Unit::TestCase
    end
 
    def test_backtrace_format
-      begin; 1/0; rescue Exception => @exception; end 
-      assert_not_nil(@exception.backtrace.first =~ /.*?tc_backtrace\.rb:\d+:in.+/)
+      begin; 1/0; rescue Exception => @exception; end
+      # this used to be an exact match, but JRuby now puts .java elements in the trace
+      assert @exception.backtrace.find {|trace| /.*?tc_backtrace\.rb:\d+:in.+/ =~ trace}
    end
 
    def test_backtrace_expected_errors

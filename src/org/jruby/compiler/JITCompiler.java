@@ -61,16 +61,20 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 public class JITCompiler implements JITCompilerMBean {
     public static final boolean USE_CACHE = true;
-    
-    private final AtomicLong compiledCount = new AtomicLong(0);
-    private final AtomicLong successCount = new AtomicLong(0);
-    private final AtomicLong failCount = new AtomicLong(0);
-    private final AtomicLong abandonCount = new AtomicLong(0);
-    private final AtomicLong compileTime = new AtomicLong(0);
-    private final AtomicLong averageCompileTime = new AtomicLong(0);
-    private final AtomicLong codeSize = new AtomicLong(0);
-    private final AtomicLong averageCodeSize = new AtomicLong(0);
-    private final AtomicLong largestCodeSize = new AtomicLong(0);
+
+    public static class JITCounts {
+        private final AtomicLong compiledCount = new AtomicLong(0);
+        private final AtomicLong successCount = new AtomicLong(0);
+        private final AtomicLong failCount = new AtomicLong(0);
+        private final AtomicLong abandonCount = new AtomicLong(0);
+        private final AtomicLong compileTime = new AtomicLong(0);
+        private final AtomicLong averageCompileTime = new AtomicLong(0);
+        private final AtomicLong codeSize = new AtomicLong(0);
+        private final AtomicLong averageCodeSize = new AtomicLong(0);
+        private final AtomicLong largestCodeSize = new AtomicLong(0);
+    }
+
+    private final JITCounts counts = new JITCounts();
     
     public JITCompiler(Ruby ruby) {
         ruby.getBeanManager().register(this);
@@ -82,16 +86,6 @@ public class JITCompiler implements JITCompilerMBean {
         }
 
         return null;
-    }
-    
-    @Deprecated
-    public void runJIT(final DefaultMethod method, final ThreadContext context, final String name) {
-        // This method has JITed already or has been abandoned. Bail out.
-        if (method.getCallCount() < 0) {
-            return;
-        } else {
-            jitIsEnabled(method, context, name);
-        }
     }
 
     private DynamicMethod jitIsEnabled(final DefaultMethod method, final ThreadContext context, final String name) {
@@ -109,7 +103,7 @@ public class JITCompiler implements JITCompilerMBean {
             // The cache is full. Abandon JIT for this method and bail out.
             ClassCache classCache = instanceConfig.getClassCache();
             if (classCache.isFull()) {
-                abandonCount.incrementAndGet();
+                counts.abandonCount.incrementAndGet();
                 method.setCallCount(-1);
                 return null;
             }
@@ -134,19 +128,19 @@ public class JITCompiler implements JITCompilerMBean {
             }
 
             String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
-            JITClassGenerator generator = new JITClassGenerator(name, key, context.getRuntime(), method, context);
+            JITClassGenerator generator = new JITClassGenerator(name, key, context.getRuntime(), method, context, counts);
 
             Class<Script> sourceClass = (Class<Script>)instanceConfig.getClassCache().cacheClassByKey(key, generator);
 
             if (sourceClass == null) {
                 // class could not be found nor generated; give up on JIT and bail out
-                failCount.incrementAndGet();
+                counts.failCount.incrementAndGet();
                 method.setCallCount(-1);
                 return null;
             }
 
             // successfully got back a jitted method
-            successCount.incrementAndGet();
+            counts.successCount.incrementAndGet();
 
             // finally, grab the script
             Script jitCompiledScript = sourceClass.newInstance();
@@ -171,7 +165,7 @@ public class JITCompiler implements JITCompilerMBean {
             if (context.getRuntime().getDebug().isTrue()) t.printStackTrace();
             if (instanceConfig.isJitLoggingVerbose()) log(method, name, "could not compile", t.getMessage());
 
-            failCount.incrementAndGet();
+            counts.failCount.incrementAndGet();
             method.setCallCount(-1);
             return null;
         }
@@ -227,26 +221,11 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
     
-    public class JITClassGenerator implements ClassCache.ClassGenerator {
-        private StandardASMCompiler asmCompiler;
-        private StaticScope staticScope;
-        private Node bodyNode;
-        private ArgsNode argsNode;
-        private CallConfiguration jitCallConfig;
-        private String digestString;
-        
-        private byte[] bytecode;
-        private String name;
-        private Ruby ruby;
-        private String packageName;
-        private String className;
-        private String filename;
-        private String methodName;
-        
-        public JITClassGenerator(String name, String key, Ruby ruby, DefaultMethod method, ThreadContext context) {
+    public static class JITClassGenerator implements ClassCache.ClassGenerator {
+        public JITClassGenerator(String name, String key, Ruby ruby, DefaultMethod method, ThreadContext context, JITCounts counts) {
             this.packageName = "ruby/jit";
             this.digestString = getHashForString(key);
-            this.className = packageName + "/" + JavaNameMangler.mangleStringForCleanJavaIdentifier(name) + "_" + digestString;
+            this.className = packageName + "/" + JavaNameMangler.mangleMethodName(name) + "_" + digestString;
             this.name = className.replaceAll("/", ".");
             this.bodyNode = method.getBodyNode();
             this.argsNode = method.getArgsNode();
@@ -255,6 +234,7 @@ public class JITCompiler implements JITCompilerMBean {
             staticScope = method.getStaticScope();
             asmCompiler = new StandardASMCompiler(className, filename);
             this.ruby = ruby;
+            this.counts = counts;
         }
         
         @SuppressWarnings("unchecked")
@@ -284,8 +264,6 @@ public class JITCompiler implements JITCompilerMBean {
             
             // Time the compilation
             long start = System.nanoTime();
-
-            asmCompiler = new StandardASMCompiler(className, filename);
 
             asmCompiler.startScript(staticScope);
             final ASTCompiler compiler = ruby.getInstanceConfig().newCompiler();
@@ -348,14 +326,14 @@ public class JITCompiler implements JITCompilerMBean {
                 JITCompiler.saveToCodeCache(ruby, bytecode, packageName, cachedClassFile);
             }
             
-            compiledCount.incrementAndGet();
-            compileTime.addAndGet(System.nanoTime() - start);
-            codeSize.addAndGet(bytecode.length);
-            averageCompileTime.set(compileTime.get() / compiledCount.get());
-            averageCodeSize.set(codeSize.get() / compiledCount.get());
-            synchronized (JITCompiler.this) {
-                if (largestCodeSize.get() < bytecode.length) {
-                    largestCodeSize.set(bytecode.length);
+            counts.compiledCount.incrementAndGet();
+            counts.compileTime.addAndGet(System.nanoTime() - start);
+            counts.codeSize.addAndGet(bytecode.length);
+            counts.averageCompileTime.set(counts.compileTime.get() / counts.compiledCount.get());
+            counts.averageCodeSize.set(counts.codeSize.get() / counts.compiledCount.get());
+            synchronized (counts) {
+                if (counts.largestCodeSize.get() < bytecode.length) {
+                    counts.largestCodeSize.set(bytecode.length);
                 }
             }
         }
@@ -381,6 +359,22 @@ public class JITCompiler implements JITCompilerMBean {
         public String toString() {
             return methodName + "() at " + bodyNode.getPosition().getFile() + ":" + bodyNode.getPosition().getLine();
         }
+        
+        private final StandardASMCompiler asmCompiler;
+        private final StaticScope staticScope;
+        private final Node bodyNode;
+        private final ArgsNode argsNode;
+        private final Ruby ruby;
+        private final String packageName;
+        private final String className;
+        private final String filename;
+        private final String methodName;
+        private final JITCounts counts;
+        private final String digestString;
+
+        private CallConfiguration jitCallConfig;
+        private byte[] bytecode;
+        private String name;
     }
     
     private static String calculateFilename(ArgsNode argsNode, Node bodyNode) {
@@ -409,38 +403,38 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     public long getSuccessCount() {
-        return successCount.get();
+        return counts.successCount.get();
     }
 
     public long getCompileCount() {
-        return compiledCount.get();
+        return counts.compiledCount.get();
     }
 
     public long getFailCount() {
-        return failCount.get();
+        return counts.failCount.get();
     }
 
     public long getCompileTime() {
-        return compileTime.get() / 1000;
+        return counts.compileTime.get() / 1000;
     }
 
     public long getAbandonCount() {
-        return abandonCount.get();
+        return counts.abandonCount.get();
     }
     
     public long getCodeSize() {
-        return codeSize.get();
+        return counts.codeSize.get();
     }
     
     public long getAverageCodeSize() {
-        return averageCodeSize.get();
+        return counts.averageCodeSize.get();
     }
     
     public long getAverageCompileTime() {
-        return averageCompileTime.get() / 1000;
+        return counts.averageCompileTime.get() / 1000;
     }
     
     public long getLargestCodeSize() {
-        return largestCodeSize.get();
+        return counts.largestCodeSize.get();
     }
 }

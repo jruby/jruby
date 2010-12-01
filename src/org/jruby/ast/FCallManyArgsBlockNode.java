@@ -26,6 +26,6 @@ public class FCallManyArgsBlockNode extends FCallNode {
         IRubyObject[] args = ((ArrayNode) getArgsNode()).interpretPrimitive(runtime, context, self, aBlock);
         Block block = RuntimeHelpers.getBlock(context, self, iterNode);
 
-        return callAdapter.call(context, self, self, args, block);
+        return callAdapter.callIter(context, self, self, args, block);
     }
 }

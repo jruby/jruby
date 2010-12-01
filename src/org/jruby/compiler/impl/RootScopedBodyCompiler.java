@@ -19,8 +19,8 @@ import static org.objectweb.asm.Opcodes.*;
 public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
     private boolean specificArity;
 
-    protected RootScopedBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, ASTInspector inspector, StaticScope scope) {
-        super(scriptCompiler, friendlyName, inspector, scope);
+    protected RootScopedBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, String rubyName, ASTInspector inspector, StaticScope scope) {
+        super(scriptCompiler, friendlyName, rubyName, inspector, scope);
     }
 
     public String getSignature() {
@@ -61,10 +61,10 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
             method.aload(i);
         }
         // we append an index to ensure two identical method names will not conflict
-        methodName = methodName + "_" + script.getAndIncrementMethodIndex();
+        methodName = "chained_" + script.getAndIncrementMethodIndex() + "_" + methodName;
         method.invokestatic(script.getClassname(), methodName, getSignature());
 
-        ChainedRootBodyCompiler methodCompiler = new ChainedRootBodyCompiler(script, methodName, inspector, scope, this);
+        ChainedRootBodyCompiler methodCompiler = new ChainedRootBodyCompiler(script, methodName, rubyName, inspector, scope, this);
 
         methodCompiler.beginChainedMethod();
 

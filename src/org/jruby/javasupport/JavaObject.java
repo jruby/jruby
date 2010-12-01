@@ -287,7 +287,7 @@ public class JavaObject extends RubyObject {
         }
     }
     
-    @JRubyMethod(frame = true)
+    @JRubyMethod
     public IRubyObject marshal_dump() {
         if (Serializable.class.isAssignableFrom(getJavaClass())) {
             try {
@@ -305,7 +305,7 @@ public class JavaObject extends RubyObject {
         }
     }
 
-    @JRubyMethod(frame = true)
+    @JRubyMethod
     public IRubyObject marshal_load(ThreadContext context, IRubyObject str) {
         try {
             ByteList byteList = str.convertToString().getByteList();

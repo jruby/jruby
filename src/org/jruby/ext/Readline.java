@@ -47,7 +47,7 @@ import jline.CursorBuffer;
 import jline.FileNameCompletor;
 import jline.History;
 
-import org.jruby.CompatVersion;
+import static org.jruby.CompatVersion.*;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyIO;
@@ -58,9 +58,8 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.Library;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -221,7 +220,7 @@ public class Readline {
         return s_readline(recv.getRuntime().getCurrentContext(), recv, prompt, add_to_hist);
     }
 
-    @JRubyMethod(name = "readline", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "readline", module = true, visibility = PRIVATE)
     public static IRubyObject s_readline(ThreadContext context, IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) {
         Ruby runtime = context.getRuntime();
         ConsoleHolder holder = getHolder(runtime);
@@ -262,29 +261,29 @@ public class Readline {
         return line;
     }
 
-    @JRubyMethod(name = "input=", module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "input=", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject setInput(ThreadContext context, IRubyObject recv, IRubyObject input) {
         // FIXME: JRUBY-3604
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "output=", module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "output=", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject setOutput(ThreadContext context, IRubyObject recv, IRubyObject output) {
         // FIXME: JRUBY-3604
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "readline", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "readline", module = true, visibility = PRIVATE)
     public static IRubyObject s_readline(IRubyObject recv, IRubyObject prompt) {
         return s_readline(recv, prompt, recv.getRuntime().getFalse());
     }
 
-    @JRubyMethod(name = "readline", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "readline", module = true, visibility = PRIVATE)
     public static IRubyObject s_readline(IRubyObject recv) {
         return s_readline(recv, RubyString.newEmptyString(recv.getRuntime()), recv.getRuntime().getFalse());
     }
 
-    @JRubyMethod(name = "basic_word_break_characters=", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "basic_word_break_characters=", module = true, visibility = PRIVATE)
     public static IRubyObject s_set_basic_word_break_character(IRubyObject recv, IRubyObject achar) {
         Ruby runtime = recv.getRuntime();
         if (!achar.respondsTo("to_str")) {
@@ -294,17 +293,17 @@ public class Readline {
         return achar;
     }
 
-    @JRubyMethod(name = "basic_word_break_characters", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "basic_word_break_characters", module = true, visibility = PRIVATE)
     public static IRubyObject s_get_basic_word_break_character(IRubyObject recv) {
         return recv.getRuntime().newString(ProcCompletor.getDelimiter());
     }
 
-    @JRubyMethod(name = "completion_append_character=", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "completion_append_character=", module = true, visibility = PRIVATE)
     public static IRubyObject s_set_completion_append_character(IRubyObject recv, IRubyObject achar) {
         return recv.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "completion_proc=", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "completion_proc=", module = true, visibility = PRIVATE)
     public static IRubyObject s_set_completion_proc(IRubyObject recv, IRubyObject proc) {
         if (!proc.respondsTo("call")) {
             throw recv.getRuntime().newArgumentError("argument must respond to call");
@@ -321,7 +320,7 @@ public class Readline {
         "completion_proc",
         "emacs_editing_mode",
         "filename_quote_characters", "filename_quote_characters=",
-        "vi_editing_mode"}, frame = true, module = true, visibility = Visibility.PRIVATE)
+        "vi_editing_mode"}, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject unimplemented(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         runtime.secure(4);
@@ -338,7 +337,7 @@ public class Readline {
         "emacs_editing_mode", "emacs_editing_mode?",
         "filename_quote_characters", "filename_quote_characters=",
         "vi_editing_mode", "vi_editing_mode?",
-        "set_screen_size"}, frame = true, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+        "set_screen_size"}, frame = true, module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject unimplemented19(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         runtime.secure(4);
@@ -346,14 +345,14 @@ public class Readline {
         throw runtime.newNotImplementedError(err);
     }
 
-    @JRubyMethod(name = "completion_case_fold", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "completion_case_fold", module = true, visibility = PRIVATE)
     public static IRubyObject s_get_completion_case_fold(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         runtime.secure(4);
         return COMPLETION_CASE_FOLD;
     }
 
-    @JRubyMethod(name = "completion_case_fold=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "completion_case_fold=", required = 1, module = true, visibility = PRIVATE)
     // FIXME: this is really a noop
     public static IRubyObject s_set_completion_case_fold(ThreadContext context, IRubyObject recv,
             IRubyObject other) {
@@ -362,7 +361,7 @@ public class Readline {
         return COMPLETION_CASE_FOLD = other;
     }
 
-    @JRubyMethod(name = "get_screen_size", module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "get_screen_size", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_get_screen_size(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         runtime.secure(4);
@@ -374,7 +373,7 @@ public class Readline {
 
     }
 
-    @JRubyMethod(name = "line_buffer", module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "line_buffer", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_get_line_buffer(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         runtime.secure(4);
@@ -386,7 +385,7 @@ public class Readline {
         return runtime.newString(cb.toString()).taint(context);
     }
 
-    @JRubyMethod(name = "point", module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "point", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_get_point(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         runtime.secure(4);
@@ -398,7 +397,7 @@ public class Readline {
         return runtime.newFixnum(cb.cursor);
     }
 
-    @JRubyMethod(name = "refresh_line", module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "refresh_line", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_refresh_line(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         runtime.secure(4);

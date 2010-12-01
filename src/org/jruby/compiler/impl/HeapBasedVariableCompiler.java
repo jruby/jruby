@@ -360,4 +360,8 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         
         retrieveHeapLocal(depth, index);
     }
+
+    public boolean isHeap() {
+        return true;
+    }
 }

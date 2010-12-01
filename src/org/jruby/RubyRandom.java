@@ -30,7 +30,8 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -64,7 +65,7 @@ public class RubyRandom extends RubyObject {
         super(runtime, rubyClass);
     }
 
-    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         long seedLong = random.nextLong();
@@ -73,7 +74,7 @@ public class RubyRandom extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "initialize", required = 1, frame = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg) {
         long seedLong;
         if (arg instanceof RubyFloat) {
@@ -91,27 +92,29 @@ public class RubyRandom extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "seed", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "seed", compat = RUBY1_9)
     public IRubyObject seed(ThreadContext context) {
         return seed;
     }
 
-    @JRubyMethod(name = "rand", meta = true, optional = 1, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject arg = context.getRuntime().getNil();
-        if (args.length > 0) {
-            arg = args[0];
-        }
-        return randCommon(context, arg, globalRandom, false);
+    @JRubyMethod(name = "rand", meta = true, compat = RUBY1_9)
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv) {
+        return randCommon(context, context.nil, globalRandom, false);
     }
 
-    @JRubyMethod(name = "rand", backtrace = true, optional = 1, compat = CompatVersion.RUBY1_9)
-    public IRubyObject randObj(ThreadContext context, IRubyObject[] args) {
-        IRubyObject arg = context.getRuntime().getNil();
-        if (args.length > 0) {
-            arg = args[0];
-        }
-        return randCommon(context, arg, random, true);
+    @JRubyMethod(name = "rand", meta = true, compat = RUBY1_9)
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        return randCommon(context, arg0, globalRandom, false);
+    }
+
+    @JRubyMethod(name = "rand", compat = RUBY1_9)
+    public IRubyObject randObj(ThreadContext context) {
+        return randCommon(context, context.nil, random, true);
+    }
+
+    @JRubyMethod(name = "rand", compat = RUBY1_9)
+    public IRubyObject randObj(ThreadContext context, IRubyObject arg0) {
+        return randCommon(context, arg0, random, true);
     }
 
     private static IRubyObject randCommon(ThreadContext context, IRubyObject arg, Random random, boolean raiseArgError) {
@@ -167,12 +170,12 @@ public class RubyRandom extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "srand", frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(meta = true, compat = RUBY1_9)
     public static IRubyObject srand(ThreadContext context, IRubyObject recv) {
         return srand(context, recv, context.getRuntime().getNil());
     }
 
-    @JRubyMethod(name = "srand", frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(meta = true, compat = RUBY1_9)
     public static IRubyObject srand(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return srandCommon(context, recv, arg, false);
     }
@@ -203,7 +206,7 @@ public class RubyRandom extends RubyObject {
     }
 
     @Override
-    @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "==", required = 1, compat = RUBY1_9)
     public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.getRuntime();
         // TODO: mri also compares the "state"
@@ -216,7 +219,7 @@ public class RubyRandom extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "marshal_dump", backtrace = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "marshal_dump", backtrace = true, compat = RUBY1_9)
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.getRuntime().newArray(this, seed);
 
@@ -224,7 +227,7 @@ public class RubyRandom extends RubyObject {
         return dump;
     }
 
-    @JRubyMethod(name = "marshal_load", backtrace = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(compat = RUBY1_9)
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
         if (load.size() > 0) {
@@ -236,7 +239,7 @@ public class RubyRandom extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "bytes", frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(compat = RUBY1_9)
     public IRubyObject bytes(ThreadContext context, IRubyObject arg) {
         int size = RubyNumeric.num2int(arg);
 
@@ -246,7 +249,7 @@ public class RubyRandom extends RubyObject {
         return context.getRuntime().newString(new ByteList(bytes));
     }
 
-    @JRubyMethod(name = "new_seed", frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "new_seed", meta = true, compat = RUBY1_9)
     public static IRubyObject newSeed(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         globalRandom = new Random();

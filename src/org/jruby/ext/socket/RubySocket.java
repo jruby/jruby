@@ -158,7 +158,7 @@ public class RubySocket extends RubyBasicSocket {
     public static IRubyObject for_fd(IRubyObject socketClass, IRubyObject fd) {
         return for_fd(socketClass.getRuntime().getCurrentContext(), socketClass, fd);
     }
-    @JRubyMethod(frame = true, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject fd) {
         Ruby ruby = context.getRuntime();
         if (fd instanceof RubyFixnum) {

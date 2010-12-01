@@ -66,7 +66,7 @@ describe "A Java object's java_method method" do
 
       method = PackageStaticMethod.java_class.declared_method_smart :thePackageScopeMethod
       method.accessible = true
-      method.invoke Java.ruby_to_java(nil)
+      method.invoke nil.to_java
     }.should_not raise_error
   end
 end

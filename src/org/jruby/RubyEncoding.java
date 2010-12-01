@@ -27,7 +27,6 @@ package org.jruby;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Locale;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
@@ -44,6 +43,7 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import static org.jruby.CompatVersion.*;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject {
@@ -332,7 +332,7 @@ public class RubyEncoding extends RubyObject {
         return enc == null ? runtime.getNil() : new RubyEncoding(runtime, enc);
     }
 
-    @JRubyMethod(name = "default_external", meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "default_external", meta = true, compat = RUBY1_9)
     public static IRubyObject getDefaultExternal(IRubyObject recv) {
         return getDefaultExternal(recv.getRuntime());
     }
@@ -351,7 +351,7 @@ public class RubyEncoding extends RubyObject {
         return defaultExternal;
     }
 
-    @JRubyMethod(name = "default_external=", required = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "default_external=", meta = true, compat = RUBY1_9)
     public static void setDefaultExternal(IRubyObject recv, IRubyObject encoding) {
         if (encoding.isNil()) {
             recv.getRuntime().newArgumentError("default_external can not be nil");
@@ -359,7 +359,7 @@ public class RubyEncoding extends RubyObject {
         recv.getRuntime().setDefaultExternalEncoding(getEncodingFromObject(recv.getRuntime(), encoding));
     }
 
-    @JRubyMethod(name = "default_internal", meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "default_internal", meta = true, compat = RUBY1_9)
     public static IRubyObject getDefaultInternal(IRubyObject recv) {
         return getDefaultInternal(recv.getRuntime());
     }
@@ -368,7 +368,7 @@ public class RubyEncoding extends RubyObject {
         return convertEncodingToRubyEncoding(runtime, runtime.getDefaultInternalEncoding());
     }
 
-    @JRubyMethod(name = "default_internal=", required = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "default_internal=", required = 1, meta = true, compat = RUBY1_9)
     public static void setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
         if (encoding.isNil()) {
             recv.getRuntime().newArgumentError("default_internal can not be nil");

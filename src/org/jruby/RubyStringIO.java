@@ -42,7 +42,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
@@ -89,7 +89,7 @@ public class RubyStringIO extends RubyObject {
         return stringIOClass;
     }
 
-    @JRubyMethod(name = "open", optional = 2, frame = true, meta = true)
+    @JRubyMethod(optional = 2, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
         IRubyObject val = strio;
@@ -124,7 +124,7 @@ public class RubyStringIO extends RubyObject {
         setupModes();
     }
 
-    @JRubyMethod(name = "initialize", optional = 2, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         Object modeArgument = null;
         switch (args.length) {
@@ -160,7 +160,7 @@ public class RubyStringIO extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize_copy(IRubyObject other) {
 
         RubyStringIO otherIO = (RubyStringIO) TypeConverter.convertToType(
@@ -184,12 +184,12 @@ public class RubyStringIO extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "binmode")
+    @JRubyMethod
     public IRubyObject binmode() {
         return this;
     }
 
-    @JRubyMethod(name = "close", frame=true)
+    @JRubyMethod
     public IRubyObject close() {
         checkInitialized();
         checkOpen();
@@ -212,7 +212,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newBoolean(data.closedRead && data.closedWrite);
     }
 
-    @JRubyMethod(name = "close_read")
+    @JRubyMethod
     public IRubyObject close_read() {
         checkReadable();
         data.closedRead = true;
@@ -226,7 +226,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newBoolean(data.closedRead);
     }
 
-    @JRubyMethod(name = "close_write")
+    @JRubyMethod
     public IRubyObject close_write() {
         checkWritable();
         data.closedWrite = true;
@@ -240,7 +240,7 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newBoolean(data.closedWrite);
     }
 
-    public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject eachInternal(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject line = getsOnly(context, args);
 
         while (!line.isNil()) {
@@ -251,17 +251,17 @@ public class RubyStringIO extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "each", optional = 1, frame = true, writes = FrameField.LASTLINE)
-    public IRubyObject each19(ThreadContext context, IRubyObject[] args, Block block) {
-        return block.isGiven() ? each(context, args, block) : enumeratorize(context.getRuntime(), this, "each", args);
+    @JRubyMethod(name = "each", optional = 1, writes = FrameField.LASTLINE)
+    public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
+        return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.getRuntime(), this, "each", args);
     }
 
-    @JRubyMethod(name = "each_line", optional = 1, frame = true)
+    @JRubyMethod(optional = 1)
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
-        return block.isGiven() ? each(context, args, block) : enumeratorize(context.getRuntime(), this, "each_line", args);
+        return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.getRuntime(), this, "each_line", args);
     }
 
-    @JRubyMethod(name = "lines", optional = 1, frame = true)
+    @JRubyMethod(optional = 1)
     public IRubyObject lines(ThreadContext context, IRubyObject[] args, Block block) {
         return block.isGiven() ? each(context, args, block) : enumeratorize(context.getRuntime(), this, "lines", args);
     }
@@ -279,17 +279,17 @@ public class RubyStringIO extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "each_byte", frame = true)
+    @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte19(ThreadContext context, Block block) {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
     }
 
-    @JRubyMethod(name = "bytes", frame = true)
+    @JRubyMethod
     public IRubyObject bytes(ThreadContext context, Block block) {
         return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "bytes");
     }
 
-    public IRubyObject each_char(final ThreadContext context, final Block block) {
+    public IRubyObject each_charInternal(final ThreadContext context, final Block block) {
         checkReadable();
 
         Ruby runtime = context.getRuntime();
@@ -309,14 +309,14 @@ public class RubyStringIO extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "each_char", frame = true)
-    public IRubyObject each_char19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_char(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+    @JRubyMethod
+    public IRubyObject each_char(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_charInternal(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
     }
 
-    @JRubyMethod(name = "chars", frame = true)
-    public IRubyObject chars19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_char(context, block) : enumeratorize(context.getRuntime(), this, "chars");
+    @JRubyMethod
+    public IRubyObject chars(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_charInternal(context, block) : enumeratorize(context.getRuntime(), this, "chars");
     }
 
     @JRubyMethod(name = {"eof", "eof?"})
@@ -747,7 +747,7 @@ public class RubyStringIO extends RubyObject {
         this.data.lineno = 0;
     }
 
-    @JRubyMethod(name = "seek", required = 1, optional = 1, frame=true)
+    @JRubyMethod(required = 1, optional = 1)
     public IRubyObject seek(IRubyObject[] args) {
         checkOpen();
         checkFinalized();

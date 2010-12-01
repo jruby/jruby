@@ -60,7 +60,7 @@ public class RubyNoMethodError extends RubyNameError {
         this.args = args;
     }    
 
-    @JRubyMethod(name = "initialize", optional = 3, frame = true)
+    @JRubyMethod(optional = 3)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 2) {
             this.args = args[args.length - 1];

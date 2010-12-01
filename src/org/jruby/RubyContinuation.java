@@ -91,7 +91,7 @@ public class RubyContinuation extends RubyObject {
         return continuation;
     }
 
-    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         if (disabled) {
             throw context.getRuntime().newLocalJumpError(

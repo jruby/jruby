@@ -237,4 +237,17 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         }
         return new IRubyObject[] {value};
     }
+
+    private IRubyObject[] warnMultiReturnNil(Ruby ruby) {
+        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
+        return IRubyObject.NULL_ARRAY;
+    }
+
+    public String getFile() {
+        return callback.getFile();
+    }
+
+    public int getLine() {
+        return callback.getLine();
+    }
 }

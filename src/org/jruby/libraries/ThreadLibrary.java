@@ -126,7 +126,7 @@ public class ThreadLibrary implements Library {
             return context.getRuntime().getTrue();
         }
 
-        @JRubyMethod(frame = true)
+        @JRubyMethod
         public IRubyObject lock(ThreadContext context) {
             //if (Thread.interrupted()) {
             //    throw new InterruptedException();
@@ -202,7 +202,7 @@ public class ThreadLibrary implements Library {
 
     @JRubyClass(name="ConditionVariable")
     public static class ConditionVariable extends RubyObject {
-        @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
+        @JRubyMethod(name = "new", rest = true, meta = true)
         public static ConditionVariable newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
             ConditionVariable result = new ConditionVariable(context.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);
@@ -295,7 +295,7 @@ public class ThreadLibrary implements Library {
         private LinkedList entries;
         protected volatile int numWaiting=0;
 
-        @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
+        @JRubyMethod(name = "new", rest = true, meta = true)
         public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
             Queue result = new Queue(context.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);
@@ -396,7 +396,7 @@ public class ThreadLibrary implements Library {
     public static class SizedQueue extends Queue {
         private int capacity;
 
-        @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
+        @JRubyMethod(name = "new", rest = true, meta = true)
         public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
             SizedQueue result = new SizedQueue(context.getRuntime(), (RubyClass)recv);
             result.callInit(args, block);

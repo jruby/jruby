@@ -126,7 +126,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_upto
      * 
      */
-    @JRubyMethod(name = "upto", frame = true)
+    @JRubyMethod
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
             if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
@@ -171,7 +171,7 @@ public abstract class RubyInteger extends RubyNumeric {
      * 
      */
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
-    @JRubyMethod(name = "downto", frame = true)
+    @JRubyMethod
     public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
             if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
@@ -212,7 +212,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "times", frame = true)
+    @JRubyMethod
     public IRubyObject times(ThreadContext context, Block block) {
         if (block.isGiven()) {
             Ruby runtime = context.getRuntime();

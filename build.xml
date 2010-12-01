@@ -80,45 +80,46 @@
     <propertyset refid="${test.sysprops.set}"/>
     <mapper type="glob" from="mac.*" to="*"/>
   </propertyset>
+  
+  <!-- if ruby.home is not set, use env var -->
+  <condition property="ruby.home" value="${env.RUBY_HOME}">
+    <not><isset property="ruby.home"/></not>
+  </condition>
+  <condition property="is.windows" value="true">
+    <os family="windows"/>
+  </condition>
+  <condition property="run.jvm.model" value="">
+    <os family="windows"/>
+  </condition>
+  <condition property="run.jvm.model" value="-d64">
+    <or>
+      <os arch="amd64"/>
+      <os arch="x86_64"/>
+      <os arch="sparcv9"/>
+      <os arch="s390x"/>
+    </or>
+  </condition>
+  <condition property="run.jvm.model" value="-d32">
+    <or>
+      <os arch="i386"/>
+      <os arch="x86"/>
+      <os arch="powerpc"/>
+      <os arch="ppc"/>
+      <os arch="sparc"/>
+    </or>
+  </condition>
+  <condition property="run.jvm.model" value="">
+    <not><isset property="run.jvm.model"/></not>
+  </condition>
+  <condition property="spec.jvm.model.option" value="">
+    <equals arg1="${run.jvm.model}" arg2=""/>
+  </condition>
 
   <!-- Initializes the build -->
   <target name="init">
     <tstamp><format property="build.date" pattern="yyyy-MM-dd"/></tstamp>
     <property environment="env"/>
     <property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
-    <!-- if ruby.home is not set, use env var -->
-    <condition property="ruby.home" value="${env.RUBY_HOME}">
-      <not><isset property="ruby.home"/></not>
-    </condition>
-    <condition property="is.windows" value="true">
-      <os family="windows"/>
-    </condition>
-    <condition property="run.jvm.model" value="">
-        <os family="windows"/>
-    </condition>
-    <condition property="run.jvm.model" value="-d64">
-      <or>
-        <os arch="amd64"/>
-        <os arch="x86_64"/>
-        <os arch="sparcv9"/>
-        <os arch="s390x"/>
-      </or>
-    </condition>
-    <condition property="run.jvm.model" value="-d32">
-      <or>
-        <os arch="i386"/>
-        <os arch="x86"/>
-        <os arch="powerpc"/>
-        <os arch="ppc"/>
-        <os arch="sparc"/>
-      </or>
-    </condition>
-    <condition property="run.jvm.model" value="">
-        <not><isset property="run.jvm.model"/></not>
-    </condition>
-    <condition property="spec.jvm.model.option" value="">
-        <equals arg1="${run.jvm.model}" arg2=""/>
-    </condition>
     <property name="spec.jvm.model.option" value="-T -J${run.jvm.model}"/>
     <property name="rdoc.archive" value="docs/rdocs.tar.gz"/>
     <uptodate property="docsNotNeeded" srcfile="${rdoc.archive}" targetfile="${basedir}/share/ri.jar"/>
@@ -881,7 +882,7 @@
 
         <!-- force client VM to improve test run times AND -->
         <!-- set a larger max permgen, since the tests load a lot of bytecode -->
-        <jvmarg line="-ea ${run.jvm.model} -client -XX:MaxPermSize=128M -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles -XX:+EnableInvokeDynamic"/>
+        <jvmarg line="-ea ${run.jvm.model} -client -XX:MaxPermSize=256M -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles -XX:+EnableInvokeDynamic"/>
 
 	<formatter type="xml"/>
 	<formatter type="brief" usefile="false" />
@@ -934,7 +935,8 @@
         <syspropertyset refid="test.sysproperties"/>
 
         <!-- force client VM to improve test run times AND -->
-        <!-- set a larger max permgen, since the tests load a lot of bytecode -->	<jvmarg line="-ea ${run.jvm.model} -client -XX:MaxPermSize=128M"/>
+        <!-- set a larger max permgen, since the tests load a lot of bytecode -->
+        <jvmarg line="-ea ${run.jvm.model} -client -XX:MaxPermSize=256M"/>
 
 	<formatter type="xml"/>
 	<formatter type="brief" usefile="false" />

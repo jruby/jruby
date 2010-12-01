@@ -136,8 +136,12 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
             post(context, binding, null, lastFrame);
         }
     }
-    
-    // TODO: This is actually now returning the scope of whoever called Method#to_proc
-    // which is obviously wrong; but there's no scope to provide for many methods.
-    // It fixes JRUBY-2237, but needs a better solution. <--- We inherit get/setScope from superclass
+
+    public String getFile() {
+        return "(method)";
+    }
+
+    public int getLine() {
+        return -1;
+    }
 }

@@ -941,7 +941,7 @@ public final class StructLayout extends Type {
         /**
          * Needed for Enumerable implementation
          */
-        @JRubyMethod(name = "each", frame = true)
+        @JRubyMethod(name = "each")
         public IRubyObject each(ThreadContext context, Block block) {
             if (!block.isGiven()) {
                 throw context.getRuntime().newLocalJumpErrorNoBlock();

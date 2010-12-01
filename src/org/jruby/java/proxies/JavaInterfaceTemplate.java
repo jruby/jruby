@@ -73,6 +73,7 @@ public class JavaInterfaceTemplate {
         return runtime.getNil();
     }
 
+    // framed for invokeSuper
     @JRubyMethod(frame = true)
     public static IRubyObject append_features(ThreadContext context, IRubyObject self, IRubyObject clazz, Block block) {
         if (clazz instanceof RubyClass) {

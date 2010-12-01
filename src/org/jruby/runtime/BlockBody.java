@@ -279,6 +279,16 @@ public abstract class BlockBody {
     }
 
     /**
+     * Get the filename for this block
+     */
+    public abstract String getFile();
+
+    /**
+     * get The line number for this block
+     */
+    public abstract int getLine();
+
+    /**
      * Compiled codes way of examining arguments
      *
      * @param nodeId to be considered
