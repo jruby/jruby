@@ -41,7 +41,6 @@ import java.io.OutputStream;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
@@ -74,11 +73,8 @@ public class RubyMarshal {
 
     @JRubyMethod(required = 1, optional = 2, module = true)
     public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        if (args.length < 1) {
-            throw recv.getRuntime().newArgumentError("wrong # of arguments(at least 1)");
-        }
+        Ruby runtime = recv.getRuntime();
         IRubyObject objectToDump = args[0];
-
         IRubyObject io = null;
         int depthLimit = -1;
 
@@ -88,7 +84,7 @@ public class RubyMarshal {
             } else if (args[1] instanceof RubyFixnum) {
                 depthLimit = (int) ((RubyFixnum) args[1]).getLongValue();
             } else {
-                throw recv.getRuntime().newTypeError("Instance of IO needed");
+                throw runtime.newTypeError("Instance of IO needed");
             }
             if (args.length == 3) {
                 depthLimit = (int) args[2].convertToInteger().getLongValue();
@@ -97,97 +93,72 @@ public class RubyMarshal {
 
         try {
             if (io != null) {
-                dumpToStream(objectToDump, outputStream(io), depthLimit);
+                dumpToStream(runtime, objectToDump, outputStream(runtime.getCurrentContext(), io), depthLimit);
                 return io;
             }
             
             ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-            boolean taint = dumpToStream(objectToDump, stringOutput, depthLimit);
+            boolean taint = dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
+            RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray(), false));
+            
+            if (taint) result.setTaint(true);
 
-            RubyString result = RubyString.newString(recv.getRuntime(), new ByteList(stringOutput.toByteArray(),false));
-            if(taint) {
-                result.setTaint(true);
-            }
             return result;
         } catch (IOException ioe) {
-            throw recv.getRuntime().newIOErrorFromException(ioe);
+            throw runtime.newIOErrorFromException(ioe);
         }
 
     }
 
-    private static OutputStream outputStream(IRubyObject out) {
-        setBinmodeIfPossible(out);
+    private static OutputStream outputStream(ThreadContext context, IRubyObject out) {
+        setBinmodeIfPossible(context, out);
         return new IOOutputStream(out);
     }
 
-    private static void setBinmodeIfPossible(IRubyObject io) {
-        if (io.respondsTo("binmode")) {
-            io.callMethod(io.getRuntime().getCurrentContext(), "binmode");
-        }
+    private static void setBinmodeIfPossible(ThreadContext context, IRubyObject io) {
+        if (io.respondsTo("binmode")) io.callMethod(context, "binmode");
     }
 
     @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, module = true)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        IRubyObject in = null;
-        IRubyObject proc = null;
+        Ruby runtime = context.getRuntime();
+        IRubyObject in = args[0];
+        IRubyObject proc = args.length == 2 ? args[1] : null;
+        
         try {
-            if (args.length < 1) {
-                throw recv.getRuntime().newArgumentError("wrong number of arguments (0 for 1)");
-            }
-            
-            if (args.length > 2) {
-            	throw recv.getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
-            }
-            
-            switch (args.length) {
-            case 2:
-            	proc = args[1];
-            case 1:
-            	in = args[0];
-            }
-
             InputStream rawInput;
-            boolean tainted = false;
+            boolean tainted;
             IRubyObject v = in.checkStringType();
+            
             if (!v.isNil()) {
                 tainted = in.isTaint();
                 ByteList bytes = ((RubyString) v).getByteList();
-                rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(),
-                        bytes.length());
+                rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             } else if (in.respondsTo("getc") && in.respondsTo("read")) {
-                if (in.respondsTo("binmode")) {
-                    RuntimeHelpers.invoke(context, in, "binmode");
-                }
                 tainted = true;
-                rawInput = inputStream(in);
+                rawInput = inputStream(context, in);
             } else {
-                throw recv.getRuntime().newTypeError("instance of IO needed");
+                throw runtime.newTypeError("instance of IO needed");
             }
 
-            UnmarshalStream input = new UnmarshalStream(recv.getRuntime(), rawInput, proc, tainted);
+            return new UnmarshalStream(runtime, rawInput, proc, tainted).unmarshalObject();
+        } catch (EOFException e) {
+            if (in.respondsTo("to_str")) throw runtime.newArgumentError("marshal data too short");
 
-            return input.unmarshalObject();
-
-        } catch (EOFException ee) {
-          if (in != null && in.respondsTo("to_str")) {
-              throw recv.getRuntime().newArgumentError("marshal data too short");
-          } else {
-              throw recv.getRuntime().newEOFError();
-          }
+            throw runtime.newEOFError();
         } catch (IOException ioe) {
-            throw recv.getRuntime().newIOErrorFromException(ioe);
+            throw runtime.newIOErrorFromException(ioe);
         }
     }
 
-    private static InputStream inputStream(IRubyObject in) {
-        setBinmodeIfPossible(in);
+    private static InputStream inputStream(ThreadContext context, IRubyObject in) {
+        setBinmodeIfPossible(context, in);
         return new IOInputStream(in);
     }
 
-    private static boolean dumpToStream(IRubyObject object, OutputStream rawOutput, int depthLimit)
-        throws IOException
-    {
-        MarshalStream output = new MarshalStream(object.getRuntime(), rawOutput, depthLimit);
+    private static boolean dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput,
+            int depthLimit) throws IOException {
+        MarshalStream output = new MarshalStream(runtime, rawOutput, depthLimit);
         output.dumpObject(object);
         return output.isTainted();
     }
