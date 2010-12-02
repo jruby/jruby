@@ -481,6 +481,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public static RubyString newString(Ruby runtime, ByteList bytes) {
         return new RubyString(runtime, runtime.getString(), bytes);
     }
+
+    public static RubyString newString(Ruby runtime, ByteList bytes, Encoding encoding) {
+        return new RubyString(runtime, runtime.getString(), bytes, encoding);
+    }
     
     public static RubyString newUnicodeString(Ruby runtime, String str) {
         return new RubyString(runtime, runtime.getString(), new ByteList(RubyEncoding.encodeUTF8(str), false));
@@ -496,10 +500,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public static RubyString newStringShared(Ruby runtime, ByteList bytes) {
         return newStringShared(runtime, runtime.getString(), bytes);
-    }    
+    }
+
+    public static RubyString newStringShared(Ruby runtime, ByteList bytes, Encoding encoding) {
+        return newStringShared(runtime, runtime.getString(), bytes, encoding);
+    }
 
     public static RubyString newStringShared(Ruby runtime, RubyClass clazz, ByteList bytes) {
         RubyString str = new RubyString(runtime, clazz, bytes);
+        str.shareLevel = SHARE_LEVEL_BYTELIST;
+        return str;
+    }
+
+    public static RubyString newStringShared(Ruby runtime, RubyClass clazz, ByteList bytes, Encoding encoding) {
+        RubyString str = new RubyString(runtime, clazz, bytes, encoding);
         str.shareLevel = SHARE_LEVEL_BYTELIST;
         return str;
     }
