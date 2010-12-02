@@ -167,21 +167,18 @@ public class SystemPropertyCatcher {
     }
 
     private static String findFromJar(Object instance) throws URISyntaxException {
-        URL resource = instance.getClass().getResource("/META-INF/jruby.home/bin/jruby");
+        URL resource = instance.getClass().getResource("/META-INF/jruby.home");
         if (resource == null) {
             return null;
         }
-        String location = resource.toURI().getSchemeSpecificPart();
-        if (location == null) {
-            return null;
+
+        String location = null;
+        if (resource.getProtocol().equals("jar")) {
+            location = resource.getPath();
+        } else {
+            location = "classpath:/META-INF/jruby.home";
         }
-        Pattern p = Pattern.compile("jruby\\.home");
-        Matcher m = p.matcher(location);
-        while(m.find()) {
-            location = location.substring(0, m.end());
-            return location;
-        }
-        return null;
+        return location;
     }
 
     /**

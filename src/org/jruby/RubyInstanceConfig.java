@@ -808,14 +808,13 @@ public class RubyInstanceConfig {
             } else {
                 try {
                     // try loading from classloader resources
-                    URI jrubyHomeURI = getClass().getResource("/META-INF/jruby.home").toURI();
-                    String scheme = jrubyHomeURI.getScheme();
-                    String path = jrubyHomeURI.getSchemeSpecificPart();
-                    if ("jar".equals(scheme) && path.startsWith("file:")) {
-                        // special case for jar:file (most typical case)
-                        jrubyHome = path;
+                    final String jrubyHomePath = "/META-INF/jruby.home";
+                    URL jrubyHomeURL = getClass().getResource(jrubyHomePath);
+                    // special case for jar:file (most typical case)
+                    if (jrubyHomeURL.getProtocol().equals("jar")) {
+                        jrubyHome = jrubyHomeURL.getPath();
                     } else {
-                        jrubyHome = "classpath:/META-INF/jruby.home";
+                        jrubyHome = "classpath:" + jrubyHomePath;
                         return jrubyHome;
                     }
                 } catch (Exception e) {}

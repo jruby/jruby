@@ -415,6 +415,30 @@ class TestFile < Test::Unit::TestCase
     assert(!File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/"))
   end
 
+  def with_load_path(entry)
+    begin
+      $LOAD_PATH.unshift entry
+      puts "adding to load path: #{entry}"
+      yield
+    ensure
+      $LOAD_PATH.shift
+    end
+  end
+
+  def test_require_from_jar_url_with_spaces_in_load_path
+    assert_nothing_raised do
+      with_load_path("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/abc") do
+        assert require('foo')
+        assert $LOADED_FEATURES.pop =~ /foo\.rb$/
+      end
+
+      with_load_path(File.expand_path("test/dir with spaces/test_jar.jar")) do
+        assert require('abc/foo')
+        assert $LOADED_FEATURES.pop =~ /foo\.rb$/
+      end
+    end
+  end
+
   def test_file_read_in_jar_file
     jruby_specific_test
 
