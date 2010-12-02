@@ -582,10 +582,30 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * overridden.
      */
     public final boolean respondsTo(String name) {
-        if(getMetaClass().searchMethod("respond_to?") == getRuntime().getRespondToMethod()) {
+        DynamicMethod method = getMetaClass().searchMethod("respond_to?");
+        if(method == getRuntime().getRespondToMethod()) {
             return getMetaClass().isMethodBound(name, false);
         } else {
-            return callMethod(getRuntime().getCurrentContext(),"respond_to?",getRuntime().newSymbol(name)).isTrue();
+            return method.call(getRuntime().getCurrentContext(), this, metaClass, "respond_to?", getRuntime().newSymbol(name)).isTrue();
+        }
+    }
+
+    /**
+     * Does this object respond to the specified message via "method_missing?"
+     */
+    public final boolean respondsToMissing(String name) {
+        DynamicMethod method = getMetaClass().searchMethod("respond_to_missing?");
+        // perhaps should try a smart version as for respondsTo above?
+        if(method.isUndefined()) {
+            return false;
+        } else {
+            return method.call(
+                    getRuntime().getCurrentContext(),
+                    this,
+                    metaClass,
+                    "respond_to_missing?",
+                    getRuntime().newSymbol(name),
+                    getRuntime().getTrue()).isTrue();
         }
     }
 

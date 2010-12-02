@@ -1134,6 +1134,11 @@ public class RubyObject extends RubyBasicObject {
         return getMetaClass().newMethod(this, symbol.asJavaString(), true, null);
     }
 
+    @JRubyMethod(name = "method", required = 1, compat = RUBY1_9)
+    public IRubyObject method19(IRubyObject symbol) {
+        return getMetaClass().newMethod(this, symbol.asJavaString(), true, null, true);
+    }
+
     /** rb_any_to_s
      *
      *  call-seq:

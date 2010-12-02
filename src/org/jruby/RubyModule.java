@@ -68,6 +68,7 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.internal.runtime.methods.MethodMethod;
@@ -81,6 +82,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodFactory;
@@ -91,6 +93,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
@@ -1348,12 +1351,31 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound, Visibility visibility) {
-        DynamicMethod method = searchMethod(name);
+        return newMethod(receiver, name, bound, visibility, false);
+    }
+
+    public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
+        DynamicMethod method = searchMethod(methodName);
 
         if (method.isUndefined() ||
             (visibility != null && method.getVisibility() != visibility)) {
-            throw getRuntime().newNameError("undefined method `" + name +
-                "' for class `" + this.getName() + "'", name);
+            if (respondToMissing) { // 1.9 behavior
+                if (receiver.respondsToMissing(methodName)) {
+                    method = new JavaMethod.JavaMethodNBlock(this, PUBLIC) {
+                        final CallSite site = new FunctionalCachingCallSite(methodName);
+                        @Override
+                        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                            return site.call(context, self, self, args, block);
+                        }
+                    };
+                } else {
+                    throw getRuntime().newNameError("undefined method `" + methodName +
+                        "' for class `" + this.getName() + "'", methodName);
+                }
+            } else {
+                throw getRuntime().newNameError("undefined method `" + methodName +
+                    "' for class `" + this.getName() + "'", methodName);
+            }
         }
 
         RubyModule implementationModule = method.getImplementationClass();
@@ -1364,9 +1386,9 @@ public class RubyModule extends RubyObject {
 
         RubyMethod newMethod;
         if (bound) {
-            newMethod = RubyMethod.newMethod(implementationModule, name, originModule, name, method, receiver);
+            newMethod = RubyMethod.newMethod(implementationModule, methodName, originModule, methodName, method, receiver);
         } else {
-            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, name, originModule, name, method);
+            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, methodName, method);
         }
         newMethod.infectBy(this);
 

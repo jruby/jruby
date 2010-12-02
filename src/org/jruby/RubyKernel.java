@@ -562,6 +562,11 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "respond_to_missing?", module = true, compat = RUBY1_9)
+    public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
+        return context.getRuntime().getFalse();
+    }
+
+    @JRubyMethod(name = "respond_to_missing?", module = true, compat = RUBY1_9)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol, IRubyObject isPrivate) {
         return context.getRuntime().getFalse();
     }
