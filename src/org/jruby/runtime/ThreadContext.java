@@ -956,20 +956,6 @@ public final class ThreadContext {
         RubyStackTraceElement[] rubyStackTrace = new RubyStackTraceElement[trace.size()];
         return (RubyStackTraceElement[])trace.toArray(rubyStackTrace);
     }
-    
-    public static IRubyObject createRubyCompiledBacktrace(Ruby runtime, StackTraceElement[] stackTrace) {
-        RubyArray traceArray = RubyArray.newArray(runtime);
-        for (int i = 0; i < stackTrace.length; i++) {
-            StackTraceElement element = stackTrace[i];
-            int index = element.getMethodName().indexOf("$RUBY$");
-            if (index < 0) continue;
-            String unmangledMethod = element.getMethodName().substring(index + 6);
-            RubyString str = RubyString.newString(runtime, element.getFileName() + ":" + element.getLineNumber() + ":in `" + unmangledMethod + "'");
-            traceArray.append(str);
-        }
-        
-        return traceArray;
-    }
 
     private Frame pushFrameForBlock(Binding binding) {
         Frame lastFrame = getNextFrame();
