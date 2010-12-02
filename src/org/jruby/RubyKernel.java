@@ -163,7 +163,7 @@ public class RubyKernel {
     @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject autoload_p(ThreadContext context, final IRubyObject recv, IRubyObject symbol) {
         Ruby runtime = context.getRuntime();
-        RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
+        final RubyModule module = getModuleForAutoload(runtime, recv);
         String name = module.getName() + "::" + symbol.asJavaString();
         
         IAutoloadMethod autoloadMethod = runtime.getLoadService().autoloadFor(name);
@@ -189,14 +189,14 @@ public class RubyKernel {
         if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
         
         final String baseName = symbol.asJavaString().intern(); // interned, OK for "fast" methods
-        final RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
+        final RubyModule module = getModuleForAutoload(runtime, recv);
         String nm = module.getName() + "::" + baseName;
         
         IRubyObject existingValue = module.fastFetchConstant(baseName); 
         if (existingValue != null && existingValue != RubyObject.UNDEF) return runtime.getNil();
-        
+
         module.fastStoreConstant(baseName, RubyObject.UNDEF);
-        
+
         loadService.addAutoload(nm, new IAutoloadMethod() {
             public String file() {
                 return file.toString();
@@ -214,6 +214,19 @@ public class RubyKernel {
             }
         });
         return runtime.getNil();
+    }
+
+    private static RubyModule getModuleForAutoload(Ruby runtime, IRubyObject recv) {
+        RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
+        if (module == runtime.getKernel()) {
+            // special behavior if calling Kernel.autoload directly
+            if (runtime.is1_9()) {
+                module = runtime.getObject().getSingletonClass();
+            } else {
+                module = runtime.getObject();
+            }
+        }
+        return module;
     }
 
     @JRubyMethod(rest = true, frame = true, visibility = PRIVATE, compat = RUBY1_8)
