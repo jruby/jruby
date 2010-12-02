@@ -1,0 +1,3 @@
+fails:Continuation#[] using #call transfers execution to right after the Kernel.callcc block
+fails:Continuation#[] escapes an inner ensure block
+fails:Continuation#[] executes an outer ensure block

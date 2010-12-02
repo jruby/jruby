@@ -96,10 +96,10 @@ class MSpecScript
                       ]
 
   # Disable features (not currently supported)
-  MSpec.disable_feature :continuation
   MSpec.disable_feature :fork
 
   # Enable features
+  MSpec.enable_feature :continuation
   MSpec.enable_feature :readline
   # These are encoding-aware methods backported to 1.8.7+ (eg String#bytes)
   MSpec.enable_feature :encoding_transition
