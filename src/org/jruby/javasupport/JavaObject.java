@@ -53,6 +53,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.JRubyObjectInputStream;
 
 /**
  *
@@ -309,7 +310,7 @@ public class JavaObject extends RubyObject {
         try {
             ByteList byteList = str.convertToString().getByteList();
             ByteArrayInputStream bais = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-            ObjectInputStream ois = new ObjectInputStream(bais);
+            ObjectInputStream ois = new JRubyObjectInputStream(context.getRuntime(), bais);
 
             dataWrapStruct(ois.readObject());
 
