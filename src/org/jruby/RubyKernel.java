@@ -64,7 +64,6 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.*;
@@ -1365,15 +1364,26 @@ public class RubyKernel {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(required = 1, optional = 1, compat = RUBY1_9)
     public static IRubyObject define_singleton_method(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (args.length == 0) throw context.getRuntime().newArgumentError(0, 1);
 
         RubyClass singleton_class = recv.getSingletonClass();
-        IRubyObject obj = args.length > 1 ?
-            singleton_class.define_method(context, args[0], args[1], block) :
-            singleton_class.define_method(context, args[0], block);
-        return obj;
+        if (args.length > 1) {
+            IRubyObject arg1 = args[1];
+            if (context.runtime.getUnboundMethod().isInstance(args[1])) {
+                RubyUnboundMethod method = (RubyUnboundMethod)arg1;
+                RubyModule owner = (RubyModule)method.owner(context);
+                if (owner.isSingleton() &&
+                    !(recv.getMetaClass().isSingleton() && recv.getMetaClass().isKindOfModule(owner))) {
+
+                    throw context.runtime.newTypeError("can't bind singleton method to a different class");
+                }
+            }
+            return singleton_class.define_method(context, args[0], args[1], block);
+        } else {
+            return singleton_class.define_method(context, args[0], block);
+        }
     }
 
     @JRubyMethod(name = {"proc", "lambda"}, module = true, visibility = PRIVATE, compat = RUBY1_8)
