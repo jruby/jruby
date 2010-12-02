@@ -426,4 +426,10 @@ public class RubyEnumerator extends RubyObject {
         context.getRuntime().getLoadService().lockAndRequire("generator_internal");
         return self.callMethod(context, "rewind");
     }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public static IRubyObject peek(ThreadContext context, IRubyObject self) {
+        context.getRuntime().getLoadService().lockAndRequire("generator_internal");
+        return self.callMethod(context, "peek");
+    }
 }

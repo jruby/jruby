@@ -338,6 +338,16 @@ class Generator
       __generator.rewind
       self
     end
+
+    if RUBY_VERSION =~ /^1\.9/
+      def peek
+        begin
+          __generator.current
+        rescue EOFError
+          raise StopIteration, 'iteration reached at end'
+        end
+      end
+    end
   end
 
   #
