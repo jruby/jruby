@@ -83,20 +83,7 @@ public class JRubyUtilLibrary implements Library {
             Enumeration<URL> urls = runtime.getJRubyClassLoader().getResources(resource);
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
-                String urlString;
-                if ("jar".equals(url.getProtocol()) && url.getFile().startsWith("file:/")) {
-                    try {
-                        urlString = url.toURI().getSchemeSpecificPart();
-                    } catch (java.net.URISyntaxException urise) {
-                        if (runtime.getInstanceConfig().isDebug()) {
-                            runtime.getErr().println("URISyntaxException trying to parse " + url + ", stack trace follows:");
-                            urise.printStackTrace(runtime.getErr());
-                        }
-                        urlString = null;
-                    }
-                } else {
-                    urlString = url.getFile();
-                }
+                String urlString = url.getPath();
                 urlStrings.add(runtime.newString(urlString));
             }
             return RubyArray.newArrayNoCopy(runtime, urlStrings.toArray(new IRubyObject[urlStrings.size()]));
