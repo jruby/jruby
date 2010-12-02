@@ -773,17 +773,17 @@ public class LoadService {
     }
 
     protected void debugLogFound( LoadServiceResource resource ) {
-        String resourceUrl;
-        try {
-            resourceUrl = resource.getURL().toString();
-        } catch (IOException e) {
-            resourceUrl = e.getMessage();
-        }
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
+            String resourceUrl;
+            try {
+                resourceUrl = resource.getURL().toString();
+            } catch (IOException e) {
+                resourceUrl = e.getMessage();
+            }
             runtime.getErr().println( "LoadService: found: " + resourceUrl );
         }
     }
-    
+
     protected Library findBuiltinLibrary(SearchState state, String baseName, SuffixType suffixType) {
         for (String suffix : suffixType.getSuffixes()) {
             String namePlusSuffix = baseName + suffix;
@@ -1265,17 +1265,8 @@ public class LoadService {
             String path = "classpath:/" + name;
             // special case for typical jar:file URLs, but only if the name didn't have
             // the classpath scheme explicitly
-            if (!isClasspathScheme && loc.toString().startsWith("jar:file:") && isRequireable(loc)) {
-                // Make sure this is not a directory or unavailable in some way
-                try {
-                    path = loc.toURI().getSchemeSpecificPart();
-                } catch (java.net.URISyntaxException urise) {
-                    if (runtime.getInstanceConfig().isDebug()) {
-                        runtime.getErr().println("URISyntaxException trying to parse " + loc + ", stack trace follows:");
-                        urise.printStackTrace(runtime.getErr());
-                    }
-                    return null;
-                }
+            if (!isClasspathScheme && loc.getProtocol().equals("jar") && isRequireable(loc)) {
+                path = loc.getPath();
             }
             LoadServiceResource foundResource = new LoadServiceResource(loc, path);
             debugLogFound(foundResource);

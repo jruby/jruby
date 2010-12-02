@@ -63,10 +63,10 @@ public class RubyClassPathVariable extends RubyObject {
         }
         return this;
     }
-    
+
     private URL getURL(String target) throws MalformedURLException {
-        if(target.indexOf("://") == -1) {
-            return new File(target).toURI().toURL();
+        if (target.indexOf("://") == -1) {
+            return new URL("file", null, target);
         } else {
             return new URL(target);
         }
