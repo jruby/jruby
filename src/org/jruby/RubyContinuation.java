@@ -44,11 +44,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyContinuation extends RubyObject {
     public static class Continuation extends Error implements Unrescuable {
         public Continuation() {tag = null;}
-        public Continuation(String tag) {
-            this.tag = tag.intern();
+        public Continuation(IRubyObject tag) {
+            this.tag = tag;
         }
         public IRubyObject[] args = IRubyObject.NULL_ARRAY;
-        public final String tag;
+        public final IRubyObject tag;
         
         @Override
         public synchronized Throwable fillInStackTrace() {
@@ -82,7 +82,7 @@ public class RubyContinuation extends RubyObject {
      * @param runtime Current JRuby runtime
      * @param tag The tag to use
      */
-    public RubyContinuation(Ruby runtime, String tag) {
+    public RubyContinuation(Ruby runtime, IRubyObject tag) {
         super(runtime, runtime.getContinuation());
         this.continuation = new Continuation(tag);
     }
@@ -101,9 +101,9 @@ public class RubyContinuation extends RubyObject {
         throw continuation;
     }
 
-    public IRubyObject enter(ThreadContext context, Block block) {
+    public IRubyObject enter(ThreadContext context, IRubyObject yielded, Block block) {
         try {
-            return block.yield(context, this);
+            return block.yield(context, yielded);
         } catch (Continuation c) {
             if (c == continuation) {
                 if (continuation.args.length == 0) {

@@ -1167,7 +1167,7 @@ public class RubyKernel {
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject callcc(ThreadContext context, IRubyObject recv, Block block) {
         RubyContinuation continuation = new RubyContinuation(context.getRuntime());
-        return continuation.enter(context, block);
+        return continuation.enter(context, continuation, block);
     }
 
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE, omit = true)
@@ -1183,10 +1183,32 @@ public class RubyKernel {
 
     @JRubyMethod(name = "catch", module = true, visibility = PRIVATE)
     public static IRubyObject rbCatch(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        RubyContinuation rbContinuation = new RubyContinuation(context.getRuntime(), tag.asJavaString());
+        Ruby runtime = context.runtime;
+        RubyContinuation rbContinuation = new RubyContinuation(runtime, stringOrSymbol(tag));
         try {
             context.pushCatch(rbContinuation.getContinuation());
-            return rbContinuation.enter(context, block);
+            return rbContinuation.enter(context, rbContinuation, block);
+        } finally {
+            context.popCatch();
+        }
+    }
+
+    @JRubyMethod(name = "catch", module = true, visibility = PRIVATE, compat = RUBY1_9)
+    public static IRubyObject rbCatch19(ThreadContext context, IRubyObject recv, Block block) {
+        IRubyObject tag = new RubyObject(context.runtime.getObject());
+        return rbCatch19Common(context, tag, block, true);
+    }
+
+    @JRubyMethod(name = "catch", module = true, visibility = PRIVATE, compat = RUBY1_9)
+    public static IRubyObject rbCatch19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
+        return rbCatch19Common(context, tag, block, false);
+    }
+
+    private static IRubyObject rbCatch19Common(ThreadContext context, IRubyObject tag, Block block, boolean yieldTag) {
+        RubyContinuation rbContinuation = new RubyContinuation(context.getRuntime(), tag);
+        try {
+            context.pushCatch(rbContinuation.getContinuation());
+            return rbContinuation.enter(context, yieldTag ? tag : rbContinuation, block);
         } finally {
             context.popCatch();
         }
@@ -1194,28 +1216,38 @@ public class RubyKernel {
 
     @JRubyMethod(name = "throw", module = true, visibility = PRIVATE, compat = RUBY1_8)
     public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        return rbThrowInternal(context, tag.asJavaString(), IRubyObject.NULL_ARRAY, block, uncaught18);
+        return rbThrowInternal(context, stringOrSymbol(tag), IRubyObject.NULL_ARRAY, block, uncaught18);
     }
 
     @JRubyMethod(name = "throw", module = true, visibility = PRIVATE, compat = RUBY1_8)
     public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject arg, Block block) {
-        return rbThrowInternal(context, tag.asJavaString(), new IRubyObject[] {arg}, block, uncaught18);
+        Ruby runtime = context.runtime;
+        if (!(tag instanceof RubySymbol)) throw runtime.newTypeError(tag, runtime.getSymbol());
+        return rbThrowInternal(context, stringOrSymbol(tag), new IRubyObject[] {arg}, block, uncaught18);
+    }
+
+    private static RubySymbol stringOrSymbol(IRubyObject obj) {
+        if (obj instanceof RubySymbol) {
+            return (RubySymbol)obj;
+        } else {
+            return RubySymbol.newSymbol(obj.getRuntime(), obj.asJavaString().intern());
+        }
     }
 
     @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
     public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        return rbThrowInternal(context, tag.asJavaString(), IRubyObject.NULL_ARRAY, block, uncaught19);
+        return rbThrowInternal(context, tag, IRubyObject.NULL_ARRAY, block, uncaught19);
     }
 
     @JRubyMethod(name = "throw", frame = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
     public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject arg, Block block) {
-        return rbThrowInternal(context, tag.asJavaString(), new IRubyObject[] {arg}, block, uncaught19);
+        return rbThrowInternal(context, tag, new IRubyObject[] {arg}, block, uncaught19);
     }
 
-    public static IRubyObject rbThrowInternal(ThreadContext context, String tag, IRubyObject[] args, Block block, Uncaught uncaught) {
+    public static IRubyObject rbThrowInternal(ThreadContext context, IRubyObject tag, IRubyObject[] args, Block block, Uncaught uncaught) {
         Ruby runtime = context.getRuntime();
 
-        RubyContinuation.Continuation continuation = context.getActiveCatch(tag.intern());
+        RubyContinuation.Continuation continuation = context.getActiveCatch(tag);
 
         if (continuation != null) {
             continuation.args = args;
@@ -1234,17 +1266,17 @@ public class RubyKernel {
     }
 
     private static abstract class Uncaught {
-        public abstract RaiseException uncaughtThrow(Ruby runtime, String message, String tag);
+        public abstract RaiseException uncaughtThrow(Ruby runtime, String message, IRubyObject tag);
     }
 
     private static final Uncaught uncaught18 = new Uncaught() {
-        public RaiseException uncaughtThrow(Ruby runtime, String message, String tag) {
-            return runtime.newNameError(message, tag);
+        public RaiseException uncaughtThrow(Ruby runtime, String message, IRubyObject tag) {
+            return runtime.newNameError(message, tag.toString());
         }
     };
 
     private static final Uncaught uncaught19 = new Uncaught() {
-        public RaiseException uncaughtThrow(Ruby runtime, String message, String tag) {
+        public RaiseException uncaughtThrow(Ruby runtime, String message, IRubyObject tag) {
             return runtime.newArgumentError(message);
         }
     };

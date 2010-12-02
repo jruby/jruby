@@ -394,7 +394,7 @@ public final class ThreadContext {
      * @param tag The interned string to search for
      * @return The continuation associated with this tag
      */
-    public Continuation getActiveCatch(String tag) {
+    public Continuation getActiveCatch(Object tag) {
         for (int i = catchIndex; i >= 0; i--) {
             Continuation c = catchStack[i];
             if (c.tag.equals(tag)) return c;
