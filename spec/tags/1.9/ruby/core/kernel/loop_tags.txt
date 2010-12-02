@@ -1,1 +1,0 @@
-fails:Kernel.loop returns an enumerator if no block given

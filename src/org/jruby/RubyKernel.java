@@ -1403,11 +1403,14 @@ public class RubyKernel {
 
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
+        if (context.runtime.is1_9() && !block.isGiven()) {
+            return RubyEnumerator.enumeratorize(context.runtime, recv, "loop");
+        }
         IRubyObject nil = context.getRuntime().getNil();
         RubyClass stopIteration = context.getRuntime().getStopIteration();
         try {
             while (true) {
-                block.yield(context, nil);
+                block.yieldSpecific(context);
 
                 context.pollThreadEvents();
             }
