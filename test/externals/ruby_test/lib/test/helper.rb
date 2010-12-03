@@ -218,15 +218,30 @@ module Test
                buf[12,2].unpack('S')[0],
                buf[14,2].unpack('S')[0]
             )
+         elsif defined?(JRUBY_VERSION)
+            require 'java'
+            cal = java.util.Calendar
+            obj = cal.get_instance(java.util.Locale::US)
+            array.push(
+               obj.get(cal::YEAR),
+               month_name[obj.get(cal::MONTH) + 1],
+               day_name[obj.get(cal::DAY_OF_WEEK) - 1],
+               obj.get(cal::DAY_OF_MONTH),
+               obj.get(cal::HOUR),
+               obj.get(cal::MINUTE),
+               obj.get(cal::SECOND),
+               0
+            )
          else
-            temp = `date +'%Y %b %a %d %H %M %S'`.chomp.split
-            temp.each_with_index{ |e, i|
-               if e =~ /[a-zA-Z]/i
-                  array[i] = e
-               else
-                  array[i] = e.to_i
-               end
-            }
+            backup, ENV["LC_ALL"] = ENV["LC_ALL"], "C"
+            begin
+               temp = `date +'%Y %b %a %d %H %M %S'`.chomp.split
+               temp.each_with_index{ |e, i|
+                  array[i] = e.index(/\d/) ? Integer(e) : e
+               }
+            ensure
+               ENV["LC_ALL"] = backup
+            end
             array.push(0) # No nanoseconds
          end
          array
