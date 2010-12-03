@@ -503,9 +503,9 @@ public class RubyKernel {
         return result;
     }
 
-    @JRubyMethod(name = "public_method", required = 1, module = true, visibility = PRIVATE, compat = RUBY1_9)
+    @JRubyMethod(name = "public_method",required = 1, module = true, compat = RUBY1_9)
     public static IRubyObject public_method(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
-        return recv.getMetaClass().newMethod(recv, symbol.asJavaString(), true, PUBLIC);
+        return recv.getMetaClass().newMethod(recv, symbol.asJavaString(), true, PUBLIC, true, false);
     }
 
     /** rb_f_putc

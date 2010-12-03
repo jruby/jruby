@@ -594,6 +594,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Does this object respond to the specified message via "method_missing?"
      */
     public final boolean respondsToMissing(String name) {
+        return respondsToMissing(name, true);
+    }
+
+    /**
+     * Does this object respond to the specified message via "method_missing?"
+     */
+    public final boolean respondsToMissing(String name, boolean priv) {
         DynamicMethod method = getMetaClass().searchMethod("respond_to_missing?");
         // perhaps should try a smart version as for respondsTo above?
         if(method.isUndefined()) {
@@ -605,7 +612,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                     metaClass,
                     "respond_to_missing?",
                     getRuntime().newSymbol(name),
-                    getRuntime().getTrue()).isTrue();
+                    getRuntime().newBoolean(priv)).isTrue();
         }
     }
 

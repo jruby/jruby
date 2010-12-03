@@ -161,6 +161,13 @@ public interface IRubyObject {
      * @return boolean
      */
     boolean respondsToMissing(String string);
+
+    /**
+     * RubyMethod respondsTo.
+     * @param string
+     * @return boolean
+     */
+    boolean respondsToMissing(String string, boolean priv);
     
     /**
      * RubyMethod getRuntime.

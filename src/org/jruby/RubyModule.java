@@ -1350,17 +1350,21 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound, Visibility visibility) {
-        return newMethod(receiver, name, bound, visibility, false);
+    public IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {
+        return newMethod(receiver, methodName, bound, visibility, false, true);
     }
 
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
+        return newMethod(receiver, methodName, bound, visibility, respondToMissing, true);
+    }
+
+    public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
         DynamicMethod method = searchMethod(methodName);
 
         if (method.isUndefined() ||
             (visibility != null && method.getVisibility() != visibility)) {
             if (respondToMissing) { // 1.9 behavior
-                if (receiver.respondsToMissing(methodName)) {
+                if (receiver.respondsToMissing(methodName, priv)) {
                     method = new JavaMethod.JavaMethodNBlock(this, PUBLIC) {
                         final CallSite site = new FunctionalCachingCallSite(methodName);
                         @Override

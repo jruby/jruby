@@ -1,2 +1,0 @@
-fails:Kernel#public_method returns a method object if we repond_to_missing? method
-fails:Kernel#public_method raises a NameError if we only repond_to_missing? method, true
