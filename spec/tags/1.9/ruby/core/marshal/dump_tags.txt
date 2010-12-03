@@ -1,21 +1,21 @@
-fails:Marshal.dump dumps an object having ivar
-fails:Marshal.dump dumps an extended_user_regexp having ivar
-fails:Marshal.dump dumps an extended_user_hash_default
-fails:Marshal.dump dumps an extended_user_hash with a parameter to initialize
-fails:Marshal.dump dumps an array containing objects having _dump method
-fails:Marshal.dump dumps an array containing objects having marshal_dump method
-fails:Marshal.dump dumps an array containing the same objects
-fails:Marshal.dump dumps an extended_array having ivar
-fails:Marshal.dump dumps an extended_struct having fields with same objects
-fails:Marshal.dump dumps a String empty
-fails:Marshal.dump dumps a String small
-fails:Marshal.dump dumps a String big
-fails:Marshal.dump dumps a String extended
-fails:Marshal.dump dumps a _dump object
-fails:Marshal.dump dumps a _dump object extended
-fails:Marshal.dump dumps a marshal_dump object
-fails:Marshal.dump dumps a Regexp
-fails:Marshal.dump dumps a Regexp subclass /i
-fails:Marshal.dump returns an untrusted string if object is untrusted
-fails:Marshal.dump returns an untrusted string if object is untrusted deep in nested structure
-fails:Marshal.dump dumps a Random
+fails(JRUBY-5233):Marshal.dump dumps an object having ivar
+fails(JRUBY-5233):Marshal.dump dumps an extended_user_regexp having ivar
+fails(JRUBY-5233):Marshal.dump dumps an extended_user_hash_default
+fails(JRUBY-5233):Marshal.dump dumps an extended_user_hash with a parameter to initialize
+fails(JRUBY-5233):Marshal.dump dumps an array containing objects having _dump method
+fails(JRUBY-5233):Marshal.dump dumps an array containing objects having marshal_dump method
+fails(JRUBY-5233):Marshal.dump dumps an array containing the same objects
+fails(JRUBY-5233):Marshal.dump dumps an extended_array having ivar
+fails(JRUBY-5233):Marshal.dump dumps an extended_struct having fields with same objects
+fails(JRUBY-5233):Marshal.dump dumps a String empty
+fails(JRUBY-5233):Marshal.dump dumps a String small
+fails(JRUBY-5233):Marshal.dump dumps a String big
+fails(JRUBY-5233):Marshal.dump dumps a String extended
+fails(JRUBY-5233):Marshal.dump dumps a _dump object
+fails(JRUBY-5233):Marshal.dump dumps a _dump object extended
+fails(JRUBY-5233):Marshal.dump dumps a marshal_dump object
+fails(JRUBY-5233):Marshal.dump dumps a Regexp
+fails(JRUBY-5233):Marshal.dump dumps a Regexp subclass /i
+fails(JRUBY-5233):Marshal.dump returns an untrusted string if object is untrusted
+fails(JRUBY-5233):Marshal.dump returns an untrusted string if object is untrusted deep in nested structure
+fails(JRUBY-5233):Marshal.dump dumps a Random
