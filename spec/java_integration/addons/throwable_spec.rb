@@ -17,7 +17,7 @@ describe "A Java Throwable" do
   
   it "implements to_s as message" do
     ex = java.lang.Exception.new
-    ex.to_s.should == nil
+    ex.to_s.should == ""
     ex.to_s.should == ex.message
     
     ex = java.lang.Exception.new('hello')
