@@ -109,6 +109,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return null;
     }
 
+    public void setEncoding(Encoding encoding) {
+        // :)
+    }
+
     private static boolean startsWithDriveLetterOnWindows(String path) {
         return (path != null)
             && Platform.IS_WINDOWS && 

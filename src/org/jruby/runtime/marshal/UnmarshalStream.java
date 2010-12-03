@@ -35,11 +35,16 @@ package org.jruby.runtime.marshal;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB.Entry;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
@@ -51,6 +56,7 @@ import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -329,7 +335,32 @@ public class UnmarshalStream extends InputStream {
 
         RubyClass cls = object.getMetaClass().getRealClass();
         for (int i = count; --i >= 0; ) {
-            String name = unmarshalObject().asJavaString();
+            IRubyObject key = unmarshalObject();
+            if (i == count - 1) { // first ivar
+                if (runtime.is1_9() && object instanceof RubyString && count >= 1) { // 1.9 string encoding
+                    RubyString strObj = (RubyString)object;
+
+                    if (key.asJavaString().equals("E")) {
+                        // special case for USASCII and UTF8
+                        if (unmarshalObject().isTrue()) {
+                            strObj.setEncoding(UTF8Encoding.INSTANCE);
+                        } else {
+                            strObj.setEncoding(USASCIIEncoding.INSTANCE);
+                        }
+                        continue;
+                    } else if (key.asJavaString().equals("encoding")) {
+                        ByteList encodingName = unmarshalString();
+                        Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName);
+                        if (entry == null) {
+                            throw runtime.newArgumentError("invalid encoding in marshaling stream: " + encodingName);
+                        }
+                        Encoding encoding = entry.getEncoding();
+                        strObj.setEncoding(encoding);
+                        continue;
+                    } // else fall through as normal ivar
+                }
+            }
+            String name = key.asJavaString();
             IRubyObject value = unmarshalObject();
 
             cls.getVariableAccessorForWrite(name).set(object, value);

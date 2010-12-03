@@ -155,6 +155,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return value.getEncoding();
     }
 
+    public void setEncoding(Encoding encoding) {
+        value.setEncoding(encoding);
+    }
+
     public void associateEncoding(Encoding enc) {
         if (value.getEncoding() != enc) {
             if (!isCodeRangeAsciiOnly() || !enc.isAsciiCompatible()) clearCodeRange();

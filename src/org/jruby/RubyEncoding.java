@@ -97,6 +97,10 @@ public class RubyEncoding extends RubyObject {
         return new RubyEncoding(runtime, name, isDummy);
     }
 
+    public static RubyEncoding newEncoding(Ruby runtime, Encoding encoding) {
+        return new RubyEncoding(runtime, encoding);
+    }
+
     public final Encoding getEncoding() {
         // TODO: make threadsafe
         if (encoding == null) encoding = getRuntime().getEncodingService().loadEncoding(name);
@@ -266,7 +270,7 @@ public class RubyEncoding extends RubyObject {
     }
 
     @JRubyMethod(name = "_dump")
-    public IRubyObject _dump(ThreadContext context) {
+    public IRubyObject _dump(ThreadContext context, IRubyObject arg) {
         return to_s(context);
     }
 

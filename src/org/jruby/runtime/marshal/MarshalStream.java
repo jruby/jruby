@@ -38,6 +38,10 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -52,6 +56,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.IncludedModuleWrapper;
+import org.jruby.RubyEncoding;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -76,6 +81,8 @@ public class MarshalStream extends FilterOutputStream {
     private final static char TYPE_USRMARSHAL = 'U';
     private final static char TYPE_USERDEF = 'u';
     private final static char TYPE_UCLASS = 'C';
+    private final static String SYMBOL_ENCODING_SPECIAL = "E";
+    private final static String SYMBOL_ENCODING = "encoding";
 
     public MarshalStream(Ruby runtime, OutputStream out, int depthLimit) throws IOException {
         super(out);
@@ -161,7 +168,12 @@ public class MarshalStream extends FilterOutputStream {
             int nativeTypeIndex = ((CoreObjectType)value).getNativeTypeIndex();
             
             if (nativeTypeIndex != ClassIndex.OBJECT) {
-                if (!value.isImmediate() && value.hasVariables() && nativeTypeIndex != ClassIndex.CLASS && nativeTypeIndex != ClassIndex.MODULE) {
+                if (shouldMarshalEncoding(value) || (
+                        !value.isImmediate()
+                        && value.hasVariables()
+                        && nativeTypeIndex != ClassIndex.CLASS
+                        && nativeTypeIndex != ClassIndex.MODULE
+                        )) {
                     // object has instance vars and isn't a class, get a snapshot to be marshalled
                     // and output the ivar header here
 
@@ -189,11 +201,21 @@ public class MarshalStream extends FilterOutputStream {
         return variables;
     }
 
+    private boolean shouldMarshalEncoding(IRubyObject value) {
+        return runtime.is1_9()
+                && value.getMetaClass() == runtime.getString()
+                && ((RubyString)value).getEncoding() != ASCIIEncoding.INSTANCE;
+    }
+
     private void writeDirectly(IRubyObject value) throws IOException {
         List<Variable<Object>> variables = getVariables(value);
         writeObjectData(value);
         if (variables != null) {
-            dumpVariables(variables);
+            if (runtime.is1_9()) {
+                dumpVariablesWithEncoding(variables, value);
+            } else {
+                dumpVariables(variables);
+            }
         }
     }
 
@@ -365,13 +387,43 @@ public class MarshalStream extends FilterOutputStream {
         writeAndRegisterSymbol(type.getName());
     }
     
+    public void dumpVariablesWithEncoding(List<Variable<Object>> vars, IRubyObject obj) throws IOException {
+        if (shouldMarshalEncoding(obj)) {
+            writeInt(vars.size() + 1); // vars preceded by encoding
+            writeEncoding(((RubyString)obj).getEncoding());
+        } else {
+            writeInt(vars.size());
+        }
+        
+        dumpVariablesShared(vars);
+    }
+
     public void dumpVariables(List<Variable<Object>> vars) throws IOException {
         writeInt(vars.size());
+        dumpVariablesShared(vars);
+    }
+
+    private void dumpVariablesShared(List<Variable<Object>> vars) throws IOException {
         for (Variable<Object> var : vars) {
             if (var.getValue() instanceof IRubyObject) {
                 writeAndRegisterSymbol(var.getName());
                 dumpObject((IRubyObject)var.getValue());
             }
+        }
+    }
+
+    public void writeEncoding(Encoding encoding) throws IOException {
+        if (encoding == null || encoding == USASCIIEncoding.INSTANCE) {
+            writeAndRegisterSymbol(SYMBOL_ENCODING_SPECIAL);
+            writeObjectData(runtime.getFalse());
+        } else if (encoding == UTF8Encoding.INSTANCE) {
+            writeAndRegisterSymbol(SYMBOL_ENCODING_SPECIAL);
+            writeObjectData(runtime.getTrue());
+        } else {
+            writeAndRegisterSymbol(SYMBOL_ENCODING);
+            byte[] name = encoding.getName();
+            write('"');
+            writeString(new ByteList(name, false));
         }
     }
     
