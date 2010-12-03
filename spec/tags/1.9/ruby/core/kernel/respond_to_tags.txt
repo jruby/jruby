@@ -1,1 +1,0 @@
-fails:Kernel#respond_to? returns false for a method which exists but is unimplemented
