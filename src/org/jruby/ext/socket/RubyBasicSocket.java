@@ -629,11 +629,12 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
-        SocketAddress sock = getLocalSocket(caller);
+        InetSocketAddress sock = getLocalSocket(caller);
         if(null == sock) {
             return RubySocket.pack_sockaddr_in(context, null, 0, "0.0.0.0");
+        } else {
+            return RubySocket.pack_sockaddr_in(context, null, sock.getPort(), sock.getAddress().getHostAddress());
         }
-        return context.getRuntime().newString(sock.toString());
     }
 
     @Deprecated
