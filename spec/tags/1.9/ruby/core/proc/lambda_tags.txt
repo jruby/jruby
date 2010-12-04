@@ -1,1 +1,0 @@
-fails:Proc#lambda? returns true if the object was created with Proc#curry

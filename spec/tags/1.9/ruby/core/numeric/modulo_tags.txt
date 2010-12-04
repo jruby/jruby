@@ -1,1 +1,0 @@
-fails:Numeric#modulo returns the result of self#- (self#/ other) * other

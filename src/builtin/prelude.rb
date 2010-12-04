@@ -39,3 +39,36 @@ module Kernel
     require absolute_feature
   end
 end
+
+class Proc
+  def curry(arity = nil)
+    if arity && lambda? && arity != self.arity
+      raise ArgumentError, "wrong number of arguments (#{arity} for #{self.arity}"
+    else
+      arity = self.arity
+    end
+
+    make_curry_proc(self, [], arity)
+  end
+
+  private
+  def make_curry_proc(proc, passed, arity)
+    passed.freeze
+    proc_or_lambda(proc.lambda?) do |*args|
+      newpassed = passed + args
+      if newpassed.length == arity
+        call(*newpassed)
+      else
+        make_curry_proc(proc, newpassed, arity)
+      end
+    end
+  end
+
+  def proc_or_lambda(bool, &block)
+    if bool
+      lambda &block
+    else
+      proc &block
+    end
+  end
+end
