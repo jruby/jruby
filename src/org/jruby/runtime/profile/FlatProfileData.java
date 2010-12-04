@@ -21,6 +21,14 @@ import org.jruby.runtime.ThreadContext;
  */
 public class FlatProfileData implements IProfileData {
 
+    private long[] profileSelfTimes = new long[0];
+    private long[] profileAggregateTimes = new long[0];
+    private long[] profileAggregateStarts = new long[0];
+    private int[] profileCounts = new int[0];
+    private int[] profileRecursions = new int[0];
+    private int current;
+    private long lastTime = 0;
+    
     private static final int SERIAL_OFFSET = 0;
     private static final int SELFTIME_OFFSET = 1;
     private static final int COUNT_OFFSET = 2;
@@ -46,8 +54,8 @@ public class FlatProfileData implements IProfileData {
      * @param nextMethod the serial number of the next method to profile
      * @return the serial number of the previous method being profiled
      */
-    public int profileExit(int nextMethod) {
-		//System.out.printf("profileExit:%d\n", nextMethod);
+    public int profileExit(int nextMethod, long startTime) {
+    //System.out.printf("profileExit:%d\n", nextMethod);
         ensureProfileSize(Math.max(current, nextMethod));
         return aggregateProfileTime(nextMethod, false);
     }
@@ -184,11 +192,4 @@ public class FlatProfileData implements IProfileData {
             return module.getName() + "#" + name;
         }
     }
-    private long[] profileSelfTimes = new long[0];
-    private long[] profileAggregateTimes = new long[0];
-    private long[] profileAggregateStarts = new long[0];
-    private int[] profileCounts = new int[0];
-    private int[] profileRecursions = new int[0];
-    private int current;
-    private long lastTime = 0;
 }

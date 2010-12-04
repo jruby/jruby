@@ -19,9 +19,10 @@ public interface IProfileData {
      * Fall back to previously profiled method after current method has returned.
      *
      * @param nextMethod the serial number of the next method to profile
+     * @param startTime the nanotime when this invocation began
      * @return the serial number of the previous method being profiled
      */
-	public int profileExit(int nextMethod);
+	public int profileExit(int nextMethod, long startTime);
 
 	/**
      * Print the profile data for a given thread (context).

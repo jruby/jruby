@@ -1513,7 +1513,7 @@ public final class ThreadContext {
         return getProfileData().profileEnter(nextMethod);
     }
 
-    public int profileExit(int nextMethod) {
-        return getProfileData().profileExit(nextMethod);
+    public int profileExit(int nextMethod, long startTime) {
+        return getProfileData().profileExit(nextMethod, startTime);
     }
 }
