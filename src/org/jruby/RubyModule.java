@@ -2533,7 +2533,7 @@ public class RubyModule extends RubyObject {
     public RubyArray constants(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         RubyArray array = runtime.newArray();
-        Collection<String> constantNames = constantsCommon(runtime, true);
+        Collection<String> constantNames = constantsCommon(runtime, true, true);
         array.addAll(constantNames);
         
         return array;
@@ -2541,19 +2541,19 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "constants", compat = RUBY1_9)
     public RubyArray constants19(ThreadContext context) {
-        return constantsCommon19(context, true);
+        return constantsCommon19(context, true, true);
     }
 
     @JRubyMethod(name = "constants", compat = RUBY1_9)
     public RubyArray constants19(ThreadContext context, IRubyObject allConstants) {
-        return constantsCommon19(context, allConstants.isTrue());
+        return constantsCommon19(context, false, allConstants.isTrue());
     }
     
-    public RubyArray constantsCommon19(ThreadContext context, boolean allConstants) {
+    public RubyArray constantsCommon19(ThreadContext context, boolean replaceModule, boolean allConstants) {
         Ruby runtime = context.getRuntime();
         RubyArray array = runtime.newArray();
         
-        Collection<String> constantNames = constantsCommon(runtime, allConstants);
+        Collection<String> constantNames = constantsCommon(runtime, replaceModule, allConstants);
         
         for (String name : constantNames) {
             array.add(runtime.newSymbol(name));
@@ -2564,12 +2564,12 @@ public class RubyModule extends RubyObject {
     /** rb_mod_constants
      *
      */
-    public Collection<String> constantsCommon(Ruby runtime, boolean allConstants) {        
+    public Collection<String> constantsCommon(Ruby runtime, boolean replaceModule, boolean allConstants) {
         RubyModule objectClass = runtime.getObject();
 
         Collection<String> constantNames = new HashSet<String>();
         if (allConstants) {
-            if (getRuntime().getModule() == this || objectClass == this) {
+            if ((replaceModule && runtime.getModule() == this) || objectClass == this) {
                 constantNames = objectClass.getConstantNames();
             } else {
                 Set<String> names = new HashSet<String>();
@@ -2579,7 +2579,7 @@ public class RubyModule extends RubyObject {
                 constantNames = names;
             }
         } else {
-            if (runtime.getModule() == this || objectClass == this) {
+            if ((replaceModule && runtime.getModule() == this) || objectClass == this) {
                 constantNames = objectClass.getConstantNames();
             } else {
                 constantNames = getConstantNames();
