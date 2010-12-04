@@ -237,7 +237,8 @@ public class Interpreter {
                 context.popFrame();
                 interp.setFrame(null);
             }
-            context.postMethodScopeOnly();
+            if (interp.hasAllocatedDynamicScope()) 
+                context.postMethodScopeOnly();
         }
     }
 
@@ -291,7 +292,8 @@ public class Interpreter {
                 context.popFrame();
                 interp.setFrame(null);
             }
-            context.postMethodScopeOnly();
+            if (interp.hasAllocatedDynamicScope()) 
+                context.postMethodScopeOnly();
         }
     }
 }

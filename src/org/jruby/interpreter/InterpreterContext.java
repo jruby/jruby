@@ -2,9 +2,13 @@ package org.jruby.interpreter;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import org.jruby.compiler.ir.IRMethod;
+
 
 /**
  * Meant as a simple interface for all the various methods we will want
@@ -37,8 +41,12 @@ public interface InterpreterContext {
     public Object getRenamedVariable(int offset);
     public Object setRenamedVariable(int offset, Object value);
 
-    public Object getFrameVariable(Object frame, String name);
-    public void setFrameVariable(Object frame, String name, Object value);
+    public void setDynamicScope(DynamicScope s);
+    public void allocateSharedBindingScope(IRMethod method);
+    public DynamicScope getSharedBindingScope();
+    public boolean hasAllocatedDynamicScope();
+    public Object getSharedBindingVariable(IRMethod irMethod, String varName);
+    public void setSharedBindingVariable(IRMethod irMethod, String varName, Object value);
 
     public Block getBlock();
     public void setBlock(Block block);

@@ -19,7 +19,7 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class AllocateFrameInstr extends Instr {
-    IRExecutionScope scope;   // Scope for which frame is needed
+    IRMethod scope;   // Scope for which frame is needed
 
     public AllocateFrameInstr(IRExecutionScope scope) {
         super(Operation.ALLOC_FRAME);
@@ -62,10 +62,10 @@ public class AllocateFrameInstr extends Instr {
             implementationClass = interp.getRuntime().getObject();
         }
 
-        interp.getContext().preMethodFrameAndScope(implementationClass, null, self,
-                interp.getBlock(), scope.getStaticScope());
+        interp.allocateSharedBindingScope(scope);
+//        interp.getContext().preMethodFrameAndScope(implementationClass, null, self, interp.getBlock(), scope.getStaticScope());
 //        interp.getContext().pushFrame();
-        interp.setFrame(interp.getContext().getCurrentFrame());
+//        interp.setFrame(interp.getContext().getCurrentFrame());
         return null;
     }
 }

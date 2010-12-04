@@ -15,6 +15,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class StoreToFrameInstr extends PutInstr {
     public StoreToFrameInstr(IRExecutionScope scope, String slotName, Operand value) {
         super(Operation.FRAME_STORE, MetaObject.create(getClosestMethodAncestor(scope)), slotName, value);
+
+        MetaObject mo = (MetaObject)getTarget();
+        IRMethod m = (IRMethod)mo.scope;
+        m.recordBindingVariable(slotName);
     }
 
     private static IRMethod getClosestMethodAncestor(IRExecutionScope scope) {
@@ -47,7 +51,7 @@ public class StoreToFrameInstr extends PutInstr {
         assert var instanceof LocalVariable;
 
         String name = ((LocalVariable) var).getName();
-        interp.setFrameVariable(getIRScope(getTarget()), name, interp.getLocalVariable(name));
+        interp.setSharedBindingVariable((IRMethod)getIRScope(getTarget()), name, interp.getLocalVariable(name));
         return null;
     }
 }

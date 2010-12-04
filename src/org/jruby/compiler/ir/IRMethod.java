@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir;
 
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -26,12 +27,19 @@ public class IRMethod extends IRExecutionScope {
     // Call parameters
     private List<Operand> callArgs;
 
+    // Local variables (their names) are mapped a slot in a binding shared across all call sites encountered in this method's lexical scope
+    // (including all nested closures)
+    int nextAvailableSlot;
+    Map<String, Integer> bindingSlotMap;
+
     public IRMethod(IRScope lexicalParent, Operand container, String name, boolean isInstanceMethod, StaticScope staticScope) {
         super(lexicalParent, container, name, staticScope);
         this.isInstanceMethod = isInstanceMethod;
         startLabel = getNewLabel("_METH_START");
         endLabel = getNewLabel("_METH_END");
         callArgs = new ArrayList<Operand>();
+        bindingSlotMap = new java.util.HashMap<String, Integer>();
+        nextAvailableSlot = 0;
         updateVersion();
     }
 
@@ -101,5 +109,20 @@ public class IRMethod extends IRExecutionScope {
         this.restArg = -1;
 
         return newScope;
+    }
+
+    public void recordBindingVariable(String varName) {
+        if (bindingSlotMap.get(varName) == null) {
+            bindingSlotMap.put(varName, nextAvailableSlot);
+            nextAvailableSlot++;
+        }
+    }
+
+    public Integer getBindingSlot(String varName) {
+        return bindingSlotMap.get(varName);
+    }
+
+    public int getBindingSlotsCount() {
+        return nextAvailableSlot;
     }
 }

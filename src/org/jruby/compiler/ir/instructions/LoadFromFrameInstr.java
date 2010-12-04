@@ -29,6 +29,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class LoadFromFrameInstr extends GetInstr {
     public LoadFromFrameInstr(Variable v, IRExecutionScope scope, String slotName) {
         super(Operation.FRAME_LOAD, v, MetaObject.create(getClosestMethodAncestor(scope)), slotName);
+
+		  MetaObject mo = (MetaObject)getSource();
+		  IRMethod m = (IRMethod)mo.scope;
+		  m.recordBindingVariable(slotName);
     }
 
     private static IRMethod getClosestMethodAncestor(IRExecutionScope scope) {
@@ -60,7 +64,7 @@ public class LoadFromFrameInstr extends GetInstr {
         Operand var = getResult();
         assert var instanceof LocalVariable;
         String name = ((LocalVariable) var).getName();
-        interp.setLocalVariable(name, interp.getFrameVariable(getIRScope(getSource()), name));
+        interp.setLocalVariable(name, interp.getSharedBindingVariable((IRMethod)getIRScope(getSource()), name));
         return null;
     }
 }
