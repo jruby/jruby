@@ -1,1 +1,0 @@
-fails(JRUBY-3151):OpenSSL::Random#pseudo_bytes raises ArgumentError on negative arguments

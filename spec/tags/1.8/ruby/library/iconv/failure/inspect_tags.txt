@@ -1,1 +1,0 @@
-fails(JRUBY-2543):Iconv::Failure#inspect includes information on the exception class name, #succes and #failed

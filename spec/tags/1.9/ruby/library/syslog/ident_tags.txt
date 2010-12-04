@@ -1,3 +1,0 @@
-fails:Syslog.ident returns the logging identity
-fails:Syslog.ident returns nil if the log is closed
-fails:Syslog.ident defaults to $0

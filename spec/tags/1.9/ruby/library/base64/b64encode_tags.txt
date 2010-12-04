@@ -1,4 +1,0 @@
-fails:Base64#b64encode returns the Base64-encoded version of the given string with a newline at 60 characters
-fails:Base64#b64encode prints the Base64-encoded version of the given string with a newline after 60 characters
-fails:Base64#b64encode with length returns the Base64-encoded version of the given string with a newline at 60 characters
-fails:Base64#b64encode with length prints the Base64-encoded version of the given stringwith a newline after length characters

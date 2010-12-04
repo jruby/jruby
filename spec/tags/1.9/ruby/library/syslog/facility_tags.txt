@@ -1,2 +1,1 @@
 fails:Syslog.facility returns nil if the log is closed
-fails:Syslog.facility resets after each open call

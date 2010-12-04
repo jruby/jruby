@@ -1,1 +1,0 @@
-fails:StringScanner#getch is multi-byte character sensitive
