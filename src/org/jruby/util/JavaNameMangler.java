@@ -7,8 +7,13 @@ package org.jruby.util;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.util.CheckClassAdapter;
 
 /**
  *
@@ -219,8 +224,21 @@ public class JavaNameMangler {
         return builder.toString();
     }
 
-    public static String unmangleMethodName(String name) {
-        return name.replaceAll("\\", "/");
+    /**
+     * We extend CheckClassAdapter to demangle method names before verifying them,
+     * since as of ASM 3.2 it does not allow the above mangling (though this
+     * mangling should be accepted by JVMs 1.5 and higher).
+     */
+    public static class JRubyCheckClassAdapter extends CheckClassAdapter {
+        public JRubyCheckClassAdapter(ClassVisitor cv) {
+            super(cv);
+        }
+        public JRubyCheckClassAdapter(ClassVisitor cv, boolean b) {
+            super(cv, b);
+        }
+        public MethodVisitor visitMethod(int i, String string, String string1, String string2, String[] strings) {
+            return super.visitMethod(i, demangleMethodName(string), string1, string2, strings);
+        }
     }
 
     private static int escapeChar(char character) {

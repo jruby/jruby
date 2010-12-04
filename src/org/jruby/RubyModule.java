@@ -93,6 +93,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -1358,6 +1359,28 @@ public class RubyModule extends RubyObject {
         return newMethod(receiver, methodName, bound, visibility, respondToMissing, true);
     }
 
+    public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
+        final CallSite site;
+        public RespondToMissingMethod(RubyModule implClass, Visibility vis, String methodName) {
+            super(implClass, vis);
+
+            site = new FunctionalCachingCallSite(methodName);
+        }
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            return site.call(context, self, self, args, block);
+        }
+
+        public boolean equals(Object other) {
+            if (!(other instanceof RespondToMissingMethod)) return false;
+
+            RespondToMissingMethod rtmm = (RespondToMissingMethod)other;
+
+            return this.site.methodName.equals(rtmm.site.methodName) &&
+                    getImplementationClass() == rtmm.getImplementationClass();
+        }
+    }
+
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
         DynamicMethod method = searchMethod(methodName);
 
@@ -1365,13 +1388,7 @@ public class RubyModule extends RubyObject {
             (visibility != null && method.getVisibility() != visibility)) {
             if (respondToMissing) { // 1.9 behavior
                 if (receiver.respondsToMissing(methodName, priv)) {
-                    method = new JavaMethod.JavaMethodNBlock(this, PUBLIC) {
-                        final CallSite site = new FunctionalCachingCallSite(methodName);
-                        @Override
-                        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                            return site.call(context, self, self, args, block);
-                        }
-                    };
+                    method = new RespondToMissingMethod(this, PUBLIC, methodName);
                 } else {
                     throw getRuntime().newNameError("undefined method `" + methodName +
                         "' for class `" + this.getName() + "'", methodName);
