@@ -70,6 +70,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
+import org.jruby.util.TypeConverter;
 
 /**
  *  1.9 rational.c as of revision: 20011
@@ -383,6 +384,8 @@ public class RubyRational extends RubyNumeric {
             a1 = f_to_r(context, a1);
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, a1);
+        } else {
+            a1 = f_to_r(context, a1);
         }
         
         if (a2 instanceof RubyFloat) {
