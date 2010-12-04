@@ -1,1 +1,0 @@
-fails:String#each_codepoint round-trips to the original String using Integer#chr
