@@ -832,7 +832,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         original.copySpecialInstanceVariables(clone);
 
         if (original.hasVariables()) clone.syncVariables(original.getVariableList());
-        if (original instanceof RubyModule) ((RubyModule) clone).syncConstants((RubyModule) original);
+        if (original instanceof RubyModule) {
+            RubyModule cloneMod = (RubyModule)clone;
+            cloneMod.syncConstants((RubyModule)original);
+            cloneMod.syncClassVariables((RubyModule)original);
+        }
 
         /* FIXME: finalizer should be dupped here */
         clone.callMethod(clone.getRuntime().getCurrentContext(), "initialize_copy", original);

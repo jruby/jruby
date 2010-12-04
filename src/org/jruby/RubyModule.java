@@ -1573,6 +1573,12 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    public void syncClassVariables(RubyModule other) {
+        if (other.getClassVariablesForRead() != Collections.EMPTY_MAP) {
+            getClassVariables().putAll(other.getClassVariablesForRead());
+        }
+    }
+
     /** rb_mod_included_modules
      *
      */
