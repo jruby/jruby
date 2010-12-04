@@ -56,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.ConvertBytes;
+import static org.jruby.CompatVersion.*;
 
 /**
  * Base class for all numerical types in ruby.
@@ -605,21 +606,37 @@ public class RubyNumeric extends RubyObject {
     /** num_div
      * 
      */
-    @JRubyMethod(name = "div")
+    @JRubyMethod(name = "div", compat = RUBY1_8)
     public IRubyObject div(ThreadContext context, IRubyObject other) {
-        return callMethod(context, "/", other).callMethod(context, "floor", other);
+        return callMethod(context, "/", other).convertToFloat().floor();
+    }
+
+    /** num_div
+     *
+     */
+    @JRubyMethod(name = "div", compat = RUBY1_9)
+    public IRubyObject div19(ThreadContext context, IRubyObject other) {
+        return callMethod(context, "/", other).callMethod(context, "floor");
     }
 
     /** num_divmod
      * 
      */
-    @JRubyMethod(name = "divmod")
+    @JRubyMethod(name = "divmod", compat = RUBY1_8)
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         return RubyArray.newArray(getRuntime(), div(context, other), modulo(context, other));
     }
+
+    /** num_divmod
+     *
+     */
+    @JRubyMethod(name = "divmod", compat = RUBY1_9)
+    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
+        return RubyArray.newArray(getRuntime(), div(context, other), modulo19(context, other));
+    }
     
     /** num_fdiv (1.9) */
-    @JRubyMethod(name = "fdiv", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "fdiv", compat = RUBY1_9)
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
         return RuntimeHelpers.invoke(context, this.convertToFloat(), "/", other);
     }
@@ -627,9 +644,17 @@ public class RubyNumeric extends RubyObject {
     /** num_modulo
      *
      */
-    @JRubyMethod(name = "modulo")
+    @JRubyMethod(name = "modulo", compat = RUBY1_8)
     public IRubyObject modulo(ThreadContext context, IRubyObject other) {
         return callMethod(context, "%", other);
+    }
+
+    /** num_modulo
+     *
+     */
+    @JRubyMethod(name = "modulo", compat = RUBY1_9)
+    public IRubyObject modulo19(ThreadContext context, IRubyObject other) {
+        return callMethod(context, "-", other.callMethod(context, "*", callMethod(context, "div", other)));
     }
 
     /** num_remainder
