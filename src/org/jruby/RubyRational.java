@@ -385,7 +385,9 @@ public class RubyRational extends RubyNumeric {
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, a1);
         } else {
-            a1 = f_to_r(context, a1);
+            if (a1.respondsTo("to_r")) {
+                a1 = f_to_r(context, a1);
+            }
         }
         
         if (a2 instanceof RubyFloat) {
