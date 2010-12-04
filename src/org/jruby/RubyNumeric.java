@@ -607,7 +607,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "div")
     public IRubyObject div(ThreadContext context, IRubyObject other) {
-        return callMethod(context, "/", other).convertToFloat().floor();
+        return callMethod(context, "/", other).callMethod(context, "floor", other);
     }
 
     /** num_divmod
