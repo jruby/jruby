@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Set;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -19,9 +20,8 @@ import org.jruby.runtime.ThreadContext;
  */
 public class GraphProfileData implements IProfileData {
 
-    private HashMap methods = new HashMap<Integer, GraphMethodData>();
-
-    private int currentMethod = 0;
+    private Invocation currentInvocation = new Invocation(0);
+    private Invocation topInvocation     = currentInvocation;
     private long sinceTime = 0;
     
     /**
@@ -32,21 +32,16 @@ public class GraphProfileData implements IProfileData {
      * @return the serial number of the previous method being profiled
      */
     public int profileEnter(int calledMethod) {
-        int callingMethod = currentMethod;
-        long now          = System.nanoTime();
+        Invocation parentInvocation = currentInvocation;
+        long now                    = System.nanoTime();
         
-        GraphMethodData calledMethodData = getMethodData(calledMethod);
-        calledMethodData.recursiveDepth++;
-        calledMethodData.callCount++;
-        calledMethodData.incCaller(callingMethod);
+        Invocation childInvocation = currentInvocation.childInvocationFor(calledMethod);
         
-        GraphMethodData callingMethodData = getMethodData(callingMethod);
-        callingMethodData.incCallee(calledMethod);
-        callingMethodData.selfTime += (now - sinceTime)/1000;
-
-        currentMethod = calledMethod;
-        sinceTime     = now;
-        return callingMethod;
+        childInvocation.count++;
+        
+        currentInvocation = childInvocation;
+        sinceTime         = now;
+        return parentInvocation.methodSerialNumber;
     }
     
     /**
@@ -56,66 +51,141 @@ public class GraphProfileData implements IProfileData {
      * @return the serial number of the previous method being profiled
      */
     public int profileExit(int callingMethod, long startTime) {
-        int calledMethod = currentMethod;
-        
-        long now      = System.nanoTime();
-        long duration = (now - startTime)/1000;
-        
-        GraphMethodData callingMethodData = getMethodData(callingMethod);
-        callingMethodData.addCalleeTime(calledMethod, duration);
-        
-        GraphMethodData calledMethodData = getMethodData(calledMethod);
-        calledMethodData.recursiveDepth--;
-        if (calledMethodData.recursiveDepth == 0) {
-            calledMethodData.totalTime += duration;
-        }
-        calledMethodData.addCallerTime(callingMethod, duration);
-        calledMethodData.selfTime += (now - sinceTime)/1000;
-        
-        currentMethod = callingMethod;
-        sinceTime     = now;
-        return calledMethod;
-    }
+        long now         = System.nanoTime();
 
-    public void printProfile(ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out) {
-        out.println("    #            calls             self        aggregate  method");
-        out.println("----------------------------------------------------------------");
+        long duration = now - startTime;
         
-        Set<Integer> methodSerialNumbers = methods.keySet();
-        for (int serialNumber : methodSerialNumbers) {
-            if (serialNumber != 0) {
-                String name                = profiledNames[serialNumber];
-                DynamicMethod method       = profiledMethods[serialNumber];
-                GraphMethodData methodData = getMethodData(serialNumber);
-                String displayName         = moduleHashMethod(method.getImplementationClass(), name);
-                
-                out.printf("%s, serial: %d, count: %d, time: %d, self: %d\n", displayName, serialNumber, methodData.callCount, methodData.totalTime, methodData.selfTime);
-                out.println("  callers:");
-                Set<Integer> callerSerials = methodData.callerMethodCounts.keySet();
-                for (int i : callerSerials) {
-                    if (i != 0) {
-                        String n          = profiledNames[i];
-                        DynamicMethod m   = profiledMethods[i];
-                        String dp         = moduleHashMethod(m.getImplementationClass(), n);
-                        int count         = (Integer) methodData.callerMethodCounts.get(i);
-                        long time         = (Long) methodData.callerMethodTimes.get(i);
-                        out.printf("    %s, count: %d, time: %d\n", dp, count, time);
-                    }
-                }
-                
-                out.println("  callees:");
-                Set<Integer> calleeSerials = methodData.calleeMethodCounts.keySet();
-                for (int i : calleeSerials) {
-                    if (i != 0) {
-                        String n          = profiledNames[i];
-                        DynamicMethod m   = profiledMethods[i];
-                        String dp         = moduleHashMethod(m.getImplementationClass(), n);
-                        int count         = (Integer) methodData.calleeMethodCounts.get(i);
-                        long time         = (Long) methodData.calleeMethodTimes.get(i);
-                        out.printf("    %s, count: %d, time: %d\n", dp, count, time);
-                    }
+        currentInvocation.duration += duration;
+        
+        int previousMethod = currentInvocation.methodSerialNumber;
+        currentInvocation = currentInvocation.parent;
+        sinceTime     = now;
+        return previousMethod;
+    }
+    
+    public long _totalTime = -1;
+    public long totalTime() {
+        if (_totalTime == -1)
+            _totalTime = topInvocation.childTime();
+        return _totalTime;
+    }
+    
+    public void printProfile(ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out) {
+        topInvocation.duration = totalTime();
+        out.println(" %total   %self     total      self    children               calls   Name");
+        
+        HashMap<Integer, MethodData> methods = methodData();
+        
+        for (MethodData data : methods.values()) {
+        out.println("--------------------------------------------------------------------------");
+            int serial = data.serialNumber;
+            
+            int[] parentSerials = data.parents();
+            if (parentSerials.length > 0) {
+                for (int parentSerial : parentSerials) {
+                    String callerName = methodName(profiledNames, profiledMethods, parentSerial);
+                    InvocationSet invs = data.invocationsFromParent(parentSerial);
+                    out.print("                 ");
+                    pad(out, 10, nanoString(invs.totalTime()));
+                    out.print("  ");
+                    pad(out, 10, nanoString(invs.selfTime()));
+                    out.print("  ");
+                    pad(out, 10, nanoString(invs.childTime()));
+                    out.print("  ");
+                    pad(out, 10, Integer.toString(invs.totalCount()));
+                    out.print("  ");
+                    pad(out, 10, callerName);
+                    out.println("");
                 }
             }
+            int[] childSerials = data.children();
+
+            String displayName = methodName(profiledNames, profiledMethods, serial);
+            pad(out, 4, Long.toString(data.totalTime()*100/totalTime()));
+            out.print("%  ");
+            pad(out, 4, Long.toString(data.selfTime()*100/totalTime()));
+            out.print("%     ");
+            pad(out, 10, nanoString(data.totalTime()));
+            out.print("  ");
+            pad(out, 10, nanoString(data.selfTime()));
+            out.print("  ");
+            pad(out, 10, nanoString(data.childTime()));
+            out.print("  ");
+            pad(out, 10, Integer.toString(data.calls()));
+            out.print("  ");
+            pad(out, 10, displayName);
+            out.println("");
+            
+            if (childSerials.length > 0) {
+                for (int childSerial : childSerials) {
+                    String callerName = methodName(profiledNames, profiledMethods, childSerial);
+                    InvocationSet invs = data.invocationsOfChild(childSerial);
+                    out.print("                 ");
+                    pad(out, 10, nanoString(invs.totalTime()));
+                    out.print("  ");
+                    pad(out, 10, nanoString(invs.selfTime()));
+                    out.print("  ");
+                    pad(out, 10, nanoString(invs.childTime()));
+                    out.print("  ");
+                    pad(out, 10, Integer.toString(invs.totalCount()));
+                    out.print("  ");
+                    pad(out, 10, callerName);
+                    out.println("");
+                }
+            }
+        }
+    }
+    
+    private void pad(PrintStream out, int size, String body) {
+        pad(out, size, body, true);
+    }
+
+    private void pad(PrintStream out, int size, String body, boolean front) {
+        if (front) {
+            for (int i = 0; i < size - body.length(); i++) {
+                out.print(' ');
+            }
+        }
+        out.print(body);
+        if (!front) {
+            for (int i = 0; i < size - body.length(); i++) {
+                out.print(' ');
+            }
+        }
+    }
+
+    private String nanoString(long nanoTime) {
+        return Double.toString((double) nanoTime / 1.0E9) + 's';
+    }
+
+    private String methodName(String[] profiledNames, DynamicMethod[] profiledMethods, int serial) {
+        if (serial == 0) {
+            return "#top";
+        }
+        String name = profiledNames[serial];
+        DynamicMethod method = profiledMethods[serial];
+        return moduleHashMethod(method.getImplementationClass(), name);
+    }
+    
+    private HashMap<Integer, MethodData> methodData() {
+        HashMap<Integer, MethodData> methods = new HashMap<Integer, MethodData>();
+        MethodData data = new MethodData(0);
+        methods.put(0, data);
+        data.invocations.add(topInvocation);
+        methodData1(methods, topInvocation);
+        return methods;
+    }
+        
+    private void methodData1(HashMap<Integer, MethodData> methods, Invocation inv) {
+        for (int serial : inv.children.keySet()) {
+            Invocation child = inv.children.get(serial);
+            MethodData data = methods.get(child.methodSerialNumber);
+            if (data == null) {
+                data = new MethodData(child.methodSerialNumber);
+                methods.put(child.methodSerialNumber, data);
+            }
+            data.invocations.add(child);
+            methodData1(methods, child);
         }
     }
     
@@ -127,13 +197,4 @@ public class GraphProfileData implements IProfileData {
         }
     }
     
-    private GraphMethodData getMethodData(int method) {
-        GraphMethodData methodData = (GraphMethodData) methods.get(method);
-        if (methodData == null) {
-            methodData = new GraphMethodData();
-            methods.put(method, methodData);
-        }
-        return methodData;
-    }
-
 }
