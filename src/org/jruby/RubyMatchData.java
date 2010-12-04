@@ -51,6 +51,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import static org.jruby.CompatVersion.*;
 
 /**
  * @author olabini
@@ -573,5 +574,24 @@ public class RubyMatchData extends RubyObject {
         regs = origMatchData.regs;
 
         return this;
+    }
+
+    public boolean equals(Object other) {
+        if (!(other instanceof RubyMatchData)) return false;
+
+        RubyMatchData match = (RubyMatchData)other;
+
+        return (this.str == match.str || (this.str != null && this.str.equals(match.str))) &&
+                (this.regexp == match.regexp || (this.regexp != null && this.regexp.equals(match.regexp))) &&
+                (this.charOffsets == match.charOffsets || (this.charOffsets != null && this.charOffsets.equals(match.charOffsets))) &&
+                this.begin == match.begin &&
+                this.end == match.end &&
+                this.charOffsetUpdated == match.charOffsetUpdated;
+    }
+
+    @JRubyMethod(name = {"eql?", "=="}, required = 1, compat = RUBY1_9)
+    @Override
+    public IRubyObject eql_p(IRubyObject obj) {
+        return getRuntime().newBoolean(equals(obj));
     }
 }
