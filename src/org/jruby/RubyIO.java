@@ -648,6 +648,7 @@ public class RubyIO extends RubyObject {
                             readStream.clearerr();
 
                             try {
+                                runtime.getCurrentContext().getThread().beforeBlockingCall();
                                 if (limit == -1) {
                                     n = readStream.getline(buf, (byte) newline);
                                 } else {
@@ -662,6 +663,8 @@ public class RubyIO extends RubyObject {
                                 c = buf.length() > 0 ? buf.get(buf.length() - 1) & 0xff : -1;
                             } catch (EOFException e) {
                                 n = -1;
+                            } finally {
+                                runtime.getCurrentContext().getThread().afterBlockingCall();
                             }
                             
                             // CRuby checks ferror(f) and retry getc for
@@ -768,10 +771,13 @@ public class RubyIO extends RubyObject {
                 readStream.clearerr();
                 int n;
                 try {
+                    runtime.getCurrentContext().getThread().beforeBlockingCall();
                     n = readStream.getline(buf, (byte) delim);
                     c = buf.length() > 0 ? buf.get(buf.length() - 1) & 0xff : -1;
                 } catch (EOFException e) {
                     n = -1;
+                } finally {
+                    runtime.getCurrentContext().getThread().afterBlockingCall();
                 }
 
                 // CRuby checks ferror(f) and retry getc for non-blocking IO.
@@ -1185,6 +1191,7 @@ public class RubyIO extends RubyObject {
                 myOpenFile.checkClosed(runtime);
             }
             
+            context.getThread().beforeBlockingCall();
             int read = writeStream.getDescriptor().write(string.getByteList());
             
             if (read == -1) {
@@ -1201,6 +1208,8 @@ public class RubyIO extends RubyObject {
             throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
             throw runtime.newSystemCallError(e.getMessage());
+        } finally {
+            context.getThread().afterBlockingCall();
         }
     }
     
@@ -1255,6 +1264,7 @@ public class RubyIO extends RubyObject {
             
             myOpenFile.checkWritable(runtime);
 
+            context.getThread().beforeBlockingCall();
             int written = fwrite(str.getByteList());
 
             if (written == -1) {
@@ -1275,6 +1285,8 @@ public class RubyIO extends RubyObject {
             throw runtime.newErrnoEINVALError();
         } catch (PipeException ex) {
             throw runtime.newErrnoEPIPEError();
+        } finally {
+            context.getThread().afterBlockingCall();
         }
     }
     
@@ -2679,6 +2691,7 @@ public class RubyIO extends RubyObject {
             // READ_CHECK from MRI io.c
             readCheck(myOpenFile.getMainStream());
 
+            context.getThread().beforeBlockingCall();
             ByteList newBuffer = fread(length);
 
             return newBuffer;
@@ -2692,6 +2705,8 @@ public class RubyIO extends RubyObject {
             throw runtime.newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
             throw runtime.newErrnoEBADFError();
+        } finally {
+            context.getThread().afterBlockingCall();
         }
     }
 
@@ -2753,12 +2768,16 @@ public class RubyIO extends RubyObject {
             } else if (descriptor == null) {
                 buf = null;
             } else {
+                RubyThread thread = runtime.getCurrentContext().getThread();
                 try {
                     while (true) {
                         // TODO: ruby locks the string here
                         readCheck(openFile.getMainStream());
                         openFile.checkReadable(runtime);
+                        thread.beforeBlockingCall();
                         ByteList read = fread(ChannelStream.BUFSIZE);
+                        thread.afterBlockingCall();
+                            
                         // TODO: Ruby unlocks the string here
                         if (read.length() == 0) {
                             break;
@@ -2773,6 +2792,8 @@ public class RubyIO extends RubyObject {
                     throw runtime.newErrnoEPIPEError();
                 } catch (InvalidValueException ex) {
                     throw runtime.newErrnoEINVALError();
+                } finally {
+                    thread.afterBlockingCall();
                 }
             }
         } catch (NonReadableChannelException ex) {
