@@ -463,7 +463,7 @@ public class RuntimeHelpers {
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return self.getMetaClass().finvoke(context, self, name, arg0, arg1, arg2);
     }
-    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args) {
+    public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return self.getMetaClass().finvoke(context, self, name, args);
     }
     
