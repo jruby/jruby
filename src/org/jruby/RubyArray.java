@@ -1655,6 +1655,46 @@ public class RubyArray extends RubyObject implements List {
         return block.isGiven() ? eachCommon(context, block) : enumeratorize(context.getRuntime(), this, "each");
     }
 
+    public IRubyObject eachSlice(ThreadContext context, int size, Block block) {
+        Ruby runtime = context.getRuntime();
+
+        // local copies of everything
+        int localRealLength = realLength;
+        IRubyObject[] localValues = values;
+        int localBegin = begin;
+
+        // sliding window
+        RubyArray window = newArrayNoCopy(runtime, localValues, localBegin, size);
+        makeShared();
+
+        // don't expose shared array to ruby
+        final boolean specificArity = block.arity().isFixed() && block.arity().required() != 1;
+        
+        for (; localRealLength >= size; localRealLength -= size) {
+            block.yield(context, window);
+            if (specificArity) { // array is never exposed to ruby, just use for yielding
+                window.begin += localBegin += size;
+            } else { // array may be exposed to ruby, create new
+                window = newArrayNoCopy(runtime, localValues, localBegin += size, size);
+            }
+        }
+
+        // remainder
+        if (localRealLength > 0) {
+            window.realLength = localRealLength;
+            block.yield(context, window);
+        }
+        return runtime.getNil();
+    }
+
+    @JRubyMethod
+    public IRubyObject each_slice(ThreadContext context, IRubyObject arg, Block block) {
+        final int size = RubyNumeric.num2int(arg);
+        final Ruby runtime = context.getRuntime();
+        if (size <= 0) throw runtime.newArgumentError("invalid slice size");
+        return block.isGiven() ? eachSlice(context, size, block) : enumeratorize(context.getRuntime(), this, "each_slice");
+    }
+
     /** rb_ary_each_index
      *
      */

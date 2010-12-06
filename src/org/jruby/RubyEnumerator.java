@@ -30,6 +30,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ObjectAllocator;
@@ -282,7 +283,7 @@ public class RubyEnumerator extends RubyObject {
 
             final RubyArray result[] = new RubyArray[]{runtime.newArray(size)};
 
-            RubyEnumerable.callEach(runtime, context, self, new BlockCallback() {
+            RubyEnumerable.callEach(runtime, context, self, Arity.ONE_ARGUMENT, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     result[0].append(largs[0]);
                     if (result[0].size() == size) {
@@ -314,7 +315,7 @@ public class RubyEnumerator extends RubyObject {
 
             final RubyArray result = runtime.newArray(size);
 
-            RubyEnumerable.callEach(runtime, context, self, new BlockCallback() {
+            RubyEnumerable.callEach(runtime, context, self, Arity.ONE_ARGUMENT, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     if (result.size() == size) result.shift(ctx);
                     result.append(largs[0]);
@@ -351,7 +352,7 @@ public class RubyEnumerator extends RubyObject {
             final Ruby runtime = context.getRuntime();
             if (!block.isGiven()) return enumeratorize(runtime, self , rubyMethodName, arg);
 
-            RubyEnumerable.callEach(runtime, context, self, new BlockCallback() {
+            RubyEnumerable.callEach(runtime, context, self, Arity.ONE_ARGUMENT, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     block.call(ctx, new IRubyObject[]{runtime.newArray(largs[0], arg)});
                     return runtime.getNil();
@@ -392,7 +393,7 @@ public class RubyEnumerator extends RubyObject {
             args = e.methodArgs;
         }
 
-        return RubyEnumerable.callEach(runtime, context, self, args, new EachWithIndex(context, block, index));
+        return RubyEnumerable.callEach(runtime, context, self, args, Arity.TWO_ARGUMENTS, new EachWithIndex(context, block, index));
     }
 
     @JRubyMethod
