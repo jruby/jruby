@@ -229,7 +229,7 @@ public class ASTInterpreter {
             }
 
             if (bodyNode == null) return runtime.getNil();
-            return INTERPRET_CLASS(runtime, context, bodyNode, type.getBaseName() == null ? "(class)" : "(class " + type.getBaseName() + " class", type, block);
+            return INTERPRET_CLASS(runtime, context, bodyNode, type.getBaseName() == null ? "(class)" : "(class " + type.getBaseName() + ")", type, block);
         } finally {
             try {
                 if (runtime.hasEventHooks()) {
