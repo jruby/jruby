@@ -13,8 +13,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public final class EncodingService {
-    private final Ruby runtime;
-
     private final CaseInsensitiveBytesHash<Entry> encodings;
     private final CaseInsensitiveBytesHash<Entry> aliases;
 
@@ -24,15 +22,13 @@ public final class EncodingService {
     private RubyEncoding[] encodingIndex = new RubyEncoding[4];
 
     public EncodingService (Ruby runtime) {
-        this.runtime = runtime;
-
         // TODO: make it cross runtime safe by COW or eager copy
         encodings = EncodingDB.getEncodings();
         aliases = EncodingDB.getAliases();
 
         encodingList = new IRubyObject[encodings.size()];
-        defineEncodings();
-        defineAliases();        
+        defineEncodings(runtime);
+        defineAliases(runtime);
     }
 
     public CaseInsensitiveBytesHash<Entry> getEncodings() {
@@ -83,7 +79,7 @@ public final class EncodingService {
         return encodingIndex[enc.getIndex()];
     }
 
-    private void defineEncodings() {
+    private void defineEncodings(Ruby runtime) {
         HashEntryIterator hei = encodings.entryIterator();
         while (hei.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
@@ -91,22 +87,23 @@ public final class EncodingService {
             Entry ee = e.value; 
             RubyEncoding encoding = RubyEncoding.newEncoding(runtime, e.bytes, e.p, e.end, ee.isDummy());
             encodingList[ee.getIndex()] = encoding;
-            defineEncodingConstants(encoding, e.bytes, e.p, e.end);
+            defineEncodingConstants(runtime, encoding, e.bytes, e.p, e.end);
         }
     }
 
-    private void defineAliases() {
+    private void defineAliases(Ruby runtime) {
         HashEntryIterator hei = aliases.entryIterator();
         while (hei.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
             Entry ee = e.value; 
             RubyEncoding encoding = (RubyEncoding)encodingList[ee.getIndex()];  
-            defineEncodingConstants(encoding, e.bytes, e.p, e.end);
+            defineEncodingConstants(runtime, encoding, e.bytes, e.p, e.end);
         }
     }
 
-    private void defineEncodingConstants(RubyEncoding encoding, byte[]name, int p, int end) {
+    private void defineEncodingConstants(Ruby runtime, RubyEncoding encoding, byte[]name, int p,
+            int end) {
         Encoding enc = ASCIIEncoding.INSTANCE;
         int s = p;
 
@@ -125,7 +122,7 @@ public final class EncodingService {
         boolean isValid = false;
         if (s >= end) {
             isValid = true;
-            defineEncodingConstant(encoding, name, p, end);
+            defineEncodingConstant(runtime, encoding, name, p, end);
         }
 
         if (!isValid || hasLower) {
@@ -148,7 +145,7 @@ public final class EncodingService {
                     if (!enc.isAlnum(constName[s] & 0xff)) constName[s] = (byte)'_';
                 }
                 if (hasUpper) {
-                    defineEncodingConstant(encoding, constName, 0, constName.length);
+                    defineEncodingConstant(runtime, encoding, constName, 0, constName.length);
                 }
             }
             if (hasLower) {
@@ -156,12 +153,13 @@ public final class EncodingService {
                     code = constName[s] & 0xff;
                     if (enc.isLower(code)) constName[s] = AsciiTables.ToUpperCaseTable[code];
                 }
-                defineEncodingConstant(encoding, constName, 0, constName.length);
+                defineEncodingConstant(runtime, encoding, constName, 0, constName.length);
             }
         }
     }
 
-    private void defineEncodingConstant(RubyEncoding encoding, byte[]constName, int constP, int constEnd) {
+    private void defineEncodingConstant(Ruby runtime, RubyEncoding encoding, byte[]constName,
+            int constP, int constEnd) {
         runtime.getEncoding().defineConstant(new String(constName, constP , constEnd), encoding);
     }
 }
