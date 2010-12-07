@@ -383,19 +383,15 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject userUnmarshal(MarshalState state) throws IOException {
         String className = unmarshalObject().asJavaString();
         ByteList marshaled = unmarshalString();
-        RubyModule classInstance = findClass(className);
-        if (!classInstance.respondsTo("_load")) {
-            throw runtime.newTypeError("class " + classInstance.getName() + " needs to have method `_load'");
-        }
+        RubyClass classInstance = findClass(className);
         RubyString data = RubyString.newString(getRuntime(), marshaled);
         if (state.isIvarWaiting()) {
             defaultVariablesUnmarshal(data);
             state.setIvarWaiting(false);
         }
-        IRubyObject result = classInstance.callMethod(getRuntime().getCurrentContext(),
-            "_load", data);
-        registerLinkTarget(result);
-        return result;
+        IRubyObject unmarshaled = classInstance.smartLoadOldUser(data);
+        registerLinkTarget(unmarshaled);
+        return unmarshaled;
     }
 
     private IRubyObject userNewUnmarshal() throws IOException {
@@ -404,8 +400,7 @@ public class UnmarshalStream extends InputStream {
         IRubyObject result = classInstance.allocate();
         registerLinkTarget(result);
         IRubyObject marshaled = unmarshalObject();
-        result.callMethod(getRuntime().getCurrentContext(),"marshal_load", marshaled);
-        return result;
+        return classInstance.smartLoadNewUser(result, marshaled);
     }
 
     private RubyClass findClass(String className) {

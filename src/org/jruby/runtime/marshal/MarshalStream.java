@@ -152,13 +152,7 @@ public class MarshalStream extends FilterOutputStream {
         if (cache.isRegistered(value)) {
             cache.writeLink(this, value);
         } else {
-            if (hasNewUserDefinedMarshaling(value)) {
-                userNewMarshal(value);
-            } else if (hasUserDefinedMarshaling(value)) {
-                userMarshal(value);
-            } else {
-                writeDirectly(value);
-            }
+            value.getMetaClass().smartDump(this, value);
         }
     }
 
@@ -207,7 +201,7 @@ public class MarshalStream extends FilterOutputStream {
                 && ((RubyString)value).getEncoding() != ASCIIEncoding.INSTANCE;
     }
 
-    private void writeDirectly(IRubyObject value) throws IOException {
+    public void writeDirectly(IRubyObject value) throws IOException {
         List<Variable<Object>> variables = getVariables(value);
         writeObjectData(value);
         if (variables != null) {
@@ -329,30 +323,50 @@ public class MarshalStream extends FilterOutputStream {
             dumpDefaultObjectHeader(value.getMetaClass());
             value.getMetaClass().getRealClass().marshal(value, this);
         }
-        
     }
 
-    private boolean hasNewUserDefinedMarshaling(IRubyObject value) {
-        return value.respondsTo("marshal_dump");
+    public void userNewMarshal(IRubyObject value, DynamicMethod method) throws IOException {
+        userNewCommon(value, method);
     }
 
-    private void userNewMarshal(IRubyObject value) throws IOException {
+    public void userNewMarshal(IRubyObject value) throws IOException {
+        userNewCommon(value, null);
+    }
+
+    private void userNewCommon(IRubyObject value, DynamicMethod method) throws IOException {
         registerLinkTarget(value);
         write(TYPE_USRMARSHAL);
         RubyClass metaclass = value.getMetaClass().getRealClass();
         writeAndRegisterSymbol(metaclass.getName());
 
-        IRubyObject marshaled = value.callMethod(runtime.getCurrentContext(), "marshal_dump"); 
+        IRubyObject marshaled;
+        if (method != null) {
+            marshaled = method.call(runtime.getCurrentContext(), value, value.getMetaClass(), "marshal_dump");
+        } else {
+            marshaled = value.callMethod(runtime.getCurrentContext(), "marshal_dump");
+        }
         dumpObject(marshaled);
     }
 
-    private boolean hasUserDefinedMarshaling(IRubyObject value) {
-        return value.respondsTo("_dump");
+    public void userMarshal(IRubyObject value, DynamicMethod method) throws IOException {
+        userCommon(value, method);
     }
 
-    private void userMarshal(IRubyObject value) throws IOException {
+    public void userMarshal(IRubyObject value) throws IOException {
+        userCommon(value, null);
+    }
+
+    private void userCommon(IRubyObject value, DynamicMethod method) throws IOException {
         registerLinkTarget(value);
-        IRubyObject dumpResult = value.callMethod(runtime.getCurrentContext(), "_dump", runtime.newFixnum(depthLimit));
+        RubyFixnum depthLimitFixnum = runtime.newFixnum(depthLimit);
+
+        IRubyObject dumpResult;
+        if (method != null) {
+            dumpResult = method.call(runtime.getCurrentContext(), value, value.getMetaClass(), "_dump", depthLimitFixnum);
+        } else {
+            dumpResult = value.callMethod(runtime.getCurrentContext(), "_dump", depthLimitFixnum);
+        }
+        
         if (!(dumpResult instanceof RubyString)) {
             throw runtime.newTypeError(dumpResult, runtime.getString());
         }
