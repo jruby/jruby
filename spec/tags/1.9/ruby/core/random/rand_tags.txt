@@ -1,0 +1,1 @@
+fails(JRUBY-5243):Random#rand with Range considers Integers as Floats if one end point is a float
