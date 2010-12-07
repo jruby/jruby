@@ -52,6 +52,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
+import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.SafePropertyAccessor;
@@ -97,8 +98,9 @@ public class RubyException extends RubyObject {
             
             marshalStream.registerLinkTarget(exc);
             List<Variable<Object>> attrs = exc.getVariableList();
-            exc.setInternalVariable("mesg", exc.message == null ? runtime.getNil() : exc.message);
-            exc.setInternalVariable("bt", exc.getBacktrace());
+            attrs.add(new VariableEntry<Object>(
+                    "mesg", exc.message == null ? runtime.getNil() : exc.message));
+            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
         }
 
