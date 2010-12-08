@@ -1559,7 +1559,7 @@ public class RubyModule extends RubyObject {
 
         if (!getMetaClass().isSingleton()) setMetaClass(originalModule.getSingletonClassClone());
         setSuperClass(originalModule.getSuperClass());
-        if (originalModule.hasVariables()) syncVariables(originalModule.getVariableList());
+        if (originalModule.hasVariables()) syncVariables(originalModule);
         syncConstants(originalModule);
 
         originalModule.cloneMethods(this);

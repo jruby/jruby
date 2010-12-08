@@ -223,7 +223,7 @@ public class RubyRandom extends RubyObject {
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.getRuntime().newArray(this, seed);
 
-        if (hasVariables()) dump.syncVariables(getVariableList());
+        if (hasVariables()) dump.syncVariables(this);
         return dump;
     }
 
@@ -235,7 +235,7 @@ public class RubyRandom extends RubyObject {
             seed =  load.eltInternal(1);
             random.setSeed(seed.convertToInteger().getLongValue());
         }
-        if (load.hasVariables()) syncVariables(load.getVariableList());
+        if (load.hasVariables()) syncVariables((IRubyObject)load);
         return this;
     }
 

@@ -831,7 +831,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         original.copySpecialInstanceVariables(clone);
 
-        if (original.hasVariables()) clone.syncVariables(original.getVariableList());
+        if (original.hasVariables()) clone.syncVariables(original);
         if (original instanceof RubyModule) {
             RubyModule cloneMod = (RubyModule)clone;
             cloneMod.syncConstants((RubyModule)original);
@@ -899,7 +899,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         if (klass.hasVariables()) {
-            clone.syncVariables(klass.getVariableList());
+            clone.syncVariables(klass);
         }
         clone.syncConstants(klass);
 
@@ -1426,9 +1426,34 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Sync one variable table with another - this is used to make
      * rbClone work correctly.
      */
+    @Deprecated
     public void syncVariables(List<Variable<Object>> variables) {
         variableTableSync(variables);
     }
+
+    /**
+     * Sync one this object's variables with other's - this is used to make
+     * rbClone work correctly.
+     */
+    public void syncVariables(IRubyObject other) {
+        RubyClass realClass = metaClass.getRealClass();
+        RubyClass otherRealClass = other.getMetaClass().getRealClass();
+        boolean sameTable = otherRealClass == realClass;
+        
+        for (Map.Entry<String, RubyClass.VariableAccessor> entry : otherRealClass.getVariableAccessorsForRead().entrySet()) {
+            RubyClass.VariableAccessor accessor = entry.getValue();
+            Object value = accessor.get(other);
+            
+            if (value != null) {
+                if (sameTable) {
+                    accessor.set(this, value);
+                } else {
+                    realClass.getVariableAccessorForWrite(accessor.getName()).set(this, value);
+                }
+            }
+        }
+    }
+
 
     //
     // INSTANCE VARIABLE API METHODS

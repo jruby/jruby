@@ -649,7 +649,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "_dump", optional = 1)
     public RubyString dump(IRubyObject[] args, Block unusedBlock) {
         RubyString str = (RubyString) mdump();
-        str.syncVariables(this.getVariableList());
+        str.syncVariables(this);
         return str;
     }    
 

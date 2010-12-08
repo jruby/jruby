@@ -893,7 +893,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "marshal_dump")
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.getRuntime().newArray(real, image);
-        if (hasVariables()) dump.syncVariables(getVariableList());
+        if (hasVariables()) dump.syncVariables(this);
         return dump;
     }
 
@@ -906,7 +906,7 @@ public class RubyComplex extends RubyNumeric {
         real = load.size() > 0 ? load.eltInternal(0) : context.getRuntime().getNil();
         image = load.size() > 1 ? load.eltInternal(1) : context.getRuntime().getNil();
 
-        if (load.hasVariables()) syncVariables(load.getVariableList());
+        if (load.hasVariables()) syncVariables((IRubyObject)load);
         return this;
     }
 

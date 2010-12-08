@@ -977,7 +977,7 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "marshal_dump")
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.getRuntime().newArray(num, den);
-        if (hasVariables()) dump.syncVariables(getVariableList());
+        if (hasVariables()) dump.syncVariables(this);
         return dump;
     }
 
@@ -991,7 +991,7 @@ public class RubyRational extends RubyNumeric {
         den = load.size() > 1 ? load.eltInternal(1) : context.getRuntime().getNil();
 
         if (f_zero_p(context, den)) throw context.getRuntime().newZeroDivisionError();
-        if (load.hasVariables()) syncVariables(load.getVariableList());
+        if (load.hasVariables()) syncVariables((IRubyObject)load);
         return this;
     }
 
