@@ -90,6 +90,7 @@ import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.DXStrNode;
 import org.jruby.ast.DefsNode;
 import org.jruby.ast.ForNode;
+import org.jruby.ast.LiteralNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.OpAsgnNode;
@@ -461,6 +462,7 @@ public class IRBuilder {
             case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node, m); // done
             case INSTVARNODE: return buildInstVar((InstVarNode) node, m); // done
             case ITERNODE: return buildIter((IterNode) node, (IRExecutionScope)m); // done
+            case LITERALNODE: return buildLiteral((LiteralNode) node, m);
             case LOCALASGNNODE: return buildLocalAsgn((LocalAsgnNode) node, m); // done
             case LOCALVARNODE: return buildLocalVar((LocalVarNode) node, m); // done
             case MATCH2NODE: return buildMatch2((Match2Node) node, m); // done
@@ -508,7 +510,7 @@ public class IRBuilder {
             case YIELDNODE: return buildYield((YieldNode) node, m); // done
             case ZARRAYNODE: return buildZArray(node, m); // done
             case ZSUPERNODE: return buildZSuper((ZSuperNode) node, m); // done
-            default: new Exception().printStackTrace(); throw new NotCompilableException("Unknown node encountered in builder: " + node);
+            default: new Exception().printStackTrace(); throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
         }
     }
 
@@ -2091,6 +2093,10 @@ public class IRBuilder {
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
         return new ClosureMetaObject(closure);
+    }
+
+    public Operand buildLiteral(LiteralNode literalNode, IRScope s) {
+        return new StringLiteral(literalNode.getName());
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode, IRScope s) {
