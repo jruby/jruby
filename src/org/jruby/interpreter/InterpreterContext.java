@@ -25,6 +25,7 @@ import org.jruby.compiler.ir.IRMethod;
  * can "cheat" initially and use the same context for some of the more difficult
  * parts until it finds the best way.
  *
+ * SSS: InterpreterContext is actually the closure environment
  */
 public interface InterpreterContext {
     // Section: Return value, Local Variables, Temporary Variables

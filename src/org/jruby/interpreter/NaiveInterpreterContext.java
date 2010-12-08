@@ -36,7 +36,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     protected boolean allocatedDynScope = false;
 
     public NaiveInterpreterContext(ThreadContext context, IRubyObject self, int temporaryVariableSize, int renamedVariableSize, IRubyObject[] parameters, StaticScope staticScope, Block block) {
-        // context.preMethodScopeOnly(self.getMetaClass(), staticScope);
         context.preMethodFrameOnly(self.getMetaClass(), null, self, block);
 
         this.context = context;

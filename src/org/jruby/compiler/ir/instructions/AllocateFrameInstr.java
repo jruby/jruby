@@ -63,9 +63,6 @@ public class AllocateFrameInstr extends Instr {
         }
 
         interp.allocateSharedBindingScope(scope);
-//        interp.getContext().preMethodFrameAndScope(implementationClass, null, self, interp.getBlock(), scope.getStaticScope());
-//        interp.getContext().pushFrame();
-//        interp.setFrame(interp.getContext().getCurrentFrame());
         return null;
     }
 }

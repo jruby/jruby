@@ -184,6 +184,7 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     // SSS FIXME: Are all bases covered?
+	 // SSS FIXME: This refers to the call-stack frame, not binding dynamic scope!
     private boolean getRequiresFrameFlag() {
         // This is an eval, or it has a closure that requires a frame
         if (canBeEval()) return true;

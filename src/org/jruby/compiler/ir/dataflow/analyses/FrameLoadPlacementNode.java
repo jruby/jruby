@@ -34,7 +34,6 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
     }
 
     // Only ruby local variables are candidates for frame loads.  Ignore the rest!
-    // SSS FIXME: What about self?
     public void buildDataFlowVars(Instr i) {
         FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem) _prob;
         for (Variable v : i.getUsedVariables()) {
@@ -85,6 +84,15 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                     cl_flp.setup(cl_cfg);
                     cl_flp.compute_MOP_Solution();
                     cl_cfg.setDataFlowSolution(cl_flp.getName(), cl_flp);
+/**
+                    flp.setBindingHasEscaped(cl_flp.bindingHasEscaped());
+                    // SSS FIXME: 'Frame' is the call-stack frame, not binding scope-closure frame!
+                    // So what we actually need to do is this!
+                    if (call.requiresBinding() || (flp.bindingHasEscaped() && call.mightUseBinding())) {
+                        reqdLoads.clear();
+                        flp.setBindingHasEscaped(call.capturesBinding());
+                    }
+**/
 
                     // Variables defined in the closure do not need to be loaded anymore at
                     // program points before the call.
@@ -93,7 +101,16 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                         if (cl_flp.scopeDefinesVariable(v)) newReqdLoads.remove(v);
                     }
                     reqdLoads = newReqdLoads;
-                } // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
+                }
+                // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
+/**
+                // SSS FIXME: 'Frame' is the call-stack frame, not binding scope-closure frame!
+                // So what we actually need to do is this!
+                else if (call.requiresBinding() || (flp.bindingHasEscaped() && call.mightUseBinding())) {
+                    reqdLoads.clear();
+                    flp.setBindingHasEscaped(call.capturesBinding());
+                }
+**/
                 else if (call.requiresFrame()) {
                     reqdLoads.clear();
                 }
