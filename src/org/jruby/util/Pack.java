@@ -1711,8 +1711,10 @@ public class Pack {
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString, boolean taint) {
         return packCommon(runtime, list, formatString, taint, executor18);
     }
-    
-    @Deprecated
+
+    /**
+     * Same as pack(Ruby, RubyArray, ByteList) but defaults tainting of output to false.
+     */
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
         return packCommon(runtime, list, formatString, false, executor18);
     }
