@@ -221,11 +221,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         for (Instr instr : instructions) {
             if (i > 0) b.append("\n");
             
-            b.append("  ").append(i).append('\t');
-
-            if (instr.isDead()) b.append("[DEAD]");
+            b.append("  ").append(i).append('\t').append(instr);
             
-            b.append(instr);
             i++;
         }
 
