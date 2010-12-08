@@ -92,7 +92,7 @@ public final class MappedType extends Type {
     }
 
     @JRubyMethod
-    public final IRubyObject native_type(ThreadContext contexxt) {
+    public final IRubyObject native_type(ThreadContext context) {
         return realType;
     }
 

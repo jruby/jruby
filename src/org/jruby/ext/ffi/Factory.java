@@ -97,6 +97,8 @@ public abstract class Factory {
             if (ffi.fastGetClass("Type") == null) {
                 Type.createTypeClass(runtime, ffi);
             }
+            DataConverter.createDataConverterModule(runtime, ffi);
+
             if (ffi.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
                 AbstractMemory.createAbstractMemoryClass(runtime, ffi);
             }
@@ -139,7 +141,7 @@ public abstract class Factory {
             
             Platform.createPlatformModule(runtime, ffi);
             IOModule.createIOModule(runtime, ffi);
-            DataConverter.createDataConverterModule(runtime, ffi);
+            
             StructByReference.createStructByReferenceClass(runtime, ffi);
         }
     }

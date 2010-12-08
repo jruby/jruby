@@ -81,9 +81,6 @@ abstract class MemoryOp {
             StructByValue sbv = (StructByValue) type;
             return new StructOp(sbv.getStructClass());
         
-        } else if (type instanceof Enum) {
-            return new EnumOp((Enum) type, order);
-        
         } else if (type instanceof MappedType) {
             return new Mapped(getMemoryOp(((MappedType) type).getRealType(), order), (MappedType) type);
         }
@@ -280,25 +277,6 @@ abstract class MemoryOp {
 
         public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
             return runtime.newFloat(io.getDouble(offset));
-        }
-    }
-
-    
-    static final class EnumOp extends PrimitiveOp {
-        private final Enum e;
-        private final ByteOrder order;
-
-        public EnumOp(Enum e, ByteOrder order) {
-            this.e = e;
-            this.order = order;
-        }
-        
-        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
-            io.putInt(offset, order.equals(ByteOrder.nativeOrder()) ? e.intValue(value) : Integer.reverseBytes(e.intValue(value)));
-        }
-
-        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
-            return e.symbolValue(order.equals(ByteOrder.nativeOrder()) ? io.getInt(offset) : Integer.reverseBytes(io.getInt(offset)));
         }
     }
     

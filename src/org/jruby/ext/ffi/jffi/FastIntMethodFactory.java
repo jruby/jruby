@@ -2,14 +2,11 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Function;
-import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
-import org.jruby.RubySymbol;
 import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.Enum;
 import org.jruby.ext.ffi.MappedType;
 import org.jruby.ext.ffi.NativeParam;
 import org.jruby.ext.ffi.NativeType;
@@ -64,9 +61,6 @@ public class FastIntMethodFactory extends MethodFactory {
                     return Platform.getPlatform().longSize() == 32;
             }
 
-        } else if (type instanceof org.jruby.ext.ffi.Enum && type.getNativeType() == NativeType.INT) {
-            return true;
-
         } else if (type instanceof MappedType) {
             return isFastIntResult(((MappedType) type).getRealType());
 
@@ -90,9 +84,6 @@ public class FastIntMethodFactory extends MethodFactory {
                 case ULONG:
                     return Platform.getPlatform().longSize() == 32;
             }
-
-        } else if (paramType instanceof org.jruby.ext.ffi.Enum && paramType.getNativeType() == NativeType.INT) {
-            return true;
 
         } else if (paramType instanceof MappedType) {
             MappedType mt = (MappedType) paramType;
@@ -130,9 +121,6 @@ public class FastIntMethodFactory extends MethodFactory {
     final IntParameterConverter getIntParameterConverter(Type type, IRubyObject enums) {
         if (type instanceof Type.Builtin) {
             return getIntParameterConverter(type.getNativeType(), enums);
-
-        } else if (type instanceof org.jruby.ext.ffi.Enum) {
-            return new EnumParameterConverter((org.jruby.ext.ffi.Enum) type);
 
         } else if (type instanceof MappedType) {
             MappedType ctype = (MappedType) type;
@@ -181,9 +169,6 @@ public class FastIntMethodFactory extends MethodFactory {
     final IntResultConverter getIntResultConverter(Type type) {
         if (type instanceof Type.Builtin) {
             return getIntResultConverter(type.getNativeType());
-
-        } else if (type instanceof org.jruby.ext.ffi.Enum) {
-            return new EnumResultConverter((org.jruby.ext.ffi.Enum) type);
 
         } else if (type instanceof MappedType) {
             MappedType ctype = (MappedType) type;
@@ -317,18 +302,6 @@ public class FastIntMethodFactory extends MethodFactory {
         }
     }
 
-    static final class EnumResultConverter implements IntResultConverter {
-        private final org.jruby.ext.ffi.Enum enums;
-
-        public EnumResultConverter(org.jruby.ext.ffi.Enum enums) {
-            this.enums = enums;
-        }
-
-        public final IRubyObject fromNative(ThreadContext context, int value) {
-            return enums.symbolValue(value);
-        }
-    }
-
     static abstract class BaseParameterConverter implements IntParameterConverter {
         static final com.kenai.jffi.MemoryIO IO = com.kenai.jffi.MemoryIO.getInstance();
 
@@ -422,18 +395,6 @@ public class FastIntMethodFactory extends MethodFactory {
         }
 
 
-    }
-
-    static final class EnumParameterConverter extends BaseParameterConverter {
-        private final org.jruby.ext.ffi.Enum enums;
-
-        public EnumParameterConverter(org.jruby.ext.ffi.Enum enums) {
-            this.enums = enums;
-        }
-
-        public final int intValue(ThreadContext context, IRubyObject obj) {
-            return enums.intValue(obj);
-        }
     }
 
     static final class IntOrEnumParameterConverter extends BaseParameterConverter {

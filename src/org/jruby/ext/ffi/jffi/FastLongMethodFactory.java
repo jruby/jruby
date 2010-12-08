@@ -2,12 +2,10 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Function;
-import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
-import org.jruby.ext.ffi.Enum;
 import org.jruby.ext.ffi.MappedType;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Platform;
@@ -58,9 +56,6 @@ public class FastLongMethodFactory {
                     return true;
             }
 
-        } else if (type instanceof org.jruby.ext.ffi.Enum) {
-            return true;
-
         } else if (type instanceof MappedType) {
             MappedType mt = (MappedType) type;
             return isFastLongResult(mt.getRealType()) && !mt.isReferenceRequired() && !mt.isPostInvokeRequired();
@@ -87,9 +82,6 @@ public class FastLongMethodFactory {
                     return true;
             }
 
-        } else if (paramType instanceof org.jruby.ext.ffi.Enum) {
-            return true;
-        
         } else if (paramType instanceof MappedType) {
             return isFastLongParam(((MappedType) paramType).getRealType());
 
@@ -125,9 +117,6 @@ public class FastLongMethodFactory {
     final LongParameterConverter getLongParameterConverter(Type type, IRubyObject enums) {
         if (type instanceof Type.Builtin) {
             return getLongParameterConverter(type.getNativeType(), enums);
-
-        } else if (type instanceof org.jruby.ext.ffi.Enum) {
-            return new EnumParameterConverter((org.jruby.ext.ffi.Enum) type);
 
         } else if (type instanceof MappedType) {
             MappedType mtype = (MappedType) type;
@@ -174,9 +163,6 @@ public class FastLongMethodFactory {
     final LongResultConverter getLongResultConverter(Type type) {
         if (type instanceof Type.Builtin) {
             return getLongResultConverter(type.getNativeType());
-
-        } else if (type instanceof org.jruby.ext.ffi.Enum) {
-            return new EnumResultConverter((org.jruby.ext.ffi.Enum) type);
 
         } else if (type instanceof MappedType) {
             MappedType mtype = (MappedType) type;
@@ -229,18 +215,6 @@ public class FastLongMethodFactory {
         public static final LongResultConverter INSTANCE = new Signed8ResultConverter();
         public final IRubyObject fromNative(ThreadContext context, long value) {
             return context.getRuntime().newBoolean(value != 0);
-        }
-    }
-
-    static final class EnumResultConverter implements LongResultConverter {
-        private final org.jruby.ext.ffi.Enum enums;
-
-        public EnumResultConverter(Enum enums) {
-            this.enums = enums;
-        }
-
-        public final IRubyObject fromNative(ThreadContext context, long value) {
-            return enums.symbolValue((int) value);
         }
     }
 
@@ -349,18 +323,6 @@ public class FastLongMethodFactory {
                 throw context.getRuntime().newTypeError("wrong argument type.  Expected true or false");
             }
             return obj.isTrue() ? 1 : 0;
-        }
-    }
-
-    static final class EnumParameterConverter extends BaseParameterConverter {
-        private final org.jruby.ext.ffi.Enum enums;
-
-        public EnumParameterConverter(org.jruby.ext.ffi.Enum enums) {
-            this.enums = enums;
-        }
-
-        public final long longValue(ThreadContext context, IRubyObject obj) {
-            return enums.intValue(obj);
         }
     }
 
