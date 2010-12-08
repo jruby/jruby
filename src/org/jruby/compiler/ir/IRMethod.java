@@ -82,12 +82,12 @@ public class IRMethod extends IRExecutionScope {
     // SSS FIXME: Incorect!
     // ENEBO: Should it be: return (m == null) ? ":" + getName() : m.getName() + ":" + getName();
     public String getFullyQualifiedName() {
-        IRModule m = getDefiningModule();
+        IRModule m = getDefiningIRModule();
         
         return (m == null) ? null : m.getName() + ":" + getName();
     }
 
-    public IRModule getDefiningModule() {
+    public IRModule getDefiningIRModule() {
         if (!(container instanceof MetaObject)) return null;
 
         IRScope scope = ((MetaObject) container).scope;
