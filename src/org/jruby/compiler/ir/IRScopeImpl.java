@@ -87,6 +87,11 @@ public abstract class IRScopeImpl implements IRScope {
         this.staticScope = staticScope;
     }
 
+    // Update the containing scope
+    public void setContainer(Operand o) {
+        container = o;
+    }
+
     // Returns the containing scope!
     public Operand getContainer() {
         return container;

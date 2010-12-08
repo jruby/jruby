@@ -1,21 +1,25 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class DefineInstanceMethodInstr extends NoOperandInstr {
+public class DefineInstanceMethodInstr extends OneOperandInstr {
     public final IRModule module; // Can be either class of module
     public final IRMethod method;
 
     public DefineInstanceMethodInstr(IRModule module, IRMethod method) {
-        super(Operation.DEF_INST_METH);
+		  // SSS FIXME: I have to explicitly record method.getContainer() as an operand because it can be an unresolved value and thus a Variable
+		  // We dont want live variable analysis to forget about it!
+        super(Operation.DEF_INST_METH, null, method.getContainer());
         this.module = module;
         this.method = method;
     }
@@ -27,6 +31,14 @@ public class DefineInstanceMethodInstr extends NoOperandInstr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return this;
+    }
+
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+		  super.simplifyOperands(valueMap);
+        Operand o = method.getContainer();
+        Operand v = valueMap.get(o);
+        if (v != null)
+            method.setContainer(v);
     }
 
     @Override
