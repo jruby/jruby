@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -44,7 +44,6 @@ public class RubyClassPathVariable extends RubyObject {
         RubyClassPathVariable self = new RubyClassPathVariable(runtime);
         runtime.getEnumerable().extend_object(self);
         runtime.defineReadonlyVariable("$CLASSPATH", self);
-        
         self.getMetaClass().defineAnnotatedMethods(RubyClassPathVariable.class);
     }
 
@@ -65,10 +64,18 @@ public class RubyClassPathVariable extends RubyObject {
     }
 
     private URL getURL(String target) throws MalformedURLException {
-        if (target.indexOf("://") == -1) {
-            return new URL("file", null, target);
-        } else {
+        try {
+            // First try assuming a protocol is included
             return new URL(target);
+        } catch (MalformedURLException e) {
+            // Assume file: protocol
+            File f = new File(target);
+            String path = target;
+            if (f.exists() && f.isDirectory() && !path.endsWith("/")) {
+                // URLClassLoader requires that directores end with slashes
+                path = path + "/";
+            }
+            return new URL("file", null, path);
         }
     }
 
@@ -90,10 +97,10 @@ public class RubyClassPathVariable extends RubyObject {
     @JRubyMethod
     public IRubyObject to_s() {
         return callMethod(getRuntime().getCurrentContext(), "to_a").callMethod(getRuntime().getCurrentContext(), "to_s");
-    }    
+    }
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         return callMethod(getRuntime().getCurrentContext(), "to_a").callMethod(getRuntime().getCurrentContext(), "inspect");
-    }    
+    }
 }// RubyClassPathVariable
