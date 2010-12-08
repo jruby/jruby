@@ -34,14 +34,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     protected Block block;
     protected DynamicScope currDynScope = null;
     protected boolean allocatedDynScope = false;
-    
-    private static ThreadLocal<Map<Object, Map<String, Object>>> frameVariables = new ThreadLocal<Map<Object, Map<String, Object>>>() {
-
-        @Override
-        protected Map<Object, Map<String, Object>> initialValue() {
-            return new HashMap<Object, Map<String, Object>>();
-        }
-    };
 
     public NaiveInterpreterContext(ThreadContext context, IRubyObject self, int temporaryVariableSize, int renamedVariableSize, IRubyObject[] parameters, StaticScope staticScope, Block block) {
         // context.preMethodScopeOnly(self.getMetaClass(), staticScope);
@@ -142,21 +134,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
         int slot = irMethod.getBindingSlot(varName);
 //        System.out.println("STORE: location for " + varName + " is " + slot);
         currDynScope.setValue(slot, (IRubyObject)value, 0);
-    }
-
-    // SSS: This is actually dynamic scope variable -- badly named in the IR
-    private Map<String, Object> getFrameVariableMap(Object frame) {
-        Map<Object, Map<String, Object>> maps = frameVariables.get();
-        Map<String, Object> map = maps.get(frame);
-
-        if (map == null) {
-            map = new HashMap<String, Object>();
-            maps.put(frame, map);
-        }
-
-//        System.out.println("MAP = " + map);
-
-        return map;
     }
 
     public Object getLocalVariable(String name) {
