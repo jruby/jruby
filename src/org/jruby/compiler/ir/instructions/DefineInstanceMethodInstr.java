@@ -34,6 +34,8 @@ public class DefineInstanceMethodInstr extends NoOperandInstr {
         // If this is a class/module body the the clazz is self otherwise we get the meta class.
         RubyModule clazz = self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
 
+        method.setContainerModule((RubyModule) method.getContainer().retrieve(interp));
+
         clazz.addMethod(method.getName(), new InterpretedIRMethod(method, clazz));
         return null;
     }
