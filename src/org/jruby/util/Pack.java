@@ -1708,13 +1708,18 @@ public class Pack {
      * @see RubyString#unpack
      **/
     @SuppressWarnings("fallthrough")
+    public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString, boolean taint) {
+        return packCommon(runtime, list, formatString, taint, executor18);
+    }
+    
+    @Deprecated
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
-        return packCommon(runtime, list, formatString, executor18);
+        return packCommon(runtime, list, formatString, false, executor18);
     }
 
     @SuppressWarnings("fallthrough")
     public static RubyString pack19(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
-        RubyString pack = packCommon(runtime, list, formatString.getByteList(), executor19);
+        RubyString pack = packCommon(runtime, list, formatString.getByteList(), formatString.isTaint(), executor19);
         pack = (RubyString) pack.infectBy(formatString);
 
         for (IRubyObject element : list.toJavaArray()) {
@@ -1727,10 +1732,10 @@ public class Pack {
         return pack;
     }
 
-    private static RubyString packCommon(Ruby runtime, RubyArray list, ByteList formatString, ConverterExecutor executor) {
+    private static RubyString packCommon(Ruby runtime, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteList result = new ByteList();
-        boolean taintOutput = false;
+        boolean taintOutput = tainted;
         int listSize = list.size();
         int type = 0;
         int next = safeGet(format);
