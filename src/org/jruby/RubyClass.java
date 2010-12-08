@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -1146,6 +1147,8 @@ public class RubyClass extends RubyModule {
         reify(null);
     }
 
+    private static final boolean DEBUG_REIFY = false;
+
     /**
      * Stand up a real Java class for the backing store of this object
      * @param classDumpDir Directory to save reified java class
@@ -1161,8 +1164,8 @@ public class RubyClass extends RubyModule {
             name = getName();
         }
         
-        String javaName = "ruby." + name.replaceAll("::", ".");
-        String javaPath = "ruby/" + name.replaceAll("::", "/");
+        String javaName = "rubyobj." + name.replaceAll("::", ".");
+        String javaPath = "rubyobj/" + name.replaceAll("::", "/");
         OneShotClassLoader parentCL;
         if (superClass.getRealClass().getReifiedClass().getClassLoader() instanceof OneShotClassLoader) {
             parentCL = (OneShotClassLoader)superClass.getRealClass().getReifiedClass().getClassLoader();
@@ -1227,6 +1230,9 @@ public class RubyClass extends RubyModule {
         m.voidreturn();
         m.end();
 
+        // gather a list of instance methods, so we don't accidentally make static ones that conflict
+        Set<String> instanceMethods = new HashSet<String>();
+        
         for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
             String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
@@ -1234,11 +1240,13 @@ public class RubyClass extends RubyModule {
             List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(methodName);
             Class[] methodSignature = getMethodSignatures().get(methodName);
 
+            String signature;
             if (methodSignature == null) {
                 // non-signature signature with just IRubyObject
                 switch (methodEntry.getValue().getArity().getValue()) {
                 case 0:
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(IRubyObject.class), null, null);
+                    signature = sig(IRubyObject.class);
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.aload(0);
@@ -1246,7 +1254,8 @@ public class RubyClass extends RubyModule {
                     m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
                     break;
                 default:
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(IRubyObject.class, IRubyObject[].class), null, null);
+                    signature = sig(IRubyObject.class, IRubyObject[].class);
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.aload(0);
@@ -1271,7 +1280,8 @@ public class RubyClass extends RubyModule {
                 }
                 int rubyIndex = baseIndex;
 
-                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(methodSignature[0], params), null, null);
+                signature = sig(methodSignature[0], params);
+                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                 m.getstatic(javaPath, "ruby", ci(Ruby.class));
@@ -1285,6 +1295,10 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
             }
 
+            if (DEBUG_REIFY) System.out.println("defining " + getName() + "#" + methodName + " as " + javaName + "#" + javaMethodName + signature);
+
+            instanceMethods.add(javaMethodName + signature);
+
             m.end();
         }
         
@@ -1295,11 +1309,14 @@ public class RubyClass extends RubyModule {
             List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(methodName);
             Class[] methodSignature = getMetaClass().getMethodSignatures().get(methodName);
 
+            String signature;
             if (methodSignature == null) {
                 // non-signature signature with just IRubyObject
                 switch (methodEntry.getValue().getArity().getValue()) {
                 case 0:
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(IRubyObject.class), null, null);
+                    signature = sig(IRubyObject.class);
+                    if (instanceMethods.contains(javaMethodName + signature)) continue;
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
@@ -1308,7 +1325,9 @@ public class RubyClass extends RubyModule {
                     m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
                     break;
                 default:
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(IRubyObject.class, IRubyObject[].class), null, null);
+                    signature = sig(IRubyObject.class, IRubyObject[].class);
+                    if (instanceMethods.contains(javaMethodName + signature)) continue;
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
@@ -1333,7 +1352,9 @@ public class RubyClass extends RubyModule {
                 }
                 int rubyIndex = baseIndex;
 
-                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(methodSignature[0], params), null, null);
+                signature = sig(methodSignature[0], params);
+                if (instanceMethods.contains(javaMethodName + signature)) continue;
+                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                 m.getstatic(javaPath, "ruby", ci(Ruby.class));
@@ -1348,6 +1369,8 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
             }
 
+            if (DEBUG_REIFY) System.out.println("defining " + getName() + "." + methodName + " as " + javaName + "." + javaMethodName + signature);
+
             m.end();
         }
 
@@ -1361,7 +1384,10 @@ public class RubyClass extends RubyModule {
             java.lang.reflect.Method clinit = result.getDeclaredMethod("clinit", Ruby.class, RubyClass.class);
             clinit.invoke(null, runtime, this);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
+                System.err.println("failed to reify class " + getName() + " due to:\n");
+                e.printStackTrace(System.err);
+            }
         }
 
         setClassAllocator(result);

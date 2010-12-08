@@ -50,6 +50,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
+import org.jruby.compiler.JITCompiler;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -1002,7 +1003,7 @@ public final class ThreadContext {
                     (element.getFileName().endsWith(".rb") ||
                     element.getFileName().equals("-e") ||
                     // FIXME: Formalize jitted method structure so this isn't quite as hacky
-                    element.getClassName().startsWith("ruby.jit.") ||
+                    element.getClassName().startsWith(JITCompiler.RUBY_JIT_PREFIX) ||
                     element.getMethodName().contains("$RUBY$"))) {
                 if (element.getLineNumber() == -1) continue;
                 
@@ -1010,9 +1011,9 @@ public final class ThreadContext {
                 String className = element.getClassName();
 
                 // FIXME: Formalize jitted method structure so this isn't quite as hacky
-                if (className.startsWith("ruby.jit.")) {
+                if (className.startsWith(JITCompiler.RUBY_JIT_PREFIX)) {
                     // pull out and demangle the method name
-                    methodName = className.substring("ruby.jit.".length(), className.lastIndexOf("_"));
+                    methodName = className.substring(JITCompiler.RUBY_JIT_PREFIX.length() + 1, className.lastIndexOf("_"));
                     methodName = JavaNameMangler.demangleMethodName(methodName);
                     
                     trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));

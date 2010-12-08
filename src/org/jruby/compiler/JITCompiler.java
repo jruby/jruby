@@ -61,6 +61,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 public class JITCompiler implements JITCompilerMBean {
     public static final boolean USE_CACHE = true;
+    public static final String RUBY_JIT_PREFIX = "rubyjit";
 
     public static class JITCounts {
         private final AtomicLong compiledCount = new AtomicLong(0);
@@ -223,7 +224,7 @@ public class JITCompiler implements JITCompilerMBean {
     
     public static class JITClassGenerator implements ClassCache.ClassGenerator {
         public JITClassGenerator(String name, String key, Ruby ruby, DefaultMethod method, ThreadContext context, JITCounts counts) {
-            this.packageName = "ruby/jit";
+            this.packageName = JITCompiler.RUBY_JIT_PREFIX;
             this.digestString = getHashForString(key);
             this.className = packageName + "/" + JavaNameMangler.mangleMethodName(name) + "_" + digestString;
             this.name = className.replaceAll("/", ".");

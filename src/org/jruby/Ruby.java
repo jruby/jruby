@@ -2612,7 +2612,7 @@ public final class Ruby {
                 }
                 buffer = baos.toByteArray();
                 String hash = JITCompiler.getHashForBytes(buffer);
-                className = "ruby.jit.FILE_" + hash;
+                className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
 
                 // FIXME: duplicated from ClassCache
                 Class contents;

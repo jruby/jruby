@@ -267,6 +267,9 @@ public class RubyInstanceConfig {
     public static final boolean REIFY_RUBY_CLASSES
             = SafePropertyAccessor.getBoolean("jruby.reify.classes", false);
 
+    public static final boolean REIFY_LOG_ERRORS
+            = SafePropertyAccessor.getBoolean("jruby.reify.logErrors", false);
+
     public static final boolean USE_GENERATED_HANDLES
             = SafePropertyAccessor.getBoolean("jruby.java.handles", false);
 
@@ -592,6 +595,10 @@ public class RubyInstanceConfig {
                 .append("       Make non-local flow jumps generate backtraces. Default is false.\n")
                 .append("    jruby.process.noUnwrap=true|false\n")
                 .append("       Do not unwrap process streams (IBM Java 6 issue). Default is false.\n")
+                .append("    jruby.reify.classes=true|false\n")
+                .append("       Before instantiation, stand up a real Java class for ever Ruby class. Default is false. \n")
+                .append("    jruby.reify.logErrors=true|false\n")
+                .append("       Log errors during reification (reify.classes=true). Default is false. \n")
                 .append("\nDEBUGGING/LOGGING:\n")
                 .append("    jruby.debug.loadService=true|false\n")
                 .append("       LoadService logging\n")
