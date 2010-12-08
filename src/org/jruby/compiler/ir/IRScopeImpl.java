@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jruby.RubyModule;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.operands.Label;
@@ -53,6 +54,7 @@ import org.jruby.parser.StaticScope;
  */
 public abstract class IRScopeImpl implements IRScope {
     Operand container;       // Parent container for this context
+    RubyModule containerModule; // Live version of container
     IRScope lexicalParent;  // Lexical parent scope
 
     private String name;
@@ -88,6 +90,14 @@ public abstract class IRScopeImpl implements IRScope {
     // Returns the containing scope!
     public Operand getContainer() {
         return container;
+    }
+
+    public RubyModule getContainerModule() {
+        return containerModule;
+    }
+
+    public void setContainerModule(RubyModule containerModule) {
+        this.containerModule = containerModule;
     }
 
     public IRScope getLexicalParent() {
