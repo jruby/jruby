@@ -220,11 +220,14 @@ public class Interpreter {
             BasicBlock basicBlock = cfg.getEntryBB();
             while (basicBlock != null) {
                 Label jumpTarget = null;
-                Instr prev = null;
+
                 for (Instr instruction : basicBlock.getInstrs()) {
-//                    System.out.println("EXEC'ing: " + instruction);
-                    interpInstrsCount++;
-                    jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
+                    // TODO: CFG should remove dead instructions
+                    if (!instruction.isDead()) {
+//                      System.out.println("EXEC'ing: " + instruction);
+                        interpInstrsCount++;
+                        jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
+                    }
                 }
 
                 // Explicit jump or implicit fall-through to next bb
