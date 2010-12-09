@@ -279,6 +279,11 @@ public class RubyEncoding extends RubyObject {
         return find(context, recv, str);
     }
 
+    @JRubyMethod(name = "ascii_compatible?")
+    public IRubyObject asciiCompatible_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(getEncoding().isAsciiCompatible());
+    }
+
     @JRubyMethod(name = {"to_s", "name"})
     public IRubyObject to_s(ThreadContext context) {
         // TODO: rb_usascii_str_new2
