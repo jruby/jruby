@@ -584,9 +584,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public final boolean respondsTo(String name) {
         DynamicMethod method = getMetaClass().searchMethod("respond_to?");
         if(method == getRuntime().getRespondToMethod()) {
+            // fastest path; builtin respond_to? which just does isMethodBound
             return getMetaClass().isMethodBound(name, false);
-        } else {
+        } else if (!method.isUndefined()) {
+            // medium path, invoke user's respond_to? if defined
             return method.call(getRuntime().getCurrentContext(), this, metaClass, "respond_to?", getRuntime().newSymbol(name)).isTrue();
+        } else {
+            // slowest path, full callMethod to hit method_missing if present, or produce error
+            return callMethod(getRuntime().getCurrentContext(), "respond_to?", getRuntime().newSymbol(name)).isTrue();
         }
     }
 

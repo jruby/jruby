@@ -78,3 +78,32 @@ class TestRespondToCallSite < Test::Unit::TestCase
     assert CallSite.respond_to?(:method_missing, true)
   end
 end
+
+# regression from r91031746 broke m_m invocation when attempting respond_to?
+class TestRespondToViaMethodMissing < Test::Unit::TestCase
+  class ABasicObject #:nodoc:
+    instance_methods.each do |m|
+      undef_method(m) if m.to_s !~ /(?:^__|^nil\?$|^send$|^object_id$)/
+    end
+    
+    attr_accessor :respond_to_called
+
+    def method_missing(name, *args)
+      if name == :respond_to? && args[0] == :to_str
+        @respond_to_called = true
+        true
+      elsif name == :==
+        true
+      else
+        super
+      end
+    end
+  end
+
+  def test_respond_to_check_can_trigger_method_missing
+    obj = ABasicObject.new
+    assert_nothing_raised do
+      assert "string" == obj
+    end
+  end
+end

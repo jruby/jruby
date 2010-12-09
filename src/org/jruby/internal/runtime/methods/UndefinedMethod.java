@@ -56,7 +56,7 @@ public class UndefinedMethod extends DynamicMethod {
      * @see DynamicMethod.call
      */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("BUG: invoking UndefinedMethod.call; report at http://bugs.jruby.org");
     }
     
     /**
