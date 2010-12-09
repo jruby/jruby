@@ -83,6 +83,7 @@ import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.PostExeNode;
+import org.jruby.ast.PreExe19Node;
 import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
@@ -1655,17 +1656,16 @@ states[19] = new ParserState() {
 };
 states[20] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (support.isInDef() || support.isInSingle()) {
-                        support.yyerror("BEGIN in method");
+                    // FIXME: the == here is gross; need a cleaner way to check it
+                    if (support.isInDef() || support.isInSingle() || support.getCurrentScope().getClass() == BlockStaticScope.class) {
+                        support.yyerror("BEGIN in method, singleton, or block");
                     }
-                    support.pushLocalScope();
     return yyVal;
   }
 };
 states[21] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.getResult().addBeginNode(new PreExeNode(((Token)yyVals[-4+yyTop]).getPosition(), support.getCurrentScope(), ((Node)yyVals[-1+yyTop])));
-                    support.popCurrentScope();
+                    support.getResult().addBeginNode(new PreExe19Node(((Token)yyVals[-4+yyTop]).getPosition(), support.getCurrentScope(), ((Node)yyVals[-1+yyTop])));
                     yyVal = null;
     return yyVal;
   }

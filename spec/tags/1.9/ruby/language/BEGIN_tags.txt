@@ -1,2 +1,0 @@
-fails:The BEGIN keyword runs in a shared scope
-fails:The BEGIN keyword must appear in a top-level context
