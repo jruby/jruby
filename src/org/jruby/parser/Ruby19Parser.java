@@ -84,7 +84,6 @@ import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExe19Node;
-import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
@@ -1656,7 +1655,7 @@ states[19] = new ParserState() {
 };
 states[20] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    // FIXME: the == here is gross; need a cleaner way to check it
+                    /* FIXME: the == here is gross; need a cleaner way to check it*/
                     if (support.isInDef() || support.isInSingle() || support.getCurrentScope().getClass() == BlockStaticScope.class) {
                         support.yyerror("BEGIN in method, singleton, or block");
                     }
@@ -4221,7 +4220,7 @@ states[541] = new ParserState() {
   }
 };
 }
-					// line 2022 "Ruby19Parser.y"
+					// line 2021 "Ruby19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4254,4 +4253,4 @@ states[541] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8045 "-"
+					// line 8044 "-"
