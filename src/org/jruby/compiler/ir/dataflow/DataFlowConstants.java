@@ -1,15 +1,15 @@
 package org.jruby.compiler.ir.dataflow;
 
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
-import org.jruby.compiler.ir.dataflow.analyses.FrameLoadPlacementProblem;
-import org.jruby.compiler.ir.dataflow.analyses.FrameStorePlacementProblem;
+import org.jruby.compiler.ir.dataflow.analyses.BindingLoadPlacementProblem;
+import org.jruby.compiler.ir.dataflow.analyses.BindingStorePlacementProblem;
 import org.jruby.compiler.ir.operands.Operand;
 
 public class DataFlowConstants
 {
     public static final String LVP_NAME = (new LiveVariablesProblem()).getName();
-    public static final String FLP_NAME = (new FrameLoadPlacementProblem()).getName();
-    public static final String FSP_NAME = (new FrameStorePlacementProblem()).getName();
+    public static final String BLP_NAME = (new BindingLoadPlacementProblem()).getName();
+    public static final String BSP_NAME = (new BindingStorePlacementProblem()).getName();
 
     /* Lattice TOP, BOTTOM, ANY values -- these will be used during dataflow analyses */
 

@@ -18,11 +18,11 @@ import org.jruby.RubyModule;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class AllocateFrameInstr extends Instr {
+public class AllocateBindingInstr extends Instr {
     IRMethod scope;   // Scope for which frame is needed
 
-    public AllocateFrameInstr(IRExecutionScope scope) {
-        super(Operation.ALLOC_FRAME);
+    public AllocateBindingInstr(IRExecutionScope scope) {
+        super(Operation.ALLOC_BINDING);
         
         this.scope = getClosestMethodAncestor(scope);
     }
@@ -44,7 +44,7 @@ public class AllocateFrameInstr extends Instr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         // The frame will now be allocated in the caller's scope
-        return new AllocateFrameInstr(ii.callerCFG.getScope());
+        return new AllocateBindingInstr(ii.callerCFG.getScope());
     }
 
     @Override
@@ -54,8 +54,7 @@ public class AllocateFrameInstr extends Instr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        // ENEBO: This is slightly better than pushFrame but at least we are pushing proper self, block,
-        // and static scope.  The impl class may or may not be correct.
+        // The impl class may or may not be correct.
         RubyModule implementationClass = scope.getStaticScope().getModule();
 
         if (implementationClass == null) {

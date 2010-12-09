@@ -12,7 +12,7 @@ import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
-import org.jruby.compiler.ir.compiler_pass.AddFrameInstructions;
+import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
 import org.jruby.compiler.ir.compiler_pass.IR_Printer;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
@@ -43,7 +43,7 @@ public class Interpreter {
         scope.runCompilerPass(new CFG_Builder());
         scope.runCompilerPass(new LiveVariableAnalysis());
         scope.runCompilerPass(new DeadCodeElimination());
-        scope.runCompilerPass(new AddFrameInstructions());
+        scope.runCompilerPass(new AddBindingInstructions());
         scope.runCompilerPass(new CallSplitter());
 
         return Interpreter.interpretTop(runtime, scope, self);
@@ -78,7 +78,7 @@ public class Interpreter {
             long t7 = new Date().getTime();
             scope.runCompilerPass(new DeadCodeElimination());
             long t8 = new Date().getTime();
-            scope.runCompilerPass(new AddFrameInstructions());
+            scope.runCompilerPass(new AddBindingInstructions());
             long t9 = new Date().getTime();
             if (isDebug) scope.runCompilerPass(new IR_Printer());
             Interpreter.interpretTop(runtime, scope, runtime.getTopSelf());

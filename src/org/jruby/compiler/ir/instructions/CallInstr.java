@@ -41,7 +41,7 @@ public class CallInstr extends MultiOperandInstr {
     
     private boolean _flagsComputed;
     private boolean _canBeEval;
-    private boolean _requiresFrame;
+    private boolean _requiresBinding;    // Does this call make use of the caller's binding?
     public HashMap<DynamicMethod, Integer> _profile;
 
     public CallInstr(Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
@@ -54,7 +54,7 @@ public class CallInstr extends MultiOperandInstr {
         _closure = closure;
         _flagsComputed = false;
         _canBeEval = true;
-        _requiresFrame = true;
+        _requiresBinding = true;
     }
 
     public CallInstr(Operation op, Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
@@ -67,7 +67,7 @@ public class CallInstr extends MultiOperandInstr {
         _closure = closure;
         _flagsComputed = false;
         _canBeEval = true;
-        _requiresFrame = true;
+        _requiresBinding = true;
     }
 
     public void setMethodAddr(Operand mh) {
@@ -183,19 +183,18 @@ public class CallInstr extends MultiOperandInstr {
         return true; // Unknown method -- could be eval!
     }
 
-    // SSS FIXME: Are all bases covered?
-	 // SSS FIXME: This refers to the call-stack frame, not binding dynamic scope!
-    private boolean getRequiresFrameFlag() {
-        // This is an eval, or it has a closure that requires a frame
-        if (canBeEval()) return true;
+    private boolean getRequiresBindingFlag() {
+        // This is an eval
+        // SSS FIXME: This is conservative, but will let that go for now
+        if (canBeEval() /*|| canCaptureCallersBinding()*/) return true;
 
         if (_closure != null) {
-            // can be a symbol .. ex: [1,2,3,4].map(&:foo) .. &:foo is a closure
+            // Can be a symbol .. ex: [1,2,3,4].map(&:foo)
+            // SSS FIXME: Is it true that if the closure operand is a symbol, it couldn't access the caller's binding?
             if (!(_closure instanceof MetaObject)) return false;
 
             IRClosure cl = (IRClosure) ((MetaObject) _closure).scope;
-
-            if (cl.requiresFrame()) return true;
+            if (cl.requiresBinding() /*|| cl.canCaptureCallersBinding()*/) return true;
         }
 
         // Check if we are calling Proc.new or lambda
@@ -204,10 +203,9 @@ public class CallInstr extends MultiOperandInstr {
         if (!(ma instanceof MethAddr)) return true;
 
         String mname = ((MethAddr) ma).getName();
-
-        if (mname.equals("lambda")) return true;
-
-        if (mname.equals("new")) {
+        if (mname.equals("lambda")) {
+           return true;
+        } else if (mname.equals("new")) {
             Operand object = getReceiver();
 
             // Unknown receiver -- could be Proc!!
@@ -218,6 +216,7 @@ public class CallInstr extends MultiOperandInstr {
             if ((c instanceof IRClass) && c.getName().equals("Proc")) return true;
         }
         
+        // SSS FIXME: Are all bases covered?
         return false;  // All checks done -- dont need one
     }
 
@@ -225,7 +224,7 @@ public class CallInstr extends MultiOperandInstr {
         // Order important!
         _flagsComputed = true;
         _canBeEval = getEvalFlag();
-        _requiresFrame = getRequiresFrameFlag();
+        _requiresBinding   = _canBeEval ? true : getRequiresBindingFlag();
     }
 
     public boolean canBeEval() {
@@ -234,13 +233,14 @@ public class CallInstr extends MultiOperandInstr {
         return _canBeEval;
     }
 
-    public boolean requiresFrame() {
+    public boolean requiresBinding() {
         if (!_flagsComputed) computeFlags();
 
-        return _requiresFrame;
+        return _requiresBinding;
     }
 
-    public boolean canCaptureCallersFrame() {
+    // SSS FIXME: Are all bases covered?
+    public boolean canCaptureCallersBinding() {
         /**
          * We should do this better by setting default flags for various core library methods
          * and by checking type of receiver to see if the receiver is any core object (string, array, etc.)
@@ -255,13 +255,18 @@ public class CallInstr extends MultiOperandInstr {
 
         // If we don't know the method we are dispatching to, or if we know that the method can capture the callers frame,
         // we are in deep doo-doo.  We will need to store all variables in the call frame.
-        return ((rm == null) || rm.canCaptureCallersFrame());
+        //
+        // SSS FIXME:
+        // This is a "static" check and at some point during the execution, the caller's code could change and capture the binding at that point!
+        // We need to set a compilation flag that records this dependency on the caller, so that this method can be recompiled whenever
+        // the caller changes.
+        return ((rm == null) || rm.canCaptureCallersBinding());
     }
 
     public boolean isLVADataflowBarrier() {
-        // If the call is an eval, OR if it passes a closure and the callee can capture the caller's frame, we are in trouble
+        // If the call is an eval, OR if it passes a closure and the callee can capture the caller's binding, we are in trouble
         // We would have to pretty much spill everything at the call site!
-        return canBeEval() || ((getClosureArg() != null) && canCaptureCallersFrame());
+        return canBeEval() || ((getClosureArg() != null) && canCaptureCallersBinding());
     }
 
     @Override

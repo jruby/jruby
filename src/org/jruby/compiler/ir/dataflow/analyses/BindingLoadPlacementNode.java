@@ -7,7 +7,7 @@ import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.LoadFromFrameInstr;
+import org.jruby.compiler.ir.instructions.LoadFromBindingInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
@@ -21,9 +21,9 @@ import java.util.ListIterator;
 import java.util.Set;
 import org.jruby.compiler.ir.operands.LocalVariable;
 
-public class FrameLoadPlacementNode extends FlowGraphNode {
+public class BindingLoadPlacementNode extends FlowGraphNode {
     /* ---------- Public fields, methods --------- */
-    public FrameLoadPlacementNode(DataFlowProblem prob, BasicBlock n) {
+    public BindingLoadPlacementNode(DataFlowProblem prob, BasicBlock n) {
         super(prob, n);
     }
 
@@ -33,31 +33,31 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
         _outReqdLoads = new HashSet<Variable>();
     }
 
-    // Only ruby local variables are candidates for frame loads.  Ignore the rest!
+    // Only ruby local variables are candidates for binding loads.  Ignore the rest!
     public void buildDataFlowVars(Instr i) {
-        FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem) _prob;
+        BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) _prob;
         for (Variable v : i.getUsedVariables()) {
             if (v instanceof LocalVariable)
-                flp.recordUsedVar(v);
+                blp.recordUsedVar(v);
         }
 
         Variable v = i.getResult();
-        if ((v != null) && (v instanceof LocalVariable)) flp.recordDefVar(v);
+        if ((v != null) && (v instanceof LocalVariable)) blp.recordDefVar(v);
     }
 
     public void initSolnForNode() {
         if (_bb == _prob.getCFG().getExitBB()) {
-            _inReqdLoads = ((FrameLoadPlacementProblem) _prob).getLoadsOnScopeExit();
+            _inReqdLoads = ((BindingLoadPlacementProblem) _prob).getLoadsOnScopeExit();
         }
     }
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred) {
-        FrameLoadPlacementNode n = (FrameLoadPlacementNode) pred;
+        BindingLoadPlacementNode n = (BindingLoadPlacementNode) pred;
         _inReqdLoads.addAll(n._outReqdLoads);
     }
 
     public boolean applyTransferFunction() {
-        FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem) _prob;
+        BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) _prob;
         Set<Variable> reqdLoads = new HashSet<Variable>(_inReqdLoads);
 
         List<Instr> instrs = _bb.getInstrs();
@@ -65,53 +65,39 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
         while (it.hasPrevious()) {
             Instr i = it.previous();
 
-            if (i.operation == Operation.FRAME_STORE) continue;
+            if (i.operation == Operation.BINDING_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
             Variable r = i.getResult();
 
             if (r != null) reqdLoads.remove(r);
 
-            // Process calls specially -- these are the sites of frame loads!
+            // Process calls specially -- these are the sites of binding loads!
             if (i instanceof CallInstr) {
                 CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
                     IRClosure cl = (IRClosure) ((MetaObject) o).scope;
                     CFG cl_cfg = cl.getCFG();
-                    FrameLoadPlacementProblem cl_flp = new FrameLoadPlacementProblem();
-                    cl_flp.initLoadsOnScopeExit(reqdLoads);
-                    cl_flp.setup(cl_cfg);
-                    cl_flp.compute_MOP_Solution();
-                    cl_cfg.setDataFlowSolution(cl_flp.getName(), cl_flp);
-/**
-                    flp.setBindingHasEscaped(cl_flp.bindingHasEscaped());
-                    // SSS FIXME: 'Frame' is the call-stack frame, not binding scope-closure frame!
-                    // So what we actually need to do is this!
-                    if (call.requiresBinding() || (flp.bindingHasEscaped() && call.mightUseBinding())) {
+                    BindingLoadPlacementProblem cl_blp = new BindingLoadPlacementProblem();
+                    cl_blp.initLoadsOnScopeExit(reqdLoads);
+                    cl_blp.setup(cl_cfg);
+                    cl_blp.compute_MOP_Solution();
+                    cl_cfg.setDataFlowSolution(cl_blp.getName(), cl_blp);
+                    if (call.requiresBinding()) {
                         reqdLoads.clear();
-                        flp.setBindingHasEscaped(call.capturesBinding());
                     }
-**/
 
                     // Variables defined in the closure do not need to be loaded anymore at
                     // program points before the call.
                     Set<Variable> newReqdLoads = new HashSet<Variable>(reqdLoads);
                     for (Variable v : reqdLoads) {
-                        if (cl_flp.scopeDefinesVariable(v)) newReqdLoads.remove(v);
+                        if (cl_blp.scopeDefinesVariable(v)) newReqdLoads.remove(v);
                     }
                     reqdLoads = newReqdLoads;
                 }
                 // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
-/**
-                // SSS FIXME: 'Frame' is the call-stack frame, not binding scope-closure frame!
-                // So what we actually need to do is this!
-                else if (call.requiresBinding() || (flp.bindingHasEscaped() && call.mightUseBinding())) {
-                    reqdLoads.clear();
-                    flp.setBindingHasEscaped(call.capturesBinding());
-                }
-**/
-                else if (call.requiresFrame()) {
+                else if (call.requiresBinding()) {
                     reqdLoads.clear();
                 }
             }
@@ -140,15 +126,15 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
     }
 
     public void addLoads() {
-        FrameLoadPlacementProblem flp = (FrameLoadPlacementProblem) _prob;
-        IRExecutionScope s = flp.getCFG().getScope();
+        BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) _prob;
+        IRExecutionScope s = blp.getCFG().getScope();
         List<Instr> instrs = _bb.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         Set<Variable> reqdLoads = new HashSet<Variable>(_inReqdLoads);
         while (it.hasPrevious()) {
             Instr i = it.previous();
 
-            if (i.operation == Operation.FRAME_STORE) continue;
+            if (i.operation == Operation.BINDING_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
             Variable r = i.getResult();
@@ -160,15 +146,15 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
                     CFG cl_cfg = ((IRClosure) ((MetaObject) o).scope).getCFG();
-                    FrameLoadPlacementProblem cl_flp = (FrameLoadPlacementProblem) cl_cfg.getDataFlowSolution(flp.getName());
+                    BindingLoadPlacementProblem cl_blp = (BindingLoadPlacementProblem) cl_cfg.getDataFlowSolution(blp.getName());
 
                     // Only those variables that are defined in the closure, and are in the required loads set 
-                    // will need to be loaded from the frame after the call!
+                    // will need to be loaded from the binding after the call!
                     Set<Variable> newReqdLoads = new HashSet<Variable>(reqdLoads);
                     it.next();
                     for (Variable v : reqdLoads) {
-                        if (cl_flp.scopeDefinesVariable(v)) {
-                            it.add(new LoadFromFrameInstr(v, s, v.getName()));
+                        if (cl_blp.scopeDefinesVariable(v)) {
+                            it.add(new LoadFromBindingInstr(v, s, v.getName()));
                             it.previous();
                             newReqdLoads.remove(v);
                         }
@@ -177,11 +163,11 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
                     reqdLoads = newReqdLoads;
 
                     // add loads in the closure
-                    ((FrameLoadPlacementProblem) cl_cfg.getDataFlowSolution(flp.getName())).addLoads();
-                } else if (call.requiresFrame()) {
+                    ((BindingLoadPlacementProblem) cl_cfg.getDataFlowSolution(blp.getName())).addLoads();
+                } else if (call.requiresBinding()) {
                     it.next();
                     for (Variable v : reqdLoads) {
-                        it.add(new LoadFromFrameInstr(v, s, v.getName()));
+                        it.add(new LoadFromBindingInstr(v, s, v.getName()));
                         it.previous();
                     }
                     it.previous();
@@ -199,14 +185,14 @@ public class FrameLoadPlacementNode extends FlowGraphNode {
         // Load first use of variables in closures
         if ((s instanceof IRClosure) && (_bb == _prob.getCFG().getEntryBB())) {
             for (Variable v : reqdLoads) {
-                if (flp.scopeUsesVariable(v)) {
-                    it.add(new LoadFromFrameInstr(v, s, v.getName()));
+                if (blp.scopeUsesVariable(v)) {
+                    it.add(new LoadFromBindingInstr(v, s, v.getName()));
                 }
             }
         }
     }
 
     /* ---------- Private fields, methods --------- */
-    Set<Variable> _inReqdLoads;     // On entry to flow graph node:  Variables that need to be loaded from the heap frame
-    Set<Variable> _outReqdLoads;    // On exit from flow graph node: Variables that need to be loaded from the heap frame
+    Set<Variable> _inReqdLoads;     // On entry to flow graph node:  Variables that need to be loaded from the heap binding
+    Set<Variable> _outReqdLoads;    // On exit from flow graph node: Variables that need to be loaded from the heap binding
 }

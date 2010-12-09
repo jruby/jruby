@@ -30,7 +30,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
     /* *****************************************************************************************************
      * Does this execution scope (applicable only to methods) receive a block and use it in such a way that
-     * all of the caller's local variables need to be stored in a heap frame?
+     * all of the caller's local variables need to be materialized into a heap binding?
      * Ex: 
      *    def foo(&b)
      *     eval 'puts a', b
@@ -55,7 +55,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
      * This logic was extracted from an email thread on the JRuby mailing list -- Yehuda Katz & Charles Nutter
      * contributed this analysis above.
      * ********************************************************************************************************/
-    private boolean canCaptureCallersFrame;
+    private boolean canCaptureCallersBinding;
 
     /* ****************************************************************************
      * Does this scope define code, i.e. does it (or anybody in the downward call chain)
@@ -66,17 +66,17 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private boolean canModifyCode;
 
     /* ****************************************************************************
-     * Does this scope (if a closure, applies to the nearest method ancestor) require a heap frame?
+     * Does this scope (if a closure, applies to the nearest method ancestor) require a binding to be materialized?
      * Yes if any of the following holds true:
      * - calls 'Proc.new'
      * - calls 'eval'
      * - calls 'call' (could be a call on a stored block which could be local!)
      * - calls 'send' and we cannot resolve the message (method name) that is being sent!
-     * - calls methods that can access the callers heap frame
+     * - calls methods that can access the caller's binding
      * - calls a method which we cannot resolve now!
-     * - has a call whose closure requires a heap frame
+     * - has a call whose closure requires a binding
      * **************************************************************************** */
-    private boolean requiresFrame;
+    private boolean requiresBinding;
 
     // NOTE: Since we are processing ASTs, loop bodies are processed in depth-first manner
     // with outer loops encountered before inner loops, and inner loops finished before outer ones.
@@ -98,8 +98,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
         // All flags are true by default!
         canModifyCode = true;
-        canCaptureCallersFrame = true;
-        requiresFrame = true;
+        canCaptureCallersBinding = true;
+        requiresBinding = true;
     }
 
     public IRExecutionScope(IRScope lexicalParent, Operand container, String name, StaticScope staticScope) {
@@ -146,12 +146,12 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return canModifyCode;
     }
 
-    public boolean requiresFrame() {
-        return requiresFrame;
+    public boolean requiresBinding() {
+        return requiresBinding;
     }
 
-    public boolean canCaptureCallersFrame() {
-        return canCaptureCallersFrame;
+    public boolean canCaptureCallersBinding() {
+        return canCaptureCallersBinding;
     }
 
     public CFG buildCFG() {
@@ -184,8 +184,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     public void computeExecutionScopeFlags() {
         // init
         canModifyCode = true;
-        canCaptureCallersFrame = false;
-        requiresFrame = false;
+        canCaptureCallersBinding = false;
+        requiresBinding = false;
 
         // recompute flags -- we could be calling this method different times
         // definitely once after ir generation and local optimizations propagates constants locally
@@ -197,18 +197,18 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
             // SSS FIXME: Should we build a ZSUPER IR Instr rather than have this code here?
             if ((i instanceof RubyInternalCallInstr) && (((CallInstr) i).getMethodAddr() == MethAddr.ZSUPER))
-                canCaptureCallersFrame = true;
+                canCaptureCallersBinding = true;
 
             if (i instanceof CallInstr) {
                 CallInstr call = (CallInstr) i;
-                if (call.requiresFrame())
-                    requiresFrame = true;
+                if (call.requiresBinding())
+                    requiresBinding = true;
 
                 // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
                 // it could be using the closure as a binding -- which means it could be using pretty much any
-                // variable from the caller's frame!
+                // variable from the caller's binding!
                 if (receivesClosureArg && call.canBeEval() && (call.getCallArgs().length > 1))
-                    canCaptureCallersFrame = true;
+                    canCaptureCallersBinding = true;
             }
         }
     }

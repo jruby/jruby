@@ -270,7 +270,7 @@ public class IRBuilder {
            long t7 = new Date().getTime();
            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination());
            long t8 = new Date().getTime();
-           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.AddFrameInstructions());
+           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.AddBindingInstructions());
            long t9 = new Date().getTime();
            if (isDebug) {
                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());

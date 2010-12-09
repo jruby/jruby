@@ -8,8 +8,8 @@ import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.AllocateFrameInstr;
-import org.jruby.compiler.ir.instructions.StoreToFrameInstr;
+import org.jruby.compiler.ir.instructions.AllocateBindingInstr;
+import org.jruby.compiler.ir.instructions.StoreToBindingInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
@@ -23,9 +23,9 @@ import java.util.HashSet;
 import java.util.ListIterator;
 import org.jruby.compiler.ir.operands.LocalVariable;
 
-public class FrameStorePlacementNode extends FlowGraphNode {
+public class BindingStorePlacementNode extends FlowGraphNode {
     /* ---------- Public fields, methods --------- */
-    public FrameStorePlacementNode(DataFlowProblem prob, BasicBlock n) {
+    public BindingStorePlacementNode(DataFlowProblem prob, BasicBlock n) {
         super(prob, n);
     }
 
@@ -34,67 +34,67 @@ public class FrameStorePlacementNode extends FlowGraphNode {
         _inDirtyVars = new HashSet<Variable>();
         _outDirtyVars = new HashSet<Variable>();
 
-        // For closure scopes, the heap frame will already have been allocated in the parent scope
-        // So, don't even bother with the frame allocation in closures!
+        // For closure scopes, the heap binding will already have been allocated in the parent scope
+        // So, don't even bother with the binding allocation in closures!
         if (_prob.getCFG().getScope() instanceof IRClosure) {
-            _inFrameAllocated = _outFrameAllocated = true;
+            _inBindingAllocated = _outBindingAllocated = true;
         } else {
-            _inFrameAllocated = _outFrameAllocated = false;
+            _inBindingAllocated = _outBindingAllocated = false;
         }
     }
 
-    // Only ruby local variables are candidates for frame stores.  Ignore the rest!
+    // Only ruby local variables are candidates for binding stores.  Ignore the rest!
     // SSS FIXME: What about self?
     public void buildDataFlowVars(Instr i) {
-        FrameStorePlacementProblem fsp = (FrameStorePlacementProblem) _prob;
+        BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) _prob;
         for (Variable v : i.getUsedVariables()) {
             if (v instanceof LocalVariable)
-                fsp.recordUsedVar(v);
+                bsp.recordUsedVar(v);
         }
 
         Variable v = i.getResult();
 
-        if ((v != null) && (v instanceof LocalVariable)) fsp.recordDefVar(v);
+        if ((v != null) && (v instanceof LocalVariable)) bsp.recordDefVar(v);
     }
 
     public void initSolnForNode() {
     }
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred) {
-        FrameStorePlacementNode n = (FrameStorePlacementNode) pred;
+        BindingStorePlacementNode n = (BindingStorePlacementNode) pred;
         _inDirtyVars.addAll(n._outDirtyVars);
 
-        // For frame allocation, we are using the and operator -- so only if the frame has been allocated
-        // on all incoming paths do we consider that a frame has been allocated 
-        _inFrameAllocated = _inFrameAllocated && n._outFrameAllocated;
+        // For binding allocation, we are using the and operator -- so only if the binding has been allocated
+        // on all incoming paths do we consider that a binding has been allocated 
+        _inBindingAllocated = _inBindingAllocated && n._outBindingAllocated;
     }
 
     public boolean applyTransferFunction() {
-        boolean frameAllocated = _inFrameAllocated;
+        boolean bindingAllocated = _inBindingAllocated;
 
-        FrameStorePlacementProblem fsp = (FrameStorePlacementProblem) _prob;
+        BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) _prob;
         Set<Variable> dirtyVars = new HashSet<Variable>(_inDirtyVars);
 
         for (Instr i : _bb.getInstrs()) {
-            if (i.operation == Operation.FRAME_LOAD) continue;
+            if (i.operation == Operation.BINDING_LOAD) continue;
 
-            // Process calls specially -- these are the sites of frame stores!
+            // Process calls specially -- these are the sites of binding stores!
             if (i instanceof CallInstr) {
                 CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
-                    // At this call site, a frame will get allocated if it has not been already!
-                    frameAllocated = true;
+                    // At this call site, a binding will get allocated if it has not been already!
+                    bindingAllocated = true;
 
                     IRClosure cl = (IRClosure) ((MetaObject) o).scope;
                     CFG cl_cfg = cl.getCFG();
-                    FrameStorePlacementProblem cl_fsp = new FrameStorePlacementProblem();
-                    cl_fsp.setup(cl_cfg);
-                    cl_fsp.compute_MOP_Solution();
-                    cl_cfg.setDataFlowSolution(cl_fsp.getName(), cl_fsp);
+                    BindingStorePlacementProblem cl_bsp = new BindingStorePlacementProblem();
+                    cl_bsp.setup(cl_cfg);
+                    cl_bsp.compute_MOP_Solution();
+                    cl_cfg.setDataFlowSolution(cl_bsp.getName(), cl_bsp);
 
-                    // If the call is an eval, or if the callee can capture this method's frame, we have to spill all variables.
-                    boolean spillAllVars = call.canBeEval() || call.canCaptureCallersFrame();
+                    // If the call is an eval, or if the callee can capture this method's binding, we have to spill all variables.
+                    boolean spillAllVars = call.canBeEval() || call.canCaptureCallersBinding();
 
                     // - If all variables have to be spilled, then those variables will no longer be dirty after the call site
                     // - If a variable is used in the closure (FIXME: Strictly only those vars that are live at the call site -- 
@@ -103,15 +103,15 @@ public class FrameStorePlacementNode extends FlowGraphNode {
                     //   won't be dirty after the call site either!
                     Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
                     for (Variable v : dirtyVars) {
-                        if (spillAllVars || cl_fsp.scopeUsesVariable(v) || cl_fsp.scopeDefinesVariable(v)) {
+                        if (spillAllVars || cl_bsp.scopeUsesVariable(v) || cl_bsp.scopeDefinesVariable(v)) {
                             newDirtyVars.remove(v);
                         }
                     }
                     dirtyVars = newDirtyVars;
                 } // Call has no closure && it requires stores
-                else if (call.requiresFrame()) {
+                else if (call.requiresBinding()) {
                     dirtyVars.clear();
-                    frameAllocated = true;
+                    bindingAllocated = true;
                 }
             }
 
@@ -122,15 +122,15 @@ public class FrameStorePlacementNode extends FlowGraphNode {
         }
 
         // At the end of the scope, there are no more dirty vars!
-        // Dirty vars at the end of the closure are handled specially by 'addStoreAndFrameAllocInstructions'
+        // Dirty vars at the end of the closure are handled specially by 'addStoreAndBindingAllocInstructions'
         CFG cfg = _prob.getCFG();
 
         if (_bb == cfg.getExitBB()) dirtyVars.clear();
 
-        if (_outDirtyVars.equals(dirtyVars) && (_outFrameAllocated == frameAllocated)) return false;
+        if (_outDirtyVars.equals(dirtyVars) && (_outBindingAllocated == bindingAllocated)) return false;
 
         _outDirtyVars = dirtyVars;
-        _outFrameAllocated = frameAllocated;
+        _outBindingAllocated = bindingAllocated;
         return true;
     }
 
@@ -139,45 +139,45 @@ public class FrameStorePlacementNode extends FlowGraphNode {
         return "";
     }
 
-    public void addStoreAndFrameAllocInstructions() {
-        FrameStorePlacementProblem fsp = (FrameStorePlacementProblem) _prob;
-        IRExecutionScope s = fsp.getCFG().getScope();
+    public void addStoreAndBindingAllocInstructions() {
+        BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) _prob;
+        IRExecutionScope s = bsp.getCFG().getScope();
         ListIterator<Instr> instrs = _bb.getInstrs().listIterator();
         Set<Variable> dirtyVars = new HashSet<Variable>(_inDirtyVars);
-        boolean frameAllocated = _inFrameAllocated;
+        boolean bindingAllocated = _inBindingAllocated;
 
         while (instrs.hasNext()) {
             Instr i = instrs.next();
-            if (i.operation == Operation.FRAME_LOAD) continue;
+            if (i.operation == Operation.BINDING_LOAD) continue;
 
             if (i instanceof CallInstr) {
                 CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
                     CFG cl_cfg = ((IRClosure) ((MetaObject) o).scope).getCFG();
-                    FrameStorePlacementProblem cl_fsp = (FrameStorePlacementProblem) cl_cfg.getDataFlowSolution(fsp.getName());
+                    BindingStorePlacementProblem cl_bsp = (BindingStorePlacementProblem) cl_cfg.getDataFlowSolution(bsp.getName());
 
-                    // Add a frame allocation instruction, if necessary
+                    // Add a binding allocation instruction, if necessary
                     instrs.previous();
-                    if (!frameAllocated) {
-                        instrs.add(new AllocateFrameInstr(s));
-                        frameAllocated = true;
+                    if (!bindingAllocated) {
+                        instrs.add(new AllocateBindingInstr(s));
+                        bindingAllocated = true;
                     }
 
-                    // If the call is an eval, or if the callee can capture this method's frame,
+                    // If the call is an eval, or if the callee can capture this method's binding,
                     // we have to spill all variables.
-                    boolean spillAllVars = call.canBeEval() || call.canCaptureCallersFrame();
+                    boolean spillAllVars = call.canBeEval() || call.canCaptureCallersBinding();
 
                     // Unless we have to spill everything, spill only those dirty variables that are:
                     // - used in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
                     Set<Variable> newDirtyVars = new HashSet<Variable>(dirtyVars);
                     for (Variable v : dirtyVars) {
-                        if (spillAllVars || cl_fsp.scopeUsesVariable(v)) {
+                        if (spillAllVars || cl_bsp.scopeUsesVariable(v)) {
                             // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
-                            instrs.add(new StoreToFrameInstr(s, v.getName(), v));
+                            instrs.add(new StoreToBindingInstr(s, v.getName(), v));
                             newDirtyVars.remove(v);
                         } // These variables will be spilt inside the closure -- so they will no longer be dirty after the call site!
-                        else if (cl_fsp.scopeDefinesVariable(v)) {
+                        else if (cl_bsp.scopeDefinesVariable(v)) {
                             newDirtyVars.remove(v);
                         }
                     }
@@ -185,16 +185,16 @@ public class FrameStorePlacementNode extends FlowGraphNode {
                     instrs.next();
 
                     // add stores in the closure
-                    ((FrameStorePlacementProblem) cl_cfg.getDataFlowSolution(fsp.getName())).addStoreAndFrameAllocInstructions();
+                    ((BindingStorePlacementProblem) cl_cfg.getDataFlowSolution(bsp.getName())).addStoreAndBindingAllocInstructions();
                 } // Call has no closure && it requires stores
-                else if (call.requiresFrame()) {
+                else if (call.requiresBinding()) {
                     instrs.previous();
-                    if (!frameAllocated) {
-                        instrs.add(new AllocateFrameInstr(s));
-                        frameAllocated = true;
+                    if (!bindingAllocated) {
+                        instrs.add(new AllocateBindingInstr(s));
+                        bindingAllocated = true;
                     }
                     for (Variable v : dirtyVars) {
-                        instrs.add(new StoreToFrameInstr(s, v.getName(), v));
+                        instrs.add(new StoreToBindingInstr(s, v.getName(), v));
                     }
                     instrs.next();
                     dirtyVars.clear();
@@ -208,14 +208,14 @@ public class FrameStorePlacementNode extends FlowGraphNode {
                 //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
                 //       i,j are dirty inside the block, but not used outside
                 //
-                // add a frame store
+                // add a binding store
 
-                LiveVariablesProblem lvp = (LiveVariablesProblem) fsp.getCFG().getDataFlowSolution(DataFlowConstants.LVP_NAME);
+                LiveVariablesProblem lvp = (LiveVariablesProblem) bsp.getCFG().getDataFlowSolution(DataFlowConstants.LVP_NAME);
                 dirtyVars.retainAll(lvp.getVarsLiveOnExit()); // Intersection with variables live on exit from the scope
 
                 instrs.previous();
                 for (Variable v : dirtyVars) {
-                    instrs.add(new StoreToFrameInstr(s, v.getName(), v));
+                    instrs.add(new StoreToBindingInstr(s, v.getName(), v));
                 }
                 instrs.next();
             }
@@ -227,8 +227,8 @@ public class FrameStorePlacementNode extends FlowGraphNode {
     }
 
     /* ---------- Package fields, methods --------- */
-    Set<Variable> _inDirtyVars;     // On entry to flow graph node:  Variables that need to be stored to the heap frame
-    Set<Variable> _outDirtyVars;    // On exit from flow graph node: Variables that need to be stored to the heap frame
-    boolean _inFrameAllocated;   // Flag on entry to bb as to whether a frame has been allocated?
-    boolean _outFrameAllocated;   // Flag on exit to bb as to whether a frame has been allocated?
+    Set<Variable> _inDirtyVars;     // On entry to flow graph node:  Variables that need to be stored to the heap binding
+    Set<Variable> _outDirtyVars;    // On exit from flow graph node: Variables that need to be stored to the heap binding
+    boolean _inBindingAllocated;   // Flag on entry to bb as to whether a binding has been allocated?
+    boolean _outBindingAllocated;   // Flag on exit to bb as to whether a binding has been allocated?
 }

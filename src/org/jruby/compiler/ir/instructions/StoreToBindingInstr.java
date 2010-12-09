@@ -12,9 +12,9 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class StoreToFrameInstr extends PutInstr {
-    public StoreToFrameInstr(IRExecutionScope scope, String slotName, Operand value) {
-        super(Operation.FRAME_STORE, MetaObject.create(getClosestMethodAncestor(scope)), slotName, value);
+public class StoreToBindingInstr extends PutInstr {
+    public StoreToBindingInstr(IRExecutionScope scope, String slotName, Operand value) {
+        super(Operation.BINDING_STORE, MetaObject.create(getClosestMethodAncestor(scope)), slotName, value);
 
         MetaObject mo = (MetaObject)getTarget();
         IRMethod m = (IRMethod)mo.scope;
@@ -31,11 +31,11 @@ public class StoreToFrameInstr extends PutInstr {
 
     @Override
     public String toString() {
-        return "\tSTORE_TO_FRAME(" + operands[TARGET] + ")." + ref + " = " + operands[VALUE];
+        return "\tBINDING(" + operands[TARGET] + ")." + ref + " = " + operands[VALUE];
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new StoreToFrameInstr((IRExecutionScope)((MetaObject)operands[TARGET]).scope, ref, operands[VALUE].cloneForInlining(ii));
+        return new StoreToBindingInstr((IRExecutionScope)((MetaObject)operands[TARGET]).scope, ref, operands[VALUE].cloneForInlining(ii));
     }
 
     private IRScope getIRScope(Operand scopeHolder) {
