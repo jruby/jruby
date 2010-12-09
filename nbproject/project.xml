@@ -66,6 +66,12 @@
                     <location>lib/ruby/site_ruby</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
+                <source-folder>
+                    <label>cext/src</label>
+                    <type>java</type>
+                    <location>cext/src</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
             </folders>
             <ide-actions>
                 <action name="build">
@@ -202,6 +208,10 @@
                         <label>lib/ruby/site_ruby</label>
                         <location>lib/ruby/site_ruby</location>
                     </source-folder>
+                    <source-folder style="packages">
+                        <label>cext/src</label>
+                        <location>cext/src</location>
+                    </source-folder>
                     <source-file>
                         <location>build.xml</location>
                     </source-file>
@@ -264,6 +274,10 @@
             </compilation-unit>
             <compilation-unit>
                 <package-root>lib/ruby/site_ruby</package-root>
+                <source-level>1.5</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>cext/src</package-root>
                 <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>
