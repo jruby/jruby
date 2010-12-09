@@ -398,7 +398,11 @@ public final class ThreadContext {
     public Continuation getActiveCatch(Object tag) {
         for (int i = catchIndex; i >= 0; i--) {
             Continuation c = catchStack[i];
-            if (c.tag.equals(tag)) return c;
+            if (runtime.is1_9()) {
+                if (c.tag == tag) return c;
+            } else {
+                if (c.tag.equals(tag)) return c;
+            }
         }
         return null;
     }
