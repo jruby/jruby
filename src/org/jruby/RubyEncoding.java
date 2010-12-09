@@ -250,23 +250,36 @@ public class RubyEncoding extends RubyObject {
                                 ((RubyEncoding)list[e.value.getIndex()]).name).freeze(context);
             result.fastASet(alias, name);
         }
+
+        // FIXME: Should we be creating a new RubyEncoding everytime we alias?
+        result.fastASet(runtime.newString("external"), 
+                runtime.newString(new ByteList(runtime.getDefaultExternalEncoding().getName())));
+        result.fastASet(runtime.newString("locale"),
+                runtime.newString(getLocaleEncodingName()));
+
         return result;
+    }
+
+    private static ByteList getLocaleEncodingName() {
+        return ByteList.create(Charset.defaultCharset().name());
+    }
+
+    private static IRubyObject findWithError(Ruby runtime, ByteList name) {
+        EncodingService service = runtime.getEncodingService();
+        Entry e = service.findEncodingOrAliasEntry(name);
+
+        if (e == null) throw runtime.newArgumentError("unknown encoding name - " + name);
+
+        return service.getEncodingList()[e.getIndex()];
     }
 
     @JRubyMethod(name = "find", meta = true)
     public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
-        Ruby runtime = context.getRuntime();
-        EncodingService service = runtime.getEncodingService();
         // TODO: check for ascii string
         ByteList name = str.convertToString().getByteList();
-        if (name.equals(LOCALE)) {
-            name = ByteList.create(Charset.defaultCharset().name());
-        }
-        Entry e = service.findEncodingOrAliasEntry(name);
+        if (name.equals(LOCALE)) name = getLocaleEncodingName();
 
-        if (e == null) throw context.getRuntime().newArgumentError("unknown encoding name - " + name);
-
-        return service.getEncodingList()[e.getIndex()];
+        return findWithError(context.getRuntime(), name);
     }
 
     @JRubyMethod(name = "_dump")
