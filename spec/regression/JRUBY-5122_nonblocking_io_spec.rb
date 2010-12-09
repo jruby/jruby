@@ -198,8 +198,10 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
   it "should not block for write" do
     server = TCPServer.new(0)
     value = nil
+    after_accept = false
     t = Thread.new {
       sock = accept(server)
+      after_accept = true
       begin
         value = 1
         # this could block; [ruby-dev:26405]  But it doesn't block on Windows.
@@ -211,6 +213,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     }
     s = connect(server)
     type = nil
+    Thread.pass until after_accept # ensure accept returns
     wait_for_sleep_and_terminate(t) do
       if value == 1
         type = :blocked
