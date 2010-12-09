@@ -58,6 +58,7 @@ public final class EncodingService {
 
     public Encoding loadEncoding(ByteList name) {
         Entry entry = findEncodingOrAliasEntry(name);
+        if (entry == null) return null;
         Encoding enc = entry.getEncoding(); // load the encoding
         int index = enc.getIndex();
         if (index >= encodingIndex.length) {
