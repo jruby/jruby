@@ -286,7 +286,7 @@ public class ParserSupport {
         case Tokens.k__LINE__:
             return new FixnumNode(token.getPosition(), token.getPosition().getStartLine()+1);
         case Tokens.k__ENCODING__:
-            return new EncodingNode(token.getPosition());
+            return new EncodingNode(token.getPosition(), lexer.getEncoding());
         case Tokens.tIDENTIFIER:
             return currentScope.declare(token.getPosition(), (String) token.getValue());
         case Tokens.tCONSTANT:

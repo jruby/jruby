@@ -71,6 +71,7 @@ public class Parser {
     @SuppressWarnings("unchecked")
     public Node parse(String file, ByteList content, DynamicScope blockScope,
             ParserConfiguration configuration) {
+        configuration.setDefaultEncoding(content.getEncoding());
         return parse(file, content.bytes(), blockScope, configuration);
     }
 
@@ -125,11 +126,18 @@ public class Parser {
             // but I am not sure which conditions leads to this...so lame message.
             throw runtime.newSyntaxError("Problem reading source: " + e);
         } catch (SyntaxException e) {
-            StringBuilder buffer = new StringBuilder(100);
-            buffer.append(e.getPosition().getFile()).append(':');
-            buffer.append(e.getPosition().getStartLine() + 1).append(": ");
-            buffer.append(e.getMessage());
-            throw runtime.newSyntaxError(buffer.toString());
+            switch (e.getPid()) {
+                case UNKNOWN_ENCODING:
+                case NOT_ASCII_COMPATIBLE:
+                    throw runtime.newArgumentError(e.getMessage());
+                default:
+                    StringBuilder buffer = new StringBuilder(100);
+                    buffer.append(e.getPosition().getFile()).append(':');
+                    buffer.append(e.getPosition().getStartLine() + 1).append(": ");
+                    buffer.append(e.getMessage());
+
+                    throw runtime.newSyntaxError(buffer.toString());
+            }
         } finally {
             RubyParserPool.getInstance().returnParser(parser);
         }

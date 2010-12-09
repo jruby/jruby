@@ -2030,7 +2030,7 @@ none_block_pass : /* none */ {
         
         lexer.reset();
         lexer.setSource(source);
-        lexer.setEncoding(configuration.getKCode().getEncoding());
+        lexer.setEncoding(configuration.getDefaultEncoding());
 
         Object debugger = null;
         if (configuration.isDebug()) {

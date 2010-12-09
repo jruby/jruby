@@ -30,10 +30,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import org.jcodings.Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -56,16 +59,23 @@ public class ParserConfiguration {
     private CompatVersion version;
 
     private KCode kCode;
+    private final EncodingService encodingService;
+    private Encoding defaultEncoding;
     
-    public ParserConfiguration(KCode kCode, int lineNumber, boolean inlineSource, CompatVersion version) {
-        this(kCode, lineNumber, false, inlineSource, version);
+    public ParserConfiguration(EncodingService encodingService, KCode kCode, int lineNumber,
+            boolean inlineSource, CompatVersion version) {
+        this(encodingService, kCode, lineNumber, false, inlineSource, version);
     }
     
-    public ParserConfiguration(KCode kCode, int lineNumber, boolean extraPositionInformation, boolean inlineSource, CompatVersion version) {
-        this(kCode, lineNumber, extraPositionInformation, inlineSource, true, version);
+    public ParserConfiguration(EncodingService encodingService, KCode kCode, int lineNumber,
+            boolean extraPositionInformation, boolean inlineSource, CompatVersion version) {
+        this(encodingService, kCode, lineNumber, extraPositionInformation, inlineSource, true, version);
     }
 
-    public ParserConfiguration(KCode kCode, int lineNumber, boolean extraPositionInformation, boolean inlineSource, boolean isFileParse, CompatVersion version) {
+    public ParserConfiguration(EncodingService encodingService, KCode kCode, int lineNumber,
+            boolean extraPositionInformation, boolean inlineSource, boolean isFileParse,
+            CompatVersion version) {
+        this.encodingService = encodingService;
         this.kCode = kCode;
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
@@ -74,10 +84,30 @@ public class ParserConfiguration {
         this.version = version;
     }
 
-    public ParserConfiguration(KCode kCode, int lineNumber, boolean extraPositionInformation, boolean inlineSource, boolean isFileParse, RubyInstanceConfig config) {
-        this(kCode, lineNumber, extraPositionInformation, inlineSource, isFileParse, config.getCompatVersion());
+    public ParserConfiguration(EncodingService encodingService, KCode kCode, int lineNumber,
+            boolean extraPositionInformation, boolean inlineSource, boolean isFileParse,
+            RubyInstanceConfig config) {
+        this(encodingService, kCode, lineNumber, extraPositionInformation, inlineSource, isFileParse, config.getCompatVersion());
 
         this.isDebug = config.isParserDebug();
+    }
+
+    private static final ByteList USASCII = new ByteList(new byte[]{'U', 'S', '-', 'A', 'S', 'C', 'I', 'I'});
+
+    void setDefaultEncoding(Encoding encoding) {
+        this.defaultEncoding = encoding;
+    }
+
+    public Encoding getDefaultEncoding() {
+        if (defaultEncoding == null) {
+            defaultEncoding = encodingService.loadEncoding(USASCII);
+        }
+        
+        return defaultEncoding;
+    }
+
+    public EncodingService getEncodingService() {
+        return encodingService;
     }
 
     /**
