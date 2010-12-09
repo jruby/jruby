@@ -66,9 +66,9 @@ class Proc
 
   def proc_or_lambda(bool, &block)
     if bool
-      lambda &block
+      lambda(&block)
     else
-      proc &block
+      proc(&block)
     end
   end
 end
