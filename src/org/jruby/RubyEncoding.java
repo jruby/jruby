@@ -111,6 +111,7 @@ public class RubyEncoding extends RubyObject {
         if (obj1 instanceof EncodingCapable && obj2 instanceof EncodingCapable) {
             Encoding enc1 = ((EncodingCapable)obj1).getEncoding();
             Encoding enc2 = ((EncodingCapable)obj2).getEncoding();
+
             if (enc1 == enc2) return enc1;
 
             if (obj2 instanceof RubyString && ((RubyString) obj2).getByteList().getRealSize() == 0) return enc1;
@@ -351,7 +352,7 @@ public class RubyEncoding extends RubyObject {
         Ruby runtime = context.getRuntime();
         Encoding enc = areCompatible(first, second);
 
-        return enc == null ? runtime.getNil() : new RubyEncoding(runtime, enc);
+        return enc == null ? runtime.getNil() : runtime.getEncodingService().getEncoding(enc);
     }
 
     @JRubyMethod(name = "default_external", meta = true, compat = RUBY1_9)
@@ -399,10 +400,8 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static IRubyObject convertEncodingToRubyEncoding(Ruby runtime, Encoding defaultEncoding) {
-        if (defaultEncoding != null) {
-            return new RubyEncoding(runtime, defaultEncoding);
-        }
-        return runtime.getNil();
+        return defaultEncoding != null ?
+            runtime.getEncodingService().getEncoding(defaultEncoding) : runtime.getNil();
     }
 
     public static Encoding getEncodingFromObject(Ruby runtime, IRubyObject arg) {

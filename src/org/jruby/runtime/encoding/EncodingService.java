@@ -85,7 +85,7 @@ public final class EncodingService {
         while (hei.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
-            Entry ee = e.value; 
+            Entry ee = e.value;
             RubyEncoding encoding = RubyEncoding.newEncoding(runtime, e.bytes, e.p, e.end, ee.isDummy());
             encodingList[ee.getIndex()] = encoding;
             defineEncodingConstants(runtime, encoding, e.bytes, e.p, e.end);
