@@ -93,7 +93,9 @@ EXT_FILES = {
   'ext/digest/sha2/lib/sha2.rb' => 'sha2.rb',
   'ext/dl/win32/lib/win32' => 'win32',
   'ext/psych/lib/psych.rb' => 'psych.rb',
-  'ext/psych/lib/psych' => 'psych'
+  'ext/psych/lib/psych' => 'psych',
+  'ext/ripper/lib/ripper.rb' => 'ripper.rb',
+  'ext/ripper/lib/ripper' => 'ripper'
 }
 
 # yaml files go into src/builtin for jruby
