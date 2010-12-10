@@ -211,11 +211,10 @@
     <!-- avoid overwriting if it hasn't changed, to avoid recompiles -->
     <copy file="${basedir}/src_gen/org/jruby/runtime/Constants.java"
         tofile="${basedir}/src_gen/org/jruby/runtime/Constants.java.old"
-        preservelastmodified="true"/>
-    <copy todir="${basedir}/src_gen" overwrite="true" >
-        <fileset dir="${basedir}/src_gen">
-            <include name="org/jruby/runtime/Constants.java"/>
-        </fileset>
+        preservelastmodified="true" failonerror="false"/>
+    <copy file="${basedir}/src/org/jruby/runtime/Constants.java"
+        overwrite="true"
+        tofile="${basedir}/src_gen/org/jruby/runtime/Constants.java.gen" >
         <filterset>
             <filter token="version.ruby.major" value="${version.ruby.major}"/>
             <filter token="version.ruby" value="${version.ruby}"/>
@@ -234,7 +233,7 @@
     </copy>
 
     <condition property="constants.java.is.same">
-      <filesmatch file1="${basedir}/src_gen/org/jruby/runtime/Constants.java" file2="${basedir}/src_gen/org/jruby/runtime/Constants.java.old" textfile="true"/>
+      <filesmatch file1="${basedir}/src_gen/org/jruby/runtime/Constants.java.gen" file2="${basedir}/src_gen/org/jruby/runtime/Constants.java.old" textfile="true"/>
     </condition>
     <antcall target="_uc_internal_"/>
     
@@ -242,10 +241,7 @@
   </target>
   
   <target name="_uc_internal_" unless="constants.java.is.same">
-    <copy file="${basedir}/src_gen/org/jruby/runtime/Constants.java" tofile="${src.dir}/org/jruby/runtime/Constants.java"/>
-    <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${basedir}/src_gen"
-        includes="org/jruby/runtime/Constants.java" source="${javac.version}"
-        target="${javac.version}" deprecation="true" encoding="UTF-8"/>
+    <copy file="${basedir}/src_gen/org/jruby/runtime/Constants.java.gen" tofile="${basedir}/src_gen/org/jruby/runtime/Constants.java"/>
   </target>
 
   <target name="compile-annotation-binder">
