@@ -196,12 +196,11 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
   SOCKET_CHANNEL_MIGHT_BLOCK = "a" * (65536 * 4)
 
   it "should not block for write" do
+  100.times do # for acceleration; it failed w/o wait_for_accepted call
     server = TCPServer.new(0)
     value = nil
-    after_accept = false
     t = Thread.new {
       sock = accept(server)
-      after_accept = true
       begin
         value = 1
         # this could block; [ruby-dev:26405]  But it doesn't block on Windows.
@@ -213,7 +212,6 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     }
     s = connect(server)
     type = nil
-    Thread.pass until after_accept # ensure accept returns
     wait_for_sleep_and_terminate(t) do
       if value == 1
         type = :blocked
@@ -227,6 +225,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
       value.should == 3
       t.status.should == false
     end
+  end
   end
 
   it "should not block for write_nonblock" do
@@ -246,6 +245,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     flag = File::NONBLOCK
     flag |= sock.fcntl(Fcntl::F_GETFL)
     sock.fcntl(Fcntl::F_SETFL, flag)
+    Thread.current[:accepted] = true
     sock
   end
 
@@ -254,20 +254,27 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
   end
 
   def wait_for_sleep_and_terminate(server_thread)
+    wait_for_accepted(server_thread)
     wait_for_sleep(server_thread)
     yield if block_given?
     wait_for_terminate(server_thread)
   end
 
+  def wait_for_accepted(server_thread)
+    timeout(2) do
+      Thread.pass while !server_thread[:accepted]
+    end
+  end
+
   def wait_for_sleep(t)
     timeout(2) do
-      sleep 0.1 while t.status == 'run'
+      Thread.pass while t.status == 'run'
     end
   end
 
   def wait_for_terminate(t)
     timeout(2) do
-      sleep 0.1 while t.alive?
+      Thread.pass while t.alive?
     end
   end
 end
