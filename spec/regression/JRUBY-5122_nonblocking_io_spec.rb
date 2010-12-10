@@ -111,7 +111,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value.should == "foo\r"
   end
 
-  it "ZOMG: should read 4 bytes for read(4)" do
+  it "should read 4 bytes for read(4)" do
     100.times do
       server = TCPServer.new(0)
       value = nil
