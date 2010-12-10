@@ -310,7 +310,8 @@ public class RubyProc extends RubyObject implements DataType {
 
         // returns can't propagate out of threads
         if (isThread()) {
-            throw runtime.newThreadError("return can't jump across threads");
+            // just re-throw, let thread handle it
+            throw rj;
         }
 
         // If the block-receiving method is not still active and the original

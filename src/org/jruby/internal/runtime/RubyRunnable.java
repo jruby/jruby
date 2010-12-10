@@ -94,7 +94,11 @@ public class RubyRunnable implements Runnable {
                 IRubyObject result = proc.call(context, arguments);
                 rubyThread.cleanTerminate(result);
             } catch (JumpException.ReturnJump rj) {
-                rubyThread.exceptionRaised(runtime.newThreadError("return can't jump across threads"));
+                if (runtime.is1_9()) {
+                    rubyThread.exceptionRaised(rj.buildException(runtime));
+                } else {
+                    rubyThread.exceptionRaised(runtime.newThreadError("return can't jump across threads"));
+                }
             } catch (RaiseException e) {
                 rubyThread.exceptionRaised(e);
             } catch (MainExitException mee) {
