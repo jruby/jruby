@@ -242,6 +242,10 @@
   
   <target name="_uc_internal_" unless="constants.java.is.same">
     <copy file="${basedir}/src_gen/org/jruby/runtime/Constants.java.gen" tofile="${basedir}/src_gen/org/jruby/runtime/Constants.java"/>
+    <javac destdir="${jruby.classes.dir}" debug="true" srcdir="${basedir}/src_gen"
+        includes="org/jruby/runtime/Constants.java" source="${javac.version}"
+        target="${javac.version}" deprecation="true" encoding="UTF-8"
+        includeantruntime="false"/>
   </target>
 
   <target name="compile-annotation-binder">
