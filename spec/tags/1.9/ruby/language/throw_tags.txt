@@ -1,1 +1,0 @@
-fails:The throw keyword raises a ArgumentError if used to exit a thread

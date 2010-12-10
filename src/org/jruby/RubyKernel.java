@@ -1263,7 +1263,12 @@ public class RubyKernel {
         if (currentThread == runtime.getThreadService().getMainThread()) {
             throw uncaught.uncaughtThrow(runtime, message, tag);
         } else {
-            throw runtime.newThreadError(message + " in thread 0x" + Integer.toHexString(RubyInteger.fix2int(currentThread.id())));
+            message += " in thread 0x" + Integer.toHexString(RubyInteger.fix2int(currentThread.id()));
+            if (runtime.is1_9()) {
+                throw runtime.newArgumentError(message);
+            } else {
+                throw runtime.newThreadError(message);
+            }
         }
     }
 
