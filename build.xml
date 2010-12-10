@@ -1147,7 +1147,7 @@
   <target name="spec-all-interpreted" depends="spec:ci_all_interpreted_18"/>
 
   <!-- For CI, because target names become filesystem paths with matrix builds -->
-  <target name="spec-ci_interpreted_18" depends="spec:ci_interepreted_18"></target>
+  <target name="spec-ci_interpreted_18" depends="spec:ci_interpreted_18"></target>
   <target name="spec-ci_compiled_18" depends="spec:ci_compiled_18"></target>
   <target name="spec-ci_precompiled_18" depends="spec:ci_precompiled_18"></target>
   <target name="spec-ci_interpreted_19" depends="spec:ci_interpreted_19"></target>
