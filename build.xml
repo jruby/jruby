@@ -33,7 +33,6 @@
 
   <patternset id="java.src.pattern">
     <include name="**/*.java"/>
-    <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
     <exclude unless="sun-misc-signal" name="**/SunSignalFacade.java"/>
   </patternset>
 
