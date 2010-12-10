@@ -277,7 +277,7 @@ public class RubyStruct extends RubyObject {
     
     // For binding purposes on the newly created struct types
     public static class StructMethods {
-        @JRubyMethod(name = {"new", "[]"}, rest = true, frame = true)
+        @JRubyMethod(name = {"new", "[]"}, rest = true)
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
             return RubyStruct.newStruct(recv, args, block);
         }
