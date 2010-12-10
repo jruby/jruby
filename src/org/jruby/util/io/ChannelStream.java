@@ -111,9 +111,8 @@ public class ChannelStream implements Stream, Finalizable {
         runtime.addInternalFinalizer(this);
     }
 
-    private ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes, boolean autoclose) throws InvalidValueException {
+    private ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes, boolean autoclose) {
         this(runtime, descriptor, autoclose);
-        descriptor.checkNewModes(modes);
         this.modes = modes;
     }
 
@@ -1428,6 +1427,8 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public static Stream fdopen(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes) throws InvalidValueException {
+        // check these modes before constructing, so we don't finalize the partially-initialized stream
+        descriptor.checkNewModes(modes);
         return maybeWrapWithLineEndingWrapper(new ChannelStream(runtime, descriptor, modes, true), modes);
     }
 
@@ -1436,6 +1437,8 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public static Stream fdopen(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes, boolean autoclose) throws InvalidValueException {
+        // check these modes before constructing, so we don't finalize the partially-initialized stream
+        descriptor.checkNewModes(modes);
         return maybeWrapWithLineEndingWrapper(new ChannelStream(runtime, descriptor, modes, autoclose), modes);
     }
 
