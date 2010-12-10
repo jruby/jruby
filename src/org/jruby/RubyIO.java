@@ -2806,11 +2806,11 @@ public class RubyIO extends RubyObject {
     // implements io_fread in io.c
     private ByteList fread(int length) throws IOException, BadDescriptorException {
         Stream stream = openFile.getMainStream();
-        ByteList buf = stream.fread(length);
-        if (buf != null && buf.length() == length) {
-            return buf;
-        }
         int rest = length;
+        ByteList buf = stream.fread(length);
+        if (buf != null) {
+            rest -= buf.length();
+        }
         while (rest > 0) {
             waitReadable(stream);
             openFile.checkClosed(getRuntime());

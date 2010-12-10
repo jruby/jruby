@@ -111,6 +111,24 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value.should == "foo\r"
   end
 
+  it "ZOMG: should read 4 bytes for read(4)" do
+    100.times do
+      server = TCPServer.new(0)
+      value = nil
+      t = Thread.new {
+        sock = accept(server)
+        value = sock.read(4)
+      }
+      s = connect(server)
+      # 2 (or more?) times write is needed to reproduce
+      # And writing "12" then "345" blocks forever.
+      s.write("1")
+      s.write("2345")
+      t.join
+      value.should == "1234"
+    end
+  end
+
   it "should not block for readpartial" do
     server = TCPServer.new(0)
     value = nil
