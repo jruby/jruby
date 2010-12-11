@@ -520,6 +520,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.ldc(getClassname() + ".class");
             method.invokevirtual(p(ClassLoader.class), "getResource", sig(URL.class, String.class));
             method.invokevirtual(p(Object.class), "toString", sig(String.class));
+            method.astore(1);
+            method.aload(1);
             method.invokevirtual(p(AbstractScript.class), "setFilename", sig(void.class, String.class));
 
             // instance config for the script run
@@ -531,6 +533,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.dup();
             method.aload(0);
             method.invokevirtual(p(RubyInstanceConfig.class), "setArgv", sig(void.class, String[].class));
+
+            // set script filename ($0)
+            method.dup();
+            method.aload(1);
+            method.invokevirtual(p(RubyInstanceConfig.class), "setScriptFileName", sig(void.class, String.class));
 
             // invoke run with threadcontext and topself
             method.invokestatic(p(Ruby.class), "newInstance", sig(Ruby.class, RubyInstanceConfig.class));
