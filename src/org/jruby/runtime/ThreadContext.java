@@ -62,7 +62,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class ThreadContext {
     public static ThreadContext newContext(Ruby runtime) {
         ThreadContext context = new ThreadContext(runtime);
-
         return context;
     }
     
@@ -106,7 +105,8 @@ public final class ThreadContext {
     
     // Line where current executing unit is being evaluated
     private int line = 0;
-
+    
+    public boolean isProfiling;
     // The flat profile data for this thread
 	private IProfileData profileData;
 	
@@ -124,7 +124,8 @@ public final class ThreadContext {
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();
-        
+        this.isProfiling = runtime.getInstanceConfig().isProfiling();
+
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
         StaticScope topStaticScope = new LocalStaticScope(null);

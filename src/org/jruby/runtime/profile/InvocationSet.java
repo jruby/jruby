@@ -3,13 +3,14 @@ package org.jruby.runtime.profile;
 
 import java.util.ArrayList;
 
-public class InvocationSet { 
-    Invocation[] invocations;
+public class InvocationSet {
+    ArrayList<Invocation> invocations;
+    
+    public InvocationSet() {
+    }
     
     public InvocationSet(ArrayList<Invocation> invs) {
-        invocations = new Invocation[invs.size()];
-        for (int i = 0; i < invocations.length; i++)
-            invocations[i] = invs.get(i);
+        this.invocations = invs;
     }
     
     public long totalTime() {
@@ -32,7 +33,7 @@ public class InvocationSet {
         return t;
     }
     
-    public int totalCount() {
+    public int totalCalls() {
         int t = 0;
         for (Invocation inv : invocations) {
             t += inv.count;

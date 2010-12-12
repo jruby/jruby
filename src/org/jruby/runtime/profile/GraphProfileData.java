@@ -3,9 +3,13 @@ package org.jruby.runtime.profile;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Set;
+import java.text.DecimalFormat;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -22,6 +26,7 @@ public class GraphProfileData implements IProfileData {
 
     private Invocation currentInvocation = new Invocation(0);
     private Invocation topInvocation     = currentInvocation;
+    private HashMap<Integer, Integer> methodRecursion = new HashMap<Integer, Integer>();
     private long sinceTime = 0;
     
     /**
@@ -35,8 +40,8 @@ public class GraphProfileData implements IProfileData {
         Invocation parentInvocation = currentInvocation;
         long now                    = System.nanoTime();
         
-        Invocation childInvocation = currentInvocation.childInvocationFor(calledMethod);
-        
+        int recursiveDepth = incRecursionFor(calledMethod);
+        Invocation childInvocation = currentInvocation.childInvocationFor(calledMethod, recursiveDepth);
         childInvocation.count++;
         
         currentInvocation = childInvocation;
@@ -58,33 +63,52 @@ public class GraphProfileData implements IProfileData {
         currentInvocation.duration += duration;
         
         int previousMethod = currentInvocation.methodSerialNumber;
+        
+        decRecursionFor(previousMethod);
+        
         currentInvocation = currentInvocation.parent;
         sinceTime     = now;
+
         return previousMethod;
     }
     
-    public long _totalTime = -1;
+    public void decRecursionFor(int serial) {
+        methodRecursion.put(serial, methodRecursion.get(serial) - 1);
+    }
+    
+    public int incRecursionFor(int serial) {
+        Integer prev;
+        if ((prev = methodRecursion.get(serial)) == null) {
+            prev = 0;
+        }
+        methodRecursion.put(serial, prev + 1);
+        return prev + 1;
+    }
+    
     public long totalTime() {
-        if (_totalTime == -1)
-            _totalTime = topInvocation.childTime();
-        return _totalTime;
+        return topInvocation.childTime();
     }
     
     public void printProfile(ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out) {
         topInvocation.duration = totalTime();
-        out.println(" %total   %self     total      self    children               calls   Name");
+        out.println("  %total   %self           total     self       children            calls                            Name");
         
         HashMap<Integer, MethodData> methods = methodData();
-        
+        ArrayList<MethodData> sortedMethods = new ArrayList<MethodData>();
         for (MethodData data : methods.values()) {
-        out.println("--------------------------------------------------------------------------");
+            sortedMethods.add(data);
+        }
+        Collections.sort(sortedMethods);
+        Collections.reverse(sortedMethods);
+        for (MethodData data : sortedMethods) {
+            out.println("---------------------------------------------------------------------------------------------------------");
             int serial = data.serialNumber;
             
             int[] parentSerials = data.parents();
             if (parentSerials.length > 0) {
                 for (int parentSerial : parentSerials) {
                     String callerName = methodName(profiledNames, profiledMethods, parentSerial);
-                    InvocationSet invs = data.invocationsFromParent(parentSerial);
+                    InvocationSet invs = data.rootInvocationsFromParent(parentSerial);
                     out.print("                 ");
                     pad(out, 10, nanoString(invs.totalTime()));
                     out.print("  ");
@@ -92,9 +116,9 @@ public class GraphProfileData implements IProfileData {
                     out.print("  ");
                     pad(out, 10, nanoString(invs.childTime()));
                     out.print("  ");
-                    pad(out, 10, Integer.toString(invs.totalCount()));
+                    pad(out, 20, Integer.toString(data.invocationsFromParent(parentSerial).totalCalls()) + "/" + Integer.toString(data.totalCalls()));
                     out.print("  ");
-                    pad(out, 10, callerName);
+                    pad(out, 30, callerName);
                     out.println("");
                 }
             }
@@ -111,15 +135,15 @@ public class GraphProfileData implements IProfileData {
             out.print("  ");
             pad(out, 10, nanoString(data.childTime()));
             out.print("  ");
-            pad(out, 10, Integer.toString(data.calls()));
+            pad(out, 20, Integer.toString(data.totalCalls()));
             out.print("  ");
-            pad(out, 10, displayName);
+            pad(out, 30, displayName);
             out.println("");
             
             if (childSerials.length > 0) {
                 for (int childSerial : childSerials) {
                     String callerName = methodName(profiledNames, profiledMethods, childSerial);
-                    InvocationSet invs = data.invocationsOfChild(childSerial);
+                    InvocationSet invs = data.rootInvocationsOfChild(childSerial);
                     out.print("                 ");
                     pad(out, 10, nanoString(invs.totalTime()));
                     out.print("  ");
@@ -127,9 +151,9 @@ public class GraphProfileData implements IProfileData {
                     out.print("  ");
                     pad(out, 10, nanoString(invs.childTime()));
                     out.print("  ");
-                    pad(out, 10, Integer.toString(invs.totalCount()));
+                    pad(out, 20, Integer.toString(data.invocationsOfChild(childSerial).totalCalls()) + "/" + Integer.toString(methods.get(childSerial).totalCalls()));
                     out.print("  ");
-                    pad(out, 10, callerName);
+                    pad(out, 30, callerName);
                     out.println("");
                 }
             }
@@ -155,7 +179,8 @@ public class GraphProfileData implements IProfileData {
     }
 
     private String nanoString(long nanoTime) {
-        return Double.toString((double) nanoTime / 1.0E9) + 's';
+        DecimalFormat formatter = new DecimalFormat("###.##");
+        return formatter.format((double) nanoTime / 1.0E9);
     }
 
     private String methodName(String[] profiledNames, DynamicMethod[] profiledMethods, int serial) {

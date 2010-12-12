@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 public class Invocation {
     public int methodSerialNumber;
+    public int recursiveDepth;
     public Invocation parent = null;
     public long duration     = 0;
     public int count         = 0;
@@ -12,17 +13,19 @@ public class Invocation {
     
     public Invocation(int serial) {
         this.methodSerialNumber = serial;
+        this.recursiveDepth = 1;
     }
     
-    public Invocation(Invocation parent, int serial) {
+    public Invocation(Invocation parent, int serial, int recursiveDepth) {
         this.parent             = parent;
         this.methodSerialNumber = serial;
+        this.recursiveDepth     = recursiveDepth;
     }
     
-    public Invocation childInvocationFor(int serial) {
+    public Invocation childInvocationFor(int serial, int recursiveDepth) {
         Invocation child;
         if ((child = children.get(serial)) == null) {
-            child = new Invocation(this, serial);
+            child = new Invocation(this, serial, recursiveDepth);
             children.put(serial, child);
         }
         return child;
