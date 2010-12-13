@@ -154,8 +154,6 @@ public class FlatProfileData implements IProfileData {
             out.print("  ");
             pad(out, 15, nanoString(tuple[AGGREGATETIME_OFFSET]));
             out.print("  ");
-			out.print(Integer.toString(index));
-			out.printf(" ");
             out.println(displayName);
             if (lines == 50) {
                 break;
