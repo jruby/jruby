@@ -87,6 +87,10 @@ public class RbConfigLibrary implements Library {
     }
     
     public static String getOSName() {
+        if (Platform.IS_WINDOWS) {
+            return RUBY_WIN32;
+        }
+        
         String OSName = Platform.getOSName();
         String theOSName = RUBY_OS_NAMES.get(OSName);
         
