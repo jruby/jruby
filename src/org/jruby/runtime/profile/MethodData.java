@@ -3,7 +3,7 @@ package org.jruby.runtime.profile;
 
 import java.util.ArrayList;
 
-public class MethodData extends InvocationSet implements Comparable<MethodData> { 
+public class MethodData extends InvocationSet { 
     public int serialNumber;
     
     public MethodData(int serial) {
@@ -11,7 +11,7 @@ public class MethodData extends InvocationSet implements Comparable<MethodData> 
         this.invocations = new ArrayList<Invocation>();
     }
     
-    public int[] parents() {
+    public Integer[] parents() {
         ArrayList<Integer> p = new ArrayList<Integer>();
         for (Invocation inv : invocations) {
             if (inv.parent != null) {
@@ -20,10 +20,10 @@ public class MethodData extends InvocationSet implements Comparable<MethodData> 
                     p.add(serial);
             }
         }
-        return MethodData.convertIntegers(p);
+        return MethodData.convertIntegers2(p);
     }
     
-    public int[] children() {
+    public Integer[] children() {
         ArrayList<Integer> p = new ArrayList<Integer>();
         for (Invocation inv : invocations) {
             for (Integer childSerial : inv.children.keySet()) {
@@ -32,7 +32,7 @@ public class MethodData extends InvocationSet implements Comparable<MethodData> 
                 }
             }
         }
-        return MethodData.convertIntegers(p);
+        return MethodData.convertIntegers2(p);
     }
     
     public InvocationSet invocationsForParent(int parentSerial) {
@@ -107,15 +107,19 @@ public class MethodData extends InvocationSet implements Comparable<MethodData> 
         return t;
     }
     
-    public int compareTo(MethodData otherMethodData) {
-        long thisTotalTime = totalTime();
-        long otherTotalTime = otherMethodData.totalTime();
-        return thisTotalTime == otherTotalTime ? 0 : (thisTotalTime < otherTotalTime ? -1 : 1);
-    }
-
     public static int[] convertIntegers(ArrayList<Integer> integers)
     {
         int[] ret = new int[integers.size()];
+        for (int i=0; i < ret.length; i++)
+        {
+            ret[i] = integers.get(i).intValue();
+        }
+        return ret;
+    }
+    
+    public static Integer[] convertIntegers2(ArrayList<Integer> integers)
+    {
+        Integer[] ret = new Integer[integers.size()];
         for (int i=0; i < ret.length; i++)
         {
             ret[i] = integers.get(i).intValue();

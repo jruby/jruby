@@ -29,6 +29,8 @@ public class GraphProfileData implements IProfileData {
     private HashMap<Integer, Integer> methodRecursion = new HashMap<Integer, Integer>();
     private long sinceTime = 0;
     
+    public static MethodData currentData;
+    
     /**
      * Begin profiling a new method, aggregating the current time diff in the previous
      * method's profile slot.
@@ -94,17 +96,29 @@ public class GraphProfileData implements IProfileData {
         out.println("  %total   %self           total     self       children            calls                            Name");
         
         HashMap<Integer, MethodData> methods = methodData();
-        ArrayList<MethodData> sortedMethods = new ArrayList<MethodData>();
-        for (MethodData data : methods.values()) {
-            sortedMethods.add(data);
-        }
-        Collections.sort(sortedMethods);
-        Collections.reverse(sortedMethods);
+        MethodData[] sortedMethods = methods.values().toArray(new MethodData[0]);
+        Arrays.sort(sortedMethods, new Comparator<MethodData>() {
+            public int compare(MethodData md1, MethodData md2) {
+                long time1 = md1.totalTime();
+                long time2 = md2.totalTime();
+                return time1 == time2 ? 0 : (time1 < time2 ? 1 : -1);
+            }
+        });
         for (MethodData data : sortedMethods) {
+            GraphProfileData.currentData = data;
+            
             out.println("---------------------------------------------------------------------------------------------------------");
             int serial = data.serialNumber;
             
-            int[] parentSerials = data.parents();
+            Integer[] parentSerials = data.parents();
+            
+            Arrays.sort(parentSerials, new Comparator<Integer>() {
+                public int compare(Integer parent1, Integer parent2) {
+                    long time1 = GraphProfileData.currentData.rootInvocationsFromParent(parent1).totalTime();
+                    long time2 = GraphProfileData.currentData.rootInvocationsFromParent(parent2).totalTime();
+                    return time1 == time2 ? 0 : (time1 < time2 ? -1 : 1);
+                }
+            });
             if (parentSerials.length > 0) {
                 for (int parentSerial : parentSerials) {
                     String callerName = methodName(profiledNames, profiledMethods, parentSerial);
@@ -122,7 +136,6 @@ public class GraphProfileData implements IProfileData {
                     out.println("");
                 }
             }
-            int[] childSerials = data.children();
 
             String displayName = methodName(profiledNames, profiledMethods, serial);
             pad(out, 4, Long.toString(data.totalTime()*100/totalTime()));
@@ -139,6 +152,15 @@ public class GraphProfileData implements IProfileData {
             out.print("  ");
             pad(out, 30, displayName);
             out.println("");
+            
+            Integer[] childSerials = data.children();
+            Arrays.sort(childSerials, new Comparator<Integer>() {
+                public int compare(Integer child1, Integer child2) {
+                    long time1 = GraphProfileData.currentData.rootInvocationsOfChild(child1).totalTime();
+                    long time2 = GraphProfileData.currentData.rootInvocationsOfChild(child2).totalTime();
+                    return time1 == time2 ? 0 : (time1 < time2 ? 1 : -1);
+                }
+            });
             
             if (childSerials.length > 0) {
                 for (int childSerial : childSerials) {
