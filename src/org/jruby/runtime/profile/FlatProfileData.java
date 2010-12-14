@@ -1,6 +1,7 @@
 package org.jruby.runtime.profile;
 
 import java.io.PrintStream;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import org.jruby.RubyClass;
@@ -134,7 +135,7 @@ public class FlatProfileData implements IProfileData {
             String displayName = moduleHashMethod(method.getImplementationClass(), name);
             longestName = Math.max(longestName, displayName.length());
         }
-        out.println("    #            calls             self        aggregate  method");
+        out.println("     total        self    children       calls  method");
         out.println("----------------------------------------------------------------");
         int lines = 0;
         for (long[] tuple : tuples) {
@@ -146,13 +147,13 @@ public class FlatProfileData implements IProfileData {
             String name = profiledNames[index];
             DynamicMethod method = profiledMethods[index];
             String displayName = moduleHashMethod(method.getImplementationClass(), name);
-            pad(out, 5, Integer.toString(lines));
+            pad(out, 10, nanoString(tuple[AGGREGATETIME_OFFSET]));
             out.print("  ");
-            pad(out, 15, Long.toString(tuple[COUNT_OFFSET]));
+            pad(out, 10, nanoString(tuple[SELFTIME_OFFSET]));
             out.print("  ");
-            pad(out, 15, nanoString(tuple[SELFTIME_OFFSET]));
+            pad(out, 10, nanoString(tuple[AGGREGATETIME_OFFSET] - tuple[SELFTIME_OFFSET]));
             out.print("  ");
-            pad(out, 15, nanoString(tuple[AGGREGATETIME_OFFSET]));
+            pad(out, 10, Long.toString(tuple[COUNT_OFFSET]));
             out.print("  ");
             out.println(displayName);
             if (lines == 50) {
@@ -180,8 +181,10 @@ public class FlatProfileData implements IProfileData {
     }
 
     private String nanoString(long nanoTime) {
-        return Double.toString((double) nanoTime / 1.0E9) + 's';
+        DecimalFormat formatter = new DecimalFormat("##0.00");
+        return formatter.format((double) nanoTime / 1.0E9);
     }
+
 
     private String moduleHashMethod(RubyModule module, String name) {
         if (module.isSingleton()) {
