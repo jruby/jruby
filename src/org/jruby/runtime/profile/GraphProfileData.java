@@ -11,7 +11,10 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.text.DecimalFormat;
 import org.jruby.RubyClass;
+import org.jruby.MetaClass;
 import org.jruby.RubyModule;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.RubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 
@@ -247,7 +250,19 @@ public class GraphProfileData implements IProfileData {
     }
     
     private String moduleHashMethod(RubyModule module, String name) {
-        if (module.isSingleton()) {
+        if (module instanceof MetaClass) {
+            IRubyObject obj = ((MetaClass) module).getAttached();
+            if (obj instanceof RubyModule) {
+                module = (RubyModule) obj;
+                return module.getName() + "." + name;
+            }
+            else if (obj instanceof RubyObject) {
+                return ((RubyObject) obj).getType().getName() + "#" + name;
+            }
+            else {
+                return "unknown#" + name;
+            }
+        } else if (module.isSingleton()) {
             return ((RubyClass) module).getRealClass().getName() + "(singleton)#" + name;
         } else {
             return module.getName() + "#" + name;
