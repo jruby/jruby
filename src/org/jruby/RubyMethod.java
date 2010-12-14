@@ -283,6 +283,10 @@ public class RubyMethod extends RubyObject implements DataType {
         return context.getRuntime().newSymbol(methodName);
     }
 
+    public String getMethodName() {
+        return methodName;
+    }
+
     @JRubyMethod(name = "receiver")
     public IRubyObject receiver(ThreadContext context) {
         return receiver;
@@ -295,16 +299,35 @@ public class RubyMethod extends RubyObject implements DataType {
 
     @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
     public IRubyObject source_location(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
         DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        
-        if (realMethod instanceof PositionAware) {
-            Ruby runtime = context.getRuntime();
-            PositionAware poser = (PositionAware) realMethod;
-            return runtime.newArray(runtime.newString(poser.getFile()),
-                    runtime.newFixnum(poser.getLine() + 1 /*zero-based*/));
+
+        String filename = getFilename();
+        if (filename != null) {
+            return runtime.newArray(
+                    runtime.newString(getFilename()),
+                    runtime.newFixnum(getLine()));
         }
 
         return context.getRuntime().getNil();
+    }
+
+    public String getFilename() {
+        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
+        if (realMethod instanceof PositionAware) {
+            PositionAware poser = (PositionAware) realMethod;
+            return poser.getFile();
+        }
+        return null;
+    }
+
+    public int getLine() {
+        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
+        if (realMethod instanceof PositionAware) {
+            PositionAware poser = (PositionAware) realMethod;
+            return poser.getLine();
+        }
+        return -1;
     }
 
     @JRubyMethod(name = "parameters", compat = CompatVersion.RUBY1_9)

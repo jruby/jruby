@@ -40,10 +40,12 @@ import java.util.Iterator;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.ast.ArgsNoArgNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.NodeType;
 import org.jruby.ast.OptArgNode;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -51,8 +53,10 @@ import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Interpreted19Block;
+import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
@@ -359,8 +363,13 @@ public class RubyProc extends RubyObject implements DataType {
         Ruby runtime = context.getRuntime();
         RubyArray parms = RubyArray.newEmptyArray(runtime);
         ArgsNode args;
+        BlockBody body = this.getBlock().getBody();
 
-        if (!(this.getBlock().getBody() instanceof Interpreted19Block)) {
+        if (!(body instanceof Interpreted19Block)) {
+            if (body instanceof MethodBlock) {
+                MethodBlock methodBlock = (MethodBlock)body;
+                return methodBlock.getMethod().parameters(context);
+            }
             return parms;
         }
 
@@ -401,12 +410,18 @@ public class RubyProc extends RubyObject implements DataType {
             }
         }
 
-        ArgumentNode rest = args.getRestArgNode();
-        if (rest != null) {
+        if (args instanceof ArgsNoArgNode) {
             elem = RubyArray.newEmptyArray(runtime);
             elem.add(RubySymbol.newSymbol(runtime, "rest"));
-            elem.add(RubySymbol.newSymbol(runtime, rest.getName()));
             parms.add(elem);
+        } else {
+            ArgumentNode rest = args.getRestArgNode();
+            if (rest != null) {
+                elem = RubyArray.newEmptyArray(runtime);
+                elem.add(RubySymbol.newSymbol(runtime, "rest"));
+                elem.add(RubySymbol.newSymbol(runtime, rest.getName()));
+                parms.add(elem);
+            }
         }
 
         BlockArgNode blockArg = args.getBlock();

@@ -54,7 +54,7 @@ class Proc
   private
   def make_curry_proc(proc, passed, arity)
     passed.freeze
-    proc_or_lambda(proc.lambda?) do |*args|
+    curried = proc_or_lambda(proc.lambda?) do |*args|
       newpassed = passed + args
       if newpassed.length == arity
         call(*newpassed)
@@ -62,6 +62,16 @@ class Proc
         make_curry_proc(proc, newpassed, arity)
       end
     end
+    curried.singleton_class.send(:define_method, :binding) {
+      raise ArgumentError, "cannot create binding from curried proc"
+    }
+    curried.singleton_class.send(:define_method, :parameters) {
+      proc.parameters
+    }
+    curried.singleton_class.send(:define_method, :source_location) {
+      proc.source_location
+    }
+    curried
   end
 
   def proc_or_lambda(bool, &block)

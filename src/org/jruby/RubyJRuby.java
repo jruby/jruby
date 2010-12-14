@@ -66,6 +66,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.util.Map;
+import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
@@ -617,21 +618,25 @@ public class RubyJRuby {
         public static IRubyObject methodArgs(IRubyObject recv) {
             Ruby runtime = recv.getRuntime();
             RubyMethod rubyMethod = (RubyMethod)recv;
-            
+            RubyArray argsArray = RubyArray.newArray(runtime);
             DynamicMethod method = rubyMethod.method;
+            RubySymbol req = runtime.newSymbol("req");
+            RubySymbol opt = runtime.newSymbol("opt");
+            RubySymbol rest = runtime.newSymbol("rest");
+            RubySymbol block = runtime.newSymbol("block");
             
             if (method instanceof MethodArgs) {
-                RubySymbol req = runtime.newSymbol("req");
-                RubySymbol opt = runtime.newSymbol("opt");
-                RubySymbol rest = runtime.newSymbol("rest");
-                RubySymbol block = runtime.newSymbol("block");
                 MethodArgs interpMethod = (MethodArgs)method;
                 ArgsNode args = interpMethod.getArgsNode();
-                RubyArray argsArray = RubyArray.newArray(runtime);
                 
                 ListNode requiredArgs = args.getPre();
                 for (int i = 0; requiredArgs != null && i < requiredArgs.size(); i++) {
-                    argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode) requiredArgs.get(i))));
+                    Node argNode = requiredArgs.get(i);
+                    if (argNode instanceof MultipleAsgn19Node) {
+                        argsArray.append(RubyArray.newArray(runtime, req));
+                    } else {
+                        argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode)argNode)));
+                    }
                 }
                 
                 ListNode optArgs = args.getOptArgs();
@@ -645,17 +650,24 @@ public class RubyJRuby {
                 
                 ListNode requiredArgsPost = args.getPost();
                 for (int i = 0; requiredArgsPost != null && i < requiredArgsPost.size(); i++) {
-                    argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode) requiredArgsPost.get(i))));
+                    Node argNode = requiredArgsPost.get(i);
+                    if (argNode instanceof MultipleAsgn19Node) {
+                        argsArray.append(RubyArray.newArray(runtime, req));
+                    } else {
+                        argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode) requiredArgsPost.get(i))));
+                    }
                 }
 
                 if (args.getBlock() != null) {
                     argsArray.append(RubyArray.newArray(runtime, block, getNameFrom(runtime, args.getBlock())));
                 }
-                
-                return argsArray;
+            } else {
+                if (method.getArity() == Arity.OPTIONAL) {
+                    argsArray.append(RubyArray.newArray(runtime, rest));
+                }
             }
-            
-            return runtime.getNil();
+
+            return argsArray;
         }
     }
 

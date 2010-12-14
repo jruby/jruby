@@ -42,9 +42,25 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public abstract class MethodBlock extends ContextAwareBlockBody {
     private final RubyMethod method;
+    private final String filename;
+    private final int line;
     
     public static Block createMethodBlock(ThreadContext context, IRubyObject self, DynamicScope dynamicScope, MethodBlock body) {
-        Binding binding = context.currentBinding(self, dynamicScope);
+        RubyMethod method = body.method;
+        RubyModule module = method.getMethod().getImplementationClass();
+        Frame frame = new Frame();
+
+        frame.setKlazz(module);
+        frame.setName(method.getMethodName());
+        frame.setSelf(method.receiver(context));
+        frame.setVisibility(method.getMethod().getVisibility());
+        
+        Binding binding = new Binding(
+                frame,
+                module,
+                dynamicScope,
+                new ThreadContext.Backtrace(module.getName(), method.getMethodName(), body.getFile(), body.getLine()));
+
         return new Block(body, binding);
     }
 
@@ -52,6 +68,10 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
         super(staticScope, Arity.createArity((int) method.arity().getLongValue()), BlockBody.SINGLE_RESTARG);
         
         this.method = method;
+        String filename = method.getFilename();
+        if (filename == null) filename = "(method)";
+        this.filename = filename;
+        this.line = method.getLine();
     }
 
     public abstract IRubyObject callback(IRubyObject value, IRubyObject method, IRubyObject self, Block block);
@@ -138,10 +158,14 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
     }
 
     public String getFile() {
-        return "(method)";
+        return filename;
     }
 
     public int getLine() {
-        return -1;
+        return line;
+    }
+
+    public RubyMethod getMethod() {
+        return method;
     }
 }
