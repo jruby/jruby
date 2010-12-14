@@ -90,6 +90,15 @@ public class StrNode extends Node implements ILiteralNode {
     public ByteList getValue() {
         return value;
     }
+
+    /**
+     * Get the string's coderange.
+     *
+     * @return the string's coderange
+     */
+    public int getCodeRange() {
+        return codeRange;
+    }
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
