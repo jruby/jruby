@@ -257,7 +257,7 @@ public class GraphProfileData implements IProfileData {
                 return module.getName() + "." + name;
             }
             else if (obj instanceof RubyObject) {
-                return ((RubyObject) obj).getType().getName() + "#" + name;
+                return ((RubyObject) obj).getType().getName() + "(singleton)#" + name;
             }
             else {
                 return "unknown#" + name;
