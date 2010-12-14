@@ -38,6 +38,7 @@ package org.jruby.util;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import org.jcodings.Encoding;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -781,6 +782,7 @@ public class Pack {
      *
      **/
     public static RubyArray unpack(Ruby runtime, ByteList encodedString, ByteList formatString) {
+        Encoding encoding = encodedString.getEncoding();
         RubyArray result = runtime.newArray();
         // FIXME: potentially could just use ByteList here?
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
@@ -866,7 +868,7 @@ public class Pack {
                            }
                     }
 
-                    result.append(RubyString.newString(runtime, new ByteList(potential, 0, occurrences,false)));
+                    result.append(RubyString.newString(runtime, new ByteList(potential, 0, occurrences, encoding, false)));
                     }
                     break;
                 case 'Z' :
@@ -889,7 +891,7 @@ public class Pack {
                             t++;
                         }
 
-                        result.append(RubyString.newString(runtime, new ByteList(potential, 0, t, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(potential, 0, t, encoding, false)));
 
                         // In case when the number of occurences is
                         // explicitly specified, we have to read up
@@ -916,7 +918,7 @@ public class Pack {
                     }
                     byte[] potential = new byte[occurrences];
                     encode.get(potential);
-                    result.append(RubyString.newString(runtime, new ByteList(potential, false)));
+                    result.append(RubyString.newString(runtime, new ByteList(potential, encoding, false)));
                     break;
                 case 'b' :
                     {
@@ -933,7 +935,7 @@ public class Pack {
                             }
                             lElem[lCurByte] = (bits & 1) != 0 ? (byte)'1' : (byte)'0';
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, encoding, false)));
                     }
                     break;
                 case 'B' :
@@ -952,7 +954,7 @@ public class Pack {
                             lElem[lCurByte] = (bits & 128) != 0 ? (byte)'1' : (byte)'0';
                         }
 
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, encoding, false)));
                     }
                     break;
                 case 'h' :
@@ -970,7 +972,7 @@ public class Pack {
                             }
                             lElem[lCurByte] = sHexDigits[bits & 15];
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, encoding, false)));
                     }
                     break;
                 case 'H' :
@@ -988,7 +990,7 @@ public class Pack {
                             }
                             lElem[lCurByte] = sHexDigits[(bits >>> 4) & 15];
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, encoding, false)));
                     }
                     break;
 
@@ -1056,7 +1058,7 @@ public class Pack {
                             }
                         }
                     }
-                    result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, false)));
+                    result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, encoding, false)));
                 }
                 break;
 
@@ -1125,7 +1127,7 @@ public class Pack {
                             lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
                         }
                     }
-                    result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, false)));
+                    result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, encoding, false)));
                 }
                 break;
 
@@ -1160,7 +1162,7 @@ public class Pack {
                                 lElem[index++] = value;
                             }
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, encoding, false)));
                     }
                     break;
                 case 'U' :
