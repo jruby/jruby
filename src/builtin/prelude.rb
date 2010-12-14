@@ -41,11 +41,10 @@ module Kernel
 end
 
 class Proc
-  def curry(arity = nil)
-    if arity && lambda? && arity != self.arity
-      raise ArgumentError, "wrong number of arguments (#{arity} for #{self.arity}"
-    else
-      arity = self.arity
+  def curry(arity = self.arity)
+    check = check_arity(arity, self.arity, lambda?)
+    if lambda? && arity != self.arity && !check
+      argument_error(arity, self.arity)
     end
 
     make_curry_proc(self, [], arity)
@@ -54,10 +53,11 @@ class Proc
   private
   def make_curry_proc(proc, passed, arity)
     passed.freeze
-    curried = proc_or_lambda(proc.lambda?) do |*args|
+    proc_lambda = proc.lambda?
+    curried = proc_or_lambda(proc_lambda) do |*args, &blk|
       newpassed = passed + args
-      if newpassed.length == arity
-        call(*newpassed)
+      if check_arity(newpassed.length, arity, proc_lambda)
+        call(*newpassed, &blk)
       else
         make_curry_proc(proc, newpassed, arity)
       end
@@ -72,6 +72,46 @@ class Proc
       proc.source_location
     }
     curried
+  end
+
+  def check_arity(args_arity, target_arity, lambda)
+    if lambda
+      if target_arity >= 0
+        if args_arity == target_arity
+          true
+        elsif args_arity > target_arity
+          argument_error(args_arity, target_arity)
+        else
+          false
+        end
+      else
+        if args_arity >= -target_arity
+          true
+        elsif args_arity == (-target_arity) - 1
+          true
+        else
+          false
+        end
+      end
+    else
+      if target_arity >= 0
+        if args_arity >= target_arity
+          true
+        else
+          false
+        end
+      else
+        if args_arity >= (-target_arity) - 1
+          true
+        else
+          false
+        end
+      end
+    end
+  end
+
+  def argument_error(args_arity, target_arity)
+    raise ArgumentError, "wrong number of arguments (#{args_arity} for #{target_arity})"
   end
 
   def proc_or_lambda(bool, &block)
