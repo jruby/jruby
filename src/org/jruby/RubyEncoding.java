@@ -381,7 +381,7 @@ public class RubyEncoding extends RubyObject {
     @JRubyMethod(name = "default_external=", meta = true, compat = RUBY1_9)
     public static void setDefaultExternal(IRubyObject recv, IRubyObject encoding) {
         if (encoding.isNil()) {
-            recv.getRuntime().newArgumentError("default_external can not be nil");
+            throw recv.getRuntime().newArgumentError("default_external can not be nil");
         }
         recv.getRuntime().setDefaultExternalEncoding(getEncodingFromObject(recv.getRuntime(), encoding));
     }
