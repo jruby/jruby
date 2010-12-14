@@ -231,6 +231,10 @@ public class RubyEncoding extends RubyObject {
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
+
+        result.append(runtime.newString(EXTERNAL));
+        result.append(runtime.newString(LOCALE));
+        
         return result;
     }
 
@@ -343,6 +347,9 @@ public class RubyEncoding extends RubyObject {
                 result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
+        result.append(runtime.newString(EXTERNAL));
+        result.append(runtime.newString(LOCALE));
+        
         return result;
     }
 
