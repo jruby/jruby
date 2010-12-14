@@ -512,7 +512,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
 
     public static RubyString newStringShared(Ruby runtime, ByteList bytes, int codeRange) {
-        return new RubyString(runtime, runtime.getString(), bytes, codeRange);
+        RubyString str = new RubyString(runtime, runtime.getString(), bytes, codeRange);
+        str.shareLevel = SHARE_LEVEL_BYTELIST;
+        return str;
     }
 
     public static RubyString newStringShared(Ruby runtime, RubyClass clazz, ByteList bytes) {
