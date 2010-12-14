@@ -135,12 +135,6 @@ public class RubySymbol extends RubyObject {
     }
 
     @Override
-    public RubyString convertToString() {
-        Ruby runtime = getRuntime();
-        return runtime.is1_9() ? newShared(runtime) : super.convertToString(); 
-    }
-
-    @Override
     public String toString() {
         return symbol;
     }
