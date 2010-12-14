@@ -49,6 +49,7 @@ import static org.jruby.CompatVersion.*;
 public class RubyEncoding extends RubyObject {
     public static final Charset UTF8 = Charset.forName("UTF-8");
     public static final ByteList LOCALE = ByteList.create("locale");
+    public static final ByteList EXTERNAL = ByteList.create("external");
 
     public static RubyClass createEncodingClass(Ruby runtime) {
         RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -252,10 +253,9 @@ public class RubyEncoding extends RubyObject {
             result.fastASet(alias, name);
         }
 
-        // FIXME: Should we be creating a new RubyEncoding everytime we alias?
-        result.fastASet(runtime.newString("external"), 
+        result.fastASet(runtime.newString(EXTERNAL),
                 runtime.newString(new ByteList(runtime.getDefaultExternalEncoding().getName())));
-        result.fastASet(runtime.newString("locale"),
+        result.fastASet(runtime.newString(LOCALE),
                 runtime.newString(getLocaleEncodingName()));
 
         return result;
@@ -278,7 +278,11 @@ public class RubyEncoding extends RubyObject {
     public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
         // TODO: check for ascii string
         ByteList name = str.convertToString().getByteList();
-        if (name.equals(LOCALE)) name = getLocaleEncodingName();
+        if (name.caseInsensitiveCmp(LOCALE) == 0) {
+            name = getLocaleEncodingName();
+        } else if (name.caseInsensitiveCmp(EXTERNAL) == 0) {
+            name = new ByteList(context.getRuntime().getDefaultExternalEncoding().getName());
+        }
 
         return findWithError(context.getRuntime(), name);
     }
