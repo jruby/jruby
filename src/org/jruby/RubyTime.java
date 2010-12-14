@@ -678,7 +678,7 @@ public class RubyTime extends RubyObject {
             dumpValue[i] = (byte)(se & 0xFF);
             se >>>= 8;
         }
-        return RubyString.newString(obj.getRuntime(), new ByteList(dumpValue,false));
+        return RubyString.newString(obj.getRuntime(), new ByteList(dumpValue, getRuntime().getDefaultInternalEncoding(), false));
     }
 
     @JRubyMethod(visibility = PRIVATE)

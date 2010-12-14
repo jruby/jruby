@@ -99,7 +99,7 @@ public class RubyMarshal {
             
             ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
             boolean taint = dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
-            RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray(), false));
+            RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray(), runtime.getDefaultInternalEncoding(), false));
             
             if (taint) result.setTaint(true);
 
