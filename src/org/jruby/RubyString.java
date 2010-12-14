@@ -510,6 +510,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return newStringShared(runtime, runtime.getString(), bytes, encoding);
     }
 
+
+    public static RubyString newStringShared(Ruby runtime, ByteList bytes, int codeRange) {
+        return new RubyString(runtime, runtime.getString(), bytes, codeRange);
+    }
+
     public static RubyString newStringShared(Ruby runtime, RubyClass clazz, ByteList bytes) {
         RubyString str = new RubyString(runtime, clazz, bytes);
         str.shareLevel = SHARE_LEVEL_BYTELIST;
@@ -1183,7 +1188,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         modify(value.getRealSize() + len);
         int toCr = getCodeRange();
         Encoding toEnc = value.getEncoding();
-        
+
         if (toEnc == enc) {
             if (toCr == CR_UNKNOWN || (toEnc == ASCIIEncoding.INSTANCE && toCr != CR_7BIT)) { 
                 cr = CR_UNKNOWN;
@@ -1211,7 +1216,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (toEnc != enc && toCr != CR_7BIT && cr != CR_7BIT) {        
             throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + toEnc + " and " + enc);
         }
-        
+
         final int resCr;
         final Encoding resEnc;
         if (toCr == CR_UNKNOWN) {
@@ -1230,7 +1235,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             resCr = toCr;
         } else {
             resEnc = toEnc;
-            resCr = len > 0 ? CR_BROKEN : toCr;
+            resCr = len > 0 ? CR_UNKNOWN : toCr;
         }
         
         if (len < 0) throw getRuntime().newArgumentError("negative string size (or size too big)");            
