@@ -83,7 +83,9 @@ class TestFileExhaustive < Test::Unit::TestCase
       assert_integer_or_nil(fs1.rdev_minor)
       assert_integer(fs1.ino)
       assert_integer(fs1.mode)
-      unless /emx/ =~ RUBY_PLATFORM
+      unless /emx|mswin|mingw/ =~ RUBY_PLATFORM
+        # on Windows, nlink is always 1. but this behavior will be changed
+        # in the future.
         assert_equal(@hardlinkfile ? 2 : 1, fs1.nlink)
       end
       assert_integer(fs1.uid)
@@ -391,11 +393,23 @@ class TestFileExhaustive < Test::Unit::TestCase
       assert_equal(@file, File.expand_path(@file + " "))
       assert_equal(@file, File.expand_path(@file + "."))
       assert_equal(@file, File.expand_path(@file + "::$DATA"))
+      assert_match(/\Ac:\//i, File.expand_path('c:'), '[ruby-core:31591]')
     end
     assert_kind_of(String, File.expand_path("~"))
     assert_raise(ArgumentError) { File.expand_path("~foo_bar_baz_unknown_user_wahaha") }
     assert_raise(ArgumentError) { File.expand_path("~foo_bar_baz_unknown_user_wahaha", "/") }
-
+    begin
+      bug3630 = '[ruby-core:31537]'
+      home = ENV["HOME"]
+      ENV["HOME"] = nil
+      assert_raise(ArgumentError) { File.expand_path("~") }
+      ENV["HOME"] = "~"
+      assert_raise(ArgumentError, bug3630) { File.expand_path("~") }
+      ENV["HOME"] = "."
+      assert_raise(ArgumentError, bug3630) { File.expand_path("~") }
+    ensure
+      ENV["HOME"] = home
+    end
     assert_incompatible_encoding {|d| File.expand_path(d)}
   end
 
@@ -423,6 +437,8 @@ class TestFileExhaustive < Test::Unit::TestCase
     end
 
     assert_incompatible_encoding {|d| File.basename(d)}
+    assert_incompatible_encoding {|d| File.basename(d, ".*")}
+    assert_raise(Encoding::CompatibilityError) {File.basename("foo.ext", ".*".encode("utf-16le"))}
   end
 
   def test_dirname
@@ -432,7 +448,7 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_extname
-    assert(".test", File.extname(@file))
+    assert_equal(".test", File.extname(@file))
     prefixes = ["", "/", ".", "/.", "bar/.", "/bar/."]
     infixes = ["", " ", "."]
     infixes2 = infixes + [".ext "]
@@ -452,6 +468,8 @@ class TestFileExhaustive < Test::Unit::TestCase
         end
       end
     end
+    bug3175 = '[ruby-core:29627]'
+    assert_equal(".rb", File.extname("/tmp//bla.rb"), bug3175)
 
     assert_incompatible_encoding {|d| File.extname(d)}
   end
@@ -492,7 +510,7 @@ class TestFileExhaustive < Test::Unit::TestCase
     f.close
     make_file("foo", @file)
 
-    assert_raise(IOError) { File.open(@file) {|f| f.truncate(0)} }
+    assert_raise(IOError) { File.open(@file) {|ff| ff.truncate(0)} }
   rescue NotImplementedError
   end
 
@@ -530,7 +548,7 @@ class TestFileExhaustive < Test::Unit::TestCase
       assert_equal(File.socket?(f), test(?S, f))
       assert_equal(File.setuid?(f), test(?u, f))
       assert_equal(File.writable?(f), test(?w, f))
-      assert_equal(File.world_writable?(f), test(?W, f))
+      assert_equal(File.writable_real?(f), test(?W, f))
       assert_equal(File.executable?(f), test(?x, f))
       assert_equal(File.executable_real?(f), test(?X, f))
       assert_equal(File.zero?(f), test(?z, f))
@@ -570,7 +588,9 @@ class TestFileExhaustive < Test::Unit::TestCase
       assert_integer_or_nil(fs1.rdev_minor)
       assert_integer(fs1.ino)
       assert_integer(fs1.mode)
-      unless /emx/ =~ RUBY_PLATFORM
+      unless /emx|mswin|mingw/ =~ RUBY_PLATFORM
+        # on Windows, nlink is always 1. but this behavior will be changed
+        # in the future.
         assert_equal(@hardlinkfile ? 2 : 1, fs1.nlink)
       end
       assert_integer(fs1.uid)

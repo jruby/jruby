@@ -1,14 +1,7 @@
-require "test/unit"
-require "bigdecimal"
+require_relative "testbase"
 
 class TestBigDecimal < Test::Unit::TestCase
-  def setup
-    BigDecimal.mode(BigDecimal::EXCEPTION_ALL, true)
-    BigDecimal.mode(BigDecimal::EXCEPTION_UNDERFLOW, true)
-    BigDecimal.mode(BigDecimal::EXCEPTION_OVERFLOW, true)
-    BigDecimal.mode(BigDecimal::ROUND_MODE, BigDecimal::ROUND_HALF_UP)
-    BigDecimal.limit(0)
-  end
+  include TestBigDecimalBase
 
   def test_version
     assert_equal("1.0.1", BigDecimal.ver)
@@ -32,6 +25,7 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal( 1, BigDecimal.new("Infinity").infinite?)
     assert_equal(-1, BigDecimal.new("-Infinity").infinite?)
     assert_equal(true, BigDecimal.new("NaN").nan?)
+    assert_equal( 1, BigDecimal.new("1E11111111111").infinite?)
   end
 
   def _test_mode(type)
@@ -61,7 +55,6 @@ class TestBigDecimal < Test::Unit::TestCase
       x = BigDecimal.new("0.1")
       100.times do
         x *= x
-        break if x == false
       end
     end
   end
@@ -71,7 +64,6 @@ class TestBigDecimal < Test::Unit::TestCase
       x = BigDecimal.new("10")
       100.times do
         x *= x
-        break if x == false
       end
     end
   end
@@ -179,6 +171,7 @@ class TestBigDecimal < Test::Unit::TestCase
   def test_zero_p
     assert_equal(true, BigDecimal.new("0").zero?)
     assert_equal(false, BigDecimal.new("1").zero?)
+    assert_equal(true, BigDecimal.new("0E200000000000000").zero?)
   end
 
   def test_nonzero_p
@@ -219,7 +212,20 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_operator(1, :<, inf)
   end
 
-  def test_cmp_corece
+  def test_cmp_nan
+    n1 = BigDecimal.new("1")
+    BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false)
+    assert_equal(nil, BigDecimal.new("NaN") <=> n1)
+    assert_equal(false, BigDecimal.new("NaN") > n1)
+  end
+
+  def test_cmp_failing_coercion
+    n1 = BigDecimal.new("1")
+    assert_equal(nil, n1 <=> nil)
+    assert_raise(ArgumentError){n1 > nil}
+  end
+
+  def test_cmp_coerce
     n1 = BigDecimal.new("1")
     n2 = BigDecimal.new("2")
     o1 = Object.new; def o1.coerce(x); [x, BigDecimal.new("1")]; end
@@ -343,6 +349,7 @@ class TestBigDecimal < Test::Unit::TestCase
     a, b = BigDecimal.new("1").coerce(1.0)
     assert_instance_of(Float, a)
     assert_instance_of(Float, b)
+    assert_equal(2, 1 + BigDecimal.new("1"), '[ruby-core:25697]')
   end
 
   def test_uplus
@@ -692,7 +699,14 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(BigDecimal::SIGN_NEGATIVE_ZERO, BigDecimal.new("-1E-1" + "0" * 10000).sign)
   end
 
-  def test_coerce
-    assert_equal(2, 1 + BigDecimal.new("1"), '[ruby-core:25697]')
+  def test_gc
+    bug3258 = '[ruby-dev:41213]'
+    stress, GC.stress = GC.stress, true
+    10.upto(20) do |i|
+      b = BigDecimal.new("1"+"0"*i)
+      assert_equal([1, "1", 10, i+1], b.split, bug3258)
+    end
+  ensure
+    GC.stress = stress
   end
 end

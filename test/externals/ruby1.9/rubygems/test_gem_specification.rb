@@ -1,11 +1,5 @@
-#--
-# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
-# All rights reserved.
-# See LICENSE.txt for permissions.
-#++
-
-require 'stringio'
 require_relative 'gemutilities'
+require 'stringio'
 require 'rubygems/specification'
 
 class TestGemSpecification < RubyGemTestCase
@@ -129,7 +123,7 @@ end
   end
 
   def test_self_load
-    spec = File.join @gemhome, 'specifications', "#{@a2.full_name}.gemspec"
+    spec = File.join @gemhome, 'specifications', @a2.spec_name
     gs = Gem::Specification.load spec
 
     assert_equal @a2, gs
@@ -143,16 +137,6 @@ end
     assert_equal Gem::Specification::TODAY, spec.date
     assert spec.required_ruby_version.satisfied_by?(Gem::Version.new('1'))
     assert_equal false, spec.has_unit_tests?
-  end
-
-  def test_self_load_legacy_yaml
-    s = YAML.load StringIO.new(LEGACY_YAML_SPEC)
-    assert_equal 'keyedlist', s.name
-    assert_equal '0.4.0', s.version.to_s
-    assert_equal true, s.has_rdoc?
-    #assert_equal Date.today, s.date
-    #assert s.required_ruby_version.satisfied_by?(Gem::Version.new('1'))
-    assert_equal false, s.has_unit_tests?
   end
 
   def test_self_normalize_yaml_input_with_183_yaml
@@ -489,6 +473,31 @@ end
     assert_equal expected, @a1.files.sort
   end
 
+  def test_files_append
+    @a1.files            = %w(files bin/common)
+    @a1.test_files       = %w(test_files bin/common)
+    @a1.executables      = %w(executables common)
+    @a1.extra_rdoc_files = %w(extra_rdoc_files bin/common)
+    @a1.extensions       = %w(extensions bin/common)
+
+    expected = %w[
+      bin/common
+      bin/executables
+      extensions
+      extra_rdoc_files
+      files
+      test_files
+    ]
+    assert_equal expected, @a1.files.sort
+
+    @a1.files << "generated_file.c"
+
+    expected << "generated_file.c"
+    expected.sort!
+
+    assert_equal expected, @a1.files.sort
+  end
+
   def test_files_duplicate
     @a2.files = %w[a b c d b]
     @a2.extra_rdoc_files = %w[x y z x]
@@ -538,8 +547,7 @@ end
 
   def test_full_gem_path_double_slash
     gemhome = @gemhome.sub(/\w\//, '\&/')
-    @a1.loaded_from = File.join gemhome, 'specifications',
-                                "#{@a1.full_name}.gemspec"
+    @a1.loaded_from = File.join gemhome, 'specifications', @a1.spec_name
 
     assert_equal File.join(@gemhome, 'gems', @a1.full_name),
                  @a1.full_gem_path
@@ -566,7 +574,7 @@ end
       'i386-mswin32_80'   => 'a-1-x86-mswin32-80',
       'i386-mingw32'      => 'a-1-x86-mingw32'
     }
-    
+
     test_cases.each do |arch, expected|
       util_set_arch arch
       @a1.platform = 'current'
@@ -730,6 +738,10 @@ end
     assert_equal(  1, (s2 <=> s1))
   end
 
+  def test_spec_name
+    assert_equal 'a-1.gemspec', @a1.spec_name
+  end
+
   def test_summary
     assert_equal 'this is a summary', @a1.summary
   end
@@ -761,14 +773,14 @@ Gem::Specification.new do |s|
   s.files = [\"lib/code.rb\"]
   s.homepage = %q{http://example.com}
   s.require_paths = [\"lib\"]
-  s.rubygems_version = %q{#{Gem::RubyGemsVersion}}
+  s.rubygems_version = %q{#{Gem::VERSION}}
   s.summary = %q{this is a summary}
 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = #{Gem::Specification::CURRENT_SPECIFICATION_VERSION}
 
-    if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
+    if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<b>, [\"= 1\"])
     else
       s.add_dependency(%q<b>, [\"= 1\"])
@@ -815,7 +827,7 @@ Gem::Specification.new do |s|
   s.require_paths = [\"lib\"]
   s.requirements = [\"A working computer\"]
   s.rubyforge_project = %q{example}
-  s.rubygems_version = %q{#{Gem::RubyGemsVersion}}
+  s.rubygems_version = %q{#{Gem::VERSION}}
   s.summary = %q{this is a summary}
   s.test_files = [\"test/suite.rb\"]
 
@@ -823,7 +835,7 @@ Gem::Specification.new do |s|
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
-    if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
+    if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<rake>, [\"> 0.4\"])
       s.add_runtime_dependency(%q<jabber4r>, [\"> 0.0.0\"])
       s.add_runtime_dependency(%q<pqa>, [\"> 0.4\", \"<= 0.6\"])
@@ -896,7 +908,7 @@ end
 
     yaml_str = @a1.to_yaml
 
-    same_spec = YAML.load(yaml_str)
+    same_spec = YAML.load yaml_str
 
     assert_equal Gem::Platform.new('powerpc-darwin7'), same_spec.platform
     assert_equal 'powerpc-darwin7.9.0', same_spec.original_platform
@@ -1186,7 +1198,7 @@ end
       @a1.validate
     end
 
-    assert_equal "expected RubyGems version #{Gem::RubyGemsVersion}, was 3",
+    assert_equal "expected RubyGems version #{Gem::VERSION}, was 3",
                  e.message
   end
 
@@ -1239,6 +1251,20 @@ end
 
   def test_version
     assert_equal Gem::Version.new('1'), @a1.version
+  end
+
+  def test_load_errors_contain_filename
+    specfile = Tempfile.new(self.class.name.downcase)
+    specfile.write "raise 'boom'"
+    specfile.close
+    begin
+      Gem::Specification.load(specfile.path)
+    rescue => e
+      name_rexp = Regexp.new(Regexp.escape(specfile.path))
+      assert e.backtrace.grep(name_rexp).any?
+    end
+  ensure
+    specfile.delete
   end
 
   def util_setup_validate

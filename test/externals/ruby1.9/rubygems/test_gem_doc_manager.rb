@@ -1,9 +1,3 @@
-#--
-# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
-# All rights reserved.
-# See LICENSE.txt for permissions.
-#++
-
 require_relative 'gemutilities'
 require 'rubygems/doc_manager'
 
@@ -18,7 +12,7 @@ class TestGemDocManager < RubyGemTestCase
 
   def test_uninstall_doc_unwritable
     orig_mode = File.stat(@spec.installation_path).mode
-    
+
     # File.chmod has no effect on MS Windows directories (it needs ACL).
     if win_platform?
       skip("test_uninstall_doc_unwritable skipped on MS Windows")

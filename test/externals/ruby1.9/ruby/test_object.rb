@@ -322,6 +322,16 @@ class TestObject < Test::Unit::TestCase
     assert_raise(ArgumentError) do
       c.new.method_missing
     end
+
+    bug2494 = '[ruby-core:27219]'
+    c = Class.new do
+      def method_missing(meth, *args)
+        super
+      end
+    end
+    b = c.new
+    foo rescue nil
+    assert_nothing_raised(bug2494) {[b].flatten}
   end
 
   def test_respond_to_missing
@@ -377,6 +387,31 @@ class TestObject < Test::Unit::TestCase
     assert_raise(ArgumentError) { 1.send }
   end
 
+  def test_no_superclass_method
+    bug2312 = '[ruby-dev:39581]'
+
+    o = Object.new
+    e = assert_raise(NoMethodError) {
+      o.method(:__send__).call(:never_defined_test_no_superclass_method)
+    }
+    m1 = e.message
+    assert_no_match(/no superclass method/, m1, bug2312)
+    e = assert_raise(NoMethodError) {
+      o.method(:__send__).call(:never_defined_test_no_superclass_method)
+    }
+    assert_equal(m1, e.message, bug2312)
+    e = assert_raise(NoMethodError) {
+      o.never_defined_test_no_superclass_method
+    }
+    assert_equal(m1, e.message, bug2312)
+  end
+
+  def test_superclass_method
+    bug2312 = '[ruby-dev:39581]'
+    assert_in_out_err(["-e", "module Enumerable;undef min;end; (1..2).min{}"],
+                      "", [], /no superclass method/, bug2312)
+  end
+
   def test_specific_eval_with_wrong_arguments
     assert_raise(ArgumentError) do
       1.instance_eval("foo") { foo }
@@ -391,12 +426,20 @@ class TestObject < Test::Unit::TestCase
     end
   end
 
+  class InstanceExec
+    INSTANCE_EXEC = 123
+  end
+
   def test_instance_exec
     x = 1.instance_exec(42) {|a| self + a }
     assert_equal(43, x)
 
     x = "foo".instance_exec("bar") {|a| self + a }
     assert_equal("foobar", x)
+
+    assert_raise(NameError) do
+      InstanceExec.new.instance_exec { INSTANCE_EXEC }
+    end
   end
 
   def test_extend
@@ -517,5 +560,26 @@ class TestObject < Test::Unit::TestCase
         b == a
       end
     end.call
+  end
+
+  def test_singleton_class
+    x = Object.new
+    xs = class << x; self; end
+    assert_equal(xs, x.singleton_class)
+
+    y = Object.new
+    ys = y.singleton_class
+    assert_equal(class << y; self; end, ys)
+
+    assert_equal(NilClass, nil.singleton_class)
+    assert_equal(TrueClass, true.singleton_class)
+    assert_equal(FalseClass, false.singleton_class)
+
+    assert_raise(TypeError) do
+      123.singleton_class
+    end
+    assert_raise(TypeError) do
+      :foo.singleton_class
+    end
   end
 end

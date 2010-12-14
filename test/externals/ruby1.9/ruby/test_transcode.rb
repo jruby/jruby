@@ -909,7 +909,7 @@ class TestTranscode < Test::Unit::TestCase
     assert_raise(Encoding::UndefinedConversionError) { "\xFF".encode("utf-8", 'TIS-620') }
   end
 
-    def test_CP850
+  def test_CP850
     check_both_ways("\u00C7", "\x80", 'CP850') # Ç
     check_both_ways("\u00C5", "\x8F", 'CP850') # Å
     check_both_ways("\u00C9", "\x90", 'CP850') # É
@@ -1357,6 +1357,33 @@ class TestTranscode < Test::Unit::TestCase
                  "\xA1\xA1".encode("ISO-2022-JP", "EUC-JP"))
   end
 
+  def test_cp50221
+    assert_equal("!", "\e(B\x21".encode("utf-8", "cp50221"))
+    assert_equal("!", "\e(J\x21".encode("utf-8", "cp50221"))
+    assert_equal("\uFF71",     "\xB1".encode("utf-8", "cp50221"))
+    assert_equal("\uFF71", "\e(B\xB1".encode("utf-8", "cp50221"))
+    assert_equal("\uFF71", "\e(J\xB1".encode("utf-8", "cp50221"))
+    assert_equal("\uFF71", "\e(I\xB1".encode("utf-8", "cp50221"))
+    assert_equal("\uFF71", "\e(I\x31".encode("utf-8", "cp50221"))
+    assert_equal("\uFF71", "\x0E\xB1".encode("utf-8", "cp50221"))
+    assert_equal("\u3000", "\e$@\x21\x21".encode("utf-8", "cp50221"))
+    assert_equal("\u3000", "\e$B\x21\x21".encode("utf-8", "cp50221"))
+    assert_equal("\u2460", "\e$B\x2D\x21".encode("utf-8", "cp50221"))
+    assert_equal("\u7e8a", "\e$B\x79\x21".encode("utf-8", "cp50221"))
+    assert_equal("\u5fde", "\e$B\x7A\x21".encode("utf-8", "cp50221"))
+    assert_equal("\u72be", "\e$B\x7B\x21".encode("utf-8", "cp50221"))
+    assert_equal("\u91d7", "\e$B\x7C\x21".encode("utf-8", "cp50221"))
+    assert_equal("\e(I!_\e(B", "\xA1\xDF".encode("cp50220","sjis"))
+  end
+
+  def test_cp50221
+    assert_equal("\e$B!#!,\e(B".force_encoding("cp50220"),
+                 "\xA1\xDF".encode("cp50220","sjis"))
+    assert_equal("\e$B%*!+%,%I%J!+%N!+%P%\\%^!+%Q%]%\"\e(B".force_encoding("cp50220"),
+        "\xB5\xDE\xB6\xDE\xC4\xDE\xC5\xDE\xC9\xDE\xCA\xDE\xCE\xDE\xCF\xDE\xCA\xDF\xCE\xDF\xB1".
+                 encode("cp50220", "sjis"))
+  end
+
   def test_iso_2022_jp_1
     # check_both_ways("\u9299", "\x1b$(Dd!\x1b(B", "iso-2022-jp-1") # JIS X 0212 区68 点01 銙
   end
@@ -1578,7 +1605,13 @@ class TestTranscode < Test::Unit::TestCase
   end
 
   def test_gb18030
-    # test from GBK
+    # overall roundtrip test
+    all_unicode = (0x0..0xD7FF).to_a.pack 'U*' #追加
+    all_unicode << (0xE000..0xFFFF).to_a.pack("U*") #追加
+
+    assert_equal(all_unicode, all_unicode.encode("gb18030").encode("UTF-8")) #追加
+
+    # tests from GBK
     check_both_ways("\u4E02", "\x81\x40", 'GB18030') #
     check_both_ways("\u4E8A", "\x81\x7E", 'GB18030') #
     check_both_ways("\u4E90", "\x81\x80", 'GB18030') #
@@ -1691,7 +1724,7 @@ class TestTranscode < Test::Unit::TestCase
     check_both_ways("\u9752\u5C71\u5B66\u9662\u5927\u5B66", "\xC7\xE0\xC9\xBD\xD1\xA7\xD4\xBA\xB4\xF3\xD1\xA7", 'GB18030') # 青山学院大学
     check_both_ways("\u795E\u6797\u7FA9\u535A", "\xC9\xF1\xC1\xD6\xC1\x78\xB2\xA9", 'GB18030') # 神林義
 
-	# new tests for GB18030
+    # new tests for GB18030
     check_both_ways("\u9FA6", "\x82\x35\x8F\x33", 'GB18030') # 龦
     check_both_ways("\uD7FF", "\x83\x36\xC7\x38", 'GB18030') # No name ()
 
@@ -1867,11 +1900,34 @@ class TestTranscode < Test::Unit::TestCase
     #assert_raise(Encoding::UndefinedConversionError) { "\xF9\xD6".encode("utf-8", 'Big5-HKSCS') }
     check_both_ways("\u795E\u6797\u7FA9\u535A", "\xAF\xAB\xAA\x4C\xB8\x71\xB3\xD5", 'Big5-HKSCS') # 神林義博
   end
-
+  
+  def test_Big5_UAO
+    check_both_ways("\u4e17", "\x81\x40", 'Big5-UAO') # 丗
+  end
+  
   def test_nothing_changed
     a = "James".force_encoding("US-ASCII")
     b = a.encode("Shift_JIS")
     assert_equal(Encoding::US_ASCII, a.encoding)
     assert_equal(Encoding::Shift_JIS, b.encoding)
+  end
+
+  def test_utf8_mac
+    assert_equal("\u{fb4d}", "\u05DB\u05BF".encode("UTF-8", "UTF8-MAC"))
+    assert_equal("\u{1ff7}", "\u03C9\u0345\u0342".encode("UTF-8", "UTF8-MAC"))
+
+    assert_equal("\u05DB\u05BF", "\u{fb4d}".encode("UTF8-MAC").force_encoding("UTF-8"))
+    assert_equal("\u03C9\u0345\u0342", "\u{1ff7}".encode("UTF8-MAC").force_encoding("UTF-8"))
+
+    check_both_ways("\u{e9 74 e8}", "e\u0301te\u0300", 'UTF8-MAC')
+  end
+
+  def test_fallback
+    assert_equal("\u3042".encode("EUC-JP"), "\u{20000}".encode("EUC-JP",
+        fallback: {"\u{20000}" => "\u3042".encode("EUC-JP")}))
+    assert_equal("\u3042".encode("EUC-JP"), "\u{20000}".encode("EUC-JP",
+        fallback: {"\u{20000}" => "\u3042"}))
+    assert_equal("[ISU]", "\u{1F4BA}".encode("SJIS-KDDI",
+        fallback: {"\u{1F4BA}" => "[ISU]"}))
   end
 end

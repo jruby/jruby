@@ -727,15 +727,6 @@ class TestM17NComb < Test::Unit::TestCase
     STRINGS.each {|s|
       s = s.dup
       desc = "#{encdump s}.chop"
-      if !s.valid_encoding?
-        #assert_raise(ArgumentError, desc) { s.chop }
-        begin
-          s.chop
-        rescue ArgumentError
-          e = $!
-        end
-        next if e
-      end
       t = nil
       assert_nothing_raised(desc) { t = s.chop }
       assert(t.valid_encoding?) if s.valid_encoding?
@@ -1049,10 +1040,12 @@ class TestM17NComb < Test::Unit::TestCase
     STRINGS.each {|s|
       if /\0/ =~ a(s)
         assert_raise(ArgumentError) { s.intern }
-      else
+      elsif s.valid_encoding?
         sym = s.intern
         assert_equal(s, sym.to_s, "#{encdump s}.intern.to_s")
         assert_equal(sym, s.to_sym)
+      else
+        assert_raise(EncodingError) { s.intern }
       end
     }
   end
@@ -1066,7 +1059,7 @@ class TestM17NComb < Test::Unit::TestCase
   def test_str_oct
     STRINGS.each {|s|
       t = s.oct
-      t2 = a(s)[/\A[0-9a-fA-FxXbB]*/].oct
+      t2 = a(s)[/\A[0-9a-fA-FxX]*/].oct
       assert_equal(t2, t)
     }
   end
@@ -1354,7 +1347,7 @@ class TestM17NComb < Test::Unit::TestCase
     STRINGS.each {|s0|
       next if s0.empty?
       s = s0.dup
-      n = 1000
+      n = 300
       h = {}
       n.times {|i|
         if h[s]

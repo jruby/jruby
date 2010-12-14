@@ -218,6 +218,13 @@ class TestString < Test::Unit::TestCase
     l = s.size
     s << "bar"
     assert_equal(l + 3, s.size)
+
+    bug = '[ruby-core:27583]'
+    assert_raise(RangeError, bug) {S("a".force_encoding(Encoding::UTF_8)) << -3}
+    assert_raise(RangeError, bug) {S("a".force_encoding(Encoding::UTF_8)) << -2}
+    assert_raise(RangeError, bug) {S("a".force_encoding(Encoding::UTF_8)) << -1}
+    assert_raise(RangeError, bug) {S("a".force_encoding(Encoding::UTF_8)) << 0x81308130}
+    assert_nothing_raised {S("a".force_encoding(Encoding::GB18030)) << 0x81308130}
   end
 
   def test_MATCH # '=~'
@@ -320,9 +327,12 @@ class TestString < Test::Unit::TestCase
 
   end
 
+  Bug2463 = '[ruby-dev:39856]'
   def test_center
     assert_equal(S("hello"),       S("hello").center(4))
     assert_equal(S("   hello   "), S("hello").center(11))
+    assert_equal(S("ababaababa"), S("").center(10, "ab"), Bug2463)
+    assert_equal(S("ababaababab"), S("").center(11, "ab"), Bug2463)
   end
 
   def test_chomp
@@ -779,6 +789,8 @@ class TestString < Test::Unit::TestCase
   def test_ljust
     assert_equal(S("hello"),       S("hello").ljust(4))
     assert_equal(S("hello      "), S("hello").ljust(11))
+    assert_equal(S("ababababab"), S("").ljust(10, "ab"), Bug2463)
+    assert_equal(S("abababababa"), S("").ljust(11, "ab"), Bug2463)
   end
 
   def test_next
@@ -863,6 +875,12 @@ class TestString < Test::Unit::TestCase
     s2 = ["foo"].pack("p")
     s.replace(s2)
     assert_equal(s2, s)
+
+    fs = "".freeze
+    assert_raise(RuntimeError) { fs.replace("a") }
+    assert_raise(RuntimeError) { fs.replace(fs) }
+    assert_raise(ArgumentError) { fs.replace() }
+    assert_raise(RuntimeError) { fs.replace(42) }
   end
 
   def test_reverse
@@ -917,6 +935,8 @@ class TestString < Test::Unit::TestCase
   def test_rjust
     assert_equal(S("hello"), S("hello").rjust(4))
     assert_equal(S("      hello"), S("hello").rjust(11))
+    assert_equal(S("ababababab"), S("").rjust(10, "ab"), Bug2463)
+    assert_equal(S("abababababa"), S("").rjust(11, "ab"), Bug2463)
   end
 
   def test_scan
@@ -1344,6 +1364,15 @@ class TestString < Test::Unit::TestCase
     }
   end
 
+  def test_sum_long
+    s8421505 = "\xff" * 8421505
+    assert_equal(127, s8421505.sum(31))
+    assert_equal(2147483775, s8421505.sum(0))
+    s16843010 = ("\xff" * 16843010)
+    assert_equal(254, s16843010.sum(32))
+    assert_equal(4294967550, s16843010.sum(0))
+  end
+
   def test_swapcase
     assert_equal(S("hi&LOW"), S("HI&low").swapcase)
   end
@@ -1365,6 +1394,8 @@ class TestString < Test::Unit::TestCase
     assert_equal(5.9742e24, S("5.9742e24").to_f)
     assert_equal(98.6,      S("98.6 degrees").to_f)
     assert_equal(0.0,       S("degrees 100.0").to_f)
+    assert_equal([ 0.0].pack('G'), [S(" 0.0").to_f].pack('G'))
+    assert_equal([-0.0].pack('G'), [S("-0.0").to_f].pack('G'))
   end
 
   def test_to_i
@@ -1408,6 +1439,18 @@ class TestString < Test::Unit::TestCase
     a = S("me")
     assert_equal("me", a.to_s)
     assert_equal(a.__id__, a.to_s.__id__) if @cls == String
+
+    o = Object.new
+    def o.to_str
+      "at"
+    end
+    assert_equal("meat", a.concat(o))
+
+    o = Object.new
+    def o.to_str
+      foo_bar()
+    end
+    assert_match(/foo_bar/, assert_raise(NoMethodError) {a.concat(o)}.message)
   end
 
   def test_tr
@@ -1588,6 +1631,17 @@ class TestString < Test::Unit::TestCase
                    count += 1
                    })
     assert_equal(24, count, "[ruby-dev:39361]")
+  end
+
+  def test_upto_nonalnum
+    first = S("\u3041")
+    last  = S("\u3093")
+    count = 0
+    assert_equal(first, first.upto(last) {|s|
+                   count += 1
+                   s.replace(last)
+                   })
+    assert_equal(83, count, "[ruby-dev:39626]")
   end
 
   def test_mod_check
@@ -1819,5 +1873,13 @@ class TestString < Test::Unit::TestCase
     k = h.keys[0]
     assert_equal(s, k, '[ruby-dev:39068]')
     assert_equal(Encoding::UTF_8, k.encoding, '[ruby-dev:39068]')
+  end
+
+  def test_ascii_incomat_inspect
+    [Encoding::UTF_16LE, Encoding::UTF_16BE,
+     Encoding::UTF_32LE, Encoding::UTF_32BE].each do |e|
+      assert_equal('"abc"', "abc".encode(e).inspect)
+      assert_equal('"\\u3042\\u3044\\u3046"', "\u3042\u3044\u3046".encode(e).inspect)
+    end
   end
 end

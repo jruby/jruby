@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'envutil.rb'
+require_relative 'envutil.rb'
 
 class TestCase < Test::Unit::TestCase
   def test_case
@@ -46,15 +46,42 @@ class TestCase < Test::Unit::TestCase
     else
       assert(false)
     end
+
+    case "+"
+    when *%w/. +/
+      assert(true)
+    else
+      assert(false)
+    end
+
+    case
+    when *[], false
+      assert(false)
+    else
+      assert(true)
+    end
+
+    case
+    when *false, []
+      assert(true)
+    else
+      assert(false)
+    end
+
+    assert_raise(NameError) do
+      case
+      when false, *x, false
+      end
+    end
   end
 
   def test_deoptimization
     assert_in_out_err(['-e', <<-EOS], '', %w[42], [])
-      class Symbol; def ===(o); p 42; true; end; end; case :foo; when :foo; end
+      class Symbol; undef ===; def ===(o); p 42; true; end; end; case :foo; when :foo; end
     EOS
 
     assert_in_out_err(['-e', <<-EOS], '', %w[42], [])
-      class Fixnum; def ===(o); p 42; true; end; end; case 1; when 1; end
+      class Fixnum; undef ===; def ===(o); p 42; true; end; end; case 1; when 1; end
     EOS
   end
 end

@@ -385,6 +385,39 @@ EOT
     }
   end
 
+  def test_getc_newlineconv
+    with_tmpdir {
+      src = "\u3042"
+      generate_file('tmp', src)
+      defext = Encoding.default_external
+      Encoding.default_external = Encoding::UTF_8
+      open("tmp", "rt") {|f|
+        s = f.getc
+        assert_equal(true, s.valid_encoding?)
+        assert_equal("\u3042", s)
+      }
+      Encoding.default_external = defext
+    }
+  end
+
+  def test_getc_newlineconv_invalid
+    with_tmpdir {
+      src = "\xE3\x81"
+      generate_file('tmp', src)
+      defext = Encoding.default_external
+      Encoding.default_external = Encoding::UTF_8
+      open("tmp", "rt") {|f|
+        s = f.getc
+        assert_equal(false, s.valid_encoding?)
+        assert_equal("\xE3".force_encoding("UTF-8"), s)
+        s = f.getc
+        assert_equal(false, s.valid_encoding?)
+        assert_equal("\x81".force_encoding("UTF-8"), s)
+      }
+      Encoding.default_external = defext
+    }
+  end
+
   def test_ungetc_stateful_conversion
     with_tmpdir {
       src = "before \e$B\x23\x30\x23\x31\e(B after".force_encoding("iso-2022-jp")
@@ -556,6 +589,12 @@ EOT
       w << eucjp
       w.close
       assert_equal(eucjp, r.read)
+    }
+
+    with_pipe("UTF-8") {|r,w|
+      w << "a" * 1023 + "\u3042" + "a" * 1022
+      w.close
+      assert_equal(true, r.read.valid_encoding?)
     }
 
     with_pipe("UTF-8:EUC-JP") {|r,w|
@@ -889,6 +928,7 @@ EOT
   end
 
   def test_stdin_external_encoding_with_reopen
+    skip "passing non-stdio fds is not supported" if /mswin|mingw/ =~ RUBY_PLATFORM
     with_tmpdir {
       open("tst", "w+") {|f|
         pid = spawn(EnvUtil.rubybin, '-e', <<-'End', 10=>f)
@@ -1505,7 +1545,6 @@ EOT
         assert_equal("a", f.getc)
         assert_equal("\n", f.getc)
         f.binmode
-        assert_equal("\n", f.getc)
         assert_equal("b", f.getc)
         assert_equal("\r", f.getc)
         assert_equal("\n", f.getc)
@@ -1525,7 +1564,6 @@ EOT
         assert_equal("a", f.getc)
         assert_equal("\n", f.getc)
         f.binmode
-        assert_equal("\n", f.getc)
         assert_equal("b", f.getc)
         assert_equal("\r", f.getc)
         assert_equal("\n", f.getc)
@@ -1702,7 +1740,98 @@ EOT
         assert_equal(content[1].force_encoding("ascii-8bit"),
                      result.force_encoding("ascii-8bit"))
       end
+
+      bug3407 = '[ruby-core:30641]'
+      result = File.read('UTF-8-bom.txt', encoding: 'BOM|UTF-8')
+      assert_equal("a", result.force_encoding("ascii-8bit"), bug3407)
     }
+  end
+
+  def test_cbuf
+    with_tmpdir {
+      fn = "tst"
+      open(fn, "w") {|f| f.print "foo" }
+      open(fn, "r+t") {|f|
+        f.ungetc(f.getc)
+        assert_raise(IOError, "[ruby-dev:40493]") { f.readpartial(2) }
+        assert_raise(IOError) { f.read(2) }
+        assert_raise(IOError) { f.each_byte {|c| } }
+        assert_raise(IOError) { f.getbyte }
+        assert_raise(IOError) { f.ungetbyte(0) }
+        assert_raise(IOError) { f.sysread(2) }
+        assert_raise(IOError) { IO.copy_stream(f, "tmpout") }
+        assert_raise(IOError) { f.sysseek(2) }
+      }
+      open(fn, "r+t") {|f|
+        f.ungetc(f.getc)
+        assert_equal("foo", f.read)
+      }
+    }
+  end
+
+  def test_text_mode_ungetc_eof
+    with_tmpdir {
+      open("ff", "w") {|f| }
+      open("ff", "rt") {|f|
+        f.ungetc "a"
+        assert(!f.eof?, "[ruby-dev:40506] (3)")
+      }
+    }
+  end
+
+  def test_cbuf_select
+    with_pipe("US-ASCII:UTF-8", :universal_newline => true) do |r, w|
+      w << "\r\n"
+      r.ungetc(r.getc)
+      assert_equal([[r],[],[]], IO.select([r], nil, nil, 1))
+    end
+  end
+
+  def test_textmode_paragraphmode
+    with_pipe("US-ASCII:UTF-8", :universal_newline => true) do |r, w|
+      w << "a\n\n\nc".gsub(/\n/, "\r\n")
+      w.close
+      assert_equal("a\n\n", r.gets(""))
+      assert_equal("c", r.gets(""), "[ruby-core:23723] (18)")
+    end
+  end
+
+  def test_textmode_paragraph_binaryread
+    with_pipe("US-ASCII:UTF-8", :universal_newline => true) do |r, w|
+      w << "a\n\n\ncdefgh".gsub(/\n/, "\r\n")
+      w.close
+      assert_equal("a\n\n", r.gets(""))
+      assert_equal("c", r.getc)
+      assert_equal("defgh", r.readpartial(10))
+    end
+  end
+
+  def test_textmode_paragraph_nonasciicompat
+    bug3534 = ['[ruby-dev:41803]', '[Bug #3534]']
+    r, w = IO.pipe
+    [Encoding::UTF_32BE, Encoding::UTF_32LE,
+     Encoding::UTF_16BE, Encoding::UTF_16LE,
+     Encoding::UTF_8].each do |e|
+      r.set_encoding(Encoding::US_ASCII, e)
+      w.print(bug3534[0], "\n\n\n\n", bug3534[1], "\n")
+      assert_equal((bug3534[0]+"\n\n").encode(e), r.gets(""), bug3534[0])
+      assert_equal((bug3534[1]+"\n").encode(e), r.gets(), bug3534[1])
+    end
+  end
+
+  def test_binmode_paragraph_nonasciicompat
+    bug3534 = ['[ruby-dev:41803]', '[Bug #3534]']
+    r, w = IO.pipe
+    r.binmode
+    w.binmode
+    [Encoding::UTF_32BE, Encoding::UTF_32LE,
+     Encoding::UTF_16BE, Encoding::UTF_16LE,
+     Encoding::UTF_8].each do |e|
+      r.set_encoding(Encoding::US_ASCII, e)
+      w.print(bug3534[0], "\n\n\n\n", bug3534[1], "\n")
+      assert_equal((bug3534[0]+"\n\n").encode(e), r.gets(""), bug3534[0])
+      assert_equal((bug3534[1]+"\n").encode(e), r.gets(), bug3534[1])
+    end
   end
 end
 

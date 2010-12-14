@@ -3,6 +3,40 @@ require 'dl/func'
 
 module DL
   class TestFunc < TestBase
+    def test_name
+      f = Function.new(CFunc.new(@libc['strcpy'], TYPE_VOIDP, 'strcpy'),
+                       [TYPE_VOIDP, TYPE_VOIDP])
+      assert_equal 'strcpy', f.name
+    end
+
+    def test_to_i
+      cfunc = CFunc.new(@libc['strcpy'], TYPE_VOIDP, 'strcpy')
+      f = Function.new(cfunc, [TYPE_VOIDP, TYPE_VOIDP])
+      assert_equal cfunc.to_i, f.to_i
+    end
+
+    def test_random
+      f = Function.new(CFunc.new(@libc['srand'], TYPE_VOID, 'srand'),
+                       [-TYPE_LONG])
+      assert_nil f.call(10)
+    end
+
+    def test_sinf
+      begin
+        f = Function.new(CFunc.new(@libm['sinf'], TYPE_FLOAT, 'sinf'),
+                         [TYPE_FLOAT])
+      rescue DL::DLError
+        skip "libm may not have sinf()"
+      end
+      assert_in_delta 1.0, f.call(90 * Math::PI / 180), 0.0001
+    end
+
+    def test_sin
+      f = Function.new(CFunc.new(@libm['sin'], TYPE_DOUBLE, 'sin'),
+                       [TYPE_DOUBLE])
+      assert_in_delta 1.0, f.call(90 * Math::PI / 180), 0.0001
+    end
+
     def test_strcpy()
       f = Function.new(CFunc.new(@libc['strcpy'], TYPE_VOIDP, 'strcpy'),
                        [TYPE_VOIDP, TYPE_VOIDP])
@@ -11,6 +45,18 @@ module DL
       assert_equal("123", buff)
       assert_equal("123", str.to_s)
     end
+
+    def test_string()
+      stress, GC.stress = GC.stress, true
+      f = Function.new(CFunc.new(@libc['strcpy'], TYPE_VOIDP, 'strcpy'),
+                       [TYPE_VOIDP, TYPE_VOIDP])
+      buff = "000"
+      str = f.call(buff, "123")
+      assert_equal("123", buff)
+      assert_equal("123", str.to_s)
+    ensure
+      GC.stress = stress
+    end   
 
     def test_isdigit()
       f = Function.new(CFunc.new(@libc['isdigit'], TYPE_INT, 'isdigit'),
@@ -33,10 +79,10 @@ module DL
     def test_strtod()
       f = Function.new(CFunc.new(@libc['strtod'], TYPE_DOUBLE, 'strtod'),
                        [TYPE_VOIDP, TYPE_VOIDP])
-      buff1 = "12.34"
-      buff2 = "     "
-      r = f.call(buff1, buff2)
-      assert_match(12.00..13.00, r)
+      buff1 = CPtr["12.34"]
+      buff2 = buff1 + 4
+      r = f.call(buff1, - buff2)
+      assert_in_delta(12.34, r, 0.001)
     end
 
     def test_qsort1()

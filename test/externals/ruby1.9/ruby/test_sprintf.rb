@@ -191,6 +191,21 @@ class TestSprintf < Test::Unit::TestCase
     assert_equal(" Inf", sprintf("% 0e", 1.0/0.0), "moved from btest/knownbug")
   end
 
+  def test_float_hex
+    assert_equal("-0x0p+0", sprintf("%a", -0.0))
+    assert_equal("0x0p+0", sprintf("%a", 0.0))
+    assert_equal("0x1p-1", sprintf("%a", 0.5))
+    assert_equal("0x1p+0", sprintf("%a", 1.0))
+    assert_equal("0x1p+1", sprintf("%a", 2.0))
+    assert_equal("0x1p+10", sprintf("%a", 1024))
+    assert_equal("0x1.23456p+789", sprintf("%a", 3.704450999893983e+237))
+    assert_equal("0x1p-1074", sprintf("%a", 4.9e-324))
+    assert_equal("Inf", sprintf("%e", Float::INFINITY))
+    assert_equal("Inf", sprintf("%E", Float::INFINITY))
+    assert_equal("NaN", sprintf("%e", Float::NAN))
+    assert_equal("NaN", sprintf("%E", Float::NAN))
+  end
+
   BSIZ = 120
 
   def test_skip
@@ -263,7 +278,8 @@ class TestSprintf < Test::Unit::TestCase
   end
 
   def test_rb_sprintf
-    assert(T012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.new.inspect =~ /^#<TestSprintf::T012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789:0x[0-9a-f]+>$/)
+    assert_match(/^#<TestSprintf::T012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789:0x[0-9a-f]+>$/,
+                 T012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.new.inspect)
   end
 
   def test_negative_hex
@@ -278,5 +294,8 @@ class TestSprintf < Test::Unit::TestCase
     assert_equal("value", sprintf("%<key>s", :key => "value"))
     assert_raise(ArgumentError) {sprintf("%1$<key2>s", :key => "value")}
     assert_raise(ArgumentError) {sprintf("%<key><key2>s", :key => "value")}
+    assert_equal("value", sprintf("%{key}", :key => "value"))
+    assert_raise(ArgumentError) {sprintf("%1${key2}", :key => "value")}
+    assert_equal("value{key2}", sprintf("%{key}{key2}", :key => "value"))
   end
 end

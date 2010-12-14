@@ -52,6 +52,13 @@ class TestRubyLiteral < Test::Unit::TestCase
     assert_equal "\1", "\1"
     assert_equal "3", "\x33"
     assert_equal "\n", "\n"
+    bug2500 = '[ruby-core:27228]'
+    %w[c C- M-].each do |pre|
+      ["u", "x", %w[u{ }]].each do |open, close|
+        str = "\"\\#{pre}\\#{open}5555#{close}\""
+        assert_raise(SyntaxError, "#{bug2500} eval(#{str})") {eval(str)}
+      end
+    end
   end
 
   def test_dstring
@@ -77,16 +84,16 @@ class TestRubyLiteral < Test::Unit::TestCase
 
   def test_regexp
     assert_instance_of Regexp, //
-    assert_match //, 'a'
-    assert_match //, ''
+    assert_match(//, 'a')
+    assert_match(//, '')
     assert_instance_of Regexp, /a/
-    assert_match /a/, 'a'
-    assert_no_match /test/, 'tes'
+    assert_match(/a/, 'a')
+    assert_no_match(/test/, 'tes')
     re = /test/
     assert_match re, 'test'
     str = 'test'
     assert_match re, str
-    assert_match /test/, str
+    assert_match(/test/, str)
     assert_equal 0, (/test/ =~ 'test')
     assert_equal 0, (re =~ 'test')
     assert_equal 0, (/test/ =~ str)
@@ -210,6 +217,16 @@ class TestRubyLiteral < Test::Unit::TestCase
           assert_equal(r1, r2, "Integer(#{s.inspect}) != eval(#{s.inspect})")
         }
       }
+    }
+    bug2407 = '[ruby-dev:39798]'
+    head.each {|h|
+      if /^0/ =~ h
+        begin
+          eval("#{h}_")
+        rescue SyntaxError => e
+          assert_match(/numeric literal without digits\Z/, e.message, bug2407)
+        end
+      end
     }
   end
 

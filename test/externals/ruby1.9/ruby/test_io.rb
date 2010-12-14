@@ -19,7 +19,7 @@ class TestIO < Test::Unit::TestCase
   end
 
   def have_nonblock?
-    IO.instance_methods.index(:"nonblock=")
+    IO.method_defined?("nonblock=")
   end
 
   def test_pipe
@@ -113,7 +113,8 @@ class TestIO < Test::Unit::TestCase
   def test_ungetc
     r, w = IO.pipe
     w.close
-    assert_raise(IOError, "[ruby-dev:31650]") { 20000.times { r.ungetc "a" } }
+    s = "a" * 1000
+    assert_raise(IOError, "[ruby-dev:31650]") { 200.times { r.ungetc s } }
   ensure
     r.close
   end
@@ -150,9 +151,22 @@ class TestIO < Test::Unit::TestCase
     r.close
   end
 
+  def test_each_codepoint
+    t = make_tempfile
+    bug2959 = '[ruby-core:28650]'
+    a = ""
+    File.open(t, 'rt') {|f|
+      f.each_codepoint {|c| a << c}
+    }
+    assert_equal("foo\nbar\nbaz\n", a, bug2959)
+  end
+
   def test_rubydev33072
+    t = make_tempfile
+    path = t.path
+    t.close!
     assert_raise(Errno::ENOENT, "[ruby-dev:33072]") do
-      File.read("empty", nil, nil, {})
+      File.read(path, nil, nil, {})
     end
   end
 
@@ -318,7 +332,12 @@ class TestIO < Test::Unit::TestCase
         with_read_pipe("abc") {|r1|
           assert_equal("a", r1.getc)
           with_pipe {|r2, w2|
-            w2.nonblock = true
+            begin
+              w2.nonblock = true
+            rescue Errno::EBADF
+              skip "nonblocking IO for pipe is not implemented"
+              break
+            end
             s = w2.syswrite("a" * 100000)
             t = Thread.new { sleep 0.1; r2.read }
             ret = IO.copy_stream(r1, w2)
@@ -372,10 +391,14 @@ class TestIO < Test::Unit::TestCase
       if have_nonblock?
         with_pipe {|r1, w1|
           with_pipe {|r2, w2|
+            begin
+              r1.nonblock = true
+              w2.nonblock = true
+            rescue Errno::EBADF
+              skip "nonblocking IO for pipe is not implemented"
+            end
             t1 = Thread.new { w1 << megacontent; w1.close }
             t2 = Thread.new { r2.read }
-            r1.nonblock = true
-            w2.nonblock = true
             ret = IO.copy_stream(r1, w2)
             assert_equal(megacontent.bytesize, ret)
             w2.close
@@ -502,8 +525,12 @@ class TestIO < Test::Unit::TestCase
 
       if have_nonblock?
         with_socketpair {|s1, s2|
+          begin
+            s1.nonblock = true
+          rescue Errno::EBADF
+            skip "nonblocking IO for pipe is not implemented"
+          end
           t = Thread.new { s2.read }
-          s1.nonblock = true
           ret = IO.copy_stream("megasrc", s1)
           assert_equal(megacontent.bytesize, ret)
           s1.close
@@ -713,12 +740,14 @@ class TestIO < Test::Unit::TestCase
   end
 
   def safe_4
-    Thread.new do
-      Timeout.timeout(10) do
-        $SAFE = 4
-        yield
-      end
-    end.join
+    t = Thread.new do
+      $SAFE = 4
+      yield
+    end
+    unless t.join(10)
+      t.kill
+      flunk("timeout in safe_4")
+    end
   end
 
   def pipe(wp, rp)
@@ -804,7 +833,7 @@ class TestIO < Test::Unit::TestCase
 
   def test_inspect
     with_pipe do |r, w|
-      assert(r.inspect =~ /^#<IO:fd \d+>$/)
+      assert_match(/^#<IO:fd \d+>$/, r.inspect)
       assert_raise(SecurityError) do
         safe_4 { r.inspect }
       end
@@ -823,15 +852,15 @@ class TestIO < Test::Unit::TestCase
     end)
   end
 
-  def test_readpartial_error
+  def test_readpartial_lock
     with_pipe do |r, w|
       s = ""
       t = Thread.new { r.readpartial(5, s) }
       0 until s.size == 5
-      s.clear
+      assert_raise(RuntimeError) { s.clear }
       w.write "foobarbaz"
       w.close
-      assert_raise(RuntimeError) { t.join }
+      assert_equal("fooba", t.value)
     end
   end
 
@@ -858,15 +887,15 @@ class TestIO < Test::Unit::TestCase
     end)
   end
 
-  def test_read_error
+  def test_read_lock
     with_pipe do |r, w|
       s = ""
       t = Thread.new { r.read(5, s) }
       0 until s.size == 5
-      s.clear
+      assert_raise(RuntimeError) { s.clear }
       w.write "foobarbaz"
       w.close
-      assert_raise(RuntimeError) { t.join }
+      assert_equal("fooba", t.value)
     end
   end
 
@@ -882,6 +911,7 @@ class TestIO < Test::Unit::TestCase
 
   def test_read_nonblock_error
     return if !have_nonblock?
+    skip "IO#read_nonblock is not supported on file/pipe." if /mswin|bccwin|mingw/ =~ RUBY_PLATFORM
     with_pipe {|r, w|
       begin
         r.read_nonblock 4096
@@ -893,6 +923,7 @@ class TestIO < Test::Unit::TestCase
 
   def test_write_nonblock_error
     return if !have_nonblock?
+    skip "IO#write_nonblock is not supported on file/pipe." if /mswin|bccwin|mingw/ =~ RUBY_PLATFORM
     with_pipe {|r, w|
       begin
         loop {
@@ -1167,6 +1198,21 @@ class TestIO < Test::Unit::TestCase
     end
   end
 
+  def test_pos
+    t = make_tempfile
+
+    open(t.path, IO::RDWR|IO::CREAT|IO::TRUNC, 0600) do |f|
+      f.write "Hello"
+      assert_equal(5, f.pos)
+    end
+    open(t.path, IO::RDWR|IO::CREAT|IO::TRUNC, 0600) do |f|
+      f.sync = true
+      f.read
+      f.write "Hello"
+      assert_equal(5, f.pos)
+    end
+  end
+
   def test_sysseek
     t = make_tempfile
 
@@ -1241,6 +1287,49 @@ class TestIO < Test::Unit::TestCase
     f.close
   end
 
+  def try_fdopen(fd, autoclose = true, level = 100)
+    if level > 0
+      try_fdopen(fd, autoclose, level - 1)
+      GC.start
+      level
+    else
+      IO.for_fd(fd, autoclose: autoclose)
+      nil
+    end
+  end
+
+  def test_autoclose
+    feature2250 = '[ruby-core:26222]'
+    pre = 'ft2250'
+
+    Tempfile.new(pre) do |t|
+      f = IO.for_fd(t.fileno)
+      assert_equal(true, f.autoclose?)
+      f.autoclose = false
+      assert_equal(false, f.autoclose?)
+      f.close
+      assert_nothing_raised(Errno::EBADF) {t.close}
+
+      t.open
+      f = IO.for_fd(t.fileno, autoclose: false)
+      assert_equal(false, f.autoclose?)
+      f.autoclose = true
+      assert_equal(true, f.autoclose?)
+      f.close
+      assert_raise(Errno::EBADF) {t.close}
+    end
+
+    Tempfile.new(pre) do |t|
+      try_fdopen(t.fileno)
+      assert_raise(Errno::EBADF) {t.close}
+    end
+
+    Tempfile.new(pre) do |t|
+      try_fdopen(f.fileno, false)
+      assert_nothing_raised(Errno::EBADF) {t.close}
+    end
+  end
+
   def test_open_redirect
     o = Object.new
     def o.to_open; self; end
@@ -1295,6 +1384,19 @@ class TestIO < Test::Unit::TestCase
       f.reopen(f2)
       assert_equal("baz\n", f.gets, '[ruby-dev:39479]')
     end
+  end
+
+  def test_reopen_inherit
+    mkcdtmpdir {
+      system(EnvUtil.rubybin, '-e', <<"End")
+        f = open("out", "w")
+        STDOUT.reopen(f)
+        STDERR.reopen(f)
+        system(#{EnvUtil.rubybin.dump}, '-e', 'STDOUT.print "out"')
+        system(#{EnvUtil.rubybin.dump}, '-e', 'STDERR.print "err"')
+End
+      assert_equal("outerr", File.read("out"))
+    }
   end
 
   def test_foreach
@@ -1358,6 +1460,24 @@ class TestIO < Test::Unit::TestCase
     assert_in_out_err(["-", t.path], "print while $<.gets", %w(foo bar baz), [])
   end
 
+  def test_print_separators
+    $, = ':'
+    $\ = "\n"
+    pipe(proc do |w|
+      w.print('a')
+      w.print('a','b','c')
+      w.close
+    end, proc do |r|
+      assert_equal("a\n", r.gets)
+      assert_equal("a:b:c\n", r.gets)
+      assert_nil r.gets
+      r.close
+    end)
+  ensure
+    $, = nil
+    $\ = nil
+  end
+
   def test_putc
     pipe(proc do |w|
       w.putc "A"
@@ -1400,19 +1520,24 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_initialize
+    return unless defined?(Fcntl::F_GETFL)
+
     t = make_tempfile
 
     fd = IO.sysopen(t.path, "w")
     assert_kind_of(Integer, fd)
     %w[r r+ w+ a+].each do |mode|
-      assert_raise(Errno::EINVAL, '[ruby-dev:38571]') {IO.new(fd, mode)}
+      assert_raise(Errno::EINVAL, "#{mode} [ruby-dev:38571]") {IO.new(fd, mode)}
     end
     f = IO.new(fd, "w")
     f.write("FOO\n")
     f.close
 
     assert_equal("FOO\n", File.read(t.path))
+  end
 
+  def test_reinitialize
+    t = make_tempfile
     f = open(t.path)
     assert_raise(RuntimeError) do
       f.instance_eval { initialize }
@@ -1483,5 +1608,19 @@ class TestIO < Test::Unit::TestCase
     t = make_tempfile
     t.close
     assert_raise(IOError) {t.binmode}
+  end
+
+  def test_threaded_flush
+    bug3585 = '[ruby-core:31348]'
+    src = %q{\
+      t = Thread.new { sleep 3 }
+      Thread.new {sleep 1; t.kill; p 'hi!'}
+      t.join
+    }.gsub(/^\s+/, '')
+    10.times.map do
+      Thread.start do
+        assert_in_out_err([], src, [%q["hi!"]])
+      end
+    end.each {|th| th.join}
   end
 end

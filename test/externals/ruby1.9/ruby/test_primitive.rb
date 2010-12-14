@@ -228,6 +228,12 @@ class TestRubyPrimitive < Test::Unit::TestCase
     assert_equal 7, a[0]
     a[0] ||= 3
     assert_equal 7, a[0]
+
+    a = [0, 1, nil, 3, 4]
+    a[*[2]] ||= :foo
+    assert_equal [0, 1, :foo, 3, 4], a
+    a[*[1,3]] &&= [:bar]
+    assert_equal [0, :bar, 4], a
   end
 
   def test_opassign_and_or
@@ -394,4 +400,24 @@ class TestRubyPrimitive < Test::Unit::TestCase
     #assert_equal [0,1,2,3,4], [0, *a, 4]
   end
 
+  def test_concatarray_ruby_dev_41933
+    bug3658 = '[ruby-dev:41933]'
+    [0, *x=1]
+    assert_equal(1, x, bug3658)
+    [0, *x=1, 2]
+    assert_equal(1, x, bug3658)
+    class << (x = Object.new)
+      attr_accessor :to_a_called
+      def to_a
+        @to_a_called = true
+        [self]
+      end
+    end
+    x.to_a_called = false
+    [0, *x]
+    assert(x.to_a_called, bug3658)
+    x.to_a_called = false
+    [0, *x, 2]
+    assert(x.to_a_called, bug3658)
+  end
 end

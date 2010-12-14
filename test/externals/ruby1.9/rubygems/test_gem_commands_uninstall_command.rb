@@ -57,5 +57,27 @@ class TestGemCommandsUninstallCommand < GemInstallerTestCase
     assert_empty output, "UI output should be empty after an uninstall error"
   end
 
+  def test_execute_prerelease
+    @spec = quick_gem "pre", "2.b"
+    @gem = File.join @tempdir, @spec.file_name
+    FileUtils.touch @gem
+
+    util_setup_gem
+
+    build_rake_in do
+      use_ui @ui do
+        @installer.install
+      end
+    end
+
+    @cmd.options[:args] = ["pre"]
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    output = @ui.output
+    assert_match(/Successfully uninstalled/, output)
+  end
 end
 

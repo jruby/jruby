@@ -3,6 +3,11 @@ require 'tempfile'
 require_relative 'ruby/envutil'
 
 class TestTempfile < Test::Unit::TestCase
+  def initialize(*)
+    super
+    @tempfile = nil
+  end
+
   def tempfile(*args, &block)
     t = Tempfile.new(*args, &block)
     @tempfile = (t unless block)
@@ -45,13 +50,13 @@ class TestTempfile < Test::Unit::TestCase
 
   def test_basename
     t = tempfile("foo")
-    assert_match /^foo/, File.basename(t.path)
+    assert_match(/^foo/, File.basename(t.path))
   end
 
   def test_basename_with_suffix
     t = tempfile(["foo", ".txt"])
-    assert_match /^foo/, File.basename(t.path)
-    assert_match /\.txt$/, File.basename(t.path)
+    assert_match(/^foo/, File.basename(t.path))
+    assert_match(/\.txt$/, File.basename(t.path))
   end
 
   def test_unlink
@@ -81,6 +86,7 @@ class TestTempfile < Test::Unit::TestCase
   end
 
   def test_unlink_before_close_works_on_posix_systems
+    skip "on Windows, unlink is always delayed" if /mswin|mingw/ =~ RUBY_PLATFORM
     tempfile = tempfile("foo")
     begin
       path = tempfile.path
@@ -113,6 +119,7 @@ class TestTempfile < Test::Unit::TestCase
   end
 
   def test_close_with_unlink_now_true_does_not_unlink_if_already_unlinked
+    skip "on Windows, unlink is always delayed" if /mswin|mingw/ =~ RUBY_PLATFORM
     t = tempfile("foo")
     path = t.path
     t.unlink
@@ -135,6 +142,7 @@ class TestTempfile < Test::Unit::TestCase
   end
 
   def test_close_bang_does_not_unlink_if_already_unlinked
+    skip "on Windows, unlink is always delayed" if /mswin|mingw/ =~ RUBY_PLATFORM
     t = tempfile("foo")
     path = t.path
     t.unlink
@@ -148,7 +156,8 @@ class TestTempfile < Test::Unit::TestCase
   end
 
   def test_finalizer_does_not_unlink_if_already_unlinked
-    assert_in_out_err('-rtempfile', <<-'EOS') do |(filename), (error)|
+    skip "on Windows, unlink is always delayed" if /mswin|mingw/ =~ RUBY_PLATFORM
+    assert_in_out_err('-rtempfile', <<-'EOS') do |(filename,*), (error,*)|
 file = Tempfile.new('foo')
 path = file.path
 puts path
@@ -160,7 +169,7 @@ File.open(path, "w").close
       assert_nil error
     end
 
-    assert_in_out_err('-rtempfile', <<-'EOS') do |(filename), (error)|
+    assert_in_out_err('-rtempfile', <<-'EOS') do |(filename,*), (error,*)|
 file = Tempfile.new('foo')
 path = file.path
 file.unlink
@@ -186,7 +195,7 @@ File.open(path, "w").close
     t = tempfile("foo")
     t.write("hello")
     t.close
-    assert 5, File.size(t.path)
+    assert_equal 5, File.size(t.path)
   end
 
   def test_tempfile_is_unlinked_when_ruby_exits
@@ -200,16 +209,16 @@ puts Tempfile.new('foo').path
   def test_size_flushes_buffer_before_determining_file_size
     t = tempfile("foo")
     t.write("hello")
-    assert 0, File.size(t.path)
-    assert 5, t.size
-    assert 5, File.size(t.path)
+    assert_equal 0, File.size(t.path)
+    assert_equal 5, t.size
+    assert_equal 5, File.size(t.path)
   end
 
   def test_size_works_if_file_is_closed
     t = tempfile("foo")
     t.write("hello")
     t.close
-    assert 5, t.size
+    assert_equal 5, t.size
   end
 
   def test_concurrency
@@ -283,6 +292,17 @@ puts Tempfile.new('foo').path
     t.write("\xE6\x9D\xBE\xE6\xB1\x9F")
     t.rewind
     assert_equal(Encoding::ASCII_8BIT,t.read.encoding)
+  end
+
+  def test_binmode
+    t = tempfile("TEST", mode: IO::BINARY)
+    if IO::BINARY.nonzero?
+      assert(t.binmode?)
+      t.open
+      assert(t.binmode?, 'binmode after reopen')
+    else
+      assert_equal(0600, t.stat.mode & 0777)
+    end
   end
 end
 

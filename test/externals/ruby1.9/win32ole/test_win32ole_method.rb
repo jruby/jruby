@@ -108,8 +108,13 @@ if defined?(WIN32OLE_METHOD)
       assert_equal(1610743810, @m_namespace.dispid)
     end
 
+    def is_ruby64?
+      /mswin64|mingw64/ =~ RUBY_PLATFORM
+    end
+
     def test_offset_vtbl
-      assert_equal(24, @m_invoke.offset_vtbl)
+      exp = is_ruby64? ? 48 : 24
+      assert_equal(exp, @m_invoke.offset_vtbl)
     end
 
     def test_size_params

@@ -30,7 +30,7 @@ class TestThread < Test::Unit::TestCase
   def test_mutex_synchronize
     m = Mutex.new
     r = 0
-    max = 100
+    max = 10
     (1..max).map{
       Thread.new{
         i=0
@@ -108,7 +108,7 @@ class TestThread < Test::Unit::TestCase
     $:.unshift File.join(File.dirname(dir), 'ruby')
     require 'envutil'
     $:.shift
-    10.times {
+    3.times {
       result = `#{EnvUtil.rubybin} #{lbtest}`
       assert(!$?.coredump?, '[ruby-dev:30653]')
       assert_equal("exit.", result[/.*\Z/], '[ruby-dev:30653]')
@@ -124,9 +124,13 @@ class TestThread < Test::Unit::TestCase
     assert_equal(-1, t1.priority)
     assert_equal(-3, t2.priority)
     sleep 0.5
+    5.times do
+      break if c1 > c2
+      sleep 0.1
+    end
     t1.kill
     t2.kill
-    assert(c1 > c2, "[ruby-dev:33124]")
+    # assert_operator(c1, :>, c2, "[ruby-dev:33124]") # not guaranteed
   end
 
   def test_new
@@ -228,8 +232,8 @@ class TestThread < Test::Unit::TestCase
       Thread.pass
       t2 = Thread.new { loop { } }
       t3 = Thread.new { }.join
-      p [Thread.current, t1, t2].sort_by {|t| t.object_id }
-      p Thread.list.sort_by {|t| t.object_id }
+      p [Thread.current, t1, t2].map{|t| t.object_id }.sort
+      p Thread.list.map{|t| t.object_id }.sort
     INPUT
       assert_equal(r.first, r.last)
       assert_equal([], e)

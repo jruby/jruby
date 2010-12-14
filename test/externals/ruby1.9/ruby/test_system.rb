@@ -10,6 +10,8 @@ class TestSystem < Test::Unit::TestCase
     }
     code.force_encoding("us-ascii")
     catch {|tag| eval(code, binding, fname, 0)}
+  rescue SyntaxError
+    false
   end
 
   def test_system
@@ -37,7 +39,7 @@ class TestSystem < Test::Unit::TestCase
       tmp = open(tmpfilename, "w")
       tmp.print "this is a leading junk\n";
       tmp.print "#! /usr/local/bin/ruby -s\n";
-      tmp.print "print $zzz\n";
+      tmp.print "print $zzz if defined? $zzz\n";
       tmp.print "__END__\n";
       tmp.print "this is a trailing junk\n";
       tmp.close
@@ -49,7 +51,7 @@ class TestSystem < Test::Unit::TestCase
       tmp.print "#! /non/exist\\interpreter?/./to|be:ignored\n";
       tmp.print "this is a leading junk\n";
       tmp.print "#! /usr/local/bin/ruby -s\n";
-      tmp.print "print $zzz\n";
+      tmp.print "print $zzz if defined? $zzz\n";
       tmp.print "__END__\n";
       tmp.print "this is a trailing junk\n";
       tmp.close

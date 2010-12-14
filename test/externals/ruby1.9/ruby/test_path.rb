@@ -35,13 +35,15 @@ class TestPath < Test::Unit::TestCase
       assert_equal("/sub", File.expand_path("sub", "/"))
     end
     if dosish
-      assert_equal("//machine/share", File.expand_path("/", "//machine/share/sub"))
-      assert_equal("//machine/share/dir", File.expand_path("/dir", "//machine/share/sub"))
+      assert_equal("//127.0.0.1/share", File.expand_path("/", "//127.0.0.1/share/sub"))
+      assert_equal("//127.0.0.1/share/dir", File.expand_path("/dir", "//127.0.0.1/share/sub"))
       assert_equal("z:/", File.expand_path("/", "z:/sub"))
       assert_equal("z:/dir", File.expand_path("/dir", "z:/sub"))
     end
     assert_equal("//", File.expand_path(".", "//"))
     assert_equal("//sub", File.expand_path("sub", "//"))
+
+    assert_equal("//127.0.0.1/\u3042", File.expand_path("\u3042", "//127.0.0.1"))
   end
 
   def test_dirname
@@ -226,8 +228,13 @@ class TestPath < Test::Unit::TestCase
 
   def test_extname
     assert_equal('', File.extname('a'))
-    assert_equal('.rb', File.extname('a.rb'))
-    assert_equal('', File.extname('a.rb.'))
+    ext = '.rb'
+    assert_equal(ext, File.extname('a.rb'))
+    unless /mswin|bccwin|mingw/ =~ RUBY_PLATFORM
+      # trailing spaces and dots are ignored on NTFS.
+      ext = ''
+    end
+    assert_equal(ext, File.extname('a.rb.'))
     assert_equal('', File.extname('a.'))
     assert_equal('', File.extname('.x'))
     assert_equal('', File.extname('..x'))

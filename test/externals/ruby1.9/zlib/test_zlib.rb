@@ -535,7 +535,7 @@ if defined? Zlib
       assert_equal("foobar".each_byte.to_a, a)
     end
 
-    def test_gets
+    def test_gets2
       t = Tempfile.new("test_zlib_gzip_reader")
       t.close
       Zlib::GzipWriter.open(t.path) {|gz| gz.print("foo\nbar\nbaz\n") }
@@ -662,11 +662,31 @@ if defined? Zlib
       assert_equal(0x8a62c964, Zlib.adler32("abc\x01\x02\x03" * 10000))
     end
 
+    def test_adler32_combine
+      one = Zlib.adler32("fo")
+      two = Zlib.adler32("o")
+      begin
+        assert_equal(0x02820145, Zlib.adler32_combine(one, two, 1))
+      rescue NotImplementedError
+        skip "adler32_combine is not implemented"
+      end
+    end
+
     def test_crc32
       assert_equal(0x00000000, Zlib.crc32)
       assert_equal(0x8c736521, Zlib.crc32("foo"))
       assert_equal(0x8c736521, Zlib.crc32("o", Zlib.crc32("fo")))
       assert_equal(0x07f0d68f, Zlib.crc32("abc\x01\x02\x03" * 10000))
+    end
+
+    def test_crc32_combine
+      one = Zlib.crc32("fo")
+      two = Zlib.crc32("o")
+      begin
+        assert_equal(0x8c736521, Zlib.crc32_combine(one, two, 1))
+      rescue NotImplementedError
+        skip "crc32_combine is not implemented"
+      end
     end
 
     def test_crc_table

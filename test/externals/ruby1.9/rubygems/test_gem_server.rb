@@ -20,6 +20,17 @@ class TestGemServer < RubyGemTestCase
     @res = WEBrick::HTTPResponse.new :HTTPVersion => '1.0'
   end
 
+  def test_spec_dirs
+    s = Gem::Server.new Gem.dir, process_based_port, false
+
+    assert_equal [File.join(Gem.dir, 'specifications')], s.spec_dirs
+
+    s = Gem::Server.new [Gem.dir, Gem.dir], process_based_port, false
+
+    assert_equal [File.join(Gem.dir, 'specifications'),
+                  File.join(Gem.dir, 'specifications')], s.spec_dirs
+  end
+
   def test_Marshal
     data = StringIO.new "GET /Marshal.#{Gem.marshal_version} HTTP/1.0\r\n\r\n"
     @req.parse data
@@ -76,6 +87,26 @@ class TestGemServer < RubyGemTestCase
     assert_equal 'application/x-gzip', @res['content-type']
     assert_equal [['a', Gem::Version.new(2), Gem::Platform::RUBY]],
                  Marshal.load(Gem.gunzip(@res.body))
+  end
+
+  def test_listen
+    util_listen
+
+    out, err = capture_io do
+      @server.listen
+    end
+
+    assert_equal 1, @server.server.listeners.length
+  end
+
+  def test_listen_addresses
+    util_listen
+
+    out, err = capture_io do
+      @server.listen %w[a b]
+    end
+    
+    assert_equal 2, @server.server.listeners.length
   end
 
   def test_quick_a_1_gemspec_rz
@@ -304,6 +335,21 @@ class TestGemServer < RubyGemTestCase
     si.add_specs @a1, @a2
 
     assert_equal si, YAML.load(Gem.inflate(@res.body))
+  end
+
+  def util_listen
+    webrick = Object.new
+    webrick.instance_variable_set :@listeners, []
+    def webrick.listeners() @listeners end
+    def webrick.listen(host, port)
+      socket = Object.new
+      socket.instance_variable_set :@host, host
+      socket.instance_variable_set :@port, port
+      def socket.addr() [nil, @port, @host] end
+      @listeners << socket
+    end
+
+    @server.instance_variable_set :@server, webrick
   end
 
 end

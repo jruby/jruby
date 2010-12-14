@@ -141,6 +141,11 @@ class TestModule < Test::Unit::TestCase
       :bClass3
     end
   end
+  
+  class CClass < BClass
+    def self.cClass
+    end
+  end
 
   MyClass = AClass.clone
   class MyClass
@@ -216,10 +221,29 @@ class TestModule < Test::Unit::TestCase
                  remove_rake_mixins(remove_json_mixins(remove_pp_mixins(String.ancestors))))
   end
 
+  CLASS_EVAL = 2
+  @@class_eval = 'b'
+
   def test_class_eval
     Other.class_eval("CLASS_EVAL = 1")
     assert_equal(1, Other::CLASS_EVAL)
     assert(Other.constants.include?(:CLASS_EVAL))
+    assert_equal(2, Other.class_eval { CLASS_EVAL })
+
+    Other.class_eval("@@class_eval = 'a'")
+    assert_equal('a', Other.class_variable_get(:@@class_eval))
+    assert_equal('b', Other.class_eval { @@class_eval })
+
+    Other.class_eval do
+      module_function
+
+      def class_eval_test
+        "foo"
+      end
+    end
+    assert_equal("foo", Other.class_eval_test)
+
+    assert_equal([Other], Other.class_eval { |*args| args })
   end
 
   def test_const_defined?
@@ -262,6 +286,9 @@ class TestModule < Test::Unit::TestCase
     assert_equal([:user, :mixin].sort, User.instance_methods(true).sort)
     assert_equal([:mixin], Mixin.instance_methods)
     assert_equal([:mixin], Mixin.instance_methods(true))
+    assert_equal([:cClass], (class << CClass; self; end).instance_methods(false))
+    assert_equal([], (class << BClass; self; end).instance_methods(false))
+    assert_equal([:cm2], (class << AClass; self; end).instance_methods(false))
     # Ruby 1.8 feature change:
     # #instance_methods includes protected methods.
     #assert_equal([:aClass], AClass.instance_methods(false))
@@ -361,6 +388,21 @@ class TestModule < Test::Unit::TestCase
     Object.module_eval "WALTER = 99"
     c2 = Module.constants
     assert_equal([:WALTER], c2 - c1)
+
+    assert_equal([], Module.constants(true))
+    assert_equal([], Module.constants(false))
+
+    src = <<-INPUT
+      ary = Module.constants
+      module M
+        WALTER = 99
+      end
+      class Module
+        include M
+      end
+      p Module.constants - ary, Module.constants(true), Module.constants(false)
+    INPUT
+    assert_in_out_err([], src, %w([:M] [:WALTER] []), [])
   end
 
   module M1
@@ -451,7 +493,7 @@ class TestModule < Test::Unit::TestCase
 
   def test_class_variable_get
     c = Class.new
-    c.class_eval { @@foo = :foo }
+    c.class_eval('@@foo = :foo')
     assert_equal(:foo, c.class_variable_get(:@@foo))
     assert_raise(NameError) { c.class_variable_get(:@@bar) } # c.f. instance_variable_get
     assert_raise(NameError) { c.class_variable_get(:foo) }
@@ -460,13 +502,13 @@ class TestModule < Test::Unit::TestCase
   def test_class_variable_set
     c = Class.new
     c.class_variable_set(:@@foo, :foo)
-    assert_equal(:foo, c.class_eval { @@foo })
+    assert_equal(:foo, c.class_eval('@@foo'))
     assert_raise(NameError) { c.class_variable_set(:foo, 1) }
   end
 
   def test_class_variable_defined
     c = Class.new
-    c.class_eval { @@foo = :foo }
+    c.class_eval('@@foo = :foo')
     assert_equal(true, c.class_variable_defined?(:@@foo))
     assert_equal(false, c.class_variable_defined?(:@@bar))
     assert_raise(NameError) { c.class_variable_defined?(:foo) }
@@ -474,7 +516,7 @@ class TestModule < Test::Unit::TestCase
 
   def test_remove_class_variable
     c = Class.new
-    c.class_eval { @@foo = :foo }
+    c.class_eval('@@foo = :foo')
     c.class_eval { remove_class_variable(:@@foo) }
     assert_equal(false, c.class_variable_defined?(:@@foo))
   end
@@ -853,5 +895,29 @@ class TestModule < Test::Unit::TestCase
       end
     end
     assert_equal("", stderr)
+  end
+
+  def test_protected_singleton_method
+    klass = Class.new
+    x = klass.new
+    class << x
+      protected
+
+      def foo
+      end
+    end
+    assert_raise(NoMethodError) do
+      x.foo
+    end
+    klass.send(:define_method, :bar) do
+      x.foo
+    end
+    assert_nothing_raised do
+      x.bar
+    end
+    y = klass.new
+    assert_raise(NoMethodError) do
+      y.bar
+    end
   end
 end

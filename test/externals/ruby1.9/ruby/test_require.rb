@@ -2,6 +2,7 @@ require 'test/unit'
 
 require 'tempfile'
 require_relative 'envutil'
+require 'tmpdir'
 
 class TestRequire < Test::Unit::TestCase
   def test_require_invalid_shared_object
@@ -84,7 +85,7 @@ class TestRequire < Test::Unit::TestCase
       begin
         require 'socket'
         p :ng
-      rescue NameError
+      rescue TypeError
         p :ok
       end
     INPUT
@@ -196,6 +197,19 @@ class TestRequire < Test::Unit::TestCase
     assert_raise(ArgumentError) { at_exit }
   end
 
+  def test_load2  # [ruby-core:25039]
+    t = Tempfile.new(["test_ruby_test_require", ".rb"])
+    t.puts "Hello = 'hello'"
+    t.puts "class Foo"
+    t.puts "  p Hello"
+    t.puts "end"
+    t.close
+
+    assert_in_out_err([], <<-INPUT, %w("hello"), [])
+      load(#{ t.path.dump }, true)
+    INPUT
+  end
+
   def test_tainted_loadpath
     t = Tempfile.new(["test_ruby_test_require", ".rb"])
     abs_dir, file = File.split(t.path)
@@ -246,7 +260,6 @@ class TestRequire < Test::Unit::TestCase
   end
 
   def test_relative
-    require 'tmpdir'
     load_path = $:.dup
     $:.delete(".")
     Dir.mktmpdir do |tmp|
@@ -267,5 +280,24 @@ class TestRequire < Test::Unit::TestCase
     end
   ensure
     $:.replace(load_path) if load_path
+  end
+
+  def test_relative_symlink
+    Dir.mktmpdir {|tmp|
+      Dir.chdir(tmp) {
+        Dir.mkdir "a"
+        Dir.mkdir "b"
+        File.open("a/lib.rb", "w") {|f| f.puts 'puts "a/lib.rb"' }
+        File.open("b/lib.rb", "w") {|f| f.puts 'puts "b/lib.rb"' }
+        File.open("a/tst.rb", "w") {|f| f.puts 'require_relative "lib"' }
+        begin
+          File.symlink("../a/tst.rb", "b/tst.rb")
+          result = IO.popen([EnvUtil.rubybin, "b/tst.rb"]).read
+          assert_equal("a/lib.rb\n", result, "[ruby-dev:40040]")
+        rescue NotImplementedError
+          skip "File.symlink is not implemented"
+        end
+      }
+    }
   end
 end
