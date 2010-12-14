@@ -944,17 +944,11 @@ public final class ThreadContext {
         return buffer.toString();
     }
 
-    public static RubyStackTraceElement[] gatherRawBacktrace(Ruby runtime, StackTraceElement[] stackTrace, boolean filter) {
+    public static RubyStackTraceElement[] gatherRawBacktrace(Ruby runtime, StackTraceElement[] stackTrace) {
         List trace = new ArrayList(stackTrace.length);
         
         for (int i = 0; i < stackTrace.length; i++) {
             StackTraceElement element = stackTrace[i];
-            if (filter) {
-                if (element.getClassName().startsWith("org.jruby") ||
-                        element.getLineNumber() < 0) {
-                    continue;
-                }
-            }
             trace.add(new RubyStackTraceElement(element));
         }
 

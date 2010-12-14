@@ -1217,7 +1217,6 @@ public class RubyInstanceConfig {
                         FASTCASE_COMPILE_ENABLED = true;
                         FASTSEND_COMPILE_ENABLED = true;
                         INLINE_DYNCALL_ENABLED = true;
-                        RubyException.TRACE_TYPE = RubyException.RUBY_COMPILED;
                         break FOR;
                     } else if (argument.equals("--profile")) {
                         profiling = true;
