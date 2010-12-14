@@ -1035,9 +1035,31 @@ public final class ThreadContext {
 
                     // if it's a synthetic call, use it but gobble up parent calls
                     // TODO: need to formalize this better
-                    if (methodName.startsWith("SYNTHETIC")) {
-                        methodName = methodName.substring("SYNTHETIC".length());
+                    if (methodName.startsWith("$RUBY$SYNTHETIC")) {
+                        methodName = methodName.substring("$RUBY$SYNTHETIC".length());
                         methodName = JavaNameMangler.demangleMethodName(methodName);
+                        trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
+
+                        // gobble up at least one parent, and keep going if there's more synthetic frames
+                        while (element.getMethodName().indexOf("$RUBY$SYNTHETIC") != -1) {
+                            i++;
+                            element = stackTrace[i];
+                        }
+                        continue;
+                    }
+
+                    methodName = JavaNameMangler.demangleMethodName(methodName);
+                    trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
+                    continue;
+                }
+
+                // last attempt at AOT compiled backtrace element, looking for __file__
+                if (methodName.indexOf("__file__") >= 0) {
+                    methodName = "(root)";
+
+                    // if it's a synthetic call, use it but gobble up parent calls
+                    // TODO: need to formalize this better
+                    if (methodName.startsWith("$RUBY$SYNTHETIC")) {
                         trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
 
                         // gobble up at least one parent, and keep going if there's more synthetic frames
