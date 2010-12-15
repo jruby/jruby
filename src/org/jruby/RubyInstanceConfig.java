@@ -497,7 +497,8 @@ public class RubyInstanceConfig {
                 .append("  --jdb           runs JRuby process under JDB\n")
                 .append("  --properties    List all configuration Java properties (pass -J-Dproperty=value)\n")
                 .append("  --sample        run with profiling using the JVM's sampling profiler\n")
-                .append("  --profile       run with instrumented (timed) profiling, flat format\n")
+        //.append("  --profile       activate Ruby profiler API\n")
+                .append("  --profile.flat  run with instrumented (timed) profiling, flat format\n")
                 .append("  --profile.graph run with instrumented (timed) profiling, graph format\n")
                 .append("  --client        use the non-optimizing \"client\" JVM (improves startup; default)\n")
                 .append("  --server        use the optimizing \"server\" JVM (improves perf)\n")
@@ -1221,7 +1222,7 @@ public class RubyInstanceConfig {
                         INLINE_DYNCALL_ENABLED = true;
                         RubyException.TRACE_TYPE = RubyException.RUBY_COMPILED;
                         break FOR;
-                    } else if (argument.equals("--profile")) {
+                    } else if (argument.equals("--profile.flat")) {
                         profilingMode = ProfilingMode.FLAT;
                         break FOR;
                     } else if (argument.equals("--profile.graph")) {
