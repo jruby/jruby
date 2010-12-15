@@ -57,9 +57,11 @@ import org.jruby.compiler.ASTCompiler19;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.profile.ProfileData;
 import org.jruby.runtime.profile.IProfileData;
-import org.jruby.runtime.profile.FlatProfileData;
-import org.jruby.runtime.profile.GraphProfileData;
+import org.jruby.runtime.profile.AbstractProfilePrinter;
+import org.jruby.runtime.profile.FlatProfilePrinter;
+import org.jruby.runtime.profile.GraphProfilePrinter;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadService19;
 import org.jruby.util.ClassCache;
@@ -1630,11 +1632,15 @@ public class RubyInstanceConfig {
     }
     
     public IProfileData makeProfileData() {
+        return new ProfileData();
+    }
+    
+    public AbstractProfilePrinter makeProfilePrinter() {
         if (profilingMode == ProfilingMode.FLAT) {
-            return new FlatProfileData();
+            return new FlatProfilePrinter();
         }
         else if (profilingMode == ProfilingMode.GRAPH) {
-            return new GraphProfileData();
+            return new GraphProfilePrinter();
         }
         return null;
     }

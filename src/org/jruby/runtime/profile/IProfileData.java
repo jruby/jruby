@@ -23,11 +23,4 @@ public interface IProfileData {
      * @return the serial number of the previous method being profiled
      */
 	public int profileExit(int nextMethod, long startTime);
-
-	/**
-     * Print the profile data for a given thread (context).
-     *
-     * @param context the thread (context) for which to dump profile data
-     */
-	public void printProfile(ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out);
 }
