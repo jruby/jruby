@@ -1031,13 +1031,13 @@ public final class ThreadContext {
                 // AOT formatted method names, need to be cleaned up
                 int RUBYindex = methodName.indexOf("$RUBY$");
                 if (RUBYindex >= 0) {
-                    methodName = methodName.substring(RUBYindex + "$RUBY$".length());
-
                     // if it's a synthetic call, use it but gobble up parent calls
                     // TODO: need to formalize this better
+                    methodName = methodName.substring(RUBYindex);
                     if (methodName.startsWith("$RUBY$SYNTHETIC")) {
                         methodName = methodName.substring("$RUBY$SYNTHETIC".length());
                         methodName = JavaNameMangler.demangleMethodName(methodName);
+                        if (methodName == "__file__") methodName = "(root)";
                         trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
 
                         // gobble up at least one parent, and keep going if there's more synthetic frames
@@ -1048,29 +1048,16 @@ public final class ThreadContext {
                         continue;
                     }
 
+                    // not a synthetic body
+                    methodName = methodName.substring("$RUBY$".length());
                     methodName = JavaNameMangler.demangleMethodName(methodName);
                     trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
                     continue;
                 }
 
                 // last attempt at AOT compiled backtrace element, looking for __file__
-                if (methodName.indexOf("__file__") >= 0) {
+                if (methodName.equals("__file__")) {
                     methodName = "(root)";
-
-                    // if it's a synthetic call, use it but gobble up parent calls
-                    // TODO: need to formalize this better
-                    if (methodName.startsWith("$RUBY$SYNTHETIC")) {
-                        trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
-
-                        // gobble up at least one parent, and keep going if there's more synthetic frames
-                        while (element.getMethodName().indexOf("$RUBY$SYNTHETIC") != -1) {
-                            i++;
-                            element = stackTrace[i];
-                        }
-                        continue;
-                    }
-
-                    methodName = JavaNameMangler.demangleMethodName(methodName);
                     trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
                     continue;
                 }
