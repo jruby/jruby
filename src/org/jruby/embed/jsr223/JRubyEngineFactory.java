@@ -169,6 +169,10 @@ public class JRubyEngineFactory implements ScriptEngineFactory {
         LocalContextScope scope = SystemPropertyCatcher.getScope(LocalContextScope.SINGLETON);
         LocalVariableBehavior behavior = SystemPropertyCatcher.getBehavior(LocalVariableBehavior.GLOBAL);
         container = new ScriptingContainer(scope, behavior);
+        boolean useCurrent = SystemPropertyCatcher.useCurrentClassLoader(false);
+        if (useCurrent) {
+            container.setClassLoader(container.getClass().getClassLoader());
+        }
         SystemPropertyCatcher.setConfiguration(container);
         JRubyEngine engine = new JRubyEngine(container, this);
         return (ScriptEngine)engine;

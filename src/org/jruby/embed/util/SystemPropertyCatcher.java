@@ -103,6 +103,38 @@ public class SystemPropertyCatcher {
     }
 
     /**
+     * Gets a local variable behavior from System property. If no value is assigned to
+     * PropertyName.LOCALVARIABLE_BEHAVIOR, given default value is applied.
+     *
+     * @param defaultBehavior a default local variable behavior
+     * @return a local variable behavior
+     */
+    public static boolean isLazy(boolean defaultLaziness) {
+        boolean lazy = defaultLaziness;
+        String s = System.getProperty(PropertyName.LAZINESS.toString());
+        if (s == null) {
+            return lazy;
+        }
+        return Boolean.parseBoolean(s);
+    }
+
+    /**
+     * Gets a value for classloader policy from System property.
+     *
+     * @param defaultPolicy default policy to use current classloader.
+     * @return true if current classloader is used, false otherwise.
+     */
+    public static boolean useCurrentClassLoader(boolean defaultPolicy) {
+        String s = System.getProperty(PropertyName.CLASSLOADER.toString());
+        if (s == null) return defaultPolicy;
+        if ("current".equals(s)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Sets configuration parameters given by System properties. Compile mode and
      * Compat version can be set.
      *
