@@ -118,6 +118,22 @@ public class SystemPropertyCatcher {
     }
 
     /**
+     * Gets a value for classloader policy from System property.
+     *
+     * @param defaultPolicy default policy to use current classloader.
+     * @return true if current classloader is used, false otherwise.
+     */
+    public static boolean useCurrentClassLoader(boolean defaultPolicy) {
+        String s = System.getProperty(PropertyName.CLASSLOADER.toString());
+        if (s == null) return defaultPolicy;
+        if ("current".equals(s)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Sets configuration parameters given by System properties. Compile mode and
      * Compat version can be set.
      *

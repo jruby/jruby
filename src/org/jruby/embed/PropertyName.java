@@ -64,6 +64,18 @@ public enum PropertyName {
     LAZINESS("org.jruby.embed.laziness"),
 
     /**
+     * A key to get/set the value for classloader policy. The assigned value must
+     * be "current" or "none." When current is set, JSR223 engine sets a current
+     * classloader (the one used to initialize ScriptingContainer) to Ruby runtime.
+     * When none is set, no classloader is set to Ruby runtime.
+     * Default value is "none" for version 1.5.x, and "current" for 1.6.0 and later.
+     *
+     * This property is used only for JSR223 since ScriptingContainer users can
+     * set any classloader explicitely.
+     */
+    CLASSLOADER("org.jruby.embed.classloader"),
+
+    /**
      * A key to get/set compile mode. The assigned value is one of jit or force.
      */
     COMPILEMODE("org.jruby.embed.compilemode"),
