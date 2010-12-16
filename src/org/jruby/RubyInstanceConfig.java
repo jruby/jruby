@@ -176,11 +176,11 @@ public class RubyInstanceConfig {
     private CompatVersion compatVersion;
 
     public enum ProfilingMode {
-		OFF, FLAT, GRAPH
+		OFF, API, FLAT, GRAPH
 	}
 		
     private ProfilingMode profilingMode = ProfilingMode.OFF;
-	
+    
     private ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
     private ClassLoader loader = contextLoader == null ? RubyInstanceConfig.class.getClassLoader() : contextLoader;
 
@@ -499,7 +499,7 @@ public class RubyInstanceConfig {
                 .append("  --jdb           runs JRuby process under JDB\n")
                 .append("  --properties    List all configuration Java properties (pass -J-Dproperty=value)\n")
                 .append("  --sample        run with profiling using the JVM's sampling profiler\n")
-        //.append("  --profile       activate Ruby profiler API\n")
+                .append("  --profile       activate Ruby profiler API\n")
                 .append("  --profile.flat  run with instrumented (timed) profiling, flat format\n")
                 .append("  --profile.graph run with instrumented (timed) profiling, graph format\n")
                 .append("  --client        use the non-optimizing \"client\" JVM (improves startup; default)\n")
@@ -1224,6 +1224,9 @@ public class RubyInstanceConfig {
                         INLINE_DYNCALL_ENABLED = true;
                         RubyException.TRACE_TYPE = RubyException.RUBY_COMPILED;
                         break FOR;
+                    } else if (argument.equals("--profile")) {
+                        profilingMode = ProfilingMode.API;
+                        break FOR;
                     } else if (argument.equals("--profile.flat")) {
                         profilingMode = ProfilingMode.FLAT;
                         break FOR;
@@ -1626,6 +1629,10 @@ public class RubyInstanceConfig {
     public boolean isProfiling() {
         return profilingMode != ProfilingMode.OFF;
     }
+    
+    public boolean isProfilingEntireRun() {
+        return profilingMode != ProfilingMode.OFF && profilingMode != ProfilingMode.API;
+    }
 
     public ProfilingMode getProfilingMode() {
         return profilingMode;
@@ -1635,7 +1642,7 @@ public class RubyInstanceConfig {
         return new ProfileData();
     }
     
-    public AbstractProfilePrinter makeProfilePrinter() {
+    public AbstractProfilePrinter makeDefaultProfilePrinter() {
         if (profilingMode == ProfilingMode.FLAT) {
             return new FlatProfilePrinter();
         }

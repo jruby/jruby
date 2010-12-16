@@ -106,7 +106,7 @@ public final class ThreadContext {
     // Line where current executing unit is being evaluated
     private int line = 0;
     
-    public boolean isProfiling;
+    private boolean isProfiling = false;
     // The flat profile data for this thread
 	private IProfileData profileData;
 	
@@ -124,7 +124,8 @@ public final class ThreadContext {
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();
-        this.isProfiling = runtime.getInstanceConfig().isProfiling();
+        if (runtime.getInstanceConfig().isProfilingEntireRun())
+            startProfiling();
 
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
@@ -1511,10 +1512,28 @@ public final class ThreadContext {
     }
 
     public int profileEnter(int nextMethod) {
-        return getProfileData().profileEnter(nextMethod);
+        if (isProfiling)
+            return getProfileData().profileEnter(nextMethod);
+        else
+            return -1;
     }
 
     public int profileExit(int nextMethod, long startTime) {
-        return getProfileData().profileExit(nextMethod, startTime);
+        if (isProfiling)
+            return getProfileData().profileExit(nextMethod, startTime);
+        else
+            return -1;
+    }
+    
+    public void startProfiling() {
+        isProfiling = true;
+    }
+    
+    public void stopProfiling() {
+        isProfiling = false;
+    }
+    
+    public boolean isProfiling() {
+        return isProfiling;
     }
 }

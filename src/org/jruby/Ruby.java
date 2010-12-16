@@ -416,9 +416,9 @@ public final class Ruby {
             }
         } finally {
             context.setFileAndLine(oldFile, oldLine);
-            if (config.isProfiling()) {
+            if (config.isProfilingEntireRun()) {
                 IProfileData profileData = (IProfileData) context.getProfileData();
-                config.makeProfilePrinter().printProfile(profileData, context, profiledNames, profiledMethods, System.out);
+                config.makeDefaultProfilePrinter().printProfile(profileData, context, profiledNames, profiledMethods, System.out);
             }
         }
     }
