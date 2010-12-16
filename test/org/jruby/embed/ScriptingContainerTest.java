@@ -1813,7 +1813,7 @@ public class ScriptingContainerTest {
     public void testSetCompatVersion() {
         logger1.info("setCompatVersion");
         CompatVersion version = null;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
@@ -1821,6 +1821,9 @@ public class ScriptingContainerTest {
         instance.setCompatVersion(version);
         assertEquals(CompatVersion.RUBY1_8, instance.getCompatVersion());
 
+        // CompatVersion can't be changed after Ruby Runtime has been initialized, so
+        // need to have new Runtime for this test
+        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         version = CompatVersion.RUBY1_9;
         instance.setCompatVersion(version);
         assertEquals(version, instance.getCompatVersion());
