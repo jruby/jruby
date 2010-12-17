@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-public class JRubyClassLoader extends URLClassLoader {
+public class JRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
     private final static ProtectionDomain DEFAULT_DOMAIN
             = JRubyClassLoader.class.getProtectionDomain();
 
