@@ -5,7 +5,10 @@ begin
 rescue LoadError
   unless tried_gem
     require 'rubygems'
-    gem 'jruby-openssl'
+    begin
+      gem 'jruby-openssl'
+    rescue LoadError
+    end
     tried_gem = true
     retry
   end

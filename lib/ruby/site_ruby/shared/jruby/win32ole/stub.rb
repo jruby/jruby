@@ -7,7 +7,10 @@ rescue LoadError
     raise $!
   end
   require 'rubygems'
-  gem 'jruby-win32ole'
+  begin
+    gem 'jruby-win32ole'
+  rescue LoadError
+  end
   tried_gem = true
   retry
 end
