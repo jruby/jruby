@@ -218,13 +218,19 @@ public class RubyDir extends RubyObject {
     /**
      * Returns an array containing all of the filenames in the given directory.
      */
-    @JRubyMethod(name = "entries", required = 1, meta = true, compat = RUBY1_8)
+    @JRubyMethod(name = "entries", meta = true, compat = RUBY1_8)
     public static RubyArray entries(IRubyObject recv, IRubyObject path) {
         return entriesCommon(recv.getRuntime(), path.convertToString().getUnicodeValue());
     }
 
-    @JRubyMethod(name = "entries", required = 1, meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "entries", meta = true, compat = RUBY1_9)
     public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return entriesCommon(context.getRuntime(), getPath19(context, arg));
+    }
+
+    @JRubyMethod(name = "entries", meta = true, compat = RUBY1_9)
+    public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
+        // FIXME: do something with opts
         return entriesCommon(context.getRuntime(), getPath19(context, arg));
     }
 

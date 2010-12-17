@@ -2848,7 +2848,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         final Regex pattern, prepared;
         final RubyRegexp regexp;
         if (arg0 instanceof RubyRegexp) {
-            modifyCheck();
             regexp = (RubyRegexp)arg0;
             pattern = regexp.getPattern();
             prepared = regexp.preparePattern(this);
@@ -7080,7 +7079,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context) {
-        modify19();
         Ruby runtime = context.getRuntime();
         IRubyObject defaultInternal = RubyEncoding.getDefaultInternal(runtime);
 
@@ -7095,7 +7093,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject enc) {
-        modify19();
         Ruby runtime = context.getRuntime();
 
         ByteList encoded = encodeCommon(context, runtime, value, enc, runtime.getNil(),
@@ -7105,7 +7102,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject enc, IRubyObject arg) {
-        modify19();
         Ruby runtime = context.getRuntime();
 
         IRubyObject fromEnc = arg;
@@ -7120,14 +7116,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject enc, IRubyObject fromEnc, IRubyObject opts) {
-        modify19();
         Ruby runtime = context.getRuntime();
 
         ByteList encoded = encodeCommon(context, runtime, value, enc, fromEnc, opts);
         return runtime.newString(encoded);
     }
 
-    private ByteList encodeCommon(ThreadContext context, Ruby runtime, ByteList value,
+    private static ByteList encodeCommon(ThreadContext context, Ruby runtime, ByteList value,
             IRubyObject toEnc, IRubyObject fromEnc, IRubyObject opts) {
         Charset from = fromEnc.isNil() ? getCharset(runtime, value.getEncoding()) : getCharset(runtime, fromEnc);
 
@@ -7153,7 +7148,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
-    private CharsetEncoder getEncoder(ThreadContext context, Ruby runtime, Charset charset, IRubyObject opts) {
+    private static CharsetEncoder getEncoder(ThreadContext context, Ruby runtime, Charset charset, IRubyObject opts) {
         CharsetEncoder encoder = charset.newEncoder();
 
         if (!opts.isNil()) {
@@ -7194,7 +7189,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return encoder;
     }
 
-    private Encoding getEncoding(Ruby runtime, IRubyObject toEnc) {
+    private static Encoding getEncoding(Ruby runtime, IRubyObject toEnc) {
         try {
             return RubyEncoding.getEncodingFromObject(runtime, toEnc);
         } catch (Exception e) {
@@ -7202,7 +7197,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    private Charset getCharset(Ruby runtime, IRubyObject toEnc) {
+    private static Charset getCharset(Ruby runtime, IRubyObject toEnc) {
         try {
             Encoding encoding = RubyEncoding.getEncodingFromObject(runtime, toEnc);
 
@@ -7212,7 +7207,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    private Charset getCharset(Ruby runtime, Encoding encoding) {
+    private static Charset getCharset(Ruby runtime, Encoding encoding) {
         try {
             // special-casing ASCII* to ASCII
             return encoding.toString().startsWith("ASCII") ?

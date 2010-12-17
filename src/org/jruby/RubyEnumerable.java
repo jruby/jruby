@@ -40,16 +40,12 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 
 import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
@@ -726,15 +722,14 @@ public class RubyEnumerable {
         return collectCommon19(context, self, block, "map");
     }
 
-    private static IRubyObject collectCommon19(ThreadContext context, IRubyObject self, final Block block, String methodName) {
+    private static IRubyObject collectCommon19(ThreadContext context, final IRubyObject self, final Block block, String methodName) {
         final Ruby runtime = context.getRuntime();
         if (block.isGiven()) {
             final RubyArray result = runtime.newArray();
 
             callEach19(runtime, context, self, block.arity(), new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg = checkArgs(runtime, largs);
-                    IRubyObject value = block.yield(ctx, larg);
+                    IRubyObject value = block.yieldArray(ctx, runtime.newArrayNoCopyLight(largs), null, null);
                     synchronized (result) {
                         result.append(value);
                     }
