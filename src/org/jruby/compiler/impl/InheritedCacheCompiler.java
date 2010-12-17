@@ -311,23 +311,15 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
-        // build scope names string
-        StringBuffer scopeNames = new StringBuffer();
-        for (int i = 0; i < scope.getVariables().length; i++) {
-            if (i != 0) scopeNames.append(';');
-            scopeNames.append(scope.getVariables()[i]);
-        }
-
-        // build descriptor string
-        String descriptor =
-                closureMethod + ',' +
-                arity + ',' +
-                scopeNames + ',' +
-                hasMultipleArgsHead + ',' +
-                BlockBody.asArgumentType(argsNodeId) + ',' +
-                file + "," +
-                line + "," +
-                !(inspector.hasClosure() || inspector.hasScopeAwareMethods());
+        String descriptor = RuntimeHelpers.buildBlockDescriptor(
+                closureMethod,
+                arity,
+                scope,
+                file,
+                line,
+                hasMultipleArgsHead,
+                argsNodeId,
+                inspector);
 
         method.loadThis();
         method.loadThreadContext();
@@ -345,23 +337,15 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
-        // build scope names string
-        StringBuffer scopeNames = new StringBuffer();
-        for (int i = 0; i < scope.getVariables().length; i++) {
-            if (i != 0) scopeNames.append(';');
-            scopeNames.append(scope.getVariables()[i]);
-        }
-
-        // build descriptor string
-        String descriptor =
-                closureMethod + ',' +
-                arity + ',' +
-                scopeNames + ',' +
-                hasMultipleArgsHead + ',' +
-                BlockBody.asArgumentType(argsNodeId) + ',' +
-                file + ',' +
-                line + ',' +
-                !(inspector.hasClosure() || inspector.hasScopeAwareMethods());
+        String descriptor = RuntimeHelpers.buildBlockDescriptor(
+                closureMethod,
+                arity,
+                scope,
+                file,
+                line,
+                hasMultipleArgsHead,
+                argsNodeId,
+                inspector);
 
         method.loadThis();
         method.loadThreadContext();

@@ -25,8 +25,10 @@ import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.LiteralNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.NodeType;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -176,6 +178,59 @@ public class RuntimeHelpers {
 
         return factory.getBlockCallback19Offline(closureMethod, file, line, classPath);
     }
+
+    public static String buildBlockDescriptor(
+            String closureMethod,
+            int arity,
+            StaticScope scope,
+            String file,
+            int line,
+            boolean hasMultipleArgsHead,
+            NodeType argsNodeId,
+            ASTInspector inspector) {
+        
+        // build scope names string
+        StringBuffer scopeNames = new StringBuffer();
+        for (int i = 0; i < scope.getVariables().length; i++) {
+            if (i != 0) scopeNames.append(';');
+            scopeNames.append(scope.getVariables()[i]);
+        }
+
+        // build descriptor string
+        String descriptor =
+                closureMethod + ',' +
+                arity + ',' +
+                scopeNames + ',' +
+                hasMultipleArgsHead + ',' +
+                BlockBody.asArgumentType(argsNodeId) + ',' +
+                file + ',' +
+                line + ',' +
+                !(inspector.hasClosure() || inspector.hasScopeAwareMethods());
+
+        return descriptor;
+    }
+    
+    public static String[][] parseBlockDescriptor(String descriptor) {
+        String[] firstSplit = descriptor.split(",");
+        String[] secondSplit;
+        if (firstSplit[2].length() == 0) {
+            secondSplit = new String[0];
+        } else {
+            secondSplit = firstSplit[2].split(";");
+            // FIXME: Big fat hack here, because scope names are expected to be interned strings by the parser
+            for (int i = 0; i < secondSplit.length; i++) {
+                secondSplit[i] = secondSplit[i].intern();
+            }
+        }
+        return new String[][] {firstSplit, secondSplit};
+    }
+
+    public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String descriptor) {
+        String[][] splitDesc = parseBlockDescriptor(descriptor);
+        String[] firstSplit = splitDesc[0];
+        String[] secondSplit = splitDesc[1];
+        return createCompiledBlockBody(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), firstSplit[5], Integer.parseInt(firstSplit[6]), Boolean.valueOf(firstSplit[7]));
+    }
     
     public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity, 
             String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light) {
@@ -194,6 +249,13 @@ public class RuntimeHelpers {
                     createBlockCallback(context.getRuntime(), scriptObject, closureMethod, file, line),
                     hasMultipleArgsHead, argsNodeType);
         }
+    }
+
+    public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String descriptor) {
+        String[][] splitDesc = parseBlockDescriptor(descriptor);
+        String[] firstSplit = splitDesc[0];
+        String[] secondSplit = splitDesc[1];
+        return createCompiledBlockBody19(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), firstSplit[5], Integer.parseInt(firstSplit[6]), Boolean.valueOf(firstSplit[7]));
     }
 
     public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String closureMethod, int arity,
