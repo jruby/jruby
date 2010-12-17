@@ -95,6 +95,8 @@ import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
+import org.jruby.util.ClassCache;
+import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.IdUtil;
 import org.jruby.util.SafePropertyAccessor;
@@ -1102,7 +1104,8 @@ public class Java implements Library {
             try {
                 proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
             } catch (ClassNotFoundException cnfe) {
-                proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName);
+                OneShotClassLoader oneShotClassLoader = new ClassCache.OneShotClassLoader(runtime.getJRubyClassLoader());
+                proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, oneShotClassLoader);
             }
 
             try {
