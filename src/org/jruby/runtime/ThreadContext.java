@@ -36,6 +36,7 @@
 package org.jruby.runtime;
 
 import org.jruby.runtime.profile.IProfileData;
+import org.jruby.runtime.profile.ProfileData;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -1505,7 +1506,7 @@ public final class ThreadContext {
      */
     public IProfileData getProfileData() {
         if (profileData == null)
-            profileData = runtime.getInstanceConfig().makeProfileData();
+            profileData = new ProfileData(this);
         return profileData;
     }
 

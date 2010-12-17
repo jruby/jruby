@@ -1638,16 +1638,12 @@ public class RubyInstanceConfig {
         return profilingMode;
     }
     
-    public IProfileData makeProfileData() {
-        return new ProfileData();
-    }
-    
-    public AbstractProfilePrinter makeDefaultProfilePrinter() {
+    public AbstractProfilePrinter makeDefaultProfilePrinter(IProfileData profileData) {
         if (profilingMode == ProfilingMode.FLAT) {
-            return new FlatProfilePrinter();
+            return new FlatProfilePrinter(profileData);
         }
         else if (profilingMode == ProfilingMode.GRAPH) {
-            return new GraphProfilePrinter();
+            return new GraphProfilePrinter(profileData);
         }
         return null;
     }

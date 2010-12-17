@@ -8,32 +8,20 @@ import java.util.HashMap;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.ThreadContext;
 
-/**
- * Encapsulates the logic of recording and reporting profiled timings of
- * method invocations.
- *
- * Profile data is stored in a set of arrays, indexed by the serial number of
- * the method in question. This helps keep the cost of profiling to a minimum,
- * since only primitive int/long array read/writes are required to update the tally
- * for a given method.
- *
- * See ProfilingDynamicMethod for the "hook" end of profiling.
- */
 public class FlatProfilePrinter extends AbstractProfilePrinter {
-     private static final int SERIAL_OFFSET = 0;
-     private static final int SELFTIME_OFFSET = 1;
-     private static final int COUNT_OFFSET = 2;
-     private static final int AGGREGATETIME_OFFSET = 3;
+    private static final int SERIAL_OFFSET = 0;
+    private static final int SELFTIME_OFFSET = 1;
+    private static final int COUNT_OFFSET = 2;
+    private static final int AGGREGATETIME_OFFSET = 3;
 
-    /**
-     * Process the profile data for a given thread (context).
-     *
-     * @param context the thread (context) for which to dump profile data
-     */
-    public void printProfile(IProfileData iProfileData, ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out) {
-        ProfileData profileData = (ProfileData) iProfileData;
+    private ProfileData profileData;
+    
+    public FlatProfilePrinter(IProfileData iProfileData) {
+        profileData = (ProfileData) iProfileData;
+    }
+    
+    public void printProfile(PrintStream out) {
         profileData.topInvocation.duration = profileData.totalTime();
         
         out.printf("Total time: %s\n\n", nanoString(profileData.totalTime()));
@@ -55,17 +43,6 @@ public class FlatProfilePrinter extends AbstractProfilePrinter {
             }
         });
         
-        int longestName = 0;
-        for (int i = 0; i < profiledNames.length; i++) {
-            String name = profiledNames[i];
-            if (name == null) {
-                continue;
-            }
-            DynamicMethod method = profiledMethods[i];
-            String displayName = moduleHashMethod(method.getImplementationClass(), name);
-            longestName = Math.max(longestName, displayName.length());
-        }
-        
         out.println("     total        self    children       calls  method");
         out.println("----------------------------------------------------------------");
         int lines = 0;
@@ -76,7 +53,7 @@ public class FlatProfilePrinter extends AbstractProfilePrinter {
             int index = (int) tuple[SERIAL_OFFSET];
             if (index != 0) {
                 lines++;
-                String name = methodName(profiledNames, profiledMethods, index);
+                String name = methodName(index);
                 pad(out, 10, nanoString(tuple[AGGREGATETIME_OFFSET]));
                 out.print("  ");
                 pad(out, 10, nanoString(tuple[SELFTIME_OFFSET]));

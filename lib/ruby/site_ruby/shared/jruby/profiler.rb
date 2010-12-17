@@ -3,6 +3,9 @@ require 'java'
 
 module JRuby
   module Profiler
+    import org.jruby.runtime.profile.GraphProfilePrinter
+    import org.jruby.runtime.profile.FlatProfilePrinter
+    
     def self.start
       current_thread_context.start_profiling
     end

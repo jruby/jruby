@@ -11,20 +11,16 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.ThreadContext;
 
-/**
- * Encapsulates the logic of recording and reporting profiled timings of
- * method invocations. This keeps track of aggregate values for callers and
- * callees of each method.
- *
- * See ProfilingDynamicMethod for the "hook" end of profiling.
- */
 public class GraphProfilePrinter extends AbstractProfilePrinter {
     public static MethodData currentData;
+    private ProfileData profileData;
+    
+    public GraphProfilePrinter(IProfileData iProfileData) {
+        profileData = (ProfileData) iProfileData;
+    }
 
-    public void printProfile(IProfileData iProfileData, ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out) {
-        ProfileData profileData = (ProfileData) iProfileData;
+    public void printProfile(PrintStream out) {
         profileData.topInvocation.duration = profileData.totalTime();
         
         out.println(" %total   %self    total        self    children                 calls  name");
@@ -38,16 +34,7 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
                 return time1 == time2 ? 0 : (time1 < time2 ? 1 : -1);
             }
         });
-        int longestName = 0;
-        for (int i = 0; i < profiledNames.length; i++) {
-            String name = profiledNames[i];
-            if (name == null) {
-                continue;
-            }
-            DynamicMethod method = profiledMethods[i];
-            String displayName = moduleHashMethod(method.getImplementationClass(), name);
-            longestName = Math.max(longestName, displayName.length());
-        }
+            
         for (MethodData data : sortedMethods) {
             GraphProfilePrinter.currentData = data;
             
@@ -65,7 +52,7 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
             });
             if (parentSerials.length > 0) {
                 for (int parentSerial : parentSerials) {
-                    String callerName = methodName(profiledNames, profiledMethods, parentSerial);
+                    String callerName = methodName(parentSerial);
                     InvocationSet invs = data.rootInvocationsFromParent(parentSerial);
                     out.print("              ");
                     pad(out, 10, nanoString(invs.totalTime()));
@@ -81,7 +68,7 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
                 }
             }
 
-            String displayName = methodName(profiledNames, profiledMethods, serial);
+            String displayName = methodName(serial);
             pad(out, 4, Long.toString(data.totalTime()*100/profileData.totalTime()));
             out.print("%  ");
             pad(out, 4, Long.toString(data.selfTime()*100/profileData.totalTime()));
@@ -108,7 +95,7 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
             
             if (childSerials.length > 0) {
                 for (int childSerial : childSerials) {
-                    String callerName = methodName(profiledNames, profiledMethods, childSerial);
+                    String callerName = methodName(childSerial);
                     InvocationSet invs = data.rootInvocationsOfChild(childSerial);
                     out.print("              ");
                     pad(out, 10, nanoString(invs.totalTime()));

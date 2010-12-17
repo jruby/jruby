@@ -3,6 +3,8 @@ package org.jruby.runtime.profile;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
 
+import org.jruby.Ruby;
+import org.jruby.RubyIO;
 import org.jruby.RubyClass;
 import org.jruby.MetaClass;
 import org.jruby.RubyModule;
@@ -12,7 +14,11 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 
 public class AbstractProfilePrinter {
-    public void printProfile(IProfileData iProfileData, ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out) {
+    public void printProfile(PrintStream out) {
+    }
+    
+    public void printProfile(RubyIO out) {
+        printProfile(new PrintStream(out.getOutStream()));
     }
     
     protected void pad(PrintStream out, int size, String body) {
@@ -38,10 +44,13 @@ public class AbstractProfilePrinter {
         return formatter.format((double) nanoTime / 1.0E9);
     }
 
-    protected String methodName(String[] profiledNames, DynamicMethod[] profiledMethods, int serial) {
+    protected String methodName(int serial) {
         if (serial == 0) {
             return "(top)";
         }
+        Ruby runtime = Ruby.getGlobalRuntime();
+        String[] profiledNames = runtime.profiledNames;
+        DynamicMethod[] profiledMethods = runtime.profiledMethods;
         String name = profiledNames[serial];
         DynamicMethod method = profiledMethods[serial];
         return moduleHashMethod(method.getImplementationClass(), name);

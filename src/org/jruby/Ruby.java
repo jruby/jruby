@@ -418,7 +418,7 @@ public final class Ruby {
             context.setFileAndLine(oldFile, oldLine);
             if (config.isProfilingEntireRun()) {
                 IProfileData profileData = (IProfileData) context.getProfileData();
-                config.makeDefaultProfilePrinter().printProfile(profileData, context, profiledNames, profiledMethods, System.out);
+                config.makeDefaultProfilePrinter(profileData).printProfile(System.out);
             }
         }
     }
@@ -4027,8 +4027,8 @@ public final class Ruby {
     private static final int MAX_PROFILE_METHODS = 100000;
 
     // The list of method names associated with method serial numbers
-    private String[] profiledNames = new String[0];
+    public String[] profiledNames = new String[0];
 
     // The method objects for serial numbers
-    private DynamicMethod[] profiledMethods = new DynamicMethod[0];
+    public DynamicMethod[] profiledMethods = new DynamicMethod[0];
 }

@@ -32,7 +32,12 @@ public class ProfileData implements IProfileData {
     private HashMap<Integer, Integer> methodRecursion = new HashMap<Integer, Integer>();
     private long sinceTime = 0;
     
+    public ThreadContext threadContext;
     public static MethodData currentData;
+    
+    public ProfileData(ThreadContext tc) {
+        threadContext = tc;
+    }
     
     /**
      * Begin profiling a new method, aggregating the current time diff in the previous
