@@ -27,7 +27,6 @@ package org.jruby;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Locale;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
@@ -44,11 +43,13 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import static org.jruby.CompatVersion.*;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject {
     public static final Charset UTF8 = Charset.forName("UTF-8");
     public static final ByteList LOCALE = ByteList.create("locale");
+    public static final ByteList EXTERNAL = ByteList.create("external");
 
     public static RubyClass createEncodingClass(Ruby runtime) {
         RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -97,6 +98,10 @@ public class RubyEncoding extends RubyObject {
         return new RubyEncoding(runtime, name, isDummy);
     }
 
+    public static RubyEncoding newEncoding(Ruby runtime, Encoding encoding) {
+        return new RubyEncoding(runtime, encoding);
+    }
+
     public final Encoding getEncoding() {
         // TODO: make threadsafe
         if (encoding == null) encoding = getRuntime().getEncodingService().loadEncoding(name);
@@ -107,6 +112,7 @@ public class RubyEncoding extends RubyObject {
         if (obj1 instanceof EncodingCapable && obj2 instanceof EncodingCapable) {
             Encoding enc1 = ((EncodingCapable)obj1).getEncoding();
             Encoding enc2 = ((EncodingCapable)obj2).getEncoding();
+
             if (enc1 == enc2) return enc1;
 
             if (obj2 instanceof RubyString && ((RubyString) obj2).getByteList().getRealSize() == 0) return enc1;
@@ -225,6 +231,10 @@ public class RubyEncoding extends RubyObject {
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
+
+        result.append(runtime.newString(EXTERNAL));
+        result.append(runtime.newString(LOCALE));
+        
         return result;
     }
 
@@ -246,33 +256,54 @@ public class RubyEncoding extends RubyObject {
                                 ((RubyEncoding)list[e.value.getIndex()]).name).freeze(context);
             result.fastASet(alias, name);
         }
+
+        result.fastASet(runtime.newString(EXTERNAL),
+                runtime.newString(new ByteList(runtime.getDefaultExternalEncoding().getName())));
+        result.fastASet(runtime.newString(LOCALE),
+                runtime.newString(getLocaleEncodingName()));
+
         return result;
     }
 
-    @JRubyMethod(name = "find", meta = true)
-    public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
-        Ruby runtime = context.getRuntime();
+    private static ByteList getLocaleEncodingName() {
+        return ByteList.create(Charset.defaultCharset().name());
+    }
+
+    private static IRubyObject findWithError(Ruby runtime, ByteList name) {
         EncodingService service = runtime.getEncodingService();
-        // TODO: check for ascii string
-        ByteList name = str.convertToString().getByteList();
-        if (name.equals(LOCALE)) {
-            name = ByteList.create(Charset.defaultCharset().name());
-        }
         Entry e = service.findEncodingOrAliasEntry(name);
 
-        if (e == null) throw context.getRuntime().newArgumentError("unknown encoding name - " + name);
+        if (e == null) throw runtime.newArgumentError("unknown encoding name - " + name);
 
         return service.getEncodingList()[e.getIndex()];
     }
 
+    @JRubyMethod(name = "find", meta = true)
+    public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
+        // TODO: check for ascii string
+        ByteList name = str.convertToString().getByteList();
+        if (name.caseInsensitiveCmp(LOCALE) == 0) {
+            name = getLocaleEncodingName();
+        } else if (name.caseInsensitiveCmp(EXTERNAL) == 0) {
+            name = new ByteList(context.getRuntime().getDefaultExternalEncoding().getName());
+        }
+
+        return findWithError(context.getRuntime(), name);
+    }
+
     @JRubyMethod(name = "_dump")
-    public IRubyObject _dump(ThreadContext context) {
+    public IRubyObject _dump(ThreadContext context, IRubyObject arg) {
         return to_s(context);
     }
 
     @JRubyMethod(name = "_load", meta = true)
     public static IRubyObject _load(ThreadContext context, IRubyObject recv, IRubyObject str) {
         return find(context, recv, str);
+    }
+
+    @JRubyMethod(name = "ascii_compatible?")
+    public IRubyObject asciiCompatible_p(ThreadContext context) {
+        return context.getRuntime().newBoolean(getEncoding().isAsciiCompatible());
     }
 
     @JRubyMethod(name = {"to_s", "name"})
@@ -316,6 +347,9 @@ public class RubyEncoding extends RubyObject {
                 result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
+        result.append(runtime.newString(EXTERNAL));
+        result.append(runtime.newString(LOCALE));
+        
         return result;
     }
 
@@ -329,10 +363,10 @@ public class RubyEncoding extends RubyObject {
         Ruby runtime = context.getRuntime();
         Encoding enc = areCompatible(first, second);
 
-        return enc == null ? runtime.getNil() : new RubyEncoding(runtime, enc);
+        return enc == null ? runtime.getNil() : runtime.getEncodingService().getEncoding(enc);
     }
 
-    @JRubyMethod(name = "default_external", meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "default_external", meta = true, compat = RUBY1_9)
     public static IRubyObject getDefaultExternal(IRubyObject recv) {
         return getDefaultExternal(recv.getRuntime());
     }
@@ -351,15 +385,15 @@ public class RubyEncoding extends RubyObject {
         return defaultExternal;
     }
 
-    @JRubyMethod(name = "default_external=", required = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "default_external=", meta = true, compat = RUBY1_9)
     public static void setDefaultExternal(IRubyObject recv, IRubyObject encoding) {
         if (encoding.isNil()) {
-            recv.getRuntime().newArgumentError("default_external can not be nil");
+            throw recv.getRuntime().newArgumentError("default_external can not be nil");
         }
         recv.getRuntime().setDefaultExternalEncoding(getEncodingFromObject(recv.getRuntime(), encoding));
     }
 
-    @JRubyMethod(name = "default_internal", meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "default_internal", meta = true, compat = RUBY1_9)
     public static IRubyObject getDefaultInternal(IRubyObject recv) {
         return getDefaultInternal(recv.getRuntime());
     }
@@ -368,7 +402,7 @@ public class RubyEncoding extends RubyObject {
         return convertEncodingToRubyEncoding(runtime, runtime.getDefaultInternalEncoding());
     }
 
-    @JRubyMethod(name = "default_internal=", required = 1, frame = true, meta = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "default_internal=", required = 1, meta = true, compat = RUBY1_9)
     public static void setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
         if (encoding.isNil()) {
             recv.getRuntime().newArgumentError("default_internal can not be nil");
@@ -377,10 +411,8 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static IRubyObject convertEncodingToRubyEncoding(Ruby runtime, Encoding defaultEncoding) {
-        if (defaultEncoding != null) {
-            return new RubyEncoding(runtime, defaultEncoding);
-        }
-        return runtime.getNil();
+        return defaultEncoding != null ?
+            runtime.getEncodingService().getEncoding(defaultEncoding) : runtime.getNil();
     }
 
     public static Encoding getEncodingFromObject(Ruby runtime, IRubyObject arg) {

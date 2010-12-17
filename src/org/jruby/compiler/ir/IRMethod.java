@@ -1,10 +1,12 @@
 package org.jruby.compiler.ir;
 
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
+import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
@@ -25,12 +27,19 @@ public class IRMethod extends IRExecutionScope {
     // Call parameters
     private List<Operand> callArgs;
 
+    // Local variables (their names) are mapped a slot in a binding shared across all call sites encountered in this method's lexical scope
+    // (including all nested closures)
+    int nextAvailableSlot;
+    Map<String, Integer> bindingSlotMap;
+
     public IRMethod(IRScope lexicalParent, Operand container, String name, boolean isInstanceMethod, StaticScope staticScope) {
         super(lexicalParent, container, name, staticScope);
         this.isInstanceMethod = isInstanceMethod;
         startLabel = getNewLabel("_METH_START");
         endLabel = getNewLabel("_METH_END");
         callArgs = new ArrayList<Operand>();
+        bindingSlotMap = new java.util.HashMap<String, Integer>();
+        nextAvailableSlot = 0;
         updateVersion();
     }
 
@@ -49,7 +58,8 @@ public class IRMethod extends IRExecutionScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate call arguments
-        if (i instanceof ReceiveArgumentInstruction) callArgs.add(i.result);
+        // SSS FIXME: ReceiveSelf should inherit from ReceiveArg?
+        if ((i instanceof ReceiveArgumentInstruction) || (i instanceof ReceiveSelfInstruction)) callArgs.add(i.result);
 
         super.addInstr(i);
     }
@@ -72,12 +82,12 @@ public class IRMethod extends IRExecutionScope {
     // SSS FIXME: Incorect!
     // ENEBO: Should it be: return (m == null) ? ":" + getName() : m.getName() + ":" + getName();
     public String getFullyQualifiedName() {
-        IRModule m = getDefiningModule();
+        IRModule m = getDefiningIRModule();
         
         return (m == null) ? null : m.getName() + ":" + getName();
     }
 
-    public IRModule getDefiningModule() {
+    public IRModule getDefiningIRModule() {
         if (!(container instanceof MetaObject)) return null;
 
         IRScope scope = ((MetaObject) container).scope;
@@ -99,5 +109,20 @@ public class IRMethod extends IRExecutionScope {
         this.restArg = -1;
 
         return newScope;
+    }
+
+    public void recordBindingVariable(String varName) {
+        if (bindingSlotMap.get(varName) == null) {
+            bindingSlotMap.put(varName, nextAvailableSlot);
+            nextAvailableSlot++;
+        }
+    }
+
+    public Integer getBindingSlot(String varName) {
+        return bindingSlotMap.get(varName);
+    }
+
+    public int getBindingSlotsCount() {
+        return nextAvailableSlot;
     }
 }

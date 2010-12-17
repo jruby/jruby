@@ -1,6 +1,6 @@
 require 'test/unit'
 require 'webrick'
-require File.join(File.dirname(__FILE__), 'webrick_testing')
+require_relative 'webrick_testing'
 require "xmlrpc/server"
 require 'xmlrpc/client'
 
@@ -88,11 +88,11 @@ class Test_Webrick < Test::Unit::TestCase
     # default handler (missing handler)
     ok, param = @s.call2('test.nonexisting')
     assert_equal false, ok
-    assert_equal -99, param.faultCode
+    assert_equal(-99, param.faultCode)
 
     # default handler (wrong number of arguments)
     ok, param = @s.call2('test.add', 1, 2, 3)
     assert_equal false, ok
-    assert_equal -99, param.faultCode
+    assert_equal(-99, param.faultCode)
   end
 end

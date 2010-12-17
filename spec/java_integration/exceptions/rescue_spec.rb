@@ -19,10 +19,10 @@ end
 describe "A Ruby-level exception" do
   it "carries its message along to the Java exception" do
     java_ex = JRuby.runtime.new_runtime_error("error message");
-    java_ex.message.should == "error message"
+    java_ex.message.should == "(RuntimeError) error message"
 
     java_ex = JRuby.runtime.new_name_error("error message", "name");
-    java_ex.message.should == "error message"
+    java_ex.message.should == "(NameError) error message"
   end
 end
 

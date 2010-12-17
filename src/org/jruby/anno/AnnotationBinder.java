@@ -95,6 +95,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("/* THIS FILE IS GENERATED. DO NOT EDIT */");
                     out.println("package org.jruby.gen;");
 
+                    out.println("import org.jruby.Ruby;");
                     out.println("import org.jruby.RubyModule;");
                     out.println("import org.jruby.RubyClass;");
                     out.println("import org.jruby.CompatVersion;");
@@ -131,6 +132,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     if (hasMeta) out.println("        RubyClass metaClass = cls.getMetaClass();");
                     out.println("        RubyModule singletonClass;");
                     if (hasCompat) out.println("        CompatVersion compatVersion = cls.getRuntime().getInstanceConfig().getCompatVersion();");
+                    out.println("        Ruby runtime = cls.getRuntime();");
 
                     Map<String, List<MethodDeclaration>> annotatedMethods = new HashMap<String, List<MethodDeclaration>>();
                     Map<String, List<MethodDeclaration>> staticAnnotatedMethods = new HashMap<String, List<MethodDeclaration>>();
@@ -235,30 +237,54 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     classNames.add(getActualQualifiedName(cd));
 
                     processMethodDeclarations(staticAnnotatedMethods);
+                    for (Map.Entry<String, List<MethodDeclaration>> entry : staticAnnotatedMethods.entrySet()) {
+                        MethodDeclaration decl = entry.getValue().get(0);
+                        if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                    }
 
                     if (!staticAnnotatedMethods1_8.isEmpty()) {
                         out.println("        if (compatVersion == CompatVersion.RUBY1_8 || compatVersion == CompatVersion.BOTH) {");
                         processMethodDeclarations(staticAnnotatedMethods1_8);
+                        for (Map.Entry<String, List<MethodDeclaration>> entry : staticAnnotatedMethods1_8.entrySet()) {
+                            MethodDeclaration decl = entry.getValue().get(0);
+                            if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                        }
                         out.println("        }");
                     }
 
                     if (!staticAnnotatedMethods1_9.isEmpty()) {
                         out.println("        if (compatVersion == CompatVersion.RUBY1_9 || compatVersion == CompatVersion.BOTH) {");
                         processMethodDeclarations(staticAnnotatedMethods1_9);
+                        for (Map.Entry<String, List<MethodDeclaration>> entry : staticAnnotatedMethods1_9.entrySet()) {
+                            MethodDeclaration decl = entry.getValue().get(0);
+                            if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                        }
                         out.println("        }");
                     }
 
                     processMethodDeclarations(annotatedMethods);
+                    for (Map.Entry<String, List<MethodDeclaration>> entry : annotatedMethods.entrySet()) {
+                        MethodDeclaration decl = entry.getValue().get(0);
+                        if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                    }
 
                     if (!annotatedMethods1_8.isEmpty()) {
                         out.println("        if (compatVersion == CompatVersion.RUBY1_8 || compatVersion == CompatVersion.BOTH) {");
                         processMethodDeclarations(annotatedMethods1_8);
+                        for (Map.Entry<String, List<MethodDeclaration>> entry : annotatedMethods1_8.entrySet()) {
+                            MethodDeclaration decl = entry.getValue().get(0);
+                            if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                        }
                         out.println("        }");
                     }
 
                     if (!annotatedMethods1_9.isEmpty()) {
                         out.println("        if (compatVersion == CompatVersion.RUBY1_9 || compatVersion == CompatVersion.BOTH) {");
                         processMethodDeclarations(annotatedMethods1_9);
+                        for (Map.Entry<String, List<MethodDeclaration>> entry : annotatedMethods1_9.entrySet()) {
+                            MethodDeclaration decl = entry.getValue().get(0);
+                            if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                        }
                         out.println("        }");
                     }
 
@@ -398,6 +424,17 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             "CallConfiguration." + getCallConfigNameByAnno(anno) + ");");
                     generateMethodAddCalls(md, anno);
                 }
+            }
+
+            private void addCoreMethodMapping(String rubyName, MethodDeclaration decl, PrintStream out) {
+                out.println(
+                        "        runtime.addBoundMethod(\""
+                        + decl.getDeclaringType().getQualifiedName()
+                        + "."
+                        + decl.getSimpleName()
+                        + "\", \""
+                        + rubyName
+                        + "\");");
             }
 
             private String getActualQualifiedName(TypeDeclaration td) {

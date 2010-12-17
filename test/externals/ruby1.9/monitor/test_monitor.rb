@@ -54,6 +54,32 @@ class TestMonitor < Test::Unit::TestCase
     assert_equal((1..10).to_a, ary)
   end
 
+  def test_killed_thread_in_synchronize
+    ary = []
+    queue = Queue.new
+    t1 = Thread.start {
+      queue.pop
+      @monitor.synchronize {
+        ary << :t1
+      }
+    }
+    t2 = Thread.start {
+      queue.pop
+      @monitor.synchronize {
+        ary << :t2
+      }
+    }
+    @monitor.synchronize do
+      queue.enq(nil)
+      queue.enq(nil)
+      assert_equal([], ary)
+      t1.kill
+      t2.kill
+      ary << :main
+    end
+    assert_equal([:main], ary)
+  end
+
   def test_try_enter
     queue1 = Queue.new
     queue2 = Queue.new
@@ -96,7 +122,8 @@ class TestMonitor < Test::Unit::TestCase
     end
   end
 
-  def _test_timedwait
+  def test_timedwait
+    cond = @monitor.new_cond
     b = "foo"
     queue2 = Queue.new
     Thread.start do
@@ -126,7 +153,7 @@ class TestMonitor < Test::Unit::TestCase
     @monitor.synchronize do
       assert_equal("foo", c)
       result3 = cond.wait(0.1)
-      assert_equal(false, result3)
+      assert_equal(true, result3) # wait always returns true in Ruby 1.9
       assert_equal("foo", c)
       queue3.enq(nil)
       result4 = cond.wait

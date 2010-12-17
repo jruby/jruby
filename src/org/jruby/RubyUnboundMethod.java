@@ -36,6 +36,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.CompatVersion.*;
 
 /**
  * 
@@ -83,7 +84,7 @@ public class RubyUnboundMethod extends RubyMethod {
     /**
      * @see org.jruby.RubyMethod#call(IRubyObject[])
      */
-    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true)
+    @JRubyMethod(name = {"call", "[]"}, rest = true)
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
         throw context.getRuntime().newTypeError("you cannot call unbound method; bind first");
@@ -92,14 +93,14 @@ public class RubyUnboundMethod extends RubyMethod {
     /**
      * @see org.jruby.RubyMethod#unbind()
      */
-    @JRubyMethod(name = "unbind", frame = true)
+    @JRubyMethod
     @Override
-    public RubyUnboundMethod unbind(Block block) {
+    public RubyUnboundMethod unbind() {
         return this;
     }
 
-    @JRubyMethod(name = "bind", required = 1, frame = true)
-    public RubyMethod bind(ThreadContext context, IRubyObject aReceiver, Block block) {
+    @JRubyMethod
+    public RubyMethod bind(ThreadContext context, IRubyObject aReceiver) {
         RubyClass receiverClass = aReceiver.getMetaClass();
         
         if (!originModule.isInstance(aReceiver)) {
@@ -122,18 +123,18 @@ public class RubyUnboundMethod extends RubyMethod {
         return newUnboundMethod(implementationModule, methodName, originModule, originName, method);
     }
 
-    @JRubyMethod(name = "to_proc", frame = true)
+    @JRubyMethod
     @Override
     public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
         return super.to_proc(context, unusedBlock);
     }
 
-    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject name(ThreadContext context) {
         return context.getRuntime().newString(methodName);
     }
 
-    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "name", compat = RUBY1_9)
     public IRubyObject name19(ThreadContext context) {
         return context.getRuntime().newSymbol(methodName);
     }

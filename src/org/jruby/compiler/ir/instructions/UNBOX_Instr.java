@@ -19,8 +19,8 @@ public class UNBOX_Instr extends OneOperandInstr
 
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
-	    return (argument instanceof BoxedValue) ? ((BoxedValue)argument)._value : new UnboxedValue(argument);
-	}
+        return (argument instanceof BoxedValue) ? ((BoxedValue)argument)._value : new UnboxedValue(argument);
+    }
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new UNBOX_Instr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));

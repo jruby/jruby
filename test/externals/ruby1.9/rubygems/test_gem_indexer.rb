@@ -1,15 +1,8 @@
-#--
-# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
-# All rights reserved.
-# See LICENSE.txt for permissions.
-#++
-
 require_relative 'gemutilities'
-
 require 'rubygems/indexer'
 
 unless ''.respond_to? :to_xs then
-  warn "Gem::Indexer tests are being skipped.  Install builder gem."
+  warn "Gem::Indexer tests are being skipped.  Install builder gem." if $VERBOSE
 end
 
 class TestGemIndexer < RubyGemTestCase
@@ -118,10 +111,13 @@ class TestGemIndexer < RubyGemTestCase
     expected = <<-EOF
 a-1
 a-2
+a-3.a
 a_evil-9
 b-2
 c-1.2
 d-2.0
+d-2.0.a
+d-2.0.b
 pl-1-i386-linux
     EOF
 
@@ -142,19 +138,19 @@ pl-1-i386-linux
 
     assert_equal expected, latest_quick_index
 
-    assert_indexed quickdir, "#{@a1.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@a2.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@b2.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@c1_2.full_name}.gemspec.rz"
+    assert_indexed quickdir, "#{@a1.spec_name}.rz"
+    assert_indexed quickdir, "#{@a2.spec_name}.rz"
+    assert_indexed quickdir, "#{@b2.spec_name}.rz"
+    assert_indexed quickdir, "#{@c1_2.spec_name}.rz"
 
     assert_indexed quickdir, "#{@pl1.original_name}.gemspec.rz"
-    refute_indexed quickdir, "#{@pl1.full_name}.gemspec.rz"
+    refute_indexed quickdir, "#{@pl1.spec_name}.rz"
 
-    assert_indexed marshal_quickdir, "#{@a1.full_name}.gemspec.rz"
-    assert_indexed marshal_quickdir, "#{@a2.full_name}.gemspec.rz"
+    assert_indexed marshal_quickdir, "#{@a1.spec_name}.rz"
+    assert_indexed marshal_quickdir, "#{@a2.spec_name}.rz"
 
-    refute_indexed quickdir, "#{@c1_2.full_name}.gemspec"
-    refute_indexed marshal_quickdir, "#{@c1_2.full_name}.gemspec"
+    refute_indexed quickdir, @c1_2.spec_name
+    refute_indexed marshal_quickdir, @c1_2.spec_name
 
     assert_indexed @tempdir, "specs.#{@marshal_version}"
     assert_indexed @tempdir, "specs.#{@marshal_version}.gz"
@@ -163,13 +159,13 @@ pl-1-i386-linux
     assert_indexed @tempdir, "latest_specs.#{@marshal_version}.gz"
 
     expected = <<-EOF
-<?xml version="1.0"?>
-<rss version="2.0">
+<?xml version=\"1.0\"?>
+<rss version=\"2.0\">
   <channel>
     <title>ExampleForge gems</title>
     <link>http://example.com</link>
     <description>Recently released gems from http://example.com</description>
-    <generator>RubyGems v#{Gem::RubyGemsVersion}</generator>
+    <generator>RubyGems v#{Gem::VERSION}</generator>
     <docs>http://cyber.law.harvard.edu/rss/rss.html</docs>
     <item>
       <title>a-2</title>
@@ -178,9 +174,21 @@ pl-1-i386-linux
       </description>
       <author>example@example.com (A User)</author>
       <guid>a-2</guid>
-      <enclosure url="http://gems.example.com/gems/a-2.gem"
-                 length="3072" type="application/octet-stream" />
-      <pubDate>#{Gem::Specification::TODAY.rfc2822}</pubDate>
+      <enclosure url=\"http://gems.example.com/gems/a-2.gem\"
+                 length=\"3072\" type=\"application/octet-stream\" />
+      <pubDate>#{@a2.date.rfc2822}</pubDate>
+      <link>http://example.com</link>
+    </item>
+    <item>
+      <title>a-3.a</title>
+      <description>
+&lt;pre&gt;This is a test description&lt;/pre&gt;
+      </description>
+      <author>example@example.com (A User)</author>
+      <guid>a-3.a</guid>
+      <enclosure url=\"http://gems.example.com/gems/a-3.a.gem\"
+                 length=\"3072\" type=\"application/octet-stream\" />
+      <pubDate>#{@a3a.date.rfc2822}</pubDate>
       <link>http://example.com</link>
     </item>
     <item>
@@ -190,9 +198,9 @@ pl-1-i386-linux
       </description>
       <author>example@example.com (A User)</author>
       <guid>a_evil-9</guid>
-      <enclosure url="http://gems.example.com/gems/a_evil-9.gem"
-                 length="3072" type="application/octet-stream" />
-      <pubDate>#{Gem::Specification::TODAY.rfc2822}</pubDate>
+      <enclosure url=\"http://gems.example.com/gems/a_evil-9.gem\"
+                 length=\"3072\" type=\"application/octet-stream\" />
+      <pubDate>#{@a_evil9.date.rfc2822}</pubDate>
       <link>http://example.com</link>
     </item>
     <item>
@@ -202,9 +210,9 @@ pl-1-i386-linux
       </description>
       <author>example@example.com (A User)</author>
       <guid>b-2</guid>
-      <enclosure url="http://gems.example.com/gems/b-2.gem"
-                 length="3072" type="application/octet-stream" />
-      <pubDate>#{Gem::Specification::TODAY.rfc2822}</pubDate>
+      <enclosure url=\"http://gems.example.com/gems/b-2.gem\"
+                 length=\"3072\" type=\"application/octet-stream\" />
+      <pubDate>#{@b2.date.rfc2822}</pubDate>
       <link>http://example.com</link>
     </item>
     <item>
@@ -214,9 +222,33 @@ pl-1-i386-linux
       </description>
       <author>example@example.com (A User)</author>
       <guid>c-1.2</guid>
-      <enclosure url="http://gems.example.com/gems/c-1.2.gem"
-                 length="3072" type="application/octet-stream" />
-      <pubDate>#{Gem::Specification::TODAY.rfc2822}</pubDate>
+      <enclosure url=\"http://gems.example.com/gems/c-1.2.gem\"
+                 length=\"3072\" type=\"application/octet-stream\" />
+      <pubDate>#{@c1_2.date.rfc2822}</pubDate>
+      <link>http://example.com</link>
+    </item>
+    <item>
+      <title>d-2.0.a</title>
+      <description>
+&lt;pre&gt;This is a test description&lt;/pre&gt;
+      </description>
+      <author>example@example.com (A User)</author>
+      <guid>d-2.0.a</guid>
+      <enclosure url=\"http://gems.example.com/gems/d-2.0.a.gem\"
+                 length=\"3072\" type=\"application/octet-stream\" />
+      <pubDate>#{@d2_0_a.date.rfc2822}</pubDate>
+      <link>http://example.com</link>
+    </item>
+    <item>
+      <title>d-2.0.b</title>
+      <description>
+&lt;pre&gt;This is a test description&lt;/pre&gt;
+      </description>
+      <author>example@example.com (A User)</author>
+      <guid>d-2.0.b</guid>
+      <enclosure url=\"http://gems.example.com/gems/d-2.0.b.gem\"
+                 length=\"3072\" type=\"application/octet-stream\" />
+      <pubDate>#{@d2_0_b.date.rfc2822}</pubDate>
       <link>http://example.com</link>
     </item>
     <item>
@@ -226,9 +258,9 @@ pl-1-i386-linux
       </description>
       <author>example@example.com (A User)</author>
       <guid>pl-1-x86-linux</guid>
-      <enclosure url="http://gems.example.com/gems/pl-1-x86-linux.gem"
-                 length="3072" type="application/octet-stream" />
-      <pubDate>#{Gem::Specification::TODAY.rfc2822}</pubDate>
+      <enclosure url=\"http://gems.example.com/gems/pl-1-x86-linux.gem\"
+                 length=\"3072\" type=\"application/octet-stream\" />
+      <pubDate>#{@pl1.date.rfc2822}</pubDate>
       <link>http://example.com</link>
     </item>
     <item>
@@ -247,9 +279,9 @@ eighty characters.&lt;/pre&gt;
       </description>
       <author>example@example.com (Example), example2@example.com (Example2)</author>
       <guid>a-1</guid>
-      <enclosure url="http://gems.example.com/gems/a-1.gem"
-                 length="3584" type="application/octet-stream" />
-      <pubDate>#{(Gem::Specification::TODAY - 86400).rfc2822}</pubDate>
+      <enclosure url=\"http://gems.example.com/gems/a-1.gem\"
+                 length=\"3584\" type=\"application/octet-stream\" />
+      <pubDate>#{@a1.date.rfc2822}</pubDate>
       <link>http://a.example.com</link>
     </item>
   </channel>
@@ -286,19 +318,19 @@ eighty characters.&lt;/pre&gt;
     assert_indexed quickdir, "latest_index"
     assert_indexed quickdir, "latest_index.rz"
 
-    assert_indexed quickdir, "#{@a1.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@a2.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@b2.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@c1_2.full_name}.gemspec.rz"
+    assert_indexed quickdir, "#{@a1.spec_name}.rz"
+    assert_indexed quickdir, "#{@a2.spec_name}.rz"
+    assert_indexed quickdir, "#{@b2.spec_name}.rz"
+    assert_indexed quickdir, "#{@c1_2.spec_name}.rz"
 
     assert_indexed quickdir, "#{@pl1.original_name}.gemspec.rz"
-    refute_indexed quickdir, "#{@pl1.full_name}.gemspec.rz"
+    refute_indexed quickdir, "#{@pl1.spec_name}.rz"
 
-    assert_indexed marshal_quickdir, "#{@a1.full_name}.gemspec.rz"
-    assert_indexed marshal_quickdir, "#{@a2.full_name}.gemspec.rz"
+    assert_indexed marshal_quickdir, "#{@a1.spec_name}.rz"
+    assert_indexed marshal_quickdir, "#{@a2.spec_name}.rz"
 
-    refute_indexed quickdir, "#{@c1_2.full_name}.gemspec"
-    refute_indexed marshal_quickdir, "#{@c1_2.full_name}.gemspec"
+    refute_indexed quickdir, "#{@c1_2.spec_name}"
+    refute_indexed marshal_quickdir, "#{@c1_2.spec_name}"
 
     refute_indexed @tempdir, "specs.#{@marshal_version}"
     refute_indexed @tempdir, "specs.#{@marshal_version}.gz"
@@ -340,15 +372,15 @@ eighty characters.&lt;/pre&gt;
     assert_indexed quickdir, "latest_index"
     assert_indexed quickdir, "latest_index.rz"
 
-    assert_indexed quickdir, "#{@a1.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@a2.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@b2.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@c1_2.full_name}.gemspec.rz"
+    assert_indexed quickdir, "#{@a1.spec_name}.rz"
+    assert_indexed quickdir, "#{@a2.spec_name}.rz"
+    assert_indexed quickdir, "#{@b2.spec_name}.rz"
+    assert_indexed quickdir, "#{@c1_2.spec_name}.rz"
 
     assert_indexed quickdir, "#{@pl1.original_name}.gemspec.rz"
 
-    assert_indexed marshal_quickdir, "#{@a1.full_name}.gemspec.rz"
-    assert_indexed marshal_quickdir, "#{@a2.full_name}.gemspec.rz"
+    assert_indexed marshal_quickdir, "#{@a1.spec_name}.rz"
+    assert_indexed marshal_quickdir, "#{@a2.spec_name}.rz"
 
     assert_indexed @tempdir, "specs.#{@marshal_version}"
     assert_indexed @tempdir, "specs.#{@marshal_version}.gz"
@@ -382,19 +414,19 @@ eighty characters.&lt;/pre&gt;
     refute_indexed quickdir, "latest_index"
     refute_indexed quickdir, "latest_index.rz"
 
-    refute_indexed quickdir, "#{@a1.full_name}.gemspec.rz"
-    refute_indexed quickdir, "#{@a2.full_name}.gemspec.rz"
-    refute_indexed quickdir, "#{@b2.full_name}.gemspec.rz"
-    refute_indexed quickdir, "#{@c1_2.full_name}.gemspec.rz"
+    refute_indexed quickdir, "#{@a1.spec_name}.rz"
+    refute_indexed quickdir, "#{@a2.spec_name}.rz"
+    refute_indexed quickdir, "#{@b2.spec_name}.rz"
+    refute_indexed quickdir, "#{@c1_2.spec_name}.rz"
 
     refute_indexed quickdir, "#{@pl1.original_name}.gemspec.rz"
-    refute_indexed quickdir, "#{@pl1.full_name}.gemspec.rz"
+    refute_indexed quickdir, "#{@pl1.spec_name}.rz"
 
-    assert_indexed marshal_quickdir, "#{@a1.full_name}.gemspec.rz"
-    assert_indexed marshal_quickdir, "#{@a2.full_name}.gemspec.rz"
+    assert_indexed marshal_quickdir, "#{@a1.spec_name}.rz"
+    assert_indexed marshal_quickdir, "#{@a2.spec_name}.rz"
 
-    refute_indexed quickdir, "#{@c1_2.full_name}.gemspec"
-    refute_indexed marshal_quickdir, "#{@c1_2.full_name}.gemspec"
+    refute_indexed quickdir, "#{@c1_2.spec_name}"
+    refute_indexed marshal_quickdir, "#{@c1_2.spec_name}"
 
     assert_indexed @tempdir, "specs.#{@marshal_version}"
     assert_indexed @tempdir, "specs.#{@marshal_version}.gz"
@@ -436,15 +468,15 @@ eighty characters.&lt;/pre&gt;
     assert_indexed quickdir, "latest_index"
     assert_indexed quickdir, "latest_index.rz"
 
-    assert_indexed quickdir, "#{@a1.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@a2.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@b2.full_name}.gemspec.rz"
-    assert_indexed quickdir, "#{@c1_2.full_name}.gemspec.rz"
+    assert_indexed quickdir, "#{@a1.spec_name}.rz"
+    assert_indexed quickdir, "#{@a2.spec_name}.rz"
+    assert_indexed quickdir, "#{@b2.spec_name}.rz"
+    assert_indexed quickdir, "#{@c1_2.spec_name}.rz"
 
     assert_indexed quickdir, "#{@pl1.original_name}.gemspec.rz"
 
-    assert_indexed marshal_quickdir, "#{@a1.full_name}.gemspec.rz"
-    assert_indexed marshal_quickdir, "#{@a2.full_name}.gemspec.rz"
+    assert_indexed marshal_quickdir, "#{@a1.spec_name}.rz"
+    assert_indexed marshal_quickdir, "#{@a2.spec_name}.rz"
 
     assert_indexed @tempdir, "specs.#{@marshal_version}"
     assert_indexed @tempdir, "specs.#{@marshal_version}.gz"
@@ -462,9 +494,9 @@ eighty characters.&lt;/pre&gt;
                  @ui.output
     assert_match %r%^\.\.\.\.\.\.\.\.\.\.$%, @ui.output
     assert_match %r%^Loaded all gems$%, @ui.output
-    assert_match %r%^Generating Marshal quick index gemspecs for 7 gems$%,
+    assert_match %r%^Generating Marshal quick index gemspecs for 10 gems$%,
                  @ui.output
-    assert_match %r%^Generating YAML quick index gemspecs for 7 gems$%,
+    assert_match %r%^Generating YAML quick index gemspecs for 10 gems$%,
                  @ui.output
     assert_match %r%^Complete$%, @ui.output
     assert_match %r%^Generating specs index$%, @ui.output
@@ -473,7 +505,7 @@ eighty characters.&lt;/pre&gt;
     assert_match %r%^Generating latest index$%, @ui.output
     assert_match %r%^Generating prerelease specs index$%, @ui.output
     assert_match %r%^Generating Marshal master index$%, @ui.output
-    assert_match %r%^Generating YAML master index for 7 gems \(this may take a while\)$%, @ui.output
+    assert_match %r%^Generating YAML master index for 10 gems \(this may take a while\)$%, @ui.output
     assert_match %r%^Complete$%, @ui.output
     assert_match %r%^Compressing indicies$%, @ui.output
 
@@ -598,14 +630,14 @@ eighty characters.&lt;/pre&gt;
     @d2_1_a_tuple = [@d2_1_a.name, @d2_1_a.version, @d2_1_a.original_platform]
 
     gems = File.join @tempdir, 'gems'
-    FileUtils.mv File.join(@gemhome, 'cache', "#{@d2_1.full_name}.gem"), gems
-    FileUtils.mv File.join(@gemhome, 'cache', "#{@d2_1_a.full_name}.gem"), gems
+    FileUtils.mv File.join(@gemhome, 'cache', @d2_1.file_name), gems
+    FileUtils.mv File.join(@gemhome, 'cache', @d2_1_a.file_name), gems
 
     use_ui @ui do
       @indexer.update_index
     end
 
-    assert_indexed marshal_quickdir, "#{@d2_1.full_name}.gemspec.rz"
+    assert_indexed marshal_quickdir, "#{@d2_1.spec_name}.rz"
 
     specs_index = Marshal.load Gem.read_binary(@indexer.dest_specs_index)
 

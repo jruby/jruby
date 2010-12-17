@@ -69,9 +69,11 @@ class MSpecScript
   set :command_line, [ SPEC_DIR + '/command_line' ]
 
   # Enable features
+  MSpec.enable_feature :continuation
   MSpec.enable_feature :fiber
   MSpec.enable_feature :fiber_library
   MSpec.enable_feature :encoding
+  MSpec.enable_feature :readline
 
   if WINDOWS
     # Some specs on Windows will fail in we launch JRuby via

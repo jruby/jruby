@@ -96,6 +96,10 @@ public class NativeThread implements ThreadLike {
         return false;
     }
 
+    public Thread getThread() {
+        return nativeThread.get();
+    }
+
     public String toString() {
         return "" + nativeThread.get();
     }

@@ -49,7 +49,7 @@ class TestEnv < Test::Unit::TestCase
 
   def test_has_value
     val = 'a'
-    val.succ! while ENV.has_value?(val) && ENV.has_value?(val.upcase)
+    val.succ! while ENV.has_value?(val) || ENV.has_value?(val.upcase)
     ENV['test'] = val[0...-1]
 
     assert_equal(false, ENV.has_value?(val))
@@ -64,10 +64,11 @@ class TestEnv < Test::Unit::TestCase
 
   def test_key
     val = 'a'
-    val.succ! while ENV.has_value?(val) && ENV.has_value?(val.upcase)
+    val.succ! while ENV.has_value?(val) || ENV.has_value?(val.upcase)
     ENV['test'] = val[0...-1]
 
     assert_nil(ENV.key(val))
+    assert_nil(ENV.index(val))
     assert_nil(ENV.key(val.upcase))
     ENV['test'] = val
     if IGNORE_CASE
@@ -122,6 +123,13 @@ class TestEnv < Test::Unit::TestCase
     assert_equal(nil, ENV["test"])
     assert_raise(ArgumentError) { ENV["foo\0bar"] = "test" }
     assert_raise(ArgumentError) { ENV["test"] = "foo\0bar" }
+    if /netbsd/ =~ RUBY_PLATFORM
+      ENV["foo=bar"] = "test"
+      assert_equal("test", ENV["foo=bar"])
+      assert_equal("test", ENV["foo"])
+    else
+      assert_raise(Errno::EINVAL) { ENV["foo=bar"] = "test" }
+    end
     ENV[PATH_ENV] = "/tmp/".taint
     assert_equal("/tmp/", ENV[PATH_ENV])
   end
@@ -168,6 +176,24 @@ class TestEnv < Test::Unit::TestCase
     ENV.each_pair {|k, v| h1[k] = v }
     ENV["test"] = "foo"
     ENV.delete_if {|k, v| IGNORE_CASE ? k.upcase == "TEST" : k == "test" }
+    h2 = {}
+    ENV.each_pair {|k, v| h2[k] = v }
+    assert_equal(h1, h2)
+  end
+
+  def test_select_bang
+    h1 = {}
+    ENV.each_pair {|k, v| h1[k] = v }
+    ENV["test"] = "foo"
+    ENV.select! {|k, v| IGNORE_CASE ? k.upcase != "TEST" : k != "test" }
+    h2 = {}
+    ENV.each_pair {|k, v| h2[k] = v }
+    assert_equal(h1, h2)
+
+    h1 = {}
+    ENV.each_pair {|k, v| h1[k] = v }
+    ENV["test"] = "foo"
+    ENV.keep_if {|k, v| IGNORE_CASE ? k.upcase != "TEST" : k != "test" }
     h2 = {}
     ENV.each_pair {|k, v| h2[k] = v }
     assert_equal(h1, h2)

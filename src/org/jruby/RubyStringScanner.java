@@ -12,7 +12,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -82,13 +82,13 @@ public class RubyStringScanner extends RubyObject {
     }
 
     // second argument is allowed, but ignored (MRI)
-    @JRubyMethod(name = "initialize", required = 1, optional = 1, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         str = args[0].convertToString();        
         return this;
     }
     
-    @JRubyMethod(name = "initialize_copy", frame=true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject other) {
         if (this == other) return this;

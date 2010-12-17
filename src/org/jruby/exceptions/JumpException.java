@@ -31,7 +31,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyLocalJumpError.Reason;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * This class should be used for performance reasons if the
@@ -45,9 +48,13 @@ public class JumpException extends RuntimeException {
     public static class FlowControlException extends JumpException implements Unrescuable {
         protected int target;
         protected Object value;
+        protected final Reason reason;
 
-        public FlowControlException() {}
-        public FlowControlException(int target, Object value) {
+        public FlowControlException(Reason reason) {
+            this.reason = reason;
+        }
+        public FlowControlException(Reason reason, int target, Object value) {
+            this.reason = reason;
             this.target = target;
             this.value = value;
         }
@@ -55,17 +62,35 @@ public class JumpException extends RuntimeException {
         public void setTarget(int target) { this.target = target; }
         public Object getValue() { return value; }
         public void setValue(Object value) { this.value = value; }
+
+        public RaiseException buildException(Ruby runtime) {
+            switch (reason) {
+                case RETURN:
+                case BREAK:
+                case NEXT:
+                    // takes an argument
+                    return runtime.newLocalJumpError(reason, (IRubyObject)value, "unexpected " + reason);
+                case REDO:
+                case RETRY:
+                    // no argument
+                    return runtime.newLocalJumpError(reason, runtime.getNil(), "unexpected " + reason);
+                case NOREASON:
+                default:
+                    // different message or no reason given
+                    return runtime.newLocalJumpError(reason, runtime.getNil(), "no reason");
+            }
+        }
     }
     
-    public static class BreakJump extends FlowControlException { public BreakJump(int t, Object v) { super(t, v); }}
-    public static class NextJump extends FlowControlException { public NextJump(Object v) { super(0, v); }}
-    public static class RetryJump extends FlowControlException {}
+    public static class BreakJump extends FlowControlException { public BreakJump(int t, Object v) { super(Reason.BREAK, t, v); } }
+    public static class NextJump extends FlowControlException { public NextJump(Object v) { super(Reason.NEXT, 0, v); } }
+    public static class RetryJump extends FlowControlException { public RetryJump() {super(Reason.RETRY); } }
     public static final RetryJump RETRY_JUMP = new RetryJump();
-    public static class RedoJump extends FlowControlException {}
+    public static class RedoJump extends FlowControlException { public RedoJump() {super(Reason.REDO); } }
     public static final RedoJump REDO_JUMP = new RedoJump();
-    public static class SpecialJump extends FlowControlException {}
+    public static class SpecialJump extends FlowControlException { public SpecialJump() {super(Reason.NOREASON); } }
     public static final SpecialJump SPECIAL_JUMP = new SpecialJump();
-    public static class ReturnJump extends FlowControlException { public ReturnJump(int t, Object v) { target = t; value = v; }}
+    public static class ReturnJump extends FlowControlException { public ReturnJump(int t, Object v) { super(Reason.RETURN, t, v); }}
     
     /**
      * Constructor for flow-control-only JumpExceptions.

@@ -41,7 +41,7 @@ import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ShellLauncher;
 
@@ -244,7 +244,7 @@ public class RubyProcess {
             throw self.getRuntime().newNotImplementedError("Process::UID::sid_available not implemented yet");
         }
         
-        @JRubyMethod(name = "switch", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "switch", module = true, visibility = PRIVATE)
         public static IRubyObject switch_rb(ThreadContext context, IRubyObject self, Block block) {
             Ruby runtime = context.getRuntime();
             int uid = runtime.getPosix().getuid();
@@ -332,7 +332,7 @@ public class RubyProcess {
             throw self.getRuntime().newNotImplementedError("Process::GID::sid_available not implemented yet");
         }
         
-        @JRubyMethod(name = "switch", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "switch", module = true, visibility = PRIVATE)
         public static IRubyObject switch_rb(ThreadContext context, IRubyObject self, Block block) {
             Ruby runtime = context.getRuntime();
             int gid = runtime.getPosix().getgid();
@@ -363,7 +363,7 @@ public class RubyProcess {
         public static IRubyObject getegid(IRubyObject self) {
             return egid(self.getRuntime());
         }
-        @JRubyMethod(name = "getegid", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "getegid", module = true, visibility = PRIVATE)
         public static IRubyObject getegid(ThreadContext context, IRubyObject self) {
             return egid(context.getRuntime());
         }
@@ -372,7 +372,7 @@ public class RubyProcess {
         public static IRubyObject geteuid(IRubyObject self) {
             return euid(self.getRuntime());
         }
-        @JRubyMethod(name = "geteuid", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "geteuid", module = true, visibility = PRIVATE)
         public static IRubyObject geteuid(ThreadContext context, IRubyObject self) {
             return euid(context.getRuntime());
         }
@@ -381,7 +381,7 @@ public class RubyProcess {
         public static IRubyObject getgid(IRubyObject self) {
             return gid(self.getRuntime());
         }
-        @JRubyMethod(name = "getgid", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "getgid", module = true, visibility = PRIVATE)
         public static IRubyObject getgid(ThreadContext context, IRubyObject self) {
             return gid(context.getRuntime());
         }
@@ -390,7 +390,7 @@ public class RubyProcess {
         public static IRubyObject getuid(IRubyObject self) {
             return uid(self.getRuntime());
         }
-        @JRubyMethod(name = "getuid", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "getuid", module = true, visibility = PRIVATE)
         public static IRubyObject getuid(ThreadContext context, IRubyObject self) {
             return uid(context.getRuntime());
         }
@@ -399,7 +399,7 @@ public class RubyProcess {
         public static IRubyObject setegid(IRubyObject recv, IRubyObject arg) {
             return egid_set(recv.getRuntime(), arg);
         }
-        @JRubyMethod(name = "setegid", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "setegid", module = true, visibility = PRIVATE)
         public static IRubyObject setegid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
             return egid_set(context.getRuntime(), arg);
         }
@@ -408,7 +408,7 @@ public class RubyProcess {
         public static IRubyObject seteuid(IRubyObject recv, IRubyObject arg) {
             return euid_set(recv.getRuntime(), arg);
         }
-        @JRubyMethod(name = "seteuid", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "seteuid", module = true, visibility = PRIVATE)
         public static IRubyObject seteuid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
             return euid_set(context.getRuntime(), arg);
         }
@@ -417,7 +417,7 @@ public class RubyProcess {
         public static IRubyObject setgid(IRubyObject recv, IRubyObject arg) {
             return gid_set(recv.getRuntime(), arg);
         }
-        @JRubyMethod(name = "setgid", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "setgid", module = true, visibility = PRIVATE)
         public static IRubyObject setgid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
             return gid_set(context.getRuntime(), arg);
         }
@@ -426,28 +426,28 @@ public class RubyProcess {
         public static IRubyObject setuid(IRubyObject recv, IRubyObject arg) {
             return uid_set(recv.getRuntime(), arg);
         }
-        @JRubyMethod(name = "setuid", module = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(name = "setuid", module = true, visibility = PRIVATE)
         public static IRubyObject setuid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
             return uid_set(context.getRuntime(), arg);
         }
     }
 
-    @JRubyMethod(name = "abort", optional = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "abort", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject abort(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.abort(context, recv, args);
     }
 
-    @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.exit_bang(recv, args);
     }
 
-    @JRubyMethod(name = "groups", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "groups", module = true, visibility = PRIVATE)
     public static IRubyObject groups(IRubyObject recv) {
         throw recv.getRuntime().newNotImplementedError("Process#groups not yet implemented");
     }
 
-    @JRubyMethod(name = "setrlimit", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "setrlimit", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject setrlimit(IRubyObject recv, IRubyObject[] args) {
         throw recv.getRuntime().newNotImplementedError("Process#setrlimit not yet implemented");
     }
@@ -456,7 +456,7 @@ public class RubyProcess {
     public static IRubyObject getpgrp(IRubyObject recv) {
         return getpgrp(recv.getRuntime());
     }
-    @JRubyMethod(name = "getpgrp", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "getpgrp", module = true, visibility = PRIVATE)
     public static IRubyObject getpgrp(ThreadContext context, IRubyObject recv) {
         return getpgrp(context.getRuntime());
     }
@@ -464,7 +464,7 @@ public class RubyProcess {
         return runtime.newFixnum(runtime.getPosix().getpgrp());
     }
 
-    @JRubyMethod(name = "groups=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "groups=", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject groups_set(IRubyObject recv, IRubyObject arg) {
         throw recv.getRuntime().newNotImplementedError("Process#groups not yet implemented");
     }
@@ -473,7 +473,7 @@ public class RubyProcess {
     public static IRubyObject waitpid(IRubyObject recv, IRubyObject[] args) {
         return waitpid(recv.getRuntime(), args);
     }
-    @JRubyMethod(name = "waitpid", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "waitpid", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject waitpid(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return waitpid(context.getRuntime(), args);
     }
@@ -502,7 +502,7 @@ public class RubyProcess {
     public static IRubyObject wait(IRubyObject recv, IRubyObject[] args) {
         return wait(recv.getRuntime(), args);
     }
-    @JRubyMethod(name = "wait", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "wait", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return wait(context.getRuntime(), args);
     }
@@ -528,7 +528,7 @@ public class RubyProcess {
     public static IRubyObject waitall(IRubyObject recv) {
         return waitall(recv.getRuntime());
     }
-    @JRubyMethod(name = "waitall", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "waitall", module = true, visibility = PRIVATE)
     public static IRubyObject waitall(ThreadContext context, IRubyObject recv) {
         return waitall(context.getRuntime());
     }
@@ -550,7 +550,7 @@ public class RubyProcess {
     public static IRubyObject setsid(IRubyObject recv) {
         return setsid(recv.getRuntime());
     }
-    @JRubyMethod(name = "setsid", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "setsid", module = true, visibility = PRIVATE)
     public static IRubyObject setsid(ThreadContext context, IRubyObject recv) {
         return setsid(context.getRuntime());
     }
@@ -562,7 +562,7 @@ public class RubyProcess {
     public static IRubyObject setpgrp(IRubyObject recv) {
         return setpgrp(recv.getRuntime());
     }
-    @JRubyMethod(name = "setpgrp", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "setpgrp", module = true, visibility = PRIVATE)
     public static IRubyObject setpgrp(ThreadContext context, IRubyObject recv) {
         return setpgrp(context.getRuntime());
     }
@@ -574,7 +574,7 @@ public class RubyProcess {
     public static IRubyObject egid_set(IRubyObject recv, IRubyObject arg) {
         return egid_set(recv.getRuntime(), arg);
     }
-    @JRubyMethod(name = "egid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "egid=", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject egid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return egid_set(context.getRuntime(), arg);
     }
@@ -587,7 +587,7 @@ public class RubyProcess {
     public static IRubyObject euid(IRubyObject recv) {
         return euid(recv.getRuntime());
     }
-    @JRubyMethod(name = "euid", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "euid", module = true, visibility = PRIVATE)
     public static IRubyObject euid(ThreadContext context, IRubyObject recv) {
         return euid(context.getRuntime());
     }
@@ -599,7 +599,7 @@ public class RubyProcess {
     public static IRubyObject uid_set(IRubyObject recv, IRubyObject arg) {
         return uid_set(recv.getRuntime(), arg);
     }
-    @JRubyMethod(name = "uid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "uid=", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject uid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return uid_set(context.getRuntime(), arg);
     }
@@ -612,7 +612,7 @@ public class RubyProcess {
     public static IRubyObject gid(IRubyObject recv) {
         return gid(recv.getRuntime());
     }
-    @JRubyMethod(name = "gid", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "gid", module = true, visibility = PRIVATE)
     public static IRubyObject gid(ThreadContext context, IRubyObject recv) {
         return gid(context.getRuntime());
     }
@@ -624,7 +624,7 @@ public class RubyProcess {
         return runtime.newFixnum(runtime.getPosix().getgid());
     }
 
-    @JRubyMethod(name = "maxgroups", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "maxgroups", module = true, visibility = PRIVATE)
     public static IRubyObject maxgroups(IRubyObject recv) {
         throw recv.getRuntime().newNotImplementedError("Process#maxgroups not yet implemented");
     }
@@ -633,7 +633,7 @@ public class RubyProcess {
     public static IRubyObject getpriority(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         return getpriority(recv.getRuntime(), arg1, arg2);
     }
-    @JRubyMethod(name = "getpriority", required = 2, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "getpriority", required = 2, module = true, visibility = PRIVATE)
     public static IRubyObject getpriority(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         return getpriority(context.getRuntime(), arg1, arg2);
     }
@@ -649,7 +649,7 @@ public class RubyProcess {
     public static IRubyObject uid(IRubyObject recv) {
         return uid(recv.getRuntime());
     }
-    @JRubyMethod(name = "uid", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "uid", module = true, visibility = PRIVATE)
     public static IRubyObject uid(ThreadContext context, IRubyObject recv) {
         return uid(context.getRuntime());
     }
@@ -661,7 +661,7 @@ public class RubyProcess {
     public static IRubyObject waitpid2(IRubyObject recv, IRubyObject[] args) {
         return waitpid2(recv.getRuntime(), args);
     }
-    @JRubyMethod(name = "waitpid2", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "waitpid2", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject waitpid2(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return waitpid2(context.getRuntime(), args);
     }
@@ -685,12 +685,12 @@ public class RubyProcess {
         return runtime.newArray(runtime.newFixnum(pid), RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
     }
 
-    @JRubyMethod(name = "initgroups", required = 2, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initgroups", required = 2, module = true, visibility = PRIVATE)
     public static IRubyObject initgroups(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         throw recv.getRuntime().newNotImplementedError("Process#initgroups not yet implemented");
     }
 
-    @JRubyMethod(name = "maxgroups=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "maxgroups=", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject maxgroups_set(IRubyObject recv, IRubyObject arg) {
         throw recv.getRuntime().newNotImplementedError("Process#maxgroups_set not yet implemented");
     }
@@ -699,7 +699,7 @@ public class RubyProcess {
     public static IRubyObject ppid(IRubyObject recv) {
         return ppid(recv.getRuntime());
     }
-    @JRubyMethod(name = "ppid", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "ppid", module = true, visibility = PRIVATE)
     public static IRubyObject ppid(ThreadContext context, IRubyObject recv) {
         return ppid(context.getRuntime());
     }
@@ -711,7 +711,7 @@ public class RubyProcess {
     public static IRubyObject gid_set(IRubyObject recv, IRubyObject arg) {
         return gid_set(recv.getRuntime(), arg);
     }
-    @JRubyMethod(name = "gid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "gid=", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject gid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return gid_set(context.getRuntime(), arg);
     }
@@ -723,7 +723,7 @@ public class RubyProcess {
     public static IRubyObject wait2(IRubyObject recv, IRubyObject[] args) {
         return waitpid2(recv.getRuntime(), args);
     }
-    @JRubyMethod(name = "wait2", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "wait2", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject wait2(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return waitpid2(context.getRuntime(), args);
     }
@@ -732,7 +732,7 @@ public class RubyProcess {
     public static IRubyObject euid_set(IRubyObject recv, IRubyObject arg) {
         return euid_set(recv.getRuntime(), arg);
     }
-    @JRubyMethod(name = "euid=", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "euid=", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject euid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return euid_set(context.getRuntime(), arg);
     }
@@ -745,7 +745,7 @@ public class RubyProcess {
     public static IRubyObject setpriority(IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         return setpriority(recv.getRuntime(), arg1, arg2, arg3);
     }
-    @JRubyMethod(name = "setpriority", required = 3, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "setpriority", required = 3, module = true, visibility = PRIVATE)
     public static IRubyObject setpriority(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         return setpriority(context.getRuntime(), arg1, arg2, arg3);
     }
@@ -768,7 +768,7 @@ public class RubyProcess {
     public static IRubyObject setpgid(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         return setpgid(recv.getRuntime(), arg1, arg2);
     }
-    @JRubyMethod(name = "setpgid", required = 2, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "setpgid", required = 2, module = true, visibility = PRIVATE)
     public static IRubyObject setpgid(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         return setpgid(context.getRuntime(), arg1, arg2);
     }
@@ -782,7 +782,7 @@ public class RubyProcess {
     public static IRubyObject getpgid(IRubyObject recv, IRubyObject arg) {
         return getpgid(recv.getRuntime(), arg);
     }
-    @JRubyMethod(name = "getpgid", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "getpgid", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject getpgid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return getpgid(context.getRuntime(), arg);
     }
@@ -794,7 +794,7 @@ public class RubyProcess {
     public static IRubyObject getrlimit(IRubyObject recv, IRubyObject arg) {
         return getrlimit(recv.getRuntime(), arg);
     }
-    @JRubyMethod(name = "getrlimit", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "getrlimit", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject getrlimit(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return getrlimit(context.getRuntime(), arg);
     }
@@ -806,7 +806,7 @@ public class RubyProcess {
     public static IRubyObject egid(IRubyObject recv) {
         return egid(recv.getRuntime());
     }
-    @JRubyMethod(name = "egid", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "egid", module = true, visibility = PRIVATE)
     public static IRubyObject egid(ThreadContext context, IRubyObject recv) {
         return egid(context.getRuntime());
     }
@@ -847,7 +847,7 @@ public class RubyProcess {
     public static IRubyObject kill(IRubyObject recv, IRubyObject[] args) {
         return kill(recv.getRuntime(), args);
     }
-    @JRubyMethod(name = "kill", rest = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "kill", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject kill(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return kill(context.getRuntime(), args);
     }
@@ -891,7 +891,7 @@ public class RubyProcess {
 
     }
 
-    @JRubyMethod(name = "detach", required = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "detach", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject detach(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         final int pid = (int)arg.convertToInteger().getLongValue();
         Ruby runtime = context.getRuntime();
@@ -915,7 +915,7 @@ public class RubyProcess {
     public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
         return times(recv.getRuntime());
     }
-    @JRubyMethod(name = "times", frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject times(ThreadContext context, IRubyObject recv, Block unusedBlock) {
         return times(context.getRuntime());
     }
@@ -932,7 +932,7 @@ public class RubyProcess {
     public static IRubyObject pid(IRubyObject recv) {
         return pid(recv.getRuntime());
     }
-    @JRubyMethod(name = "pid", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "pid", module = true, visibility = PRIVATE)
     public static IRubyObject pid(ThreadContext context, IRubyObject recv) {
         return pid(context.getRuntime());
     }
@@ -940,7 +940,7 @@ public class RubyProcess {
         return runtime.newFixnum(runtime.getPosix().getpid());
     }
     
-    @JRubyMethod(name = "fork", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE)
     public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
         return RubyKernel.fork(context, recv, block);
     }
@@ -952,7 +952,7 @@ public class RubyProcess {
         return RubyFixnum.newFixnum(runtime, pid);
     }
     
-    @JRubyMethod(name = "exit", optional = 1, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "exit", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.exit(recv, args);
     }

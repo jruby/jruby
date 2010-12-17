@@ -66,7 +66,8 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                 args[i] = context.getRuntime().getNil();
             }
         }
-        InterpreterContext interp = new NaiveInterpreterContext(context, self, closure.getTemporaryVariableSize(), args, scope, Block.NULL_BLOCK);
+        InterpreterContext interp = new NaiveInterpreterContext(context, self, closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, scope, Block.NULL_BLOCK);
+        interp.setDynamicScope(binding.getDynamicScope());
 
         return Interpreter.interpret(context, closure.getCFG(), interp);
     }
@@ -78,7 +79,8 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         // FIXME: args processing
         if (self == null) self = value;
         IRubyObject[] args = new IRubyObject[] { value };
-        InterpreterContext interp = new NaiveInterpreterContext(context, self, closure.getTemporaryVariableSize(), args, scope, Block.NULL_BLOCK);
+        InterpreterContext interp = new NaiveInterpreterContext(context, self, closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, scope, Block.NULL_BLOCK);
+        interp.setDynamicScope(binding.getDynamicScope());
 
         return Interpreter.interpret(context, closure.getCFG(), interp);
     }
@@ -139,5 +141,17 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
             return warnMultiReturnNil(ruby);
         }
         return value;
+    }
+
+    @Override
+    public String getFile() {
+        // FIXME: need to get position from IR somehow?
+        return "(unknown)";
+    }
+
+    @Override
+    public int getLine() {
+        // FIXME: need to get position from IR somehow?
+        return -1;
     }
 }

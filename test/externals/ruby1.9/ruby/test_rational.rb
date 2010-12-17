@@ -7,9 +7,10 @@ class Rational_Test < Test::Unit::TestCase
   def setup
     @complex = defined?(Complex)
     if @complex
-      @keiju = Complex.instance_variable_get('@RCS_ID')
+      @keiju = Complex.instance_variables.include?(:@RCS_ID)
     end
-    @unify = $".grep(/mathn/).size != 0
+    seps = [File::SEPARATOR, File::ALT_SEPARATOR].compact.map{|x| Regexp.escape(x)}.join("|")
+    @unify = $".grep(/(?:^|#{seps})mathn(?:\.(?:rb|so))?/).size != 0
   end
 
   def test_ratsub
@@ -795,6 +796,11 @@ class Rational_Test < Test::Unit::TestCase
 
     assert_raise(ZeroDivisionError){
       Marshal.load("\x04\bU:\rRational[\ai\x06i\x05")
+    }
+
+    bug3656 = '[ruby-core:31622]'
+    assert_raise(TypeError, bug3656) {
+      Rational(1,2).marshal_load(0)
     }
   end
 

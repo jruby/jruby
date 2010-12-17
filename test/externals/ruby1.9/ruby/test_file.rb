@@ -140,13 +140,13 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_s_chown
-    assert_nothing_raised { File.chown -1, -1 }
+    assert_nothing_raised { File.chown(-1, -1) }
     assert_nothing_raised { File.chown nil, nil }
   end
 
   def test_chown
     assert_nothing_raised {
-      File.open(__FILE__) {|f| f.chown -1, -1 }
+      File.open(__FILE__) {|f| f.chown(-1, -1) }
     }
     assert_nothing_raised("[ruby-dev:27140]") {
       File.open(__FILE__) {|f| f.chown nil, nil }
@@ -157,4 +157,28 @@ class TestFile < Test::Unit::TestCase
     assert_raise(TypeError) { File::Stat.allocate.readable? }
     assert_nothing_raised { File::Stat.allocate.inspect }
   end
+
+  def test_realpath
+    Dir.mktmpdir('rubytest-realpath') {|tmpdir|
+      realdir = File.realpath(tmpdir)
+      tst = realdir.sub(/#{Regexp.escape(File::SEPARATOR)}/, '\0\0\0')
+      assert_equal(realdir, File.realpath(tst))
+      assert_equal(realdir, File.realpath(".", tst))
+      if File::ALT_SEPARATOR
+        bug2961 = '[ruby-core:28653]'
+        assert_equal(realdir, File.realpath(realdir.tr(File::SEPARATOR, File::ALT_SEPARATOR)), bug2961)
+      end
+    }
+  end
+
+  def test_realdirpath
+    Dir.mktmpdir('rubytest-realdirpath') {|tmpdir|
+      realdir = File.realpath(tmpdir)
+      tst = realdir.sub(/#{Regexp.escape(File::SEPARATOR)}/, '\0\0\0')
+      assert_equal(realdir, File.realdirpath(tst))
+      assert_equal(realdir, File.realdirpath(".", tst))
+      assert_equal(File.join(realdir, "foo"), File.realdirpath("foo", tst))
+    }
+  end
+
 end

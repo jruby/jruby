@@ -47,6 +47,14 @@ public class CRLFStreamWrapper implements Stream {
         stream.setBinmode();
     }
 
+    public boolean isAutoclose() {
+        return stream.isAutoclose();
+    }
+
+    public void setAutoclose(boolean autoclose) {
+        stream.setAutoclose(autoclose);
+    }
+
     public ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException {
         return convertCRLFToLF(stream.fgets(separatorString));
     }

@@ -54,6 +54,14 @@ public class StringTerm extends StrTerm {
         this.nest  = 0;
     }
 
+    protected ByteList createByteList(RubyYaccLexer lexer) {
+        // TODO: ByteList seems to be missing a constructor
+        // TODO: Perhaps both 1.8 and 1.9 can just always pass in encoding
+        if (lexer.isOneEight()) return new ByteList();
+
+        return new ByteList(new byte[]{}, lexer.getEncoding());
+    }
+
     public int parseString(RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
         boolean spaceSeen = false;
         int c;
@@ -97,7 +105,8 @@ public class StringTerm extends StrTerm {
 
         // Single-quote fast path
         if (begin == '\0' && flags == 0) {
-            ByteList buffer = new ByteList();
+            ByteList buffer = createByteList(lexer);
+
             src.unread(c);
             if (parseSimpleStringIntoBuffer(lexer, src, buffer) == RubyYaccLexer.EOF) {
                 throw new SyntaxException(PID.STRING_HITS_EOF, src.getPosition(), 
@@ -115,7 +124,7 @@ public class StringTerm extends StrTerm {
             return Tokens.tSTRING_CONTENT;
         }
         
-        ByteList buffer = new ByteList();
+        ByteList buffer = createByteList(lexer);
 
         if ((flags & RubyYaccLexer.STR_FUNC_EXPAND) != 0 && c == '#') {
             c = src.read();

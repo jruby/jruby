@@ -4,6 +4,7 @@ import java.util.Map;
 import org.jruby.RubyArray;
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -39,10 +40,11 @@ public class GetArrayInstr extends OneOperandInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray array = (RubyArray) getArg().retrieve(interp);
 
         getResult().store(interp, array.get(index));
+        return null;
     }
 }

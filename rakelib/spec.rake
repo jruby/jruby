@@ -29,13 +29,19 @@ namespace :spec do
   desc "Run rubyspecs expected to pass (version-frozen)"
   task :ci_19 => ['spec:fetch_stable_specs', 'spec:tagged_19']
 
-  desc "Run rubyspecs expexted to pass in interpreted mode (version-frozen)"
+  desc "Run rubyspecs expected to pass in interpreted mode (version-frozen)"
   task :ci_interpreted_18 => ['spec:fetch_stable_specs', 'spec:interpreted_18']
 
-  desc "Run rubyspecs expexted to pass in interpreted mode (version-frozen)"
+  desc "Run rubyspecs expected to pass in interpreted 1.9 mode (version-frozen)"
   task :ci_interpreted_19 => ['spec:fetch_stable_specs', 'spec:interpreted_19']
 
-  desc "Run rubyspecs expexted to pass in interpreted mode (version-frozen)"
+  desc "Run rubyspecs expected to pass in compiled mode (version-frozen)"
+  task :ci_compiled_18 => ['spec:fetch_stable_specs', 'spec:compiled_18']
+
+  desc "Run rubyspecs expected to pass in precompiled mode (version-frozen)"
+  task :ci_precompiled_18 => ['spec:fetch_stable_specs', 'spec:precompiled_18']
+
+  desc "Run rubyspecs expected to pass in interpreted mode (version-frozen, both 1.8 and 1.9)"
   task :ci_interpreted_18_19 => ['spec:fetch_stable_specs', 'spec:interpreted_18', 'spec:interpreted_19']
 
   desc "Run all the specs including failures (version-frozen)"

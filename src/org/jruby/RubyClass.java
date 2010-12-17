@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -58,6 +59,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -70,7 +72,10 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
+import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassCache.OneShotClassLoader;
@@ -102,7 +107,7 @@ public class RubyClass extends RubyModule {
         
         classClass.defineAnnotatedMethods(RubyClass.class);
         
-        classClass.addMethod("new", new SpecificArityNew(classClass, Visibility.PUBLIC));
+        classClass.addMethod("new", new SpecificArityNew(classClass, PUBLIC));
     }
     
     public static final ObjectAllocator CLASS_ALLOCATOR = new ObjectAllocator() {
@@ -851,26 +856,26 @@ public class RubyClass extends RubyModule {
     /** rb_class_initialize
      * 
      */
-    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_8, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(compat = RUBY1_8, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         checkNotInitialized();
         return initializeCommon(runtime.getObject(), block, false);
     }
         
-    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_8, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(compat = RUBY1_8, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
         return initializeCommon((RubyClass)superObject, block, false);
     }
         
-    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", compat = RUBY1_9, visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, Block block) {
         checkNotInitialized();
         return initializeCommon(runtime.getObject(), block, true);
     }
         
-    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", compat = RUBY1_9, visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
@@ -900,7 +905,7 @@ public class RubyClass extends RubyModule {
     /** rb_class_init_copy
      * 
      */
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original){
         checkNotInitialized();
@@ -1026,7 +1031,7 @@ public class RubyClass extends RubyModule {
         return this;
     }    
 
-    @JRubyMethod(name = "inherited", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "inherited", required = 1, visibility = PRIVATE)
     public IRubyObject inherited(ThreadContext context, IRubyObject arg) {
         return runtime.getNil();
     }
@@ -1142,6 +1147,8 @@ public class RubyClass extends RubyModule {
         reify(null);
     }
 
+    private static final boolean DEBUG_REIFY = false;
+
     /**
      * Stand up a real Java class for the backing store of this object
      * @param classDumpDir Directory to save reified java class
@@ -1157,8 +1164,8 @@ public class RubyClass extends RubyModule {
             name = getName();
         }
         
-        String javaName = "ruby." + name.replaceAll("::", ".");
-        String javaPath = "ruby/" + name.replaceAll("::", "/");
+        String javaName = "rubyobj." + name.replaceAll("::", ".");
+        String javaPath = "rubyobj/" + name.replaceAll("::", "/");
         OneShotClassLoader parentCL;
         if (superClass.getRealClass().getReifiedClass().getClassLoader() instanceof OneShotClassLoader) {
             parentCL = (OneShotClassLoader)superClass.getRealClass().getReifiedClass().getClassLoader();
@@ -1223,6 +1230,9 @@ public class RubyClass extends RubyModule {
         m.voidreturn();
         m.end();
 
+        // gather a list of instance methods, so we don't accidentally make static ones that conflict
+        Set<String> instanceMethods = new HashSet<String>();
+        
         for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
             String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
@@ -1230,11 +1240,13 @@ public class RubyClass extends RubyModule {
             List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(methodName);
             Class[] methodSignature = getMethodSignatures().get(methodName);
 
+            String signature;
             if (methodSignature == null) {
                 // non-signature signature with just IRubyObject
                 switch (methodEntry.getValue().getArity().getValue()) {
                 case 0:
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(IRubyObject.class), null, null);
+                    signature = sig(IRubyObject.class);
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.aload(0);
@@ -1242,7 +1254,8 @@ public class RubyClass extends RubyModule {
                     m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
                     break;
                 default:
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(IRubyObject.class, IRubyObject[].class), null, null);
+                    signature = sig(IRubyObject.class, IRubyObject[].class);
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.aload(0);
@@ -1267,7 +1280,8 @@ public class RubyClass extends RubyModule {
                 }
                 int rubyIndex = baseIndex;
 
-                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, sig(methodSignature[0], params), null, null);
+                signature = sig(methodSignature[0], params);
+                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                 m.getstatic(javaPath, "ruby", ci(Ruby.class));
@@ -1281,6 +1295,10 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
             }
 
+            if (DEBUG_REIFY) System.out.println("defining " + getName() + "#" + methodName + " as " + javaName + "#" + javaMethodName + signature);
+
+            instanceMethods.add(javaMethodName + signature);
+
             m.end();
         }
         
@@ -1291,11 +1309,14 @@ public class RubyClass extends RubyModule {
             List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(methodName);
             Class[] methodSignature = getMetaClass().getMethodSignatures().get(methodName);
 
+            String signature;
             if (methodSignature == null) {
                 // non-signature signature with just IRubyObject
                 switch (methodEntry.getValue().getArity().getValue()) {
                 case 0:
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(IRubyObject.class), null, null);
+                    signature = sig(IRubyObject.class);
+                    if (instanceMethods.contains(javaMethodName + signature)) continue;
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
@@ -1304,7 +1325,9 @@ public class RubyClass extends RubyModule {
                     m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
                     break;
                 default:
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(IRubyObject.class, IRubyObject[].class), null, null);
+                    signature = sig(IRubyObject.class, IRubyObject[].class);
+                    if (instanceMethods.contains(javaMethodName + signature)) continue;
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
@@ -1329,7 +1352,9 @@ public class RubyClass extends RubyModule {
                 }
                 int rubyIndex = baseIndex;
 
-                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, sig(methodSignature[0], params), null, null);
+                signature = sig(methodSignature[0], params);
+                if (instanceMethods.contains(javaMethodName + signature)) continue;
+                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS | ACC_STATIC, javaMethodName, signature, null, null);
                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                 m.getstatic(javaPath, "ruby", ci(Ruby.class));
@@ -1344,6 +1369,8 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
             }
 
+            if (DEBUG_REIFY) System.out.println("defining " + getName() + "." + methodName + " as " + javaName + "." + javaMethodName + signature);
+
             m.end();
         }
 
@@ -1357,7 +1384,10 @@ public class RubyClass extends RubyModule {
             java.lang.reflect.Method clinit = result.getDeclaredMethod("clinit", Ruby.class, RubyClass.class);
             clinit.invoke(null, runtime, this);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
+                System.err.println("failed to reify class " + getName() + " due to:\n");
+                e.printStackTrace(System.err);
+            }
         }
 
         setClassAllocator(result);
@@ -1468,6 +1498,235 @@ public class RubyClass extends RubyModule {
         return super.toJava(klass);
     }
 
+    /**
+     * An enum defining the type of marshaling a given class's objects employ.
+     */
+    private static enum MarshalType {
+        DEFAULT, NEW_USER, OLD_USER, DEFAULT_SLOW, NEW_USER_SLOW, USER_SLOW
+    }
+
+    /**
+     * A tuple representing the mechanism by which objects should be marshaled.
+     *
+     * This tuple caches the type of marshaling to perform (from @MarshalType),
+     * the method to be used for marshaling data (either marshal_load/dump or
+     * _load/_dump), and the generation of the class at the time this tuple was
+     * created. When "dump" or "load" are invoked, they either call the default
+     * marshaling logic (@MarshalType.DEFAULT) or they further invoke the cached
+     * marshal_dump/load or _dump/_load methods to marshal the data.
+     *
+     * It is expected that code outside MarshalTuple will validate that the
+     * generation number still matches before invoking load or dump.
+     */
+    private static class MarshalTuple {
+        /**
+         * Construct a new MarshalTuple with the given values.
+         *
+         * @param method The method to invoke, or null in the case of default
+         * marshaling.
+         * @param type The type of marshaling to perform, from @MarshalType
+         * @param generation The generation of the associated class at the time
+         * of creation.
+         */
+        public MarshalTuple(DynamicMethod method, MarshalType type, int generation) {
+            this.method = method;
+            this.type = type;
+            this.generation = generation;
+        }
+
+        /**
+         * Dump the given object to the given stream, using the appropriate
+         * marshaling method.
+         *
+         * @param stream The stream to which to dump
+         * @param object The object to dump
+         * @throws IOException If there is an IO error during dumping
+         */
+        public void dump(MarshalStream stream, IRubyObject object) throws IOException {
+            switch (type) {
+                case DEFAULT:
+                    stream.writeDirectly(object);
+                    return;
+                case NEW_USER:
+                    stream.userNewMarshal(object, method);
+                    return;
+                case OLD_USER:
+                    stream.userMarshal(object, method);
+                    return;
+                case DEFAULT_SLOW:
+                    if (object.respondsTo("marshal_dump")) {
+                        stream.userNewMarshal(object);
+                    } else if (object.respondsTo("_dump")) {
+                        stream.userMarshal(object);
+                    } else {
+                        stream.writeDirectly(object);
+                    }
+                    return;
+            }
+        }
+
+        /** A "null" tuple, used as the default value for caches. */
+        public static final MarshalTuple NULL_TUPLE = new MarshalTuple(null, null, 0);
+        /** The method associated with this tuple. */
+        public final DynamicMethod method;
+        /** The type of marshaling that will be performed */
+        public final MarshalType type;
+        /** The generation of the associated class at the time of creation */
+        public final int generation;
+    }
+
+    /**
+     * Marshal the given object to the marshaling stream, being "smart" and
+     * caching how to do that marshaling.
+     *
+     * If the class defines a custom "respond_to?" method, then the behavior of
+     * dumping could vary without our class structure knowing it. As a result,
+     * we do only the slow-path classic behavior.
+     *
+     * If the class defines a real "marshal_dump" method, we cache and use that.
+     *
+     * If the class defines a real "_dump" method, we cache and use that.
+     *
+     * If the class neither defines none of the above methods, we use a fast
+     * path directly to the default dumping logic.
+     *
+     * @param stream The stream to which to marshal the data
+     * @param target The object whose data should be marshaled
+     * @throws IOException If there is an IO exception while writing to the
+     * stream.
+     */
+    public void smartDump(MarshalStream stream, IRubyObject target) throws IOException {
+        MarshalTuple tuple;
+        if ((tuple = cachedDumpMarshal).generation == generation) {
+        } else {
+            // recache
+            DynamicMethod method = searchMethod("respond_to?");
+            if (method != runtime.getRespondToMethod() && !method.isUndefined()) {
+
+                // custom respond_to?, always do slow default marshaling
+                tuple = (cachedDumpMarshal = new MarshalTuple(null, MarshalType.DEFAULT_SLOW, generation));
+
+            } else if (!(method = searchMethod("marshal_dump")).isUndefined()) {
+
+                // object really has 'marshal_dump', cache "new" user marshaling
+                tuple = (cachedDumpMarshal = new MarshalTuple(method, MarshalType.NEW_USER, generation));
+
+            } else if (!(method = searchMethod("_dump")).isUndefined()) {
+
+                // object really has '_dump', cache "old" user marshaling
+                tuple = (cachedDumpMarshal = new MarshalTuple(method, MarshalType.OLD_USER, generation));
+
+            } else {
+
+                // no respond_to?, marshal_dump, or _dump, so cache default marshaling
+                tuple = (cachedDumpMarshal = new MarshalTuple(null, MarshalType.DEFAULT, generation));
+            }
+        }
+
+        tuple.dump(stream, target);
+    }
+
+    /**
+     * Load marshaled data into a blank target object using marshal_load, being
+     * "smart" and caching the mechanism for invoking marshal_load.
+     *
+     * If the class implements a custom respond_to?, cache nothing and go slow
+     * path invocation of respond_to? and marshal_load every time. Raise error
+     * if respond_to? :marshal_load returns true and no :marshal_load is
+     * defined.
+     *
+     * If the class implements marshal_load, cache and use that.
+     *
+     * Otherwise, error, since marshal_load is not present.
+     *
+     * @param target The blank target object into which marshal_load will
+     * deserialize the given data
+     * @param data The marshaled data
+     * @return The fully-populated target object
+     */
+    public IRubyObject smartLoadNewUser(IRubyObject target, IRubyObject data) {
+        ThreadContext context = runtime.getCurrentContext();
+        CacheEntry cache;
+        if ((cache = cachedLoad).token == generation) {
+            cache.method.call(context, target, this, "marshal_load", data);
+            return target;
+        } else {
+            DynamicMethod method = searchMethod("respond_to?");
+            if (method != runtime.getRespondToMethod() && !method.isUndefined()) {
+
+                // custom respond_to?, cache nothing and use slow path
+                if (method.call(context, target, this, "respond_to?", runtime.newSymbol("marshal_load")).isTrue()) {
+                    target.callMethod(context, "marshal_load", data);
+                    return target;
+                } else {
+                    throw runtime.newTypeError("class " + getName() + " needs to have method `marshal_load'");
+                }
+
+            } else if (!(cache = searchWithCache("marshal_load")).method.isUndefined()) {
+
+                // real marshal_load defined, cache and call it
+                cachedLoad = cache;
+                cache.method.call(context, target, this, "marshal_load", data);
+                return target;
+
+            } else {
+
+                // go ahead and call, method_missing might handle it
+                target.callMethod(context, "marshal_load", data);
+                return target;
+                
+            }
+        }
+    }
+
+
+    /**
+     * Load marshaled data into a blank target object using _load, being
+     * "smart" and caching the mechanism for invoking _load.
+     *
+     * If the metaclass implements custom respond_to?, cache nothing and go slow
+     * path invocation of respond_to? and _load every time. Raise error if
+     * respond_to? :_load returns true and no :_load is defined.
+     *
+     * If the metaclass implements _load, cache and use that.
+     *
+     * Otherwise, error, since _load is not present.
+     *
+     * @param data The marshaled data, to be reconstituted into an object by
+     * _load
+     * @return The fully-populated target object
+     */
+    public IRubyObject smartLoadOldUser(IRubyObject data) {
+        ThreadContext context = runtime.getCurrentContext();
+        CacheEntry cache;
+        if ((cache = getSingletonClass().cachedLoad).token == getSingletonClass().generation) {
+            return cache.method.call(context, this, getSingletonClass(), "_load", data);
+        } else {
+            DynamicMethod method = getSingletonClass().searchMethod("respond_to?");
+            if (method != runtime.getRespondToMethod() && !method.isUndefined()) {
+
+                // custom respond_to?, cache nothing and use slow path
+                if (method.call(context, this, getSingletonClass(), "respond_to?", runtime.newSymbol("_load")).isTrue()) {
+                    return callMethod(context, "_load", data);
+                } else {
+                    throw runtime.newTypeError("class " + getName() + " needs to have method `_load'");
+                }
+
+            } else if (!(cache = getSingletonClass().searchWithCache("_load")).method.isUndefined()) {
+
+                // real _load defined, cache and call it
+                getSingletonClass().cachedLoad = cache;
+                return cache.method.call(context, this, getSingletonClass(), "_load", data);
+
+            } else {
+
+                // provide an error, since it doesn't exist
+                throw runtime.newTypeError("class " + getName() + " needs to have method `_load'");
+
+            }
+        }
+    }
+
     protected final Ruby runtime;
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
@@ -1504,4 +1763,10 @@ public class RubyClass extends RubyModule {
     private Map<String, Class[]> methodSignatures;
 
     private Map<Class, Map<String,Object>> classAnnotations;
+
+    /** A cached tuple of method, type, and generation for dumping */
+    private MarshalTuple cachedDumpMarshal = MarshalTuple.NULL_TUPLE;
+
+    /** A cached tuple of method and generation for marshal loading */
+    private CacheEntry cachedLoad = CacheEntry.NULL_CACHE;
 }

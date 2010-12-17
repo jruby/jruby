@@ -41,7 +41,9 @@ import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.ZeroArgNode;
+import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.assigner.Assigner;
 import org.jruby.runtime.assigner.Pre0Rest0Post0Assigner;
 import org.jruby.runtime.assigner.Pre0Rest0Post0BlockAssigner;
@@ -80,6 +82,9 @@ public class InterpretedBlock extends ContextAwareBlockBody {
      * explanation).
      */
     private boolean noargblock;
+
+    /** The position for the block */
+    private final ISourcePosition position;
 
     /** The body of the block, pulled out of bodyNode */
     private final Node bodyNode;
@@ -203,6 +208,8 @@ public class InterpretedBlock extends ContextAwareBlockBody {
         super(iterNode.getScope(), arity, argumentType);
         
         this.bodyNode = iterNode.getBodyNode() == null ? NilImplicitNode.NIL : iterNode.getBodyNode();
+        this.scope = iterNode.getScope();
+        this.position = iterNode.getPosition();
         assignerFor(iterNode);
     }
 
@@ -221,7 +228,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             if (!noargblock) assigner.assign(context.getRuntime(), context, self, arg0, Block.NULL_BLOCK);
 
             // This while loop is for restarting the block call in case a 'redo' fires.
-            return evalBlockBody(context, self);
+            return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
@@ -239,7 +246,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             if (!noargblock) assigner.assign(context.getRuntime(), context, self, arg0, arg1, Block.NULL_BLOCK);
 
             // This while loop is for restarting the block call in case a 'redo' fires.
-            return evalBlockBody(context, self);
+            return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
@@ -257,7 +264,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             if (!noargblock) assigner.assign(context.getRuntime(), context, self, arg0, arg1, arg2, Block.NULL_BLOCK);
 
             // This while loop is for restarting the block call in case a 'redo' fires.
-            return evalBlockBody(context, self);
+            return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
@@ -274,7 +281,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
         try {
             if (!noargblock) assigner.assign(context.getRuntime(), context, self, Block.NULL_BLOCK);
 
-            return evalBlockBody(context, self);
+            return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
@@ -307,7 +314,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             }
 
             // This while loop is for restarting the block call in case a 'redo' fires.
-            return evalBlockBody(context, self);
+            return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
@@ -326,7 +333,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             if (!noargblock) assigner.assignArray(context.getRuntime(), context, self,
                     assigner.convertToArray(context.getRuntime(), value), block);
 
-            return evalBlockBody(context, self);
+            return evalBlockBody(context, binding, self);
         } catch (JumpException.NextJump nj) {
             return handleNextJump(context, nj, type);
         } finally {
@@ -349,11 +356,11 @@ public class InterpretedBlock extends ContextAwareBlockBody {
         return yield(context, value, self, klass, alreadyArray, binding, type, Block.NULL_BLOCK);
     }
     
-    private IRubyObject evalBlockBody(ThreadContext context, IRubyObject self) {
+    private IRubyObject evalBlockBody(ThreadContext context, Binding binding, IRubyObject self) {
         // This while loop is for restarting the block call in case a 'redo' fires.
         while (true) {
             try {
-                return bodyNode.interpret(context.getRuntime(), context, self, Block.NULL_BLOCK);
+                return ASTInterpreter.INTERPRET_BLOCK(context.getRuntime(), context, bodyNode, binding.getMethod(), self, Block.NULL_BLOCK);
             } catch (JumpException.RedoJump rj) {
                 context.pollThreadEvents();
                 // do nothing, allow loop to redo
@@ -376,5 +383,13 @@ public class InterpretedBlock extends ContextAwareBlockBody {
 
     public Node getBodyNode() {
         return bodyNode;
+    }
+
+    public String getFile() {
+        return position.getFile();
+    }
+
+    public int getLine() {
+        return position.getLine();
     }
 }

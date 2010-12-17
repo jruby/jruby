@@ -5,6 +5,7 @@ import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -81,24 +82,35 @@ abstract class MemoryOp {
             return new StructOp(sbv.getStructClass());
         
         } else if (type instanceof MappedType) {
-            return getMemoryOp(((MappedType) type).getRealType(), order);
+            return new Mapped(getMemoryOp(((MappedType) type).getRealType(), order), (MappedType) type);
         }
 
         return null;
     }
     
-    abstract IRubyObject get(Ruby runtime, MemoryIO io, long offset);
-    abstract void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value);
-
-    IRubyObject get(Ruby runtime, AbstractMemory ptr, long offset) {
-        return get(runtime, ptr.getMemoryIO(), offset);
+    abstract IRubyObject get(ThreadContext context, MemoryIO io, long offset);
+    abstract void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value);
+    
+    IRubyObject get(ThreadContext context, AbstractMemory ptr, long offset) {
+        return get(context, ptr.getMemoryIO(), offset);
     }
 
-    void put(Ruby runtime, AbstractMemory ptr, long offset, IRubyObject value) {
-        put(runtime, ptr.getMemoryIO(), offset, value);
+    void put(ThreadContext context, AbstractMemory ptr, long offset, IRubyObject value) {
+        put(context, ptr.getMemoryIO(), offset, value);
     }
 
-    static final class BooleanOp extends MemoryOp {
+    static abstract class PrimitiveOp extends MemoryOp {
+        abstract IRubyObject get(Ruby runtime, MemoryIO io, long offset);
+        abstract void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value);
+    
+        IRubyObject get(ThreadContext context, MemoryIO io, long offset) {
+            return get(context.getRuntime(), io, offset);
+        }
+        void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
+            put(context.getRuntime(), io, offset, value);
+        }
+    }
+    static final class BooleanOp extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putByte(offset, (byte) (value.isTrue() ? 1 : 0));
         }
@@ -108,7 +120,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Signed8 extends MemoryOp {
+    static final class Signed8 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putByte(offset, Util.int8Value(value));
         }
@@ -118,7 +130,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Unsigned8 extends MemoryOp {
+    static final class Unsigned8 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putByte(offset, (byte) Util.uint8Value(value));
         }
@@ -128,7 +140,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Signed16 extends MemoryOp {
+    static final class Signed16 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putShort(offset, Util.int16Value(value));
         }
@@ -138,7 +150,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Signed16Swapped extends MemoryOp {
+    static final class Signed16Swapped extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putShort(offset, Short.reverseBytes(Util.int16Value(value)));
         }
@@ -148,7 +160,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Unsigned16 extends MemoryOp {
+    static final class Unsigned16 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putShort(offset, (short) Util.uint16Value(value));
         }
@@ -158,7 +170,7 @@ abstract class MemoryOp {
         }
     }
     
-    static final class Unsigned16Swapped extends MemoryOp {
+    static final class Unsigned16Swapped extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putShort(offset, Short.reverseBytes((short) Util.uint16Value(value)));
         }
@@ -168,7 +180,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Signed32 extends MemoryOp {
+    static final class Signed32 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putInt(offset, Util.int32Value(value));
         }
@@ -178,7 +190,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Signed32Swapped extends MemoryOp {
+    static final class Signed32Swapped extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putInt(offset, Integer.reverseBytes(Util.int32Value(value)));
         }
@@ -188,7 +200,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Unsigned32 extends MemoryOp {
+    static final class Unsigned32 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putInt(offset, (int) Util.uint32Value(value));
         }
@@ -198,7 +210,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Unsigned32Swapped extends MemoryOp {
+    static final class Unsigned32Swapped extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putInt(offset, Integer.reverseBytes((int) Util.uint32Value(value)));
         }
@@ -208,7 +220,7 @@ abstract class MemoryOp {
         }
     }
     
-    static final class Signed64 extends MemoryOp {
+    static final class Signed64 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putLong(offset, Util.int64Value(value));
         }
@@ -218,7 +230,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Signed64Swapped extends MemoryOp {
+    static final class Signed64Swapped extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putLong(offset, Long.reverseBytes(Util.int64Value(value)));
         }
@@ -228,7 +240,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Unsigned64 extends MemoryOp {
+    static final class Unsigned64 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putLong(offset, Util.uint64Value(value));
         }
@@ -238,7 +250,7 @@ abstract class MemoryOp {
         }
     }
 
-    static final class Unsigned64Swapped extends MemoryOp {
+    static final class Unsigned64Swapped extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putLong(offset, Long.reverseBytes(Util.uint64Value(value)));
         }
@@ -248,7 +260,7 @@ abstract class MemoryOp {
         }
     }
     
-    static final class Float32 extends MemoryOp {
+    static final class Float32 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putFloat(offset, Util.floatValue(value));
         }
@@ -258,7 +270,7 @@ abstract class MemoryOp {
         }
     }
     
-    static final class Float64 extends MemoryOp {
+    static final class Float64 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
             io.putDouble(offset, Util.doubleValue(value));
         }
@@ -267,7 +279,7 @@ abstract class MemoryOp {
             return runtime.newFloat(io.getDouble(offset));
         }
     }
-
+    
     static final class StructOp extends MemoryOp {
         private final RubyClass structClass;
 
@@ -276,31 +288,61 @@ abstract class MemoryOp {
         }
 
         @Override
-        IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+        IRubyObject get(ThreadContext context, MemoryIO io, long offset) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+        void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        IRubyObject get(Ruby runtime, AbstractMemory ptr, long offset) {
-            return structClass.newInstance(runtime.getCurrentContext(),
-                        new IRubyObject[] { ptr.slice(runtime, offset) },
+        IRubyObject get(ThreadContext context, AbstractMemory ptr, long offset) {
+            return structClass.newInstance(context,
+                        new IRubyObject[] { ptr.slice(context.getRuntime(), offset) },
                         Block.NULL_BLOCK);
         }
 
         @Override
-        void put(Ruby runtime, AbstractMemory ptr, long offset, IRubyObject value) {
+        void put(ThreadContext context, AbstractMemory ptr, long offset, IRubyObject value) {
             if (!(value instanceof Struct)) {
-                throw runtime.newTypeError("expected a struct");
+                throw context.getRuntime().newTypeError("expected a struct");
             }
             Struct s = (Struct) value;
-            byte[] tmp = new byte[Struct.getStructSize(runtime, s)];
+            byte[] tmp = new byte[Struct.getStructSize(context.getRuntime(), s)];
             s.getMemoryIO().get(0, tmp, 0, tmp.length);
             ptr.getMemoryIO().put(offset, tmp, 0, tmp.length);
+        }
+    }
+    
+    static final class Mapped extends MemoryOp {
+        private final MemoryOp nativeOp;
+        private final MappedType mappedType;
+
+        public Mapped(MemoryOp nativeOp, MappedType mappedType) {
+            this.nativeOp = nativeOp;
+            this.mappedType = mappedType;
+        }
+
+        @Override
+        IRubyObject get(ThreadContext context, AbstractMemory ptr, long offset) {
+            return mappedType.fromNative(context, nativeOp.get(context, ptr, offset));
+        }
+
+        @Override
+        void put(ThreadContext context, AbstractMemory ptr, long offset, IRubyObject value) {
+            nativeOp.put(context, ptr, offset, mappedType.toNative(context, value));
+        }
+        
+        @Override
+        IRubyObject get(ThreadContext context, MemoryIO io, long offset) {
+            return mappedType.fromNative(context, nativeOp.get(context, io, offset));
+        }
+
+        @Override
+        void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
+            nativeOp.put(context, io, offset, mappedType.toNative(context, value));
         }
     }
 }

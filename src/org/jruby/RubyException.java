@@ -49,7 +49,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
@@ -63,8 +63,7 @@ import org.jruby.util.SafePropertyAccessor;
  */
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
-    private ThreadContext.RubyStackTraceElement[] backtraceFrames;
-    private StackTraceElement[] javaStackTrace;
+    private ThreadContext.RubyStackTraceElement[] backtraceElements;
     private IRubyObject backtrace;
     public IRubyObject message;
     public static final int TRACE_HEAD = 8;
@@ -79,7 +78,6 @@ public class RubyException extends RubyObject {
         super(runtime, rubyClass);
         
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
-        this.javaStackTrace = Thread.currentThread().getStackTrace();
     }
     
     private static ObjectAllocator EXCEPTION_ALLOCATOR = new ObjectAllocator() {
@@ -139,34 +137,38 @@ public class RubyException extends RubyObject {
         return new RubyException(runtime, excptnClass, msg);
     }
     
-    public void setBacktraceFrames(ThreadContext.RubyStackTraceElement[] backtraceFrames) {
-        this.backtraceFrames = backtraceFrames;
+    public void setBacktraceElements(ThreadContext.RubyStackTraceElement[] backtraceElements) {
+        this.backtraceElements = backtraceElements;
     }
     
-    public ThreadContext.RubyStackTraceElement[] getBacktraceFrames() {
-        return backtraceFrames;
+    public ThreadContext.RubyStackTraceElement[] getBacktraceElements() {
+        return backtraceElements;
     }
 
     public void prepareBacktrace(ThreadContext context, boolean nativeException) {
-        ThreadContext.RubyStackTraceElement[] stackTrace = getBacktraceFrames();
-
         // if it's null, build a backtrace
-        if (stackTrace == null) {
-            stackTrace = context.createBacktrace2(0, nativeException);
-
-            // if it's still null, just use an empty trace
-            if (stackTrace == null) stackTrace = new ThreadContext.RubyStackTraceElement[0];
-
-            setBacktraceFrames(stackTrace);
+        boolean fullTrace = false;
+        if (backtraceElements == null) {
+            switch (TRACE_TYPE) {
+            case RAW:
+                backtraceElements = ThreadContext.gatherRawBacktrace(getRuntime(), Thread.currentThread().getStackTrace());
+                break;
+            case FULL:
+                fullTrace = true;
+            default:
+                backtraceElements = ThreadContext.gatherHybridBacktrace(
+                        context.getRuntime(),
+                        context.createBacktrace2(0, nativeException),
+                        Thread.currentThread().getStackTrace(),
+                        fullTrace);
+            }
         }
     }
     
     public static final int RAW = 0;
-    public static final int RAW_FILTERED = 1;
     public static final int RUBY_FRAMED = 2;
-    public static final int RUBY_COMPILED = 3;
-    public static final int RUBY_HYBRID = 4;
     public static final int RUBINIUS = 5;
+    public static final int FULL = 6;
 
     public static final int RAW_FRAME_CROP_COUNT = 10;
     
@@ -176,11 +178,9 @@ public class RubyException extends RubyObject {
         String style = SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed").toLowerCase();
         
         if (style.equalsIgnoreCase("raw")) TRACE_TYPE = RAW;
-        else if (style.equalsIgnoreCase("raw_filtered")) TRACE_TYPE = RAW_FILTERED;
         else if (style.equalsIgnoreCase("ruby_framed")) TRACE_TYPE = RUBY_FRAMED;
-        else if (style.equalsIgnoreCase("ruby_compiled")) TRACE_TYPE = RUBY_COMPILED;
-        else if (style.equalsIgnoreCase("ruby_hybrid")) TRACE_TYPE = RUBY_HYBRID;
         else if (style.equalsIgnoreCase("rubinius")) TRACE_TYPE = RUBINIUS;
+        else if (style.equalsIgnoreCase("full")) TRACE_TYPE = FULL;
         else TRACE_TYPE = RUBY_FRAMED;
     }
     
@@ -192,27 +192,10 @@ public class RubyException extends RubyObject {
     }
     
     public void initBacktrace() {
-        switch (TRACE_TYPE) {
-        case RAW:
-            backtrace = ThreadContext.createRawBacktrace(getRuntime(), javaStackTrace, false);
-            break;
-        case RAW_FILTERED:
-            backtrace = ThreadContext.createRawBacktrace(getRuntime(), javaStackTrace, true);
-            break;
-        case RUBY_FRAMED:
-        case RUBINIUS:
-            backtrace = backtraceFrames == null ? getRuntime().getNil() : ThreadContext.createBacktraceFromFrames(getRuntime(), backtraceFrames);
-            break;
-        case RUBY_COMPILED:
-            backtrace = ThreadContext.createRubyCompiledBacktrace(getRuntime(), javaStackTrace);
-            break;
-        case RUBY_HYBRID:
-            backtrace = ThreadContext.createRubyHybridBacktrace(getRuntime(), backtraceFrames, javaStackTrace, getRuntime().getDebug().isTrue());
-            break;
-        }
+        backtrace = ThreadContext.renderBacktraceMRI(getRuntime(), backtraceElements);
     }
 
-    @JRubyMethod(optional = 2, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length == 1) message = args[0];
         return this;
@@ -220,7 +203,8 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod
     public IRubyObject backtrace() {
-        return getBacktrace(); 
+        IRubyObject bt = getBacktrace();
+        return bt;
     }
 
     @JRubyMethod(required = 1)
@@ -316,8 +300,7 @@ public class RubyException extends RubyObject {
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
-        exception.backtraceFrames = backtraceFrames;
-        exception.javaStackTrace = javaStackTrace;
+        exception.backtraceElements = backtraceElements;
         exception.backtrace = backtrace;
         exception.message = message;
     }

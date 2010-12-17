@@ -73,7 +73,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClassProvider;
@@ -462,7 +462,7 @@ public class Java implements Library {
                 // JRUBY-1000, fail early when attempting to subclass a final Java class;
                 // solved here by adding an exception-throwing "inherited"
                 if (Modifier.isFinal(c.getModifiers())) {
-                    proxyClass.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxyClass, Visibility.PUBLIC) {
+                    proxyClass.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxyClass, PUBLIC) {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                             throw context.getRuntime().newTypeError("can not extend final Java class: " + c.getCanonicalName());
@@ -592,12 +592,12 @@ public class Java implements Library {
             return method.invokeStaticDirect(argsAry);
         }
 
-        @JRubyMethod(backtrace = true, meta = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(backtrace = true, meta = true, visibility = PRIVATE)
         public static IRubyObject java_alias(ThreadContext context, IRubyObject proxyClass, IRubyObject newName, IRubyObject rubyName) {
             return java_alias(context, proxyClass, newName, rubyName, context.getRuntime().newEmptyArray());
         }
 
-        @JRubyMethod(backtrace = true, meta = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(backtrace = true, meta = true, visibility = PRIVATE)
         public static IRubyObject java_alias(ThreadContext context, IRubyObject proxyClass, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
             String name = rubyName.asJavaString();
             String newNameStr = newName.asJavaString();
@@ -689,7 +689,7 @@ public class Java implements Library {
 
         RubyClass subclassSingleton = rubySubclass.getSingletonClass();
         subclassSingleton.addReadWriteAttribute(context, "java_proxy_class");
-        subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, Visibility.PUBLIC) {
+        subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 IRubyObject javaInterfaces = self.getInstanceVariables().fastGetInstanceVariable("@java_interfaces");
@@ -698,7 +698,7 @@ public class Java implements Library {
             }
         });
 
-        rubySubclass.addMethod("__jcreate!", new JavaMethodN(subclassSingleton, Visibility.PUBLIC) {
+        rubySubclass.addMethod("__jcreate!", new JavaMethodN(subclassSingleton, PUBLIC) {
             private final Map<Integer, ParameterTypes> methodCache = new HashMap<Integer, ParameterTypes>();
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
@@ -717,7 +717,7 @@ public class Java implements Library {
                     }
                 }
                 if (forArity.size() == 0) {
-                    throw context.getRuntime().newArgumentError("wrong # of arguments for constructor");
+                    throw context.getRuntime().newArgumentError("wrong number of arguments for constructor");
                 }
                 JavaProxyConstructor matching = (JavaProxyConstructor)CallableSelector.matchingCallableArityN(
                         methodCache,
@@ -982,7 +982,7 @@ public class Java implements Library {
 
     private static void memoizePackageOrClass(final RubyModule parentPackage, final String name, final IRubyObject value) {
         RubyClass singleton = parentPackage.getSingletonClass();
-        singleton.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(singleton, Visibility.PUBLIC) {
+        singleton.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(singleton, PUBLIC) {
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                 if (args.length != 0) {
                     throw context.getRuntime().newArgumentError(
@@ -1016,12 +1016,12 @@ public class Java implements Library {
     public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
         return getInstance(runtime, ((JavaObject) java_object).getValue());
     }
-
+    
     /**
-     * High-level object conversion utility function 'java_to_primitive' is the low-level version 
+     * High-level object conversion utility function 'java_to_primitive' is the low-level version
      */
     @Deprecated
-    @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         try {
             return JavaUtil.java_to_ruby(recv.getRuntime(), object);
@@ -1034,21 +1034,23 @@ public class Java implements Library {
 
     // TODO: Formalize conversion mechanisms between Java and Ruby
     /**
-     * High-level object conversion utility. 
+     * High-level object conversion utility.
      */
     @Deprecated
-    @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
         return JavaUtil.ruby_to_java(recv, object, unusedBlock);
     }
 
     @Deprecated
-    @JRubyMethod(frame = true, module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         return JavaUtil.java_to_primitive(recv, object, unusedBlock);
     }
 
-    @JRubyMethod(required = 2, frame = true, module = true, visibility = Visibility.PRIVATE)
+
+    // TODO: Formalize conversion mechanisms between Java and Ruby
+    @JRubyMethod(required = 2, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper, IRubyObject ifcs, Block block) {
         IRubyObject[] javaClasses = ((RubyArray)ifcs).toJavaArray();
         final Ruby runtime = recv.getRuntime();
@@ -1174,7 +1176,7 @@ public class Java implements Library {
             if (NEW_STYLE_EXTENSION &&
                     !(RubyBasicObject.class.isAssignableFrom(proxyImplClass) || clazz.getMethods().containsKey("initialize"))
                     ) {
-                clazz.addMethod("initialize", new JavaMethodZero(clazz, Visibility.PUBLIC) {
+                clazz.addMethod("initialize", new JavaMethodZero(clazz, PUBLIC) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                         return context.getRuntime().getNil();

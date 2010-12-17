@@ -227,7 +227,7 @@ public class RubyInstanceConfig {
     public static final boolean PEEPHOLE_OPTZ
             = SafePropertyAccessor.getBoolean("jruby.compile.peephole", true);
     public static boolean DYNOPT_COMPILE_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.compile.dynopt");
+            = SafePropertyAccessor.getBoolean("jruby.compile.dynopt", false);
     public static boolean NOGUARDS_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.noguards");
     public static boolean FASTEST_COMPILE_ENABLED
@@ -240,7 +240,7 @@ public class RubyInstanceConfig {
             || SafePropertyAccessor.getBoolean("jruby.compile.frameless");
     public static boolean POSITIONLESS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
-            || SafePropertyAccessor.getBoolean("jruby.compile.positionless");
+            || SafePropertyAccessor.getBoolean("jruby.compile.positionless", true);
     public static boolean THREADLESS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.threadless");
@@ -276,6 +276,9 @@ public class RubyInstanceConfig {
 
     public static final boolean REIFY_RUBY_CLASSES
             = SafePropertyAccessor.getBoolean("jruby.reify.classes", false);
+
+    public static final boolean REIFY_LOG_ERRORS
+            = SafePropertyAccessor.getBoolean("jruby.reify.logErrors", false);
 
     public static final boolean USE_GENERATED_HANDLES
             = SafePropertyAccessor.getBoolean("jruby.java.handles", false);
@@ -604,6 +607,10 @@ public class RubyInstanceConfig {
                 .append("       Make non-local flow jumps generate backtraces. Default is false.\n")
                 .append("    jruby.process.noUnwrap=true|false\n")
                 .append("       Do not unwrap process streams (IBM Java 6 issue). Default is false.\n")
+                .append("    jruby.reify.classes=true|false\n")
+                .append("       Before instantiation, stand up a real Java class for ever Ruby class. Default is false. \n")
+                .append("    jruby.reify.logErrors=true|false\n")
+                .append("       Log errors during reification (reify.classes=true). Default is false. \n")
                 .append("\nDEBUGGING/LOGGING:\n")
                 .append("    jruby.debug.loadService=true|false\n")
                 .append("       LoadService logging\n")
@@ -846,14 +853,13 @@ public class RubyInstanceConfig {
             } else {
                 try {
                     // try loading from classloader resources
-                    URI jrubyHomeURI = getClass().getResource("/META-INF/jruby.home").toURI();
-                    String scheme = jrubyHomeURI.getScheme();
-                    String path = jrubyHomeURI.getSchemeSpecificPart();
-                    if ("jar".equals(scheme) && path.startsWith("file:")) {
-                        // special case for jar:file (most typical case)
-                        jrubyHome = path;
+                    final String jrubyHomePath = "/META-INF/jruby.home";
+                    URL jrubyHomeURL = getClass().getResource(jrubyHomePath);
+                    // special case for jar:file (most typical case)
+                    if (jrubyHomeURL.getProtocol().equals("jar")) {
+                        jrubyHome = jrubyHomeURL.getPath();
                     } else {
-                        jrubyHome = "classpath:/META-INF/jruby.home";
+                        jrubyHome = "classpath:" + jrubyHomePath;
                         return jrubyHome;
                     }
                 } catch (Exception e) {}
@@ -1193,6 +1199,7 @@ public class RubyInstanceConfig {
                         break FOR;
                     } else if (argument.equals("--debug")) {
                         FULL_TRACE_ENABLED = true;
+                        compileMode = CompileMode.OFF;
                         break FOR;
                     } else if (argument.equals("--jdb")) {
                         debug = true;
@@ -1222,7 +1229,6 @@ public class RubyInstanceConfig {
                         FASTCASE_COMPILE_ENABLED = true;
                         FASTSEND_COMPILE_ENABLED = true;
                         INLINE_DYNCALL_ENABLED = true;
-                        RubyException.TRACE_TYPE = RubyException.RUBY_COMPILED;
                         break FOR;
                     } else if (argument.equals("--profile")) {
                         profilingMode = ProfilingMode.API;

@@ -57,7 +57,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormat;
@@ -646,15 +646,15 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum((int)(((dt.getMillis() / 1000) ^ microseconds()) << 1) >> 1);
     }    
 
-    @JRubyMethod(name = "_dump", optional = 1, frame = true)
+    @JRubyMethod(name = "_dump", optional = 1)
     public RubyString dump(IRubyObject[] args, Block unusedBlock) {
-        RubyString str = (RubyString) mdump(new IRubyObject[] { this });
-        str.syncVariables(this.getVariableList());
+        RubyString str = (RubyString) mdump();
+        str.syncVariables(this);
         return str;
     }    
 
-    public RubyObject mdump(final IRubyObject[] args) {
-        RubyTime obj = (RubyTime)args[0];
+    public RubyObject mdump() {
+        RubyTime obj = this;
         DateTime dateTime = obj.dt.toDateTime(DateTimeZone.UTC);
         byte dumpValue[] = new byte[8];
         
@@ -678,10 +678,10 @@ public class RubyTime extends RubyObject {
             dumpValue[i] = (byte)(se & 0xFF);
             se >>>= 8;
         }
-        return RubyString.newString(obj.getRuntime(), new ByteList(dumpValue,false));
+        return RubyString.newString(obj.getRuntime(), new ByteList(dumpValue, getRuntime().getDefaultInternalEncoding(), false));
     }
 
-    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(Block block) {
         return this;
     }
@@ -796,7 +796,7 @@ public class RubyTime extends RubyObject {
         return createTime(recv, args, true);
     }
 
-    @JRubyMethod(name = "_load", required = 1, frame = true, meta = true)
+    @JRubyMethod(name = "_load", meta = true)
     public static RubyTime load(IRubyObject recv, IRubyObject from, Block block) {
         return s_mload(recv, (RubyTime)(((RubyClass)recv).allocate()), from);
     }

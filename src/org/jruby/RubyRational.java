@@ -70,6 +70,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
+import org.jruby.util.TypeConverter;
 
 /**
  *  1.9 rational.c as of revision: 20011
@@ -383,6 +384,10 @@ public class RubyRational extends RubyNumeric {
             a1 = f_to_r(context, a1);
         } else if (a1 instanceof RubyString) {
             a1 = str_to_r_strict(context, a1);
+        } else {
+            if (a1.respondsTo("to_r")) {
+                a1 = f_to_r(context, a1);
+            }
         }
         
         if (a2 instanceof RubyFloat) {
@@ -972,7 +977,7 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "marshal_dump")
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyArray dump = context.getRuntime().newArray(num, den);
-        if (hasVariables()) dump.syncVariables(getVariableList());
+        if (hasVariables()) dump.syncVariables(this);
         return dump;
     }
 
@@ -986,7 +991,7 @@ public class RubyRational extends RubyNumeric {
         den = load.size() > 1 ? load.eltInternal(1) : context.getRuntime().getNil();
 
         if (f_zero_p(context, den)) throw context.getRuntime().newZeroDivisionError();
-        if (load.hasVariables()) syncVariables(load.getVariableList());
+        if (load.hasVariables()) syncVariables((IRubyObject)load);
         return this;
     }
 

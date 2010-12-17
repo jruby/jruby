@@ -44,8 +44,10 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.StarNode;
+import org.jruby.ast.StrNode;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
+import org.jruby.util.StringSupport;
 
 /**
  *
@@ -170,6 +172,10 @@ public class ASTCompiler19 extends ASTCompiler {
         final IterNode iterNode = (IterNode)node;
         final ArgsNode argsNode = (ArgsNode)iterNode.getVarNode();
 
+        if (argsNode.getArity().getValue() != 0) {
+            throw new NotCompilableException("can't compile block with arguments at: " + iterNode.getPosition());
+        }
+
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
             public void call(BodyCompiler context) {
@@ -216,10 +222,10 @@ public class ASTCompiler19 extends ASTCompiler {
 
         if (argsNodeId == null) {
             // no args, do not pass args processor
-            context.createNewClosure19(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
+            context.createNewClosure19(iterNode.getPosition().getFile(), iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
                     closureBody, null, hasMultipleArgsHead, argsNodeId, inspector);
         } else {
-            context.createNewClosure19(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
+            context.createNewClosure19(iterNode.getPosition().getFile(), iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
                     closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
         }
     }
@@ -361,6 +367,17 @@ public class ASTCompiler19 extends ASTCompiler {
     @Override
     protected void createNewHash(BodyCompiler context, HashNode hashNode, ArrayCallback hashCallback) {
         context.createNewHash19(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
+    }
+
+    @Override
+    public void compileStr(Node node, BodyCompiler context, boolean expr) {
+        StrNode strNode = (StrNode) node;
+
+        if (strNode.getCodeRange() != StringSupport.CR_7BIT) {
+            throw new NotCompilableException("can't compile non-ASCII string at: " + strNode.getPosition());
+        }
+
+        super.compileStr(node, context, expr);
     }
 
     @Override

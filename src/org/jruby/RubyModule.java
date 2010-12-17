@@ -38,10 +38,8 @@
 package org.jruby;
 
 import static org.jruby.anno.FrameField.VISIBILITY;
-import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
-import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.Visibility.PROTECTED;
-import static org.jruby.runtime.Visibility.PUBLIC;
+import static org.jruby.runtime.Visibility.*;
+import static org.jruby.CompatVersion.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -70,6 +68,7 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.internal.runtime.methods.MethodMethod;
@@ -83,6 +82,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodFactory;
@@ -93,6 +93,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
@@ -562,17 +564,17 @@ public class RubyModule extends RubyObject {
                 List<JavaMethodDescriptor> methodDescs;
                 Map<String, List<JavaMethodDescriptor>> methodsHash = null;
                 if (desc.isStatic) {
-                    if (anno.compat() == CompatVersion.RUBY1_8) {
+                    if (anno.compat() == RUBY1_8) {
                         methodsHash = staticAnnotatedMethods1_8;
-                    } else if (anno.compat() == CompatVersion.RUBY1_9) {
+                    } else if (anno.compat() == RUBY1_9) {
                         methodsHash = staticAnnotatedMethods1_9;
                     } else {
                         methodsHash = staticAnnotatedMethods;
                     }
                 } else {
-                    if (anno.compat() == CompatVersion.RUBY1_8) {
+                    if (anno.compat() == RUBY1_8) {
                         methodsHash = annotatedMethods1_8;
-                    } else if (anno.compat() == CompatVersion.RUBY1_9) {
+                    } else if (anno.compat() == RUBY1_9) {
                         methodsHash = annotatedMethods1_9;
                     } else {
                         methodsHash = annotatedMethods;
@@ -669,7 +671,7 @@ public class RubyModule extends RubyObject {
 
         if (jrubyMethod == null) return false;
 
-            if(jrubyMethod.compat() == CompatVersion.BOTH ||
+            if(jrubyMethod.compat() == BOTH ||
                     getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
             JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
@@ -685,7 +687,7 @@ public class RubyModule extends RubyObject {
 
         if (jrubyMethod == null) return false;
 
-            if(jrubyMethod.compat() == CompatVersion.BOTH ||
+            if(jrubyMethod.compat() == BOTH ||
                     getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
             DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc);
             define(this, desc, dynamicMethod);
@@ -1349,13 +1351,52 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound, Visibility visibility) {
-        DynamicMethod method = searchMethod(name);
+    public IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {
+        return newMethod(receiver, methodName, bound, visibility, false, true);
+    }
+
+    public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
+        return newMethod(receiver, methodName, bound, visibility, respondToMissing, true);
+    }
+
+    public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
+        final CallSite site;
+        public RespondToMissingMethod(RubyModule implClass, Visibility vis, String methodName) {
+            super(implClass, vis);
+
+            site = new FunctionalCachingCallSite(methodName);
+        }
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            return site.call(context, self, self, args, block);
+        }
+
+        public boolean equals(Object other) {
+            if (!(other instanceof RespondToMissingMethod)) return false;
+
+            RespondToMissingMethod rtmm = (RespondToMissingMethod)other;
+
+            return this.site.methodName.equals(rtmm.site.methodName) &&
+                    getImplementationClass() == rtmm.getImplementationClass();
+        }
+    }
+
+    public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
+        DynamicMethod method = searchMethod(methodName);
 
         if (method.isUndefined() ||
             (visibility != null && method.getVisibility() != visibility)) {
-            throw getRuntime().newNameError("undefined method `" + name +
-                "' for class `" + this.getName() + "'", name);
+            if (respondToMissing) { // 1.9 behavior
+                if (receiver.respondsToMissing(methodName, priv)) {
+                    method = new RespondToMissingMethod(this, PUBLIC, methodName);
+                } else {
+                    throw getRuntime().newNameError("undefined method `" + methodName +
+                        "' for class `" + this.getName() + "'", methodName);
+                }
+            } else {
+                throw getRuntime().newNameError("undefined method `" + methodName +
+                    "' for class `" + this.getName() + "'", methodName);
+            }
         }
 
         RubyModule implementationModule = method.getImplementationClass();
@@ -1366,16 +1407,16 @@ public class RubyModule extends RubyObject {
 
         RubyMethod newMethod;
         if (bound) {
-            newMethod = RubyMethod.newMethod(implementationModule, name, originModule, name, method, receiver);
+            newMethod = RubyMethod.newMethod(implementationModule, methodName, originModule, methodName, method, receiver);
         } else {
-            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, name, originModule, name, method);
+            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, methodName, method);
         }
         newMethod.infectBy(this);
 
         return newMethod;
     }
 
-    @JRubyMethod(name = "define_method", frame = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
         Ruby runtime = context.getRuntime();
         String name = arg0.asJavaString().intern();
@@ -1390,12 +1431,12 @@ public class RubyModule extends RubyObject {
         
         newMethod = createProcMethod(name, visibility, proc);
         
-        RuntimeHelpers.addInstanceMethod(this, name, newMethod, context.getPreviousVisibility(), context, runtime);
+        RuntimeHelpers.addInstanceMethod(this, name, newMethod, context.getCurrentVisibility(), context, runtime);
 
         return proc;
     }
     
-    @JRubyMethod(name = "define_method", frame = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.getRuntime();
         IRubyObject body;
@@ -1414,12 +1455,12 @@ public class RubyModule extends RubyObject {
             RubyMethod method = (RubyMethod)arg1;
             body = method;
 
-            newMethod = new MethodMethod(this, method.unbind(null), visibility);
+            newMethod = new MethodMethod(this, method.unbind(), visibility);
         } else {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
         
-        RuntimeHelpers.addInstanceMethod(this, name, newMethod, context.getPreviousVisibility(), context, runtime);
+        RuntimeHelpers.addInstanceMethod(this, name, newMethod, context.getCurrentVisibility(), context, runtime);
 
         return body;
     }
@@ -1431,7 +1472,7 @@ public class RubyModule extends RubyObject {
         case 2:
             return define_method(context, args[0], args[1], block);
         default:
-            throw context.getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 2)");
+            throw context.getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
         }
     }
     
@@ -1439,6 +1480,7 @@ public class RubyModule extends RubyObject {
         Block block = proc.getBlock();
         block.getBinding().getFrame().setKlazz(this);
         block.getBinding().getFrame().setName(name);
+        block.getBinding().setMethod(name);
         
         StaticScope scope = block.getBody().getStaticScope();
 
@@ -1476,7 +1518,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "name", compat = RUBY1_9)
     public IRubyObject name19() {
         Ruby runtime = getRuntime();
         if (getBaseName() == null) {
@@ -1517,7 +1559,7 @@ public class RubyModule extends RubyObject {
 
         if (!getMetaClass().isSingleton()) setMetaClass(originalModule.getSingletonClassClone());
         setSuperClass(originalModule.getSuperClass());
-        if (originalModule.hasVariables()) syncVariables(originalModule.getVariableList());
+        if (originalModule.hasVariables()) syncVariables(originalModule);
         syncConstants(originalModule);
 
         originalModule.cloneMethods(this);
@@ -1528,6 +1570,12 @@ public class RubyModule extends RubyObject {
     public void syncConstants(RubyModule other) {
         if (other.getConstantMap() != Collections.EMPTY_MAP) {
             getConstantMapForWrite().putAll(other.getConstantMap());
+        }
+    }
+
+    public void syncClassVariables(RubyModule other) {
+        if (other.getClassVariablesForRead() != Collections.EMPTY_MAP) {
+            getClassVariables().putAll(other.getClassVariablesForRead());
         }
     }
 
@@ -1737,21 +1785,21 @@ public class RubyModule extends RubyObject {
     }
     
     public void addReadWriteAttribute(ThreadContext context, String name) {
-        addAccessor(context, name.intern(), Visibility.PUBLIC, true, true);
+        addAccessor(context, name.intern(), PUBLIC, true, true);
     }
     
     public void addReadAttribute(ThreadContext context, String name) {
-        addAccessor(context, name.intern(), Visibility.PUBLIC, true, false);
+        addAccessor(context, name.intern(), PUBLIC, true, false);
     }
     
     public void addWriteAttribute(ThreadContext context, String name) {
-        addAccessor(context, name.intern(), Visibility.PUBLIC, false, true);
+        addAccessor(context, name.intern(), PUBLIC, false, true);
     }
 
     /** rb_mod_attr
      *
      */
-    @JRubyMethod(name = "attr", required = 1, optional = 1, visibility = PRIVATE, reads = VISIBILITY, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "attr", required = 1, optional = 1, visibility = PRIVATE, reads = VISIBILITY, compat = RUBY1_8)
     public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         boolean writeable = args.length > 1 ? args[1].isTrue() : false;
 
@@ -1763,7 +1811,7 @@ public class RubyModule extends RubyObject {
         return getRuntime().getNil();
     }
     
-    @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY, compat = RUBY1_9)
     public IRubyObject attr19(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
 
@@ -1882,22 +1930,22 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "instance_methods", optional = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "instance_methods", optional = 1, compat = RUBY1_8)
     public RubyArray instance_methods(IRubyObject[] args) {
         return instance_methods(args, PRIVATE, true, false);
     }
 
-    @JRubyMethod(name = "instance_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "instance_methods", optional = 1, compat = RUBY1_9)
     public RubyArray instance_methods19(IRubyObject[] args) {
         return instance_methods(args, PRIVATE, true, true);
     }
 
-    @JRubyMethod(name = "public_instance_methods", optional = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "public_instance_methods", optional = 1, compat = RUBY1_8)
     public RubyArray public_instance_methods(IRubyObject[] args) {
         return instance_methods(args, PUBLIC, false, false);
     }
 
-    @JRubyMethod(name = "public_instance_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "public_instance_methods", optional = 1, compat = RUBY1_9)
     public RubyArray public_instance_methods19(IRubyObject[] args) {
         return instance_methods(args, PUBLIC, false, true);
     }
@@ -1910,12 +1958,12 @@ public class RubyModule extends RubyObject {
     /** rb_class_protected_instance_methods
      *
      */
-    @JRubyMethod(name = "protected_instance_methods", optional = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "protected_instance_methods", optional = 1, compat = RUBY1_8)
     public RubyArray protected_instance_methods(IRubyObject[] args) {
         return instance_methods(args, PROTECTED, false, false);
     }
 
-    @JRubyMethod(name = "protected_instance_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "protected_instance_methods", optional = 1, compat = RUBY1_9)
     public RubyArray protected_instance_methods19(IRubyObject[] args) {
         return instance_methods(args, PROTECTED, false, true);
     }
@@ -1923,12 +1971,12 @@ public class RubyModule extends RubyObject {
     /** rb_class_private_instance_methods
      *
      */
-    @JRubyMethod(name = "private_instance_methods", optional = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "private_instance_methods", optional = 1, compat = RUBY1_8)
     public RubyArray private_instance_methods(IRubyObject[] args) {
         return instance_methods(args, PRIVATE, false, false);
     }
 
-    @JRubyMethod(name = "private_instance_methods", optional = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "private_instance_methods", optional = 1, compat = RUBY1_9)
     public RubyArray private_instance_methods19(IRubyObject[] args) {
         return instance_methods(args, PRIVATE, false, true);
     }
@@ -2365,7 +2413,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_class_variables
      *
      */
-    @JRubyMethod(name = "class_variables", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "class_variables", compat = RUBY1_8)
     public RubyArray class_variables(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         RubyArray ary = runtime.newArray();
@@ -2375,7 +2423,7 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
-    @JRubyMethod(name = "class_variables", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "class_variables", compat = RUBY1_9)
     public RubyArray class_variables19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         RubyArray ary = runtime.newArray();
@@ -2403,13 +2451,13 @@ public class RubyModule extends RubyObject {
     /** rb_mod_const_defined
      *
      */
-    @JRubyMethod(name = "const_defined?", required = 1, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "const_defined?", required = 1, compat = RUBY1_8)
     public RubyBoolean const_defined_p(ThreadContext context, IRubyObject symbol) {
         // Note: includes part of fix for JRUBY-1339
         return context.getRuntime().newBoolean(fastIsConstantDefined(validateConstant(symbol.asJavaString()).intern()));
     }
 
-    @JRubyMethod(name = "const_defined?", required = 1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "const_defined?", required = 1, compat = RUBY1_9)
     public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject symbol) {
         // Note: includes part of fix for JRUBY-1339
         return context.getRuntime().newBoolean(fastIsConstantDefined19(validateConstant(symbol.asJavaString()).intern()));
@@ -2487,31 +2535,31 @@ public class RubyModule extends RubyObject {
         throw runtime.newNameError("uninitialized constant " + name, name);
     }
 
-    @JRubyMethod(name = "constants", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "constants", compat = RUBY1_8)
     public RubyArray constants(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         RubyArray array = runtime.newArray();
-        Collection<String> constantNames = constantsCommon(runtime, true);
+        Collection<String> constantNames = constantsCommon(runtime, true, true);
         array.addAll(constantNames);
         
         return array;
     }
 
-    @JRubyMethod(name = "constants", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "constants", compat = RUBY1_9)
     public RubyArray constants19(ThreadContext context) {
-        return constantsCommon19(context, true);
+        return constantsCommon19(context, true, true);
     }
 
-    @JRubyMethod(name = "constants", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "constants", compat = RUBY1_9)
     public RubyArray constants19(ThreadContext context, IRubyObject allConstants) {
-        return constantsCommon19(context, allConstants.isTrue());
+        return constantsCommon19(context, false, allConstants.isTrue());
     }
     
-    public RubyArray constantsCommon19(ThreadContext context, boolean allConstants) {
+    public RubyArray constantsCommon19(ThreadContext context, boolean replaceModule, boolean allConstants) {
         Ruby runtime = context.getRuntime();
         RubyArray array = runtime.newArray();
         
-        Collection<String> constantNames = constantsCommon(runtime, allConstants);
+        Collection<String> constantNames = constantsCommon(runtime, replaceModule, allConstants);
         
         for (String name : constantNames) {
             array.add(runtime.newSymbol(name));
@@ -2522,12 +2570,12 @@ public class RubyModule extends RubyObject {
     /** rb_mod_constants
      *
      */
-    public Collection<String> constantsCommon(Ruby runtime, boolean allConstants) {        
+    public Collection<String> constantsCommon(Ruby runtime, boolean replaceModule, boolean allConstants) {
         RubyModule objectClass = runtime.getObject();
 
         Collection<String> constantNames = new HashSet<String>();
         if (allConstants) {
-            if (getRuntime().getModule() == this || objectClass == this) {
+            if ((replaceModule && runtime.getModule() == this) || objectClass == this) {
                 constantNames = objectClass.getConstantNames();
             } else {
                 Set<String> names = new HashSet<String>();
@@ -2537,7 +2585,7 @@ public class RubyModule extends RubyObject {
                 constantNames = names;
             }
         } else {
-            if (runtime.getModule() == this || objectClass == this) {
+            if ((replaceModule && runtime.getModule() == this) || objectClass == this) {
                 constantNames = objectClass.getConstantNames();
             } else {
                 constantNames = getConstantNames();
@@ -3216,7 +3264,7 @@ public class RubyModule extends RubyObject {
                 ASTInspector.FRAME_AWARE_METHODS.add(name);
             }
         }
-        if(jrubyMethod.compat() == CompatVersion.BOTH ||
+        if(jrubyMethod.compat() == BOTH ||
                 module.getRuntime().getInstanceConfig().getCompatVersion() == jrubyMethod.compat()) {
             RubyModule singletonClass;
 

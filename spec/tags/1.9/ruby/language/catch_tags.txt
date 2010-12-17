@@ -1,2 +1,0 @@
-fails:The catch keyword allows any object
-fails:The catch keyword does not match objects that are not exactly the same

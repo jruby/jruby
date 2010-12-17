@@ -2,8 +2,8 @@ package org.jruby.compiler.ir;
 
 import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
-import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.parser.StaticScope;
 
 public class IRMetaClass extends IRClass {
@@ -17,7 +17,7 @@ public class IRMetaClass extends IRClass {
         // SSS FIXME: class name -- can be unknown at compile time ... How do we handle this? 
         super(s, null, new ClassMetaObject(CLASS_METACLASS), "<FIXME>", staticScope);
 
-        if ((receiver instanceof SelfVariable)) {
+        if ((receiver instanceof LocalVariable) && (((LocalVariable)receiver).isSelf())) {
             IRMethod classRootMethod = (IRMethod)s;
             methodClassedObject = (MetaObject)classRootMethod.getContainer();
         } else {

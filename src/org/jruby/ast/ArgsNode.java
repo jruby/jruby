@@ -242,7 +242,7 @@ public class ArgsNode extends Node {
         if (!hasMasgnArgs) {
             // no arg grouping, just use bulk assignment methods
             if (preCount > 0) scope.setArgValues(args, Math.min(args.length, preCount));
-            if (postCount > 0) scope.setEndArgValues(args, postIndex, postCount);
+            if (postCount > 0 && args.length > preCount) scope.setEndArgValues(args, postIndex, Math.min(args.length - preCount, postCount));
         } else {
             masgnAwareArgAssign(context, runtime, self, args, block, scope);
         }

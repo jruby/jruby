@@ -147,6 +147,8 @@ class TestTimeExtension < Test::Unit::TestCase # :nodoc:
                  Time.xmlschema("2000-01-12T12:13:14Z"))
     assert_equal(Time.utc(2001, 4, 17, 19, 23, 17, 300000),
                  Time.xmlschema("2001-04-17T19:23:17.3Z"))
+    assert_equal(Time.utc(2000, 1, 2, 0, 0, 0),
+                 Time.xmlschema("2000-01-01T24:00:00Z"))
     assert_raise(ArgumentError) { Time.xmlschema("2000-01-01T00:00:00.+00:00") }
   end
 
@@ -188,6 +190,15 @@ class TestTimeExtension < Test::Unit::TestCase # :nodoc:
     end
 
     assert_equal(249, Time.xmlschema("2008-06-05T23:49:23.000249+09:00").usec)
+
+    assert_equal("10000-01-01T00:00:00Z", Time.utc(10000).xmlschema)
+    assert_equal("9999-01-01T00:00:00Z", Time.utc(9999).xmlschema)
+    assert_equal("0001-01-01T00:00:00Z", Time.utc(1).xmlschema) # 1 AD
+    assert_equal("0000-01-01T00:00:00Z", Time.utc(0).xmlschema) # 1 BC
+    assert_equal("-0001-01-01T00:00:00Z", Time.utc(-1).xmlschema) # 2 BC
+    assert_equal("-0004-01-01T00:00:00Z", Time.utc(-4).xmlschema) # 5 BC
+    assert_equal("-9999-01-01T00:00:00Z", Time.utc(-9999).xmlschema)
+    assert_equal("-10000-01-01T00:00:00Z", Time.utc(-10000).xmlschema)
   end
 
   def test_completion

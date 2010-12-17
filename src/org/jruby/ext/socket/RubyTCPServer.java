@@ -262,7 +262,7 @@ public class RubyTCPServer extends RubyTCPSocket {
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         return open(recv.getRuntime().getCurrentContext(), recv, args, block);
     }
-    @JRubyMethod(name = "open", rest = true, frame = true, meta = true)
+    @JRubyMethod(rest = true, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         IRubyObject tcpServer = recv.callMethod(context, "new", args);
 

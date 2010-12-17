@@ -150,7 +150,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return buildRubyArray(getParameterTypes());
     }
     
-    @JRubyMethod(frame = true, rest = true)
+    @JRubyMethod(rest = true)
     public RubyObject new_instance2(IRubyObject[] args, Block unusedBlock) {
         Arity.checkArgumentCount(getRuntime(), args, 2, 2);
 
@@ -245,7 +245,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
     }
 
-    @JRubyMethod(required = 1, optional = 1, frame = true)
+    @JRubyMethod(required = 1, optional = 1)
     public RubyObject new_instance(IRubyObject[] args, Block block) {
         int size = Arity.checkArgumentCount(getRuntime(), args, 1, 2) - 1;
         final RubyProc proc;

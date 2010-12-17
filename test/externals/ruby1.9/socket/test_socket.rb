@@ -60,6 +60,15 @@ class TestSocket < Test::Unit::TestCase
     assert_raise(SocketError) { Socket.getaddrinfo("www.kame.net", 80, "AF_UNIX") }
   end
 
+  def test_getaddrinfo_raises_no_errors_on_port_argument_of_0 # [ruby-core:29427]
+    assert_nothing_raised('[ruby-core:29427]'){ Socket.getaddrinfo('localhost', 0, Socket::AF_INET, Socket::SOCK_STREAM, nil, Socket::AI_CANONNAME) }
+    assert_nothing_raised('[ruby-core:29427]'){ Socket.getaddrinfo('localhost', '0', Socket::AF_INET, Socket::SOCK_STREAM, nil, Socket::AI_CANONNAME) }
+    assert_nothing_raised('[ruby-core:29427]'){ Socket.getaddrinfo('localhost', '00', Socket::AF_INET, Socket::SOCK_STREAM, nil, Socket::AI_CANONNAME) }
+    assert_raise(SocketError, '[ruby-core:29427]'){ Socket.getaddrinfo(nil, nil, Socket::AF_INET, Socket::SOCK_STREAM, nil, Socket::AI_CANONNAME) }
+    assert_nothing_raised('[ruby-core:29427]'){ TCPServer.open('localhost', 0) {} }
+  end
+
+
   def test_getnameinfo
     assert_raise(SocketError) { Socket.getnameinfo(["AF_UNIX", 80, "0.0.0.0"]) }
   end
@@ -191,7 +200,7 @@ class TestSocket < Test::Unit::TestCase
           assert_equal(clients.length, accepted.length)
         ensure
           tcp_servers.each {|s| s.close if !s.closed?  }
-          unix_server.close if !unix_server.closed?
+          unix_server.close if unix_server && !unix_server.closed?
           clients.each {|s| s.close if !s.closed?  }
           accepted.each {|s| s.close if !s.closed?  }
         end
@@ -281,7 +290,7 @@ class TestSocket < Test::Unit::TestCase
             msg1 = "<<<#{ai.inspect}>>>"
             s.sendmsg msg1
             unless IO.select([s], nil, nil, 10)
-              raise "no response"
+              raise "no response from #{ai.inspect}"
             end
             msg2, addr = s.recvmsg
             msg2, remote_address, local_address = Marshal.load(msg2)
@@ -289,7 +298,7 @@ class TestSocket < Test::Unit::TestCase
             assert_equal(ai.ip_address, addr.ip_address)
           }
         }
-      rescue NotImplementedError
+      rescue NotImplementedError, Errno::ENOSYS
         skipped = true
         skip "need sendmsg and recvmsg"
       ensure

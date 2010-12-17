@@ -38,10 +38,14 @@ class TestRubyOptions < Test::Unit::TestCase
   end
 
   def test_warning
+    save_rubyopt = ENV['RUBYOPT']
+    ENV['RUBYOPT'] = nil
     assert_in_out_err(%w(-W0 -e) + ['p $-W'], "", %w(0), [])
     assert_in_out_err(%w(-W1 -e) + ['p $-W'], "", %w(1), [])
     assert_in_out_err(%w(-Wx -e) + ['p $-W'], "", %w(1), [])
     assert_in_out_err(%w(-W -e) + ['p $-W'], "", %w(2), [])
+  ensure
+    ENV['RUBYOPT'] = save_rubyopt
   end
 
   def test_safe_level
@@ -178,7 +182,7 @@ class TestRubyOptions < Test::Unit::TestCase
   end
 
   def test_syntax_check
-    assert_in_out_err(%w(-c -e 1+1), "", ["Syntax OK"], [])
+    assert_in_out_err(%w(-c -e a=1+1), "", ["Syntax OK"], [])
   end
 
   def test_invalid_option
@@ -271,7 +275,7 @@ class TestRubyOptions < Test::Unit::TestCase
 
   def test_sflag
     assert_in_out_err(%w(- -abc -def=foo -ghi-jkl -- -xyz),
-                      "#!ruby -s\np [$abc, $def, $ghi_jkl, $xyz]\n",
+                      "#!ruby -s\np [$abc, $def, $ghi_jkl, defined?($xyz)]\n",
                       ['[true, "foo", true, nil]'], [])
 
     assert_in_out_err(%w(- -#), "#!ruby -s\n", [],
@@ -315,9 +319,130 @@ class TestRubyOptions < Test::Unit::TestCase
   def test_notfound
     notexist = "./notexist.rb"
     rubybin = Regexp.quote(EnvUtil.rubybin)
-    pat = /\A#{rubybin}:.* -- #{Regexp.quote(notexist)} \(LoadError\)\Z/
+    pat = Regexp.quote(notexist)
+    bug1573 = '[ruby-core:23717]'
     assert_equal(false, File.exist?(notexist))
-    assert_in_out_err(["-r", notexist, "-ep"], [], [], pat)
-    assert_in_out_err([notexist], [], [], pat)
+    assert_in_out_err(["-r", notexist, "-ep"], "", [], /.* -- #{pat} \(LoadError\)/, bug1573)
+    assert_in_out_err([notexist], "", [], /#{rubybin}:.* -- #{pat} \(LoadError\)/, bug1573)
+  end
+
+  def test_program_name
+    ruby = EnvUtil.rubybin
+    IO.popen([ruby, '-e', 'print $0']) {|f|
+      assert_equal('-e', f.read)
+    }
+    IO.popen([ruby, '-'], 'r+') {|f|
+      f << 'print $0'
+      f.close_write
+      assert_equal('-', f.read)
+    }
+    Dir.mktmpdir {|d|
+      n1 = File.join(d, 't1')
+      open(n1, 'w') {|f| f << 'print $0' }
+      IO.popen([ruby, n1]) {|f|
+        assert_equal(n1, f.read)
+      }
+      if File.respond_to? :symlink
+        n2 = File.join(d, 't2')
+        File.symlink(n1, n2)
+        IO.popen([ruby, n2]) {|f|
+          assert_equal(n2, f.read)
+        }
+      end
+      Dir.chdir(d) {
+        n3 = '-e'
+        open(n3, 'w') {|f| f << 'print $0' }
+        IO.popen([ruby, '--', n3]) {|f|
+          assert_equal(n3, f.read)
+        }
+        n4 = '-'
+        IO.popen([ruby, '--', n4], 'r+') {|f|
+          f << 'print $0'
+          f.close_write
+          assert_equal(n4, f.read)
+        }
+      }
+    }
+  end
+
+  def test_segv_test
+    opts = {}
+    if /mswin|mingw/ =~ RUBY_PLATFORM
+      additional = '[\s\w\.\']*'
+    else
+      opts[:rlimit_core] = 0
+      additional = ""
+    end
+    assert_in_out_err(["-e", "Process.kill :SEGV, $$"], "", [],
+      %r(\A
+      -e:(?:1:)?\s\[BUG\]\sSegmentation\sfault\n
+      #{ Regexp.quote(RUBY_DESCRIPTION) }\n\n
+      --\scontrol\sframe\s----------\n
+      (?:c:.*\n)*
+      ---------------------------\n
+      (?:
+      --\sRuby\slevel\sbacktrace\sinformation\s----------------------------------------\n
+      -e:1:in\s`<main>'\n
+      -e:1:in\s`kill'\n
+      )?
+      \n
+      (?:
+        --\sC\slevel\sbacktrace\sinformation\s-------------------------------------------\n
+        (?:(?:.*\s)?\[0x\h+\]\n)*\n
+      )?
+      \[NOTE\]\n
+      You\smay\shave\sencountered\sa\sbug\sin\sthe\sRuby\sinterpreter\sor\sextension\slibraries.\n
+      Bug\sreports\sare\swelcome.\n
+      For\sdetails:\shttp:\/\/www.ruby-lang.org/bugreport.html\n
+      \n
+      (?:#{additional})
+      \z
+      )x,
+      nil,
+      opts)
+  end
+
+  def test_DATA
+    t = Tempfile.new(["test_ruby_test_rubyoption", ".rb"])
+    t.puts "puts DATA.read.inspect"
+    t.puts "__END__"
+    t.puts "foo"
+    t.puts "bar"
+    t.puts "baz"
+    t.close
+    assert_in_out_err([t.path], "", %w("foo\\nbar\\nbaz\\n"), [])
+  ensure
+    t.close(true) if t
+  end
+
+  def test_script_from_stdin
+    begin
+      require 'pty'
+      require 'io/console'
+    rescue LoadError
+      return
+    end
+    require 'timeout'
+    result = nil
+    s, w = IO.pipe
+    PTY.spawn(EnvUtil.rubybin, out: w) do |r, m|
+      w.close
+      m.print("\C-d")
+      assert_nothing_raised('[ruby-dev:37798]') do
+        result = Timeout.timeout(3) {s.read}
+      end
+    end
+    s.close
+    assert_equal("", result, '[ruby-dev:37798]')
+    s, w = IO.pipe
+    PTY.spawn(EnvUtil.rubybin, out: w) do |r, m|
+      w.close
+      m.print("$stdin.read; p $stdin.gets\n\C-d")
+      m.print("abc\n\C-d")
+      m.print("zzz\n")
+      result = s.read
+    end
+    s.close
+    assert_equal("\"zzz\\n\"\n", result, '[ruby-core:30910]')
   end
 end

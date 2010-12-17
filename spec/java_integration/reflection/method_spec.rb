@@ -23,7 +23,7 @@ describe "A JavaMethod" do
     end
   
     it "should allow invocation with a Java null method" do
-      lambda { @method.invoke Java.ruby_to_java(nil) }.should_not raise_error
+      lambda { @method.invoke nil.to_java }.should_not raise_error
     end  
   end
   
@@ -42,7 +42,7 @@ describe "A JavaMethod" do
     end
 
     it "should allow invocation with a Java null method" do
-      lambda { @method.invoke Java.ruby_to_java(nil) }.should_not raise_error
+      lambda { @method.invoke nil.to_java }.should_not raise_error
     end
   end
   
@@ -61,7 +61,7 @@ describe "A JavaMethod" do
     end
 
     it "should allow invocation with a Java null method" do
-      lambda { @method.invoke Java.ruby_to_java(nil) }.should_not raise_error
+      lambda { @method.invoke nil.to_java }.should_not raise_error
     end
   end    
 

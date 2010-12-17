@@ -83,4 +83,8 @@ public @interface JRubyMethod {
      * Argument types to coerce to before calling
      */
     Class[] argTypes() default {};
+    /**
+     * Whether to use a frame slot for backtrace information
+     */
+    boolean omit() default false;
 }

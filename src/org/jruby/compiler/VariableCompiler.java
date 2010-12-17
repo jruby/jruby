@@ -87,4 +87,5 @@ public interface VariableCompiler {
     public void getTempLocal(int index);
     public void releaseTempLocal();
     public void declareLocals(StaticScope scope, Label start, Label end);
+    public boolean isHeap();
 }

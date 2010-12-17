@@ -80,7 +80,7 @@ import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.PostExeNode;
-import org.jruby.ast.PreExeNode;
+import org.jruby.ast.PreExe19Node;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.RescueBodyNode;
@@ -362,13 +362,12 @@ stmt            : kALIAS fitem {
                     $$ = new RescueNode(support.getPosition($1), $1, new RescueBodyNode(support.getPosition($1), null, body, null), null);
                 }
                 | klBEGIN {
-                    if (support.isInDef() || support.isInSingle()) {
-                        support.yyerror("BEGIN in method");
+                    // FIXME: the == here is gross; need a cleaner way to check it
+                    if (support.isInDef() || support.isInSingle() || support.getCurrentScope().getClass() == BlockStaticScope.class) {
+                        support.yyerror("BEGIN in method, singleton, or block");
                     }
-                    support.pushLocalScope();
                 } tLCURLY compstmt tRCURLY {
-                    support.getResult().addBeginNode(new PreExeNode($1.getPosition(), support.getCurrentScope(), $4));
-                    support.popCurrentScope();
+                    support.getResult().addBeginNode(new PreExe19Node($1.getPosition(), support.getCurrentScope(), $4));
                     $$ = null;
                 }
                 | klEND tLCURLY compstmt tRCURLY {
@@ -2030,7 +2029,7 @@ none_block_pass : /* none */ {
         
         lexer.reset();
         lexer.setSource(source);
-        lexer.setEncoding(configuration.getKCode().getEncoding());
+        lexer.setEncoding(configuration.getDefaultEncoding());
 
         Object debugger = null;
         if (configuration.isDebug()) {

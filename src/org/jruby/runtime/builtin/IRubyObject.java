@@ -154,6 +154,20 @@ public interface IRubyObject {
      * @return boolean
      */
     boolean respondsTo(String string);
+
+    /**
+     * RubyMethod respondsTo.
+     * @param string
+     * @return boolean
+     */
+    boolean respondsToMissing(String string);
+
+    /**
+     * RubyMethod respondsTo.
+     * @param string
+     * @return boolean
+     */
+    boolean respondsToMissing(String string, boolean priv);
     
     /**
      * RubyMethod getRuntime.
@@ -340,7 +354,17 @@ public interface IRubyObject {
      * 
      * @param variables the variables to be set for object 
      */
+    @Deprecated
     void syncVariables(List<Variable<Object>> variables);
+
+    /**
+     * Sets object's variables to those in the supplied object,
+     * removing/replacing any previously defined variables of the same name.
+     * Applies to all variable types (ivar/cvar/constant/internal).
+     *
+     * @param source the source object containing the variables to sync
+     */
+    void syncVariables(IRubyObject source);
     
     /**
      * @return a list of all variables (ivar/cvar/constant/internal)

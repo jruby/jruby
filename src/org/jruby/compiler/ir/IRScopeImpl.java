@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jruby.RubyModule;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.operands.Label;
@@ -14,7 +15,6 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.operands.ModuleMetaObject;
-import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
@@ -54,6 +54,7 @@ import org.jruby.parser.StaticScope;
  */
 public abstract class IRScopeImpl implements IRScope {
     Operand container;       // Parent container for this context
+    RubyModule containerModule; // Live version of container
     IRScope lexicalParent;  // Lexical parent scope
 
     private String name;
@@ -68,8 +69,8 @@ public abstract class IRScopeImpl implements IRScope {
     // oldName -> newName for methods
     private Map<String, String> aliases = new HashMap<String, String>();
 
-    // ENEBO: This is also only for lexical score too right?
-    private Map<String, Operand> contants = new HashMap<String, Operand>();
+    // ENEBO: This is also only for lexical scope too right?
+    private Map<String, Operand> constants = new HashMap<String, Operand>();
 
     // Index values to guarantee we don't assign same internal index twice
     private int nextClosureIndex = 0;
@@ -86,9 +87,22 @@ public abstract class IRScopeImpl implements IRScope {
         this.staticScope = staticScope;
     }
 
+    // Update the containing scope
+    public void setContainer(Operand o) {
+        container = o;
+    }
+
     // Returns the containing scope!
     public Operand getContainer() {
         return container;
+    }
+
+    public RubyModule getContainerModule() {
+        return containerModule;
+    }
+
+    public void setContainerModule(RubyModule containerModule) {
+        this.containerModule = containerModule;
     }
 
     public IRScope getLexicalParent() {
@@ -132,6 +146,10 @@ public abstract class IRScopeImpl implements IRScope {
         return getPrefixCountSize("%v");
     }
 
+    public int getRenamedVariableSize() {
+        return getPrefixCountSize("%i");
+    }
+
     public String getName() {
         return name;
     }
@@ -165,12 +183,6 @@ public abstract class IRScopeImpl implements IRScope {
         if (index == null) return 0;
 
         return index.intValue();
-    }
-
-    // ENEBO: Can this always be the same variable?  Then SELF comparison could
-    //    compare against this?
-    public Variable getSelf() {
-        return new SelfVariable();
     }
 
     public StaticScope getStaticScope() {
@@ -232,7 +244,7 @@ public abstract class IRScopeImpl implements IRScope {
     //
     public Operand getConstantValue(String constRef) {
 //        System.out.println("Looking in " + this + " for constant: " + constRef);
-        Operand cv = contants.get(constRef);
+        Operand cv = constants.get(constRef);
         Operand p = container;
         // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the container is a static scope
         if ((cv == null) && (p != null) && (p instanceof MetaObject)) {
@@ -250,7 +262,7 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     public void setConstantValue(String constRef, Operand val) {
-        if (val.isConstant()) contants.put(constRef, val);
+        if (val.isConstant()) constants.put(constRef, val);
 
         if (this instanceof IRModule) {
             ((IRModule) this).getRootMethod().addInstr(new PutConstInstr(this, constRef, val));
@@ -258,13 +270,13 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     public Map getConstants() {
-        return Collections.unmodifiableMap(contants);
+        return Collections.unmodifiableMap(constants);
     }
 
     @Override
     public String toString() {
         return getScopeName() + " " + getName() +
-                (contants.isEmpty() ? "" : "\n  constants: " + contants);
+                (constants.isEmpty() ? "" : "\n  constants: " + constants);
     }
 
     protected void runCompilerPassOnNestedScopes(CompilerPass p) {

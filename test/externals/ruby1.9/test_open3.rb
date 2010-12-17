@@ -1,6 +1,5 @@
 require 'test/unit'
 require 'open3'
-require 'shellwords'
 require_relative 'ruby/envutil'
 
 class TestOpen3 < Test::Unit::TestCase
@@ -60,9 +59,9 @@ class TestOpen3 < Test::Unit::TestCase
   end
 
   def test_commandline
-    commandline = Shellwords.join([RUBY, '-e', 'print "quux"'])
+    commandline = "echo quux\n"
     Open3.popen3(commandline) {|i,o,e,t|
-      assert_equal("quux", o.read)
+      assert_equal("quux\n", o.read)
     }
   end
 
@@ -190,8 +189,8 @@ class TestOpen3 < Test::Unit::TestCase
       ts.each {|t| assert_kind_of(Thread, t) }
       i.print str
       i.close
-      ts.each_with_index {|t, i|
-        assert_equal(str[i] == ?t, t.value.success?)
+      ts.each_with_index {|t, ii|
+        assert_equal(str[ii] == ?t, t.value.success?)
       }
     }
   end

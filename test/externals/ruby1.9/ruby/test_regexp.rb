@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestRegexp < Test::Unit::TestCase
   def setup
@@ -8,6 +9,15 @@ class TestRegexp < Test::Unit::TestCase
 
   def teardown
     $VERBOSE = @verbose
+  end
+
+  def test_ruby_dev_999
+    assert_match(/(?<=a).*b/, "aab")
+    assert_match(/(?<=\u3042).*b/, "\u3042ab")
+  end
+
+  def test_ruby_core_27247
+    assert_match(/(a){2}z/, "aaz")
   end
 
   def test_ruby_dev_24643
@@ -141,12 +151,12 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal('//', //.inspect)
     assert_equal('//i', //i.inspect)
     assert_equal('/\//i', /\//i.inspect)
-    assert_equal('/\//i', /#{'/'}/i.inspect)
+    assert_equal('/\//i', %r"#{'/'}"i.inspect)
     assert_equal('/\/x/i', /\/x/i.inspect)
     assert_equal('/\x00/i', /#{"\0"}/i.inspect)
     assert_equal("/\n/i", /#{"\n"}/i.inspect)
-    s = [0xff].pack("C")
-    assert_equal('/\/'+s+'/i', /\/#{s}/i.inspect)
+    s = [0xf1, 0xf2, 0xf3].pack("C*")
+    assert_equal('/\/\xF1\xF2\xF3/i', /\/#{s}/i.inspect)
   end
 
   def test_char_to_option
@@ -281,6 +291,10 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal(Encoding.find("US-ASCII"), Regexp.new("b..", nil, "n").encoding)
     assert_equal("bar", "foobarbaz"[Regexp.new("b..", nil, "n")])
     assert_equal(//n, Regexp.new("", nil, "n"))
+
+    arg_encoding_none = 32 # ARG_ENCODING_NONE is implementation defined value
+    assert_equal(arg_encoding_none, Regexp.new("", nil, "n").options)
+    assert_equal(arg_encoding_none, Regexp.new("", nil, "N").options)
 
     assert_raise(RegexpError) { Regexp.new(")(") }
   end
@@ -473,7 +487,7 @@ class TestRegexp < Test::Unit::TestCase
     end.value
     assert(m.tainted?)
     assert_nothing_raised('[ruby-core:26137]') {
-      m = proc {$SAFE = 4; /#{}/o}.call
+      m = proc {$SAFE = 4; %r"#{ }"o}.call
     }
     assert(m.tainted?)
   end
@@ -492,7 +506,7 @@ class TestRegexp < Test::Unit::TestCase
   end
 
   def failcheck(re)
-    assert_raise(RegexpError) { /#{ re }/ }
+    assert_raise(RegexpError) { %r"#{ re }" }
   end
 
   def test_parse
@@ -633,8 +647,8 @@ class TestRegexp < Test::Unit::TestCase
     check(/\u3042\d/, ["\u30421", "\u30422"])
 
     # CClassTable cache test
-    assert(/\u3042\d/.match("\u30421"))
-    assert(/\u3042\d/.match("\u30422"))
+    assert_match(/\u3042\d/, "\u30421")
+    assert_match(/\u3042\d/, "\u30422")
   end
 
   def test_char_class
@@ -790,5 +804,35 @@ class TestRegexp < Test::Unit::TestCase
     assert_equal(a, b, '[ruby-core:24748]')
     h = {a => 42}
     assert_equal(42, h[b], '[ruby-core:24748]')
+  end
+
+  def test_regexp_poped
+    assert_nothing_raised { eval("a = 1; /\#{ a }/; a") }
+    assert_nothing_raised { eval("a = 1; /\#{ a }/o; a") }
+  end
+
+  def test_optimize_last_anycharstar
+    s = "1" + " " * 5000000
+    assert_nothing_raised { s.match(/(\d) (.*)/) }
+    assert_equal("1", $1)
+    assert_equal(" " * 4999999, $2)
+    assert_match(/(?:A.+){2}/, 'AbAb')
+  end
+
+  def test_invalid_fragment
+    bug2547 = '[ruby-core:27374]'
+    assert_raise(SyntaxError, bug2547) {eval('/#{"\\\\"}y/')}
+  end
+
+  def test_dup_warn
+    assert_in_out_err(%w/-w -U/, "#coding:utf-8\nx=/[\u3042\u3041]/\n!x", [], [])
+    assert_in_out_err(%w/-w -U/, "#coding:utf-8\nx=/[\u3042\u3042]/\n!x", [], /duplicated/u, nil,
+                      encoding: Encoding::UTF_8)
+    assert_in_out_err(%w/-w -U/, "#coding:utf-8\nx=/[\u3042\u3041-\u3043]/\n!x", [], /duplicated/u, nil,
+                      encoding: Encoding::UTF_8)
+  end
+
+  def test_property_warn
+    assert_in_out_err('-w', 'x=/\p%s/', [], %r"warning: invalid Unicode Property \\p: /\\p%s/")
   end
 end

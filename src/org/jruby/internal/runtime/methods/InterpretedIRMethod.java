@@ -11,7 +11,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InterpretedIRMethod extends DynamicMethod {
-    private IRMethod method;
+    public final IRMethod method;
     private final int temporaryVariableSize;
 
     // We can probably use IRMethod callArgs for something (at least arity)
@@ -25,8 +25,9 @@ public class InterpretedIRMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
             IRubyObject[] args, Block block) {
+        method.setContainerModule(clazz);
         InterpreterContext interp = new NaiveInterpreterContext(context, self,
-                temporaryVariableSize, args, method.getStaticScope(), block);
+                temporaryVariableSize, method.getRenamedVariableSize(), args, method.getStaticScope(), block);
 //        Arity.checkArgumentCount(context.getRuntime(), args.length, requiredArgsCount, method.get???);
 
         return Interpreter.interpret(context, method.getCFG(), interp);

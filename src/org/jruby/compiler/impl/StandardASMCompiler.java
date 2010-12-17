@@ -54,7 +54,6 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.*;
@@ -78,6 +77,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public static final String THREADCONTEXT = p(ThreadContext.class);
     public static final String RUBY = p(Ruby.class);
     public static final String IRUBYOBJECT = p(IRubyObject.class);
+    public static final boolean VERIFY_CLASSFILES = false;
 
     public static String getStaticMethodSignature(String classname, int args) {
         switch (args) {
@@ -233,23 +233,31 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                     descriptor.getFile(),
                     descriptor.getLine());
 
-            CheckClassAdapter.verify(new ClassReader(invokerBytes), false, new PrintWriter(System.err));
+            if (VERIFY_CLASSFILES) CheckClassAdapter.verify(new ClassReader(invokerBytes), false, new PrintWriter(System.err));
 
             writeClassFile(destination, invokerBytes, descriptor.getInvokerName());
         }
 
         for (BlockCallbackDescriptor descriptor : blockCallbackDescriptors) {
-            byte[] callbackBytes = RuntimeHelpers.createBlockCallbackOffline(descriptor.getClassname(), descriptor.getMethod());
+            byte[] callbackBytes = RuntimeHelpers.createBlockCallbackOffline(
+                    descriptor.getClassname(),
+                    descriptor.getMethod(),
+                    descriptor.getFile(),
+                    descriptor.getLine());
 
-            CheckClassAdapter.verify(new ClassReader(callbackBytes), false, new PrintWriter(System.err));
+            if (VERIFY_CLASSFILES) CheckClassAdapter.verify(new ClassReader(callbackBytes), false, new PrintWriter(System.err));
 
             writeClassFile(destination, callbackBytes, descriptor.getCallbackName());
         }
 
         for (BlockCallbackDescriptor descriptor : blockCallback19Descriptors) {
-            byte[] callbackBytes = RuntimeHelpers.createBlockCallback19Offline(descriptor.getClassname(), descriptor.getMethod());
+            byte[] callbackBytes = RuntimeHelpers.createBlockCallback19Offline(
+                    descriptor.getClassname(),
+                    descriptor.getMethod(),
+                    descriptor.getFile(),
+                    descriptor.getLine());
 
-            CheckClassAdapter.verify(new ClassReader(callbackBytes), false, new PrintWriter(System.err));
+            if (VERIFY_CLASSFILES) CheckClassAdapter.verify(new ClassReader(callbackBytes), false, new PrintWriter(System.err));
 
             writeClassFile(destination, callbackBytes, descriptor.getCallbackName());
         }
@@ -258,7 +266,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private void writeClass(String classname, File destination, ClassWriter writer) throws IOException {
         // verify the class
         byte[] bytecode = writer.toByteArray();
-        CheckClassAdapter.verify(new ClassReader(bytecode), false, new PrintWriter(System.err));
+        if (VERIFY_CLASSFILES) CheckClassAdapter.verify(new ClassReader(bytecode), false, new PrintWriter(System.err));
 
         writeClassFile(destination, bytecode, classname);
     }
@@ -346,11 +354,15 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         private final String method;
         private final String classname;
         private final String callbackName;
+        private final String file;
+        private final int line;
 
-        public BlockCallbackDescriptor(String method, String classname) {
+        public BlockCallbackDescriptor(String method, String classname, String file, int line) {
             this.method = method;
             this.classname = classname;
             this.callbackName = classname + "BlockCallback$" + method + "xx1";
+            this.file = file;
+            this.line = line;
         }
 
         public String getClassname() {
@@ -364,6 +376,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public String getCallbackName() {
             return callbackName;
         }
+
+        public String getFile() {
+            return file;
+        }
+
+        public int getLine() {
+            return line;
+        }
     }
 
     public void addInvokerDescriptor(String newMethodName, int methodArity, StaticScope scope, CallConfiguration callConfig, String filename, int line) {
@@ -375,12 +395,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         invokerDescriptors.add(descriptor);
     }
 
-    public void addBlockCallbackDescriptor(String method) {
-        blockCallbackDescriptors.add(new BlockCallbackDescriptor(method, classname));
+    public void addBlockCallbackDescriptor(String method, String file, int line) {
+        blockCallbackDescriptors.add(new BlockCallbackDescriptor(method, classname, file, line));
     }
 
-    public void addBlockCallback19Descriptor(String method) {
-        blockCallback19Descriptors.add(new BlockCallbackDescriptor(method, classname));
+    public void addBlockCallback19Descriptor(String method, String file, int line) {
+        blockCallback19Descriptors.add(new BlockCallbackDescriptor(method, classname, file, line));
     }
 
     public String getClassname() {
@@ -419,19 +439,25 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         
         cacheCompiler = new InheritedCacheCompiler(this);
 
-        String sourceNoPath;
-        if (sourcename.indexOf("/") >= 0) {
-            String[] pathElements = sourcename.split("/");
-            sourceNoPath = pathElements[pathElements.length - 1];
-        } else if (sourcename.indexOf("\\") >= 0) {
-            String[] pathElements = sourcename.split("\\\\");
-            sourceNoPath = pathElements[pathElements.length - 1];
-        } else {
-            sourceNoPath = sourcename;
-        }
+        // This code was originally used to provide debugging info using JSR-45
+        // "SMAP" format. However, it breaks using normal Java traces to
+        // generate Ruby traces, since the original path is lost. Reverting
+        // to full path for now.
+//        String sourceNoPath;
+//        if (sourcename.indexOf("/") >= 0) {
+//            String[] pathElements = sourcename.split("/");
+//            sourceNoPath = pathElements[pathElements.length - 1];
+//        } else if (sourcename.indexOf("\\") >= 0) {
+//            String[] pathElements = sourcename.split("\\\\");
+//            sourceNoPath = pathElements[pathElements.length - 1];
+//        } else {
+//            sourceNoPath = sourcename;
+//        }
 
         final File sourceFile = new File(getSourcename());
-        classWriter.visitSource(sourceNoPath, sourceFile.getAbsolutePath());
+        // Revert to using original sourcename here, so that jitted traces match
+        // interpreted traces.
+        classWriter.visitSource(sourcename, sourceFile.getAbsolutePath());
     }
 
     public void endScript(boolean generateLoad, boolean generateMain) {
@@ -450,8 +476,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
             method.label(tryBegin);
             method.aload(THREADCONTEXT_INDEX);
-            buildStaticScopeNames(method, topLevelScope);
-            method.invokestatic(p(RuntimeHelpers.class), "preLoad", sig(void.class, ThreadContext.class, String[].class));
+            String scopeNames = RuntimeHelpers.encodeScope(topLevelScope);
+            method.ldc(scopeNames);
+            method.invokestatic(p(RuntimeHelpers.class), "preLoad", sig(void.class, ThreadContext.class, String.class));
 
             method.aload(THIS);
             method.aload(THREADCONTEXT_INDEX);
@@ -493,6 +520,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.ldc(getClassname() + ".class");
             method.invokevirtual(p(ClassLoader.class), "getResource", sig(URL.class, String.class));
             method.invokevirtual(p(Object.class), "toString", sig(String.class));
+            method.astore(1);
+            method.aload(1);
             method.invokevirtual(p(AbstractScript.class), "setFilename", sig(void.class, String.class));
 
             // instance config for the script run
@@ -504,6 +533,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.dup();
             method.aload(0);
             method.invokevirtual(p(RubyInstanceConfig.class), "setArgv", sig(void.class, String[].class));
+
+            // set script filename ($0)
+            method.dup();
+            method.aload(1);
+            method.invokevirtual(p(RubyInstanceConfig.class), "setScriptFileName", sig(void.class, String.class));
 
             // invoke run with threadcontext and topself
             method.invokestatic(p(Ruby.class), "newInstance", sig(Ruby.class, RubyInstanceConfig.class));
@@ -526,33 +560,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         endClassInit();
     }
 
-    public static void buildStaticScopeNames(SkinnyMethodAdapter method, StaticScope scope) {
-        // construct static scope list of names
-        String signature = null;
-        switch (scope.getNumberOfVariables()) {
-        case 0:
-            method.pushInt(0);
-            method.anewarray(p(String.class));
-            break;
-        case 1: case 2: case 3: case 4: case 5:
-        case 6: case 7: case 8: case 9: case 10:
-            signature = sig(String[].class, params(String.class, scope.getNumberOfVariables()));
-            for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-                method.ldc(scope.getVariables()[i]);
-            }
-            method.invokestatic(p(RuntimeHelpers.class), "constructStringArray", signature);
-            break;
-        default:
-            method.pushInt(scope.getNumberOfVariables());
-            method.anewarray(p(String.class));
-            for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-                method.dup();
-                method.pushInt(i);
-                method.ldc(scope.getVariables()[i]);
-                method.arraystore();
-            }
-            break;
-        }
+    public static String buildStaticScopeNames(StaticScope scope) {
+        return RuntimeHelpers.encodeScope(scope);
     }
 
     private void beginInit() {

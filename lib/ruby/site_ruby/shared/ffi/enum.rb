@@ -50,7 +50,6 @@ module FFI
   end
   
   class Enum
-    include DataConverter
 
     attr_reader :tag
 
@@ -99,25 +98,6 @@ module FFI
 
     alias to_h symbol_map
     alias to_hash symbol_map
-
-    def native_type
-      Type::INT
-    end
-
-    def to_native(val, ctx)
-      @kv_map[val] || if val.is_a?(Integer)
-        val
-      elsif val.respond_to?(:to_int)
-        val.to_int
-      else
-        raise ArgumentError, "invalid enum value, #{val.inspect}"
-      end
-    end
-
-    def from_native(val, ctx)
-      @vk_map[val] || val
-    end
-
   end
 
 end

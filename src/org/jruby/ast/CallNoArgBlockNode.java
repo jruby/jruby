@@ -61,7 +61,7 @@ public final class CallNoArgBlockNode extends CallNode {
         Block block = RuntimeHelpers.getBlock(context, self, iterNode);
             
         try {
-            return callAdapter.call(context, self, receiver, block);
+            return callAdapter.callIter(context, self, receiver, block);
         } catch (JumpException.RetryJump rj) {
             throw runtime.newLocalJumpError(Reason.RETRY, self, "retry is not supported outside rescue");
         } finally {

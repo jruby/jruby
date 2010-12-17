@@ -179,6 +179,14 @@ public class ReflectionCallbackFactory extends CallbackFactory {
                         }
                     }
                 }
+
+                public String getFile() {
+                    return "(deprecated)";
+                }
+
+                public int getLine() {
+                    return -1;
+                }
             };
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
@@ -207,6 +215,14 @@ public class ReflectionCallbackFactory extends CallbackFactory {
                             throw new RuntimeException(ex);
                         }
                     }
+                }
+
+                public String getFile() {
+                    return "(deprecated)";
+                }
+
+                public int getLine() {
+                    return -1;
                 }
             };
         } catch (NoSuchMethodException nsme) {

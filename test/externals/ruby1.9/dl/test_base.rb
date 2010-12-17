@@ -29,9 +29,24 @@ when /mingw/, /mswin/
 when /darwin/
   libc_so = "/usr/lib/libc.dylib"
   libm_so = "/usr/lib/libm.dylib"
+when /kfreebsd/
+  libc_so = "/lib/libc.so.0.1"
+  libm_so = "/lib/libm.so.1"
 when /bsd|dragonfly/
   libc_so = "/usr/lib/libc.so"
   libm_so = "/usr/lib/libm.so"
+when /solaris/
+  libdir = '/lib'
+  case [0].pack('L!').size
+  when 4
+    # 32-bit ruby
+    libdir = '/lib' if File.directory? '/lib'
+  when 8
+    # 64-bit ruby
+    libdir = '/lib/64' if File.directory? '/lib/64'
+  end
+  libc_so = File.join(libdir, "libc.so.6")
+  libm_so = File.join(libdir, "libm.so.6")
 else
   libc_so = ARGV[0] if ARGV[0] && ARGV[0][0] == ?/
   libm_so = ARGV[1] if ARGV[1] && ARGV[1][0] == ?/
@@ -66,19 +81,19 @@ module DL
     end
 
     def assert_match(expected, actual, message="")
-      assert(expected === actual, message)
+      assert_operator(expected, :===, actual, message)
     end
 
     def assert_positive(actual)
-      assert(actual > 0)
+      assert_operator(actual, :>, 0)
     end
 
     def assert_zero(actual)
-      assert(actual == 0)
+      assert_equal(0, actual)
     end
 
     def assert_negative(actual)
-      assert(actual < 0)
+      assert_operator(actual, :<, 0)
     end
 
     def test_empty()

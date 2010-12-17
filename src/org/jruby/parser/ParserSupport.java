@@ -286,7 +286,7 @@ public class ParserSupport {
         case Tokens.k__LINE__:
             return new FixnumNode(token.getPosition(), token.getPosition().getStartLine()+1);
         case Tokens.k__ENCODING__:
-            return new EncodingNode(token.getPosition());
+            return new EncodingNode(token.getPosition(), lexer.getEncoding());
         case Tokens.tIDENTIFIER:
             return currentScope.declare(token.getPosition(), (String) token.getValue());
         case Tokens.tCONSTANT:
@@ -1304,13 +1304,10 @@ public class ParserSupport {
     public IterNode new_iter(ISourcePosition position, Node vars, 
             StaticScope scope, Node body) {
         if (vars != null && vars instanceof BlockPassNode) {
-            BlockPassNode blockPass = (BlockPassNode) vars;
-
-            return new IterNode(position, blockPass.getArgsNode(), blockPass,
-                    scope, body);
+            vars = ((BlockPassNode)vars).getArgsNode();
         }
         
-        return new IterNode(position, vars, null, scope, body);
+        return new IterNode(position, vars, scope, body);
     }
     
     public Node new_yield(ISourcePosition position, Node node) {

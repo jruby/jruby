@@ -135,6 +135,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return pattern.getEncoding();
     }
 
+    public void setEncoding(Encoding encoding) {
+        // FIXME: howto?
+    }
+
     private static final class RegexpCache {
         private volatile SoftReference<Map<ByteList, Regex>> cache = new SoftReference<Map<ByteList, Regex>>(null);
         private Map<ByteList, Regex> get() {

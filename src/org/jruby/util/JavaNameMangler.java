@@ -7,6 +7,7 @@ package org.jruby.util;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -171,5 +172,64 @@ public class JavaNameMangler {
             }
         }
         return cleanBuffer.toString();
+    }
+
+    private static final String DANGEROUS_CHARS = "\\/.;:$[]<>";
+    private static final String REPLACEMENT_CHARS = "-|,?!%{}^_";
+    private static final char ESCAPE_C = '\\';
+    private static final char NULL_ESCAPE_C = '=';
+    private static final String NULL_ESCAPE = ESCAPE_C+""+NULL_ESCAPE_C;
+
+    public static String mangleMethodName(String name) {
+        // scan for characters that need escaping
+        StringBuilder builder = null; // lazy
+        for (int i = 0; i < name.length(); i++) {
+            char candidate = name.charAt(i);
+            int escape = escapeChar(candidate);
+            if (escape != -1) {
+                if (builder == null) {
+                    builder = new StringBuilder();
+                    // start mangled with '='
+                    builder.append(NULL_ESCAPE);
+                    builder.append(name.substring(0, i));
+                }
+                builder.append(ESCAPE_C).append((char)escape);
+            } else if (builder != null) builder.append(candidate);
+        }
+
+        if (builder != null) return builder.toString();
+
+        return name;
+    }
+
+    public static String demangleMethodName(String name) {
+        if (!name.startsWith(NULL_ESCAPE)) return name;
+        
+        StringBuilder builder = new StringBuilder();
+        for (int i = 2; i < name.length(); i++) {
+            char candidate = name.charAt(i);
+            if (candidate == ESCAPE_C) {
+                i++;
+                char escaped = name.charAt(i);
+                char unescape = unescapeChar(escaped);
+                builder.append(unescape);
+            } else builder.append(candidate);
+        }
+
+        return builder.toString();
+    }
+
+    public static String unmangleMethodName(String name) {
+        return name.replaceAll("\\", "/");
+    }
+
+    private static int escapeChar(char character) {
+        int index = DANGEROUS_CHARS.indexOf(character);
+        if (index == -1) return -1;
+        return REPLACEMENT_CHARS.charAt(index);
+    }
+
+    private static char unescapeChar(char character) {
+        return DANGEROUS_CHARS.charAt(REPLACEMENT_CHARS.indexOf(character));
     }
 }

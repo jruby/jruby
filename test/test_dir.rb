@@ -148,11 +148,9 @@ class TestDir < Test::Unit::TestCase
     require 'test/dir with spaces/test_jar.jar'
     require 'inside_jar'
 
-    prefix = WINDOWS ? "file:/" : "file:"
-
     first = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 
-    prefix + File.join(first, "test", "dir with spaces", "test_jar.jar") + "!"
+    "file:" + File.join(first, "test", "dir with spaces", "test_jar.jar") + "!"
   end
 
   # JRUBY-4177

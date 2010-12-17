@@ -45,38 +45,38 @@ public class DynamicMethodFactory {
 
         if (runtime.getInstanceConfig().getCompileMode() == CompileMode.OFF) {
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                return new TraceableInterpretedMethod(container, scope, body, argsNode,
+                return new TraceableInterpretedMethod(container, scope, body, name, argsNode,
                         visibility, position);
             } else {
-                return new InterpretedMethod(container, scope, body, argsNode, visibility,
+                return new InterpretedMethod(container, scope, body, name, argsNode, visibility,
                         position);
             }
         } else  {
-            return new DefaultMethod(container, scope, body, argsNode, visibility, position);
+            return new DefaultMethod(container, scope, body, name, argsNode, visibility, position);
         }
     }
     
     public static InterpretedMethod newInterpretedMethod(
             Ruby runtime, RubyModule container, StaticScope scope,
-            Node body, ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
+            Node body, String name, ArgsNode argsNode, Visibility visibility, ISourcePosition position) {
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            return new TraceableInterpretedMethod(container, scope, body, argsNode,
+            return new TraceableInterpretedMethod(container, scope, body, name, argsNode,
                     visibility, position);
         } else {
-            return new InterpretedMethod(container, scope, body, argsNode, visibility,
+            return new InterpretedMethod(container, scope, body, name, argsNode, visibility,
                     position);
         }
     }
 
     public static DynamicMethod newJittedMethod(
-            Ruby runtime, RubyModule container, StaticScope scope, Script script,
+            Ruby runtime, RubyModule container, StaticScope scope, Script script, String name, 
             CallConfiguration config, Visibility visibility, Arity arity, ISourcePosition position, DefaultMethod defaultMethod) {
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            return new TraceableJittedMethod(container, scope, script, config, visibility, arity, position, defaultMethod);
+            return new TraceableJittedMethod(container, scope, script, name, config, visibility, arity, position, defaultMethod);
         } else {
-            return new JittedMethod(container, scope, script, config, visibility, arity, position, defaultMethod);
+            return new JittedMethod(container, scope, script, name, config, visibility, arity, position, defaultMethod);
         }
     }
 }

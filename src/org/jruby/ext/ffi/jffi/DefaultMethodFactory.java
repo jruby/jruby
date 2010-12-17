@@ -148,9 +148,6 @@ public final class DefaultMethodFactory {
         } else if (returnType instanceof CallbackInfo) {
             return new CallbackInvoker((CallbackInfo) returnType);
 
-        } else if (returnType instanceof org.jruby.ext.ffi.Enum) {
-            return new EnumInvoker((org.jruby.ext.ffi.Enum) returnType);
-
         } else if (returnType instanceof StructByValue) {
             return new StructByValueInvoker((StructByValue) returnType);
         
@@ -217,9 +214,6 @@ public final class DefaultMethodFactory {
 
         } else if (type instanceof org.jruby.ext.ffi.CallbackInfo) {
             return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
-
-        } else if (type instanceof org.jruby.ext.ffi.Enum) {
-            return new EnumMarshaller((org.jruby.ext.ffi.Enum) type);
 
         } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
             return new StructByValueMarshaller((org.jruby.ext.ffi.StructByValue) type);
@@ -335,21 +329,6 @@ public final class DefaultMethodFactory {
             return context.getRuntime().newBoolean((invoker.invokeInt(function, args) & 0xff) != 0);
         }
         public static final FunctionInvoker INSTANCE = new BooleanInvoker();
-    }
-
-    /**
-     * Invokes the native function with a native int type, and converts to a symbol
-     */
-    private static final class EnumInvoker extends BaseInvoker {
-        private final org.jruby.ext.ffi.Enum returnType;
-
-        public EnumInvoker(org.jruby.ext.ffi.Enum returnType) {
-            this.returnType = returnType;
-        }
-
-        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return returnType.symbolValue(invoker.invokeInt(function, args));
-        }
     }
 
     /**
@@ -553,25 +532,6 @@ public final class DefaultMethodFactory {
 
         public boolean requiresReference() {
             return false;
-        }
-    }
-
-    /**
-     * Converts a ruby Enum into an native integer.
-     */
-    static final class EnumMarshaller extends BaseMarshaller {
-        private final org.jruby.ext.ffi.Enum enums;
-
-        public EnumMarshaller(org.jruby.ext.ffi.Enum enums) {
-            this.enums = enums;
-        }
-
-        public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putInt(enums.intValue(parameter));
-        }
-
-        public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
-            marshal(invocation.getThreadContext(), buffer, parameter);
         }
     }
 

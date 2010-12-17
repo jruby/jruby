@@ -40,6 +40,11 @@ import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
 
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
+import org.jcodings.exception.EncodingException;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -126,7 +131,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_upto
      * 
      */
-    @JRubyMethod(name = "upto", frame = true)
+    @JRubyMethod
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
             if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
@@ -171,7 +176,7 @@ public abstract class RubyInteger extends RubyNumeric {
      * 
      */
     // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
-    @JRubyMethod(name = "downto", frame = true)
+    @JRubyMethod
     public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
             if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
@@ -212,7 +217,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    @JRubyMethod(name = "times", frame = true)
+    @JRubyMethod
     public IRubyObject times(ThreadContext context, Block block) {
         if (block.isGiven()) {
             Ruby runtime = context.getRuntime();
@@ -244,10 +249,19 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     static final ByteList[] SINGLE_CHAR_BYTELISTS;
+    static final ByteList[] SINGLE_CHAR_BYTELISTS19;
     static {
         SINGLE_CHAR_BYTELISTS = new ByteList[256];
+        SINGLE_CHAR_BYTELISTS19 = new ByteList[256];
         for (int i = 0; i < 256; i++) {
-            SINGLE_CHAR_BYTELISTS[i] = new ByteList(new byte[]{(byte)i}, false);
+            ByteList usascii = new ByteList(new byte[]{(byte)i}, false);
+            SINGLE_CHAR_BYTELISTS[i] = usascii;
+            SINGLE_CHAR_BYTELISTS19[i] = i < 0x80 ?
+                new ByteList(new byte[]{(byte)i}, USASCIIEncoding.INSTANCE)
+                :
+                new ByteList(
+                    new byte[]{(byte)i},
+                    ASCIIEncoding.INSTANCE);
         }
     }
 
@@ -265,12 +279,18 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
     public RubyString chr19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        long value = getLongValue();
-        if (value < 0 || value > 0xff) throw runtime.newRangeError(this.toString() + " out of char range");
-        if (value < 0x80) {
-            return RubyString.newUsAsciiStringShared(runtime, SINGLE_CHAR_BYTELISTS[(int)value]);
+        int value = (int)getLongValue();
+        if (value >= 0 && value <= 0xFF) {
+            ByteList bytes = SINGLE_CHAR_BYTELISTS19[value];
+            return RubyString.newStringShared(runtime, bytes, bytes.getEncoding());
         } else {
-            return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[(int)value]);
+            Encoding enc = runtime.getDefaultInternalEncoding();
+            if (value > 0xFF && (enc == null || enc == ASCIIEncoding.INSTANCE)) {
+                throw runtime.newRangeError(this.toString() + " out of char range");
+            } else {
+                if (enc == null) enc = USASCIIEncoding.INSTANCE;
+                return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, (int)value), enc, 0);
+            }
         }
     }
 
@@ -278,15 +298,32 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyString chr19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         long value = getLongValue();
-        Encoding enc = arg.convertToString().toEncoding(runtime);
-        int n;
-        if (value < 0 || (n = StringSupport.codeLength(runtime, enc, (int)value)) <= 0) {
-            throw runtime.newRangeError(this.toString() + " out of char range");
+        Encoding enc;
+        if (arg instanceof RubyEncoding) {
+            enc = ((RubyEncoding)arg).getEncoding();
+        } else {
+            enc =  arg.convertToString().toEncoding(runtime);
         }
+        if (enc == ASCIIEncoding.INSTANCE && value >= 0x80) {
+            return chr19(context);
+        }
+        return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, (int)value), enc, 0);
+    }
+
+    private ByteList fromEncodedBytes(Ruby runtime, Encoding enc, int value) {
+        int n;
+        try {
+            n = value < 0 ? 0 : enc.codeToMbcLength(value);
+        } catch (EncodingException ee) {
+            n = 0;
+        }
+        
+        if (n <= 0) throw runtime.newRangeError(this.toString() + " out of char range");
+        
         ByteList bytes = new ByteList(n);
-        enc.codeToMbc((int)value, bytes.getUnsafeBytes(), 0);
+        enc.codeToMbc(value, bytes.getUnsafeBytes(), 0);
         bytes.setRealSize(n);
-        return RubyString.newStringNoCopy(runtime, bytes, enc, 0);
+        return bytes;
     }
 
     /** int_ord

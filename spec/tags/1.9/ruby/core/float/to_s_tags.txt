@@ -1,4 +1,3 @@
-fails:Float#to_s returns a string representation of self
 fails:Float#to_s uses non-e format for a positive value with whole part having 16 decimal places
 fails:Float#to_s uses non-e format for a negative value with whole part having 15 decimal places
 fails:Float#to_s outputs the minimal, unique form necessary to recreate the value

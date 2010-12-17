@@ -253,6 +253,8 @@ class TestCSVTable < Test::Unit::TestCase
     # with options
     assert_equal( csv.gsub(",", "|").gsub("\n", "\r\n"),
                   @table.to_csv(col_sep: "|", row_sep: "\r\n") )
+    assert_equal( csv.lines.to_a[1..-1].join,
+                  @table.to_csv(:write_headers => false) )
 
     # with headers
     assert_equal(csv, @header_table.to_csv)
@@ -321,6 +323,12 @@ class TestCSVTable < Test::Unit::TestCase
     END_RESULT
   end
 
+  def test_delete_with_blank_rows
+    data = "col1,col2\nra1,ra2\n\nrb1,rb2"
+    table = CSV.parse(data, :headers => true)
+    assert_equal(["ra2", nil, "rb2"], table.delete("col2"))
+  end
+  
   def test_delete_if
     ######################
     ### Mixed/Row Mode ###

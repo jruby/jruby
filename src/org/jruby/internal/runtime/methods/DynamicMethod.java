@@ -73,6 +73,8 @@ public abstract class DynamicMethod {
     protected boolean builtin = false;
     /** Data on what native call will eventually be made */
     protected NativeCall nativeCall;
+    /** The simple, base name this method was defined under. May be null.*/
+    protected String name;
 
     /**
      * Base constructor for dynamic method handles.
@@ -86,6 +88,20 @@ public abstract class DynamicMethod {
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
         assert implementationClass != null;
         init(implementationClass, visibility, callConfig);
+    }
+
+    /**
+     * Base constructor for dynamic method handles with names.
+     *
+     * @param implementationClass The class to which this method will be
+     * immediately bound
+     * @param visibility The visibility assigned to this method
+     * @param callConfig The CallConfiguration to use for this method's
+     * pre/post invocation logic.
+     */
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
+        this(implementationClass, visibility, callConfig);
+        this.name = name;
     }
 
     /**
@@ -481,19 +497,37 @@ public abstract class DynamicMethod {
         return false;
     }
 
+    /**
+     * Get the base name this method was defined as.
+     *
+     * @return the base name for the method
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Set the base name for this method.
+     *
+     * @param name the name to set
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
     protected IRubyObject handleRedo(Ruby runtime) throws RaiseException {
         throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, runtime.getNil(), "unexpected redo");
     }
 
-    protected IRubyObject handleReturn(ThreadContext context, JumpException.ReturnJump rj) {
-        if (rj.getTarget() == context.getFrameJumpTarget()) {
+    protected IRubyObject handleReturn(ThreadContext context, JumpException.ReturnJump rj, int callNumber) {
+        if (rj.getTarget() == callNumber) {
             return (IRubyObject) rj.getValue();
         }
         throw rj;
     }
 
-    protected IRubyObject handleBreak(ThreadContext context, Ruby runtime, JumpException.BreakJump bj) {
-        if (bj.getTarget() == context.getFrameJumpTarget()) {
+    protected IRubyObject handleBreak(ThreadContext context, Ruby runtime, JumpException.BreakJump bj, int callNumber) {
+        if (bj.getTarget() == callNumber) {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, runtime.getNil(), "unexpected break");
         }
         throw bj;

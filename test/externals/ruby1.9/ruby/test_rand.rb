@@ -207,6 +207,7 @@ class TestRand < Test::Unit::TestCase
     assert_raise(ArgumentError, '[ruby-dev:39166]') { r.rand(0..-1) }
     assert_raise(ArgumentError, '[ruby-dev:39166]') { r.rand(0.0...0.0) }
     assert_raise(ArgumentError, '[ruby-dev:39166]') { r.rand(0.0...-0.1) }
+    assert_raise(ArgumentError, bug3027 = '[ruby-core:29075]') { r.rand(nil) }
   end
 
   def test_random_seed
@@ -356,6 +357,9 @@ END
     v = r.rand(3.1..4)
     assert_instance_of(Float, v, '[ruby-core:24679]')
     assert_includes(3.1..4, v)
+
+    now = Time.now
+    assert_equal(now, r.rand(now..now))
   end
 
   def test_random_float
@@ -386,5 +390,36 @@ END
     assert(r1 != r2)
     r2.rand(0x100)
     assert(r1 == r2)
+  end
+
+  def test_fork_shuffle
+    pid = fork do
+        (1..10).to_a.shuffle
+        raise 'default seed is not set' if srand == 0
+    end
+    p2, st = Process.waitpid2(pid)
+    assert(st.success?, "#{st.inspect}")
+  rescue NotImplementedError, ArgumentError
+  end
+
+  def test_seed
+    bug3104 = '[ruby-core:29292]'
+    rand_1 = Random.new(-1).rand
+    assert_not_equal(rand_1, Random.new((1 << 31) -1).rand, "#{bug3104} (2)")
+    assert_not_equal(rand_1, Random.new((1 << 63) -1).rand, "#{bug3104} (2)")
+
+    [-1, -2**10, -2**40].each {|n|
+      b = (2**64).coerce(n)[0]
+      r1 = Random.new(n).rand
+      r2 = Random.new(b).rand
+      assert_equal(r1, r2)
+    }
+  end
+
+  def test_marshal
+    bug3656 = '[ruby-core:31622]'
+    assert_raise(TypeError, bug3656) {
+      Random.new.marshal_load(0)
+    }
   end
 end

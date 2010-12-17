@@ -259,7 +259,9 @@ class Generator
     end
   end
 
-  if RUBY_VERSION =~ /^1\.9/
+  IS_RUBY_19 = RUBY_VERSION =~ /^1\.9/
+
+  if IS_RUBY_19
     Enumerator = ::Enumerator
   else
     Enumerator = Enumerable::Enumerator
@@ -334,9 +336,25 @@ class Generator
     #   e.rewind   => e
     #
     # Rewinds the enumeration sequence by the next method.
-    def rewind
-      __generator.rewind
-      self
+    if IS_RUBY_19
+      def rewind
+        @__object__.rewind if @__object__.respond_to? :rewind
+        __generator.rewind
+        self
+      end
+
+      def peek
+        begin
+          __generator.current
+        rescue EOFError
+          raise StopIteration, 'iteration reached at end'
+        end
+      end
+    else
+      def rewind
+        __generator.rewind
+        self
+      end
     end
   end
 
@@ -411,51 +429,51 @@ class Generator
       self
     end
   end
-end
 
-if RUBY_VERSION =~ /^1\.9/
-  module Enumerable
-    def slice_before(filter = (no_filter = true; nil), &block)
-      if no_filter && !block
-        raise ArgumentError.new("wrong number of arguments (0 for 1)")
-      end
+  if IS_RUBY_19
+    module ::Enumerable
+      def slice_before(filter = (no_filter = true; nil), &block)
+        if no_filter && !block
+          raise ArgumentError.new("wrong number of arguments (0 for 1)")
+        end
 
-      if block
-        if no_filter
-          state = nil
+        if block
+          if no_filter
+            state = nil
+          else
+            initial_state = filter.dup
+            state = initial_state
+          end
         else
-          initial_state = filter.dup
-          state = initial_state
+          state = nil
         end
-      else
-        state = nil
-      end
 
-      Enumerator.new do |yielder|
-        ary = nil
-        self.each do |elt|
-          if block
-            if no_filter
-              state = block.call elt
+        Enumerator.new do |yielder|
+          ary = nil
+          self.each do |elt|
+            if block
+              if no_filter
+                state = block.call elt
+              else
+                state = block.call elt, initial_state
+              end
             else
-              state = block.call elt, initial_state
+              state = (filter === elt)
             end
-          else
-            state = (filter === elt)
-          end
 
-          if ary
-            if state
-              yielder.yield ary
+            if ary
+              if state
+                yielder.yield ary
+                ary = [elt]
+              else
+                ary << elt
+              end
+            else
               ary = [elt]
-            else
-              ary << elt
             end
-          else
-            ary = [elt]
           end
+          yielder.yield ary
         end
-        yielder.yield ary
       end
     end
   end

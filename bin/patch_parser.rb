@@ -1,8 +1,8 @@
 def get_numbers_until_end_block(table)
-  while gets
-    break if /\};/ =~ $_
-    next if /^\/\// =~ $_
-    split(/,/).each do |number|
+  while line = gets
+    break if /\};/ =~ line
+    next if /^\/\// =~ line
+    line.split(/,/).each do |number|
       n = number.strip
       table.push(n.to_i) unless n == ""
     end

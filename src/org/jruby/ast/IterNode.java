@@ -57,7 +57,7 @@ public class IterNode extends Node {
     private StaticScope scope;
     private BlockBody blockBody;
     
-    public IterNode(ISourcePosition position, Node args, BlockPassNode iter, StaticScope scope, Node body) {
+    public IterNode(ISourcePosition position, Node args, StaticScope scope, Node body) {
         super(position);
 
         if (args instanceof BlockArg18Node) {
@@ -82,7 +82,7 @@ public class IterNode extends Node {
         this.blockBody = Interpreted19Block.newBlockBody(this);
     }
 
-    public int getArgumentType() {
+    public final int getArgumentType() {
         return BlockBody.asArgumentType(BlockBody.getArgumentTypeWackyHack(this));
     }
 

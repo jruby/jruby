@@ -1,6 +1,5 @@
 package org.jruby.runtime.callsite;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -82,13 +81,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
-        try {
-            return callBlock(context, caller, self, args, block);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            throw retryJumpError(context);
-        }
+        return callBlock(context, caller, self, args, block);
     }
 
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
@@ -122,13 +115,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
-        try {
-            return callBlock(context, caller, self, block);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            throw retryJumpError(context);
-        }
+        return callBlock(context, caller, self, block);
     }
 
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
@@ -162,13 +149,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
-        try {
-            return callBlock(context, caller, self, arg1, block);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            throw retryJumpError(context);
-        }
+        return callBlock(context, caller, self, arg1, block);
     }
 
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block) {
@@ -202,13 +183,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
-        try {
-            return callBlock(context, caller, self, arg1, arg2, block);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            throw retryJumpError(context);
-        }
+        return callBlock(context, caller, self, arg1, arg2, block);
     }
 
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block) {
@@ -242,13 +217,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        try {
-            return callBlock(context, caller, self, arg1, arg2, arg3, block);
-        } catch (JumpException.BreakJump bj) {
-            return handleBreakJump(context, bj);
-        } catch (JumpException.RetryJump rj) {
-            throw retryJumpError(context);
-        }
+        return callBlock(context, caller, self, arg1, arg2, arg3, block);
     }
 
     public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {

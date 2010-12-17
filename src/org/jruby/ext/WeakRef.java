@@ -17,7 +17,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -66,8 +66,9 @@ public class WeakRef extends RubyObject {
         
         return weakRef;
     }
-    
-    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+
+    // framed for invokeSuper
+    @JRubyMethod(frame = true, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject obj) {
         ref = new WeakReference<IRubyObject>(obj);
         

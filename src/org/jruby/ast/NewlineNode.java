@@ -93,8 +93,7 @@ public class NewlineNode extends Node {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         ISourcePosition position = getPosition();
         // something in here is used to build up ruby stack trace...
-        context.setFile(position.getFile());
-        context.setLine(position.getStartLine());
+        context.setFileAndLine(position);
 
         if (runtime.hasEventHooks()) {
             ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);

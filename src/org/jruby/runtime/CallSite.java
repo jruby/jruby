@@ -30,35 +30,248 @@ package org.jruby.runtime;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * This is the abstract superclass for all call sites in the system.
+ */
 public abstract class CallSite {
+    /** The method name this site calls and caches */
     public final String methodName;
+    /** The type of call this site makes */
     protected final CallType callType;
-    
+
+    /**
+     * Construct a new CallSite with the given method name and call type.
+     *
+     * @param methodName the method name this site will call and cache
+     * @param callType the type of call to perform (normal, functional, etc)
+     * @see org.jruby.runtime.CallType
+     */
     public CallSite(String methodName, CallType callType) {
         this.methodName = methodName;
         this.callType = callType;
     }
 
     // binary typed calls
+    /**
+     * Call the site's method against the target object, passing a literal long
+     * value.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param fixnum the literal long value to pass
+     * @return the result of the call
+     */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum);
+    
+    /**
+     * Call the site's method against the target object, passing a literal double
+     * value.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param flote the literal double value to pass
+     * @return the result of the call
+     */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote);
     
     // no block
+    /**
+     * Call the site's method against the target object passing no args.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @return the result of the call
+     */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3);
+
+    /**
+     * Call the site's method against the target object passing one argument.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param arg0 the argument to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0);
+
+    /**
+     * Call the site's method against the target object passing two arguments.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param arg0 the first argument to pass
+     * @param arg1 the second argument to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1);
+
+    /**
+     * Call the site's method against the target object passing two arguments.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param arg0 the first argument to pass
+     * @param arg1 the second argument to pass
+     * @param arg2 the third argument to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2);
+
+    /**
+     * Call the site's method against the target object passing arguments.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param args the arguments to pass
+     * @return the result of the call
+     */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args);
+
     // with block pass
+    /**
+     * Call the site's method against the target object passing no arguments and
+     * a non-literal (block pass, &) block.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param block the block argument to pass
+     * @return the result of the call
+     */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
-    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
+
+    /**
+     * Call the site's method against the target object passing one argument and
+     * a non-literal (block pass, &) block.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param arg0 the argument to pass
+     * @param block the block argument to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block);
+
+    /**
+     * Call the site's method against the target object passing two arguments and
+     * a non-literal (block pass, &) block.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param arg0 the first argument to pass
+     * @param arg1 the second argument to pass
+     * @param block the block argument to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block);
+
+    /**
+     * Call the site's method against the target object passing three arguments and
+     * a non-literal (block pass, &) block.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param arg0 the first argument to pass
+     * @param arg1 the second argument to pass
+     * @param arg2 the third argument to pass
+     * @param block the block argument to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg3, Block block);
+
+    /**
+     * Call the site's method against the target object passing one argument and
+     * a non-literal (block pass, &) block.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param args the arguments to pass
+     * @param block the block argument to pass
+     * @return the result of the call
+     */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
+
     // with block literal (iter)
+    /**
+     * Call the site's method against the target object passing no arguments and
+     * a literal block. This version handles break jumps by returning their
+     * value if this is the appropriate place in the call stack to do so.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param block the literal block to pass
+     * @return the result of the call
+     */
     public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, Block block);
-    public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, Block block);
-    public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, Block block);
-    public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block);
+
+    /**
+     * Call the site's method against the target object passing one argument and
+     * a literal block. This version handles break jumps by returning their
+     * value if this is the appropriate place in the call stack to do so.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param arg0 the argument to pass
+     * @param block the literal block to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block);
+
+    /**
+     * Call the site's method against the target object passing two arguments and
+     * a literal block. This version handles break jumps by returning their
+     * value if this is the appropriate place in the call stack to do so.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param arg0 the first argument to pass
+     * @param arg1 the second argument to pass
+     * @param block the literal block to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block);
+
+    /**
+     * Call the site's method against the target object passing three arguments and
+     * a literal block. This version handles break jumps by returning their
+     * value if this is the appropriate place in the call stack to do so.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param arg0 the first argument to pass
+     * @param arg1 the second argument to pass
+     * @param arg2 the third argument to pass
+     * @param block the literal block to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
+
+    /**
+     * Call the site's method against the target object passing arguments and
+     * a literal block. This version handles break jumps by returning their
+     * value if this is the appropriate place in the call stack to do so.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param args the arguments to pass
+     * @param block the literal block to pass
+     * @return the result of the call
+     */
     public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
 }

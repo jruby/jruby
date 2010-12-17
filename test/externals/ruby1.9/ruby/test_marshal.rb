@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'tempfile'
 require_relative 'marshaltestlib'
 
 class TestMarshal < Test::Unit::TestCase
@@ -32,8 +33,8 @@ class TestMarshal < Test::Unit::TestCase
   end
 
   def test_marshal
-    x = [1, 2, 3, [4,5,"foo"], {1=>"bar"}, 2.5, fact(30)]
-    assert_equal x, Marshal.load(Marshal.dump(x))
+    a = [1, 2, 3, [4,5,"foo"], {1=>"bar"}, 2.5, fact(30)]
+    assert_equal a, Marshal.load(Marshal.dump(a))
 
     [[1,2,3,4], [81, 2, 118, 3146]].each { |w,x,y,z|
       obj = (x.to_f + y.to_f / z.to_f) * Math.exp(w.to_f / (x.to_f + y.to_f / z.to_f))
@@ -193,10 +194,77 @@ class TestMarshal < Test::Unit::TestCase
     assert_equal(true, y.untrusted?)
   end
 
+  def test_taint_and_untrust_each_object
+    x = Object.new
+    obj = [[x]]
+
+    # clean object causes crean stream
+    assert_equal(false, obj.tainted?)
+    assert_equal(false, obj.untrusted?)
+    assert_equal(false, obj.first.tainted?)
+    assert_equal(false, obj.first.untrusted?)
+    assert_equal(false, obj.first.first.tainted?)
+    assert_equal(false, obj.first.first.untrusted?)
+    s = Marshal.dump(obj)
+    assert_equal(false, s.tainted?)
+    assert_equal(false, s.untrusted?)
+
+    # tainted/untrusted object causes tainted/untrusted stream
+    x.taint
+    x.untrust
+    assert_equal(false, obj.tainted?)
+    assert_equal(false, obj.untrusted?)
+    assert_equal(false, obj.first.tainted?)
+    assert_equal(false, obj.first.untrusted?)
+    assert_equal(true, obj.first.first.tainted?)
+    assert_equal(true, obj.first.first.untrusted?)
+    t = Marshal.dump(obj)
+    assert_equal(true, t.tainted?)
+    assert_equal(true, t.untrusted?)
+
+    # clean stream causes clean objects
+    assert_equal(false, s.tainted?)
+    assert_equal(false, s.untrusted?)
+    y = Marshal.load(s)
+    assert_equal(false, y.tainted?)
+    assert_equal(false, y.untrusted?)
+    assert_equal(false, y.first.tainted?)
+    assert_equal(false, y.first.untrusted?)
+    assert_equal(false, y.first.first.tainted?)
+    assert_equal(false, y.first.first.untrusted?)
+
+    # tainted/untrusted stream causes tainted/untrusted objects
+    assert_equal(true, t.tainted?)
+    assert_equal(true, t.untrusted?)
+    y = Marshal.load(t)
+    assert_equal(true, y.tainted?)
+    assert_equal(true, y.untrusted?)
+    assert_equal(true, y.first.tainted?)
+    assert_equal(true, y.first.untrusted?)
+    assert_equal(true, y.first.first.tainted?)
+    assert_equal(true, y.first.first.untrusted?)
+
+    # same tests by different senario
+    s.taint
+    s.untrust
+    assert_equal(true, s.tainted?)
+    assert_equal(true, s.untrusted?)
+    y = Marshal.load(s)
+    assert_equal(true, y.tainted?)
+    assert_equal(true, y.untrusted?)
+    assert_equal(true, y.first.tainted?)
+    assert_equal(true, y.first.untrusted?)
+    assert_equal(true, y.first.first.tainted?)
+    assert_equal(true, y.first.first.untrusted?)
+  end
+
   def test_symbol
     [:ruby, :"\u{7d05}\u{7389}"].each do |sym|
       assert_equal(sym, Marshal.load(Marshal.dump(sym)), '[ruby-core:24788]')
     end
+    bug2548 = '[ruby-core:27375]'
+    ary = [:$1, nil]
+    assert_equal(ary, Marshal.load(Marshal.dump(ary)), bug2548)
   end
 
   ClassUTF8 = eval("class R\u{e9}sum\u{e9}; self; end")
@@ -258,6 +326,15 @@ class TestMarshal < Test::Unit::TestCase
     b = "\x82\xa2".force_encoding(Encoding::Windows_31J)
     c = [/#{a}/, /#{b}/]
     assert_equal(c, Marshal.load(Marshal.dump(c)), bug2109)
+
+    assert_nothing_raised(ArgumentError, '[ruby-dev:40386]') do
+      re = Tempfile.open("marshal_regexp") do |f|
+        f.binmode.write("\x04\bI/\x00\x00\x06:\rencoding\"\rUS-ASCII")
+        f.close
+        Marshal.load(f.open.binmode)
+      end
+      assert_equal(//, re)
+    end
   end
 
   class DumpTest
@@ -300,4 +377,77 @@ class TestMarshal < Test::Unit::TestCase
     assert(true, '[ruby-dev:39425]')
     assert_raise(StopIteration) {e.next}
   end
+
+  def test_dump_buffer
+    bug2390 = '[ruby-dev:39744]'
+    w = ""
+    def w.write(str)
+      self << str.to_s
+    end
+    Marshal.dump(Object.new, w)
+    assert_not_empty(w, bug2390)
+  end
+
+  class C5
+    def marshal_dump
+      "foo"
+    end
+    def marshal_load(foo)
+      @foo = foo
+    end
+    def initialize(x)
+      @x = x
+    end
+  end
+  def test_marshal_dump
+    c = C5.new("bar")
+    s = Marshal.dump(c)
+    d = Marshal.load(s)
+    assert_equal("foo", d.instance_variable_get(:@foo))
+    assert_equal(false, d.instance_variable_defined?(:@x))
+  end
+
+  class C6
+    def initialize
+      @stdin = STDIN
+    end
+    attr_reader :stdin
+    def marshal_dump
+      1
+    end
+    def marshal_load(x)
+      @stdin = STDIN
+    end
+  end
+  def test_marshal_dump_extra_iv
+    o = C6.new
+    m = nil
+    assert_nothing_raised("[ruby-dev:21475] [ruby-dev:39845]") {
+      m = Marshal.dump(o)
+    }
+    o2 = Marshal.load(m)
+    assert_equal(STDIN, o.stdin)
+  end
+
+  def test_marshal_string_encoding
+    o1 = ["foo".force_encoding("EUC-JP")] + [ "bar" ] * 2
+    m = Marshal.dump(o1)
+    o2 = Marshal.load(m)
+    assert_equal(o1, o2, "[ruby-dev:40388]")
+  end
+
+  def test_marshal_regexp_encoding
+    o1 = [Regexp.new("r1".force_encoding("EUC-JP"))] + ["r2"] * 2
+    m = Marshal.dump(o1)
+    o2 = Marshal.load(m)
+    assert_equal(o1, o2, "[ruby-dev:40416]")
+  end
+
+  def test_marshal_encoding_encoding
+    o1 = [Encoding.find("EUC-JP")] + ["r2"] * 2
+    m = Marshal.dump(o1)
+    o2 = Marshal.load(m)
+    assert_equal(o1, o2)
+  end
+  
 end

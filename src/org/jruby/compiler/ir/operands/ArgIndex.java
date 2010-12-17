@@ -9,6 +9,10 @@ public class ArgIndex extends Operand {
         this.index = index;
     }
 
+    public int getIndex() {
+        return index;
+    }
+
     @Override
     public String toString() {
         return Integer.toString(index);
@@ -16,6 +20,7 @@ public class ArgIndex extends Operand {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        return new Integer(index); // Enebo: Silly
+        assert false : "Should not retreive ArgIndex as operand";
+        return null;
     }
 }

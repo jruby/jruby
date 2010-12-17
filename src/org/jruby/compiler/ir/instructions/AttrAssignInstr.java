@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.RubyString;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -18,12 +19,13 @@ public class AttrAssignInstr extends MultiOperandInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         Operand[] operands = getOperands();
         IRubyObject receiver = (IRubyObject) operands[0].retrieve(interp);
         String attr = ((RubyString) operands[1].retrieve(interp)).asJavaString();
         IRubyObject value = (IRubyObject) operands[2].retrieve(interp);
 
         receiver.callMethod(interp.getContext(), attr, value);
+        return null;
     }
 }

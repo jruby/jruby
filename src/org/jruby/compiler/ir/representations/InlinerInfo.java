@@ -44,7 +44,6 @@ public class InlinerInfo {
     }
 
     public Variable getRenamedVariable(Variable v) {
-        // SSS FIXME: What if 'v' is SelfVariable?
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
             newVar = this.callerCFG.getScope().getNewInlineVariable();
@@ -52,8 +51,8 @@ public class InlinerInfo {
                 // Frame load/store placement dataflow pass (and possible other passes later on) exploit
                 // information whether a variable is a temporary or a local/self variable.
                 // So, variable renaming for inlining has to preserve this information.
-                throw new RuntimeException("LOCAL VARIABLE RENAMING NEEDS TO BE FIXED...offsets!");
-//                newVar = new LocalVariable(newVar.getName());
+//                throw new RuntimeException("LOCAL VARIABLE RENAMING NEEDS TO BE FIXED...offsets!");
+                newVar = new LocalVariable(newVar.getName(), 0); // SSS: FIXME
             }
             this.varRenameMap.put(v, newVar);
         }

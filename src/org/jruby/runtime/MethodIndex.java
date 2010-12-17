@@ -56,82 +56,12 @@ import org.jruby.runtime.callsite.VariableCachingCallSite;
  * @author headius
  */
 public class MethodIndex {
-    @Deprecated
-    public static final List<String> NAMES = new ArrayList<String>();
-    @Deprecated
-    private static final Map<String, Integer> NUMBERS = new HashMap<String, Integer>();
-    
-    // ensure zero is devoted to no method name
-    @Deprecated
-    public static final int NO_INDEX = getIndex("");
-    
-    // predefine a few other methods we invoke directly elsewhere
-    @Deprecated
-    public static final int OP_PLUS = getIndex("+");
-    @Deprecated
-    public static final int OP_MINUS = getIndex("-");
-    @Deprecated
-    public static final int OP_LT = getIndex("<");
-    @Deprecated
-    public static final int AREF = getIndex("[]");
-    @Deprecated
-    public static final int ASET = getIndex("[]=");
-    @Deprecated
-    public static final int EQUALEQUAL = getIndex("==");
-    @Deprecated
-    public static final int OP_LSHIFT = getIndex("<<");
-    @Deprecated
-    public static final int EMPTY_P = getIndex("empty?");
-    @Deprecated
-    public static final int TO_S = getIndex("to_s");
-    @Deprecated
-    public static final int TO_I = getIndex("to_i");
-    @Deprecated
-    public static final int TO_STR = getIndex("to_str");
-    @Deprecated
-    public static final int TO_ARY = getIndex("to_ary");
-    @Deprecated
-    public static final int TO_INT = getIndex("to_int");
-    @Deprecated
-    public static final int TO_F = getIndex("to_f");
-    @Deprecated
-    public static final int TO_A = getIndex("to_a");
-    @Deprecated
-    public static final int TO_IO = getIndex("to_io");
-    @Deprecated
-    public static final int HASH = getIndex("hash");
-    @Deprecated
-    public static final int OP_GT = getIndex(">");
-    @Deprecated
-    public static final int OP_TIMES = getIndex("*");
-    @Deprecated
-    public static final int OP_LE = getIndex("<=");
-    @Deprecated
-    public static final int OP_SPACESHIP = getIndex("<=>");
-    @Deprecated
-    public static final int OP_EQQ = getIndex("===");
-    @Deprecated
-    public static final int EQL_P = getIndex("eql?");
-    @Deprecated
-    public static final int TO_HASH = getIndex("to_hash");
-    @Deprecated
-    public static final int METHOD_MISSING = getIndex("method_missing");
-    @Deprecated
-    public static final int DEFAULT = getIndex("default");
+    public static final int NO_METHOD = 0;
+    public static final int OP_EQUAL = 1;
+    public static final int EQL = 2;
+    public static final int HASH = 3;
+    public static final int MAX_METHODS = 4;
 
-    @Deprecated
-    public synchronized static int getIndex(String methodName) {
-        Integer index = NUMBERS.get(methodName);
-        
-        if (index == null) {
-            index = Integer.valueOf(NAMES.size());
-            NUMBERS.put(methodName, index);
-            NAMES.add(methodName);
-        }
-        
-        return index;
-    }
-    
     public static CallSite getCallSite(String name) {
         // fast and safe respond_to? call site logic
         if (name.equals("respond_to?")) return new RespondToCallSite();

@@ -1,27 +1,37 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+import java.util.HashMap;
+
+import org.jruby.RubyClass;
 import org.jruby.RubyProc;
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.MethodHandle;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
-import org.jruby.compiler.ir.operands.SelfVariable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /*
- * args field: [self, reciever, *args]
+ * args field: [self, receiver, *args]
  */
 public class CallInstr extends MultiOperandInstr {
     private Operand receiver;
@@ -31,7 +41,8 @@ public class CallInstr extends MultiOperandInstr {
     
     private boolean _flagsComputed;
     private boolean _canBeEval;
-    private boolean _requiresFrame;
+    private boolean _requiresBinding;    // Does this call make use of the caller's binding?
+    public HashMap<DynamicMethod, Integer> _profile;
 
     public CallInstr(Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(Operation.CALL, result, buildAllArgs(methAddr, receiver, args, closure));
@@ -43,7 +54,7 @@ public class CallInstr extends MultiOperandInstr {
         _closure = closure;
         _flagsComputed = false;
         _canBeEval = true;
-        _requiresFrame = true;
+        _requiresBinding = true;
     }
 
     public CallInstr(Operation op, Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
@@ -56,7 +67,11 @@ public class CallInstr extends MultiOperandInstr {
         _closure = closure;
         _flagsComputed = false;
         _canBeEval = true;
-        _requiresFrame = true;
+        _requiresBinding = true;
+    }
+
+    public void setMethodAddr(Operand mh) {
+        _methAddr = mh;
     }
 
     public Operand getMethodAddr() {
@@ -116,7 +131,7 @@ public class CallInstr extends MultiOperandInstr {
         } // self.foo(..);
         // If this call instruction is in a class method, we'll fetch a class method
         // If this call instruction is in an instance method, we'll fetch an instance method
-        else if (receiver instanceof SelfVariable) {
+        else if ((receiver instanceof LocalVariable) && (((LocalVariable)receiver).isSelf())) {
             return null;
         } else {
             IRClass c = receiver.getTargetClass();
@@ -138,6 +153,7 @@ public class CallInstr extends MultiOperandInstr {
         return method == null ? true : method.modifiesCode();
     }
 
+    // SSS FIXME: Are all bases covered?
     private boolean getEvalFlag() {
         Operand ma = getMethodAddr();
 
@@ -167,17 +183,18 @@ public class CallInstr extends MultiOperandInstr {
         return true; // Unknown method -- could be eval!
     }
 
-    private boolean getRequiresFrameFlag() {
-        // This is an eval, or it has a closure that requires a frame
-        if (canBeEval()) return true;
+    private boolean getRequiresBindingFlag() {
+        // This is an eval
+        // SSS FIXME: This is conservative, but will let that go for now
+        if (canBeEval() /*|| canCaptureCallersBinding()*/) return true;
 
         if (_closure != null) {
-            // can be a symbol .. ex: [1,2,3,4].map(&:foo) .. &:foo is a closure
+            // Can be a symbol .. ex: [1,2,3,4].map(&:foo)
+            // SSS FIXME: Is it true that if the closure operand is a symbol, it couldn't access the caller's binding?
             if (!(_closure instanceof MetaObject)) return false;
 
             IRClosure cl = (IRClosure) ((MetaObject) _closure).scope;
-
-            if (cl.requiresFrame()) return true;
+            if (cl.requiresBinding() /*|| cl.canCaptureCallersBinding()*/) return true;
         }
 
         // Check if we are calling Proc.new or lambda
@@ -186,10 +203,9 @@ public class CallInstr extends MultiOperandInstr {
         if (!(ma instanceof MethAddr)) return true;
 
         String mname = ((MethAddr) ma).getName();
-
-        if (mname.equals("lambda")) return true;
-
-        if (mname.equals("new")) {
+        if (mname.equals("lambda")) {
+           return true;
+        } else if (mname.equals("new")) {
             Operand object = getReceiver();
 
             // Unknown receiver -- could be Proc!!
@@ -200,6 +216,7 @@ public class CallInstr extends MultiOperandInstr {
             if ((c instanceof IRClass) && c.getName().equals("Proc")) return true;
         }
         
+        // SSS FIXME: Are all bases covered?
         return false;  // All checks done -- dont need one
     }
 
@@ -207,7 +224,7 @@ public class CallInstr extends MultiOperandInstr {
         // Order important!
         _flagsComputed = true;
         _canBeEval = getEvalFlag();
-        _requiresFrame = getRequiresFrameFlag();
+        _requiresBinding   = _canBeEval ? true : getRequiresBindingFlag();
     }
 
     public boolean canBeEval() {
@@ -216,13 +233,14 @@ public class CallInstr extends MultiOperandInstr {
         return _canBeEval;
     }
 
-    public boolean requiresFrame() {
+    public boolean requiresBinding() {
         if (!_flagsComputed) computeFlags();
 
-        return _requiresFrame;
+        return _requiresBinding;
     }
 
-    public boolean canCaptureCallersFrame() {
+    // SSS FIXME: Are all bases covered?
+    public boolean canCaptureCallersBinding() {
         /**
          * We should do this better by setting default flags for various core library methods
          * and by checking type of receiver to see if the receiver is any core object (string, array, etc.)
@@ -237,13 +255,18 @@ public class CallInstr extends MultiOperandInstr {
 
         // If we don't know the method we are dispatching to, or if we know that the method can capture the callers frame,
         // we are in deep doo-doo.  We will need to store all variables in the call frame.
-        return ((rm == null) || rm.canCaptureCallersFrame());
+        //
+        // SSS FIXME:
+        // This is a "static" check and at some point during the execution, the caller's code could change and capture the binding at that point!
+        // We need to set a compilation flag that records this dependency on the caller, so that this method can be recompiled whenever
+        // the caller changes.
+        return ((rm == null) || rm.canCaptureCallersBinding());
     }
 
     public boolean isLVADataflowBarrier() {
-        // If the call is an eval, OR if it passes a closure and the callee can capture the caller's frame, we are in trouble
+        // If the call is an eval, OR if it passes a closure and the callee can capture the caller's binding, we are in trouble
         // We would have to pretty much spill everything at the call site!
-        return canBeEval() || ((getClosureArg() != null) && canCaptureCallersFrame());
+        return canBeEval() || ((getClosureArg() != null) && canCaptureCallersBinding());
     }
 
     @Override
@@ -257,7 +280,7 @@ public class CallInstr extends MultiOperandInstr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CallInstr(ii.getRenamedVariable(result), _methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
-	}
+   }
 
 // --------------- Private methods ---------------
 
@@ -282,18 +305,89 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
-        IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
-        String name = (String) _methAddr.retrieve(interp);        // TODO: What happens when _methAddr is not actually a name?
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
+        Object        ma    = _methAddr.retrieve(interp);
+        IRubyObject[] args  = prepareArguments(interp);
+        Block         block = (_closure == null) ? null : prepareBlock(interp);
         Object resultValue;
+        if (ma instanceof MethodHandle) {
+            MethodHandle  mh = (MethodHandle)ma;
 
-        if (_closure == null) {
-            resultValue = object.callMethod(interp.getContext(), name, prepareArguments(interp));
+            assert mh.getMethodNameOperand() == getReceiver();
+
+            DynamicMethod m  = mh.getResolvedMethod();
+            String        mn = mh.getResolvedMethodName();
+            IRubyObject   ro = mh.getReceiverObj();
+            if (m.isUndefined()) {
+                resultValue = RuntimeHelpers.callMethodMissing(interp.getContext(), ro, m.getVisibility(), mn, CallType.FUNCTIONAL, args, block == null ? Block.NULL_BLOCK : block);
+            } else {
+               ThreadContext tc = interp.getContext();
+               RubyClass     rc = ro.getMetaClass();
+               resultValue = (block == null) ? m.call(tc, ro, rc, mn, args) : m.call(tc, ro, rc, mn, args, block);
+            }
         } else {
-            resultValue = object.callMethod(interp.getContext(), name, prepareArguments(interp), prepareBlock(interp));
+           IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
+           String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
+
+           if (block == null) {
+               resultValue = object.callMethod(interp.getContext(), name, args);
+           } else {
+               resultValue = object.callMethod(interp.getContext(), name, args, block);
+           }
         }
 
         getResult().store(interp, resultValue);
+        return null;
+    }
+
+    public Label interpret_with_inline(InterpreterContext interp, IRubyObject self) {
+        Object        ma    = _methAddr.retrieve(interp);
+        IRubyObject[] args  = prepareArguments(interp);
+        Block         block = (_closure == null) ? null : prepareBlock(interp);
+        Object resultValue;
+        if (ma instanceof MethodHandle) {
+            MethodHandle  mh = (MethodHandle)ma;
+
+            assert mh.getMethodNameOperand() == getReceiver();
+
+            DynamicMethod m  = mh.getResolvedMethod();
+            String        mn = mh.getResolvedMethodName();
+            IRubyObject   ro = mh.getReceiverObj();
+            if (m.isUndefined()) {
+                resultValue = RuntimeHelpers.callMethodMissing(interp.getContext(), ro, m.getVisibility(), mn, CallType.FUNCTIONAL, args, block == null ? Block.NULL_BLOCK : block);
+            } else {
+               ThreadContext tc = interp.getContext();
+               RubyClass     rc = ro.getMetaClass();
+               if (_profile == null) {
+                  _profile = new HashMap<DynamicMethod, Integer>();
+               }
+               Integer count = _profile.get(m);
+               if (count == null) {
+                  count = new Integer(1);
+               } else {
+                  count = new Integer(count + 1);
+                  if ((count > 50) && (m instanceof InterpretedIRMethod) && (_profile.size() == 1)) {
+                     IRMethod inlineableMethod = ((InterpretedIRMethod)m).method;
+                     _profile.remove(m); // remove it because the interpreter might ignore this hint
+                     throw new org.jruby.interpreter.InlineMethodHint(inlineableMethod);
+                  }
+               }
+               _profile.put(m, count);
+               resultValue = (block == null) ? m.call(tc, ro, rc, mn, args) : m.call(tc, ro, rc, mn, args, block);
+            }
+        } else {
+           IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
+           String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
+
+           if (block == null) {
+               resultValue = object.callMethod(interp.getContext(), name, args);
+           } else {
+               resultValue = object.callMethod(interp.getContext(), name, args, block);
+           }
+        }
+
+        getResult().store(interp, resultValue);
+        return null;
     }
 
     private Block prepareBlock(InterpreterContext interp) {
@@ -302,6 +396,7 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public IRubyObject[] prepareArguments(InterpreterContext interp) {
+        // SSS FIXME: These 3 values could be memoized.
         Operand[] operands = getCallArgs();
         int length = operands.length;
         IRubyObject[] args = new IRubyObject[length];

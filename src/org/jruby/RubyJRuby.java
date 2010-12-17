@@ -31,15 +31,12 @@
 package org.jruby;
 
 import org.jruby.ext.jruby.JRubyUtilLibrary;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
@@ -54,7 +51,6 @@ import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.Library;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
 import org.jruby.ast.Node;
@@ -66,15 +62,15 @@ import org.jruby.internal.runtime.methods.MethodArgs;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.util.TypeConverter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.util.Map;
+import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 
 /**
  * Module which defines JRuby-specific methods for use. 
@@ -123,7 +119,7 @@ public class RubyJRuby {
     }
 
     public static class JRubySynchronizedMeta {
-        @JRubyMethod(frame = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(visibility = PRIVATE)
         public static IRubyObject append_features(IRubyObject self, IRubyObject target) {
             if (target instanceof RubyClass && self instanceof RubyModule) { // should always be true
                 RubyClass targetModule = ((RubyClass)target);
@@ -133,7 +129,7 @@ public class RubyJRuby {
             throw target.getRuntime().newTypeError(self + " can only be included into classes");
         }
 
-        @JRubyMethod(frame = true, visibility = Visibility.PRIVATE)
+        @JRubyMethod(visibility = PRIVATE)
         public static IRubyObject extend_object(IRubyObject self, IRubyObject obj) {
             if (self instanceof RubyModule) {
                 RubyClass singletonClass = obj.getSingletonClass();
@@ -145,12 +141,12 @@ public class RubyJRuby {
         }
     }
 
-    @JRubyMethod(name = "runtime", frame = true, module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject runtime(IRubyObject recv, Block unusedBlock) {
         return JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(), recv.getRuntime());
     }
 
-    @JRubyMethod(frame = true, module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject with_current_runtime_as_global(ThreadContext context, IRubyObject recv, Block block) {
         Ruby currentRuntime = context.getRuntime();
         Ruby globalRuntime = Ruby.getGlobalRuntime();
@@ -167,7 +163,7 @@ public class RubyJRuby {
         return currentRuntime.getNil();
     }
 
-    @JRubyMethod(name = {"parse", "ast_for"}, optional = 3, frame = true, module = true)
+    @JRubyMethod(name = {"parse", "ast_for"}, optional = 3, module = true)
     public static IRubyObject parse(IRubyObject recv, IRubyObject[] args, Block block) {
         if(block.isGiven()) {
             if(block.getBody() instanceof org.jruby.runtime.CompiledBlock) {
@@ -191,7 +187,7 @@ public class RubyJRuby {
         }
     }
 
-    @JRubyMethod(name = "compile", optional = 3, frame = true, module = true)
+    @JRubyMethod(name = "compile", optional = 3, module = true)
     public static IRubyObject compile(IRubyObject recv, IRubyObject[] args, Block block) {
         Node node;
         String filename;
@@ -622,21 +618,25 @@ public class RubyJRuby {
         public static IRubyObject methodArgs(IRubyObject recv) {
             Ruby runtime = recv.getRuntime();
             RubyMethod rubyMethod = (RubyMethod)recv;
-            
+            RubyArray argsArray = RubyArray.newArray(runtime);
             DynamicMethod method = rubyMethod.method;
+            RubySymbol req = runtime.newSymbol("req");
+            RubySymbol opt = runtime.newSymbol("opt");
+            RubySymbol rest = runtime.newSymbol("rest");
+            RubySymbol block = runtime.newSymbol("block");
             
             if (method instanceof MethodArgs) {
-                RubySymbol req = runtime.newSymbol("req");
-                RubySymbol opt = runtime.newSymbol("opt");
-                RubySymbol rest = runtime.newSymbol("rest");
-                RubySymbol block = runtime.newSymbol("block");
                 MethodArgs interpMethod = (MethodArgs)method;
                 ArgsNode args = interpMethod.getArgsNode();
-                RubyArray argsArray = RubyArray.newArray(runtime);
                 
                 ListNode requiredArgs = args.getPre();
                 for (int i = 0; requiredArgs != null && i < requiredArgs.size(); i++) {
-                    argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode) requiredArgs.get(i))));
+                    Node argNode = requiredArgs.get(i);
+                    if (argNode instanceof MultipleAsgn19Node) {
+                        argsArray.append(RubyArray.newArray(runtime, req));
+                    } else {
+                        argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode)argNode)));
+                    }
                 }
                 
                 ListNode optArgs = args.getOptArgs();
@@ -650,17 +650,24 @@ public class RubyJRuby {
                 
                 ListNode requiredArgsPost = args.getPost();
                 for (int i = 0; requiredArgsPost != null && i < requiredArgsPost.size(); i++) {
-                    argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode) requiredArgsPost.get(i))));
+                    Node argNode = requiredArgsPost.get(i);
+                    if (argNode instanceof MultipleAsgn19Node) {
+                        argsArray.append(RubyArray.newArray(runtime, req));
+                    } else {
+                        argsArray.append(RubyArray.newArray(runtime, req, getNameFrom(runtime, (INameNode) requiredArgsPost.get(i))));
+                    }
                 }
 
                 if (args.getBlock() != null) {
                     argsArray.append(RubyArray.newArray(runtime, block, getNameFrom(runtime, args.getBlock())));
                 }
-                
-                return argsArray;
+            } else {
+                if (method.getArity() == Arity.OPTIONAL) {
+                    argsArray.append(RubyArray.newArray(runtime, rest));
+                }
             }
-            
-            return runtime.getNil();
+
+            return argsArray;
         }
     }
 

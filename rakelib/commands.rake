@@ -71,7 +71,6 @@ def jrake(dir, targets, java_options = {}, &code)
 end
 
 def mspec(mspec_options = {}, java_options = {}, &code)
-  java_options[:failonerror] ||= 'false'
   java_options[:dir] ||= BASE_DIR
 
   mspec_options[:compile_mode] ||= 'OFF'

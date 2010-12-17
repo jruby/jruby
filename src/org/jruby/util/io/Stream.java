@@ -172,4 +172,7 @@ public interface Stream {
 
     void setBinmode();
     Channel getChannel();
+
+    boolean isAutoclose();
+    void setAutoclose(boolean autoclose);
 }

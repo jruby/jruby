@@ -41,6 +41,9 @@ import java.math.BigInteger;
 import java.util.HashMap;
 
 import org.jcodings.Encoding;
+import org.joni.Matcher;
+import org.joni.Option;
+import org.joni.Regex;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.FixnumNode;
@@ -112,6 +115,10 @@ public class RubyYaccLexer {
     }
 
     private Encoding encoding;
+
+    public Encoding getEncoding() {
+        return encoding;
+    }
 
     private int getFloatToken(String number) {
         double d;
@@ -352,6 +359,22 @@ public class RubyYaccLexer {
      */
     public void setParserSupport(ParserSupport parserSupport) {
         this.parserSupport = parserSupport;
+    }
+
+    private void setEncoding(ByteList name) {
+        Encoding newEncoding = parserSupport.getConfiguration().getEncodingService().loadEncoding(name);
+
+        if (newEncoding == null) {
+            throw new SyntaxException(PID.UNKNOWN_ENCODING, getPosition(),
+                    null, "unknown encoding name: " + name.toString());
+        }
+
+        if (!newEncoding.isAsciiCompatible()) {
+            throw new SyntaxException(PID.NOT_ASCII_COMPATIBLE, getPosition(),
+                    null, name.toString() + " is not ASCII compatible");
+        }
+
+        setEncoding(newEncoding);
     }
 
     public void setEncoding(Encoding encoding) {
@@ -629,7 +652,12 @@ public class RubyYaccLexer {
         if (warnings.isVerbose()) warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
     }
 
-    private int magicCommentMarker(String str, int begin) {
+
+    /* MRI: magic_comment_marker */
+    /* This impl is a little sucky.  We basically double scan the same bytelist twice.  Once here
+     * and once in parseMagicComment.
+     */
+    private int magicCommentMarker(ByteList str, int begin) {
         int i = begin;
         int len = str.length();
 
@@ -640,7 +668,7 @@ public class RubyYaccLexer {
                     i += 2;
                     break;
                 case '*':
-                    if (i + 1 >= len) return 0;
+                    if (i + 1 >= len) return -1;
 
                     if (str.charAt(i + 1) != '-') {
                         i += 4;
@@ -655,18 +683,97 @@ public class RubyYaccLexer {
                     break;
             }
         }
-        return 0;
+        return -1;
+    }
+
+
+    private boolean magicCommentSpecialChar(char c) {
+        switch (c) {
+            case '\'': case '"': case ':': case ';': return true;
+        }
+        return false;
+    }
+
+    private static final String magicString = "([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*";
+    private static final Regex magicRegexp = new Regex(magicString.getBytes(), 0, magicString.length(), 0, Encoding.load("ASCII"));
+
+    // MRI: parser_magic_comment
+    protected boolean parseMagicComment(ByteList magicLine) throws IOException {
+        int length = magicLine.length();
+
+        if (length <= 7) return false;
+        int beg = magicCommentMarker(magicLine, 0);
+        if (beg < 0) return false;
+        int end = magicCommentMarker(magicLine, beg);
+        if (end < 0) return false;
+
+        // We only use a regex if -*- ... -*- is found.  Not too hot a path?
+        int realSize = magicLine.getRealSize();
+        int begin = magicLine.getBegin();
+        Matcher matcher = magicRegexp.matcher(magicLine.getUnsafeBytes(), begin, begin + realSize);
+        int result = matcher.search(begin, begin + realSize, Option.NONE);
+
+        if (result < 0) return false;
+
+        // Regexp is guarateed to have three matches
+        int begs[] = matcher.getRegion().beg;
+        int ends[] = matcher.getRegion().end;
+        String name = magicLine.subSequence(begs[1], ends[1]).toString();
+        if (!name.equalsIgnoreCase("encoding")) return false;
+
+        setEncoding(new ByteList(magicLine.getUnsafeBytes(), begs[2], ends[2] - begs[2]));
+
+        return true;
+    }
+
+    // TODO: Make hand-rolled version of this
+    private static final String encodingString = "[cC][oO][dD][iI][nN][gG]\\s*[=:]\\s*([a-zA-Z0-9\\-_]+)";
+    private static final Regex encodingRegexp = new Regex(encodingString.getBytes(), 0,
+            encodingString.length(), 0, Encoding.load("ASCII"));
+
+    protected void handleFileEncodingComment(ByteList encodingLine) throws IOException {
+        int realSize = encodingLine.getRealSize();
+        int begin = encodingLine.getBegin();
+        Matcher matcher = encodingRegexp.matcher(encodingLine.getUnsafeBytes(), begin, begin + realSize);
+        int result = matcher.search(begin, begin + realSize, Option.IGNORECASE);
+
+        if (result < 0) return;
+
+        int begs[] = matcher.getRegion().beg;
+        int ends[] = matcher.getRegion().end;
+
+        setEncoding(new ByteList(encodingLine.getUnsafeBytes(), begs[1], ends[1] - begs[1]));
     }
 
     /**
      * Read a comment up to end of line.
      * 
-     * @param c last character read from lexer source
-     * @return newline or eof value 
+     * @return something or eof value
      */
-    protected int readComment(int c) throws IOException {
-        return src.skipUntil('\n');
+    protected int readComment() throws IOException {
+        // 1.9 - first line comment handling
+        ByteList commentLine;
+        boolean handledMagicComment = false;
+        if (!isOneEight() && getPosition().getLine() == 0) { //
+            // Skip first line if it is a shebang line?
+            // (not the same as MRI:parser_prepare/comment_at_top)
+            if (src.peek('!')) {
+                int c = src.skipUntil('\n');
+
+                // TODO: Eat whitespace
+                
+                if (!src.peek('#')) return c; // Next line better also be a comment
+            }
+
+            commentLine = src.readUntil('\n');
+            handledMagicComment = parseMagicComment(commentLine);
+            if (!handledMagicComment) {
+                handleFileEncodingComment(commentLine);
+            }
+            return 0;
+        }
         
+        return src.skipUntil('\n');
     }
     
     /*
@@ -854,8 +961,7 @@ public class RubyYaccLexer {
                 spaceSeen = true;
                 continue;
             case '#':		/* it's a comment */
-                // FIXME: Need to detect magic_comment in 1.9 here for encoding
-                if (readComment(c) == EOF) return EOF;
+                if (readComment() == EOF) return EOF;
                     
                 /* fall through */
             case '\n':

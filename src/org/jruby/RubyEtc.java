@@ -144,7 +144,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(name = "passwd", module = true, frame=true)
+    @JRubyMethod(module = true)
     public static IRubyObject passwd(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
@@ -300,7 +300,7 @@ public class RubyEtc {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "setgrent", module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject setgrent(IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         try {
@@ -313,7 +313,7 @@ public class RubyEtc {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "group", module = true, frame=true)
+    @JRubyMethod(module = true)
     public static IRubyObject group(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();

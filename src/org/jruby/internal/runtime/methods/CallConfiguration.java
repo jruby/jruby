@@ -123,13 +123,7 @@ public enum CallConfiguration {
                 return FrameFullScopeNone;
             }
         } else if (scope) {
-            if (backtrace) {
-                return FrameBacktraceScopeFull;
-            } else {
-                return FrameNoneScopeFull;
-            }
-        } else if (backtrace) {
-            return FrameBacktraceScopeNone;
+            return FrameNoneScopeFull;
         } else {
             return FrameNoneScopeNone;
         }

@@ -29,20 +29,24 @@
 package org.jruby.ast;
 
 import java.util.List;
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.KCode;
 
 /**
  * Represents __ENCODING__.
  */
 public class EncodingNode extends Node {
-    public EncodingNode(ISourcePosition position) {
+    private final Encoding encoding;
+
+    public EncodingNode(ISourcePosition position, Encoding encoding) {
         super(position);
+
+        this.encoding = encoding;
     }
 
     @Override
@@ -62,8 +66,6 @@ public class EncodingNode extends Node {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        // FIXME: We should be getting this from the runtime rather than assume none?
-        //return runtime.getEncodingService().getEncoding(runtime.getDefaultExternalEncoding());
-        return runtime.getEncodingService().getEncoding(KCode.NONE.getEncoding());
+        return runtime.getEncodingService().getEncoding(encoding);
     }
 }

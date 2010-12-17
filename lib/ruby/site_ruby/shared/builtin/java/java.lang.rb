@@ -42,6 +42,11 @@ class java::lang::Throwable
     @backtrace = trace
   end
 
+  def message
+    msg = getLocalizedMessage
+    msg ? msg : ""
+  end
+
   def to_s
     message
   end

@@ -98,7 +98,7 @@ public class LoadServiceResource {
         if (resource != null) {
             return resource;
         } else {
-            return path.toURI().toURL();
+            return new URL("file", null, path.getAbsolutePath());
         }
     }
 

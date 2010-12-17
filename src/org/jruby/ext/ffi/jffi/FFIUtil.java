@@ -54,7 +54,7 @@ public final class FFIUtil {
 
     static final com.kenai.jffi.Type getFFIType(Type type) {
 
-        if (type instanceof Type.Builtin || type instanceof CallbackInfo || type instanceof org.jruby.ext.ffi.Enum) {
+        if (type instanceof Type.Builtin || type instanceof CallbackInfo) {
 
             return FFIUtil.getFFIType(type.getNativeType());
         

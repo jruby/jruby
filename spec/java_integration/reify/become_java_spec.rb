@@ -26,8 +26,8 @@ describe "JRuby class reification" do
     ReifyInterfacesClass1.become_java!
     ReifyInterfacesClass1::ReifyInterfacesClass2.become_java!
 
-    ReifyInterfacesClass1.to_java(jclass).name.should == "ruby.ReifyInterfacesClass1"
-    ReifyInterfacesClass1::ReifyInterfacesClass2.to_java(jclass).name.should == "ruby.ReifyInterfacesClass1.ReifyInterfacesClass2"
+    ReifyInterfacesClass1.to_java(jclass).name.should == "rubyobj.ReifyInterfacesClass1"
+    ReifyInterfacesClass1::ReifyInterfacesClass2.to_java(jclass).name.should == "rubyobj.ReifyInterfacesClass1.ReifyInterfacesClass2"
 
     # checking that the packages are valid for Java's purposes
     lambda do

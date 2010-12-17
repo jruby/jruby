@@ -77,7 +77,7 @@ class TestFileUtils
   include FileUtils
 
   def check_singleton(name)
-    assert_equal true, ::FileUtils.public_methods.include?(name.to_sym)
+    assert_respond_to ::FileUtils, name
   end
 
   def my_rm_rf(path)
@@ -286,6 +286,15 @@ class TestFileUtils
     assert_directory 'tmp/cpr_dest/d'
     my_rm_rf 'tmp/cpr_src'
     my_rm_rf 'tmp/cpr_dest'
+
+    bug3588 = '[ruby-core:31360]'
+    assert_nothing_raised(ArgumentError, bug3588) do
+      cp_r 'tmp', 'tmp2'
+    end
+    assert_directory 'tmp2/tmp'
+    assert_raise(ArgumentError, bug3588) do
+      cp_r 'tmp2', 'tmp2/new_tmp2'
+    end
   end
 
   def test_cp_r_symlink
@@ -300,8 +309,7 @@ class TestFileUtils
     ln_s 'cpr_src', 'tmp/cpr_src2'
     cp_r 'tmp/cpr_src2', 'tmp/cpr_dest2'
     assert_directory 'tmp/cpr_dest2'
-    #assert_not_symlink 'tmp/cpr_dest2'
-    assert_symlink 'tmp/cpr_dest2'   # 2005-05-26: feature change
+    assert_not_symlink 'tmp/cpr_dest2'
     assert_symlink 'tmp/cpr_dest2/symlink'
     assert_equal 'SLdest', File.readlink('tmp/cpr_dest2/symlink')
   end if have_symlink?
@@ -452,7 +460,7 @@ class TestFileUtils
 
     # [ruby-dev:39345]
     touch 'tmp/[rmtmp]'
-    rm_f 'tmp/[rmtmp]'
+    FileUtils.rm_f 'tmp/[rmtmp]'
     assert_file_not_exist 'tmp/[rmtmp]'
   end
 
@@ -726,7 +734,7 @@ class TestFileUtils
     Dir.rmdir "tmp-first-line\ntmp-second-line"
   end if lf_in_path_allowed?
 
-    def test_mkdir_pathname
+  def test_mkdir_pathname
     # pathname
     assert_nothing_raised {
       mkdir Pathname.new('tmp/tmpdirtmp')
@@ -942,20 +950,21 @@ class TestFileUtils
     check_singleton :copy_stream
     # IO
     each_srcdest do |srcpath, destpath|
-      File.open(srcpath) {|src|
-        File.open(destpath, 'w') {|dest|
+      File.open(srcpath, 'rb') {|src|
+        File.open(destpath, 'wb') {|dest|
           copy_stream src, dest
         }
       }
       assert_same_file srcpath, destpath
     end
+  end
 
+  def test_copy_stream_duck
+    check_singleton :copy_stream
     # duck typing test  [ruby-dev:25369]
-    my_rm_rf 'tmp'
-    Dir.mkdir 'tmp'
     each_srcdest do |srcpath, destpath|
-      File.open(srcpath) {|src|
-        File.open(destpath, 'w') {|dest|
+      File.open(srcpath, 'rb') {|src|
+        File.open(destpath, 'wb') {|dest|
           copy_stream Stream.new(src), Stream.new(dest)
         }
       }

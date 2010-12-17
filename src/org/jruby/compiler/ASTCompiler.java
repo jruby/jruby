@@ -806,7 +806,10 @@ public class ASTCompiler {
         String name = callNode.getName();
         CallType callType = CallType.NORMAL;
 
-        if (RubyInstanceConfig.DYNOPT_COMPILE_ENABLED) {
+        DYNOPT: if (RubyInstanceConfig.DYNOPT_COMPILE_ENABLED) {
+            // dynopt does not handle non-local block flow control yet, so we bail out
+            // if there's a closure.
+            if (callNode.getIterNode() != null) break DYNOPT;
             if (callNode.callAdapter instanceof CachingCallSite) {
                 CachingCallSite cacheSite = (CachingCallSite)callNode.callAdapter;
                 if (cacheSite.isOptimizable()) {
@@ -924,7 +927,7 @@ public class ASTCompiler {
     }
 
     private boolean compileRecursiveCall(String name, int generation, CallType callType, boolean iterator, DynamicMethod method, BodyCompiler context, ArgumentsCallback argsCallback, CompilerCallback closure, boolean expr) {
-        if (currentBodyNode != null) {
+        if (currentBodyNode != null && context.isSimpleRoot()) {
             if (method instanceof InterpretedMethod) {
                 InterpretedMethod target = (InterpretedMethod)method;
                 if (target.getBodyNode() == currentBodyNode) {
@@ -954,7 +957,7 @@ public class ASTCompiler {
         return false;
     }
 
-    private boolean compileTrivialCall(DynamicMethod method, BodyCompiler context, boolean expr) {
+    private boolean compileTrivialCall(String name, DynamicMethod method, int generation, BodyCompiler context, boolean expr) {
         Node simpleBody = null;
         if (method instanceof InterpretedMethod) {
             InterpretedMethod target = (InterpretedMethod)method;
@@ -987,7 +990,13 @@ public class ASTCompiler {
             case TRUENODE:
             case SYMBOLNODE:
             case XSTRNODE:
-                compile(simpleBody, context, expr);
+                final Node simpleBodyFinal = simpleBody;
+                context.getInvocationCompiler().invokeTrivial(name, generation, new CompilerCallback() {
+                    public void call(BodyCompiler context) {
+                        compile(simpleBodyFinal, context, true);
+                    }
+                });
+                if (!expr) context.consumeCurrentValue();
                 return true;
             }
         }
@@ -2404,7 +2413,9 @@ public class ASTCompiler {
         
         CompilerCallback closureArg = getBlock(fcallNode.getIterNode());
 
-        if (RubyInstanceConfig.DYNOPT_COMPILE_ENABLED) {
+        DYNOPT: if (RubyInstanceConfig.DYNOPT_COMPILE_ENABLED) {
+            // dynopt does not handle non-local block flow control yet, so we bail out
+            if (fcallNode.getIterNode() != null) break DYNOPT;
             if (fcallNode.callAdapter instanceof CachingCallSite) {
                 CachingCallSite cacheSite = (CachingCallSite)fcallNode.callAdapter;
                 if (cacheSite.isOptimizable()) {
@@ -2415,7 +2426,9 @@ public class ASTCompiler {
                         if (compileRecursiveCall(fcallNode.getName(), entry.token, CallType.FUNCTIONAL, fcallNode.getIterNode() instanceof IterNode, entry.method, context, argsCallback, closureArg, expr)) return;
 
                         // peephole inlining for trivial targets
-                        if (compileTrivialCall(entry.method, context, expr)) return;
+                        if (closureArg == null &&
+                                argsCallback == null &&
+                                compileTrivialCall(fcallNode.getName(), entry.method, entry.token, context, expr)) return;
                     }
                 }
             }
@@ -2887,7 +2900,7 @@ public class ASTCompiler {
         inspector.inspect(iterNode.getBodyNode());
         inspector.inspect(iterNode.getVarNode());
         
-        context.createNewClosure(iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
+        context.createNewClosure(iterNode.getPosition().getFile(), iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
                 closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
     }
 
@@ -3912,7 +3925,7 @@ public class ASTCompiler {
                     if (compileRecursiveCall(vcallNode.getName(), entry.token, CallType.VARIABLE, false, entry.method, context, null, null, expr)) return;
 
                     // peephole inlining for trivial targets
-                    if (compileTrivialCall(entry.method, context, expr)) return;
+                    if (compileTrivialCall(vcallNode.getName(), entry.method, entry.token, context, expr)) return;
                 }
             }
         }

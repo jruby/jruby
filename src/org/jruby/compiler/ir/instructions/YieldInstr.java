@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -23,15 +24,16 @@ public class YieldInstr extends MultiOperandInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-		 return this; 		 // This is just a placeholder during inlining.
+        return this;  // This is just a placeholder during inlining.
     }
 
     @Interp
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
         Object resultValue = interp.getBlock().call(interp.getContext(), prepareArguments(interp));
 
         getResult().store(interp, resultValue);
+        return null;
     }
 
     public IRubyObject[] prepareArguments(InterpreterContext interp) {
@@ -43,8 +45,8 @@ public class YieldInstr extends MultiOperandInstr {
             args[i] = (IRubyObject) operands[i].retrieve(interp);
         }
 
-        System.out.println("ARGS>LENGTH " + args.length);
-        System.out.println("ARGS: " + java.util.Arrays.toString(args));
+        //System.out.println("ARGS>LENGTH " + args.length);
+        //System.out.println("ARGS: " + java.util.Arrays.toString(args));
         return args;
     }
 }

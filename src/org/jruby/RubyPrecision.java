@@ -58,7 +58,7 @@ public class RubyPrecision {
         throw receiver.getRuntime().newTypeError("Undefined conversion from " + source.getMetaClass().getName() + " into " + ((RubyClass)receiver).getName());
     }
 
-    @JRubyMethod(name = "append_features", required = 1, frame = true, module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject append_features(IRubyObject receiver, IRubyObject include, Block block) {
         if (include instanceof RubyModule) {
             ((RubyModule) include).includeModule(receiver);
@@ -79,17 +79,17 @@ public class RubyPrecision {
     }
     
     
-    @JRubyMethod(name = "prec", required = 1, frame = true)
+    @JRubyMethod
     public static IRubyObject prec(ThreadContext context, IRubyObject receiver, IRubyObject type, Block block) {
         return type.callMethod(context, "induced_from", receiver);
     }
 
-    @JRubyMethod(name = "prec_i", frame = true)
+    @JRubyMethod
     public static IRubyObject prec_i(ThreadContext context, IRubyObject receiver, Block block) {
         return receiver.getRuntime().getInteger().callMethod(context, "induced_from", receiver);
     }
 
-    @JRubyMethod(name = "prec_f", frame = true)
+    @JRubyMethod
     public static IRubyObject prec_f(ThreadContext context, IRubyObject receiver, Block block) {
         return receiver.getRuntime().getFloat().callMethod(context, "induced_from", receiver);
     }

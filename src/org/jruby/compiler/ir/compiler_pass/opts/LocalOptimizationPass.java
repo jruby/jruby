@@ -133,7 +133,7 @@ public class LocalOptimizationPass implements CompilerPass
                     // Use the simplified receiver!
                     IRMethod rm = call.getTargetMethodWithReceiver(r);
                     if (rm != null) {
-                        IRModule rc = rm.getDefiningModule();
+                        IRModule rc = rm.getDefiningIRModule();
                         if (rc != null) { // TODO: I am fairly sure I am wallpapering
                             if (rc.isCoreClass("Fixnum")) {
                                 Operand[] args = call.getOperands();

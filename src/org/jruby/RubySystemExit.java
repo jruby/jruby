@@ -30,7 +30,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="SystemExit", parent="Exception")
@@ -64,7 +64,7 @@ public class RubySystemExit extends RubyException {
         status = runtime.getNil();
     }
 
-    @JRubyMethod(name = "initialize", optional = 2, frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[]args, Block block) {
         status = RubyFixnum.zero(getRuntime());
         if (args.length > 0 && args[0] instanceof RubyFixnum) {
@@ -77,7 +77,7 @@ public class RubySystemExit extends RubyException {
         return this;
     }
 
-    @JRubyMethod(name = "status")
+    @JRubyMethod
     public IRubyObject status() {
         return status;
     }

@@ -111,6 +111,24 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value.should == "foo\r"
   end
 
+  it "should read 4 bytes for read(4)" do
+    100.times do
+      server = TCPServer.new(0)
+      value = nil
+      t = Thread.new {
+        sock = accept(server)
+        value = sock.read(4)
+      }
+      s = connect(server)
+      # 2 (or more?) times write is needed to reproduce
+      # And writing "12" then "345" blocks forever.
+      s.write("1")
+      s.write("2345")
+      t.join
+      value.should == "1234"
+    end
+  end
+
   it "should not block for readpartial" do
     server = TCPServer.new(0)
     value = nil
@@ -188,42 +206,56 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value.should == "baz"
   end
 
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
-  BIG_CHUNK = "a" * 100_000_000
+  # On an Ubuntu 10.10(64) box:
+  #   Packaged OpenJDK6 block with > 152606 (?)
+  #   Oracle's build block with > 131072 (2**17)
+  # On a Windows 7(64) box:
+  #   Oracle's build does not block (use memory till OOMException)
+  SOCKET_CHANNEL_MIGHT_BLOCK = "a" * (65536 * 4)
 
-  unless WINDOWS                # These two failing on Windows right now
-    it "should not block for write" do
-      server = TCPServer.new(0)
-      value = nil
-      t = Thread.new {
-        sock = accept(server)
-        begin
-          value = 1
-          sock.write(BIG_CHUNK) # this blocks; [ruby-dev:26405]
-        rescue RuntimeError
-          value = 2
-        end
-      }
-      s = connect(server)
-      Thread.pass until value == 1
-      wait_for_sleep_and_terminate(t) do
-        t.raise # help thread termination
+  it "should not block for write" do
+  100.times do # for acceleration; it failed w/o wait_for_accepted call
+    server = TCPServer.new(0)
+    value = nil
+    t = Thread.new {
+      sock = accept(server)
+      begin
+        value = 1
+        # this could block; [ruby-dev:26405]  But it doesn't block on Windows.
+        sock.write(SOCKET_CHANNEL_MIGHT_BLOCK)
+        value = 2
+      rescue RuntimeError
+        value = 3
       end
-      value.should == 2
+    }
+    s = connect(server)
+    type = nil
+    wait_for_sleep_and_terminate(t) do
+      if value == 1
+        type = :blocked
+        t.raise # help thread termination
+      else
+        value.should == 2
+        t.status.should == false
+      end
     end
+    if type == :blocked
+      value.should == 3
+      t.status.should == false
+    end
+  end
+  end
 
-    it "should not block for write_nonblock" do
-      server = TCPServer.new(0)
-      value = nil
-      t = Thread.new {
-        sock = accept(server)
-        value = sock.write_nonblock(BIG_CHUNK)
-      }
-      s = connect(server)
-      wait_for_sleep_and_terminate(t)
-      t.alive?.should == false
-      value.should > 0
-    end
+  it "should not block for write_nonblock" do
+    server = TCPServer.new(0)
+    value = nil
+    t = Thread.new {
+      sock = accept(server)
+      value = sock.write_nonblock(SOCKET_CHANNEL_MIGHT_BLOCK)
+    }
+    s = connect(server)
+    wait_for_terminate(t)
+    value.should > 0
   end
 
   def accept(server)
@@ -231,6 +263,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     flag = File::NONBLOCK
     flag |= sock.fcntl(Fcntl::F_GETFL)
     sock.fcntl(Fcntl::F_SETFL, flag)
+    Thread.current[:accepted] = true
     sock
   end
 
@@ -239,20 +272,27 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
   end
 
   def wait_for_sleep_and_terminate(server_thread)
+    wait_for_accepted(server_thread)
     wait_for_sleep(server_thread)
     yield if block_given?
     wait_for_terminate(server_thread)
   end
 
+  def wait_for_accepted(server_thread)
+    timeout(2) do
+      Thread.pass while !server_thread[:accepted]
+    end
+  end
+
   def wait_for_sleep(t)
     timeout(2) do
-      sleep 0.1 while t.status == 'run'
+      Thread.pass while t.status == 'run'
     end
   end
 
   def wait_for_terminate(t)
     timeout(2) do
-      sleep 0.1 while t.alive?
+      Thread.pass while t.alive?
     end
   end
 end

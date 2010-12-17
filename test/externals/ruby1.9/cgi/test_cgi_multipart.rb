@@ -32,7 +32,7 @@ class MultiPart
   def initialize(boundary=nil)
     @boundary = boundary || create_boundary()
     @buf = ''
-    @buf.force_encoding("ascii-8bit") if RUBY_VERSION>="1.9"
+    @buf.force_encoding(::Encoding::ASCII_8BIT) if defined?(::Encoding)
   end
   attr_reader :boundary
 
@@ -44,11 +44,8 @@ class MultiPart
     buf << "Content-Disposition: form-data: name=\"#{name}\"#{s}\r\n"
     buf << "Content-Type: #{content_type}\r\n" if content_type
     buf << "\r\n"
-    if RUBY_VERSION>="1.9"
-      buf <<  value.dup.force_encoding("ASCII-8BIT")
-    else
-      buf << value
-    end
+    value = value.dup.force_encoding(::Encoding::ASCII_8BIT) if defined?(::Encoding)
+    buf << value
     buf << "\r\n"
     return self
   end
@@ -135,11 +132,8 @@ class CGIMultipartTest < Test::Unit::TestCase
     ENV['CONTENT_LENGTH'] = input.length.to_s
     ENV['REQUEST_METHOD'] = 'POST'
     ## set $stdin
-    tmpfile = if RUBY_VERSION >="1.9"
-                Tempfile.new('test_cgi_multipart', :binmode => true)
-              else
-                Tempfile.new('test_cgi_multipart')
-              end
+    tmpfile = Tempfile.new('test_cgi_multipart')
+    tmpfile.binmode
     tmpfile << input
     tmpfile.rewind()
     $stdin = tmpfile
@@ -179,11 +173,7 @@ class CGIMultipartTest < Test::Unit::TestCase
 
   def _read(basename)
     filename = File.join(File.dirname(__FILE__), 'testdata', basename)
-    if RUBY_VERSION>="1.9"
-      s = File.open(filename, 'r:ascii-8bit') {|f| f.read() }
-    else
-      s = File.open(filename, 'rb') {|f| f.read() }
-    end
+    s = File.open(filename, 'rb') {|f| f.read() }
 
     return s
   end
@@ -199,7 +189,7 @@ class CGIMultipartTest < Test::Unit::TestCase
       {:name=>'image1',  :value=>_read('small.png'),
        :filename=>'small.png',  :content_type=>'image/png'},  # small image
     ]
-    @data[1][:value].force_encoding("UTF-8") if RUBY_VERSION>="1.9"
+    @data[1][:value].force_encoding(::Encoding::UTF_8) if defined?(::Encoding)
     @expected_class = StringIO
     _test_multipart()
   end
@@ -215,7 +205,7 @@ class CGIMultipartTest < Test::Unit::TestCase
       {:name=>'image1',  :value=>_read('large.png'),
        :filename=>'large.png',  :content_type=>'image/png'},  # large image
     ]
-    @data[1][:value].force_encoding("UTF-8") if RUBY_VERSION>="1.9"
+    @data[1][:value].force_encoding(::Encoding::UTF_8) if defined?(::Encoding)
     @expected_class = Tempfile
     _test_multipart()
   end

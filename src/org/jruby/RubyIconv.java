@@ -124,7 +124,7 @@ public class RubyIconv extends RubyObject {
             super(runtime, rubyClass, message);
         }
 
-        @JRubyMethod(name = "initialize", required = 1, optional = 2, frame = true)
+        @JRubyMethod(required = 1, optional = 2)
         @Override
         public IRubyObject initialize(IRubyObject[] args, Block block) {
             super.initialize(args, block);
@@ -171,7 +171,7 @@ public class RubyIconv extends RubyObject {
         return encoding.toLowerCase().indexOf(IGNORE) != -1 ? true : false;
     }
 
-    @JRubyMethod(name = "open", required = 2, frame = true, meta = true)
+    @JRubyMethod(required = 2, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
         Ruby runtime = context.getRuntime();
 
@@ -197,7 +197,7 @@ public class RubyIconv extends RubyObject {
                 context, new IRubyObject[] {to, from}, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "initialize", required = 2, frame = true)
+    @JRubyMethod
     public IRubyObject initialize(IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
         Ruby runtime = getRuntime();
         if (!arg1.respondsTo("to_str")) {

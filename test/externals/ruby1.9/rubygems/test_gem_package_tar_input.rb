@@ -1,9 +1,3 @@
-#--
-# Copyright 2006 by Chad Fowler, Rich Kilmer, Jim Weirich and others.
-# All rights reserved.
-# See LICENSE.txt for permissions.
-#++
-
 require_relative 'gem_package_tar_test_case'
 require 'rubygems/package/tar_input'
 
@@ -47,7 +41,7 @@ class TestGemPackageTarInput < TarTestCase
       meta = @spec.to_yaml
 
       f.write tar_file_header("metadata", "", 0644, meta.size)
-      f.write meta + "\0" * (1024 - meta.size) 
+      f.write meta + "\0" * (1024 - meta.size)
       f.write "\0" * 1024
     end
 

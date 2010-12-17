@@ -20,19 +20,16 @@ module EnvUtil
       end
       ruby = File.join("..", ruby)
     end
-    begin
-      require "rbconfig"
-      File.join(
-        RbConfig::CONFIG["bindir"],
-	RbConfig::CONFIG["ruby_install_name"] + RbConfig::CONFIG["EXEEXT"]
-      )
-    rescue LoadError
+    if defined?(RbConfig.ruby)
+      RbConfig.ruby
+    else
       "ruby"
     end
   end
   module_function :rubybin
 
   LANG_ENVS = %w"LANG LC_ALL LC_CTYPE"
+
   def rubyexec(*args)
     ruby = EnvUtil.rubybin
     c = "C"
@@ -66,6 +63,58 @@ module EnvUtil
   end
   module_function :rubyexec
 
+  def invoke_ruby(args, stdin_data="", capture_stdout=false, capture_stderr=false, opt={})
+    args = [args] if args.kind_of?(String)
+    begin
+      in_c, in_p = IO.pipe
+      out_p, out_c = IO.pipe if capture_stdout
+      err_p, err_c = IO.pipe if capture_stderr
+      opt = opt.dup
+      opt[:in] = in_c
+      opt[:out] = out_c if capture_stdout
+      opt[:err] = err_c if capture_stderr
+      if enc = opt.delete(:encoding)
+        out_p.set_encoding(enc) if out_p
+        err_p.set_encoding(enc) if err_p
+      end
+      c = "C"
+      child_env = {}
+      LANG_ENVS.each {|lc| child_env[lc] = c}
+      case args.first
+      when Hash
+        child_env.update(args.shift)
+      end
+      pid = spawn(child_env, EnvUtil.rubybin, *args, opt)
+      in_c.close
+      out_c.close if capture_stdout
+      err_c.close if capture_stderr
+      th_stdout = Thread.new { out_p.read } if capture_stdout
+      th_stderr = Thread.new { err_p.read } if capture_stderr
+      in_p.write stdin_data.to_str
+      in_p.close
+      if (!capture_stdout || th_stdout.join(10)) && (!capture_stderr || th_stderr.join(10))
+        stdout = th_stdout.value if capture_stdout
+        stderr = th_stderr.value if capture_stderr
+      else
+        raise Timeout::Error
+      end
+      out_p.close if capture_stdout
+      err_p.close if capture_stderr
+      Process.wait pid
+      status = $?
+    ensure
+      in_c.close if in_c && !in_c.closed?
+      in_p.close if in_p && !in_p.closed?
+      out_c.close if out_c && !out_c.closed?
+      out_p.close if out_p && !out_p.closed?
+      err_c.close if err_c && !err_c.closed?
+      err_p.close if err_p && !err_p.closed?
+      (th_stdout.kill; th_stdout.join) if th_stdout
+      (th_stderr.kill; th_stderr.join) if th_stderr
+    end
+    return stdout, stderr, status
+  end
+  module_function :invoke_ruby
 
   def verbose_warning
     class << (stderr = "")
@@ -78,6 +127,14 @@ module EnvUtil
     return stderr
   end
   module_function :verbose_warning
+
+  def under_gc_stress
+    stress, GC.stress = GC.stress, true
+    yield
+  ensure
+    GC.stress = stress
+  end
+  module_function :under_gc_stress
 end
 
 module Test
@@ -126,31 +183,8 @@ module Test
         out_p.close if out_p && !out_p.closed?
       end
 
-      LANG_ENVS = %w"LANG LC_ALL LC_CTYPE"
-      def assert_in_out_err(args, test_stdin = "", test_stdout = "", test_stderr = "", message = nil)
-        in_c, in_p = IO.pipe
-        out_p, out_c = IO.pipe
-        err_p, err_c = IO.pipe
-        c = "C"
-        env = {}
-        LANG_ENVS.each {|lc| env[lc], ENV[lc] = ENV[lc], c}
-        pid = spawn(EnvUtil.rubybin, *args, STDIN=>in_c, STDOUT=>out_c, STDERR=>err_c)
-        in_c.close
-        out_c.close
-        err_c.close
-        in_p.write test_stdin
-        in_p.close
-        th_stdout = Thread.new { out_p.read }
-        th_stderr = Thread.new { err_p.read }
-        if th_stdout.join(10) && th_stderr.join(10)
-          stdout = th_stdout.value
-          stderr = th_stderr.value
-        else
-          flunk("timeout")
-        end
-        out_p.close
-        err_p.close
-        Process.wait pid
+      def assert_in_out_err(args, test_stdin = "", test_stdout = [], test_stderr = [], message = nil, opt={})
+        stdout, stderr, status = EnvUtil.invoke_ruby(args, test_stdin, true, true, opt)
         if block_given?
           yield(stdout.lines.map {|l| l.chomp }, stderr.lines.map {|l| l.chomp })
         else
@@ -164,25 +198,35 @@ module Test
           else
             assert_equal(test_stderr, stderr.lines.map {|l| l.chomp }, message)
           end
+          status
         end
-      ensure
-        env.each_pair {|lc, v|
-          if v
-            ENV[lc] = v
-          else
-            ENV.delete(lc)
-          end
-        } if env
-        in_c.close if in_c && !in_c.closed?
-        in_p.close if in_p && !in_p.closed?
-        out_c.close if out_c && !out_c.closed?
-        out_p.close if out_p && !out_p.closed?
-        err_c.close if err_c && !err_c.closed?
-        err_p.close if err_p && !err_p.closed?
-        (th_stdout.kill; th_stdout.join) if th_stdout
-        (th_stderr.kill; th_stderr.join) if th_stderr
       end
+
+      def assert_ruby_status(args, test_stdin="", message=nil, opt={})
+        stdout, stderr, status = EnvUtil.invoke_ruby(args, test_stdin, false, false, opt)
+        m = message ? "#{message} (#{status.inspect})" : "ruby exit status is not success: #{status.inspect}"
+        assert(status.success?, m)
+      end
+
     end
   end
 end
 
+begin
+  require 'rbconfig'
+rescue LoadError
+else
+  module RbConfig
+    @ruby = EnvUtil.rubybin
+    class << self
+      undef ruby if method_defined?(:ruby)
+      attr_reader :ruby
+    end
+    dir = File.dirname(ruby)
+    name = File.basename(ruby, CONFIG['EXEEXT'])
+    CONFIG['bindir'] = dir
+    CONFIG['ruby_install_name'] = name
+    CONFIG['RUBY_INSTALL_NAME'] = name
+    Gem::ConfigMap[:bindir] = dir if defined?(Gem)
+  end
+end

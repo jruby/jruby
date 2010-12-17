@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -43,7 +44,8 @@ public class GetConstInstr extends GetInstr {
     }
 
     @Override
-    public void interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
+        System.out.println("SOURCE: " + getSource().getClass());
         Object source = getSource().retrieve(interp);
         RubyModule module;
 
@@ -58,6 +60,6 @@ public class GetConstInstr extends GetInstr {
         }
 
         getResult().store(interp, module.getConstant(getName()));
+        return null;
     }
-
 }

@@ -67,7 +67,7 @@ public class RaiseException extends JumpException {
         if (msg == null) {
             msg = "No message available";
         }
-        providedMessage = msg;
+        providedMessage = "(" + excptnClass.getName() + ") " + msg;
         this.nativeException = nativeException;
         if (DEBUG) {
             Thread.dumpStack();
@@ -125,7 +125,7 @@ public class RaiseException extends JumpException {
     @Override
     public String getMessage() {
         if (providedMessage == null) {
-            providedMessage = exception.message(exception.getRuntime().getCurrentContext()).asJavaString();
+            providedMessage = "(" + exception.getMetaClass().getBaseName() + ") " + exception.message(exception.getRuntime().getCurrentContext()).asJavaString();
         }
         return providedMessage;
     }
@@ -166,7 +166,7 @@ public class RaiseException extends JumpException {
             if (exception instanceof NativeException) {
                 setStackTrace(cachedTrace = ((NativeException)exception).getCause().getStackTrace());
             } else {
-                setStackTrace(cachedTrace = javaTraceFromRubyTrace(exception.getBacktraceFrames()));
+                setStackTrace(cachedTrace = javaTraceFromRubyTrace(exception.getBacktraceElements()));
             }
         }
         return cachedTrace;
@@ -195,30 +195,8 @@ public class RaiseException extends JumpException {
     
     @Override
     public void printStackTrace(PrintStream ps) {
-        StackTraceElement[] trace = getStackTrace();
-        int externalIndex = 0;
-        for (int i = trace.length - 1; i > 0; i--) {
-            if (trace[i].getClassName().indexOf("org.jruby.evaluator") >= 0) {
-                break;
-            }
-            externalIndex = i;
-        }
-        IRubyObject backtrace = exception.backtrace();
-        Ruby runtime = backtrace.getRuntime();
-        if (runtime.getNil() != backtrace) {
-            IRubyObject firstLine = backtrace.callMethod(runtime.getCurrentContext(), "first");
-            if (!firstLine.isNil()) {
-                ps.print(firstLine.convertToString() + ": ");
-            }
-        }
-
-        IRubyObject message = exception.message;
-        ps.println((message.isNil() ? "" : message.convertToString()) + " (" + exception.getMetaClass().toString() + ")");
-        exception.printBacktrace(ps);
-        ps.println("\t...internal jruby stack elided...");
-        for (int i = externalIndex; i < trace.length; i++) {
-            ps.println("\tfrom " + trace[i].toString());
-        }
+        getStackTrace();
+        super.printStackTrace(ps);
     }
     
     @Override

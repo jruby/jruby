@@ -1,8 +1,0 @@
-    @Override
-    public IRubyObject call(ThreadContext context<%= n_args_in(arity) %>, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().newArrayNoCopy(<%= n_args_ary_bare(arity) %>), "yield called out of block");
-    }
-    @Override
-    public IRubyObject yieldSpecific(ThreadContext context<%= n_args_in(arity) %>, Binding binding, Type type) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, context.getRuntime().getNil(), "yield called out of block");
-    }

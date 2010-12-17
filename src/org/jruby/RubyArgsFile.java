@@ -45,6 +45,7 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import static org.jruby.CompatVersion.*;
 
 public class RubyArgsFile {
     private static final class ArgsFileData {
@@ -276,7 +277,7 @@ public class RubyArgsFile {
         return line;
     }
 
-    @JRubyMethod(name = {"readlines"}, optional = 1, frame = true)
+    @JRubyMethod(optional = 1)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
         Ruby runtime = context.getRuntime();
@@ -296,7 +297,7 @@ public class RubyArgsFile {
         return ary;
     }
 
-    @JRubyMethod(name = {"to_a"}, optional = 1, frame = true)
+    @JRubyMethod(optional = 1)
     public static IRubyObject to_a(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
         Ruby runtime = context.getRuntime();
@@ -327,22 +328,22 @@ public class RubyArgsFile {
         return recv;
     }
 
-    @JRubyMethod(name = "each_byte", optional = 1, frame = true)
+    @JRubyMethod(optional = 1)
     public static IRubyObject each_byte(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_byte(context, recv, block) : enumeratorize(context.getRuntime(), recv, "each_byte");
     }
 
-    @JRubyMethod(name = "bytes", optional = 1, frame = true)
+    @JRubyMethod(optional = 1)
     public static IRubyObject bytes(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_byte(context, recv, block) : enumeratorize(context.getRuntime(), recv, "bytes");
     }
 
-    @JRubyMethod(name = "each_char", frame = true)
+    @JRubyMethod
     public static IRubyObject each_char(final ThreadContext context, IRubyObject recv, Block block) {
         return block.isGiven() ? each_charCommon(context, recv, block) : enumeratorize(context.getRuntime(), recv, "each_char");
     }
 
-    @JRubyMethod(name = "chars", frame = true)
+    @JRubyMethod
     public static IRubyObject chars(final ThreadContext context, IRubyObject recv, Block block) {
         return block.isGiven() ? each_charCommon(context, recv, block) : enumeratorize(context.getRuntime(), recv, "chars");
     }
@@ -384,7 +385,7 @@ public class RubyArgsFile {
     /** Invoke a block for each line.
      *
      */
-    @JRubyMethod(name = {"each_line", "each"}, optional = 1, frame = true)
+    @JRubyMethod(name = {"each_line", "each"}, optional = 1)
     public static IRubyObject each_line(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
         if (!data.next_argv(context)) return context.getRuntime().getNil();
@@ -403,12 +404,12 @@ public class RubyArgsFile {
         return recv;
     }
 
-    @JRubyMethod(name = "each_line", optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each_line", optional = 1, compat = RUBY1_9)
     public static IRubyObject each_line19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.getRuntime(), recv, "each_line", args);
     }
 
-    @JRubyMethod(name = "each", optional = 1, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "each", optional = 1, compat = RUBY1_9)
     public static IRubyObject each19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.getRuntime(), recv, "each", args);
     }

@@ -6,6 +6,8 @@ class IMAPTest < Test::Unit::TestCase
   SERVER_KEY = File.expand_path("server.key", File.dirname(__FILE__))
   SERVER_CERT = File.expand_path("server.crt", File.dirname(__FILE__))
 
+  SERVER_ADDR = "127.0.0.1"
+
   def setup
     @do_not_reverse_lookup = Socket.do_not_reverse_lookup
     Socket.do_not_reverse_lookup = true
@@ -19,6 +21,10 @@ class IMAPTest < Test::Unit::TestCase
     utf8 = "\357\274\241\357\274\242\357\274\243".force_encoding("UTF-8")
     s = Net::IMAP.encode_utf7(utf8)
     assert_equal("&,yH,Iv8j-".force_encoding("UTF-8"), s)
+
+    utf8 = "\343\201\202&".force_encoding("UTF-8")
+    s = Net::IMAP.encode_utf7(utf8)
+    assert_equal("&MEI-&-".force_encoding("UTF-8"), s)
   end
 
   def test_decode_utf7
@@ -79,7 +85,9 @@ class IMAPTest < Test::Unit::TestCase
     if defined?(OpenSSL)
       assert_raise(OpenSSL::SSL::SSLError) do
         imaps_test do |port|
-          Net::IMAP.new("127.0.0.1",
+          # SERVER_ADDR is different from the hostname in the certificate,
+          # so the following code should raise a SSLError.
+          Net::IMAP.new(SERVER_ADDR,
                         :port => port,
                         :ssl => { :ca_file => CA_FILE })
         end
@@ -103,7 +111,7 @@ class IMAPTest < Test::Unit::TestCase
   end
 
   def test_unexpected_eof
-    server = TCPServer.new(0)
+    server = create_tcp_server
     port = server.addr[1]
     Thread.start do
       begin
@@ -134,7 +142,7 @@ class IMAPTest < Test::Unit::TestCase
   end
 
   def test_idle
-    server = TCPServer.new(0)
+    server = create_tcp_server
     port = server.addr[1]
     requests = []
     Thread.start do
@@ -186,7 +194,7 @@ class IMAPTest < Test::Unit::TestCase
   end
 
   def test_exception_during_idle
-    server = TCPServer.new(0)
+    server = create_tcp_server
     port = server.addr[1]
     requests = []
     Thread.start do
@@ -215,16 +223,25 @@ class IMAPTest < Test::Unit::TestCase
         begin
           th = Thread.current
           m = Monitor.new
+          in_idle = false
+          exception_raised = false
           c = m.new_cond
           Thread.start do
             m.synchronize do
-              c.wait
+              until in_idle
+                c.wait(0.1)
+              end
             end
             th.raise(Interrupt)
+            exception_raised = true
           end
           imap.idle do |res|
             m.synchronize do
+              in_idle = true
               c.signal
+              until exception_raised
+                c.wait(0.1)
+              end
             end
           end
         rescue Interrupt
@@ -242,7 +259,7 @@ class IMAPTest < Test::Unit::TestCase
   end
 
   def test_idle_done_not_during_idle
-    server = TCPServer.new(0)
+    server = create_tcp_server
     port = server.addr[1]
     requests = []
     Thread.start do
@@ -270,10 +287,76 @@ class IMAPTest < Test::Unit::TestCase
     end
   end
 
+  def test_unexpected_bye
+    server = create_tcp_server
+    port = server.addr[1]
+    Thread.start do
+      begin
+        sock = server.accept
+        begin
+          sock.print("* OK Gimap ready for requests from 75.101.246.151 33if2752585qyk.26\r\n")
+          sock.gets
+          sock.print("* BYE System Error 33if2752585qyk.26\r\n")
+        ensure
+          sock.close
+        end
+      rescue
+      end
+    end
+    begin
+      begin
+        imap = Net::IMAP.new("localhost", :port => port)
+        assert_raise(Net::IMAP::ByeResponseError) do
+          imap.login("user", "password")
+        end
+      end
+    ensure
+      server.close
+    end
+  end
+
+  def test_exception_during_shutdown
+    server = create_tcp_server
+    port = server.addr[1]
+    Thread.start do
+      begin
+        sock = server.accept
+        begin
+          sock.print("* OK test server\r\n")
+          sock.gets
+          sock.print("* BYE terminating connection\r\n")
+          sock.print("RUBY0001 OK LOGOUT completed\r\n")
+        ensure
+          sock.close
+        end
+      rescue
+      end
+    end
+    begin
+      begin
+        imap = Net::IMAP.new("localhost", :port => port)
+        imap.instance_eval do
+          def @sock.shutdown(*args)
+            super
+          ensure
+            raise "error"
+          end
+        end
+        imap.logout
+      ensure
+        assert_raise(RuntimeError) do
+          imap.disconnect
+        end
+      end
+    ensure
+      server.close
+    end
+  end
+
   private
 
   def imaps_test
-    server = TCPServer.new(0)
+    server = create_tcp_server
     port = server.addr[1]
     ctx = OpenSSL::SSL::SSLContext.new
     ctx.ca_file = CA_FILE
@@ -311,7 +394,7 @@ class IMAPTest < Test::Unit::TestCase
   end
 
   def starttls_test
-    server = TCPServer.new(0)
+    server = create_tcp_server
     port = server.addr[1]
     Thread.start do
       begin
@@ -349,5 +432,9 @@ class IMAPTest < Test::Unit::TestCase
     ensure
       server.close
     end
+  end
+
+  def create_tcp_server
+    return TCPServer.new(SERVER_ADDR, 0)
   end
 end

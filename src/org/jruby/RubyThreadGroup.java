@@ -69,12 +69,12 @@ public class RubyThreadGroup extends RubyObject {
         return threadGroupClass;
     }
     
-    @JRubyMethod(name = "new", frame = true, meta = true)
+    @JRubyMethod(name = "new", meta = true)
     public static IRubyObject newInstance(IRubyObject recv, Block block) {
         return new RubyThreadGroup(recv.getRuntime(), (RubyClass)recv);
     }
 
-    @JRubyMethod(name = "add", required = 1, frame = true)
+    @JRubyMethod(name = "add", required = 1)
     public IRubyObject add(IRubyObject rubyThread, Block block) {
         if (!(rubyThread instanceof RubyThread)) throw getRuntime().newTypeError(rubyThread, getRuntime().getThread());
         
@@ -113,19 +113,19 @@ public class RubyThreadGroup extends RubyObject {
         }
     }
     
-    @JRubyMethod(name = "enclose", frame = true)
+    @JRubyMethod
     public IRubyObject enclose(Block block) {
         enclosed = true;
 
         return this;
     }
     
-    @JRubyMethod(name = "enclosed?", frame = true)
+    @JRubyMethod(name = "enclosed?")
     public IRubyObject enclosed_p(Block block) {
         return getRuntime().newBoolean(enclosed);
     }
 
-    @JRubyMethod(name = "list", frame = true)
+    @JRubyMethod
     public IRubyObject list(Block block) {
         return RubyArray.newArray(getRuntime(), rubyThreadList);
     }

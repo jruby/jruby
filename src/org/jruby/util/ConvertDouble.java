@@ -62,7 +62,7 @@ public class ConvertDouble {
             endIndex = index + list.length();
             this.isStrict = isStrict;
             this.is19 = is19;
-            chars = new char[list.length()];
+            chars = new char[list.length()+1]; // +1 for implicit '0' for terminating 'E'
             charsIndex = 0;
         }
 
@@ -120,7 +120,7 @@ public class ConvertDouble {
             if (charsIndex == 0 || (charsIndex == 1 && chars[0] == '-')) {
                 if (isStrict) strictError(); // Strict requires at least one digit.
                 return 0.0;
-            } else if (chars[charsIndex - 1] == 'e') { // Covers 12.0efrog
+            } else if (isExponent((byte) chars[charsIndex - 1])) { // Covers 12.0efrog
                 if (isStrict) strictError();
                 addToResult((byte) '0');
             } else if (isStrict && !isEOS()) {

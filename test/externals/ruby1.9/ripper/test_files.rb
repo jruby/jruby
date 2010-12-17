@@ -1,10 +1,13 @@
 begin
+  require 'ripper'
+  require 'find'
+  require 'test/unit'
+  ripper_test = true
+  module TestRipper; end
+rescue LoadError
+end
 
-require 'ripper'
-require 'find'
-require 'test/unit'
-
-class TestRipper_Generic < Test::Unit::TestCase
+class TestRipper::Generic < Test::Unit::TestCase
   SRCDIR = File.dirname(File.dirname(File.dirname(File.expand_path(__FILE__))))
 
   class Parser < Ripper
@@ -21,8 +24,4 @@ class TestRipper_Generic < Test::Unit::TestCase
       assert_nothing_raised("ripper failed to parse: #{n.inspect}") { Parser.new(File.read(n)).parse }
     }
   end
-end
-
-rescue LoadError
-end
-
+end if ripper_test

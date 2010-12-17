@@ -15,10 +15,10 @@ class TestGemCommandsInstallCommand < RubyGemTestCase
     util_setup_fake_fetcher(:prerelease)
     util_setup_spec_fetcher @a2, @a2_pre
 
-    @fetcher.data["#{@gem_repo}gems/#{@a2.full_name}.gem"] =
-      read_binary(File.join(@gemhome, 'cache', "#{@a2.full_name}.gem"))
-    @fetcher.data["#{@gem_repo}gems/#{@a2_pre.full_name}.gem"] =
-      read_binary(File.join(@gemhome, 'cache', "#{@a2_pre.full_name}.gem"))
+    @fetcher.data["#{@gem_repo}gems/#{@a2.file_name}"] =
+      read_binary(File.join(@gemhome, 'cache', @a2.file_name))
+    @fetcher.data["#{@gem_repo}gems/#{@a2_pre.file_name}"] =
+      read_binary(File.join(@gemhome, 'cache', @a2_pre.file_name))
 
     @cmd.options[:args] = [@a2.name]
 
@@ -37,10 +37,10 @@ class TestGemCommandsInstallCommand < RubyGemTestCase
     util_setup_fake_fetcher(:prerelease)
     util_setup_spec_fetcher @a2, @a2_pre
 
-    @fetcher.data["#{@gem_repo}gems/#{@a2.full_name}.gem"] =
-      read_binary(File.join(@gemhome, 'cache', "#{@a2.full_name}.gem"))
-    @fetcher.data["#{@gem_repo}gems/#{@a2_pre.full_name}.gem"] =
-      read_binary(File.join(@gemhome, 'cache', "#{@a2_pre.full_name}.gem"))
+    @fetcher.data["#{@gem_repo}gems/#{@a2.file_name}"] =
+      read_binary(File.join(@gemhome, 'cache', @a2.file_name))
+    @fetcher.data["#{@gem_repo}gems/#{@a2_pre.file_name}"] =
+      read_binary(File.join(@gemhome, 'cache', @a2_pre.file_name))
 
     @cmd.handle_options [@a2_pre.name, '--version', @a2_pre.version.to_s]
     assert @cmd.options[:prerelease]
@@ -79,7 +79,7 @@ class TestGemCommandsInstallCommand < RubyGemTestCase
     util_setup_fake_fetcher
     @cmd.options[:domain] = :local
 
-    FileUtils.mv File.join(@gemhome, 'cache', "#{@a2.full_name}.gem"),
+    FileUtils.mv File.join(@gemhome, 'cache', @a2.file_name),
                  File.join(@tempdir)
 
     @cmd.options[:args] = [@a2.name]
@@ -109,7 +109,7 @@ class TestGemCommandsInstallCommand < RubyGemTestCase
     util_setup_fake_fetcher
     @cmd.options[:user_install] = false
 
-    FileUtils.mv File.join(@gemhome, 'cache', "#{@a2.full_name}.gem"),
+    FileUtils.mv File.join(@gemhome, 'cache', @a2.file_name),
                  File.join(@tempdir)
 
     @cmd.options[:args] = [@a2.name]
@@ -145,8 +145,7 @@ class TestGemCommandsInstallCommand < RubyGemTestCase
     end
 
     # HACK no repository was checked
-    assert_equal "ERROR:  could not find gem no_such_gem locally or in a repository\n",
-                 @ui.error
+    assert_match(/ould not find a valid gem 'no_such_gem'/, @ui.error)
   end
 
   def test_execute_no_gem
@@ -170,18 +169,17 @@ class TestGemCommandsInstallCommand < RubyGemTestCase
       assert_equal 2, e.exit_code
     end
 
-    assert_equal "ERROR:  could not find gem nonexistent locally or in a repository\n",
-                 @ui.error
+    assert_match(/ould not find a valid gem 'nonexistent'/, @ui.error)
   end
 
   def test_execute_prerelease
     util_setup_fake_fetcher(:prerelease)
     util_setup_spec_fetcher @a2, @a2_pre
 
-    @fetcher.data["#{@gem_repo}gems/#{@a2.full_name}.gem"] =
-      read_binary(File.join(@gemhome, 'cache', "#{@a2.full_name}.gem"))
-    @fetcher.data["#{@gem_repo}gems/#{@a2_pre.full_name}.gem"] =
-      read_binary(File.join(@gemhome, 'cache', "#{@a2_pre.full_name}.gem"))
+    @fetcher.data["#{@gem_repo}gems/#{@a2.file_name}"] =
+      read_binary(File.join(@gemhome, 'cache', @a2.file_name))
+    @fetcher.data["#{@gem_repo}gems/#{@a2_pre.file_name}"] =
+      read_binary(File.join(@gemhome, 'cache', @a2_pre.file_name))
 
     @cmd.options[:prerelease] = true
     @cmd.options[:args] = [@a2_pre.name]
@@ -204,8 +202,8 @@ class TestGemCommandsInstallCommand < RubyGemTestCase
     util_setup_fake_fetcher
     util_setup_spec_fetcher @a2
 
-    @fetcher.data["#{@gem_repo}gems/#{@a2.full_name}.gem"] =
-      read_binary(File.join(@gemhome, 'cache', "#{@a2.full_name}.gem"))
+    @fetcher.data["#{@gem_repo}gems/#{@a2.file_name}"] =
+      read_binary(File.join(@gemhome, 'cache', @a2.file_name))
 
     @cmd.options[:args] = [@a2.name]
 
@@ -232,10 +230,10 @@ class TestGemCommandsInstallCommand < RubyGemTestCase
     util_setup_fake_fetcher
     @cmd.options[:domain] = :local
 
-    FileUtils.mv File.join(@gemhome, 'cache', "#{@a2.full_name}.gem"),
+    FileUtils.mv File.join(@gemhome, 'cache', @a2.file_name),
                  File.join(@tempdir)
 
-    FileUtils.mv File.join(@gemhome, 'cache', "#{@b2.full_name}.gem"),
+    FileUtils.mv File.join(@gemhome, 'cache', @b2.file_name),
                  File.join(@tempdir)
 
     @cmd.options[:args] = [@a2.name, @b2.name]

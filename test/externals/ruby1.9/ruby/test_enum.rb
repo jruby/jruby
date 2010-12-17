@@ -35,6 +35,17 @@ class TestEnumerable < Test::Unit::TestCase
     assert_equal(3, @obj.count {|x| x % 2 == 1 })
     assert_equal(2, @obj.count(1) {|x| x % 2 == 1 })
     assert_raise(ArgumentError) { @obj.count(0, 1) }
+
+    if RUBY_ENGINE == "ruby"
+      en = Class.new {
+        include Enumerable
+        alias :size :count
+        def each
+          yield 1
+        end
+      }
+      assert_equal(1, en.new.count, '[ruby-core:24794]')
+    end
   end
 
   def test_find
@@ -132,29 +143,30 @@ class TestEnumerable < Test::Unit::TestCase
   def test_min
     assert_equal(1, @obj.min)
     assert_equal(3, @obj.min {|a,b| b <=> a })
-    a = %w(albatross dog horse)
-    assert_equal("albatross", a.min)
-    assert_equal("dog", a.min {|a,b| a.length <=> b.length })
+    ary = %w(albatross dog horse)
+    assert_equal("albatross", ary.min)
+    assert_equal("dog", ary.min {|a,b| a.length <=> b.length })
     assert_equal(1, [3,2,1].min)
   end
 
   def test_max
     assert_equal(3, @obj.max)
     assert_equal(1, @obj.max {|a,b| b <=> a })
-    a = %w(albatross dog horse)
-    assert_equal("horse", a.max)
-    assert_equal("albatross", a.max {|a,b| a.length <=> b.length })
+    ary = %w(albatross dog horse)
+    assert_equal("horse", ary.max)
+    assert_equal("albatross", ary.max {|a,b| a.length <=> b.length })
     assert_equal(1, [3,2,1].max{|a,b| b <=> a })
   end
 
   def test_minmax
     assert_equal([1, 3], @obj.minmax)
     assert_equal([3, 1], @obj.minmax {|a,b| b <=> a })
-    a = %w(albatross dog horse)
-    assert_equal(["albatross", "horse"], a.minmax)
-    assert_equal(["dog", "albatross"], a.minmax {|a,b| a.length <=> b.length })
+    ary = %w(albatross dog horse)
+    assert_equal(["albatross", "horse"], ary.minmax)
+    assert_equal(["dog", "albatross"], ary.minmax {|a,b| a.length <=> b.length })
     assert_equal([1, 3], [2,3,1].minmax)
     assert_equal([3, 1], [2,3,1].minmax {|a,b| b <=> a })
+    assert_equal([1, 3], [2,2,3,3,1,1].minmax)
   end
 
   def test_min_by
@@ -185,6 +197,14 @@ class TestEnumerable < Test::Unit::TestCase
     assert(!([1,2,3].member?(4)))
   end
 
+  class Foo
+    include Enumerable
+    def each
+      yield 1
+      yield 1,2
+    end
+  end
+
   def test_each_with_index
     a = []
     @obj.each_with_index {|x, i| a << [x, i] }
@@ -195,6 +215,7 @@ class TestEnumerable < Test::Unit::TestCase
       hash[item] = index
     end
     assert_equal({"cat"=>0, "wombat"=>2, "dog"=>1}, hash)
+    assert_equal([[1, 0], [[1, 2], 1]], Foo.new.each_with_index.to_a)
   end
 
   def test_each_with_object
@@ -205,6 +226,12 @@ class TestEnumerable < Test::Unit::TestCase
     }
     assert_same(obj, ret)
     assert_equal([55, 3628800], ret)
+    assert_equal([[1, nil], [[1, 2], nil]], Foo.new.each_with_object(nil).to_a)
+  end
+
+  def test_each_entry
+    assert_equal([1, 2, 3], [1, 2, 3].each_entry.to_a)
+    assert_equal([1, [1, 2]], Foo.new.each_entry.to_a)
   end
 
   def test_zip
@@ -282,38 +309,6 @@ class TestEnumerable < Test::Unit::TestCase
 
   def test_reverse_each
     assert_equal([2,1,3,2,1], @obj.reverse_each.to_a)
-  end
-
-  def test_join
-    ofs = $,
-    assert_equal("abc", ("a".."c").join(""))
-    assert_equal("a-b-c", ("a".."c").join("-"))
-    $, = "-"
-    assert_equal("a-b-c", ("a".."c").join())
-    $, = nil
-    assert_equal("abc", ("a".."c").join())
-    assert_equal("123", (1..3).join())
-    assert_raise(TypeError, '[ruby-core:24172]') {("a".."c").join(1)}
-    class << (e = Object.new.extend(Enumerable))
-      def each
-        yield self
-      end
-    end
-    assert_raise(ArgumentError){e.join("")}
-    assert_raise(ArgumentError){[e].join("")}
-    e = Class.new {
-      include Enumerable
-      def initialize(*args)
-        @e = args
-      end
-      def each
-        @e.each {|e| yield e}
-      end
-    }
-    e = e.new(1, e.new(2, e.new(3, e.new(4, 5))))
-    assert_equal("1:2:3:4:5", e.join(':'), '[ruby-core:24196]')
-  ensure
-    $, = ofs
   end
 
   def test_chunk

@@ -177,7 +177,7 @@ public class RubyNameError extends RubyException {
         return newError;
     }
 
-    @JRubyMethod(name = "initialize", optional = 2, frame = true)
+    @JRubyMethod(name = "initialize", optional = 2)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 1) {

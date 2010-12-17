@@ -40,10 +40,12 @@ import java.util.Iterator;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.ast.ArgsNoArgNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.NodeType;
 import org.jruby.ast.OptArgNode;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -51,11 +53,14 @@ import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Interpreted19Block;
+import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
+import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
@@ -66,8 +71,6 @@ import org.jruby.runtime.marshal.DataType;
 public class RubyProc extends RubyObject implements DataType {
     private Block block = Block.NULL_BLOCK;
     private Block.Type type;
-    private String file;
-    private int line;
     private ISourcePosition sourcePosition;
 
     public RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
@@ -129,11 +132,11 @@ public class RubyProc extends RubyObject implements DataType {
      * since we need to deal with special case of Proc.new with no arguments or block arg.  In 
      * this case, we need to check previous frame for a block to consume.
      */
-    @JRubyMethod(name = "new", rest = true, frame = true, meta = true)
+    @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // No passed in block, lets check next outer frame for one ('Proc.new')
         if (!block.isGiven()) {
-            block = context.getPreviousFrame().getBlock();
+            block = context.getCurrentFrame().getBlock();
         }
 
         // This metaclass == recv check seems gross, but MRI seems to do the same:
@@ -148,7 +151,7 @@ public class RubyProc extends RubyObject implements DataType {
         return obj;
     }
     
-    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block procBlock) {
         if (!procBlock.isGiven()) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
@@ -170,11 +173,12 @@ public class RubyProc extends RubyObject implements DataType {
             block.getBody().setStaticScope(newScope);
         }
 
+        // force file/line info into the new block's binding
+        block.getBinding().setFile(block.getBody().getFile());
+        block.getBinding().setLine(block.getBody().getLine());
+
         block.type = type;
         block.setProcObject(this);
-
-        file = context.getFile();
-        line = context.getLine();
         return this;
     }
     
@@ -183,8 +187,6 @@ public class RubyProc extends RubyObject implements DataType {
     public IRubyObject rbClone() {
     	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), type);
     	newProc.block = getBlock();
-    	newProc.file = file;
-    	newProc.line = line;
     	// TODO: CLONE_SETUP here
     	return newProc;
     }
@@ -194,8 +196,6 @@ public class RubyProc extends RubyObject implements DataType {
     public IRubyObject dup() {
         RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), type);
         newProc.block = getBlock();
-        newProc.file = file;
-        newProc.line = line;
         return newProc;
     }
     
@@ -210,18 +210,18 @@ public class RubyProc extends RubyObject implements DataType {
         return getRuntime().getFalse();
     }
     
-    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "to_s", compat = RUBY1_8)
     @Override
     public IRubyObject to_s() {
         return RubyString.newString(
                 getRuntime(),"#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
-                file + ":" + (line + 1) + ">");
+                block.getBody().getFile() + ":" + (block.getBody().getLine() + 1) + ">");
     }
 
-    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "to_s", compat = RUBY1_9)
     public IRubyObject to_s19() {
         StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
-                file + ":" + (line + 1));
+                block.getBody().getFile() + ":" + (block.getBody().getLine() + 1));
         if (isLambda()) {
             sb.append(" (lambda)");
         }
@@ -234,7 +234,7 @@ public class RubyProc extends RubyObject implements DataType {
         return getRuntime().newBinding(block.getBinding());
     }
 
-    @JRubyMethod(name = {"call", "[]"}, rest = true, frame = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = {"call", "[]"}, rest = true, compat = RUBY1_8)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
         return call(context, args, null, block);
     }
@@ -243,7 +243,7 @@ public class RubyProc extends RubyObject implements DataType {
         return call(context, args, null, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield"}, rest = true, frame = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"call", "[]", "yield"}, rest = true, compat = RUBY1_9)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
         if (isLambda()) {
             this.block.arity().checkArity(context.getRuntime(), args.length);
@@ -314,13 +314,14 @@ public class RubyProc extends RubyObject implements DataType {
 
         // returns can't propagate out of threads
         if (isThread()) {
-            throw runtime.newThreadError("return can't jump across threads");
+            // just re-throw, let thread handle it
+            throw rj;
         }
 
         // If the block-receiving method is not still active and the original
         // enclosing frame is no longer on the stack, it's a bad return.
         // FIXME: this is not very efficient for cases where it won't error
-        if (target == jumpTarget && !context.isJumpTargetAlive(target, 1)) {
+        if (target == jumpTarget && !context.isJumpTargetAlive(target, 0)) {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETURN, (IRubyObject)rj.getValue(), "unexpected return");
         }
 
@@ -342,7 +343,7 @@ public class RubyProc extends RubyObject implements DataType {
     	return this;
     }
 
-    @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "source_location", compat = RUBY1_9)
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (sourcePosition != null) {
@@ -357,13 +358,18 @@ public class RubyProc extends RubyObject implements DataType {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "parameters", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "parameters", compat = RUBY1_9)
     public IRubyObject parameters(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         RubyArray parms = RubyArray.newEmptyArray(runtime);
         ArgsNode args;
+        BlockBody body = this.getBlock().getBody();
 
-        if (!(this.getBlock().getBody() instanceof Interpreted19Block)) {
+        if (!(body instanceof Interpreted19Block)) {
+            if (body instanceof MethodBlock) {
+                MethodBlock methodBlock = (MethodBlock)body;
+                return methodBlock.getMethod().parameters(context);
+            }
             return parms;
         }
 
@@ -404,12 +410,18 @@ public class RubyProc extends RubyObject implements DataType {
             }
         }
 
-        ArgumentNode rest = args.getRestArgNode();
-        if (rest != null) {
+        if (args instanceof ArgsNoArgNode) {
             elem = RubyArray.newEmptyArray(runtime);
             elem.add(RubySymbol.newSymbol(runtime, "rest"));
-            elem.add(RubySymbol.newSymbol(runtime, rest.getName()));
             parms.add(elem);
+        } else {
+            ArgumentNode rest = args.getRestArgNode();
+            if (rest != null) {
+                elem = RubyArray.newEmptyArray(runtime);
+                elem.add(RubySymbol.newSymbol(runtime, "rest"));
+                elem.add(RubySymbol.newSymbol(runtime, rest.getName()));
+                parms.add(elem);
+            }
         }
 
         BlockArgNode blockArg = args.getBlock();
@@ -423,7 +435,7 @@ public class RubyProc extends RubyObject implements DataType {
        return parms;
     }
 
-    @JRubyMethod(name = "lambda?", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "lambda?", compat = RUBY1_9)
     public IRubyObject lambda_p(ThreadContext context) {
         return context.getRuntime().newBoolean(isLambda());
     }

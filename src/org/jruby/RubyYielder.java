@@ -31,7 +31,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "Enumerator::Yielder")
@@ -71,7 +71,7 @@ public class RubyYielder extends RubyObject {
         if (proc == null) throw getRuntime().newArgumentError("uninitializer yielder");
     }
 
-    @JRubyMethod(name = "initialize", frame = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) throw runtime.newLocalJumpErrorNoBlock();

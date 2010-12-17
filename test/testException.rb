@@ -16,7 +16,8 @@ rescue Exception => boom
   result =  boom.backtrace.collect {|trace|
     trace =~ /:(\d+):?/ && $1.to_i
   }
-  test_equal([10,13,13] , result.slice(0..2))
+  # skip result[1] because it may be an internal line number in 'load'
+  test_equal([10,13] , [result[0], result[2]])
 end
 
 test_no_exception {

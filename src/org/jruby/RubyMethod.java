@@ -151,7 +151,8 @@ public class RubyMethod extends RubyObject implements DataType {
         return context.getRuntime().newBoolean(implementationModule == otherMethod.implementationModule &&
                                        originModule == otherMethod.originModule &&
                                        receiver == otherMethod.receiver &&
-                                       method.getRealMethod() == otherMethod.method.getRealMethod());
+                                       (method.getRealMethod() == otherMethod.method.getRealMethod() ||
+                                       method.getRealMethod().equals(otherMethod.method)));
     }
 
     @JRubyMethod(name = "eql?", required = 1, compat = CompatVersion.RUBY1_9)
@@ -168,7 +169,7 @@ public class RubyMethod extends RubyObject implements DataType {
     /** Create a Proc object.
      * 
      */
-    @JRubyMethod(name = "to_proc", frame = true)
+    @JRubyMethod
     public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
         Ruby runtime = context.getRuntime();
         DynamicScope currentScope = context.getCurrentScope();
@@ -228,8 +229,8 @@ public class RubyMethod extends RubyObject implements DataType {
         return ((RubyMethod) arg1).call(context, new IRubyObject[] { blockArg }, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "unbind", frame = true)
-    public RubyUnboundMethod unbind(Block unusedBlock) {
+    @JRubyMethod
+    public RubyUnboundMethod unbind() {
         RubyUnboundMethod unboundMethod =
         	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
         unboundMethod.infectBy(this);
@@ -282,6 +283,10 @@ public class RubyMethod extends RubyObject implements DataType {
         return context.getRuntime().newSymbol(methodName);
     }
 
+    public String getMethodName() {
+        return methodName;
+    }
+
     @JRubyMethod(name = "receiver")
     public IRubyObject receiver(ThreadContext context) {
         return receiver;
@@ -294,16 +299,35 @@ public class RubyMethod extends RubyObject implements DataType {
 
     @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
     public IRubyObject source_location(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
         DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        
-        if (realMethod instanceof PositionAware) {
-            Ruby runtime = context.getRuntime();
-            PositionAware poser = (PositionAware) realMethod;
-            return runtime.newArray(runtime.newString(poser.getFile()),
-                    runtime.newFixnum(poser.getLine() + 1 /*zero-based*/));
+
+        String filename = getFilename();
+        if (filename != null) {
+            return runtime.newArray(
+                    runtime.newString(getFilename()),
+                    runtime.newFixnum(getLine()));
         }
 
         return context.getRuntime().getNil();
+    }
+
+    public String getFilename() {
+        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
+        if (realMethod instanceof PositionAware) {
+            PositionAware poser = (PositionAware) realMethod;
+            return poser.getFile();
+        }
+        return null;
+    }
+
+    public int getLine() {
+        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
+        if (realMethod instanceof PositionAware) {
+            PositionAware poser = (PositionAware) realMethod;
+            return poser.getLine();
+        }
+        return -1;
     }
 
     @JRubyMethod(name = "parameters", compat = CompatVersion.RUBY1_9)

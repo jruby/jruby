@@ -20,7 +20,7 @@ public class IOJavaAddons {
     // IOInput/OutputStream or is smart about the kind of IO-like object
     // it's being used against.
     
-    @JRubyMethod(frame = true)
+    @JRubyMethod
     public static IRubyObject to_inputstream(ThreadContext context, IRubyObject self) {
         RubyIO io = (RubyIO)self;
         Ruby runtime = context.getRuntime();
@@ -40,7 +40,7 @@ public class IOJavaAddons {
         return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), io.getInStream());
     }
     
-    @JRubyMethod(frame = true)
+    @JRubyMethod
     public static IRubyObject to_outputstream(ThreadContext context, IRubyObject self) {
         RubyIO io = (RubyIO)self;
         Ruby runtime = context.getRuntime();
@@ -60,7 +60,7 @@ public class IOJavaAddons {
         return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), io.getOutStream());
     }
 
-    @JRubyMethod(frame = true)
+    @JRubyMethod
     public static IRubyObject to_channel(ThreadContext context, IRubyObject self) {
         RubyIO io = (RubyIO)self;
 
@@ -68,19 +68,19 @@ public class IOJavaAddons {
     }
 
     public static class AnyIO {
-        @JRubyMethod(name = "to_inputstream", frame = true)
+        @JRubyMethod(name = "to_inputstream")
         public static IRubyObject any_to_inputstream(ThreadContext context, IRubyObject self) {
             // using IOInputStream may not be the most performance way, but it's easy.
             return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), new IOInputStream(self));
         }
 
-        @JRubyMethod(name = "to_outputstream", frame = true)
+        @JRubyMethod(name = "to_outputstream")
         public static IRubyObject any_to_outputstream(ThreadContext context, IRubyObject self) {
             // using IOOutputStream may not be the most performance way, but it's easy.
             return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), new IOOutputStream(self));
         }
 
-        @JRubyMethod(name = "to_channel", frame = true)
+        @JRubyMethod(name = "to_channel")
         public static IRubyObject any_to_channel(ThreadContext context, IRubyObject self) {
             // using IOChannel may not be the most performant way, but it's easy.
             IOChannel channel;

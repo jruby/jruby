@@ -28,22 +28,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
-import org.jruby.ast.ArgsCatNode;
-import org.jruby.ast.ArgsPushNode;
-import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
-import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.InstAsgnNode;
-import org.jruby.ast.ListNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.SValue19Node;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.Splat19Node;
 import org.jruby.ast.SplatNode;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;

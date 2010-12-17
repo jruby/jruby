@@ -163,7 +163,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     constructor = alt_assert_helper_class.constructor();
     alt_assert_helper = constructor.new_instance();
     identityMethod = alt_assert_helper_class.java_method('identityTest')
-    identity = Java.java_to_primitive(identityMethod.invoke(alt_assert_helper))
+    identity = identityMethod.invoke(alt_assert_helper)
     assert_equal("ABCDEFGH",  identity)
   end
 

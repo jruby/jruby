@@ -175,6 +175,8 @@ class TestBignum < Test::Unit::TestCase
   def test_to_f
     assert_nothing_raised { T31P.to_f.to_i }
     assert_raise(FloatDomainError) { (1024**1024).to_f.to_i }
+    assert_equal(1, (2**50000).to_f.infinite?)
+    assert_equal(-1, (-(2**50000)).to_f.infinite?)
   end
 
   def test_cmp
@@ -183,6 +185,8 @@ class TestBignum < Test::Unit::TestCase
     assert(T31P < T64P)
     assert(T64P > T31P)
     assert_raise(ArgumentError) { T31P < "foo" }
+    assert(T64 < (1.0/0.0))
+    assert(!(T64 > (1.0/0.0)))
   end
 
   def test_eq
@@ -208,8 +212,9 @@ class TestBignum < Test::Unit::TestCase
     assert_equal(-1, (x+1) - (x+2))
     assert_equal(0, (2**100) - (2.0**100))
     o = Object.new
-    def o.coerce(x); [2**100+2, x]; end
-    assert_equal(1, (2**100+1) - o)
+    def o.coerce(x); [x, 2**100+2]; end
+    assert_equal(-1, (2**100+1) - o)
+    assert_equal(-1, T_ONE - 2)
   end
 
   def test_plus
@@ -219,7 +224,7 @@ class TestBignum < Test::Unit::TestCase
     assert_equal(1267651809154049016125877911552, (2**80) + (2**100))
     assert_equal(2**101, (2**100) + (2.0**100))
     o = Object.new
-    def o.coerce(x); [2**80, x]; end
+    def o.coerce(x); [x, 2**80]; end
     assert_equal(1267651809154049016125877911552, (2**100) + o)
   end
 
@@ -232,7 +237,7 @@ class TestBignum < Test::Unit::TestCase
     assert_equal(T32.to_f, T32 * 1.0)
     assert_raise(TypeError) { T32 * "foo" }
     o = Object.new
-    def o.coerce(x); [2**100, x]; end
+    def o.coerce(x); [x, 2**100]; end
     assert_equal(2**180, (2**80) * o)
   end
 
@@ -287,8 +292,8 @@ class TestBignum < Test::Unit::TestCase
   def test_pow
     assert_equal(1.0, T32 ** 0.0)
     assert_equal(1.0 / T32, T32 ** -1)
-    assert((T32 ** T32).infinite?)
-    assert((T32 ** (2**30-1)).infinite?)
+    assert_equal(1, (T32 ** T32).infinite?)
+    assert_equal(1, (T32 ** (2**30-1)).infinite?)
 
     ### rational changes the behavior of Bignum#**
     #assert_raise(TypeError) { T32**"foo" }
@@ -413,4 +418,16 @@ class TestBignum < Test::Unit::TestCase
     assert_in_delta(1.0, @fmax2.fdiv(@fmax2), 0.01)
   end
 
+  def test_float_fdiv
+    b = 1E+300.to_i
+    assert_equal(b, (b ** 2).fdiv(b))
+    assert(@big.fdiv(0.0 / 0.0).nan?)
+    assert_in_delta(1E+300, (10**500).fdiv(1E+200), 1E+285)
+  end
+
+  def test_obj_fdiv
+    o = Object.new
+    def o.coerce(x); [x, 2**100]; end
+    assert_equal((2**200).to_f, (2**300).fdiv(o))
+  end
 end
