@@ -36,8 +36,6 @@
 package org.jruby.runtime;
 
 import org.jruby.runtime.profile.IProfileData;
-import org.jruby.runtime.profile.FlatProfileData;
-import org.jruby.runtime.profile.GraphProfileData;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;

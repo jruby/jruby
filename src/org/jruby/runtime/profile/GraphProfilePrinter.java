@@ -21,6 +21,7 @@ import org.jruby.runtime.ThreadContext;
  * See ProfilingDynamicMethod for the "hook" end of profiling.
  */
 public class GraphProfilePrinter extends AbstractProfilePrinter {
+    public static MethodData currentData;
 
     public void printProfile(IProfileData iProfileData, ThreadContext context, String[] profiledNames, DynamicMethod[] profiledMethods, PrintStream out) {
         ProfileData profileData = (ProfileData) iProfileData;
@@ -48,7 +49,7 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
             longestName = Math.max(longestName, displayName.length());
         }
         for (MethodData data : sortedMethods) {
-            GraphProfileData.currentData = data;
+            GraphProfilePrinter.currentData = data;
             
             out.println("---------------------------------------------------------------------------------------------------------");
             int serial = data.serialNumber;
@@ -57,8 +58,8 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
             
             Arrays.sort(parentSerials, new Comparator<Integer>() {
                 public int compare(Integer parent1, Integer parent2) {
-                    long time1 = GraphProfileData.currentData.rootInvocationsFromParent(parent1).totalTime();
-                    long time2 = GraphProfileData.currentData.rootInvocationsFromParent(parent2).totalTime();
+                    long time1 = GraphProfilePrinter.currentData.rootInvocationsFromParent(parent1).totalTime();
+                    long time2 = GraphProfilePrinter.currentData.rootInvocationsFromParent(parent2).totalTime();
                     return time1 == time2 ? 0 : (time1 < time2 ? -1 : 1);
                 }
             });
@@ -99,8 +100,8 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
             Integer[] childSerials = data.children();
             Arrays.sort(childSerials, new Comparator<Integer>() {
                 public int compare(Integer child1, Integer child2) {
-                    long time1 = GraphProfileData.currentData.rootInvocationsOfChild(child1).totalTime();
-                    long time2 = GraphProfileData.currentData.rootInvocationsOfChild(child2).totalTime();
+                    long time1 = GraphProfilePrinter.currentData.rootInvocationsOfChild(child1).totalTime();
+                    long time2 = GraphProfilePrinter.currentData.rootInvocationsOfChild(child2).totalTime();
                     return time1 == time2 ? 0 : (time1 < time2 ? 1 : -1);
                 }
             });
