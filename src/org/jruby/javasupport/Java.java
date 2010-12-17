@@ -1097,7 +1097,7 @@ public class Java implements Library {
                 interfacesHashCode = 31 * interfacesHashCode + runtime.getProc().hashCode();
             } else {
                 // normal new class implementing interfaces
-                interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().hashCode();
+                interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().getRealClass().hashCode();
             }
             String implClassName = "org.jruby.gen.InterfaceImpl" + Math.abs(interfacesHashCode);
             Class proxyImplClass;
