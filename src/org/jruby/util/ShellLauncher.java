@@ -313,8 +313,6 @@ public class ShellLauncher {
         File pathFile = null;
         boolean doPathSearch = filenameIsPathSearchable(fname, isExec);
         if (doPathSearch) {
-            // TODO: not used
-            String pathSeparator = System.getProperty("path.separator");
             for (String fdir: path) {
                 // NOTE: Jruby's handling of tildes is more complete than
                 //       MRI's, which can't handle user names after the tilde
