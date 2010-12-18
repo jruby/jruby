@@ -445,7 +445,8 @@ public class RubySymbol extends RubyObject {
 
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
-                RubyArray array = aValue ? (RubyArray)value : ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
+                RubyArray array = aValue && (value instanceof RubyArray) ? (RubyArray)value : 
+                  ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
                 if (array.isEmpty()) {
                     throw context.getRuntime().newArgumentError("no receiver given");
                 }
