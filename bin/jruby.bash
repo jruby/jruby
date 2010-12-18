@@ -78,14 +78,18 @@ for opt in ${JRUBY_OPTS[@]}; do
 done
 JRUBY_OPTS=${JRUBY_OPTS_TEMP}
 
-if [ -z "$JAVA_HOME" ] ; then
-  JAVA_CMD='java'
-else
-  if $cygwin; then
-    JAVA_CMD="`cygpath -u "$JAVA_HOME"`/bin/java"
+if [ -z "$JAVACMD" ] ; then
+  if [ -z "$JAVA_HOME" ] ; then
+    JAVA_CMD='java'
   else
-    JAVA_CMD="$JAVA_HOME/bin/java"
+    if $cygwin; then
+      JAVA_CMD="`cygpath -u "$JAVA_HOME"`/bin/java"
+    else
+      JAVA_CMD="$JAVA_HOME/bin/java"
+    fi
   fi
+else
+  JAVA_CMD=$JAVACMD
 fi
 
 if [ -z "$JAVA_MEM" ] ; then
