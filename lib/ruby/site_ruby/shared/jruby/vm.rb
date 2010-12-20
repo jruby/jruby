@@ -123,26 +123,57 @@ module JRuby
 
       # set up queue
       @queue = LinkedBlockingQueue.new
+    end
+
+    def start
+      if @started
+        raise RuntimeError, "already started VM"
+      end
 
       # Create the main thread for the child VM
-      @main = JThread.new Runnable.impl {
-        @runtime = Ruby.new_instance(@config)
-        @runtime.load_service.require('jruby/vm')
-        vm_class = JRuby.reference(@runtime.get_class_from_path("JRuby::VM"))
-        vm_class.set_constant("CURRENT", self)
-        vm_class.set_constant("MAP", JRuby.reference(MAP))
+      @main = JThread.new do
+        begin
+          @runtime = Ruby.new_instance(@config)
+          @runtime.load_service.require('jruby/vm')
+          vm_class = JRuby.reference(@runtime.get_class_from_path("JRuby::VM"))
+          vm_class.set_constant("CURRENT", self)
+          vm_class.set_constant("MAP", JRuby.reference(MAP))
 
-        script = @config.script_source
-        filename = @config.displayed_file_name
-        @runtime.run_from_main(script, filename)
+          script = @config.script_source
+          filename = @config.displayed_file_name
+          @runtime.run_from_main(script, filename)
 
-        # shut down the streams
-        @config.input.close
-        @config.output.close
-        @config.error.close
-      }
+          # shut down the streams
+          @config.input.close
+          @config.output.close
+          @config.error.close
+        rescue Exception => e
+          e.printStackTrace
+        end
+      end
 
       @main.start
+      @started = true
+    end
+
+    def send(obj)
+      _check_started
+      super
+    end
+
+    def join
+      _check_started
+      super
+    end
+
+    def <<(obj)
+      _check_started
+      super
+    end
+
+    private
+    def _check_started
+      raise RuntimeError, "child VM not started" unless @started
     end
   end
   
