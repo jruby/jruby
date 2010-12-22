@@ -633,7 +633,7 @@ public class Dir {
                 }
             }
 
-            if (isAbsolutePath(newpath, begin, end)) {
+            if (isAbsolutePath(bytes, begin, end)) {
                 status = addToResultIfExists(null, bytes, begin, end, flags, func, arg);
             } else if (isJarFilePath(bytes, begin, end)) {
                 if (getZipEntryFor(bytes, begin, end) != null) {
