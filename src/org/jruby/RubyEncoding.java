@@ -416,6 +416,8 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static Encoding getEncodingFromObject(Ruby runtime, IRubyObject arg) {
+        if (arg == null) return null;
+
         Encoding encoding = null;
         if (arg instanceof RubyEncoding) {
             encoding = ((RubyEncoding) arg).getEncoding();

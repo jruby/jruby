@@ -628,7 +628,8 @@ public class RubyIO extends RubyObject {
                 incrementLineno(runtime, myOpenFile);
                 return str;
             } else if (limit == 0) {
-                return RubyString.newEmptyString(runtime);
+                return RubyString.newEmptyString(runtime,
+                        RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
             } else if (separator.length() == 1 && limit < 0) {
                 return getlineFast(runtime, separator.get(0) & 0xFF, cache);
             } else {
@@ -692,21 +693,14 @@ public class RubyIO extends RubyObject {
                     }
                     
                     if (isParagraph && c != -1) swallow('\n');
-                    
-                    if (!update) {
-                        return runtime.getNil();
-                    } else {
-                        incrementLineno(runtime, myOpenFile);
-                        RubyString str = RubyString.newString(runtime, cache != null ? new ByteList(buf) : buf);
-                        str.setTaint(true);
+                    if (!update) return runtime.getNil();
 
-                        return str;
-                    }
+                    incrementLineno(runtime, myOpenFile);
+
+                    return makeString(runtime, buf, cache != null);
                 }
                 finally {
-                    if(cache != null) {
-                        cache.release(buf);
-                    }
+                    if (cache != null) cache.release(buf);
                 }
             }
         } catch (PipeException ex) {
@@ -720,6 +714,21 @@ public class RubyIO extends RubyObject {
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
+    }
+
+    private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
+        ByteList newBuf = isCached ? new ByteList(buffer) : buffer;
+
+        if (externalEncoding != null) {
+            newBuf.setEncoding(RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
+        } else if (runtime.getDefaultExternalEncoding() != null) {
+            newBuf.setEncoding(runtime.getDefaultExternalEncoding());
+        }
+
+        RubyString str = RubyString.newString(runtime, newBuf);
+        str.setTaint(true);
+
+        return str;
     }
 
     private void incrementLineno(Ruby runtime, OpenFile myOpenFile) {
@@ -791,19 +800,13 @@ public class RubyIO extends RubyObject {
                 update = true;
             } while (c != delim);
 
-            if (!update) {
-                return runtime.getNil();
-            } else {
-                incrementLineno(runtime, openFile);
-                RubyString str = RubyString.newString(runtime, cache != null ? new ByteList(buf) : buf);
-                str.setTaint(true);
-                return str;
-            }
-        }
-        finally {
-            if(cache != null) {
-                cache.release(buf);
-            }
+            if (!update) return runtime.getNil();
+                
+            incrementLineno(runtime, openFile);
+
+            return makeString(runtime, buf, cache != null);
+        } finally {
+            if (cache != null) cache.release(buf);
         }
     }
     // IO class methods.
@@ -903,9 +906,8 @@ public class RubyIO extends RubyObject {
             IRubyObject[] fullEncoding = modes19.split(context, RubyString.newString(context.getRuntime(), ":")).toJavaArray();
 
             IRubyObject externalEncodingOption = fullEncoding[initialPosition];
-            IRubyObject internalEncodingOption = null;
             if (fullEncoding.length > (initialPosition + 1)) {
-                internalEncodingOption = fullEncoding[initialPosition + 1];
+                IRubyObject internalEncodingOption = fullEncoding[initialPosition + 1];
                 set_encoding(context, externalEncodingOption, internalEncodingOption);
             } else {
                 set_encoding(context, externalEncodingOption);
@@ -2429,7 +2431,11 @@ public class RubyIO extends RubyObject {
             }
             boolean empty = buf == null || buf.length() == 0;
 
-            string.view(empty ? ByteList.EMPTY_BYTELIST.dup() : buf);
+            ByteList newBuf = empty ? ByteList.EMPTY_BYTELIST.dup() : buf;
+            if (externalEncoding != null) { // TODO: Encapsulate into something more central (when adding trancoding)
+                newBuf.setEncoding(RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
+            }
+            string.view(newBuf);
 
             if (stream.feof() && empty) return runtime.getNil();
 
@@ -2927,6 +2933,9 @@ public class RubyIO extends RubyObject {
             byte c = (byte)RubyNumeric.fix2int(ch);
             int n = runtime.getKCode().getEncoding().length(c);
             RubyString str = runtime.newString();
+            if (externalEncoding != null) {
+                str.setEncoding(RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
+            }
             str.setTaint(true);
             str.cat(c);
 
