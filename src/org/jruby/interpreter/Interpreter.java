@@ -217,17 +217,15 @@ public class Interpreter {
 
     public static IRubyObject interpret(ThreadContext context, CFG cfg, InterpreterContext interp) {
         try {
+            IRubyObject self = (IRubyObject) interp.getSelf();
             BasicBlock basicBlock = cfg.getEntryBB();
             while (basicBlock != null) {
                 Label jumpTarget = null;
 
                 for (Instr instruction : basicBlock.getInstrs()) {
-                    // TODO: CFG should remove dead instructions
-                    if (!instruction.isDead()) {
-//                      System.out.println("EXEC'ing: " + instruction);
-                        interpInstrsCount++;
-                        jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
-                    }
+//                  System.out.println("EXEC'ing: " + instruction);
+                    interpInstrsCount++;
+                    jumpTarget = instruction.interpret(interp, self);
                 }
 
                 // Explicit jump or implicit fall-through to next bb
