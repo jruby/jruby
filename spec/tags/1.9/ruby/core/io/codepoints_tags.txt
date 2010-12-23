@@ -1,5 +1,3 @@
 fails:IO#codepoints yields each codepoint
 fails:IO#codepoints raises an error if reading invalid sequence
-fails:IO#codepoints ignores a given block
-fails:IO#codepoints does not yield to a block
 fails:IO#codepoints calls the given block
