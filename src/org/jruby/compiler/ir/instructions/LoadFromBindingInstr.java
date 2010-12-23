@@ -27,20 +27,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 
 public class LoadFromBindingInstr extends GetInstr {
+    private int bindingSlot;
     public LoadFromBindingInstr(Variable v, IRExecutionScope scope, String slotName) {
-        super(Operation.BINDING_LOAD, v, MetaObject.create(getClosestMethodAncestor(scope)), slotName);
+        super(Operation.BINDING_LOAD, v, MetaObject.create(scope.getClosestMethodAncestor()), slotName);
 
 		  MetaObject mo = (MetaObject)getSource();
 		  IRMethod m = (IRMethod)mo.scope;
-		  m.recordBindingVariable(slotName);
-    }
-
-    private static IRMethod getClosestMethodAncestor(IRExecutionScope scope) {
-        while (!(scope instanceof IRMethod)) {
-            scope = (IRExecutionScope)scope.getLexicalParent();
-        }
-
-        return (IRMethod) scope;
+        bindingSlot = m.assignBindingSlot(slotName);
     }
 
     @Override
@@ -61,10 +54,11 @@ public class LoadFromBindingInstr extends GetInstr {
     @Interp
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        Operand var = getResult();
-        assert var instanceof LocalVariable;
-        String name = ((LocalVariable) var).getName();
-        interp.setLocalVariable(name, interp.getSharedBindingVariable((IRMethod)getIRScope(getSource()), name));
+        IRMethod m = (IRMethod)getIRScope(getSource());
+		  LocalVariable v = (LocalVariable)getResult();
+        if (bindingSlot == -1)
+            bindingSlot = m.getBindingSlot(v.getName());
+        interp.setLocalVariable(v.getLocation(), interp.getSharedBindingVariable(bindingSlot));
         return null;
     }
 }

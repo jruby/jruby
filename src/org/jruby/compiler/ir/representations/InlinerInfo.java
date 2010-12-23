@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.compiler.ir.Tuple;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
@@ -46,13 +47,13 @@ public class InlinerInfo {
     public Variable getRenamedVariable(Variable v) {
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
-            newVar = this.callerCFG.getScope().getNewInlineVariable();
+				IRExecutionScope m = this.callerCFG.getScope();
+            newVar = m.getNewInlineVariable();
             if (v instanceof LocalVariable) {
                 // Frame load/store placement dataflow pass (and possible other passes later on) exploit
                 // information whether a variable is a temporary or a local/self variable.
                 // So, variable renaming for inlining has to preserve this information.
-//                throw new RuntimeException("LOCAL VARIABLE RENAMING NEEDS TO BE FIXED...offsets!");
-                newVar = new LocalVariable(newVar.getName(), 0); // SSS: FIXME
+                newVar = m.getLocalVariable(newVar.getName());
             }
             this.varRenameMap.put(v, newVar);
         }

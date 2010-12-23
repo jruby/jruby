@@ -36,8 +36,12 @@ public interface InterpreterContext {
 
     public Object getTemporaryVariable(int offset);
     public Object setTemporaryVariable(int offset, Object value);
+/**
     public Object getLocalVariable(String name);
     public Object setLocalVariable(String name, Object value);
+**/
+    public Object getLocalVariable(int offset);
+    public Object setLocalVariable(int offset, Object value);
     public void   updateRenamedVariablesCount(int n);
     public Object getRenamedVariable(int offset);
     public Object setRenamedVariable(int offset, Object value);
@@ -46,8 +50,8 @@ public interface InterpreterContext {
     public void allocateSharedBindingScope(IRMethod method);
     public DynamicScope getSharedBindingScope();
     public boolean hasAllocatedDynamicScope();
-    public Object getSharedBindingVariable(IRMethod irMethod, String varName);
-    public void setSharedBindingVariable(IRMethod irMethod, String varName, Object value);
+    public Object getSharedBindingVariable(int bindingSlot);
+    public void setSharedBindingVariable(int bindingSlot, Object value);
 
     public Block getBlock();
     public void setBlock(Block block);

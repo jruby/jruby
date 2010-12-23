@@ -44,7 +44,7 @@ public class Interpreter {
         scope.runCompilerPass(new LiveVariableAnalysis());
         scope.runCompilerPass(new DeadCodeElimination());
         scope.runCompilerPass(new AddBindingInstructions());
-        scope.runCompilerPass(new CallSplitter());
+//        scope.runCompilerPass(new CallSplitter());
 
         return Interpreter.interpretTop(runtime, scope, self);
     }
