@@ -602,6 +602,35 @@
     </antcall>
   </target>
 
+  <target name="test-jar-complete" depends="jar-complete"
+          description="Do some sanity checks on the complete jar.">
+    <java jar="lib/jruby-complete.jar" fork="true" failonerror="true" outputproperty="jar-complete-gems">
+      <arg line="-v -S gem list"/>
+    </java>
+    <echo message="${jar-complete-gems}"/>
+    <fail>
+      <condition>
+        <not><and>
+          <contains string="${jar-complete-gems}" substring="rake"/>
+          <contains string="${jar-complete-gems}" substring="rspec"/>
+          <contains string="${jar-complete-gems}" substring="sources"/>
+        </and></not>
+      </condition>
+    </fail>
+    <java jar="lib/jruby-complete.jar" fork="true" failonerror="true" outputproperty="jar-complete-rake">
+      <arg line="-v -S rake --help"/>
+    </java>
+    <echo message="${jar-complete-rake}"/>
+    <fail>
+      <condition>
+        <not><and>
+          <contains string="${jar-complete-rake}" substring="rakefile"/>
+          <contains string="${jar-complete-rake}" substring="dry-run"/>
+        </and></not>
+      </condition>
+    </fail>
+  </target>
+
   <target name="dist-jar-complete" depends="jar-complete">
     <mkdir dir="${dist.dir}"/>
     <move file="${dest.lib.dir}/jruby-complete.jar" tofile="${dist.dir}/jruby-complete-${version.jruby}.jar"/>
