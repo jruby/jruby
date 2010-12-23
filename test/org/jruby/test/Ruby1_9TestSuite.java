@@ -39,6 +39,7 @@ public class Ruby1_9TestSuite extends TestUnitTestSuite {
             }
             
             StringBuffer script = new StringBuffer();
+            script.append("$: << '.' unless $:.include? '.'").append('\n');
             script.append("require 'test/minirunit'").append('\n');
             script.append("$silentTests = true").append('\n');
             script.append("test_load('").append(scriptName).append("')").append('\n');
