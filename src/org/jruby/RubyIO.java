@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.exception.EncodingException;
 import com.kenai.constantine.platform.Fcntl;
 import java.io.EOFException;
 import java.io.FileDescriptor;
@@ -716,14 +717,17 @@ public class RubyIO extends RubyObject {
         }
     }
 
+    private Encoding getExternalEncoding(Ruby runtime) {
+        return externalEncoding != null ?
+            RubyEncoding.getEncodingFromObject(runtime, externalEncoding) :
+            runtime.getDefaultExternalEncoding();
+    }
+
     private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
         ByteList newBuf = isCached ? new ByteList(buffer) : buffer;
+        Encoding encoding = getExternalEncoding(runtime);
 
-        if (externalEncoding != null) {
-            newBuf.setEncoding(RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
-        } else if (runtime.getDefaultExternalEncoding() != null) {
-            newBuf.setEncoding(runtime.getDefaultExternalEncoding());
-        }
+        if (encoding != null) newBuf.setEncoding(encoding);
 
         RubyString str = RubyString.newString(runtime, newBuf);
         str.setTaint(true);
@@ -2262,8 +2266,68 @@ public class RubyIO extends RubyObject {
     /** Read a byte. On EOF returns nil.
      * 
      */
-    @JRubyMethod(name = {"getc", "getbyte"})
+    @JRubyMethod(name = {"getc", "getbyte"}, compat = RUBY1_8)
     public IRubyObject getc() {
+        int c = getcCommon();
+
+        if (c == -1) {
+            // CRuby checks ferror(f) and retry getc for non-blocking IO
+            // read. We checks readability first if possible so retry should
+            // not be needed I believe.
+            return getRuntime().getNil();
+        }
+
+        return getRuntime().newFixnum(c);
+    }
+
+    private ByteList fromEncodedBytes(Ruby runtime, Encoding enc, int value) {
+        int n;
+        try {
+            n = value < 0 ? 0 : enc.codeToMbcLength(value);
+        } catch (EncodingException ee) {
+            n = 0;
+        }
+
+        if (n <= 0) throw runtime.newRangeError(this.toString() + " out of char range");
+
+        ByteList bytes = new ByteList(n);
+        enc.codeToMbc(value, bytes.getUnsafeBytes(), 0);
+        bytes.setRealSize(n);
+        return bytes;
+    }
+    
+    @JRubyMethod(name = "readchar", compat = RUBY1_9)
+    public IRubyObject readchar19(ThreadContext context) {
+        IRubyObject value = getc19(context);
+        
+        if (value.isNil()) throw context.getRuntime().newEOFError();
+        
+        return value;
+    }
+
+    @JRubyMethod(name = "getbyte", compat = RUBY1_9)
+    public IRubyObject getbyte19(ThreadContext context) {
+        return getc(); // Yes 1.8 getc is 1.9 getbyte
+    }
+
+    @JRubyMethod(name = "getc", compat = RUBY1_9)
+    public IRubyObject getc19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        int c = getcCommon();
+
+        if (c == -1) {
+            // CRuby checks ferror(f) and retry getc for non-blocking IO
+            // read. We checks readability first if possible so retry should
+            // not be needed I believe.
+            return runtime.getNil();
+        }
+
+        Encoding enc = getExternalEncoding(runtime);
+        // TODO: This should be optimized like RubyInteger.chr is for ascii values
+        return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, (int) c), enc, 0);
+    }
+
+    public int getcCommon() {
         try {
             OpenFile myOpenFile = getOpenFileChecked();
 
@@ -2276,16 +2340,7 @@ public class RubyIO extends RubyObject {
             waitReadable(stream);
             stream.clearerr();
             
-            int c = myOpenFile.getMainStream().fgetc();
-            
-            if (c == -1) {
-                // CRuby checks ferror(f) and retry getc for non-blocking IO
-                // read. We checks readability first if possible so retry should
-                // not be needed I believe.
-                return getRuntime().getNil();
-            }
-            
-            return getRuntime().newFixnum(c);
+            return myOpenFile.getMainStream().fgetc();
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
@@ -2849,7 +2904,7 @@ public class RubyIO extends RubyObject {
     /** Read a byte. On EOF throw EOFError.
      * 
      */
-    @JRubyMethod(name = "readchar")
+    @JRubyMethod(name = "readchar", compat = RUBY1_8)
     public IRubyObject readchar() {
         IRubyObject c = getc();
         
