@@ -303,7 +303,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
             for (Operand operand : instr.getOperands()) {
                 if (!(operand instanceof LocalVariable)) continue;
 
-                variable = (LocalVariable) operand;
+                variable = (Variable) operand;
 
                 if (ends.get((LocalVariable) variable) == null) {
                     ends.put((LocalVariable) variable, i);

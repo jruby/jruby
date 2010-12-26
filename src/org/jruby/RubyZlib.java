@@ -1879,7 +1879,7 @@ public class RubyZlib {
         
         @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
         public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-            realIo = (RubyObject) args[0];
+            realIo = (IRubyObject) args[0];
             try {
                 io = new HeaderModifyableGZIPOutputStream(realIo);
                 return this;

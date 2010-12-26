@@ -141,7 +141,7 @@ public class RubyArgsFile {
                 ((RubyIO) currentFile).close(); // we can't rename a file while it's open in windows
                 backupFile.delete();
                 file.renameTo(backupFile);
-                currentFile = (RubyIO) RubyFile.open(context, runtime.getFile(), //reopen
+                currentFile = (IRubyObject) RubyFile.open(context, runtime.getFile(), //reopen
                         new IRubyObject[]{runtime.newString(backup)}, Block.NULL_BLOCK);
             } else {
                 throw runtime.newIOError("Windows doesn't support inplace editing without a backup");

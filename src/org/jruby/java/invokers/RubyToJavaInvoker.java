@@ -55,7 +55,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             for (Member method: members) {
                 int currentArity = getMemberParameterTypes(method).length;
                 maxArity = Math.max(currentArity, maxArity);
-                List<JavaCallable> methodsForArity = (ArrayList<JavaCallable>)methodsMap.get(currentArity);
+                List<JavaCallable> methodsForArity = (List<JavaCallable>)methodsMap.get(currentArity);
                 if (methodsForArity == null) {
                     methodsForArity = new ArrayList<JavaCallable>();
                     methodsMap.put(currentArity,methodsForArity);

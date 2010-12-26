@@ -19,7 +19,7 @@ public class IRMetaClass extends IRClass {
 
         if ((receiver instanceof LocalVariable) && (((LocalVariable)receiver).isSelf())) {
             IRMethod classRootMethod = (IRMethod)s;
-            methodClassedObject = (MetaObject)classRootMethod.getContainer();
+            methodClassedObject = (Operand)classRootMethod.getContainer();
         } else {
             methodClassedObject = receiver;
         }

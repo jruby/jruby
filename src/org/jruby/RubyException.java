@@ -214,7 +214,7 @@ public class RubyException extends RubyObject {
         } else if (!isArrayOfStrings(obj)) {
             throw getRuntime().newTypeError("backtrace must be Array of String");
         } else {
-            backtrace = (RubyArray) obj;
+            backtrace = (IRubyObject) obj;
         }
         return backtrace();
     }
