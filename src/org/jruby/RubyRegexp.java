@@ -1497,7 +1497,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject inspect() {
         check();
         ByteList result = regexpDescription(getRuntime(), str, kcode.getEncoding(), pattern.getOptions());
-        if (kcode != null && !isKCodeDefault()) result.append((byte)kcode.name().charAt(0));
+        if (!isKCodeDefault()) result.append((byte)kcode.name().charAt(0));
         return RubyString.newString(getRuntime(), result);
     }
 

@@ -1251,7 +1251,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             c.getMethod("call", new Class[]{ThreadContext.class, IRubyObject.class, RubyModule.class,
             String.class, IRubyObject[].class, Block.class});
             
-            if (c != null && seenUndefinedClasses && !haveWarnedUser) {
+            if (seenUndefinedClasses && !haveWarnedUser) {
                 haveWarnedUser = true;
                 System.err.println("WARNING: while creating new bindings for " + targetClass + ",\n" +
                         "found an existing binding; you may want to run a clean build.");

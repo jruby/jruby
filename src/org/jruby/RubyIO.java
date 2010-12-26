@@ -2823,11 +2823,11 @@ public class RubyIO extends RubyObject {
         ByteList buf = null;
         ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
         try {
-            // ChannelStream#readall knows what size should be allocated at first. Just use it.
-            if (descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel) {
+            if (descriptor == null) {
+                buf = null;            
+            } else if (descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel) {
+                // ChannelStream#readall knows what size should be allocated at first. Just use it.
                 buf = openFile.getMainStream().readall();
-            } else if (descriptor == null) {
-                buf = null;
             } else {
                 RubyThread thread = runtime.getCurrentContext().getThread();
                 try {

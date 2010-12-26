@@ -100,46 +100,48 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
         method.astore(methodCompiler.getDynamicScopeIndex());
 
-        // if more than 4 locals, get the locals array too
-        if (scope.getNumberOfVariables() > 4) {
-            method.aload(methodCompiler.getDynamicScopeIndex());
-            method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-            method.astore(methodCompiler.getVarsArrayIndex());
-        }
+        if (scope != null) {
+            if (scope.getNumberOfVariables() >= 1) {
+                switch (scope.getNumberOfVariables()) {
+                case 1:
+                    methodCompiler.loadNil();
+                    assignLocalVariable(0, false);
+                    break;
+                case 2:
+                    methodCompiler.loadNil();
+                    assignLocalVariable(0,true);
+                    assignLocalVariable(1,false);
+                    break;
+                case 3:
+                    methodCompiler.loadNil();
+                    assignLocalVariable(0,true);
+                    assignLocalVariable(1,true);
+                    assignLocalVariable(2,false);
+                    break;
+                case 4:
+                    methodCompiler.loadNil();
+                    assignLocalVariable(0,true);
+                    assignLocalVariable(1,true);
+                    assignLocalVariable(2,true);
+                    assignLocalVariable(3,false);
+                    break;
+                default:
+                    // if more than 4 locals, get the locals array too
+                    if (scope.getNumberOfVariables() > 4) {
+                        method.aload(methodCompiler.getDynamicScopeIndex());
+                        method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+                        method.astore(methodCompiler.getVarsArrayIndex());
+                    }   
 
-        if (scope != null && scope.getNumberOfVariables() >= 1) {
-            switch (scope.getNumberOfVariables()) {
-            case 1:
-                methodCompiler.loadNil();
-                assignLocalVariable(0, false);
-                break;
-            case 2:
-                methodCompiler.loadNil();
-                assignLocalVariable(0,true);
-                assignLocalVariable(1,false);
-                break;
-            case 3:
-                methodCompiler.loadNil();
-                assignLocalVariable(0,true);
-                assignLocalVariable(1,true);
-                assignLocalVariable(2,false);
-                break;
-            case 4:
-                methodCompiler.loadNil();
-                assignLocalVariable(0,true);
-                assignLocalVariable(1,true);
-                assignLocalVariable(2,true);
-                assignLocalVariable(3,false);
-                break;
-            default:
-                method.aload(methodCompiler.getVarsArrayIndex());
-                methodCompiler.loadNil();
-                assignLocalVariable(0,true);
-                assignLocalVariable(1,true);
-                assignLocalVariable(2,true);
-                assignLocalVariable(3,false);
-                methodCompiler.loadRuntime();
-                methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
+                    method.aload(methodCompiler.getVarsArrayIndex());
+                    methodCompiler.loadNil();
+                    assignLocalVariable(0,true);
+                    assignLocalVariable(1,true);
+                    assignLocalVariable(2,true);
+                    assignLocalVariable(3,false);
+                    methodCompiler.loadRuntime();
+                    methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
+                }
             }
         }
     }
@@ -149,46 +151,48 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
         method.astore(methodCompiler.getDynamicScopeIndex());
 
-        // if more than 4 locals, get the locals array too
-        if (scope.getNumberOfVariables() > 4) {
-            method.aload(methodCompiler.getDynamicScopeIndex());
-            method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
-            method.astore(methodCompiler.getVarsArrayIndex());
-        }
-        
-        if (scope != null && scope.getNumberOfVariables() >= 1) {
-            switch (scope.getNumberOfVariables()) {
-            case 1:
-                methodCompiler.loadNil();
-                assignLocalVariable(0, false);
-                break;
-            case 2:
-                methodCompiler.loadNil();
-                assignLocalVariable(0,true);
-                assignLocalVariable(1,false);
-                break;
-            case 3:
-                methodCompiler.loadNil();
-                assignLocalVariable(0,true);
-                assignLocalVariable(1,true);
-                assignLocalVariable(2,false);
-                break;
-            case 4:
-                methodCompiler.loadNil();
-                assignLocalVariable(0,true);
-                assignLocalVariable(1,true);
-                assignLocalVariable(2,true);
-                assignLocalVariable(3,false);
-                break;
-            default:
-                method.aload(methodCompiler.getVarsArrayIndex());
-                methodCompiler.loadNil();
-                assignLocalVariable(0,true);
-                assignLocalVariable(1,true);
-                assignLocalVariable(2,true);
-                assignLocalVariable(3,false);
-                methodCompiler.loadRuntime();
-                methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
+        if (scope != null) {
+            if (scope.getNumberOfVariables() >= 1) {
+                switch (scope.getNumberOfVariables()) {
+                case 1:
+                    methodCompiler.loadNil();
+                    assignLocalVariable(0, false);
+                    break;
+                case 2:
+                    methodCompiler.loadNil();
+                    assignLocalVariable(0,true);
+                    assignLocalVariable(1,false);
+                    break;
+                case 3:
+                    methodCompiler.loadNil();
+                    assignLocalVariable(0,true);
+                    assignLocalVariable(1,true);
+                    assignLocalVariable(2,false);
+                    break;
+                case 4:
+                    methodCompiler.loadNil();
+                    assignLocalVariable(0,true);
+                    assignLocalVariable(1,true);
+                    assignLocalVariable(2,true);
+                    assignLocalVariable(3,false);
+                    break;
+                default:
+                    // if more than 4 locals, get the locals array too
+                    if (scope.getNumberOfVariables() > 4) {
+                        method.aload(methodCompiler.getDynamicScopeIndex());
+                        method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
+                        method.astore(methodCompiler.getVarsArrayIndex());
+                    }
+
+                    method.aload(methodCompiler.getVarsArrayIndex());
+                    methodCompiler.loadNil();
+                    assignLocalVariable(0,true);
+                    assignLocalVariable(1,true);
+                    assignLocalVariable(2,true);
+                    assignLocalVariable(3,false);
+                    methodCompiler.loadRuntime();
+                    methodCompiler.invokeUtilityMethod("fillNil", sig(void.class, IRubyObject[].class, Ruby.class));
+                }
             }
         }
 

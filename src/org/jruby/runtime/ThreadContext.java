@@ -983,15 +983,15 @@ public final class ThreadContext {
     }
 
     public static RubyStackTraceElement[] gatherHybridBacktrace(Ruby runtime, Backtrace[] backtraceFrames, StackTraceElement[] stackTrace, boolean fullTrace) {
+        // no Java trace, can't generate hybrid trace
+        // TODO: Perhaps just generate the interpreter trace? Is this path ever hit?
+        if (stackTrace == null) return null;
+
         List trace = new ArrayList(stackTrace.length);
 
         // a running index into the Ruby backtrace stack, incremented for each
         // interpreter frame we encounter in the Java backtrace.
         int rubyFrameIndex = backtraceFrames == null ? -1 : backtraceFrames.length - 1;
-
-        // no Java trace, can't generate hybrid trace
-        // TODO: Perhaps just generate the interpreter trace? Is this path ever hit?
-        if (stackTrace == null) return null;
 
         // walk the Java stack trace, peeling off Java elements or Ruby elements
         for (int i = 0; i < stackTrace.length; i++) {
