@@ -283,7 +283,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     @Interp
     public Iterator<LocalVariable> getLiveLocalVariables() {
         Map<LocalVariable, Integer> ends = new HashMap<LocalVariable, Integer>();
-        Map<LocalVariable, Integer> starts = new HashMap<LocalVariable, Integer>();
         Set<LocalVariable> variables = new TreeSet<LocalVariable>();
 
         for (int i = instructions.size() - 1; i >= 0; i--) {
@@ -297,7 +296,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
             if (variable != null && variable instanceof LocalVariable) {
                 variables.add((LocalVariable) variable);
-                starts.put((LocalVariable) variable, i);
             } 
 
             for (Operand operand : instr.getOperands()) {

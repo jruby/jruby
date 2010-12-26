@@ -753,13 +753,6 @@ public class CFG {
                 }
             }
         }
-
-        // Convert the idom map based on post order numbers to one based on basic blocks
-        Map<BasicBlock, BasicBlock> idomMap = new HashMap<BasicBlock, BasicBlock>();
-        for (Integer i = 0; i < maxNodeId; i++) {
-            idomMap.put(poNumbersToBB[i], poNumbersToBB[idoms[i]]);
-//            System.out.println("IDOM(" + poNumbersToBB[i].getID() + ") = " + poNumbersToBB[idoms[i]].getID());
-        }
     }
 
     public String toStringInstrs() {

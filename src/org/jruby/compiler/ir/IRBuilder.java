@@ -2873,7 +2873,6 @@ public class IRBuilder {
     }
 
     public Operand buildVCall(VCallNode node, IRScope s) {
-        List<Operand> args       = new ArrayList<Operand>(); args.add(getSelf(s));
         Variable      callResult = s.getNewTemporaryVariable();
         Instr      callInstr  = new CallInstr(callResult, new MethAddr(node.getName()), getSelf(s), new Operand[]{}, null);
         s.addInstr(callInstr);
