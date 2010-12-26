@@ -1668,12 +1668,12 @@ public class RubyArray extends RubyObject implements List {
         makeShared();
 
         // don't expose shared array to ruby
-        final boolean specificArity = block.arity().isFixed() && block.arity().required() != 1;
+        final boolean specificArity = (block.arity().isFixed()) && (block.arity().required() != 1);
         
         for (; localRealLength >= size; localRealLength -= size) {
             block.yield(context, window);
             if (specificArity) { // array is never exposed to ruby, just use for yielding
-                window.begin += localBegin += size;
+                window.begin = localBegin += size;
             } else { // array may be exposed to ruby, create new
                 window = newArrayNoCopy(runtime, localValues, localBegin += size, size);
             }
