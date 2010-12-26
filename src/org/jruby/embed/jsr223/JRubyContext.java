@@ -91,11 +91,7 @@ class JRubyContext implements ScriptContext {
 
     private static void updateBindings(Bindings tmpBindings, Bindings bindings) {
         if (tmpBindings == bindings) return;
-        Set<String> keys = tmpBindings.keySet();
-        for (String key : keys) {
-            Object value = tmpBindings.get(key);
-            bindings.put(key, value);
-        }
+        bindings.putAll(tmpBindings);
     }
 
     JRubyContext(ScriptingContainer container) {

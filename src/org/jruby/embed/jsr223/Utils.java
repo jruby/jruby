@@ -30,6 +30,7 @@
 package org.jruby.embed.jsr223;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -85,20 +86,18 @@ public class Utils {
     static void preEval(ScriptingContainer container, JRubyContext jrubyContext) {
         Object receiver = getReceiverObject(jrubyContext);
         Bindings bindings = jrubyContext.getEngineScopeBindings();
-        Set<String> keys = bindings.keySet();
-        for (String key : keys) {
-            Object value = bindings.get(key);
-            Object oldValue = put(container, receiver, key, value);
+        for (Map.Entry<String, Object> entry : bindings.entrySet()) {
+            put(container, receiver, entry.getKey(), entry.getValue());
         }
 
         // if key of globalMap exists in engineMap, this key-value pair should be skipped.
         bindings = jrubyContext.getGlobalScopeBindings();
         if (bindings == null) return;
-        keys = bindings.keySet();
-        for (String key : keys) {
-            if (container.getVarMap().containsKey(key)) continue;
-            Object value = bindings.get(key);
-            Object oldValue = put(container, receiver, key, value);
+        for (Map.Entry<String, Object> entry : bindings.entrySet()) {
+            String key = entry.getKey();
+            if (!container.getVarMap().containsKey(key)) {
+                put(container, receiver, key, entry.getValue());
+            }
         }
     }
 
