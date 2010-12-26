@@ -220,7 +220,7 @@ public class JavaNameMangler {
     }
 
     public static String unmangleMethodName(String name) {
-        return name.replaceAll("\\", "/");
+        return name.replaceAll("\\\\", "/");
     }
 
     private static int escapeChar(char character) {
