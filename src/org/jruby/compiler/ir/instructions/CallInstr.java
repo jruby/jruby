@@ -395,15 +395,32 @@ public class CallInstr extends MultiOperandInstr {
         return value instanceof RubyProc ? ((RubyProc) value).getBlock() : (Block) value;
     }
 
-    public IRubyObject[] prepareArguments(InterpreterContext interp) {
-        // SSS FIXME: These 3 values could be memoized.
-        Operand[] operands = getCallArgs();
-        int length = operands.length;
-        IRubyObject[] args = new IRubyObject[length];
+	 // Cache!
+	 private boolean constArgs = false; 
+	 private Operand[] operands = null;
+    private IRubyObject[] args = null;
 
-        for (int i = 0; i < length; i++) {
-            args[i] = (IRubyObject) operands[i].retrieve(interp);
-        }
+    public IRubyObject[] prepareArguments(InterpreterContext interp) {
+		  if (operands == null) {
+			  operands = getCallArgs();
+			  args = new IRubyObject[operands.length];
+			  constArgs = true;
+			  for (int i = 0; i < operands.length; i++) {
+				  if (operands[i].isConstant()) {
+						args[i] = (IRubyObject) operands[i].retrieve(interp);
+				  }
+				  else {
+					  constArgs = false;
+					  break;
+				  }
+			  }
+		  }
+
+		  if (!constArgs) {
+			  for (int i = 0; i < operands.length; i++) {
+					args[i] = (IRubyObject) operands[i].retrieve(interp);
+			  }
+		  }
 
         return args;
     }

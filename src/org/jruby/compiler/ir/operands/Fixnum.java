@@ -61,8 +61,14 @@ public class Fixnum extends Constant {
         return null;
     }
 
+	 // Cache!
+	 private IRubyObject fv = null;
+
     @Override
     public Object retrieve(InterpreterContext interp) {
-        return interp.getRuntime().newFixnum(value);
+		  if (fv == null) {
+            fv = interp.getRuntime().newFixnum(value);
+		  }
+		  return fv;
     }
 }

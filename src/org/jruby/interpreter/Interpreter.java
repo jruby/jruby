@@ -222,7 +222,7 @@ public class Interpreter {
             while (basicBlock != null) {
                 Label jumpTarget = null;
 
-                for (Instr instruction : basicBlock.getInstrs()) {
+                for (Instr instruction : basicBlock.getInstrsArray()) {
 //                  System.out.println("EXEC'ing: " + instruction);
                     interpInstrsCount++;
                     jumpTarget = instruction.interpret(interp, self);
