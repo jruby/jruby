@@ -23,6 +23,7 @@ public class BEQInstr extends BranchInstr {
 
 //        System.out.println("VALUE1: " + value1 + ", VALUE2: " + value2);
 
+        // FIXME: equals? rather than == 
         return (value1 == value2) ? target : null;
     }
 }

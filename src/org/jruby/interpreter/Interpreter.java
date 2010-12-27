@@ -12,6 +12,11 @@ import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
+import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.instructions.BEQInstr;
+import org.jruby.compiler.ir.instructions.CopyInstr;
+import org.jruby.compiler.ir.instructions.JumpInstr;
+import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
 import org.jruby.compiler.ir.compiler_pass.IR_Printer;
@@ -218,6 +223,46 @@ public class Interpreter {
     public static IRubyObject interpret(ThreadContext context, CFG cfg, InterpreterContext interp) {
         try {
             IRubyObject self = (IRubyObject) interp.getSelf();
+            Instr[] instrs = cfg.prepareForInterpretation();
+            int n   = instrs.length;
+            int ipc = 0;
+            while (ipc < n) {
+                interpInstrsCount++;
+                Label jumpTarget = instrs[ipc].interpret(interp, self);
+                ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
+            }
+/**
+            while (ipc < n) {
+                Label jumpTarget = null;
+                Object v1, v2;
+                switch (i.operation) {
+                    case COPY : 
+                        i.getResult().store(interp, ((CopyInstr)i).getArg().retrieve(interp));
+                        break;
+
+                    case JUMP : 
+                        jumpTarget = ((JumpInstr)i).getJumpTarget();
+                        break;
+
+                    case BEQ : 
+                        BEQInstr b = (BEQInstr)i;
+                        v1 = b.getOperand1().retrieve(interp);
+                        v2 = b.getOperand2().retrieve(interp);
+                        // FIXME: equals? rather than == 
+                        jumpTarget = (v1 == v2) ? b.getJumpTarget() : null;
+                        break;
+
+                    case LINE_NUM : 
+                        interp.getContext().setLine(((LineNumberInstr)i).lineNumber);
+                        break;
+
+                    default: 
+                        jumpTarget = i.interpret(interp, self);
+                }
+                ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
+            }
+**/
+/**
             BasicBlock basicBlock = cfg.getEntryBB();
             while (basicBlock != null) {
                 Label jumpTarget = null;
@@ -231,6 +276,7 @@ public class Interpreter {
                 // Explicit jump or implicit fall-through to next bb
                 basicBlock = (jumpTarget == null) ? cfg.getFallThroughBB(basicBlock) : cfg.getTargetBB(jumpTarget);
             }
+**/
 
             return (IRubyObject) interp.getReturnValue();
         } finally {

@@ -38,6 +38,10 @@ public class BasicBlock {
         return _id;
     }
 
+    public Label getLabel() {
+        return _label;
+    }
+
     public void addInstr(Instr i) {
         _instrs.add(i);
     }

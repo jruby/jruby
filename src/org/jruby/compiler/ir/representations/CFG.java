@@ -184,6 +184,52 @@ public class CFG {
                     });
     }
 
+    private Instr[] _instrs = null;
+    public Instr[] prepareForInterpretation() {
+        if (_instrs != null) // Done
+            return _instrs;
+
+        List<Instr> instrs = new ArrayList<Instr>();
+        List<BasicBlock> bbs = linearize();
+
+        // Set up a bb array that maps labels to targets -- just to make sure old code continues to work! 
+        setupFallThruMap();
+
+        // Set up IPCs
+        HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
+        List<Label> labelsToFixup = new ArrayList<Label>();
+        int ipc = 0;
+        for (BasicBlock b: bbs) {
+            labelIPCMap.put(b.getLabel(), ipc);
+            for (Instr i: b.getInstrs()) {
+                instrs.add(i);
+                Operation op = i.operation;
+                if (op == Operation.BEQ)
+                    labelsToFixup.add(((BranchInstr)i).getJumpTarget());
+                else if (op == Operation.JUMP) 
+                    labelsToFixup.add(((JumpInstr)i).getJumpTarget());
+                else if (op == Operation.RECV_OPT_ARG || op == Operation.SET_RETADDR) {
+                    for (Operand o: i.getOperands()) {
+                        if (o instanceof Label) {
+                            labelsToFixup.add((Label)o);
+                        }
+                    }
+                }
+                ipc++;
+            }
+        }
+
+        // Fix up labels
+        for (Label l: labelsToFixup) {
+            l.setTargetPC(labelIPCMap.get(l));
+        }
+
+        _instrs = instrs.toArray(new Instr[instrs.size()]);
+        return _instrs;
+    }
+
+    public Instr[] getInstrArray() { return _instrs; }
+
     public void build(List<Instr> instrs) {
         // Map of label & basic blocks which are waiting for a bb with that label
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<Label, List<BasicBlock>>();
@@ -339,7 +385,7 @@ public class CFG {
             for (BasicBlock b: rr._exclusiveBBs) {
                 _bbRescuerMap.put(b, firstRescueBB);
                 g.addEdge(b, firstRescueBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
-				}
+            }
         }
 
         // Dummy entry and exit basic blocks and other dummy edges are needed to maintain the CFG 
@@ -370,9 +416,6 @@ public class CFG {
 
         // Delete orphaned (with no incoming edges) blocks
         deleteOrphanedBlocks();
-
-        // Set up the bb array
-        setupFallThruMap();
     }
 
 /*
@@ -801,8 +844,8 @@ public class CFG {
     }
 
     public void deleteOrphanedBlocks() {
-		  // System.out.println("\nGraph:\n" + getGraph().toString());
-		  // System.out.println("\nInstructions:\n" + toStringInstrs());
+        // System.out.println("\nGraph:\n" + getGraph().toString());
+        // System.out.println("\nInstructions:\n" + toStringInstrs());
 
         // FIXME: Quick and dirty implementation
         while (true) {
@@ -830,7 +873,7 @@ public class CFG {
             List<Instr> bInstrs = b.getInstrs();
             for (ListIterator<Instr> it = ((ArrayList<Instr>)b.getInstrs()).listIterator(); it.hasNext(); ) {
                 Instr i = it.next();
-					 // Only user calls, not Ruby & JRuby internal calls
+                // Only user calls, not Ruby & JRuby internal calls
                 if (i.operation == Operation.CALL) {
                     CallInstr call = (CallInstr)i;
                     Operand   r    = call.getReceiver();
@@ -856,6 +899,9 @@ public class CFG {
     }
 
     public List<BasicBlock> linearize() {
+        if (_linearizedBBList != null) // Done!
+            return _linearizedBBList;
+
         _linearizedBBList = new ArrayList<BasicBlock>();
        
         // Linearize the basic blocks of the cfg!

@@ -45,7 +45,7 @@ public class GetConstInstr extends GetInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        System.out.println("SOURCE: " + getSource().getClass());
+        //System.out.println("SOURCE: " + getSource().getClass());
         Object source = getSource().retrieve(interp);
         RubyModule module;
 
