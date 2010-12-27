@@ -30,23 +30,8 @@ public class YieldInstr extends MultiOperandInstr {
     @Interp
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        Object resultValue = interp.getBlock().call(interp.getContext(), prepareArguments(interp));
-
+        Object resultValue = interp.getBlock().call(interp.getContext(), prepareArguments(getOperands(), interp));
         getResult().store(interp, resultValue);
         return null;
-    }
-
-    public IRubyObject[] prepareArguments(InterpreterContext interp) {
-        Operand[] operands = getOperands();
-        IRubyObject[] args = new IRubyObject[operands.length];
-        int length = args.length;
-
-        for (int i = 0; i < length; i++) {
-            args[i] = (IRubyObject) operands[i].retrieve(interp);
-        }
-
-        //System.out.println("ARGS>LENGTH " + args.length);
-        //System.out.println("ARGS: " + java.util.Arrays.toString(args));
-        return args;
     }
 }

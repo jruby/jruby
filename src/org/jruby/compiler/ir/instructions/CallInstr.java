@@ -307,7 +307,7 @@ public class CallInstr extends MultiOperandInstr {
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
         Object        ma    = _methAddr.retrieve(interp);
-        IRubyObject[] args  = prepareArguments(interp);
+        IRubyObject[] args  = prepareArguments(getCallArgs(), interp);
         Block         block = (_closure == null) ? null : prepareBlock(interp);
         Object resultValue;
         if (ma instanceof MethodHandle) {
@@ -342,7 +342,7 @@ public class CallInstr extends MultiOperandInstr {
 
     public Label interpret_with_inline(InterpreterContext interp, IRubyObject self) {
         Object        ma    = _methAddr.retrieve(interp);
-        IRubyObject[] args  = prepareArguments(interp);
+        IRubyObject[] args  = prepareArguments(getCallArgs(), interp);
         Block         block = (_closure == null) ? null : prepareBlock(interp);
         Object resultValue;
         if (ma instanceof MethodHandle) {
@@ -393,35 +393,5 @@ public class CallInstr extends MultiOperandInstr {
     private Block prepareBlock(InterpreterContext interp) {
         Object value = _closure.retrieve(interp);
         return value instanceof RubyProc ? ((RubyProc) value).getBlock() : (Block) value;
-    }
-
-	 // Cache!
-	 private boolean constArgs = false; 
-	 private Operand[] operands = null;
-    private IRubyObject[] args = null;
-
-    public IRubyObject[] prepareArguments(InterpreterContext interp) {
-		  if (operands == null) {
-			  operands = getCallArgs();
-			  args = new IRubyObject[operands.length];
-			  constArgs = true;
-			  for (int i = 0; i < operands.length; i++) {
-				  if (operands[i].isConstant()) {
-						args[i] = (IRubyObject) operands[i].retrieve(interp);
-				  }
-				  else {
-					  constArgs = false;
-					  break;
-				  }
-			  }
-		  }
-
-		  if (!constArgs) {
-			  for (int i = 0; i < operands.length; i++) {
-					args[i] = (IRubyObject) operands[i].retrieve(interp);
-			  }
-		  }
-
-        return args;
     }
 }
