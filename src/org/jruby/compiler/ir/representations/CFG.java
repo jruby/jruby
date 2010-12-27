@@ -70,7 +70,7 @@ public class CFG {
     LinkedList<BasicBlock>              _postOrderList; // Post order traversal list of the cfg
     Map<String, DataFlowProblem>        _dfProbs;       // Map of name -> dataflow problem
     Map<Label, BasicBlock>              _bbMap;         // Map of label -> basic blocks with that label
-    Map<Integer, BasicBlock>            _fallThruMap;   // Map of basic block id -> fall thru basic block
+    BasicBlock[]                        _fallThruMap;   // Map of basic block id -> fall thru basic block
     List<BasicBlock>                    _linearizedBBList;  // Linearized list of bbs
     Map<BasicBlock, BasicBlock>         _bbRescuerMap;  // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
     List<RescuedRegion>                 _outermostRRs;  // Outermost rescued regions
@@ -131,7 +131,7 @@ public class CFG {
     // haven't been reordered around.  This code is there temporarily
     // to get Tom & Charlie started on the IR interpreter.
     public BasicBlock getFallThroughBB(BasicBlock bb) {
-        return _fallThruMap.get(bb.getID());
+        return _fallThruMap[bb.getID()];
     }
 
     public BasicBlock getTargetBB(Label l) {
@@ -387,11 +387,11 @@ public class CFG {
 
     private void setupFallThruMap() {
         List<BasicBlock> bbs = linearize();
-        _fallThruMap = new HashMap<Integer, BasicBlock>();
+        _fallThruMap = new BasicBlock[1+getMaxNodeID()];
         BasicBlock prev = null;
         for (BasicBlock b: bbs) {
            if (prev != null)
-              _fallThruMap.put(prev.getID(), b);
+              _fallThruMap[prev.getID()] = b;
            prev = b;
         }
     }
