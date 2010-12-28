@@ -41,6 +41,9 @@ import java.math.BigInteger;
 import java.util.HashMap;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
@@ -61,9 +64,9 @@ import org.jruby.util.ByteList;
 /** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
  */
 public class RubyYaccLexer {
-    public static final Encoding UTF8_ENCODING = Encoding.load("UTF8");
-    public static final Encoding USASCII_ENCODING = Encoding.load("USASCII");
-    public static final Encoding ASCII8BIT_ENCODING = Encoding.load("ASCII");
+    public static final Encoding UTF8_ENCODING = UTF8Encoding.INSTANCE;
+    public static final Encoding USASCII_ENCODING = USASCIIEncoding.INSTANCE;
+    public static final Encoding ASCII8BIT_ENCODING = ASCIIEncoding.INSTANCE;
     
     private static ByteList END_MARKER = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_', '_'});
     private static ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});
