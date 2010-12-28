@@ -62,6 +62,8 @@ import org.jruby.util.ByteList;
  */
 public class RubyYaccLexer {
     public static final Encoding UTF8_ENCODING = Encoding.load("UTF8");
+    public static final Encoding USASCII_ENCODING = Encoding.load("USASCII");
+    public static final Encoding ASCII8BIT_ENCODING = Encoding.load("ASCII");
     
     private static ByteList END_MARKER = new ByteList(new byte[] {'_', 'E', 'N', 'D', '_', '_'});
     private static ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});

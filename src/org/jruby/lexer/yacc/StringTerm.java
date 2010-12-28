@@ -27,12 +27,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.StrNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 public class StringTerm extends StrTerm {
     // Expand variables, Indentation of final marker
@@ -60,6 +62,25 @@ public class StringTerm extends StrTerm {
         if (lexer.isOneEight()) return new ByteList();
 
         return new ByteList(new byte[]{}, lexer.getEncoding());
+    }
+
+    protected boolean isRegexp() {
+        return (flags & RubyYaccLexer.STR_FUNC_REGEXP) != 0;
+    }
+
+    protected StrNode createStrNode(RubyYaccLexer lexer, ByteList buffer) {
+        Encoding encoding = buffer.getEncoding();
+
+        if (!isRegexp() && encoding.isAsciiCompatible()) {
+            // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
+            if (StringSupport.codeRangeScan(buffer.getEncoding(), buffer) != StringSupport.CR_7BIT &&
+                    lexer.getEncoding() == RubyYaccLexer.USASCII_ENCODING &&
+                    encoding != RubyYaccLexer.UTF8_ENCODING) {
+                buffer.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
+            }
+        }
+
+        return new StrNode(lexer.getPosition(), buffer);
     }
 
     public int parseString(RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
@@ -120,7 +141,7 @@ public class StringTerm extends StrTerm {
                 throw new SyntaxException(src.getPosition(), "unterminated string meets end of file");
             }
             */
-            lexer.setValue(new StrNode(lexer.getPosition(), buffer)); 
+            lexer.setValue(createStrNode(lexer, buffer));
             return Tokens.tSTRING_CONTENT;
         }
         
@@ -147,7 +168,7 @@ public class StringTerm extends StrTerm {
                     src.getCurrentLine(), "unterminated string meets end of file");
         }
 
-        lexer.setValue(new StrNode(lexer.getPosition(), buffer)); 
+        lexer.setValue(createStrNode(lexer, buffer));
         return Tokens.tSTRING_CONTENT;
     }
 
