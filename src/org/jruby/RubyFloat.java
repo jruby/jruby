@@ -853,15 +853,17 @@ public class RubyFloat extends RubyNumeric {
     // the C version.
     private static final Pattern pattern = Pattern.compile("\\.?0+(e|$)");
 
-    private static String formatDouble(double x) {
-        return pattern.matcher(String.format("%.32g", x)).replaceFirst("$1");
+    private static ByteList formatDouble(RubyFloat x) {
+        ByteList byteList = new ByteList();
+        Sprintf.sprintf(byteList, "%.17g", RubyArray.newArray(x.getRuntime(), x, x));
+        return byteList;
     }
 
-    private String marshalDump() {
-        if (Double.isInfinite(value)) return value < 0 ? "-inf" : "inf";
-        if (Double.isNaN(value)) return "nan";
+    private ByteList marshalDump() {
+        if (Double.isInfinite(value)) return value < 0 ? NEGATIVE_INFINITY_BYTELIST : INFINITY_BYTELIST;
+        if (Double.isNaN(value)) return NAN_BYTELIST;
 
-        return formatDouble(value);
+        return formatDouble(this);
     }
 
     public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {
