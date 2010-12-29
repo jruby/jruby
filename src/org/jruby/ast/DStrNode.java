@@ -32,24 +32,19 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  * A string which contains some dynamic elements which needs to be evaluated (introduced by #).
  */
-public class DStrNode extends ListNode implements ILiteralNode {
+public class DStrNode extends DNode implements ILiteralNode {
     public DStrNode(ISourcePosition position) {
         super(position);
     }
 
+    @Override
     public NodeType getNodeType() {
         return NodeType.DSTRNODE;
     }
@@ -61,39 +56,5 @@ public class DStrNode extends ListNode implements ILiteralNode {
     @Override
     public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitDStrNode(this);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return buildDynamicString(runtime, context, self, aBlock, this);
-    }
-    
-    public static RubyString buildDynamicString(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, ListNode list) {
-        RubyString string = runtime.newString(new ByteList());
-        
-        int size = list.size();
-        for (int i = 0; i < size; i++) {
-            DStrNode.appendToString(runtime, context, self, aBlock, string, list.get(i));
-        }
-   
-        return string;
-    }
-    
-    public static void appendToString(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RubyString string, Node node) {
-        if (node instanceof StrNode) {
-            string.getByteList().append(((StrNode) node).getValue());
-        } else {
-            string.append(node.interpret(runtime, context, self, aBlock));
-        }
-    }
-
-    @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String definition = super.definition(runtime, context, self, aBlock);
-        if (definition == null && context.getRuntime().is1_9()) {
-            definition = "expression";
-        }
-
-        return definition;
     }
 }

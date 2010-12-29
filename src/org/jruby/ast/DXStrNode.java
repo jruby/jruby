@@ -32,7 +32,6 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -44,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Dynamic backquote string. Backquote strings are eXecuted using the shell, hence the X 
  * or maybe the X is due to the %x general quote syntax?
  */
-public class DXStrNode extends ListNode implements ILiteralNode {
+public class DXStrNode extends DNode implements ILiteralNode {
     public DXStrNode(ISourcePosition position, DStrNode node) {
         super(position);
         addAll(node);
@@ -54,6 +53,7 @@ public class DXStrNode extends ListNode implements ILiteralNode {
         super(position);
     }
 
+    @Override
     public NodeType getNodeType() {
         return NodeType.DXSTRNODE;
     }
@@ -69,8 +69,6 @@ public class DXStrNode extends ListNode implements ILiteralNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyString string = DStrNode.buildDynamicString(runtime, context, self, aBlock, this);
-   
-        return self.callMethod(context, "`", string);
+        return self.callMethod(context, "`", super.interpret(runtime, context, self, aBlock));
     }
 }
