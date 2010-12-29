@@ -1,6 +1,5 @@
-if defined?(JRUBY_VERSION)
-
-  class Gem::Specification
+module Gem
+  class Specification
     # return whether the spec name represents a maven artifact
     def self.maven_name?(name)
       case name
@@ -12,18 +11,16 @@ if defined?(JRUBY_VERSION)
     end
   end
 
-  class Gem::RemoteFetcher
+  class RemoteFetcher
     def download_maven(spec, local_gem_path)
-      require 'rubygems/maven_gemify'
       FileUtils.cp Gem::Maven::Gemify.generate_gem(spec.name, spec.version), local_gem_path
       local_gem_path
     end
     private :download_maven
   end
 
-  class Gem::SpecFetcher
+  class SpecFetcher
     def gemify_generate_spec(spec)
-      require 'rubygems/maven_gemify'
       specfile = Gem::Maven::Gemify.generate_spec(spec[0], spec[1])
       Marshal.dump(Gem::Specification.from_yaml(File.read(specfile)))
     end
@@ -38,7 +35,6 @@ if defined?(JRUBY_VERSION)
         dep_name = dependency.name
       end
 
-      require 'rubygems/maven_gemify'
       Gem::Maven::Gemify.get_versions(dep_name).each do |version|
         # maven-versions which start with an letter get "0.0.0." prepended to
         # satisfy gem-version requirements
@@ -52,9 +48,17 @@ if defined?(JRUBY_VERSION)
     private :find_matching_using_maven
   end
 
-  module Gem::Maven
+  module Maven
     class Gemify
       BASE_GOAL = "de.saumya.mojo:gemify-maven-plugin:0.22.0"
+
+      @@verbose = false
+      def self.verbose?
+        @@verbose
+      end
+      def self.verbose=(v)
+        @@verbose = v
+      end
 
       private
 
@@ -98,19 +102,16 @@ if defined?(JRUBY_VERSION)
           bin = nil
         end
         raise "can not find maven3 installation. install ruby-maven with\n\n\tjruby -S gem install ruby-maven --pre\n\n" if bin.nil?
-        warn "Using Maven install at #{bin}"
+
+        warn "Using Maven install at #{bin}" if verbose?
+
         boot = File.join(bin, "..", "boot")
         lib = File.join(bin, "..", "lib")
         ext = File.join(bin, "..", "ext")
-        classpath = (Dir.glob(lib + "/*jar")  + Dir.glob(boot + "/*jar"))
+        (Dir.glob(lib + "/*jar")  + Dir.glob(boot + "/*jar")).each {|path| require path }
 
         java.lang.System.setProperty("classworlds.conf", File.join(bin, "m2.conf"))
-
         java.lang.System.setProperty("maven.home", File.join(bin, ".."))
-        classpath.each do |path|
-          require path
-        end
-
         import "org.codehaus.plexus.classworlds"
         java_import "org.codehaus.plexus.DefaultContainerConfiguration"
         java_import "org.codehaus.plexus.DefaultPlexusContainer"
@@ -131,19 +132,19 @@ if defined?(JRUBY_VERSION)
 
       def self.temp_dir
         @temp_dir ||=
-        begin
-          f = java.io.File.createTempFile("gemify", "")
-          f.delete
-          f.mkdir
-          f.deleteOnExit
-          f.absolute_path
-        end
+          begin
+            f = java.io.File.createTempFile("gemify", "")
+            f.delete
+            f.mkdir
+            f.deleteOnExit
+            f.absolute_path
+          end
       end
 
       def self.execute(goal, gemname, version, props = {})
         maven = maven_get
         r = DefaultMavenExecutionRequest.new
-        r.set_show_errors false
+        r.set_show_errors verbose?
         r.user_properties.put("gemify.skipDependencies", "true")
         r.user_properties.put("gemify.tempDir", temp_dir)
         r.user_properties.put("gemify.gemname", gemname)
@@ -176,14 +177,12 @@ if defined?(JRUBY_VERSION)
       public
 
       def self.get_versions(gemname)
-        verbose = false #true
         gemname = gemname.source.sub(/\^/, '') if gemname.is_a? Regexp
-
         result = execute("#{BASE_GOAL}:versions", gemname, nil)
 
         if result =~ /\[/ && result =~ /\]/
           result = result.gsub(/\n/, '').sub(/.*\[/, "").sub(/\]/, '').gsub(/ /, '').split(',')
-          puts "versions: #{result.inspect}" if verbose
+          puts "versions: #{result.inspect}" if verbose?
           result
         else
           []
@@ -191,9 +190,6 @@ if defined?(JRUBY_VERSION)
       end
 
       def self.generate_spec(gemname, version)
-        #     puts "generate spec"
-        #     p gemname
-        #     p version
         result = execute("#{BASE_GOAL}:gemify", gemname, version, {"gemify.onlySpecs" => true })
         path = result.gsub(/\n/, '')
         if path =~ /gemspec: /
@@ -207,10 +203,6 @@ if defined?(JRUBY_VERSION)
       end
 
       def self.generate_gem(gemname, version)
-        #    p "generate gem"
-        #    p gemname
-        #    p version.to_s
-
         result = execute("#{BASE_GOAL}:gemify", gemname, version)
         path = result.gsub(/\n/, '')
         if path =~ /gem: /
