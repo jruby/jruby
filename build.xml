@@ -1484,7 +1484,10 @@
     </antcall>
   </target>
 
-  <target name="dist" depends="install-dist-gems,dist-bin,dist-src,dist-jar-complete"/>
+  <target name="dist" depends="install-dist-gems,dist-bin,dist-src,dist-jar-complete">
+    <rake task="gem"/>
+    <rake task="installer"/>
+  </target>
 
   <target name="dist-clean">
     <delete dir="${dist.dir}"/>
@@ -1492,6 +1495,7 @@
   </target>
 
   <target name="gem" depends="dist-jar-complete"><rake task="gem"/></target>
+  <target name="installer"><rake task="installer"/></target>
 
   <target name="clean" depends="init" description="Cleans almost everything, leaves downloaded specs">
     <delete dir="${build.dir}"/>
