@@ -602,7 +602,7 @@
     </antcall>
   </target>
 
-  <target name="test-jar-complete" depends="init, jar-complete"
+  <target name="test-jar-complete" depends="init,unzip-native-libs,jar-complete"
           description="Do some sanity checks on the complete jar.">
     <java jar="lib/jruby-complete.jar" fork="true" failonerror="true" outputproperty="jar-complete-gems">
       <arg line="-v -S gem list"/>
