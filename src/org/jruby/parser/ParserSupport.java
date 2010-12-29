@@ -1239,13 +1239,17 @@ public class ParserSupport {
     public void setLexer(RubyYaccLexer lexer) {
         this.lexer = lexer;
     }
+
+    public DStrNode createDStrNode(ISourcePosition position) {
+        return new DStrNode(position);
+    }
     
     public Node literal_concat(ISourcePosition position, Node head, Node tail) { 
         if (head == null) return tail;
         if (tail == null) return head;
         
         if (head instanceof EvStrNode) {
-            head = new DStrNode(head.getPosition()).add(head);
+            head = createDStrNode(head.getPosition()).add(head);
         } 
 
         if (tail instanceof StrNode) {
@@ -1276,9 +1280,9 @@ public class ParserSupport {
         	
             //Do not add an empty string node
             if(((StrNode) head).getValue().length() == 0) {
-                head = new DStrNode(head.getPosition());
+                head = createDStrNode(head.getPosition());
             } else {
-                head = new DStrNode(head.getPosition()).add(head);
+                head = createDStrNode(head.getPosition()).add(head);
             }
         }
         return ((DStrNode) head).add(tail);

@@ -1516,7 +1516,7 @@ literal         : numeric
                 | dsym
 
 strings         : string {
-                    $$ = $1 instanceof EvStrNode ? new DStrNode($1.getPosition()).add($1) : $1;
+                    $$ = $1 instanceof EvStrNode ? new DStrNode($1.getPosition(), lexer.getEncoding()).add($1) : $1;
                     /*
                     NODE *node = $1;
                     if (!node) {
@@ -1597,7 +1597,7 @@ word_list       : /* none */ {
                     $$ = new ArrayNode(lexer.getPosition());
                 }
                 | word_list word ' ' {
-                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode($1.getPosition()).add($2) : $2);
+                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode($1.getPosition(), lexer.getEncoding()).add($2) : $2);
                 }
 
 word            : string_content
