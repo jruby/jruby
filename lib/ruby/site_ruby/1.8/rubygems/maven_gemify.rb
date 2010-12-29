@@ -1,5 +1,5 @@
 if defined?(JRUBY_VERSION)
-  
+
   class Gem::Specification
     # return whether the spec name represents a maven artifact
     def self.maven_name?(name)
@@ -11,7 +11,7 @@ if defined?(JRUBY_VERSION)
       end
     end
   end
-  
+
   class Gem::RemoteFetcher
     def download_maven(spec, local_gem_path)
       require 'rubygems/maven_gemify'
@@ -20,7 +20,7 @@ if defined?(JRUBY_VERSION)
     end
     private :download_maven
   end
-  
+
   class Gem::SpecFetcher
     def gemify_generate_spec(spec)
       require 'rubygems/maven_gemify'
@@ -28,7 +28,7 @@ if defined?(JRUBY_VERSION)
       Marshal.dump(Gem::Specification.from_yaml(File.read(specfile)))
     end
     private :gemify_generate_spec
-  
+
     # use maven to locate (generate) the specification for the dependency in question
     def find_matching_using_maven(dependency)
       specs_and_sources = []
@@ -51,13 +51,13 @@ if defined?(JRUBY_VERSION)
     end
     private :find_matching_using_maven
   end
-  
+
   module Gem::Maven
     class Gemify
       BASE_GOAL = "de.saumya.mojo:gemify-maven-plugin:0.22.0"
-      
+
       private
-      
+
       def self.create_maven
         require 'java' # done lazily, so we're not loading it all the time
         bin = nil
@@ -103,14 +103,14 @@ if defined?(JRUBY_VERSION)
         lib = File.join(bin, "..", "lib")
         ext = File.join(bin, "..", "ext")
         classpath = (Dir.glob(lib + "/*jar")  + Dir.glob(boot + "/*jar"))
-        
+
         java.lang.System.setProperty("classworlds.conf", File.join(bin, "m2.conf"))
-        
+
         java.lang.System.setProperty("maven.home", File.join(bin, ".."))
         classpath.each do |path|
           require path
         end
-        
+
         import "org.codehaus.plexus.classworlds"
         java_import "org.codehaus.plexus.DefaultContainerConfiguration"
         java_import "org.codehaus.plexus.DefaultPlexusContainer"
@@ -124,11 +124,11 @@ if defined?(JRUBY_VERSION)
         container = DefaultPlexusContainer.new(config);
         container.lookup(Maven.java_class)
       end
-      
+
       def self.maven_get
         @maven ||= create_maven
       end
-      
+
       def self.temp_dir
         @temp_dir ||=
         begin
@@ -139,7 +139,7 @@ if defined?(JRUBY_VERSION)
           f.absolute_path
         end
       end
-      
+
       def self.execute(goal, gemname, version, props = {})
         maven = maven_get
         r = DefaultMavenExecutionRequest.new
@@ -153,7 +153,7 @@ if defined?(JRUBY_VERSION)
         end
         r.set_goals [goal]
         r.set_logging_level 0
-        
+
         out = java.lang.System.out
         string_io = java.io.ByteArrayOutputStream.new
         java.lang.System.setOut(java.io.PrintStream.new(string_io))
@@ -172,15 +172,15 @@ if defined?(JRUBY_VERSION)
         end
         string_io.to_s
       end
-      
+
       public
-      
+
       def self.get_versions(gemname)
         verbose = false #true
         gemname = gemname.source.sub(/\^/, '') if gemname.is_a? Regexp
 
         result = execute("#{BASE_GOAL}:versions", gemname, nil)
-        
+
         if result =~ /\[/ && result =~ /\]/
           result = result.gsub(/\n/, '').sub(/.*\[/, "").sub(/\]/, '').gsub(/ /, '').split(',')
           puts "versions: #{result.inspect}" if verbose
@@ -189,8 +189,8 @@ if defined?(JRUBY_VERSION)
           []
         end
       end
-      
-      def self.generate_spec(gemname, version)        
+
+      def self.generate_spec(gemname, version)
         #     puts "generate spec"
         #     p gemname
         #     p version
@@ -205,12 +205,12 @@ if defined?(JRUBY_VERSION)
           end
         end
       end
-      
+
       def self.generate_gem(gemname, version)
         #    p "generate gem"
         #    p gemname
         #    p version.to_s
-        
+
         result = execute("#{BASE_GOAL}:gemify", gemname, version)
         path = result.gsub(/\n/, '')
         if path =~ /gem: /
