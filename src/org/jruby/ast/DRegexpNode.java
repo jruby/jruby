@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -50,21 +51,15 @@ public class DRegexpNode extends DNode implements ILiteralNode {
     private final int options;
     private final boolean once;
     private RubyRegexp onceRegexp;
-    
-    public DRegexpNode(ISourcePosition position) {
-        this(position, 0, false);
-    }
-
-    public DRegexpNode(ISourcePosition position, DStrNode node, int options, boolean once) {
-        this(position, options, once);
-        addAll(node);
-    }
 
     public DRegexpNode(ISourcePosition position, int options, boolean once) {
-        super(position);
+        this(position, null, options, once);
+    }
 
-        this.options = options;
+    public DRegexpNode(ISourcePosition position, Encoding encoding, int options, boolean once) {
+        super(position, encoding);
         this.once = once;
+        this.options = options;
     }
 
     @Override

@@ -41,6 +41,7 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
@@ -151,7 +152,7 @@ public class DefaultRubyParser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 155 "-"
+					// line 156 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -3423,14 +3424,14 @@ states[393] = new ParserState() {
 		  Node node = ((Node)yyVals[-1+yyTop]);
 
 		  if (node == null) {
-                      yyVal = new RegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
+          yyVal = new RegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
 		  } else if (node instanceof StrNode) {
-                      yyVal = new RegexpNode(((Node)yyVals[-1+yyTop]).getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
+          yyVal = new RegexpNode(((Node)yyVals[-1+yyTop]).getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
 		  } else if (node instanceof DStrNode) {
-                      yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), (DStrNode) node, options, (options & ReOptions.RE_OPTION_ONCE) != 0);
-		  } else {
+          yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) node);
+      } else {
 		      yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
-                  }
+      }
     return yyVal;
   }
 };
@@ -3966,7 +3967,7 @@ states[66] = new ParserState() {
   }
 };
 }
-					// line 1903 "DefaultRubyParser.y"
+					// line 1904 "DefaultRubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4000,4 +4001,4 @@ states[66] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 7827 "-"
+					// line 7828 "-"

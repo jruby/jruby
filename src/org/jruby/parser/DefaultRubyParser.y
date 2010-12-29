@@ -38,6 +38,7 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
@@ -1501,15 +1502,15 @@ regexp	      : tREGEXP_BEG xstring_contents tREGEXP_END {
 		  Node node = $2;
 
 		  if (node == null) {
-                      $$ = new RegexpNode($1.getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
+          $$ = new RegexpNode($1.getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
 		  } else if (node instanceof StrNode) {
-                      $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
+          $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
 		  } else if (node instanceof DStrNode) {
-                      $$ = new DRegexpNode($1.getPosition(), (DStrNode) node, options, (options & ReOptions.RE_OPTION_ONCE) != 0);
-		  } else {
+          $$ = new DRegexpNode($1.getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) node);
+      } else {
 		      $$ = new DRegexpNode($1.getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
-                  }
-	       }
+      }
+}
 
 // Node:words - collection of words (e.g. %w{a b c}) with delimeters [!null]
 words	       : tWORDS_BEG ' ' tSTRING_END {

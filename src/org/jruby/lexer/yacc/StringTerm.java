@@ -37,6 +37,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
 public class StringTerm extends StrTerm {
+    private static final int UNICODE = 64;
+
     // Expand variables, Indentation of final marker
     private int flags;
 
@@ -110,7 +112,15 @@ public class StringTerm extends StrTerm {
             }
             
             if ((flags & RubyYaccLexer.STR_FUNC_REGEXP) != 0) {
-                lexer.setValue(new RegexpNode(src.getPosition(), ByteList.create(""), parseRegexpFlags(src)));
+                int regexpFlags = parseRegexpFlags(src);
+                ByteList regexpBytelist = ByteList.create("");
+                if (!lexer.isOneEight()) {
+                    if ((regexpFlags & UNICODE) != 0) {
+                       regexpBytelist.setEncoding(RubyYaccLexer.UTF8_ENCODING);
+                    }
+                }
+
+                lexer.setValue(new RegexpNode(src.getPosition(), regexpBytelist, regexpFlags));
                 return Tokens.tREGEXP_END;
             }
             
@@ -203,7 +213,7 @@ public class StringTerm extends StrTerm {
                 kcode = 48;
                 break;
             case 'u':
-                kcode = 64;
+                kcode = UNICODE;
                 break;
             case 'j':
                 options |= 256; // Regexp engine 'java'

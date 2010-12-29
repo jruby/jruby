@@ -30,6 +30,7 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
@@ -1571,6 +1572,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
 
 regexp          : tREGEXP_BEG xstring_contents tREGEXP_END {
                     int options = $3.getOptions();
+                    Encoding encoding = $3.getEncoding();
                     Node node = $2;
 
                     if (node == null) {
@@ -1578,9 +1580,9 @@ regexp          : tREGEXP_BEG xstring_contents tREGEXP_END {
                     } else if (node instanceof StrNode) {
                         $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
                     } else if (node instanceof DStrNode) {
-                        $$ = new DRegexpNode($1.getPosition(), (DStrNode) node, options, (options & ReOptions.RE_OPTION_ONCE) != 0);
+                        $$ = new DRegexpNode($1.getPosition(), encoding, options, (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) node);
                     } else {
-                        $$ = new DRegexpNode($1.getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
+                        $$ = new DRegexpNode($1.getPosition(), encoding, options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
                     }
                 }
 
