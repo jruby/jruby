@@ -1047,7 +1047,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyRegexp regexp = (RubyRegexp)re;
         regexp.check();
 
-        return initializeCommon(regexp.str, regexp.getOptions());
+        return getRuntime().is1_9() ? 
+            initializeCommon19(regexp.str, regexp.str.getEncoding(), regexp.getOptions()) :
+            initializeCommon(regexp.str, regexp.getOptions());
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
@@ -1123,7 +1125,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
         setKCode(runtime, options);
-        pattern = getRegexpFromCache(runtime, bytes, getEncoding(runtime, bytes), options & 0xf);
+        pattern = getRegexpFromCache(runtime, bytes, kcode.getEncoding(), options & 0xf);
         str = bytes;
         return this;
     }
