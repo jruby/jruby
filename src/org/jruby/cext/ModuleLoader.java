@@ -70,7 +70,6 @@ public class ModuleLoader {
         
         GIL.acquire();
         try {
-            System.out.printf("calling init (%x)\n", init);
             n.callInit(context, init);
             modules.add(lib);
         } finally {
