@@ -36,6 +36,7 @@
 package org.jruby.parser;
 
 import java.math.BigInteger;
+import org.jcodings.Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
 import org.jruby.ast.AliasNode;
@@ -1558,4 +1559,34 @@ public class ParserSupport {
         return new ArgsPushNode(position(node1, node2), node1, node2);
     }
 
+    public Encoding getRegexpEncoding(RegexpNode end, Encoding other) {
+        // This is null if there is not explicit ending encoding specified for the regexp
+        Encoding encoding = end.getEncoding(); // END carries end options like '//u'
+
+        if (encoding == null) {
+            return other == null ? lexer.getEncoding() : other;
+        }
+
+        return encoding;
+    }
+
+    // end is a weird variable. We return a RegexpNode to hold options at end of an regexp.
+    public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
+        int options = end.getOptions();
+
+        if (contents == null) {
+            return new RegexpNode(position, ByteList.create(""), getRegexpEncoding(end, null),
+                    options & ~ReOptions.RE_OPTION_ONCE);
+        } else if (contents instanceof StrNode) {
+            ByteList meat = (ByteList) ((StrNode) contents).getValue().clone();
+            return new RegexpNode(contents.getPosition(), meat,
+                    getRegexpEncoding(end, meat.getEncoding()), options & ~ReOptions.RE_OPTION_ONCE);
+        } else if (contents instanceof DStrNode) {
+            return new DRegexpNode(position, getRegexpEncoding(end, null), options,
+                    (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) contents);
+        }
+
+        return new DRegexpNode(position, getRegexpEncoding(end, null), options,
+                (options & ReOptions.RE_OPTION_ONCE) != 0).add(contents);
+    }
 }

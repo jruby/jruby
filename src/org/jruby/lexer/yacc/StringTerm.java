@@ -37,7 +37,10 @@ import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
 public class StringTerm extends StrTerm {
-    private static final int UNICODE = 64;
+    private static final int ASCII = 16;
+    private static final int EUC = 32;
+    private static final int SJIS = 48;
+    private static final int UTF8 = 64;
 
     // Expand variables, Indentation of final marker
     private int flags;
@@ -59,11 +62,18 @@ public class StringTerm extends StrTerm {
     }
 
     protected ByteList createByteList(RubyYaccLexer lexer) {
-        // TODO: ByteList seems to be missing a constructor
-        // TODO: Perhaps both 1.8 and 1.9 can just always pass in encoding
         if (lexer.isOneEight()) return new ByteList();
 
-        return new ByteList(new byte[]{}, lexer.getEncoding());
+        // Regexps should try and be USASCII and change based on suffix options or based on
+        // actual contents converting the encoding to 8-BIT or UTF8
+        Encoding encoding;
+        if (isRegexp()) {
+            encoding = RubyYaccLexer.USASCII_ENCODING;
+        } else {
+            encoding = lexer.getEncoding();
+        }
+
+        return new ByteList(new byte[]{}, encoding);
     }
 
     protected boolean isRegexp() {
@@ -115,9 +125,15 @@ public class StringTerm extends StrTerm {
                 int regexpFlags = parseRegexpFlags(src);
                 ByteList regexpBytelist = ByteList.create("");
                 if (!lexer.isOneEight()) {
-                    if ((regexpFlags & UNICODE) != 0) {
-                       regexpBytelist.setEncoding(RubyYaccLexer.UTF8_ENCODING);
-                    }
+                    if((regexpFlags & SJIS) == SJIS) {
+                        regexpBytelist.setEncoding(org.jcodings.specific.SJISEncoding.INSTANCE);
+                    } else if((regexpFlags & EUC) == EUC) {
+                        regexpBytelist.setEncoding(org.jcodings.specific.EUCJPEncoding.INSTANCE);
+                    } else if((regexpFlags & ASCII) == ASCII) {
+                        regexpBytelist.setEncoding(RubyYaccLexer.USASCII_ENCODING);
+                    } else if ((regexpFlags & UTF8) == UTF8) {
+                        regexpBytelist.setEncoding(RubyYaccLexer.UTF8_ENCODING);
+                    } 
                 }
 
                 lexer.setValue(new RegexpNode(src.getPosition(), regexpBytelist, regexpFlags));
@@ -204,16 +220,16 @@ public class StringTerm extends StrTerm {
                 options |= ReOptions.RE_OPTION_ONCE;
                 break;
             case 'n':
-                kcode = 16;
+                kcode = ASCII;
                 break;
             case 'e':
-                kcode = 32;
+                kcode = EUC;
                 break;
             case 's':
-                kcode = 48;
+                kcode = SJIS;
                 break;
             case 'u':
-                kcode = UNICODE;
+                kcode = UTF8;
                 break;
             case 'j':
                 options |= 256; // Regexp engine 'java'

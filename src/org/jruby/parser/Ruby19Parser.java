@@ -49,7 +49,6 @@ import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
-import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
@@ -139,7 +138,7 @@ public class Ruby19Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 143 "-"
+					// line 142 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -2273,19 +2272,7 @@ states[477] = new ParserState() {
 };
 states[410] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    int options = ((RegexpNode)yyVals[0+yyTop]).getOptions();
-                    Encoding encoding = ((RegexpNode)yyVals[0+yyTop]).getEncoding();
-                    Node node = ((Node)yyVals[-1+yyTop]);
-
-                    if (node == null) {
-                        yyVal = new RegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
-                    } else if (node instanceof StrNode) {
-                        yyVal = new RegexpNode(((Node)yyVals[-1+yyTop]).getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
-                    } else if (node instanceof DStrNode) {
-                        yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), encoding, options, (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) node);
-                    } else {
-                        yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), encoding, options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
-                    }
+                    yyVal = support.newRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]), (RegexpNode) ((RegexpNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4222,7 +4209,7 @@ states[267] = new ParserState() {
   }
 };
 }
-					// line 2023 "Ruby19Parser.y"
+					// line 2010 "Ruby19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4255,4 +4242,4 @@ states[267] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8046 "-"
+					// line 8033 "-"

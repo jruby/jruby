@@ -46,7 +46,6 @@ import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
-import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
@@ -1571,19 +1570,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                 }
 
 regexp          : tREGEXP_BEG xstring_contents tREGEXP_END {
-                    int options = $3.getOptions();
-                    Encoding encoding = $3.getEncoding();
-                    Node node = $2;
-
-                    if (node == null) {
-                        $$ = new RegexpNode($1.getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
-                    } else if (node instanceof StrNode) {
-                        $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
-                    } else if (node instanceof DStrNode) {
-                        $$ = new DRegexpNode($1.getPosition(), encoding, options, (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) node);
-                    } else {
-                        $$ = new DRegexpNode($1.getPosition(), encoding, options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
-                    }
+                    $$ = support.newRegexpNode($1.getPosition(), $2, (RegexpNode) $3);
                 }
 
 words           : tWORDS_BEG ' ' tSTRING_END {
