@@ -3412,6 +3412,39 @@ public class RubyIO extends RubyObject {
         }
     }
 
+    /**
+     * binread is just like read, except it doesn't take options and it forces
+     * mode to be "rb:ASCII-8BIT"
+     *
+     * @param context the current ThreadContext
+     * @param recv the target of the call (IO or a subclass)
+     * @param args arguments; path [, length [, offset]]
+     * @return the binary contents of the given file, at specified length and offset
+     */
+    @JRubyMethod(meta = true, required = 1, optional = 2, compat = RUBY1_9)
+    public static IRubyObject binread(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject nil = context.getRuntime().getNil();
+        IRubyObject path = args[0];
+        IRubyObject length = nil;
+        IRubyObject offset = nil;
+        Ruby runtime = context.runtime;
+
+        if (args.length > 2) {
+            offset = args[2];
+            length = args[1];
+        } else if (args.length > 1) {
+            length = args[1];
+        }
+        RubyIO file = (RubyIO)runtime.getFile().callMethod("new", path, runtime.newString("rb:ASCII-8BIT"));
+
+        try {
+            if (!offset.isNil()) file.seek(context, offset);
+            return !length.isNil() ? file.read(context, length) : file.read(context);
+        } finally  {
+            file.close();
+        }
+    }
+
     // Enebo: annotation processing forced me to do pangea method here...
     @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, compat = RUBY1_9)
     public static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
