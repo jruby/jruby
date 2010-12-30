@@ -141,7 +141,6 @@ module Gem
         maven = maven_get
         r = DefaultMavenExecutionRequest.new
         r.set_show_errors verbose?
-        r.user_properties.put("gemify.skipDependencies", "true")
         r.user_properties.put("gemify.tempDir", temp_dir)
         r.user_properties.put("gemify.gemname", gemname)
         r.user_properties.put("gemify.version", version.to_s) if version

@@ -33,12 +33,29 @@ begin
       Gem::Maven::Gemify.get_versions("commons-lang.commons-lang").should include("2.5.0")
     end
 
+    it "allows use of colons as artifact delimiters" do
+      Gem::Maven::Gemify.get_versions("commons-lang:commons-lang").should include("2.5.0")
+    end
+
     it "generates a gemspec file for the maven artifact" do
-      require 'yaml'
       specfile = Gem::Maven::Gemify.generate_spec("commons-lang.commons-lang", "2.5.0")
       gemspec = Gem::Specification.from_yaml(File.read(specfile))
       gemspec.name.should == "commons-lang.commons-lang"
       gemspec.version.should == Gem::Version.new("2.5.0")
+    end
+
+    it "generates a .gem for the maven artifact" do
+      gemfile = Gem::Maven::Gemify.generate_gem("commons-lang.commons-lang", "2.5.0")
+      format = Gem::Format.from_file_by_path gemfile
+      format.file_entries.detect{|fe| fe[0]["path"] =~ /commons-lang\.jar/}.should be_true
+    end
+
+    it "generates a spec with a Gem::Dependency list for artifacts with dependencies" do
+      specfile = Gem::Maven::Gemify.generate_spec("commons-logging.commons-logging", "1.1.1")
+      gemspec = Gem::Specification.from_yaml(File.read(specfile))
+      gemspec.dependencies.length.should == 1
+      gemspec.dependencies[0].name.should == 'junit.junit'
+      gemspec.dependencies[0].type.should == :development
     end
   end
 rescue => e
