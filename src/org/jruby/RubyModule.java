@@ -2692,23 +2692,13 @@ public class RubyModule extends RubyObject {
     }
 
     
-    /** rb_mod_remove_cvar
+    /** 
      *
-     * FIXME: any good reason to have two identical methods? (same as remove_class_variable)
+     * @deprecated use remove_class_variable
      */
+    @Deprecated
     public IRubyObject removeCvar(IRubyObject name) { // Wrong Parameter ?
-        String internedName = validateClassVariable(name.asJavaString());
-        IRubyObject value;
-
-        if ((value = deleteClassVariable(internedName)) != null) {
-            return value;
-        }
-
-        if (fastIsClassVarDefined(internedName)) {
-            throw cannotRemoveError(internedName);
-        }
-
-        throw getRuntime().newNameError("class variable " + internedName + " not defined for " + getName(), internedName);
+        return remove_class_variable(getRuntime().getCurrentContext(), name);
     }
 
 
