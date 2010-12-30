@@ -93,7 +93,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -1300,16 +1299,7 @@ public class RubyModule extends RubyObject {
             getRuntime().secure(4);
         }
 
-        DynamicMethod method = searchMethod(name);
-
-        if (method.isUndefined() && isModule()) {
-            method = runtime.getObject().searchMethod(name);
-        }
-
-        if (method.isUndefined()) {
-            throw getRuntime().newNameError("undefined method '" + name + "' for " +
-                                (isModule() ? "module" : "class") + " '" + getName() + "'", name);
-        }
+        DynamicMethod method = deepMethodSearch(name, runtime);
 
         if (method.getVisibility() != visibility) {
             if (this == method.getImplementationClass()) {
@@ -1321,6 +1311,20 @@ public class RubyModule extends RubyObject {
 
             invalidateCacheDescendants();
         }
+    }
+
+    private DynamicMethod deepMethodSearch(String name, Ruby runtime) {
+        DynamicMethod method = searchMethod(name);
+
+        if (method.isUndefined() && isModule()) {
+            method = runtime.getObject().searchMethod(name);
+        }
+
+        if (method.isUndefined()) {
+            throw runtime.newNameError("undefined method '" + name + "' for " +
+                                (isModule() ? "module" : "class") + " '" + getName() + "'", name);
+        }
+        return method;
     }
 
     /**
@@ -2088,17 +2092,9 @@ public class RubyModule extends RubyObject {
         } else {
             setMethodVisibility(args, PRIVATE);
 
-            // FIXME: This is duplicated in exportMethod; should be unified.
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].asJavaString().intern();
-                DynamicMethod method = searchMethod(name);
-                if (method.isUndefined() && isModule()) {
-                    method = runtime.getObject().searchMethod(name);
-                }
-                if (method.isUndefined()) {
-                    throw getRuntime().newNameError("undefined method '" + name + "' for " +
-                                (isModule() ? "module" : "class") + " '" + getName() + "'", name);
-                }
+                DynamicMethod method = deepMethodSearch(name, runtime);
                 getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), method, PUBLIC));
                 callMethod(context, "singleton_method_added", context.getRuntime().fastNewSymbol(name));
             }
