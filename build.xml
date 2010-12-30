@@ -13,6 +13,12 @@
   <property file="default.build.properties"/>
 
   <property name="shared.lib.dir" value="lib/ruby/site_ruby/shared"/>
+  
+  <property name="asm.jar" value="${build.lib.dir}/asm-3.3.1.jar"/>
+  <property name="asm-commons.jar" value="${build.lib.dir}/asm-commons-3.3.1.jar"/>
+  <property name="asm-util.jar" value="${build.lib.dir}/asm-util-3.3.1.jar"/>
+  <property name="asm-analysis.jar" value="${build.lib.dir}/asm-analysis-3.3.1.jar"/>
+  <property name="asm-tree.jar" value="${build.lib.dir}/asm-tree-3.3.1.jar"/>
 
   <path id="build.classpath">
     <fileset dir="${build.lib.dir}" includes="*.jar"/>
@@ -343,11 +349,11 @@
   <target name="jar-jruby" depends="init, compile, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
       <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true" update="true">
         <fileset dir="${jruby.classes.dir}"/>
-        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
+        <zipfileset src="${asm.jar}"/>
+        <zipfileset src="${asm-commons.jar}"/>
+        <zipfileset src="${asm-util.jar}"/>
+        <zipfileset src="${asm-analysis.jar}"/>
+        <zipfileset src="${asm-tree.jar}"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
@@ -421,8 +427,8 @@
             <exclude name="org/jruby/ext/ffi/**/*"/>
             <exclude name="org/jruby/embed/**/*"/>
         </fileset>
-        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
+        <zipfileset src="${asm.jar}"/>
+        <zipfileset src="${asm-util.jar}"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
@@ -443,11 +449,11 @@
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
       <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
         <fileset dir="${jruby.classes.dir}"/>
-        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
+        <zipfileset src="${asm.jar}"/>
+        <zipfileset src="${asm-commons.jar}"/>
+        <zipfileset src="${asm-util.jar}"/>
+        <zipfileset src="${asm-analysis.jar}"/>
+        <zipfileset src="${asm-tree.jar}"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
@@ -549,11 +555,11 @@
       <fileset dir="${build.dir}/jar-complete">
         <exclude name="META-INF/jruby.home/lib/ruby/site_ruby/shared/builtin/**"/>
       </fileset>
-      <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-      <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
-      <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
-      <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
-      <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
+      <zipfileset src="${asm.jar}"/>
+      <zipfileset src="${asm-commons.jar}"/>
+      <zipfileset src="${asm-util.jar}"/>
+      <zipfileset src="${asm-analysis.jar}"/>
+      <zipfileset src="${asm-tree.jar}"/>
       <zipfileset src="${build.lib.dir}/bytelist.jar"/>
       <zipfileset src="${build.lib.dir}/constantine.jar"/>
       <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>

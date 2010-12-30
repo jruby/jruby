@@ -77,7 +77,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public static final String THREADCONTEXT = p(ThreadContext.class);
     public static final String RUBY = p(Ruby.class);
     public static final String IRUBYOBJECT = p(IRubyObject.class);
-    public static final boolean VERIFY_CLASSFILES = false;
+    public static final boolean VERIFY_CLASSFILES = true;
 
     public static String getStaticMethodSignature(String classname, int args) {
         switch (args) {
