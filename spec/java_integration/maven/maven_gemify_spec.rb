@@ -1,11 +1,28 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 require 'rubygems'
+require 'rubygems/format'
 require 'rubygems/maven_gemify'
+require 'yaml'
 
 begin
   Gem::Maven::Gemify.verbose = true if $DEBUG || ENV['DEBUG']
   Gem::Maven::Gemify.maven_get
+
+  describe Gem::Specification, "maven_name?" do
+    it "matches dot-separated artifacts" do
+      Gem::Specification.maven_name?('commons-lang.commons-lang').should be_true
+    end
+
+    it "matches colon-separated artifacts" do
+      Gem::Specification.maven_name?('commons-lang:commons-lang').should be_true
+    end
+
+    it "does not match things that look like a windows filename" do
+      Gem::Specification.maven_name?('c:ommons-lang:commons-lang').should be_false
+      Gem::Specification.maven_name?('c:/temp/somefile').should be_false
+    end
+  end
 
   describe Gem::Maven::Gemify do
     it "creates an instance of the Maven class" do
