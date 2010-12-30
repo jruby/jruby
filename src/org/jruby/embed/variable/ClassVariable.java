@@ -173,7 +173,6 @@ public class ClassVariable extends AbstractVariable {
      */
     public void remove(Ruby runtime) {
         RubyModule rubyClass = getRubyClass(runtime);
-        IRubyObject rubyName = JavaEmbedUtils.javaToRuby(runtime, name);
-        rubyClass.removeCvar(rubyName);
+        rubyClass.removeClassVariable(name);
     }
 }
