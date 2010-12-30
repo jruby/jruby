@@ -1,4 +1,5 @@
 #!/usr/bin/env jruby
+# -*- coding: utf-8 -*-
 
 # This script is for use with JRuby, to copy the (patched) stdlib and external test files from
 # various locations in MRI's layout to JRuby's layout. It should be used
@@ -26,13 +27,14 @@ require 'fileutils'
 class Sync
   include FileUtils
 
-  def initialize(version, source, target)
+  def initialize(type, version, source, target)
+    @type = type
     @named_version = version
     @version = format_version(version)
     @source = source
     @target = target
 
-    checkout @source, @version
+    checkout
   end
 
   def sync_tests
@@ -63,14 +65,32 @@ class Sync
     end
   end
 
+  def sync_rubygems
+    if Dir.pwd != File.expand_path('../..', __FILE__) || @target != '.'
+      $stderr.puts "Rubygems is sync'd into the jruby where this script was launched."
+      $stderr.puts "To acknowledge this, run in the top level of that jruby tree and use a target of `.'."
+      raise ArgumentError, "Sync Rubygems target mismatch"
+    end
+    cd(@source) do
+      system "ruby setup.rb --no-format-executable --no-ri --no-rdoc"
+    end
+    gem_script = File.join(@target, "bin", "gem")
+
+    # Fix up shebang so it doesn't have abs path
+    lines = IO.readlines gem_script
+    lines[0] = "#!/usr/bin/env jruby\n"
+    File.open(gem_script, "wb") {|f| lines.each {|l| f << l } }
+    cp File.join(@target, "bin", "gem"), File.join(@target, "bin", "jgem")
+  end
+
   private
   def format_version(version)
     version.gsub(/_\d+$/, '').gsub(/_/, '.')
   end
 
-  def checkout(source, version)
-    cd(source) do
-      branch = "jruby-ruby_#{@named_version}"
+  def checkout
+    cd(@source) do
+      branch = "jruby-ruby#{@type == 'rubygems' ? 'gems' : ''}_#{@named_version}"
 
       if (branches = `git branch | sed 's/[\*\s]*//'`).split("\n").include? branch
         `git checkout #{branch}`
@@ -83,11 +103,11 @@ end
 
 if $0 == __FILE__
   if ARGV.size != 4
-    puts "usage: sync_ruby <tests|stdlib|all> <version(1_8_7|1_9_2)> <jruby ruby fork clone> <jruby dir>"
+    puts "usage: sync_ruby <tests|stdlib|rubygems|all> <version(1_8_7|1_9_2)> <jruby ruby(gems) fork clone> <jruby dir>"
     exit 1
   end
 
-  if !%w{tests stdlib all}.include? ARGV[0]
+  if !%w{tests stdlib rubygems all}.include? ARGV[0]
     puts "invalid source to sync: #{ARGV[0]}"
     exit 1
   end
@@ -107,7 +127,7 @@ if $0 == __FILE__
     exit 1
   end
 
-  sync = Sync.new(ARGV[1], ARGV[2], ARGV[3])
+  sync = Sync.new(*ARGV)
   if ARGV[0] == 'all'
     sync.sync_tests
     sync.sync_stdlib
