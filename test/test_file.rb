@@ -1066,4 +1066,24 @@ class TestFile < Test::Unit::TestCase
       Dir.chdir(pwd)
     end
   end
+
+  # JRUBY-5282
+  def test_file_methods_with_closed_stream
+    filename = 'test.txt'
+    begin
+      file = File.open(filename, 'w+')
+      file.close
+
+      %w{atime ctime lstat mtime stat}.each do |method|
+        assert_raise(IOError) { file.send(method.to_sym) }
+      end
+
+      assert_raise(IOError) { file.truncate(0) }
+      assert_raise(IOError) { file.chmod(777) }
+      assert_raise(IOError) { file.chown(0, 0) }
+
+    ensure
+      File.unlink(filename)
+    end
+  end
 end

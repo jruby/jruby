@@ -636,6 +636,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(required = 1)
     public IRubyObject chmod(ThreadContext context, IRubyObject arg) {
+        checkClosed(context);
         int mode = (int) arg.convertToInteger().getLongValue();
 
         if (!new File(path).exists()) {
@@ -647,6 +648,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(required = 2)
     public IRubyObject chown(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+        checkClosed(context);
         int owner = -1;
         if (!arg1.isNil()) {
             owner = RubyNumeric.num2int(arg1);
@@ -666,11 +668,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject atime(ThreadContext context) {
+        checkClosed(context);
         return context.getRuntime().newFileStat(path, false).atime();
     }
 
     @JRubyMethod
     public IRubyObject ctime(ThreadContext context) {
+        checkClosed(context);
         return context.getRuntime().newFileStat(path, false).ctime();
     }
 
@@ -707,11 +711,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject lstat(ThreadContext context) {
+        checkClosed(context);
         return context.getRuntime().newFileStat(path, true);
     }
     
     @JRubyMethod
     public IRubyObject mtime(ThreadContext context) {
+        checkClosed(context);
         return getLastModified(context.getRuntime(), path);
     }
 
@@ -763,7 +769,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     @Override
     public IRubyObject stat(ThreadContext context) {
-        openFile.checkClosed(context.getRuntime());
+        checkClosed(context);
         return context.getRuntime().newFileStat(path, false);
     }
 
@@ -1823,5 +1829,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         return runtime.newTime(file.lastModified());
+    }
+
+    private void checkClosed(ThreadContext context) {
+        openFile.checkClosed(context.getRuntime());
     }
 }
