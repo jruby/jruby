@@ -2393,18 +2393,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "remove_class_variable", required = 1, visibility = PRIVATE)
     public IRubyObject remove_class_variable(ThreadContext context, IRubyObject name) {
-        String javaName = validateClassVariable(name.asJavaString());
-        IRubyObject value;
-
-        if ((value = deleteClassVariable(javaName)) != null) {
-            return value;
-        }
-
-        if (fastIsClassVarDefined(javaName)) {
-            throw cannotRemoveError(javaName);
-        }
-
-        throw context.getRuntime().newNameError("class variable " + javaName + " not defined for " + getName(), javaName);
+        return removeCvar(name);
     }
 
     /** rb_mod_class_variables
@@ -2691,8 +2680,9 @@ public class RubyModule extends RubyObject {
     
     /** rb_mod_remove_cvar
      *
-     * FIXME: any good reason to have two identical methods? (same as remove_class_variable)
+     * @deprecated use remove_class_variable
      */
+    @Deprecated
     public IRubyObject removeCvar(IRubyObject name) { // Wrong Parameter ?
         String internedName = validateClassVariable(name.asJavaString());
         IRubyObject value;
