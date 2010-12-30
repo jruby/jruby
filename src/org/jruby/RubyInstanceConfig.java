@@ -1386,6 +1386,8 @@ public class RubyInstanceConfig {
                 InputStream stream = null;
                 if (script.startsWith("file:") && script.indexOf(".jar!/") != -1) {
                     stream = new URL("jar:" + script).openStream();
+                } else if (script.startsWith("classpath:")) {
+                    stream = Ruby.getClassLoader().getResourceAsStream(script.substring("classpath:".length()));
                 } else {
                     File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
                     if (isxFlag()) {
