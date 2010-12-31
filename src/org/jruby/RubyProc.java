@@ -73,20 +73,20 @@ public class RubyProc extends RubyObject implements DataType {
     private Block.Type type;
     private ISourcePosition sourcePosition;
 
-    public RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
+    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
         super(runtime, rubyClass);
         
         this.type = type;
     }
 
-    public RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, ISourcePosition sourcePosition) {
+    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, ISourcePosition sourcePosition) {
         this(runtime, rubyClass, type);
         this.sourcePosition = sourcePosition;
     }
     
     private static ObjectAllocator PROC_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyProc instance = RubyProc.newProc(runtime, Block.Type.PROC);
+            RubyProc instance = new RubyProc(runtime, runtime.getProc(), Block.Type.PROC);
 
             instance.setMetaClass(klass);
 
@@ -112,8 +112,9 @@ public class RubyProc extends RubyObject implements DataType {
 
     // Proc class
 
+    @Deprecated
     public static RubyProc newProc(Ruby runtime, Block.Type type) {
-        return new RubyProc(runtime, runtime.getProc(), type);
+        throw runtime.newRuntimeError("deprecated RubyProc.newProc with no block; do not use");
     }
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
@@ -122,7 +123,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
-        proc.callInit(NULL_ARRAY, block);
+        proc.setup(block);
 
         return proc;
     }
@@ -145,14 +146,14 @@ public class RubyProc extends RubyObject implements DataType {
             return block.getProcObject();
         }
         
-        IRubyObject obj = ((RubyClass) recv).allocate();
+        RubyProc obj = (RubyProc)((RubyClass) recv).allocate();
+        obj.setup(block);
         
         obj.callMethod(context, "initialize", args, block);
         return obj;
     }
     
-    @JRubyMethod(visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, Block procBlock) {
+    private void setup(Block procBlock) {
         if (!procBlock.isGiven()) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }
@@ -179,14 +180,12 @@ public class RubyProc extends RubyObject implements DataType {
 
         block.type = type;
         block.setProcObject(this);
-        return this;
     }
     
     @JRubyMethod(name = "clone")
     @Override
     public IRubyObject rbClone() {
-    	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), type);
-    	newProc.block = getBlock();
+    	RubyProc newProc = newProc(getRuntime(), block, type, sourcePosition);
     	// TODO: CLONE_SETUP here
     	return newProc;
     }
@@ -194,8 +193,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "dup")
     @Override
     public IRubyObject dup() {
-        RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), type);
-        newProc.block = getBlock();
+    	RubyProc newProc = newProc(getRuntime(), block, type, sourcePosition);
         return newProc;
     }
     

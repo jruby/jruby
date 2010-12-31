@@ -2984,9 +2984,7 @@ public final class Ruby {
     public RubyProc newProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
-        RubyProc proc =  RubyProc.newProc(this, type);
-
-        proc.callInit(IRubyObject.NULL_ARRAY, block);
+        RubyProc proc =  RubyProc.newProc(this, block, type);
 
         return proc;
     }
@@ -2994,8 +2992,7 @@ public final class Ruby {
     public RubyProc newBlockPassProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
-        RubyProc proc =  RubyProc.newProc(this, type);
-        proc.initialize(getCurrentContext(), block);
+        RubyProc proc =  RubyProc.newProc(this, block, type);
 
         return proc;
     }
