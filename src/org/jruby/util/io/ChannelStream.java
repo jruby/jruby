@@ -1450,7 +1450,7 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException, BadDescriptorException {
-        ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), path, modes);
+        ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), path, modes, runtime.getClassLoader());
         Stream stream = fdopen(runtime, descriptor, modes);
 
         if (modes.isAppendable()) stream.lseek(0, Stream.SEEK_END);

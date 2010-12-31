@@ -1128,7 +1128,8 @@ public class RubyIO extends RubyObject {
         try {
             ChannelDescriptor descriptor =
                 ChannelDescriptor.open(runtime.getCurrentDirectory(),
-                                       path, modes, perms, runtime.getPosix());
+                                       path, modes, perms, runtime.getPosix(),
+                                       runtime.getJRubyClassLoader());
             // always a new fileno, so ok to use internal only
             fileno = descriptor.getFileno();
         }

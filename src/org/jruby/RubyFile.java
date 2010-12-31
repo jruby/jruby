@@ -554,7 +554,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     path,
                     modes,
                     perm,
-                    getRuntime().getPosix());
+                    getRuntime().getPosix(),
+                    getRuntime().getJRubyClassLoader());
 
             // TODO: check if too many open files, GC and try again
 
