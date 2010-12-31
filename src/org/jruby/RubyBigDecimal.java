@@ -316,11 +316,14 @@ public class RubyBigDecimal extends RubyNumeric {
     private static RubyBigDecimal getVpValue(IRubyObject v, boolean must) {
         if(v instanceof RubyBigDecimal) {
             return (RubyBigDecimal)v;
-        } else if(v instanceof RubyFixnum || v instanceof RubyBignum) {
-            String s = v.toString();
-            return newInstance(v.getRuntime().fastGetClass("BigDecimal"),new IRubyObject[]{v.getRuntime().newString(s)});
+        } else if (v instanceof RubyFixnum) {
+            return new RubyBigDecimal(v.getRuntime(), new BigDecimal(((RubyFixnum)v).getLongValue()));
+        } else if (v instanceof RubyBignum) {
+            return new RubyBigDecimal(v.getRuntime(), new BigDecimal(((RubyBignum)v).getValue()));
+        } else if (v instanceof RubyFloat) {
+            return new RubyBigDecimal(v.getRuntime(), new BigDecimal(((RubyFloat)v).getValue()));
         }
-        if(must) {
+        if (must) {
             String err;
             if (v.isImmediate()) {
                 ThreadContext context = v.getRuntime().getCurrentContext();
@@ -460,7 +463,7 @@ public class RubyBigDecimal extends RubyNumeric {
         }
 
         // Java and MRI definitions of modulo are different.
-        BigDecimal modulo = value.remainder(val.value);
+        BigDecimal modulo = remainder(value, val.value);
         if (modulo.signum() * val.value.signum() < 0) {
             modulo = modulo.add(val.value);
         }
@@ -484,7 +487,11 @@ public class RubyBigDecimal extends RubyNumeric {
         }
 
         // Java and MRI definitions of remainder are the same.
-        return new RubyBigDecimal(runtime, value.remainder(val.value)).setResult();
+        return new RubyBigDecimal(runtime, remainder(value, val.value)).setResult();
+    }
+
+    private static BigDecimal remainder(BigDecimal dividend, BigDecimal divisor) {
+        return dividend.remainder(divisor);
     }
 
     @JRubyMethod(name = "*", required = 1)
