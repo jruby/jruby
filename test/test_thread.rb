@@ -329,4 +329,11 @@ class TestThread < Test::Unit::TestCase
       assert_equal(:result, out)
     end
   end
+
+  # JRUBY-5290
+  def test_default_priority
+    t = Thread.new { sleep 1 while true }
+    assert_equal 1, t.priority
+    t.exit
+  end
 end

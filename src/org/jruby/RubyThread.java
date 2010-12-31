@@ -110,6 +110,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         this.threadService = runtime.getThreadService();
         finalResult = runtime.getNil();
 
+        this.priority = RubyFixnum.one(runtime);
         // init errorInfo to nil
         errorInfo = runtime.getNil();
     }
