@@ -332,8 +332,9 @@ class TestThread < Test::Unit::TestCase
 
   # JRUBY-5290
   def test_default_priority
+    require 'java'
     t = Thread.new { sleep 1 while true }
-    assert_equal 1, t.priority
+    assert_equal java.lang.Thread::NORM_PRIORITY, t.priority
     t.exit
   end
 end
