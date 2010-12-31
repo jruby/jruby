@@ -2339,12 +2339,14 @@ public class RubyYaccLexer {
 
     // Note: parser_tokadd_utf8 variant just for regexp literal parsing.  This variant is to be
     // called when string_literal and regexp_literal.
-    public void readUTFEscapeRegexpLiteral() throws IOException {
-        tokenBuffer.append("\\u");
+    public void readUTFEscapeRegexpLiteral(ByteList buffer) throws IOException {
+        buffer.append('\\');
+        buffer.append('u');
+
         if (src.peek('{')) { // handle \\u{...}
             do {
-                tokenBuffer.append("{");
-                if (scanHexLiteral(6, false, "invalid Unicode escape") > 0x10ffff) {
+                buffer.append(src.read());
+                if (scanHexLiteral(buffer, 6, false, "invalid Unicode escape") > 0x10ffff) {
                     throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
                             getCurrentLine(), "invalid Unicode codepoint (too large)");
                 }
@@ -2355,9 +2357,9 @@ public class RubyYaccLexer {
                 throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
                         getCurrentLine(), "unterminated Unicode escape");
             }
-            tokenBuffer.append((char) c);
+            buffer.append((char) c);
         } else { // handle \\uxxxx
-            scanHexLiteral(token, true, "Invalid Unicode escape");
+            scanHexLiteral(buffer, 4, true, "Invalid Unicode escape");
         }
     }
 
@@ -2369,7 +2371,7 @@ public class RubyYaccLexer {
     // to grow by 6 (which may be wasteful).  Another idea is to make Encoding accept an interface
     // for populating bytes and then make ByteList implement that interface.  I like this last idea
     // since it would not leak bytelist impl details all over the place.
-    private void tokenAddMBC(int codepoint, ByteList buffer, Encoding encoding) {
+    public void tokenAddMBC(int codepoint, ByteList buffer, Encoding encoding) {
         int length = encoding.codeToMbc(codepoint, mbcBuf, 0);
         buffer.append(mbcBuf, 0, length);
     }
@@ -2387,6 +2389,7 @@ public class RubyYaccLexer {
                     throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
                             getCurrentLine(), "invalid Unicode codepoint (too large)");
                 }
+
                 if (codepoint >= 0x80) {
                     buffer.setEncoding(UTF8_ENCODING);
                     if (stringLiteral) tokenAddMBC(codepoint, buffer, UTF8_ENCODING);
@@ -2493,7 +2496,8 @@ public class RubyYaccLexer {
      * exception will be thrown.  This will also return the codepoint as a value so codepoint
      * ranges can be checked.
      */
-    private char scanHexLiteral(int count, boolean strict, String errorMessage) throws IOException {
+    private char scanHexLiteral(ByteList buffer, int count, boolean strict, String errorMessage)
+            throws IOException {
         int i = 0;
         char hexValue = '\0';
 
@@ -2505,7 +2509,7 @@ public class RubyYaccLexer {
                 break;
             }
 
-            tokenBuffer.append(h1);
+            buffer.append(h1);
 
             hexValue <<= 4;
             hexValue |= Integer.parseInt("" + (char) h1, 16) & 15;

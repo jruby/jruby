@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
+import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.StrNode;
@@ -64,14 +65,7 @@ public class StringTerm extends StrTerm {
     protected ByteList createByteList(RubyYaccLexer lexer) {
         if (lexer.isOneEight()) return new ByteList();
 
-        // Regexps should try and be USASCII and change based on suffix options or based on
-        // actual contents converting the encoding to 8-BIT or UTF8
-        Encoding encoding;
-        if (isRegexp()) {
-            encoding = RubyYaccLexer.USASCII_ENCODING;
-        } else {
-            encoding = lexer.getEncoding();
-        }
+        Encoding encoding = lexer.getEncoding();
 
         return new ByteList(new byte[]{}, encoding);
     }
@@ -95,7 +89,26 @@ public class StringTerm extends StrTerm {
         return new StrNode(lexer.getPosition(), buffer);
     }
 
-    public int parseString(RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
+    private int endFound(RubyYaccLexer lexer, LexerSource src) throws IOException {
+            if ((flags & RubyYaccLexer.STR_FUNC_QWORDS) != 0) {
+                flags = -1;
+                lexer.getPosition();
+                return ' ';
+            }
+
+            if ((flags & RubyYaccLexer.STR_FUNC_REGEXP) != 0) {
+                int regexpFlags = parseRegexpFlags(src);
+                ByteList regexpBytelist = ByteList.create("");
+
+                lexer.setValue(new RegexpNode(src.getPosition(), regexpBytelist, regexpFlags));
+                return Tokens.tREGEXP_END;
+            }
+
+            lexer.setValue(new Token("\"", lexer.getPosition()));
+            return Tokens.tSTRING_END;
+    }
+
+    public int parseString(RubyYaccLexer lexer, LexerSource src) throws IOException {
         boolean spaceSeen = false;
         int c;
 
@@ -108,67 +121,16 @@ public class StringTerm extends StrTerm {
 
         c = src.read();
         if ((flags & RubyYaccLexer.STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
-            do {
-                c = src.read();
-            } while (Character.isWhitespace(c));
+            do { c = src.read(); } while (Character.isWhitespace(c));
             spaceSeen = true;
         }
 
-        if (c == end && nest == 0) {
-            if ((flags & RubyYaccLexer.STR_FUNC_QWORDS) != 0) {
-                flags = -1;
-                lexer.getPosition();
-                return ' ';
-            }
-            
-            if ((flags & RubyYaccLexer.STR_FUNC_REGEXP) != 0) {
-                int regexpFlags = parseRegexpFlags(src);
-                ByteList regexpBytelist = ByteList.create("");
-                if (!lexer.isOneEight()) {
-                    if((regexpFlags & SJIS) == SJIS) {
-                        regexpBytelist.setEncoding(org.jcodings.specific.SJISEncoding.INSTANCE);
-                    } else if((regexpFlags & EUC) == EUC) {
-                        regexpBytelist.setEncoding(org.jcodings.specific.EUCJPEncoding.INSTANCE);
-                    } else if((regexpFlags & ASCII) == ASCII) {
-                        regexpBytelist.setEncoding(RubyYaccLexer.USASCII_ENCODING);
-                    } else if ((regexpFlags & UTF8) == UTF8) {
-                        regexpBytelist.setEncoding(RubyYaccLexer.UTF8_ENCODING);
-                    } 
-                }
-
-                lexer.setValue(new RegexpNode(src.getPosition(), regexpBytelist, regexpFlags));
-                return Tokens.tREGEXP_END;
-            }
-            
-            lexer.setValue(new Token("\"", lexer.getPosition()));
-            return Tokens.tSTRING_END;
-        }
+        if (c == end && nest == 0) return endFound(lexer, src);
         
         if (spaceSeen) {
             src.unread(c);
             lexer.getPosition();
             return ' ';
-        }
-
-        // Single-quote fast path
-        if (begin == '\0' && flags == 0) {
-            ByteList buffer = createByteList(lexer);
-
-            src.unread(c);
-            if (parseSimpleStringIntoBuffer(lexer, src, buffer) == RubyYaccLexer.EOF) {
-                throw new SyntaxException(PID.STRING_HITS_EOF, src.getPosition(), 
-                        src.getCurrentLine(), "unterminated string meets end of file");
-            }
-            
-            /*
-            ByteList buffer;
-            src.unread(c);
-            if ((buffer = src.readUntil(end)) == null) {
-                throw new SyntaxException(src.getPosition(), "unterminated string meets end of file");
-            }
-            */
-            lexer.setValue(createStrNode(lexer, buffer));
-            return Tokens.tSTRING_CONTENT;
         }
         
         ByteList buffer = createByteList(lexer);
@@ -198,7 +160,7 @@ public class StringTerm extends StrTerm {
         return Tokens.tSTRING_CONTENT;
     }
 
-    private int parseRegexpFlags(final LexerSource src) throws java.io.IOException {
+    private int parseRegexpFlags(final LexerSource src) throws IOException {
         char kcode = 0;
         int options = 0;
         int c;
@@ -247,41 +209,22 @@ public class StringTerm extends StrTerm {
         }
         return options | kcode;
     }
-    
-    public int parseSimpleStringIntoBuffer(RubyYaccLexer lexer, LexerSource src, ByteList buffer) throws java.io.IOException {
-        int c;
 
-
-        while ((c = src.read()) != RubyYaccLexer.EOF) {
-            if (c == end) {
-                src.unread(c);
-                break;
-            } else if (c == '\\') {
-                c = src.read();
-                if (!lexer.isOneEight() && c == 'u') {
-                    lexer.readUTFEscape(buffer, true, false);
-
-                    // ENEBO: Mixed escape via non-ascii magic missing
-                } else if((c == '\n' || c != end) && c != '\\') {
-                    buffer.append('\\').append(c);
-                } else {
-                    buffer.append(c);
-                }
-            } else {
-                buffer.append(c);
-            }
-        }
-        
-        return c;
+    private void mixedEscape(RubyYaccLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
+        throw new SyntaxException(PID.MIXED_ENCODING,lexer.getPosition(), "",
+                foundEncoding + " mixed within " + parserEncoding);
     }
-    
-    public int parseStringIntoBuffer(RubyYaccLexer lexer, LexerSource src, ByteList buffer) throws java.io.IOException {
+
+    // mri: parser_tokadd_string
+    public int parseStringIntoBuffer(RubyYaccLexer lexer, LexerSource src, ByteList buffer) throws IOException {
         boolean qwords = (flags & RubyYaccLexer.STR_FUNC_QWORDS) != 0;
         boolean expand = (flags & RubyYaccLexer.STR_FUNC_EXPAND) != 0;
         boolean escape = (flags & RubyYaccLexer.STR_FUNC_ESCAPE) != 0;
         boolean regexp = (flags & RubyYaccLexer.STR_FUNC_REGEXP) != 0;
         boolean symbol = (flags & RubyYaccLexer.STR_FUNC_SYMBOL) != 0;
+        boolean hasNonAscii = false;
         int c;
+        Encoding encoding = lexer.getEncoding();
 
         while ((c = src.read()) != RubyYaccLexer.EOF) {
             if (begin != '\0' && c == begin) {
@@ -292,7 +235,7 @@ public class StringTerm extends StrTerm {
                     break;
                 }
                 nest--;
-            } else if (c == '#' && expand && !src.peek('\n')) {
+            } else if (expand && c == '#' && !src.peek('\n')) {
                 int c2 = src.read();
 
                 if (c2 == '$' || c2 == '@' || c2 == '{') {
@@ -320,9 +263,16 @@ public class StringTerm extends StrTerm {
                             buffer.append('\\');
                             break;
                         }
-                        lexer.readUTFEscape(buffer, true, symbol);
 
-                        // ENEBO: Mixed escape via non-ascii magic missing
+                        if (regexp) {
+                            lexer.readUTFEscapeRegexpLiteral(buffer);
+                        } else {
+                            lexer.readUTFEscape(buffer, true, symbol);
+                        }
+
+                        if (hasNonAscii && buffer.getEncoding() != encoding) {
+                            mixedEscape(lexer, buffer.getEncoding(), encoding);
+                        }
 
                         continue;
                     }
@@ -330,6 +280,11 @@ public class StringTerm extends StrTerm {
                     if (regexp) {
                         src.unread(c);
                         parseEscapeIntoBuffer(src, buffer);
+
+                        if (hasNonAscii && buffer.getEncoding() != encoding) {
+                            mixedEscape(lexer, buffer.getEncoding(), encoding);
+                        }
+                        
                         continue;
                     } else if (expand) {
                         src.unread(c);
@@ -341,9 +296,26 @@ public class StringTerm extends StrTerm {
                         buffer.append('\\');
                     }
                 }
+            } else if (!lexer.isOneEight() && lexer.isMultiByteChar(c)) {
+                if (buffer.getEncoding() != encoding) {
+                    mixedEscape(lexer, buffer.getEncoding(), encoding);
+                }
+                lexer.tokenAddMBC(c, buffer, buffer.getEncoding()); // No EOF here?
             } else if (qwords && Character.isWhitespace(c)) {
                 src.unread(c);
                 break;
+            }
+
+            if (!lexer.isOneEight()) {
+                if (c == '\0' && symbol) {
+                    throw new SyntaxException(PID.NUL_IN_SYMBOL, lexer.getPosition(),
+                            src.getCurrentLine(), "symbol cannot contain '\\0'");
+                } else if ((c & 0x80) != 0) {
+                    hasNonAscii = true;
+                    if (buffer.getEncoding() != encoding) {
+                        mixedEscape(lexer, buffer.getEncoding(), encoding);
+                    }
+                }
             }
             buffer.append(c);
         }
