@@ -3843,6 +3843,20 @@ public final class Ruby {
     }
 
     /**
+     * Get the list of method names being profiled
+     */
+    public String[] getProfiledNames() {
+        return profiledNames;
+    }
+
+    /**
+     * Get the list of method objects for methods being profiled
+     */
+    public DynamicMethod[] getProfiledMethods() {
+        return profiledMethods;
+    }
+
+    /**
      * Add a method and its name to the profiling arrays, so it can be printed out
      * later.
      *

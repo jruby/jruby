@@ -120,6 +120,14 @@ public class RubyRunnable implements Runnable {
                         System.err.println("WARNING: Security restrictions disallowed setting context classloader for Ruby threads.");
                     }
                 }
+
+                // dump profile, if any
+                if (context.runtime.getInstanceConfig().isProfiling()) {
+                    // attempt to prevent threads printing on one another
+                    synchronized (context.runtime) {
+                        context.getProfileData().printProfile(context, runtime.getProfiledNames(), runtime.getProfiledMethods(), System.out);
+                    }
+                }
             }
         } catch (ThreadKill tk) {
             // be dead
