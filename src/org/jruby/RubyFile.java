@@ -287,6 +287,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         runtime.getFileTest().extend_object(fileClass);
         
         fileClass.defineAnnotatedMethods(RubyFile.class);
+
+        // For JRUBY-5276, physically define FileTest methods on File's singleton
+        fileClass.getSingletonClass().defineAnnotatedMethods(RubyFileTest.FileTestFileMethods.class);
         
         return fileClass;
     }
