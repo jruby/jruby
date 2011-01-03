@@ -36,25 +36,29 @@ package org.jruby.embed;
  */
 public enum PropertyName {
     /**
-     * A key used to get/set classpath setting.
+     * A key used to get/set classpath setting. The key is equivalent to a
+     * System property, org.jruby.embed.class.path.
      */
     CLASSPATH("org.jruby.embed.class.path"),
 
     /**
-     * A key to get/set local context scope. The assigned value is one of
-     * threadsafe, singlethread, or singleton
+     * A key to get/set local context scope. The key is equivalent to a
+     * System property, org.jruby.embed.localcontext.scope. The assigned value
+     * must be one of threadsafe, singlethread, or singleton.
      */
     LOCALCONTEXT_SCOPE("org.jruby.embed.localcontext.scope"),
 
     /**
-     * A key to get/set local variable behavior. The assigned value is one of
-     * transient, persistent, or global for Embed Core and JSR223. BSF can choose
-     * bsf only.
+     * A key to get/set local variable behavior. The key is equivalent to a
+     * System property, org.jruby.embed.localvariable.behavior. The assigned value
+     * must be one of transient, persistent, or global for Embed Core and JSR223.
+     * BSF can choose bsf only.
      */
     LOCALVARIABLE_BEHAVIOR("org.jruby.embed.localvariable.behavior"),
 
     /**
-     * A key to get/set variables/constants retrieval policy. The assigned value
+     * A key to get/set variables/constants retrieval policy. The key is equivalent to a
+     * System property, org.jruby.embed.laziness. The assigned value
      * must be true or false. When true is given, ScriptingContainer retrieve
      * variables/constants from Ruby runtime lazily. When a variable or constant is
      * requested from user program, ScriptingConainer actually attemps to get it.
@@ -64,7 +68,8 @@ public enum PropertyName {
     LAZINESS("org.jruby.embed.laziness"),
 
     /**
-     * A key to get/set the value for classloader policy. The assigned value must
+     * A key to get/set the value for classloader policy. The key is equivalent to a
+     * System property, org.jruby.embed.classloader. The assigned value must
      * be "current" or "none." When current is set, JSR223 engine sets a current
      * classloader (the one used to initialize ScriptingContainer) to Ruby runtime.
      * When none is set, no classloader is set to Ruby runtime.
@@ -76,12 +81,14 @@ public enum PropertyName {
     CLASSLOADER("org.jruby.embed.classloader"),
 
     /**
-     * A key to get/set compile mode. The assigned value is one of jit or force.
+     * A key to get/set compile mode. The key is equivalent to a
+     * System property, org.jruby.embed.compilemode. The assigned value must be jit or force.
      */
     COMPILEMODE("org.jruby.embed.compilemode"),
 
     /**
-     * A key to get/set compatible version to Ruby. If the assigned value matches
+     * A key to get/set compatible version to Ruby. The key is equivalent to a
+     * System property, org.jruby.embed.compat.version. If the assigned value matches
      * "[jJ]?(r|R)(u|U)(b|B)(y|Y)1[\\._]?9", then Ruby 1.9 will be chosen.
      */
     COMPATVERSION("org.jruby.embed.compat.version");
