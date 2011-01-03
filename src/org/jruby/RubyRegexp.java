@@ -674,8 +674,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return to;
     }
 
-    public static void preprocessCheck(Ruby runtime, IRubyObject obj) {
-        ByteList bytes = obj.convertToString().getByteList();
+    public static void preprocessCheck(Ruby runtime, ByteList bytes) {
         preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, ErrorMode.RAISE);
     }
 

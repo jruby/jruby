@@ -39,6 +39,7 @@ import java.math.BigInteger;
 import org.jcodings.Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
+import org.jruby.RubyRegexp;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsPreOneArgNode;
@@ -1613,7 +1614,7 @@ public class ParserSupport {
 
     public void regexpFragmentCheck(RegexpNode end, ByteList value) {
         setRegexpEncoding(end, value);
-        // TODO: Preprocess
+        RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
     }
 
     // end is a weird variable. We return a RegexpNode to hold options at end of an regexp.
