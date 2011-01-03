@@ -1088,12 +1088,12 @@ class TestFile < Test::Unit::TestCase
   end
 
   # JRUBY-5286
-  def test_file_path_is_tanted
+  def test_file_path_is_tainted
     filename = 'test.txt'
-    begin
-      assert File.open(filename, 'w').path.tainted?
-    ensure
-      File.unlink(filename)
-    end
+    io = File.new(filename, 'w')
+    assert io.path.tainted?
+  ensure
+    io.close
+    File.unlink(filename)
   end
 end
