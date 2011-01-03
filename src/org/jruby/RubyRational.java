@@ -70,7 +70,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
-import org.jruby.util.TypeConverter;
 
 /**
  *  1.9 rational.c as of revision: 20011

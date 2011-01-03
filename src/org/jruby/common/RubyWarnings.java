@@ -29,7 +29,6 @@ package org.jruby.common;
 
 import org.joni.WarnCallback;
 import org.jruby.Ruby;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;

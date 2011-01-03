@@ -39,7 +39,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
-import static org.jruby.anno.FrameField.*;
 import org.jruby.util.JRubyObjectInputStream;
 
 public class JavaProxy extends RubyObject {

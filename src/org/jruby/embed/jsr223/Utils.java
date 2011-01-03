@@ -29,14 +29,12 @@
  */
 package org.jruby.embed.jsr223;
 
-import java.util.List;
 import java.util.Set;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import org.jruby.embed.AttributeName;
 import org.jruby.embed.ScriptingContainer;
-import org.jruby.embed.variable.BiVariable;
 
 /**
  * A collection of JSR223 specific utility methods.

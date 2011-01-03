@@ -30,8 +30,6 @@ package org.jruby.runtime.load;
 import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.ast.executable.Script;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaCompiledScript implements Library {
     private final LoadServiceResource resource;

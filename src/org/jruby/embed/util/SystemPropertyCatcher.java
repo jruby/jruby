@@ -33,7 +33,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.jruby.embed.PropertyName;
 import java.util.regex.Matcher;

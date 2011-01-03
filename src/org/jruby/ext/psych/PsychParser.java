@@ -28,7 +28,6 @@
 package org.jruby.ext.psych;
 
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.io.StringReader;
 import java.util.Map;
 import org.jcodings.specific.UTF16BEEncoding;

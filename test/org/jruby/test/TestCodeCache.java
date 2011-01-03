@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import org.jruby.Ruby;
 import org.jruby.RubyRuntimeAdapter;
-import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.javasupport.JavaEmbedUtils;  
 import org.jruby.util.ClassCache;
 

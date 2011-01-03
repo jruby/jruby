@@ -30,7 +30,6 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
-import org.jcodings.Encoding;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;

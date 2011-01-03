@@ -51,7 +51,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
-import org.jruby.Ruby;
 import org.jruby.RubyFile;
 
 import org.jruby.ext.posix.POSIX;

@@ -28,7 +28,6 @@
 package org.jruby.test;
 
 
-import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;

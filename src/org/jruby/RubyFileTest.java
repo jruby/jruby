@@ -30,7 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.FileDescriptor;
 import static org.jruby.RubyFile.get_path;
 import static org.jruby.RubyFile.file;
 

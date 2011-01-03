@@ -41,7 +41,6 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
