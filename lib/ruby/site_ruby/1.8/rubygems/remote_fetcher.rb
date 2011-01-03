@@ -1,6 +1,6 @@
 require 'rubygems'
-require 'rubygems/maven_gemify'
 require 'rubygems/user_interaction'
+require 'rubygems/maven_gemify'
 require 'uri'
 
 ##
@@ -95,7 +95,7 @@ class Gem::RemoteFetcher
     if Gem::Specification.maven_name? spec.name
       return download_maven(spec, local_gem_path)
     end
-    
+
    # Always escape URI's to deal with potential spaces and such
     unless URI::Generic === source_uri
       source_uri = URI.parse(URI.const_defined?(:DEFAULT_PARSER) ?

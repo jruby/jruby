@@ -1,8 +1,8 @@
 require 'rubygems/remote_fetcher'
 require 'rubygems/user_interaction'
 require 'rubygems/errors'
-require 'rubygems/maven_gemify'
 require 'rubygems/text'
+require 'rubygems/maven_gemify'
 
 ##
 # SpecFetcher handles metadata updates from remote gem repositories.
