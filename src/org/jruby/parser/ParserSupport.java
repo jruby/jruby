@@ -1404,16 +1404,6 @@ public class ParserSupport {
         return (node == null) ? new NilNode(defaultPosition) : node; 
     }
 
-    public ArgumentNode getRestArgNode(Token token) {
-        int index = ((Integer) token.getValue()).intValue();
-        if(index < 0) {
-            return null;
-        }
-        String name = getCurrentScope().getLocalScope().getVariables()[index];
-
-        return new ArgumentNode(token.getPosition(), name);
-    }
-
     public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
             ListNode post, BlockArgNode block) {
         // Zero-Argument declaration
@@ -1500,14 +1490,15 @@ public class ParserSupport {
             getterIdentifierError(identifier.getPosition(), (String) identifier.getValue());
         }
         shadowing_lvar(identifier);
-        arg_var(identifier);
-
-        return null;
+        
+        return arg_var(identifier);
     }
 
     // 1.9
-    public int arg_var(Token identifier) {
-        return getCurrentScope().addVariableThisScope((String) identifier.getValue());
+    public ArgumentNode arg_var(Token identifier) {
+        String name = (String) identifier.getValue();
+        return new ArgumentNode(identifier.getPosition(), name,
+                getCurrentScope().addVariableThisScope(name));
     }
 
     // 1.9

@@ -1832,8 +1832,7 @@ f_norm_arg      : f_bad_arg
                 }
 
 f_arg_item      : f_norm_arg {
-                    support.arg_var($1);
-                    $$ = new ArgumentNode($<ISourcePositionHolder>1.getPosition(), (String) $1.getValue());
+                    $$ = support.arg_var($1);
   /*
                     $$ = new ArgAuxiliaryNode($1.getPosition(), (String) $1.getValue(), 1);
   */
@@ -1902,7 +1901,7 @@ f_rest_arg      : restarg_mark tIDENTIFIER {
                         support.yyerror("duplicate rest argument name");
                     }
                     support.shadowing_lvar($2);
-                    $$ = new RestArgNode($1.getPosition(), (String) $2.getValue(), support.arg_var($2));
+                    $$ = new RestArgNode(support.arg_var($2));
                 }
                 | restarg_mark {
                     $$ = new UnnamedRestArgNode($1.getPosition(), support.getCurrentScope().addVariable("*"));
@@ -1913,13 +1912,11 @@ blkarg_mark     : tAMPER2 | tAMPER
 
 // f_block_arg - Block argument def for function (foo(&block)) [!null]
 f_block_arg     : blkarg_mark tIDENTIFIER {
-                    String identifier = (String) $2.getValue();
-
                     if (!support.is_local_id($2)) {
                         support.yyerror("block argument must be local variable");
                     }
                     support.shadowing_lvar($2);
-                    $$ = new BlockArgNode($1.getPosition(), support.arg_var($2), identifier);
+                    $$ = new BlockArgNode(support.arg_var($2));
                 }
 
 opt_f_block_arg : ',' f_block_arg {
