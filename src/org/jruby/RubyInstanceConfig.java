@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -844,7 +845,7 @@ public class RubyInstanceConfig {
                     URL jrubyHomeURL = getClass().getResource(jrubyHomePath);
                     // special case for jar:file (most typical case)
                     if (jrubyHomeURL.getProtocol().equals("jar")) {
-                        jrubyHome = jrubyHomeURL.getPath();
+                        jrubyHome = URLDecoder.decode(jrubyHomeURL.getPath(), "UTF-8");
                     } else {
                         jrubyHome = "classpath:" + jrubyHomePath;
                         return jrubyHome;
