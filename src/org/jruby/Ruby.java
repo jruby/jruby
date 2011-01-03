@@ -2898,6 +2898,8 @@ public final class Ruby {
         getBeanManager().unregisterClassCache();
         getBeanManager().unregisterMethodCache();
 
+        getJRubyClassLoader().tearDown();
+
         if (systemExit && status != 0) {
             throw newSystemExit(status);
         }
