@@ -148,3 +148,6 @@ test_equal({1=>2, 3=>4}, Hash[Foo.new])
 
 # JRUBY-3682
 test_equal({}.hash, {}.hash)
+
+# JRUBY-5291
+test_equal({0 => 1}.each.next, [0, 1])
