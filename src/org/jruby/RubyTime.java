@@ -99,7 +99,7 @@ public class RubyTime extends RubyObject {
         LONG_TZNAME.put("EDT", "EST5EDT");
         LONG_TZNAME.put("CDT", "CST6CDT");
         LONG_TZNAME.put("MDT", "MST7MDT");
-        LONG_TZNAME.put("PDT", "PST8MDT");
+        LONG_TZNAME.put("PDT", "PST8PDT");
         LONG_TZNAME.put("MET", "CET"); // JRUBY-2579
     }
 
