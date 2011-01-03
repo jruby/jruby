@@ -35,7 +35,7 @@ below. Also see LICENSE.RUBY for most files found in src/lib/ruby/1.8.
  build_lib/*asm*jar (http://asm.objectweb.org) are distributed under the BSD license.
 
  build_lib/apt-mirror-api.jar, build_lib/bnd-0.0.249.jar,
- build_lib/commons-logging-1.1.1.jar, build_lib/joda-time-1.5.1.jar,
+ build_lib/commons-logging-1.1.1.jar, build_lib/joda-time-1.6.2.jar,
  BSF and ant are distributed under the Apache Software License,
  Version 1.1 (license file inside the jars).
 
@@ -46,7 +46,7 @@ below. Also see LICENSE.RUBY for most files found in src/lib/ruby/1.8.
  under the MIT license.
 
  build_lib/jarjar-1.0rc8.jar (http://code.google.com/p/jarjar),
- build_lib/joda-time-1.5.1.jar (http://joda-time.sourceforge.net),
+ build_lib/joda-time-1.6.2.jar (http://joda-time.sourceforge.net),
  build_lib/dynalang-0.3.jar (http://dynalang.sourceforge.net),
  build_lib/nailgun-0.7.1.jar and tool/nailgun/ng.exe
  (http://martiansoftware.com/nailgun) are distributed under the
