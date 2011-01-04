@@ -314,7 +314,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public synchronized void beDead() {
-        status = status.DEAD;
+        status = Status.DEAD;
     }
 
     public void pollThreadEvents() {
