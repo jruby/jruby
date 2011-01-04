@@ -479,10 +479,7 @@ public final class ThreadContext {
     }
         
     private void popFrameReal(Frame oldFrame) {
-        int index = frameIndex;
-        Frame frame = frameStack[index];
-        frameStack[index] = oldFrame;
-        frameIndex = index - 1;
+        frameStack[frameIndex--] = oldFrame;
     }
     
     public Frame getCurrentFrame() {
@@ -776,7 +773,6 @@ public final class ThreadContext {
                 String rubyName = runtime.getBoundMethods().get(classDotMethod);
                 // find first Ruby file+line
                 RubyStackTraceElement rubyElement = null;
-                int rubyIndex;
                 for (int j = i; j < trace.length; j++) {
                     rubyElement = trace[j];
                     if (!rubyElement.getFileName().endsWith(".java")) {

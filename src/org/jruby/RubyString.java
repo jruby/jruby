@@ -3957,9 +3957,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     final IRubyObject uptoCommon18(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
-        Ruby runtime = context.getRuntime();
         RubyString end = arg.convertToString();
-        Encoding enc = checkEncoding(end);
+        checkEncoding(end);
 
         int n = op_cmp19(end);
         if (n > 0 || (excl && n == 0)) return this;

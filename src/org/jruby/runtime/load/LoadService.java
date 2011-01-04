@@ -338,7 +338,7 @@ public class LoadService {
         }
         @Override
         public long startLoad(String file) {
-            int i = indent.incrementAndGet();
+            indent.incrementAndGet();
             System.err.println(getIndentString() + "-> " + file);
             return System.currentTimeMillis();
         }

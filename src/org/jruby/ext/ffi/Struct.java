@@ -212,7 +212,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     public final IRubyObject order(ThreadContext context, IRubyObject byte_order) {
         ByteOrder order = Util.parseByteOrder(context.getRuntime(), byte_order);
         return new Struct(context.getRuntime(), getMetaClass(), layout,
-                getMemory().order(context.getRuntime(), Util.parseByteOrder(context.getRuntime(), byte_order)));
+                getMemory().order(context.getRuntime(), order));
     }
 
     public final AbstractMemory getMemory() {

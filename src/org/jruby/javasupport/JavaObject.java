@@ -135,7 +135,6 @@ public class JavaObject extends RubyObject {
 
     @Override
     public boolean equals(Object other) {
-        Ruby runtime = getRuntime();
         Object myValue = getValue();
         Object otherValue = other;
         if (other instanceof IRubyObject) {

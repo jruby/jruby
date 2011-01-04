@@ -130,8 +130,6 @@ public class ClassNode extends Node implements IScopingNode {
             RubyClass.checkInheritable(superObj);
             superClass = (RubyClass)superObj;
         }
-
-        boolean definedAlready = enclosingClass.isConstantDefined(cpath.getName());
         
         RubyClass clazz = enclosingClass.defineOrGetClassUnder(cpath.getName(), superClass);
 

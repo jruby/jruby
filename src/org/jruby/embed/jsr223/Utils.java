@@ -86,7 +86,7 @@ public class Utils {
         Set<String> keys = bindings.keySet();
         for (String key : keys) {
             Object value = bindings.get(key);
-            Object oldValue = put(container, receiver, key, value);
+            put(container, receiver, key, value);
         }
 
         // if key of globalMap exists in engineMap, this key-value pair should be skipped.
@@ -96,7 +96,7 @@ public class Utils {
         for (String key : keys) {
             if (container.getVarMap().containsKey(key)) continue;
             Object value = bindings.get(key);
-            Object oldValue = put(container, receiver, key, value);
+            put(container, receiver, key, value);
         }
     }
 

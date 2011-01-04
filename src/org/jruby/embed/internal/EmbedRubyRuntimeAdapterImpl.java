@@ -231,7 +231,6 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
 
     ManyVarsDynamicScope getManyVarsDynamicScope(Ruby runtime, int depth) {
         ManyVarsDynamicScope scope;
-        ThreadContext context = runtime.getCurrentContext();
 
         // root our parsing scope with a dummy scope
         StaticScope topStaticScope = new LocalStaticScope(null);

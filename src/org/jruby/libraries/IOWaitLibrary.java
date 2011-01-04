@@ -78,7 +78,6 @@ public class IOWaitLibrary implements Library {
         RubyIO io = (RubyIO)obj;
         try {
             OpenFile openFile = io.getOpenFile();
-            ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
             if (openFile.getMainStream().feof()) {
                 return context.getRuntime().getNil();
             }

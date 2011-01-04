@@ -2653,7 +2653,6 @@ public class RubyIO extends RubyObject {
     public IRubyObject read(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         OpenFile myOpenFile = getOpenFileChecked();
         
-        RubyString str = null;
         if (arg0.isNil()) {
             try {
                 myOpenFile.checkReadable(getRuntime());
@@ -3685,14 +3684,11 @@ public class RubyIO extends RubyObject {
         Ruby runtime = context.getRuntime();
 
         RubyIO io1 = null;
-        boolean close_io1 = false;
         RubyIO io2 = null;
-        boolean close_io2 = false;
 
         try {
             if (arg1 instanceof RubyString) {
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg1}, Block.NULL_BLOCK);
-                close_io1 = true;
             } else if (arg1 instanceof RubyIO) {
                 io1 = (RubyIO) arg1;
             } else {
@@ -3703,7 +3699,6 @@ public class RubyIO extends RubyObject {
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
             } else if (arg2 instanceof RubyIO) {
                 io2 = (RubyIO) arg2;
-                close_io2 = true;
             } else {
                 throw runtime.newTypeError("Should be String or IO");
             }
