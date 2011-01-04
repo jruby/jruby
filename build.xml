@@ -234,6 +234,8 @@
             <filter token="javac.version" value="${javac.version}"/>
             <filter token="os.arch" value="${os.arch}"/>
             <filter token="jruby.revision" value="${jruby.revision}"/>
+            <filter token="joda.time.version" value="${joda.time.version}"/>
+            <filter token="tzdata.version" value="${tzdata.version}"/>
         </filterset>
     </copy>
 

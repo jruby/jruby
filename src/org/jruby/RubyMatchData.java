@@ -225,6 +225,25 @@ public class RubyMatchData extends RubyObject {
         return RubyRegexp.nth_match(n, this);
     }
 
+    // This returns a list of values in the order the names are defined (named capture local var
+    // feature uses this).
+    public IRubyObject[] getNamedBackrefValues(Ruby runtime) {
+        if (pattern.numberOfNames() == 0) return NULL_ARRAY;
+
+        IRubyObject[] values = new IRubyObject[pattern.numberOfNames()];
+
+        int j = 0;
+        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry e = i.next();
+            int[] refs = e.getBackRefs();
+            int length = refs.length;
+
+            values[j++] = length == 0 ? runtime.getNil() : RubyRegexp.nth_match(refs[length - 1], this);
+        }
+
+        return values;
+    }
+
     @JRubyMethod(name = "inspect")
     @Override
     public IRubyObject inspect() {

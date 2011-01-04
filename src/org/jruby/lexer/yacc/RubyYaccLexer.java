@@ -2371,9 +2371,18 @@ public class RubyYaccLexer {
     // to grow by 6 (which may be wasteful).  Another idea is to make Encoding accept an interface
     // for populating bytes and then make ByteList implement that interface.  I like this last idea
     // since it would not leak bytelist impl details all over the place.
-    public void tokenAddMBC(int codepoint, ByteList buffer, Encoding encoding) {
-        int length = encoding.codeToMbc(codepoint, mbcBuf, 0);
+    public void tokenAddMBC(int codepoint, ByteList buffer) {
+        int length = buffer.getEncoding().codeToMbc(codepoint, mbcBuf, 0);
         buffer.append(mbcBuf, 0, length);
+    }
+
+    public void tokenAddMBCFromSrc(int c, ByteList buffer) throws IOException {
+        // read bytes for length of character
+        int length = buffer.getEncoding().length((byte)c);
+        buffer.append((byte)c);
+        for (int off = 0; off < length - 1; off++) {
+            buffer.append((byte)src.read());
+        }
     }
 
     // MRI: parser_tokadd_utf8 sans regexp literal parsing
@@ -2392,7 +2401,7 @@ public class RubyYaccLexer {
 
                 if (codepoint >= 0x80) {
                     buffer.setEncoding(UTF8_ENCODING);
-                    if (stringLiteral) tokenAddMBC(codepoint, buffer, UTF8_ENCODING);
+                    if (stringLiteral) tokenAddMBC(codepoint, buffer);
                 } else if (stringLiteral) {
                     if (codepoint == 0 && symbolLiteral) {
                         throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
@@ -2412,7 +2421,7 @@ public class RubyYaccLexer {
             codepoint = scanHex(4, true, "Invalid Unicode escape");
             if (codepoint >= 0x80) {
                 buffer.setEncoding(UTF8_ENCODING);
-                if (stringLiteral) tokenAddMBC(codepoint, buffer, UTF8_ENCODING);
+                if (stringLiteral) tokenAddMBC(codepoint, buffer);
             } else if (stringLiteral) {
                 if (codepoint == 0 && symbolLiteral) {
                     throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),

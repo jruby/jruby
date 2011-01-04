@@ -50,6 +50,9 @@ public final class Constants {
     public static final String TARGET = "java@javac.version@";
     public static final String REVISION;
     public static final String ENGINE = "jruby";
+    
+    public static final String JODA_TIME_VERSION = "@joda.time.version@";
+    public static final String TZDATA_VERSION = "@tzdata.version@";
 
     @Deprecated
     public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";

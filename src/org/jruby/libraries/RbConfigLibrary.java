@@ -230,6 +230,9 @@ public class RbConfigLibrary implements Library {
         if (gemhome != null) setConfig(configHash, "default_gem_home", gemhome);
         if (gempath != null) setConfig(configHash, "default_gem_path", gempath);
         
+        setConfig(configHash, "joda-time.version", Constants.JODA_TIME_VERSION);
+        setConfig(configHash, "tzdata.version",    Constants.TZDATA_VERSION);
+        
         RubyHash mkmfHash = RubyHash.newHash(runtime);
         
 

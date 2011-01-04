@@ -87,6 +87,14 @@ public class RegexpNode extends Node implements ILiteralNode {
         return value;
     }
 
+    public RubyRegexp loadPattern(Ruby runtime) {
+        if (pattern == null || runtime.getKCode() != pattern.getKCode()) {
+            setPattern(RubyRegexp.newRegexp(runtime, value, options));
+        }
+
+        return pattern;
+    }
+
     public void setPattern(RubyRegexp p) {
         this.pattern = p;
         this.pattern.setLiteral();
@@ -102,10 +110,6 @@ public class RegexpNode extends Node implements ILiteralNode {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (pattern == null || runtime.getKCode() != pattern.getKCode()) {
-            setPattern(RubyRegexp.newRegexp(runtime, value, options));
-        }
-
-        return pattern;
+        return loadPattern(runtime);
     }
 }
