@@ -1,56 +1,113 @@
-
+/***** BEGIN LICENSE BLOCK *****
+ * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Common Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/cpl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the CPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the CPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.profile;
 
 import java.util.ArrayList;
 
-public class MethodData extends InvocationSet { 
+public class MethodData extends InvocationSet {
     public int serialNumber;
-    
+
     public MethodData(int serial) {
         this.serialNumber = serial;
         this.invocations = new ArrayList<Invocation>();
     }
-    
-    public Integer[] parents() {
-        ArrayList<Integer> p = new ArrayList<Integer>();
+
+    private static class IntList {
+
+        private int[] ints = new int[10];
+        private int size;
+
+        public void add(int i) {
+            if (size == ints.length) {
+                int[] newInts = new int[(int) (ints.length * 1.5 + 1)];
+                System.arraycopy(ints, 0, newInts, 0, ints.length);
+                ints = newInts;
+            }
+            ints[size++] = i;
+        }
+
+        public boolean contains(int i) {
+            for (int i2 : ints) {
+                if (i2 == i) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public int[] toIntArray() {
+            int[] newInts = new int[size];
+            System.arraycopy(ints, 0, newInts, 0, size);
+            return newInts;
+        }
+    }
+
+    public int[] parents() {
+        IntList p = new IntList();
         for (Invocation inv : invocations) {
             if (inv.parent != null) {
                 int serial = inv.parent.methodSerialNumber;
-                if (p.indexOf(serial) == -1)
+                if (!p.contains(serial)) {
                     p.add(serial);
+                }
             }
         }
-        return MethodData.convertIntegers2(p);
+        return p.toIntArray();
     }
-    
-    public Integer[] children() {
-        ArrayList<Integer> p = new ArrayList<Integer>();
+
+    public int[] children() {
+        IntList p = new IntList();
         for (Invocation inv : invocations) {
             for (Integer childSerial : inv.children.keySet()) {
-                if (p.indexOf(childSerial) == -1) {
+                if (!p.contains(childSerial)) {
                     p.add(childSerial);
                 }
             }
         }
-        return MethodData.convertIntegers2(p);
+        return p.toIntArray();
     }
-    
+
     public InvocationSet invocationsForParent(int parentSerial) {
         ArrayList<Invocation> p = new ArrayList<Invocation>();
         for (Invocation inv : invocations) {
             int serial = inv.parent.methodSerialNumber;
-            if (serial == parentSerial)
+            if (serial == parentSerial) {
                 p.add(inv.parent);
+            }
         }
         return new InvocationSet(p);
     }
-    
+
     public InvocationSet rootInvocationsFromParent(int parentSerial) {
         ArrayList<Invocation> p = new ArrayList<Invocation>();
         for (Invocation inv : invocations) {
             int serial = inv.parent.methodSerialNumber;
-            if (serial == parentSerial && inv.recursiveDepth == 1)
+            if (serial == parentSerial && inv.recursiveDepth == 1) {
                 p.add(inv);
+            }
         }
         return new InvocationSet(p);
     }
@@ -59,8 +116,9 @@ public class MethodData extends InvocationSet {
         ArrayList<Invocation> p = new ArrayList<Invocation>();
         for (Invocation inv : invocations) {
             int serial = inv.parent.methodSerialNumber;
-            if (serial == parentSerial)
+            if (serial == parentSerial) {
                 p.add(inv);
+            }
         }
         return new InvocationSet(p);
     }
@@ -75,7 +133,7 @@ public class MethodData extends InvocationSet {
         }
         return new InvocationSet(p);
     }
-    
+
     public InvocationSet invocationsOfChild(int childSerial) {
         ArrayList<Invocation> p = new ArrayList<Invocation>();
         for (Invocation inv : invocations) {
@@ -86,7 +144,8 @@ public class MethodData extends InvocationSet {
         }
         return new InvocationSet(p);
     }
-    
+
+    @Override
     public long totalTime() {
         long t = 0;
         for (Invocation inv : invocations) {
@@ -96,7 +155,8 @@ public class MethodData extends InvocationSet {
         }
         return t;
     }
-    
+
+    @Override
     public long childTime() {
         long t = 0;
         for (Invocation inv : invocations) {
@@ -105,25 +165,5 @@ public class MethodData extends InvocationSet {
             }
         }
         return t;
-    }
-    
-    public static int[] convertIntegers(ArrayList<Integer> integers)
-    {
-        int[] ret = new int[integers.size()];
-        for (int i=0; i < ret.length; i++)
-        {
-            ret[i] = integers.get(i).intValue();
-        }
-        return ret;
-    }
-    
-    public static Integer[] convertIntegers2(ArrayList<Integer> integers)
-    {
-        Integer[] ret = new Integer[integers.size()];
-        for (int i=0; i < ret.length; i++)
-        {
-            ret[i] = integers.get(i).intValue();
-        }
-        return ret;
     }
 }
