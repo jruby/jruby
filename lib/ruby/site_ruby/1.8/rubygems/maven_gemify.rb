@@ -1,3 +1,5 @@
+require 'uri'
+
 module Gem
   class Specification
     # return whether the spec name represents a maven artifact
@@ -9,7 +11,7 @@ module Gem
 
   class RemoteFetcher
     def download_maven(spec, local_gem_path)
-      FileUtils.cp Gem::Maven::Gemify.generate_gem(spec.name, spec.version), local_gem_path
+      FileUtils.cp Gem::Maven::Gemify.new.generate_gem(spec.name, spec.version), local_gem_path
       local_gem_path
     end
     private :download_maven
@@ -17,7 +19,7 @@ module Gem
 
   class SpecFetcher
     def gemify_generate_spec(spec)
-      specfile = Gem::Maven::Gemify.generate_spec(spec[0], spec[1])
+      specfile = Gem::Maven::Gemify.new.generate_spec(spec[0], spec[1])
       Marshal.dump(Gem::Specification.from_yaml(File.read(specfile)))
     end
     private :gemify_generate_spec
@@ -31,7 +33,7 @@ module Gem
         dep_name = dependency.name
       end
 
-      Gem::Maven::Gemify.get_versions(dep_name).each do |version|
+      Gem::Maven::Gemify.new.get_versions(dep_name).each do |version|
         # maven-versions which start with an letter get "0.0.0." prepended to
         # satisfy gem-version requirements
         if dependency.requirement.satisfied_by? Gem::Version.new "#{version.sub(/^0.0.0./, '1.')}"
@@ -47,16 +49,56 @@ module Gem
   module Maven
     class Gemify
       BASE_GOAL = "de.saumya.mojo:gemify-maven-plugin:0.22.0"
+      MAVEN_REPOS = { "central" => "http://repo1.maven.org/maven2" }
+
+      attr_reader :repositories
+
+      def initialize(*repositories)
+        @repositories = repositories.length > 0 ? [repositories].flatten : [MAVEN_REPOS["central"]]
+        @repositories.map! do |r|
+          u = URI === r ? r : URI.parse(r)
+          if u.scheme == "mvn"
+            u.scheme = "http"
+          end
+          u
+        end
+      end
 
       @@verbose = false
       def self.verbose?
         @@verbose
+      end
+      def verbose?
+        self.class.verbose?
       end
       def self.verbose=(v)
         @@verbose = v
       end
 
       private
+      def new_repository(uri)
+        snapshots = ArtifactRepositoryPolicy.new(false,
+                                                 ArtifactRepositoryPolicy::UPDATE_POLICY_NEVER,
+                                                 ArtifactRepositoryPolicy::CHECKSUM_POLICY_FAIL)
+        releases = ArtifactRepositoryPolicy.new(true,
+                                                ENV['MVN_UPDATE_POLICY'] || ArtifactRepositoryPolicy::UPDATE_POLICY_NEVER,
+                                                ENV['MVN_CHECKSUM_POLICY'] || ArtifactRepositoryPolicy::CHECKSUM_POLICY_FAIL)
+        MavenArtifactRepository.new(uri.host, uri.to_s, DefaultRepositoryLayout.new,
+                                    snapshots, releases)
+      end
+
+      def self.java_imports
+        %w(
+           org.codehaus.plexus.classworlds.ClassWorld
+           org.codehaus.plexus.DefaultContainerConfiguration
+           org.codehaus.plexus.DefaultPlexusContainer
+           org.apache.maven.Maven
+           org.apache.maven.execution.DefaultMavenExecutionRequest
+           org.apache.maven.artifact.repository.MavenArtifactRepository
+           org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout
+           org.apache.maven.artifact.repository.ArtifactRepositoryPolicy
+          ).each {|i| java_import i }
+      end
 
       def self.create_maven
         require 'java' # done lazily, so we're not loading it all the time
@@ -108,11 +150,7 @@ module Gem
 
         java.lang.System.setProperty("classworlds.conf", File.join(bin, "m2.conf"))
         java.lang.System.setProperty("maven.home", File.join(bin, ".."))
-        import "org.codehaus.plexus.classworlds"
-        java_import "org.codehaus.plexus.DefaultContainerConfiguration"
-        java_import "org.codehaus.plexus.DefaultPlexusContainer"
-        java_import "org.apache.maven.Maven"
-        java_import "org.apache.maven.execution.DefaultMavenExecutionRequest"
+        java_imports
 
         class_world = ClassWorld.new("plexus.core", java.lang.Thread.currentThread().getContextClassLoader());
         config = DefaultContainerConfiguration.new
@@ -122,8 +160,11 @@ module Gem
         container.lookup(Maven.java_class)
       end
 
-      def self.maven_get
+      def self.maven
         @maven ||= create_maven
+      end
+      def maven
+        self.class.maven
       end
 
       def self.temp_dir
@@ -137,29 +178,33 @@ module Gem
           end
       end
 
-      def self.execute(goal, gemname, version, props = {})
-        maven = maven_get
-        r = DefaultMavenExecutionRequest.new
-        r.set_show_errors verbose?
-        r.user_properties.put("gemify.tempDir", temp_dir)
-        r.user_properties.put("gemify.gemname", gemname)
-        r.user_properties.put("gemify.version", version.to_s) if version
+      def temp_dir
+        self.class.temp_dir
+      end
+
+      def execute(goal, gemname, version, props = {})
+        request = DefaultMavenExecutionRequest.new
+        request.set_show_errors verbose?
+        request.user_properties.put("gemify.tempDir", temp_dir)
+        request.user_properties.put("gemify.gemname", gemname)
+        request.user_properties.put("gemify.version", version.to_s) if version
         props.each do |k,v|
-          r.user_properties.put(k.to_s, v.to_s)
+          request.user_properties.put(k.to_s, v.to_s)
         end
-        r.set_goals [goal]
-        r.set_logging_level 0
+        request.set_goals [goal]
+        request.set_logging_level 0
+        request.set_remote_repositories @repositories.map {|r| new_repository(r) }
 
         out = java.lang.System.out
         string_io = java.io.ByteArrayOutputStream.new
         java.lang.System.setOut(java.io.PrintStream.new(string_io))
-        result = maven.execute( r );
+        result = maven.execute request
         java.lang.System.out = out
-        if r.is_show_errors
+        if request.is_show_errors
           puts "maven goals:"
-          r.goals.each { |g| puts "\t#{g}" }
+          request.goals.each { |g| puts "\t#{g}" }
           puts "system properties:"
-          r.getUserProperties.map.each { |k,v| puts "\t#{k} => #{v}" }
+          request.getUserProperties.map.each { |k,v| puts "\t#{k} => #{v}" }
 
           result.exceptions.each do |e|
             e.print_stack_trace
@@ -170,8 +215,7 @@ module Gem
       end
 
       public
-
-      def self.get_versions(gemname)
+      def get_versions(gemname)
         result = execute("#{BASE_GOAL}:versions", maven_name(gemname), nil)
 
         if result =~ /\[/ && result =~ /\]/
@@ -183,7 +227,7 @@ module Gem
         end
       end
 
-      def self.generate_spec(gemname, version)
+      def generate_spec(gemname, version)
         result = execute("#{BASE_GOAL}:gemify", maven_name(gemname), version, "gemify.onlySpecs" => true)
         path = result.gsub(/\n/, '')
         if path =~ /gemspec: /
@@ -196,7 +240,7 @@ module Gem
         end
       end
 
-      def self.generate_gem(gemname, version)
+      def generate_gem(gemname, version)
         result = execute("#{BASE_GOAL}:gemify", maven_name(gemname), version)
         path = result.gsub(/\n/, '')
         if path =~ /gem: /
@@ -213,7 +257,7 @@ module Gem
         end
       end
 
-      def self.maven_name(gemname)
+      def maven_name(gemname)
         gemname = gemname.source if Regexp === gemname
         gemname.gsub(/:/, '.')
       end
