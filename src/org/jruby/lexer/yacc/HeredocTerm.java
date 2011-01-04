@@ -82,6 +82,7 @@ public class HeredocTerm extends StrTerm {
         }
 
         ByteList str = new ByteList();
+        str.setEncoding(lexer.getEncoding());
         ISourcePosition position;
         
         if ((flags & RubyYaccLexer.STR_FUNC_EXPAND) == 0) {
