@@ -68,8 +68,8 @@ public class MethodData extends InvocationSet {
     public int[] parents() {
         IntList p = new IntList();
         for (Invocation inv : invocations) {
-            if (inv.parent != null) {
-                int serial = inv.parent.methodSerialNumber;
+            if (inv.getParent() != null) {
+                int serial = inv.getParent().getMethodSerialNumber();
                 if (!p.contains(serial)) {
                     p.add(serial);
                 }
@@ -81,7 +81,7 @@ public class MethodData extends InvocationSet {
     public int[] children() {
         IntList p = new IntList();
         for (Invocation inv : invocations) {
-            for (Integer childSerial : inv.children.keySet()) {
+            for (Integer childSerial : inv.getChildren().keySet()) {
                 if (!p.contains(childSerial)) {
                     p.add(childSerial);
                 }
@@ -93,9 +93,9 @@ public class MethodData extends InvocationSet {
     public InvocationSet invocationsForParent(int parentSerial) {
         ArrayList<Invocation> p = new ArrayList<Invocation>();
         for (Invocation inv : invocations) {
-            int serial = inv.parent.methodSerialNumber;
+            int serial = inv.getParent().getMethodSerialNumber();
             if (serial == parentSerial) {
-                p.add(inv.parent);
+                p.add(inv.getParent());
             }
         }
         return new InvocationSet(p);
@@ -104,8 +104,8 @@ public class MethodData extends InvocationSet {
     public InvocationSet rootInvocationsFromParent(int parentSerial) {
         ArrayList<Invocation> p = new ArrayList<Invocation>();
         for (Invocation inv : invocations) {
-            int serial = inv.parent.methodSerialNumber;
-            if (serial == parentSerial && inv.recursiveDepth == 1) {
+            int serial = inv.getParent().getMethodSerialNumber();
+            if (serial == parentSerial && inv.getRecursiveDepth() == 1) {
                 p.add(inv);
             }
         }
@@ -115,7 +115,7 @@ public class MethodData extends InvocationSet {
     public InvocationSet invocationsFromParent(int parentSerial) {
         ArrayList<Invocation> p = new ArrayList<Invocation>();
         for (Invocation inv : invocations) {
-            int serial = inv.parent.methodSerialNumber;
+            int serial = inv.getParent().getMethodSerialNumber();
             if (serial == parentSerial) {
                 p.add(inv);
             }
@@ -126,8 +126,8 @@ public class MethodData extends InvocationSet {
     public InvocationSet rootInvocationsOfChild(int childSerial) {
         ArrayList<Invocation> p = new ArrayList<Invocation>();
         for (Invocation inv : invocations) {
-            Invocation childInv = inv.children.get(childSerial);
-            if (childInv != null && childInv.recursiveDepth == 1) {
+            Invocation childInv = inv.getChildren().get(childSerial);
+            if (childInv != null && childInv.getRecursiveDepth() == 1) {
                 p.add(childInv);
             }
         }
@@ -137,7 +137,7 @@ public class MethodData extends InvocationSet {
     public InvocationSet invocationsOfChild(int childSerial) {
         ArrayList<Invocation> p = new ArrayList<Invocation>();
         for (Invocation inv : invocations) {
-            Invocation childInv = inv.children.get(childSerial);
+            Invocation childInv = inv.getChildren().get(childSerial);
             if (childInv != null) {
                 p.add(childInv);
             }
@@ -149,8 +149,8 @@ public class MethodData extends InvocationSet {
     public long totalTime() {
         long t = 0;
         for (Invocation inv : invocations) {
-            if (inv.recursiveDepth == 1) {
-                t += inv.duration;
+            if (inv.getRecursiveDepth() == 1) {
+                t += inv.getDuration();
             }
         }
         return t;
@@ -160,7 +160,7 @@ public class MethodData extends InvocationSet {
     public long childTime() {
         long t = 0;
         for (Invocation inv : invocations) {
-            if (inv.recursiveDepth == 1) {
+            if (inv.getRecursiveDepth() == 1) {
                 t += inv.childTime();
             }
         }

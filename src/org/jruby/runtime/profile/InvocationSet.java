@@ -40,7 +40,7 @@ public class InvocationSet {
     public long totalTime() {
         long t = 0;
         for (Invocation inv : invocations) {
-            t += inv.duration;
+            t += inv.getDuration();
         }
         return t;
     }
@@ -60,7 +60,7 @@ public class InvocationSet {
     public int totalCalls() {
         int t = 0;
         for (Invocation inv : invocations) {
-            t += inv.count;
+            t += inv.getCount();
         }
         return t;
     }
@@ -68,9 +68,9 @@ public class InvocationSet {
     public long timeSpentInChild(int serial) {
         long t = 0;
         for (Invocation inv : invocations) {
-            Invocation childInv = inv.children.get(serial);
+            Invocation childInv = inv.getChildren().get(serial);
             if (childInv != null) {
-                t += childInv.duration;
+                t += childInv.getDuration();
             }
         }
         return t;
@@ -79,9 +79,9 @@ public class InvocationSet {
     public int callsOfChild(int serial) {
         int c = 0;
         for (Invocation inv : invocations) {
-            Invocation childInv = inv.children.get(serial);
+            Invocation childInv = inv.getChildren().get(serial);
             if (childInv != null) {
-                c += childInv.count;
+                c += childInv.getCount();
             }
         }
         return c;

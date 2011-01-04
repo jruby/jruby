@@ -28,6 +28,7 @@ package org.jruby.runtime.profile;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.collections.IntHashMap.Entry;
 
 /**
  * Encapsulates the logic of recording and reporting profiled timings of
@@ -37,13 +38,10 @@ import org.jruby.runtime.ThreadContext;
  * See ProfilingDynamicMethod for the "hook" end of profiling.
  */
 public class ProfileData implements IProfileData {
-    private static final int[] EMPTY_INT_ARRAY = new int[0];
     private Invocation currentInvocation = new Invocation(0);
-    public Invocation topInvocation = currentInvocation;
-    private int[] methodRecursion = EMPTY_INT_ARRAY;
-    private long sinceTime = 0;
-    public ThreadContext threadContext;
-    public static MethodData currentData;
+    private Invocation topInvocation = currentInvocation;
+    private int[] methodRecursion = new int[1000];
+    private ThreadContext threadContext;
 
     public ProfileData(ThreadContext tc) {
         threadContext = tc;
@@ -58,15 +56,13 @@ public class ProfileData implements IProfileData {
      */
     public int profileEnter(int calledMethod) {
         Invocation parentInvocation = currentInvocation;
-        long now = System.nanoTime();
 
         int recursiveDepth = incRecursionFor(calledMethod);
-        Invocation childInvocation = currentInvocation.childInvocationFor(calledMethod, recursiveDepth);
-        childInvocation.count++;
+        Invocation childInvocation = parentInvocation.childInvocationFor(calledMethod, recursiveDepth);
+        childInvocation.incrementCount();
 
         currentInvocation = childInvocation;
-        sinceTime = now;
-        return parentInvocation.methodSerialNumber;
+        return parentInvocation.getMethodSerialNumber();
     }
 
     /**
@@ -77,40 +73,40 @@ public class ProfileData implements IProfileData {
      */
     public int profileExit(int callingMethod, long startTime) {
         long now = System.nanoTime();
-
         long duration = now - startTime;
+        Invocation current = currentInvocation;
 
-        currentInvocation.duration += duration;
+        current.addDuration(duration);
 
-        int previousMethod = currentInvocation.methodSerialNumber;
+        int previousMethod = current.getMethodSerialNumber();
 
         decRecursionFor(previousMethod);
 
-        currentInvocation = currentInvocation.parent;
-        sinceTime = now;
+        currentInvocation = current.getParent();
 
         return previousMethod;
     }
 
     public void decRecursionFor(int serial) {
         ensureRecursionSize(serial);
-        methodRecursion[serial] = methodRecursion[serial] - 1;
+        int[] mr = methodRecursion;
+        mr[serial] = mr[serial] - 1;
     }
 
     public int incRecursionFor(int serial) {
         ensureRecursionSize(serial);
-        Integer prev;
-        if ((prev = methodRecursion[serial]) == null) {
-            prev = 0;
-        }
-        methodRecursion[serial] = prev + 1;
-        return prev + 1;
+        int[] mr = methodRecursion;
+        int inc = mr[serial] + 1;
+        mr[serial] = inc;
+        return inc;
     }
 
     private void ensureRecursionSize(int index) {
-        if (methodRecursion.length <= index) {
-            int[] newRecursion = new int[index * 2];
-            System.arraycopy(methodRecursion, 0, newRecursion, 0, methodRecursion.length);
+        int[] mr = methodRecursion;
+        int length = mr.length;
+        if (length <= index) {
+            int[] newRecursion = new int[(int)(index * 1.5 + 1)];
+            System.arraycopy(mr, 0, newRecursion, 0, length);
             methodRecursion = newRecursion;
         }
     }
@@ -129,15 +125,30 @@ public class ProfileData implements IProfileData {
     }
 
     private static void methodData1(Map<Integer, MethodData> methods, Invocation inv) {
-        for (int serial : inv.children.keySet()) {
-            Invocation child = inv.children.get(serial);
-            MethodData data = methods.get(child.methodSerialNumber);
+        for (Entry<Invocation> entry : inv.getChildren().entrySet()) {
+            Invocation child = entry.getValue();
+            int serial = child.getMethodSerialNumber();
+            MethodData data = methods.get(serial);
             if (data == null) {
-                data = new MethodData(child.methodSerialNumber);
-                methods.put(child.methodSerialNumber, data);
+                data = new MethodData(serial);
+                methods.put(serial, data);
             }
             data.invocations.add(child);
             methodData1(methods, child);
         }
+    }
+
+    /**
+     * @return the topInvocation
+     */
+    public Invocation getTopInvocation() {
+        return topInvocation;
+    }
+
+    /**
+     * @return the threadContext
+     */
+    public ThreadContext getThreadContext() {
+        return threadContext;
     }
 }

@@ -43,7 +43,7 @@ public class FlatProfilePrinter extends AbstractProfilePrinter {
     }
 
     public void printProfile(PrintStream out) {
-        profileData.topInvocation.duration = profileData.totalTime();
+        profileData.getTopInvocation().setDuration(profileData.totalTime());
 
         out.printf("Total time: %s\n\n", nanoString(profileData.totalTime()));
 

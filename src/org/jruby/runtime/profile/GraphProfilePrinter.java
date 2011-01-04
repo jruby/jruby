@@ -39,7 +39,7 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
     }
 
     public void printProfile(PrintStream out) {
-        profileData.topInvocation.duration = profileData.totalTime();
+        profileData.getTopInvocation().setDuration(profileData.totalTime());
 
         out.println(" %total   %self    total        self    children                 calls  name");
 

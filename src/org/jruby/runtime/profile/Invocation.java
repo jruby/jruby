@@ -1,3 +1,4 @@
+
 /***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
@@ -25,27 +26,63 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.profile;
 
-import java.util.HashMap;
+import org.jruby.util.collections.IntHashMap;
 
 public class Invocation {
-    public int methodSerialNumber;
-    public int recursiveDepth;
-    public Invocation parent = null;
-    public long duration = 0;
-    public int count = 0;
-    public HashMap<Integer, Invocation> children = new HashMap<Integer, Invocation>();
-
+    private final int methodSerialNumber;
+    private final int recursiveDepth;
+    private final Invocation parent;
+    private final IntHashMap<Invocation> children = new IntHashMap<Invocation>();
+    
+    private long duration     = 0;
+    private int count         = 0;
+    
     public Invocation(int serial) {
-        this.methodSerialNumber = serial;
-        this.recursiveDepth = 1;
+        this(null, serial, 1);
     }
-
+    
     public Invocation(Invocation parent, int serial, int recursiveDepth) {
-        this.parent = parent;
+        this.parent             = parent;
         this.methodSerialNumber = serial;
-        this.recursiveDepth = recursiveDepth;
+        this.recursiveDepth     = recursiveDepth;
     }
 
+    public int getMethodSerialNumber() {
+        return methodSerialNumber;
+    }
+
+    public int getRecursiveDepth() {
+        return recursiveDepth;
+    }
+
+    public Invocation getParent() {
+        return parent;
+    }
+
+    public IntHashMap<Invocation> getChildren() {
+        return children;
+    }
+
+    public long getDuration() {
+        return duration;
+    }
+
+    public void setDuration(long d) {
+        duration = d;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public void incrementCount() {
+        count++;
+    }
+
+    public void addDuration(long d) {
+        duration += d;
+    }
+    
     public Invocation childInvocationFor(int serial, int recursiveDepth) {
         Invocation child;
         if ((child = children.get(serial)) == null) {
@@ -54,7 +91,7 @@ public class Invocation {
         }
         return child;
     }
-
+    
     public long childTime() {
         long t = 0;
         for (Invocation inv : children.values()) {
@@ -62,7 +99,7 @@ public class Invocation {
         }
         return t;
     }
-
+    
     public long selfTime() {
         return duration - childTime();
     }
