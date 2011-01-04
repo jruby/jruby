@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -42,6 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * A regexp which contains some expressions which will need to be evaluated everytime the regexp 
@@ -51,20 +51,34 @@ public class DRegexpNode extends DNode implements ILiteralNode {
     private final int options;
     private final boolean once;
     private RubyRegexp onceRegexp;
+    private boolean is19;
 
+    // 1.8 constructor
     public DRegexpNode(ISourcePosition position, int options, boolean once) {
-        this(position, null, options, once);
+        this(position, options, once, false);
     }
 
-    public DRegexpNode(ISourcePosition position, Encoding encoding, int options, boolean once) {
-        super(position, encoding);
+    // 1.9 constructor
+    public DRegexpNode(ISourcePosition position, int options, boolean once, boolean is19) {
+        super(position, null);
         this.once = once;
         this.options = options;
+        this.is19 = is19;
     }
 
     @Override
     public NodeType getNodeType() {
         return NodeType.DREGEXPNODE;
+    }
+
+    @Override
+    protected RubyString allocateString(Ruby runtime) {
+        return runtime.newString(new ByteList());
+    }
+
+    @Override
+    public boolean is19() {
+        return is19;
     }
 
     /**
