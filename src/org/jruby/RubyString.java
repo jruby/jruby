@@ -4856,7 +4856,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyString padStr = arg1.convertToString();
         ByteList pad = padStr.value;
         if (pad.getRealSize() == 0) throw runtime.newArgumentError("zero width padding");
-        return justifyCommon(runtime, pad, RubyFixnum.num2int(arg0), jflag).infectBy(padStr);
+        RubyString result = justifyCommon(runtime, pad, RubyFixnum.num2int(arg0), jflag);
+        if (value.getRealSize() < RubyFixnum.num2int(arg0)) {
+            result.infectBy(padStr);
+        } 
+        return result;
     }
 
     private RubyString justifyCommon(Ruby runtime, ByteList pad, int width, int jflag) {
@@ -4912,7 +4916,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         RubyString result = new RubyString(runtime, getMetaClass(), res);
-        result.infectBy(this);
+        if ((  runtime.is1_9() && (RubyFixnum.fix2int(this.length19()) >= width)) ||
+            (! runtime.is1_9() && (RubyFixnum.fix2int(this.length()  ) >= width))) {
+            result.infectBy(this);
+        }
         return result;
     }
 
