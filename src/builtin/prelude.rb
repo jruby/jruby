@@ -29,6 +29,11 @@ end
 module Kernel
   module_function
   def require_relative(relative_feature)
+    if relative_feature.respond_to? :to_path
+      relative_feature = relative_feature.to_path
+    else
+      relative_feature = relative_feature
+    end
     unless relative_feature.respond_to? :to_str
       raise TypeError, "cannot convert #{relative_feature.class} into String"
     end
