@@ -300,12 +300,7 @@ public class StringTerm extends StrTerm {
                 if (buffer.getEncoding() != encoding) {
                     mixedEscape(lexer, buffer.getEncoding(), encoding);
                 }
-                // read bytes for length of character
-                int length = encoding.length((byte)c);
-                buffer.append((byte)c);
-                for (int off = 0; off < length - 1; off++) {
-                    buffer.append(src.read());
-                }
+                lexer.tokenAddMBCFromSrc(c, buffer);
                 continue;
             } else if (qwords && Character.isWhitespace(c)) {
                 src.unread(c);
