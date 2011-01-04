@@ -195,7 +195,7 @@ public class ParserSupport {
 
     protected IRubyWarnings warnings;
 
-    private ParserConfiguration configuration;
+    protected ParserConfiguration configuration;
     private RubyParserResult result;
 
     public void reset() {

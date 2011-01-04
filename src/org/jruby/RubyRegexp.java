@@ -39,6 +39,7 @@ import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.LASTLINE;
 
 import java.lang.ref.SoftReference;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1712,6 +1713,21 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if ((options & ReOptions.RE_OPTION_MULTILINE) != 0) to.append((byte)'m');
         if ((options & ReOptions.RE_OPTION_IGNORECASE) != 0) to.append((byte)'i');
         if ((options & ReOptions.RE_OPTION_EXTENDED) != 0) to.append((byte)'x');
+    }
+
+    private static String[] NO_NAMES = new String[] {}; //TODO: Perhaps we have another empty string arr
+    public String[] getNames() {
+        int nameLength = pattern.numberOfNames();
+        if (nameLength == 0) return NO_NAMES;
+
+        String[] names = new String[nameLength];
+        int j = 0;
+        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry e = i.next();
+            names[j++] = new String(e.name, e.nameP, e.nameEnd - e.nameP).intern();
+        }
+
+        return names;
     }
 
     /** rb_reg_names
