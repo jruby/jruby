@@ -2442,18 +2442,28 @@ public class RubyModule extends RubyObject {
         return context.getRuntime().newBoolean(fastIsConstantDefined(validateConstant(symbol.asJavaString()).intern()));
     }
 
-    @JRubyMethod(name = "const_defined?", required = 1, compat = RUBY1_9)
-    public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject symbol) {
-        // Note: includes part of fix for JRUBY-1339
-        return context.getRuntime().newBoolean(fastIsConstantDefined19(validateConstant(symbol.asJavaString()).intern()));
+    @JRubyMethod(name = "const_defined?", required = 1, optional = 1, compat = RUBY1_9)
+    public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject[] args) {
+        IRubyObject symbol = args[0];
+        boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
+
+        return context.getRuntime().newBoolean(fastIsConstantDefined19(validateConstant(symbol.asJavaString()).intern(), inherit));
     }
 
     /** rb_mod_const_get
      *
      */
-    @JRubyMethod(name = "const_get", required = 1)
+    @JRubyMethod(name = "const_get", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject const_get(IRubyObject symbol) {
         return getConstant(validateConstant(symbol.asJavaString()));
+    }
+
+    @JRubyMethod(name = "const_get", required = 1, optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject const_get(ThreadContext context, IRubyObject[] args) {
+        IRubyObject symbol = args[0];
+        boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
+
+        return getConstant(validateConstant(symbol.asJavaString()), inherit);
     }
 
     /** rb_mod_const_set
@@ -2744,34 +2754,49 @@ public class RubyModule extends RubyObject {
      * @return The value for the constant, or null if not found
      */
     public IRubyObject getConstant(String name) {
-        return fastGetConstant(name.intern());
+        return getConstant(name, true);
+    }
+
+    public IRubyObject getConstant(String name, boolean inherit) {
+        return fastGetConstant(name.intern(), inherit);
     }
     
     public IRubyObject fastGetConstant(String internedName) {
-        IRubyObject value = getConstantNoConstMissing(internedName);
+        return fastGetConstant(internedName, true);
+    }
+
+    public IRubyObject fastGetConstant(String internedName, boolean inherit) {
+        IRubyObject value = getConstantNoConstMissing(internedName, inherit);
         Ruby runtime = getRuntime();
-        
+
         return value == null ? callMethod(runtime.getCurrentContext(), "const_missing",
                 runtime.fastNewSymbol(internedName)) : value;
     }
 
     public IRubyObject getConstantNoConstMissing(String name) {
+        return getConstantNoConstMissing(name, true);
+    }
+
+    public IRubyObject getConstantNoConstMissing(String name, boolean inherit) {
         assert IdUtil.isConstant(name);
 
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+        IRubyObject constant = iterateConstentNoConstMissing(name, this, inherit);
+
+        if (constant == null && !isClass()) {
+            constant = iterateConstentNoConstMissing(name, getRuntime().getObject(), inherit);
+        }
+
+        return constant;
+    }
+
+    private IRubyObject iterateConstentNoConstMissing(String name, RubyModule init, boolean inherit) {
+        RubyModule end = inherit? null : init;
+
+        for (RubyModule p = init; p != end; p = p.getSuperClass()) {
             IRubyObject value = p.getConstantInner(name);
 
             if (value != null) return value == UNDEF ? null : value;
         }
-
-        if (!isClass()) {
-            for (RubyModule p = getRuntime().getObject(); p != null; p = p.getSuperClass()) {
-                IRubyObject value = p.getConstantInner(name);
-
-                if (value != null) return value == UNDEF ? null : value;
-            }
-        }
-
         return null;
     }
     
@@ -2964,20 +2989,23 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean fastIsConstantDefined19(String internedName) {
+        return fastIsConstantDefined19(internedName, true);
+    }
+
+    public boolean fastIsConstantDefined19(String internedName, boolean inherit) {
         assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
+        
+        RubyModule end = inherit ? null : this;
 
-        RubyModule module = this;
-
-        do {
+        for (RubyModule module = this; module != end; module = module.getSuperClass()) {
             Object value;
             if ((value = module.constantTableFastFetch(internedName)) != null) {
                 if (value != UNDEF) return true;
                 return getRuntime().getLoadService().autoloadFor(
                         module.getName() + "::" + internedName) != null;
             }
-
-        } while ((module = module.getSuperClass()) != null );
+        }
 
         return false;
     }
