@@ -1617,6 +1617,7 @@ public class ParserSupport {
         RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
     }
 
+    // Only 1.9
     // end is a weird variable. We return a RegexpNode to hold options at end of an regexp.
     public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
         int options = end.getOptions();
@@ -1637,10 +1638,12 @@ public class ParserSupport {
                     regexpFragmentCheck(end, ((StrNode) fragment).getValue());
                 }
             }
-            return new DRegexpNode(position, options, (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) contents);
+            return new DRegexpNode(position, options, 
+                    (options & ReOptions.RE_OPTION_ONCE) != 0, true).addAll((DStrNode) contents);
         }
 
         // No encoding or fragment check stuff for this...but what case is this anyways?
-        return new DRegexpNode(position, options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(contents);
+        return new DRegexpNode(position, 
+                options, (options & ReOptions.RE_OPTION_ONCE) != 0, true).add(contents);
     }
 }
