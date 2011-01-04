@@ -135,8 +135,10 @@ public class MultipleScriptsRunner {
             } catch (Throwable t) {
                 t.printStackTrace(new PrintStream(outStream));
             } finally {
-                instance.getVarMap().clear();
-                instance.terminate();
+                if (instance != null) {
+                    instance.getVarMap().clear();
+                    instance.terminate();
+                }
                 instance = null;
             }
         }
@@ -270,7 +272,9 @@ public class MultipleScriptsRunner {
             } catch (Throwable t) {
                 t.printStackTrace(new PrintStream(outStream));
             } finally {
-                instance.terminate();
+                if (instance != null) {
+                    instance.terminate();
+                }
                 instance = null;
             }
         }
