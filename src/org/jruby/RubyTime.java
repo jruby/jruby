@@ -94,14 +94,13 @@ public class RubyTime extends RubyObject {
      * joda-time disallows use of three-letter time zone IDs.
      * Since MRI accepts these values, we need to translate them.
      */
-    private static final Map<String, String> LONG_TZNAME = new HashMap<String, String>();
-    static {
-        LONG_TZNAME.put("EDT", "EST5EDT");
-        LONG_TZNAME.put("CDT", "CST6CDT");
-        LONG_TZNAME.put("MDT", "MST7MDT");
-        LONG_TZNAME.put("PDT", "PST8PDT");
-        LONG_TZNAME.put("MET", "CET"); // JRUBY-2579
-    }
+    private static final Map<String, String> LONG_TZNAME = new HashMap<String, String>() {{
+        put("EDT", "EST5EDT");
+        put("CDT", "CST6CDT");
+        put("MDT", "MST7MDT");
+        put("PDT", "PST8PDT");
+        put("MET", "CET"); // JRUBY-2579
+    }};
 
     @Override
     public int getNativeTypeIndex() {
