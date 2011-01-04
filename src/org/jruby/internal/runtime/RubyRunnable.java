@@ -39,6 +39,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.profile.IProfileData;
 
 public class RubyRunnable implements Runnable {
     private Ruby runtime;
@@ -122,11 +123,9 @@ public class RubyRunnable implements Runnable {
                 }
 
                 // dump profile, if any
-                if (context.runtime.getInstanceConfig().isProfiling()) {
-                    // attempt to prevent threads printing on one another
-                    synchronized (context.runtime) {
-                        context.getProfileData().printProfile(context, runtime.getProfiledNames(), runtime.getProfiledMethods(), System.out);
-                    }
+                if (runtime.getInstanceConfig().isProfilingEntireRun()) {
+                    IProfileData profileData = (IProfileData) context.getProfileData();
+                    runtime.getInstanceConfig().makeDefaultProfilePrinter(profileData).printProfile(System.out);
                 }
             }
         } catch (ThreadKill tk) {
