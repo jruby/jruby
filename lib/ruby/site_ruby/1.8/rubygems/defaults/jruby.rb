@@ -11,41 +11,41 @@ module Gem
     def ensure_gem_subdirectories(gemdir)
       original_ensure_gem_subdirectories(gemdir) unless jarred_path? gemdir.to_s
     end
-    
+
     JAR_URL_TOKEN = 'jar:file://'
     URL_TOKEN = '://'
     JAR_URL_MARKER = '__THIS_IS_A_JAR_URL__'
     URL_MARKER = '__THIS_IS_A_URL__'
-    
+
     # This is mostly a duplicate of stock RubyGems' set_paths
     # but with logic to avoid damaging URLs in GEM_PATH.
     def set_paths(gpaths)
       if gpaths
-        
+
         # hack to mask URLs so they don't split on :
         new_gpaths = gpaths.gsub JAR_URL_TOKEN, JAR_URL_MARKER
         new_gpaths = new_gpaths.gsub URL_TOKEN, URL_MARKER
-        
+
         @gem_path = new_gpaths.split(File::PATH_SEPARATOR)
-        
+
         if File::ALT_SEPARATOR then
           @gem_path.map! do |path|
             path.gsub File::ALT_SEPARATOR, File::SEPARATOR
           end
         end
-        
+
         # put back URL structure
         @gem_path.map! do |path|
           path = path.gsub URL_MARKER, URL_TOKEN
           path = path.gsub JAR_URL_MARKER, JAR_URL_TOKEN
         end
-        
+
         @gem_path << Gem.dir
       else
         # TODO: should this be Gem.default_path instead?
         @gem_path = [Gem.dir]
       end
-      
+
       @gem_path.uniq!
     end
 

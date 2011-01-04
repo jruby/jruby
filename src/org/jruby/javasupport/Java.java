@@ -95,6 +95,8 @@ import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
+import org.jruby.util.ClassCache;
+import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.IdUtil;
 import org.jruby.util.SafePropertyAccessor;
@@ -375,7 +377,6 @@ public class Java implements Library {
             if ((interfaceModule = javaClass.getProxyModule()) == null) {
                 interfaceModule = (RubyModule) runtime.getJavaSupport().getJavaInterfaceTemplate().dup();
                 interfaceModule.fastSetInstanceVariable("@java_class", javaClass);
-                addToJavaPackageModule(interfaceModule, javaClass);
                 javaClass.setupInterfaceModule(interfaceModule);
                 // include any interfaces we extend
                 Class<?>[] extended = javaClass.javaClass().getInterfaces();
@@ -384,6 +385,7 @@ public class Java implements Library {
                     RubyModule extModule = getInterfaceModule(runtime, extendedClass);
                     interfaceModule.includeModule(extModule);
                 }
+                addToJavaPackageModule(interfaceModule, javaClass);
             }
         } finally {
             javaClass.unlockProxy();
@@ -707,6 +709,7 @@ public class Java implements Library {
                     proxyClass = JavaProxyClass.get_with_class(self, self.getMetaClass());
                     self.getMetaClass().getInstanceVariables().fastSetInstanceVariable("@java_proxy_class", proxyClass);
                 }
+                
                 JavaProxyClass realProxyClass = (JavaProxyClass)proxyClass;
                 RubyArray constructors = realProxyClass.constructors();
                 ArrayList<JavaProxyConstructor> forArity = new ArrayList<JavaProxyConstructor>();
@@ -716,17 +719,25 @@ public class Java implements Library {
                         forArity.add(constructor);
                     }
                 }
+                
                 if (forArity.size() == 0) {
                     throw context.getRuntime().newArgumentError("wrong number of arguments for constructor");
                 }
+
                 JavaProxyConstructor matching = (JavaProxyConstructor)CallableSelector.matchingCallableArityN(
                         methodCache,
                         forArity.toArray(new JavaProxyConstructor[forArity.size()]), args, args.length);
+
+                if (matching == null) {
+                    throw context.getRuntime().newArgumentError("wrong number of arguments for constructor");
+                }
+
                 Object[] newArgs = new Object[args.length];
                 Class[] parameterTypes = matching.getParameterTypes();
                 for (int i = 0; i < args.length; i++) {
                     newArgs[i] = args[i].toJava(parameterTypes[i]);
                 }
+                
                 JavaObject newObject = matching.newInstance(self, newArgs);
                 return JavaUtilities.set_java_object(self, self, newObject);
             }
@@ -1086,14 +1097,15 @@ public class Java implements Library {
                 interfacesHashCode = 31 * interfacesHashCode + runtime.getProc().hashCode();
             } else {
                 // normal new class implementing interfaces
-                interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().hashCode();
+                interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().getRealClass().hashCode();
             }
             String implClassName = "org.jruby.gen.InterfaceImpl" + Math.abs(interfacesHashCode);
             Class proxyImplClass;
             try {
                 proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
             } catch (ClassNotFoundException cnfe) {
-                proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName);
+                OneShotClassLoader oneShotClassLoader = new ClassCache.OneShotClassLoader(runtime.getJRubyClassLoader());
+                proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, oneShotClassLoader);
             }
 
             try {

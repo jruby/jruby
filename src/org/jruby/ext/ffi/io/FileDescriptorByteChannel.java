@@ -30,9 +30,6 @@ package org.jruby.ext.ffi.io;
 
 import org.jruby.Ruby;
 import org.jruby.ext.posix.LibC;
-import org.jruby.ext.posix.POSIX;
-import org.jruby.ext.posix.POSIXFactory;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;

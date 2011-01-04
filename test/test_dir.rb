@@ -178,6 +178,11 @@ class TestDir < Test::Unit::TestCase
     Dir.unlink "./testDir_1/glück" rescue nil
   end
 
+  # JRUBY-5286
+  def test_pwd_tainted
+    assert Dir.pwd.tainted?
+  end
+
   if WINDOWS
     def test_chdir_slash_windows
       @orig_pwd = Dir.pwd

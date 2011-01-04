@@ -30,7 +30,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.FileDescriptor;
 import static org.jruby.RubyFile.get_path;
 import static org.jruby.RubyFile.file;
 
@@ -397,6 +396,132 @@ public class RubyFileTest {
         if (stat == null) return context.getRuntime().getNil();
 
         return stat.worldWritable(context);
+    }
+
+    /**
+     * MRI defines the FileTest methods both as module functions on FileTest and
+     * as singleton methods on the File class. Since our annotations can't be
+     * both module and singleton method definitions, we define proxies here for
+     * File.
+     *
+     * Note that these are to be defined on the singleton class of the File
+     * class.
+     */
+    public static class FileTestFileMethods {
+        @JRubyMethod(name = "blockdev?", required = 1)
+        public static IRubyObject blockdev_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.blockdev_p(recv, filename);
+        }
+
+        @JRubyMethod(name = "chardev?", required = 1)
+        public static IRubyObject chardev_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.chardev_p(recv, filename);
+        }
+
+        @JRubyMethod(name = "directory?", required = 1)
+        public static IRubyObject directory_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.directory_p(context, recv, filename);
+        }
+
+        @JRubyMethod(name = "executable?", required = 1)
+        public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.executable_p(recv, filename);
+        }
+
+        @JRubyMethod(name = "executable_real?", required = 1)
+        public static IRubyObject executable_real_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.executable_real_p(recv, filename);
+        }
+
+        @JRubyMethod(name = {"exist?", "exists?"}, required = 1)
+        public static IRubyObject exist_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.exist_p(context, recv, filename);
+        }
+
+        @JRubyMethod(name = "file?", required = 1)
+        public static RubyBoolean file_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.file_p(context, recv, filename);
+        }
+
+        @JRubyMethod(name = "grpowned?", required = 1)
+        public static IRubyObject grpowned_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.grpowned_p(recv, filename);
+        }
+
+        @JRubyMethod(name = "identical?", required = 2)
+        public static IRubyObject identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
+            return RubyFileTest.identical_p(recv, filename1, filename2);
+        }
+
+        @JRubyMethod(name = "owned?", required = 1)
+        public static IRubyObject owned_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.owned_p(recv, filename);
+        }
+
+        @JRubyMethod(name = "pipe?", required = 1)
+        public static IRubyObject pipe_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.pipe_p(recv, filename);
+        }
+
+        @JRubyMethod(name = {"readable?", "readable_real?"}, required = 1)
+        public static IRubyObject readable_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.readable_p(context, recv, filename);
+        }
+
+        @JRubyMethod(name = "setgid?", required = 1)
+        public static IRubyObject setgid_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.setgid_p(recv, filename);
+        }
+
+        @JRubyMethod(name = "setuid?", required = 1)
+        public static IRubyObject setuid_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.setuid_p(recv, filename);
+        }
+
+        @JRubyMethod(name = "size", required = 1)
+        public static IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.size(context, recv, filename);
+        }
+
+        @JRubyMethod(name = "size?", required = 1)
+        public static IRubyObject size_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.size_p(context, recv, filename);
+        }
+
+        @JRubyMethod(name = "socket?", required = 1)
+        public static IRubyObject socket_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.socket_p(recv, filename);
+        }
+
+        @JRubyMethod(name = "sticky?", required = 1)
+        public static IRubyObject sticky_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.sticky_p(recv, filename);
+        }
+
+        @JRubyMethod(name = "symlink?", required = 1)
+        public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.symlink_p(recv, filename);
+        }
+
+        @JRubyMethod(name = {"writable?", "writable_real?"}, required = 1)
+        public static RubyBoolean writable_p(IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.writable_p(recv, filename);
+        }
+
+        @JRubyMethod(name = "zero?", required = 1)
+        public static RubyBoolean zero_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.zero_p(context, recv, filename);
+        }
+
+        @JRubyMethod(name = "world_readable?", required = 1, compat = CompatVersion.RUBY1_9)
+        public static IRubyObject worldReadable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.worldReadable(context, recv, filename);
+        }
+
+        @JRubyMethod(name = "world_writable?", required = 1, compat = CompatVersion.RUBY1_9)
+        public static IRubyObject worldWritable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+            return RubyFileTest.worldWritable(context, recv, filename);
+        }
     }
 
     private static RubyFileStat getFileStat(ThreadContext context, IRubyObject filename) {

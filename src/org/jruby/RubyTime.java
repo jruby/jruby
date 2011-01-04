@@ -89,16 +89,34 @@ public class RubyTime extends RubyObject {
             = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
 
     private static final ByteList TZ_STRING = ByteList.create("TZ");
+    
+    /* JRUBY-3560
+     * joda-time disallows use of three-letter time zone IDs.
+     * Since MRI accepts these values, we need to translate them.
+     */
+    private static final Map<String, String> LONG_TZNAME = new HashMap<String, String>();
+    static {
+        LONG_TZNAME.put("EDT", "EST5EDT");
+        LONG_TZNAME.put("CDT", "CST6CDT");
+        LONG_TZNAME.put("MDT", "MST7MDT");
+        LONG_TZNAME.put("PDT", "PST8PDT");
+        LONG_TZNAME.put("MET", "CET"); // JRUBY-2579
+    }
 
     @Override
     public int getNativeTypeIndex() {
         return ClassIndex.TIME;
     }
-
-    public static DateTimeZone getLocalTimeZone(Ruby runtime) {
+    
+    private static IRubyObject getEnvTimeZone(Ruby runtime) {
         RubyString tzVar = runtime.newString(TZ_STRING);
         RubyHash h = ((RubyHash)runtime.getObject().fastGetConstant("ENV"));
         IRubyObject tz = h.op_aref(runtime.getCurrentContext(), tzVar);
+        return tz;
+    }
+
+    public static DateTimeZone getLocalTimeZone(Ruby runtime) {
+        IRubyObject tz = getEnvTimeZone(runtime);
 
         if (tz == null || ! (tz instanceof RubyString)) {
             return DateTimeZone.getDefault();
@@ -113,6 +131,7 @@ public class RubyTime extends RubyObject {
         if (cachedZone != null) return cachedZone;
 
         String originalZone = zone;
+        TimeZone tz = TimeZone.getTimeZone(getEnvTimeZone(runtime).toString());
 
         // Value of "TZ" property is of a bit different format,
         // which confuses the Java's TimeZone.getTimeZone(id) method,
@@ -142,6 +161,10 @@ public class RubyTime extends RubyObject {
                     zone += minutes;
                 }
             }
+            
+            tz = TimeZone.getTimeZone(zone);
+        } else {
+            if (LONG_TZNAME.containsKey(zone)) tz.setID(LONG_TZNAME.get(zone.toUpperCase()));
         }
 
         // MRI behavior: With TZ equal to "GMT" or "UTC", Time.now
@@ -153,14 +176,10 @@ public class RubyTime extends RubyObject {
         // Hence, we need to adjust for that.
         if ("GMT".equalsIgnoreCase(zone) || "UTC".equalsIgnoreCase(zone)) {
             zone = "Etc/" + zone;
+            tz = TimeZone.getTimeZone(zone);
         }
 
-        // For JRUBY-2759, when MET choose CET timezone to work around Joda
-        if ("MET".equalsIgnoreCase(zone)) {
-            zone = "CET";
-        }
-
-        DateTimeZone dtz = DateTimeZone.forTimeZone(TimeZone.getTimeZone(zone));
+        DateTimeZone dtz = DateTimeZone.forTimeZone(tz);
         runtime.getTimezoneCache().put(originalZone, dtz);
         return dtz;
     }

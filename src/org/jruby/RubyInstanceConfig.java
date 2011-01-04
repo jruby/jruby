@@ -37,8 +37,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.net.URI;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -663,7 +663,7 @@ public class RubyInstanceConfig {
     }
 
     public String getCopyrightString() {
-        return "JRuby - Copyright (C) 2001-2010 The JRuby Community (and contribs)";
+        return "JRuby - Copyright (C) 2001-2011 The JRuby Community (and contribs)";
     }
 
     public void processArguments(String[] arguments) {
@@ -857,7 +857,7 @@ public class RubyInstanceConfig {
                     URL jrubyHomeURL = getClass().getResource(jrubyHomePath);
                     // special case for jar:file (most typical case)
                     if (jrubyHomeURL.getProtocol().equals("jar")) {
-                        jrubyHome = jrubyHomeURL.getPath();
+                        jrubyHome = URLDecoder.decode(jrubyHomeURL.getPath(), "UTF-8");
                     } else {
                         jrubyHome = "classpath:" + jrubyHomePath;
                         return jrubyHome;
@@ -1404,6 +1404,8 @@ public class RubyInstanceConfig {
                 InputStream stream = null;
                 if (script.startsWith("file:") && script.indexOf(".jar!/") != -1) {
                     stream = new URL("jar:" + script).openStream();
+                } else if (script.startsWith("classpath:")) {
+                    stream = Ruby.getClassLoader().getResourceAsStream(script.substring("classpath:".length()));
                 } else {
                     File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
                     if (isxFlag()) {

@@ -1160,9 +1160,14 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
-    @JRubyMethod
+    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject each(final ThreadContext context, final Block block) {
         return block.isGiven() ? eachCommon(context, block) : enumeratorize(context.getRuntime(), this, "each");
+    }
+
+    @JRubyMethod(name = "each", compat = RUBY1_9)
+    public IRubyObject each19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_pairCommon(context, block, true) : enumeratorize(context.getRuntime(), this, "each");
     }
 
     /** rb_hash_each_pair

@@ -38,7 +38,6 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.spi.SelectorProvider;
 import java.util.WeakHashMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -110,6 +109,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         this.threadService = runtime.getThreadService();
         finalResult = runtime.getNil();
 
+        this.priority = RubyFixnum.newFixnum(runtime, Thread.NORM_PRIORITY);
         // init errorInfo to nil
         errorInfo = runtime.getNil();
     }

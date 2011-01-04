@@ -637,13 +637,13 @@ public class ChannelDescriptor {
         
         return internalWrite(buf);
     }
-    
+
     /**
      * Open a new descriptor using the given working directory, file path,
      * mode flags, and file permission. This is equivalent to the open(2)
      * POSIX function. See org.jruby.util.io.ChannelDescriptor.open(String, String, ModeFlags, int, POSIX)
      * for the version that also sets file permissions.
-     * 
+     *
      * @param cwd the "current working directory" to use when opening the file
      * @param path the file path to open
      * @param flags the mode flags to use for opening the file
@@ -657,14 +657,37 @@ public class ChannelDescriptor {
      * @throws java.io.IOException if there is an exception during IO
      */
     public static ChannelDescriptor open(String cwd, String path, ModeFlags flags) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
-        return open(cwd, path, flags, 0, null);
+        return open(cwd, path, flags, 0, null, null);
     }
     
     /**
      * Open a new descriptor using the given working directory, file path,
      * mode flags, and file permission. This is equivalent to the open(2)
-     * POSIX function.
+     * POSIX function. See org.jruby.util.io.ChannelDescriptor.open(String, String, ModeFlags, int, POSIX)
+     * for the version that also sets file permissions.
      * 
+     * @param cwd the "current working directory" to use when opening the file
+     * @param path the file path to open
+     * @param flags the mode flags to use for opening the file
+     * @param classLoader a ClassLoader to use for classpath: resources
+     * @return a new ChannelDescriptor based on the specified parameters
+     * @throws java.io.FileNotFoundException if the target file could not be found
+     * and the create flag was not specified
+     * @throws org.jruby.util.io.DirectoryAsFileException if the target file is
+     * a directory being opened as a file
+     * @throws org.jruby.util.io.FileExistsException if the target file should
+     * be created anew, but already exists
+     * @throws java.io.IOException if there is an exception during IO
+     */
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, ClassLoader classLoader) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+        return open(cwd, path, flags, 0, null, classLoader);
+    }
+
+    /**
+     * Open a new descriptor using the given working directory, file path,
+     * mode flags, and file permission. This is equivalent to the open(2)
+     * POSIX function.
+     *
      * @param cwd the "current working directory" to use when opening the file
      * @param path the file path to open
      * @param flags the mode flags to use for opening the file
@@ -681,6 +704,31 @@ public class ChannelDescriptor {
      * @throws java.io.IOException if there is an exception during IO
      */
     public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+        return open(cwd, path, flags, perm, posix, null);
+    }
+    
+    /**
+     * Open a new descriptor using the given working directory, file path,
+     * mode flags, and file permission. This is equivalent to the open(2)
+     * POSIX function.
+     * 
+     * @param cwd the "current working directory" to use when opening the file
+     * @param path the file path to open
+     * @param flags the mode flags to use for opening the file
+     * @param perm the file permissions to use when creating a new file (currently
+     * unobserved)
+     * @param posix a POSIX api implementation, used for setting permissions; if null, permissions are ignored
+     * @param classLoader a ClassLoader to use for classpath: resources
+     * @return a new ChannelDescriptor based on the specified parameters
+     * @throws java.io.FileNotFoundException if the target file could not be found
+     * and the create flag was not specified
+     * @throws org.jruby.util.io.DirectoryAsFileException if the target file is
+     * a directory being opened as a file
+     * @throws org.jruby.util.io.FileExistsException if the target file should
+     * be created anew, but already exists
+     * @throws java.io.IOException if there is an exception during IO
+     */
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix, ClassLoader classLoader) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
         boolean fileCreated = false;
         if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
             Channel nullChannel = new NullChannel();
@@ -713,9 +761,9 @@ public class ChannelDescriptor {
                 // FIXME: don't use RubyIO for this
                 return new ChannelDescriptor(Channels.newChannel(is), flags);
             }
-        } else if (path.startsWith("classpath:/")) {
+        } else if (path.startsWith("classpath:/") && classLoader != null) {
             path = path.substring("classpath:/".length());
-            InputStream is = ByteList.EMPTY_BYTELIST.getClass().getClassLoader().getResourceAsStream(path);
+            InputStream is = classLoader.getResourceAsStream(path);
             // FIXME: don't use RubyIO for this
             return new ChannelDescriptor(Channels.newChannel(is), flags);
         } else {

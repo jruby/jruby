@@ -29,8 +29,6 @@
  */
 package org.jruby.embed;
 
-import org.jruby.exceptions.RaiseException;
-
 /**
  * This class is a generic unchecked exception raised during evaluating.
  * 

@@ -64,11 +64,12 @@ public class LocalVariable extends Variable {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        return interp.getLocalVariable(getName());
+        //return interp.getLocalVariable(getName());
+        return interp.getLocalVariable(location);
     }
 
     @Override
     public Object store(InterpreterContext interp, Object value) {
-        return interp.setLocalVariable(getName(), value);
+        return interp.setLocalVariable(location, value);
     }
 }

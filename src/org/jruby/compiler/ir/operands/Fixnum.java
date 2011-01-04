@@ -63,6 +63,8 @@ public class Fixnum extends Constant {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        return interp.getRuntime().newFixnum(value);
+		  if (cachedValue == null)
+            cachedValue = interp.getRuntime().newFixnum(value);
+		  return cachedValue;
     }
 }

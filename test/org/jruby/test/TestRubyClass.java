@@ -9,7 +9,6 @@ import junit.framework.TestCase;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
-import org.jruby.runtime.ObjectAllocator;
 
 /**
  *

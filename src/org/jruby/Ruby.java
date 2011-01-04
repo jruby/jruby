@@ -2289,8 +2289,8 @@ public final class Ruby {
 
     public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
         if (parserStats != null) parserStats.addLoadParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(getEncodingService(),
-                getKCode(), lineNumber, false, false, true, config));
+        return parser.parse(file, in, scope, new ParserConfiguration(this,
+                lineNumber, false, false, true, config));
     }
     
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
@@ -2299,38 +2299,34 @@ public final class Ruby {
 
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
         if (parserStats != null) parserStats.addEvalParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(getEncodingService(),
-                getKCode(), 0, false, true, false, config));
+        return parser.parse(file, in, scope, new ParserConfiguration(this,
+                0, false, true, false, config));
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
-        byte[] bytes = content.getBytes();
-        
         if (parserStats != null) parserStats.addEvalParse();
-        return parser.parse(file, bytes, scope, new ParserConfiguration(getEncodingService(),
-                getKCode(), lineNumber, false, false, false, config));
+        return parser.parse(file, content.getBytes(), scope, new ParserConfiguration(this,
+                lineNumber, false, false, false, config));
     }
 
     @Deprecated
     public Node parse(String content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
-        byte[] bytes = content.getBytes();
-
-        return parser.parse(file, bytes, scope, new ParserConfiguration(getEncodingService(),
-                getKCode(), lineNumber, extraPositionInformation, false, true, config));
+        return parser.parse(file, content.getBytes(), scope, new ParserConfiguration(this,
+                lineNumber, extraPositionInformation, false, true, config));
     }
     
     public Node parseEval(ByteList content, String file, DynamicScope scope, int lineNumber) {
         if (parserStats != null) parserStats.addEvalParse();
-        return parser.parse(file, content, scope, new ParserConfiguration(getEncodingService(),
-                getKCode(), lineNumber, false, false, false, config));
+        return parser.parse(file, content, scope, new ParserConfiguration(this,
+                lineNumber, false, false, false, config));
     }
 
     public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber, 
             boolean extraPositionInformation) {
         if (parserStats != null) parserStats.addJRubyModuleParse();
-        return parser.parse(file, content, scope, new ParserConfiguration(getEncodingService(),
-                getKCode(), lineNumber, extraPositionInformation, false, true, config));
+        return parser.parse(file, content, scope, new ParserConfiguration(this,
+                lineNumber, extraPositionInformation, false, true, config));
     }
 
 
@@ -2900,6 +2896,8 @@ public final class Ruby {
         getBeanManager().unregisterClassCache();
         getBeanManager().unregisterMethodCache();
 
+        getJRubyClassLoader().tearDown();
+
         if (systemExit && status != 0) {
             throw newSystemExit(status);
         }
@@ -2986,9 +2984,7 @@ public final class Ruby {
     public RubyProc newProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
-        RubyProc proc =  RubyProc.newProc(this, type);
-
-        proc.callInit(IRubyObject.NULL_ARRAY, block);
+        RubyProc proc =  RubyProc.newProc(this, block, type);
 
         return proc;
     }
@@ -2996,8 +2992,7 @@ public final class Ruby {
     public RubyProc newBlockPassProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 
-        RubyProc proc =  RubyProc.newProc(this, type);
-        proc.initialize(getCurrentContext(), block);
+        RubyProc proc =  RubyProc.newProc(this, block, type);
 
         return proc;
     }
@@ -3842,6 +3837,20 @@ public final class Ruby {
      */
     public RuntimeCache getRuntimeCache() {
         return runtimeCache;
+    }
+
+    /**
+     * Get the list of method names being profiled
+     */
+    public String[] getProfiledNames() {
+        return profiledNames;
+    }
+
+    /**
+     * Get the list of method objects for methods being profiled
+     */
+    public DynamicMethod[] getProfiledMethods() {
+        return profiledMethods;
     }
 
     /**

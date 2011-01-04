@@ -14,8 +14,6 @@ import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static java.io.File.*;
-
 public class ShellLauncherTest extends TestCase {
 
     private Ruby runtime;

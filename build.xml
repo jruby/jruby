@@ -13,6 +13,12 @@
   <property file="default.build.properties"/>
 
   <property name="shared.lib.dir" value="lib/ruby/site_ruby/shared"/>
+  
+  <property name="asm.jar" value="${build.lib.dir}/asm-3.3.1.jar"/>
+  <property name="asm-commons.jar" value="${build.lib.dir}/asm-commons-3.3.1.jar"/>
+  <property name="asm-util.jar" value="${build.lib.dir}/asm-util-3.3.1.jar"/>
+  <property name="asm-analysis.jar" value="${build.lib.dir}/asm-analysis-3.3.1.jar"/>
+  <property name="asm-tree.jar" value="${build.lib.dir}/asm-tree-3.3.1.jar"/>
 
   <path id="build.classpath">
     <fileset dir="${build.lib.dir}" includes="*.jar"/>
@@ -343,11 +349,11 @@
   <target name="jar-jruby" depends="init, compile, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
       <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true" update="true">
         <fileset dir="${jruby.classes.dir}"/>
-        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
+        <zipfileset src="${asm.jar}"/>
+        <zipfileset src="${asm-commons.jar}"/>
+        <zipfileset src="${asm-util.jar}"/>
+        <zipfileset src="${asm-analysis.jar}"/>
+        <zipfileset src="${asm-tree.jar}"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
@@ -421,8 +427,8 @@
             <exclude name="org/jruby/ext/ffi/**/*"/>
             <exclude name="org/jruby/embed/**/*"/>
         </fileset>
-        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
+        <zipfileset src="${asm.jar}"/>
+        <zipfileset src="${asm-util.jar}"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
@@ -443,11 +449,11 @@
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
       <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
         <fileset dir="${jruby.classes.dir}"/>
-        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
+        <zipfileset src="${asm.jar}"/>
+        <zipfileset src="${asm-commons.jar}"/>
+        <zipfileset src="${asm-util.jar}"/>
+        <zipfileset src="${asm-analysis.jar}"/>
+        <zipfileset src="${asm-tree.jar}"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
@@ -510,195 +516,140 @@
       overwrite="true" />
   </target>
 
-    <target name="jar-complete" depends="compile" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
-      <property name="mainclass" value="org.jruby.Main"/>
-      <property name="filename" value="jruby-complete.jar"/>
-      <property name="bilename" value="jruby-complete.bar"/>
-      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
-      <property name="jar-complete-home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
-      <mkdir dir="${jar-complete-home}"/>
-      <copy todir="${jar-complete-home}">
-        <fileset dir="${basedir}">
-          <patternset refid="dist.bindir.files"/>
-          <patternset refid="dist.lib.files"/>
-        </fileset>
-      </copy>
+  <target name="jar-complete" depends="compile" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
+    <property name="mainclass" value="org.jruby.Main"/>
+    <property name="filename" value="jruby-complete.jar"/>
+    <property name="bilename" value="jruby-complete.bar"/>
+    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
+    <property name="jar-complete-home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
+    <mkdir dir="${jar-complete-home}"/>
+    <copy todir="${jar-complete-home}">
+      <fileset dir="${basedir}">
+        <patternset refid="dist.bindir.files"/>
+        <patternset refid="dist.lib.files"/>
+      </fileset>
+    </copy>
 
-      <copy todir="${build.dir}/jar-complete/cext">
-        <fileset dir="${lib.dir}/native">
-	  <patternset refid="dist.jruby-cext-native.files"/>
-        </fileset>
-      </copy>
+    <copy todir="${build.dir}/jar-complete/cext">
+      <fileset dir="${lib.dir}/native">
+        <patternset refid="dist.jruby-cext-native.files"/>
+      </fileset>
+    </copy>
 
-      <java classname="${mainclass}" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-        <classpath>
-          <path refid="jruby.execute.classpath"/>
-          <pathelement location="${build.dir}/jar-complete"/>
-        </classpath>
-        <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
-        <env key="RUBYOPT" value=""/>
-        <jvmarg value="${run.jvm.model}"/>
-        <arg line="--command maybe_install_gems ${complete.jar.gems}"/>
-        <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
-      </java>
+    <java classname="${mainclass}" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
+      <classpath>
+        <path refid="jruby.execute.classpath"/>
+        <pathelement location="${build.dir}/jar-complete"/>
+      </classpath>
+      <sysproperty key="jruby.home" value="${jar-complete-home}"/>
+      <env key="RUBYOPT" value=""/>
+      <env key="GEM_HOME" value="${jar-complete-home}/lib/ruby/gems/1.8"/>
+      <jvmarg value="${run.jvm.model}"/>
+      <arg line="-S gem install ${complete.jar.gems}"/>
+      <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
+    </java>
 
-      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
-      <jarjar destfile="${dest.lib.dir}/${filename}">
-        <fileset dir="${jruby.classes.dir}"/>
-        <fileset dir="${build.dir}/jar-complete">
-          <exclude name="META-INF/jruby.home/lib/ruby/site_ruby/shared/builtin/**"/>
-        </fileset>
-        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/bytelist.jar"/>
-        <zipfileset src="${build.lib.dir}/constantine.jar"/>
-        <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
-        <zipfileset src="${build.lib.dir}/jcodings.jar"/>
-        <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
-        <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/jaffl.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86_64-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-i386-SunOS.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86_64-SunOS.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-ppc-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-ppc64-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-sparc-SunOS.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-sparcv9-SunOS.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-i386-FreeBSD.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86_64-FreeBSD.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jgrapht-jdk1.5.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
-        <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
-        <zipfileset src="${build.lib.dir}/yydebug.jar"/>
-        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
-        <zipfileset src="${shared.lib.dir}/yecht.jar"/>
-        <metainf dir="${base.dir}/spi">
-          <include name="services/**"/>
-        </metainf>
-        <manifest>
-          <attribute name="Built-By" value="${user.name}"/>
-          <attribute name="Main-Class" value="${mainclass}"/>
-        </manifest>
-        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
-      </jarjar>
-      <antcall target="_osgify-jar_">
-        <param name="bndfile" value="jruby-complete.bnd" />
-        <param name="jar.wrap" value="${dest.lib.dir}/${filename}" />
-        <param name="bar.wrap" value="${dest.lib.dir}/${bilename}" />
-      </antcall>
-    </target>
+    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
+    <jarjar destfile="${dest.lib.dir}/${filename}">
+      <fileset dir="${jruby.classes.dir}"/>
+      <fileset dir="${build.dir}/jar-complete">
+        <exclude name="META-INF/jruby.home/lib/ruby/site_ruby/shared/builtin/**"/>
+      </fileset>
+      <zipfileset src="${asm.jar}"/>
+      <zipfileset src="${asm-commons.jar}"/>
+      <zipfileset src="${asm-util.jar}"/>
+      <zipfileset src="${asm-analysis.jar}"/>
+      <zipfileset src="${asm-tree.jar}"/>
+      <zipfileset src="${build.lib.dir}/bytelist.jar"/>
+      <zipfileset src="${build.lib.dir}/constantine.jar"/>
+      <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
+      <zipfileset src="${build.lib.dir}/jcodings.jar"/>
+      <zipfileset src="${build.lib.dir}/joni.jar"/>
+      <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
+      <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
+      <zipfileset src="${build.lib.dir}/jaffl.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-x86_64-Linux.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-i386-SunOS.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-x86_64-SunOS.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-ppc-Linux.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-ppc64-Linux.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-sparc-SunOS.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-sparcv9-SunOS.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-i386-FreeBSD.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-x86_64-FreeBSD.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
+      <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
+      <zipfileset src="${build.lib.dir}/jgrapht-jdk1.5.jar"/>
+      <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+      <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
+      <zipfileset src="${build.lib.dir}/yydebug.jar"/>
+      <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+      <zipfileset src="${shared.lib.dir}/yecht.jar"/>
+      <metainf dir="${base.dir}/spi">
+        <include name="services/**"/>
+      </metainf>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Main-Class" value="${mainclass}"/>
+      </manifest>
+      <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+    </jarjar>
+    <antcall target="_osgify-jar_">
+      <param name="bndfile" value="jruby-complete.bnd" />
+      <param name="jar.wrap" value="${dest.lib.dir}/${filename}" />
+      <param name="bar.wrap" value="${dest.lib.dir}/${bilename}" />
+    </antcall>
+  </target>
 
-    <target name="dist-jar-complete" depends="jar-complete">
-      <mkdir dir="${dist.dir}"/>
-      <move file="${dest.lib.dir}/jruby-complete.jar" tofile="${dist.dir}/jruby-complete-${version.jruby}.jar"/>
-      <checksum file="${dist.dir}/jruby-complete-${version.jruby}.jar" algorithm="md5"/>
-      <checksum file="${dist.dir}/jruby-complete-${version.jruby}.jar" algorithm="sha1"/>
-    </target>
+  <target name="test-jar-complete" depends="init,unzip-native-libs,jar-complete"
+          description="Do some sanity checks on the complete jar.">
+    <java jar="lib/jruby-complete.jar" fork="true" failonerror="true" outputproperty="jar-complete-gems">
+      <arg line="-v -S gem list"/>
+    </java>
+    <echo message="${jar-complete-gems}"/>
+    <fail>
+      <condition>
+        <not><and>
+          <contains string="${jar-complete-gems}" substring="rake"/>
+          <contains string="${jar-complete-gems}" substring="rspec"/>
+          <contains string="${jar-complete-gems}" substring="sources"/>
+        </and></not>
+      </condition>
+    </fail>
+    <java jar="lib/jruby-complete.jar" fork="true" failonerror="true" outputproperty="jar-complete-rake">
+      <arg line="-v -S rake --help"/>
+    </java>
+    <echo message="${jar-complete-rake}"/>
+    <fail>
+      <condition>
+        <not><and>
+          <contains string="${jar-complete-rake}" substring="rakefile"/>
+          <contains string="${jar-complete-rake}" substring="dry-run"/>
+        </and></not>
+      </condition>
+    </fail>
+  </target>
 
-    <target name="jar-complete-1.9" depends="compile" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
-      <property name="mainclass" value="org.jruby.Main"/>
-      <property name="filename" value="jruby-complete.jar"/>
-      <property name="bilename" value="jruby-complete.bar"/>
-      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
-      <property name="jar-complete-home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
-      <mkdir dir="${jar-complete-home}"/>
-      <copy todir="${jar-complete-home}">
-        <fileset dir="${basedir}">
-          <patternset refid="dist.bindir.files"/>
-          <patternset refid="dist.lib.files"/>
-        </fileset>
-      </copy>
+  <target name="dist-jar-complete" depends="jar-complete">
+    <mkdir dir="${dist.dir}"/>
+    <move file="${dest.lib.dir}/jruby-complete.jar" tofile="${dist.dir}/jruby-complete-${version.jruby}.jar"/>
+    <checksum file="${dist.dir}/jruby-complete-${version.jruby}.jar" algorithm="md5"/>
+    <checksum file="${dist.dir}/jruby-complete-${version.jruby}.jar" algorithm="sha1"/>
+  </target>
 
-      <java classname="${mainclass}" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
-        <classpath>
-          <path refid="jruby.execute.classpath"/>
-          <pathelement location="${build.dir}/jar-complete"/>
-        </classpath>
-        <sysproperty key="jruby.home" value="${build.dir}/jar-complete/META-INF/jruby.home"/>
-        <env key="RUBYOPT" value=""/>
-        <jvmarg value="${run.jvm.model}"/>
-        <arg line="--command maybe_install_gems ${complete.jar.gems}"/>
-        <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
-      </java>
-
-      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
-      <jarjar destfile="${dest.lib.dir}/${filename}">
-        <fileset dir="${jruby.classes.dir}"/>
-        <fileset dir="${build.dir}/jar-complete">
-          <exclude name="META-INF/jruby.home/lib/ruby/1.8/**"/>
-        </fileset>
-        <zipfileset src="${build.lib.dir}/asm-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-commons-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-util-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-analysis-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/asm-tree-3.2.jar"/>
-        <zipfileset src="${build.lib.dir}/bytelist.jar"/>
-        <zipfileset src="${build.lib.dir}/constantine.jar"/>
-        <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
-        <zipfileset src="${build.lib.dir}/jcodings.jar"/>
-        <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
-        <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/jaffl.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86_64-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-Darwin.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-i386-SunOS.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86_64-SunOS.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-ppc-AIX.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-ppc-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-ppc64-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-sparc-SunOS.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-sparcv9-SunOS.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-i386-FreeBSD.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86_64-FreeBSD.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-i386-OpenBSD.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86_64-OpenBSD.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
-        <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jgrapht-jdk1.5.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
-        <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
-        <zipfileset src="${build.lib.dir}/yydebug.jar"/>
-        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
-        <zipfileset src="${shared.lib.dir}/yecht.jar"/>
-        <metainf dir="${base.dir}/spi">
-          <include name="services/**"/>
-        </metainf>
-        <manifest>
-          <attribute name="Built-By" value="${user.name}"/>
-          <attribute name="Main-Class" value="${mainclass}"/>
-        </manifest>
-        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
-      </jarjar>
-      <antcall target="_osgify-jar_">
-        <param name="bndfile" value="jruby-complete.bnd" />
-        <param name="jar.wrap" value="${dest.lib.dir}/${filename}" />
-        <param name="bar.wrap" value="${dest.lib.dir}/${bilename}" />
-      </antcall>
-    </target>
-
-    <target name="jar-console" depends="compile" description="Create the jruby graphical console jar">
-          <antcall target="jar-complete">
-              <param name="mainclass" value="org.jruby.demo.IRBConsole"/>
-              <param name="filename" value="jruby-console.jar"/>
-          </antcall>
-    </target>
+  <target name="jar-console" depends="compile" description="Create the jruby graphical console jar">
+    <antcall target="jar-complete">
+      <param name="mainclass" value="org.jruby.demo.IRBConsole"/>
+      <param name="filename" value="jruby-console.jar"/>
+    </antcall>
+  </target>
 
   <target name="jar" depends="init" description="Create the jruby.jar file">
     <antcall target="jar-jruby" inheritall="true"/>
@@ -1539,7 +1490,10 @@
     </antcall>
   </target>
 
-  <target name="dist" depends="install-dist-gems,dist-bin,dist-src,dist-jar-complete"/>
+  <target name="dist" depends="install-dist-gems,dist-bin,dist-src,dist-jar-complete">
+    <rake task="gem"/>
+    <rake task="installer"/>
+  </target>
 
   <target name="dist-clean">
     <delete dir="${dist.dir}"/>
@@ -1547,6 +1501,7 @@
   </target>
 
   <target name="gem" depends="dist-jar-complete"><rake task="gem"/></target>
+  <target name="installer"><rake task="installer"/></target>
 
   <target name="clean" depends="init" description="Cleans almost everything, leaves downloaded specs">
     <delete dir="${build.dir}"/>

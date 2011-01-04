@@ -17,7 +17,7 @@ class Gem::Commands::ServerCommand < Gem::Command
       else
         begin
           Socket.getservbyname port
-        rescue SocketError => e
+        rescue SocketError
           raise OptionParser::InvalidArgument, "#{port}: no such named service"
         end
       end
@@ -42,6 +42,14 @@ class Gem::Commands::ServerCommand < Gem::Command
                'addresses to bind', Array do |address, options|
       options[:addresses] ||= []
       options[:addresses].push(*address)
+    end
+
+    add_option '-l', '--launch[=COMMAND]', 
+               'launches a browser window',
+               "COMMAND defaults to 'start' on Windows",
+               "and 'open' on all other platforms" do |launch, options|
+      launch ||= Gem.win_platform? ? 'start' : 'open'
+      options[:launch] = launch
     end
   end
 

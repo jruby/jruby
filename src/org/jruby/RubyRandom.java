@@ -124,8 +124,15 @@ public class RubyRandom extends RubyObject {
         } else if (arg instanceof RubyRange) { // RANGE ARGUMENT
             RubyRange range = (RubyRange) arg;
             IRubyObject first = range.first();
-            IRubyObject last = range.last();
-            if (range.include_p19(context, last).isTrue()) {
+            IRubyObject last  = range.last();
+            
+            boolean returnFloat = first instanceof RubyFloat || last instanceof RubyFloat;
+            if (returnFloat) {
+                first = first.convertToFloat();
+                last  = last.convertToFloat();
+            }
+
+            if (range.include_p19(context, last).isTrue() && (!returnFloat)) {
                 last = last.callMethod(context, "+", runtime.newFixnum(1));
             }
 
@@ -135,11 +142,18 @@ public class RubyRandom extends RubyObject {
             }
 
             IRubyObject difference = last.callMethod(context, "-", first);
-            int max = (int) RubyNumeric.num2long(difference);
+            if (returnFloat) {
+                double max = (double) RubyNumeric.num2dbl(difference);
+                double rand = random.nextDouble() * ((RubyFloat) difference).getDoubleValue();
+                return RubyFloat.newFloat(runtime, ((RubyFloat) first).getDoubleValue() + rand);
+                
+            } else {
+                int max = (int) RubyNumeric.num2long(difference);
 
-            int rand = random.nextInt(max);
+                int rand = random.nextInt(max);
 
-            return RubyNumeric.num2fix(first.callMethod(context, "+", runtime.newFixnum(rand)));
+                return RubyNumeric.num2fix(first.callMethod(context, "+", runtime.newFixnum(rand)));
+            }
         } else if (arg instanceof RubyFloat) { // FLOAT ARGUMENT
             double max = RubyNumeric.num2dbl(arg);
             if (max <= 0 && raiseArgError) {

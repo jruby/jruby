@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.exception.EncodingException;
 import com.kenai.constantine.platform.Fcntl;
 import java.io.EOFException;
 import java.io.FileDescriptor;
@@ -628,7 +629,8 @@ public class RubyIO extends RubyObject {
                 incrementLineno(runtime, myOpenFile);
                 return str;
             } else if (limit == 0) {
-                return RubyString.newEmptyString(runtime);
+                return RubyString.newEmptyString(runtime,
+                        RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
             } else if (separator.length() == 1 && limit < 0) {
                 return getlineFast(runtime, separator.get(0) & 0xFF, cache);
             } else {
@@ -692,21 +694,14 @@ public class RubyIO extends RubyObject {
                     }
                     
                     if (isParagraph && c != -1) swallow('\n');
-                    
-                    if (!update) {
-                        return runtime.getNil();
-                    } else {
-                        incrementLineno(runtime, myOpenFile);
-                        RubyString str = RubyString.newString(runtime, cache != null ? new ByteList(buf) : buf);
-                        str.setTaint(true);
+                    if (!update) return runtime.getNil();
 
-                        return str;
-                    }
+                    incrementLineno(runtime, myOpenFile);
+
+                    return makeString(runtime, buf, cache != null);
                 }
                 finally {
-                    if(cache != null) {
-                        cache.release(buf);
-                    }
+                    if (cache != null) cache.release(buf);
                 }
             }
         } catch (PipeException ex) {
@@ -720,6 +715,24 @@ public class RubyIO extends RubyObject {
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
+    }
+
+    private Encoding getExternalEncoding(Ruby runtime) {
+        return externalEncoding != null ?
+            RubyEncoding.getEncodingFromObject(runtime, externalEncoding) :
+            runtime.getDefaultExternalEncoding();
+    }
+
+    private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
+        ByteList newBuf = isCached ? new ByteList(buffer) : buffer;
+        Encoding encoding = getExternalEncoding(runtime);
+
+        if (encoding != null) newBuf.setEncoding(encoding);
+
+        RubyString str = RubyString.newString(runtime, newBuf);
+        str.setTaint(true);
+
+        return str;
     }
 
     private void incrementLineno(Ruby runtime, OpenFile myOpenFile) {
@@ -791,19 +804,13 @@ public class RubyIO extends RubyObject {
                 update = true;
             } while (c != delim);
 
-            if (!update) {
-                return runtime.getNil();
-            } else {
-                incrementLineno(runtime, openFile);
-                RubyString str = RubyString.newString(runtime, cache != null ? new ByteList(buf) : buf);
-                str.setTaint(true);
-                return str;
-            }
-        }
-        finally {
-            if(cache != null) {
-                cache.release(buf);
-            }
+            if (!update) return runtime.getNil();
+                
+            incrementLineno(runtime, openFile);
+
+            return makeString(runtime, buf, cache != null);
+        } finally {
+            if (cache != null) cache.release(buf);
         }
     }
     // IO class methods.
@@ -903,9 +910,8 @@ public class RubyIO extends RubyObject {
             IRubyObject[] fullEncoding = modes19.split(context, RubyString.newString(context.getRuntime(), ":")).toJavaArray();
 
             IRubyObject externalEncodingOption = fullEncoding[initialPosition];
-            IRubyObject internalEncodingOption = null;
             if (fullEncoding.length > (initialPosition + 1)) {
-                internalEncodingOption = fullEncoding[initialPosition + 1];
+                IRubyObject internalEncodingOption = fullEncoding[initialPosition + 1];
                 set_encoding(context, externalEncodingOption, internalEncodingOption);
             } else {
                 set_encoding(context, externalEncodingOption);
@@ -1122,7 +1128,8 @@ public class RubyIO extends RubyObject {
         try {
             ChannelDescriptor descriptor =
                 ChannelDescriptor.open(runtime.getCurrentDirectory(),
-                                       path, modes, perms, runtime.getPosix());
+                                       path, modes, perms, runtime.getPosix(),
+                                       runtime.getJRubyClassLoader());
             // always a new fileno, so ok to use internal only
             fileno = descriptor.getFileno();
         }
@@ -2260,8 +2267,68 @@ public class RubyIO extends RubyObject {
     /** Read a byte. On EOF returns nil.
      * 
      */
-    @JRubyMethod(name = {"getc", "getbyte"})
+    @JRubyMethod(name = {"getc", "getbyte"}, compat = RUBY1_8)
     public IRubyObject getc() {
+        int c = getcCommon();
+
+        if (c == -1) {
+            // CRuby checks ferror(f) and retry getc for non-blocking IO
+            // read. We checks readability first if possible so retry should
+            // not be needed I believe.
+            return getRuntime().getNil();
+        }
+
+        return getRuntime().newFixnum(c);
+    }
+
+    private ByteList fromEncodedBytes(Ruby runtime, Encoding enc, int value) {
+        int n;
+        try {
+            n = value < 0 ? 0 : enc.codeToMbcLength(value);
+        } catch (EncodingException ee) {
+            n = 0;
+        }
+
+        if (n <= 0) throw runtime.newRangeError(this.toString() + " out of char range");
+
+        ByteList bytes = new ByteList(n);
+        enc.codeToMbc(value, bytes.getUnsafeBytes(), 0);
+        bytes.setRealSize(n);
+        return bytes;
+    }
+    
+    @JRubyMethod(name = "readchar", compat = RUBY1_9)
+    public IRubyObject readchar19(ThreadContext context) {
+        IRubyObject value = getc19(context);
+        
+        if (value.isNil()) throw context.getRuntime().newEOFError();
+        
+        return value;
+    }
+
+    @JRubyMethod(name = "getbyte", compat = RUBY1_9)
+    public IRubyObject getbyte19(ThreadContext context) {
+        return getc(); // Yes 1.8 getc is 1.9 getbyte
+    }
+
+    @JRubyMethod(name = "getc", compat = RUBY1_9)
+    public IRubyObject getc19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        int c = getcCommon();
+
+        if (c == -1) {
+            // CRuby checks ferror(f) and retry getc for non-blocking IO
+            // read. We checks readability first if possible so retry should
+            // not be needed I believe.
+            return runtime.getNil();
+        }
+
+        Encoding enc = getExternalEncoding(runtime);
+        // TODO: This should be optimized like RubyInteger.chr is for ascii values
+        return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, (int) c), enc, 0);
+    }
+
+    public int getcCommon() {
         try {
             OpenFile myOpenFile = getOpenFileChecked();
 
@@ -2274,16 +2341,7 @@ public class RubyIO extends RubyObject {
             waitReadable(stream);
             stream.clearerr();
             
-            int c = myOpenFile.getMainStream().fgetc();
-            
-            if (c == -1) {
-                // CRuby checks ferror(f) and retry getc for non-blocking IO
-                // read. We checks readability first if possible so retry should
-                // not be needed I believe.
-                return getRuntime().getNil();
-            }
-            
-            return getRuntime().newFixnum(c);
+            return myOpenFile.getMainStream().fgetc();
         } catch (PipeException ex) {
             throw getRuntime().newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
@@ -2429,7 +2487,11 @@ public class RubyIO extends RubyObject {
             }
             boolean empty = buf == null || buf.length() == 0;
 
-            string.view(empty ? ByteList.EMPTY_BYTELIST.dup() : buf);
+            ByteList newBuf = empty ? ByteList.EMPTY_BYTELIST.dup() : buf;
+            if (externalEncoding != null) { // TODO: Encapsulate into something more central (when adding trancoding)
+                newBuf.setEncoding(RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
+            }
+            string.view(newBuf);
 
             if (stream.feof() && empty) return runtime.getNil();
 
@@ -2843,7 +2905,7 @@ public class RubyIO extends RubyObject {
     /** Read a byte. On EOF throw EOFError.
      * 
      */
-    @JRubyMethod(name = "readchar")
+    @JRubyMethod(name = "readchar", compat = RUBY1_8)
     public IRubyObject readchar() {
         IRubyObject c = getc();
         
@@ -2927,6 +2989,9 @@ public class RubyIO extends RubyObject {
             byte c = (byte)RubyNumeric.fix2int(ch);
             int n = runtime.getKCode().getEncoding().length(c);
             RubyString str = runtime.newString();
+            if (externalEncoding != null) {
+                str.setEncoding(RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
+            }
             str.setTaint(true);
             str.cat(c);
 
@@ -3339,6 +3404,39 @@ public class RubyIO extends RubyObject {
         Ruby runtime = context.getRuntime();
         failIfDirectory(runtime, pathStr);
         RubyIO file = newFile(context, recv, pathStr);
+
+        try {
+            if (!offset.isNil()) file.seek(context, offset);
+            return !length.isNil() ? file.read(context, length) : file.read(context);
+        } finally  {
+            file.close();
+        }
+    }
+
+    /**
+     * binread is just like read, except it doesn't take options and it forces
+     * mode to be "rb:ASCII-8BIT"
+     *
+     * @param context the current ThreadContext
+     * @param recv the target of the call (IO or a subclass)
+     * @param args arguments; path [, length [, offset]]
+     * @return the binary contents of the given file, at specified length and offset
+     */
+    @JRubyMethod(meta = true, required = 1, optional = 2, compat = RUBY1_9)
+    public static IRubyObject binread(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject nil = context.getRuntime().getNil();
+        IRubyObject path = args[0];
+        IRubyObject length = nil;
+        IRubyObject offset = nil;
+        Ruby runtime = context.runtime;
+
+        if (args.length > 2) {
+            offset = args[2];
+            length = args[1];
+        } else if (args.length > 1) {
+            length = args[1];
+        }
+        RubyIO file = (RubyIO)runtime.getFile().callMethod("new", path, runtime.newString("rb:ASCII-8BIT"));
 
         try {
             if (!offset.isNil()) file.seek(context, offset);

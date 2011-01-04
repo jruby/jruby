@@ -36,8 +36,10 @@
 package org.jruby.parser;
 
 import java.math.BigInteger;
+import org.jcodings.Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
+import org.jruby.RubyRegexp;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsPreOneArgNode;
@@ -174,6 +176,7 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
+import org.jruby.util.StringSupport;
 
 /** 
  *
@@ -1239,13 +1242,17 @@ public class ParserSupport {
     public void setLexer(RubyYaccLexer lexer) {
         this.lexer = lexer;
     }
+
+    public DStrNode createDStrNode(ISourcePosition position) {
+        return new DStrNode(position);
+    }
     
     public Node literal_concat(ISourcePosition position, Node head, Node tail) { 
         if (head == null) return tail;
         if (tail == null) return head;
         
         if (head instanceof EvStrNode) {
-            head = new DStrNode(head.getPosition()).add(head);
+            head = createDStrNode(head.getPosition()).add(head);
         } 
 
         if (tail instanceof StrNode) {
@@ -1276,9 +1283,9 @@ public class ParserSupport {
         	
             //Do not add an empty string node
             if(((StrNode) head).getValue().length() == 0) {
-                head = new DStrNode(head.getPosition());
+                head = createDStrNode(head.getPosition());
             } else {
-                head = new DStrNode(head.getPosition()).add(head);
+                head = createDStrNode(head.getPosition()).add(head);
             }
         }
         return ((DStrNode) head).add(tail);
@@ -1398,16 +1405,6 @@ public class ParserSupport {
         return (node == null) ? new NilNode(defaultPosition) : node; 
     }
 
-    public ArgumentNode getRestArgNode(Token token) {
-        int index = ((Integer) token.getValue()).intValue();
-        if(index < 0) {
-            return null;
-        }
-        String name = getCurrentScope().getLocalScope().getVariables()[index];
-
-        return new ArgumentNode(token.getPosition(), name);
-    }
-
     public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
             ListNode post, BlockArgNode block) {
         // Zero-Argument declaration
@@ -1494,14 +1491,15 @@ public class ParserSupport {
             getterIdentifierError(identifier.getPosition(), (String) identifier.getValue());
         }
         shadowing_lvar(identifier);
-        arg_var(identifier);
-
-        return null;
+        
+        return arg_var(identifier);
     }
 
     // 1.9
-    public int arg_var(Token identifier) {
-        return getCurrentScope().addVariableThisScope((String) identifier.getValue());
+    public ArgumentNode arg_var(Token identifier) {
+        String name = (String) identifier.getValue();
+        return new ArgumentNode(identifier.getPosition(), name,
+                getCurrentScope().addVariableThisScope(name));
     }
 
     // 1.9
@@ -1554,4 +1552,95 @@ public class ParserSupport {
         return new ArgsPushNode(position(node1, node2), node1, node2);
     }
 
+    private Encoding extractEncodingFromOptions(int options) {
+        switch(options & ~0xf) {
+        case 16: 
+            return RubyYaccLexer.USASCII_ENCODING;
+        case 32:
+            return org.jcodings.specific.EUCJPEncoding.INSTANCE;
+        case 48:
+            return org.jcodings.specific.SJISEncoding.INSTANCE;
+        case 64:
+            return RubyYaccLexer.UTF8_ENCODING;
+        }
+
+        return null; // no explicit encoding specified
+    }
+
+    // TODO: Put somewhere more consolidated (similiar
+    private char optionsEncodingChar(Encoding optionEncoding) {
+        if (optionEncoding == RubyYaccLexer.USASCII_ENCODING) return 'n';
+        if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
+        if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
+        if (optionEncoding == RubyYaccLexer.UTF8_ENCODING) return 'u';
+
+        return ' ';
+    }
+
+    private void compileError(Encoding optionEncoding, Encoding encoding) {
+        throw new SyntaxException(PID.REGEXP_ENCODING_MISMATCH, lexer.getPosition(), lexer.getCurrentLine(),
+                "regexp encoding option '" + optionsEncodingChar(optionEncoding) +
+                "' differs from source encoding '" + encoding + "'");
+    }
+
+    private boolean is7BitASCII(ByteList value) {
+        return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+    }
+
+    // TODO: The weird USASCII_ENCODING logic in the ifs are because I don't understand how
+    // MRI differentiates between 'n' in their weird bit logic  (mri: reg_fragment_setenc_gen)
+    public void setRegexpEncoding(RegexpNode end, ByteList value) {
+        Encoding optionsEncoding = extractEncodingFromOptions(end.getOptions());
+
+        // Change encoding to one specified by regexp options as long as the string is compatible.
+        if (optionsEncoding != null && optionsEncoding != RubyYaccLexer.USASCII_ENCODING) {
+            if (optionsEncoding != value.getEncoding() && !is7BitASCII(value)) {
+                compileError(optionsEncoding, value.getEncoding());
+            }
+            value.setEncoding(optionsEncoding);
+        } else if (optionsEncoding == RubyYaccLexer.USASCII_ENCODING) {
+            if (value.getEncoding() == RubyYaccLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
+                compileError(optionsEncoding, value.getEncoding());
+            }
+            value.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
+        } else if (lexer.getEncoding() == RubyYaccLexer.USASCII_ENCODING) {
+            if (!is7BitASCII(value)) {
+                value.setEncoding(RubyYaccLexer.USASCII_ENCODING); // This will raise later
+            } else {
+                value.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
+            }
+        }
+    }
+
+    public void regexpFragmentCheck(RegexpNode end, ByteList value) {
+        setRegexpEncoding(end, value);
+        RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
+    }
+
+    // end is a weird variable. We return a RegexpNode to hold options at end of an regexp.
+    public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
+        int options = end.getOptions();
+
+        if (contents == null) {
+            ByteList newValue = ByteList.create("");
+            regexpFragmentCheck(end, newValue);
+            return new RegexpNode(position, newValue, options & ~ReOptions.RE_OPTION_ONCE);
+        } else if (contents instanceof StrNode) {
+            ByteList meat = (ByteList) ((StrNode) contents).getValue().clone();
+            regexpFragmentCheck(end, meat);
+            return new RegexpNode(contents.getPosition(), meat, options & ~ReOptions.RE_OPTION_ONCE);
+        } else if (contents instanceof DStrNode) {
+            DStrNode dStrNode = (DStrNode) contents;
+            
+            for (Node fragment: dStrNode.childNodes()) {
+                if (fragment instanceof StrNode) {
+                    regexpFragmentCheck(end, ((StrNode) fragment).getValue());
+                }
+            }
+            return new DRegexpNode(position, options, (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) contents);
+        }
+
+        // No encoding or fragment check stuff for this...but what case is this anyways?
+        return new DRegexpNode(position, options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(contents);
+    }
 }

@@ -300,13 +300,10 @@ public class RubyMethod extends RubyObject implements DataType {
     @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
 
         String filename = getFilename();
         if (filename != null) {
-            return runtime.newArray(
-                    runtime.newString(getFilename()),
-                    runtime.newFixnum(getLine()));
+            return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
         }
 
         return context.getRuntime().getNil();
@@ -325,7 +322,7 @@ public class RubyMethod extends RubyObject implements DataType {
         DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
         if (realMethod instanceof PositionAware) {
             PositionAware poser = (PositionAware) realMethod;
-            return poser.getLine();
+            return poser.getLine() + 1;
         }
         return -1;
     }

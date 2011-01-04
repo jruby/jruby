@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -45,7 +45,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyGlobal.InputGlobalVariable;
 import org.jruby.RubyGlobal.OutputGlobalVariable;
 import org.jruby.RubyIO;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyInstanceConfig.LoadServiceCreator;
 import org.jruby.embed.internal.BiVariableMap;
@@ -69,10 +68,15 @@ import org.jruby.util.KCode;
  * for embedding Ruby in Java. Using this class, users can run Ruby scripts from
  * Java programs easily. Also, users can use methods defined or implemented by Ruby.
  *
- * ScriptingContainer has a couple of configuration parameters per container base.
- * Those are a local context scope, local variable behavior, and property file.
- * These parameters should be given when the container is instantiated; otherwise,
- * default values are applied to.
+ * ScriptingContainer allows users to set configuration parameters, which are per-container
+ * properties and per-evaluation attributes. For example, a local context scope,
+ * local variable behavior, load paths are per-container properties. Please see
+ * {@link PropertyName} and {@link AttributeName} for more details.
+ * The per-container properties should be given prior to the Ruby runtime is
+ * instantiated; otherwise, default values are applied to. SCriptingContainer delays
+ * Ruby runtime initialization as much as possible to improve startup time. When
+ * some values are put into the ScriptingContainer, or runScriptlet method is used,
+ * Ruby runtime is created internally.
  *
  * Below are examples.
  *
@@ -87,9 +91,12 @@ import org.jruby.util.KCode;
  * Hello World!</pre>
  * 
  * The second example shows how to share variables between Java and Ruby.
- * In this example, a local variable "x" is shared. Unlike JSR223 JRuby engine,
- * Ruby's local, instance, global variables and constants are available to share on
- * ScrriptingContainer. (A class variable sharing does not work on current version)
+ * In this example, a local variable "x" is shared. To make this happen, a local variable
+ * behavior should be transient or persistent. As for JSR223 JRuby engine, set these
+ * types using System property, org.jruby.embed.localvariable.behavior. If the local
+ * variable behavior is one of transient or persistent,
+ * Ruby's local, instance, global variables and constants are available to share
+ * between Java and Ruby. (A class variable sharing does not work on current version)
  * Thus, "x" in Java is also "x" in Ruby.
  * 
  * <pre>Example 2:
@@ -151,7 +158,7 @@ import org.jruby.util.KCode;
  *     message: That's the way you are.</pre>
  *
  * See more details at project's 
- * {@see <a href="http://kenai.com/projects/jruby-embed/pages/Home">Wiki</a>}
+ * {@see <a href="http://kenai.com/projects/jruby/pages/RedBridge">Wiki</a>}
  * 
  * @author Yoko Harada <yokolet@gmail.com>
  */
@@ -169,33 +176,44 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         this(LocalContextScope.SINGLETON, LocalVariableBehavior.TRANSIENT, true);
     }
 
+    /**
+     * Constructs a ScriptingContainer with a specified local context type.
+     *
+     * @param scope a local context type.
+     */
     public ScriptingContainer(LocalContextScope scope) {
         this(scope, LocalVariableBehavior.TRANSIENT, true);
     }
 
+    /**
+     * Constructs a ScriptingCOntainer with a specified local variable behavior.
+     *
+     * @param behavior a local variable behavior
+     */
     public ScriptingContainer(LocalVariableBehavior behavior) {
         this(LocalContextScope.SINGLETON, behavior, true);
     }
 
+    /**
+     * Constructs a ScriptingContainer with a specified local context type and
+     * variable behavior.
+     *
+     * @param scopea a local context type
+     * @param behavior a local variable behavior
+     */
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior) {
         this(scope, behavior, true);
     }
 
     /**
      * Constructs a ScriptingContainer with a specified local context scope,
-     * local variable behavior and property file.
-     *
-     * <p>A property file can have key-values pairs. If multiple values are
-     * associated to a key, each value is separated by comma.
-     * <pre>Example
-     * container.ids=ruby, jruby
-     * language.extension=rb</pre>
+     * local variable behavior and laziness.
      *
      * @param scope is one of a local context scope defined by {@link LocalContextScope}
      * @param behavior is one of a local variable behavior defined by {@link LocalVariableBehavior}
      * @param lazy is a switch to do lazy retrieval of variabes/constants from
      *        Ruby runtime. Default is true. When this value is true, ScriptingContainer tries to
-     *        get as many as possible variables/constants from Ruby runtime.
+     *        get as many variables/constants as possible from Ruby runtime.
      */
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
         provider = getProviderInstance(scope, behavior, lazy);
@@ -257,9 +275,9 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Changes a list of load paths Ruby scripts/libraries. The default value
      * is an empty array. If no paths is given, the list is created from
      * java.class.path System property. This value can be set by
-     * org.jruby.embed.class.path System property.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * org.jruby.embed.class.path System property, also.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given paths will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -283,8 +301,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Changes STDIN and $stdin to a given input stream. The default standard input
      * is java.lang.System.in.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given input stream will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -296,8 +314,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Changes STDIN and $stdin to a given reader. No reader is set by default.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given reader will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -326,8 +344,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Changes STDOUT and $stdout to a given output stream. The default standard
      * output is java.lang.System.out.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given output stream will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -339,8 +357,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Changes STDOUT and $stdout to a given writer. No writer is set by default.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given writer will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -370,8 +388,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Changes STDERR and $stderr to a given print stream. The default standard error
      * is java.lang.System.err.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given print stream will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -383,8 +401,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Changes STDERR and $stderr to a given writer. No writer is set by default.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given writer will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -417,8 +435,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Changes a compile mode to a given mode, which should be one of CompileMode.JIT,
      * CompileMode.FORCE, CompileMode.OFF.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given mode will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -442,8 +460,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Changes the value to determine whether Ruby runs in a process or not. The
      * default value is true.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given condition will be set.
      *
      * @since JRuby 1.5.0.
      *
@@ -471,8 +489,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Changes a Ruby version to be evaluated into one of CompatVersion.RUBY1_8,
      * CompatVersion.RUBY1_9, or CompatVersion.BOTH. The default version is
      * CompatVersion.RUBY1_8.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given version will be set.
      *
      * @since JRuby 1.5.0.
      *
@@ -496,8 +514,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Changes the value to determine whether the Object Space is enabled or not. The
      * default value is false.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given condition will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -522,7 +540,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Changes an environment variables' map.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
      * initial configurations will work.
      *
      * @since JRuby 1.5.0.
@@ -550,8 +568,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Changes a current directory to a given directory.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given directory will be set.
      *
      * @since JRuby 1.5.0.
      *
@@ -580,8 +598,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Changes a JRuby home directory to a directory of a given name.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given directory will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -606,8 +624,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Changes a ClassCache object to a given one.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given class cache will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -631,8 +649,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Changes a class loader to a given loader.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given class loader will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -660,7 +678,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Changes a Profile to a given one. The default value is Profile.DEFAULT,
      * which has the same behavior to Profile.ALL.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
      * initial configurations will work.
      *
      * Profile allows you to define a restricted subset of code to be loaded during
@@ -689,7 +707,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Changes a LoadServiceCreator to a given one.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
      * initial configurations will work.
      *
      * @since JRuby 1.5.0.
@@ -701,7 +719,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Returns an arguments' list.
+     * Returns a list of argument.
      *
      * @since JRuby 1.5.0.
      *
@@ -713,8 +731,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     /**
      * Changes values of the arguments' list.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
      *
      * @since JRuby 1.5.0.
      *
@@ -786,9 +802,10 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Changes a value of KCode to a given value. The default value is KCode.NONE.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Changes a value of KCode to a given value. The value should be one of
+     * KCode.NONE, KCode.UTF8, KCode.SJIS, or KCode.EUC. The default value is KCode.NONE.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the given value will be used.
      *
      * @since JRuby 1.5.0.
      *
@@ -814,8 +831,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Changes a value of n, so that jitted methods are logged in every n methods.
      * The default value is 0. This value can be set by the jruby.jit.logEvery System
      * property.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the configurations will work.
      *
      * @since JRuby 1.5.0.
      *
@@ -843,8 +860,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * call reached to the limit or not. The default value is -1 when security
      * restriction is applied, or 50 when no security restriction exists. This
      * value can be set by jruby.jit.threshold System property.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the configurations will work.
      *
      * @since JRuby 1.5.0.
      *
@@ -870,8 +887,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Changes a value of a max class cache size. The default value is 0 when
      * security restriction is applied, or 4096 when no security restriction exists.
      * This value can be set by jruby.jit.max System property.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the configurations will work.
      *
      * @since JRuby 1.5.0.
      *
@@ -899,8 +916,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * default value is -1 when security restriction is applied, or 10000 when
      * no security restriction exists. This value can be set by jruby.jit.maxsize
      * System property.
-     * Call this before you use put/get, runScriptlet, and parse methods so that
-     * initial configurations will work.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * the configurations will work.
      *
      * @since JRuby 1.5.0.
      *
@@ -1260,6 +1277,9 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     /**
      * Returns an instance of {@link EmbedRubyObjectAdapter} for embedders to invoke
      * methods defined by Ruby. The script must be evaluated prior to a method call.
+     * In most cases, users don't need to use this method. ScriptingContainer's
+     * callMethods are the shortcut and work in the same way.
+     *
      * <pre>Example
      *         # calendar.rb
      *         require 'date'
@@ -1446,6 +1466,10 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Returns an instance of a requested interface type. An implementation of
      * the requested interface is done by a Ruby script, which has been evaluated
      * before getting the instance.
+     * In most cases, users don't need to use this method. ScriptingContainer's
+     * runScriptlet method returns an instance of the interface type that is
+     * implemented by Ruby.
+     *
      * <pre>Example
      * Interface
      *     //QuadraticFormula.java
@@ -1679,7 +1703,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * All ScriptingContainer instances should be terminated when you are done with
      * them, rather then leaving them for GC to finalize.
      *
-     * @since JRuby 1.6.0
+     * @since JRuby 1.5.0
      */
     public void terminate() {
         getProvider().getRuntime().tearDown(false);
@@ -1690,6 +1714,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * references to it (and GC wants to reclaim it).
      * 
      * @throws Throwable
+     * 
+     * @since JRuby 1.6.0
      */
     public void finalize() throws Throwable {
         super.finalize();

@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,7 +33,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.jruby.embed.PropertyName;
 import java.util.regex.Matcher;
@@ -116,6 +115,22 @@ public class SystemPropertyCatcher {
             return lazy;
         }
         return Boolean.parseBoolean(s);
+    }
+
+    /**
+     * Gets a value for classloader policy from System property.
+     *
+     * @param defaultPolicy default policy to use current classloader.
+     * @return true if current classloader is used, false otherwise.
+     */
+    public static boolean useCurrentClassLoader(boolean defaultPolicy) {
+        String s = System.getProperty(PropertyName.CLASSLOADER.toString());
+        if (s == null) return defaultPolicy;
+        if ("current".equals(s)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -236,8 +251,9 @@ public class SystemPropertyCatcher {
      *         returns false.
      */
     public static boolean isRuby19(String name) {
-        Pattern p = Pattern.compile("[jJ]?(r|R)(u|U)(b|B)(y|Y)1[\\._]?9");
-        Matcher m = p.matcher(name);
+        String n = name.toLowerCase();
+        Pattern p = Pattern.compile("j?ruby1[\\._]?9");
+        Matcher m = p.matcher(n);
         if (m.matches()) {
             return true;
         } else {

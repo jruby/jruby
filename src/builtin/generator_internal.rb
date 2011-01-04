@@ -293,8 +293,8 @@ class Generator
   class ::Hash
     include Iterators
     # these are inefficient and need a place to store 'keys'
-    indexed_iter(:each) {|h,i| keys = k.keys; [ keys[i], h[keys[i]] ]}
-    indexed_iter(:each_with_index) {|h,i| keys = k.keys; [ [ keys[i], h[keys[i]] ], i]}
+    indexed_iter(:each) {|h,i| keys = h.keys; [ keys[i], h[keys[i]] ]}
+    indexed_iter(:each_with_index) {|h,i| keys = h.keys; [ [ keys[i], h[keys[i]] ], i]}
   end
 
   class Enumerator

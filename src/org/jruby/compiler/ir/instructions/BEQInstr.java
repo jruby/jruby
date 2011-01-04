@@ -18,12 +18,10 @@ public class BEQInstr extends BranchInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        Operand[] args = getOperands();
-        Object value1 = args[0].retrieve(interp);
-        Object value2 = args[1].retrieve(interp);
+        Object value1 = getOperand1().retrieve(interp);
+        Object value2 = getOperand2().retrieve(interp);
 
 //        System.out.println("VALUE1: " + value1 + ", VALUE2: " + value2);
-        // FIXME: Obviously inefficient
 
         return (value1 == value2) ? target : null;
     }

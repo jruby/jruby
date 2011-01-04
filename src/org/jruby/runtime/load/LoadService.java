@@ -63,7 +63,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.JRubyFile;
 
 /**
@@ -217,7 +216,7 @@ public class LoadService {
         } catch(SecurityException ignore) {}
         
         // "." dir is used for relative path loads from a given file, as in require '../foo/bar'
-        if (runtime.getSafeLevel() == 0) {
+        if (!runtime.is1_9() && runtime.getSafeLevel() == 0) {
             addPath(".");
         }
     }
@@ -1265,7 +1264,9 @@ public class LoadService {
             String path = "classpath:/" + name;
             // special case for typical jar:file URLs, but only if the name didn't have
             // the classpath scheme explicitly
-            if (!isClasspathScheme && loc.getProtocol().equals("jar") && isRequireable(loc)) {
+            if (!isClasspathScheme &&
+                    (loc.getProtocol().equals("jar") || loc.getProtocol().equals("file"))
+                    && isRequireable(loc)) {
                 path = loc.getPath();
             }
             LoadServiceResource foundResource = new LoadServiceResource(loc, path);

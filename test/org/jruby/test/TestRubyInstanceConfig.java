@@ -29,8 +29,6 @@ package org.jruby.test;
 
 import java.net.URLClassLoader;
 
-import java.util.ArrayList;
-
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.load.LoadService;

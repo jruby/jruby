@@ -32,6 +32,7 @@
 package org.jruby.ast;
 
 import java.util.List;
+import org.jcodings.Encoding;
 
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
@@ -56,6 +57,10 @@ public class RegexpNode extends Node implements ILiteralNode {
 
         this.value = value;
         this.options = options;
+    }
+
+    public Encoding getEncoding() {
+        return value.getEncoding();
     }
 
     public NodeType getNodeType() {

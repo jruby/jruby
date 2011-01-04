@@ -263,14 +263,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         setKCodeDefault();
         this.kcode = runtime.getKCode();
         this.str = str;
-        this.pattern = getRegexpFromCache(runtime, str, kcode.getEncoding(), 0);
+        this.pattern = getRegexpFromCache(runtime, str, getEncoding(runtime, str), 0);
     }
 
     private RubyRegexp(Ruby runtime, ByteList str, int options) {
         this(runtime);
         setKCode(runtime, options & 0x7f); // mask off "once" flag
         this.str = str;
-        this.pattern = getRegexpFromCache(runtime, str, kcode.getEncoding(), options & 0xf);
+        this.pattern = getRegexpFromCache(runtime, str, getEncoding(runtime, str), options & 0xf);
+    }
+
+    private Encoding getEncoding(Ruby runtime, ByteList str) {
+        return runtime.is1_9() ? str.getEncoding() : kcode.getEncoding();
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
@@ -670,8 +674,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return to;
     }
 
-    public static void preprocessCheck(Ruby runtime, IRubyObject obj) {
-        ByteList bytes = obj.convertToString().getByteList();
+    public static void preprocessCheck(Ruby runtime, ByteList bytes) {
         preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, ErrorMode.RAISE);
     }
 
@@ -1043,7 +1046,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyRegexp regexp = (RubyRegexp)re;
         regexp.check();
 
-        return initializeCommon(regexp.str, regexp.getOptions());
+        return getRuntime().is1_9() ? 
+            initializeCommon19(regexp.str, regexp.str.getEncoding(), regexp.getOptions()) :
+            initializeCommon(regexp.str, regexp.getOptions());
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
@@ -1514,6 +1519,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject to_s() {
         check();
 
+        Ruby runtime = getRuntime();
         int options = pattern.getOptions();
         int p = str.getBegin();
         int len = str.getRealSize();
@@ -1565,7 +1571,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
                 if (bytes[p] == ':' && bytes[p + len - 1] == ')') {
                     try {
-                        new Regex(bytes, ++p, p + (len -= 2), Option.DEFAULT, kcode.getEncoding(), Syntax.DEFAULT);
+                        new Regex(bytes, ++p, p + (len -= 2), Option.DEFAULT, getEncoding(runtime, str), Syntax.DEFAULT);
                         err = false;
                     } catch (JOniException e) {
                         err = true;
@@ -1588,7 +1594,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 if ((options & RE_OPTION_EXTENDED) == 0) result.append((byte)'x');
             }
             result.append((byte)':');
-            appendRegexpString(getRuntime(), result, bytes, p, len, kcode.getEncoding());
+            appendRegexpString(getRuntime(), result, bytes, p, len, getEncoding(runtime, str));
             result.append((byte)')');
             return RubyString.newString(getRuntime(), result).infectBy(this);
         } while (true);

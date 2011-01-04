@@ -45,7 +45,6 @@ import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
-import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
@@ -1515,7 +1514,7 @@ literal         : numeric
                 | dsym
 
 strings         : string {
-                    $$ = $1 instanceof EvStrNode ? new DStrNode($1.getPosition()).add($1) : $1;
+                    $$ = $1 instanceof EvStrNode ? new DStrNode($1.getPosition(), lexer.getEncoding()).add($1) : $1;
                     /*
                     NODE *node = $1;
                     if (!node) {
@@ -1570,18 +1569,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                 }
 
 regexp          : tREGEXP_BEG xstring_contents tREGEXP_END {
-                    int options = $3.getOptions();
-                    Node node = $2;
-
-                    if (node == null) {
-                        $$ = new RegexpNode($1.getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
-                    } else if (node instanceof StrNode) {
-                        $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
-                    } else if (node instanceof DStrNode) {
-                        $$ = new DRegexpNode($1.getPosition(), (DStrNode) node, options, (options & ReOptions.RE_OPTION_ONCE) != 0);
-                    } else {
-                        $$ = new DRegexpNode($1.getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
-                    }
+                    $$ = support.newRegexpNode($1.getPosition(), $2, (RegexpNode) $3);
                 }
 
 words           : tWORDS_BEG ' ' tSTRING_END {
@@ -1595,7 +1583,7 @@ word_list       : /* none */ {
                     $$ = new ArrayNode(lexer.getPosition());
                 }
                 | word_list word ' ' {
-                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode($1.getPosition()).add($2) : $2);
+                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode($1.getPosition(), lexer.getEncoding()).add($2) : $2);
                 }
 
 word            : string_content
@@ -1844,8 +1832,7 @@ f_norm_arg      : f_bad_arg
                 }
 
 f_arg_item      : f_norm_arg {
-                    support.arg_var($1);
-                    $$ = new ArgumentNode($<ISourcePositionHolder>1.getPosition(), (String) $1.getValue());
+                    $$ = support.arg_var($1);
   /*
                     $$ = new ArgAuxiliaryNode($1.getPosition(), (String) $1.getValue(), 1);
   */
@@ -1914,7 +1901,7 @@ f_rest_arg      : restarg_mark tIDENTIFIER {
                         support.yyerror("duplicate rest argument name");
                     }
                     support.shadowing_lvar($2);
-                    $$ = new RestArgNode($1.getPosition(), (String) $2.getValue(), support.arg_var($2));
+                    $$ = new RestArgNode(support.arg_var($2));
                 }
                 | restarg_mark {
                     $$ = new UnnamedRestArgNode($1.getPosition(), support.getCurrentScope().addVariable("*"));
@@ -1925,13 +1912,11 @@ blkarg_mark     : tAMPER2 | tAMPER
 
 // f_block_arg - Block argument def for function (foo(&block)) [!null]
 f_block_arg     : blkarg_mark tIDENTIFIER {
-                    String identifier = (String) $2.getValue();
-
                     if (!support.is_local_id($2)) {
                         support.yyerror("block argument must be local variable");
                     }
                     support.shadowing_lvar($2);
-                    $$ = new BlockArgNode($1.getPosition(), support.arg_var($2), identifier);
+                    $$ = new BlockArgNode(support.arg_var($2));
                 }
 
 opt_f_block_arg : ',' f_block_arg {

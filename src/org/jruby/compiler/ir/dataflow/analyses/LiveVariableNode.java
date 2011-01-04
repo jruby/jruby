@@ -250,6 +250,7 @@ public class LiveVariableNode extends FlowGraphNode
                 if ((_tmp.get(dv._id) == false) && !i.hasSideEffects()) {
 //                    System.out.println("YES!");
                     i.markDead();
+                    it.remove();
                 }
                 else if (_tmp.get(dv._id) == false) {
 //                    System.out.println("NO!  has side effects! Op is: " + i._op);

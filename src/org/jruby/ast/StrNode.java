@@ -65,6 +65,7 @@ public class StrNode extends Node implements ILiteralNode {
         ByteList tailBL = tail.getValue();
 
         ByteList myValue = new ByteList(headBL.getRealSize() + tailBL.getRealSize());
+        myValue.setEncoding(headBL.getEncoding());
         myValue.append(headBL);
         myValue.append(tailBL);
 

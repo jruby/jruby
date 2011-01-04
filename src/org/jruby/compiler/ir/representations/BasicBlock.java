@@ -50,6 +50,15 @@ public class BasicBlock {
         return _instrs;
     }
 
+	 private Instr[] _instrsArray = null;
+
+    public Instr[] getInstrsArray() {
+		  if (_instrsArray == null) {
+            _instrsArray = _instrs.toArray(new Instr[_instrs.size()]);
+		  }
+		  return _instrsArray;
+    }
+
     public Instr getLastInstr() {
         int n = _instrs.size();
         return (n == 0) ? null : _instrs.get(n-1);

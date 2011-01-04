@@ -31,6 +31,7 @@ package org.jruby.parser;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ConstDeclNode;
+import org.jruby.ast.DStrNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.Node;
@@ -89,6 +90,11 @@ public class ParserSupport19 extends ParserSupport {
 
         throw new SyntaxException(PID.BAD_IDENTIFIER, lhs.getPosition(), lexer.getCurrentLine(),
                 "identifier " + (String) lhs.getValue() + " is not valid to set", lhs.getValue());
+    }
+
+    @Override
+    public DStrNode createDStrNode(ISourcePosition position) {
+        return new DStrNode(position, lexer.getEncoding());
     }
 
     @Override

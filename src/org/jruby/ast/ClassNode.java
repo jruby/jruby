@@ -35,7 +35,6 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;

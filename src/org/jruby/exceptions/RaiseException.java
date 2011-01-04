@@ -48,7 +48,6 @@ import org.jruby.RubyString;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class RaiseException extends JumpException {
     public static final boolean DEBUG = false;

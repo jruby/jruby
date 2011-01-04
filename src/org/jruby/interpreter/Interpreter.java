@@ -19,14 +19,9 @@ import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
 import org.jruby.compiler.ir.compiler_pass.CallSplitter;
-import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
-import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
@@ -44,7 +39,7 @@ public class Interpreter {
         scope.runCompilerPass(new LiveVariableAnalysis());
         scope.runCompilerPass(new DeadCodeElimination());
         scope.runCompilerPass(new AddBindingInstructions());
-        scope.runCompilerPass(new CallSplitter());
+//        scope.runCompilerPass(new CallSplitter());
 
         return Interpreter.interpretTop(runtime, scope, self);
     }
@@ -217,17 +212,15 @@ public class Interpreter {
 
     public static IRubyObject interpret(ThreadContext context, CFG cfg, InterpreterContext interp) {
         try {
+            IRubyObject self = (IRubyObject) interp.getSelf();
             BasicBlock basicBlock = cfg.getEntryBB();
             while (basicBlock != null) {
                 Label jumpTarget = null;
 
-                for (Instr instruction : basicBlock.getInstrs()) {
-                    // TODO: CFG should remove dead instructions
-                    if (!instruction.isDead()) {
-//                      System.out.println("EXEC'ing: " + instruction);
-                        interpInstrsCount++;
-                        jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
-                    }
+                for (Instr instruction : basicBlock.getInstrsArray()) {
+//                  System.out.println("EXEC'ing: " + instruction);
+                    interpInstrsCount++;
+                    jumpTarget = instruction.interpret(interp, self);
                 }
 
                 // Explicit jump or implicit fall-through to next bb

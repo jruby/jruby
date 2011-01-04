@@ -33,6 +33,7 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
@@ -48,7 +49,6 @@ import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
-import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DXStrNode;
@@ -3504,7 +3504,7 @@ states[402] = new ParserState() {
 };
 states[404] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = ((Node)yyVals[0+yyTop]) instanceof EvStrNode ? new DStrNode(((Node)yyVals[0+yyTop]).getPosition()).add(((Node)yyVals[0+yyTop])) : ((Node)yyVals[0+yyTop]);
+                    yyVal = ((Node)yyVals[0+yyTop]) instanceof EvStrNode ? new DStrNode(((Node)yyVals[0+yyTop]).getPosition(), lexer.getEncoding()).add(((Node)yyVals[0+yyTop])) : ((Node)yyVals[0+yyTop]);
                     /*
                     NODE *node = $1;
                     if (!node) {
@@ -3572,18 +3572,7 @@ states[409] = new ParserState() {
 };
 states[410] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    int options = ((RegexpNode)yyVals[0+yyTop]).getOptions();
-                    Node node = ((Node)yyVals[-1+yyTop]);
-
-                    if (node == null) {
-                        yyVal = new RegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
-                    } else if (node instanceof StrNode) {
-                        yyVal = new RegexpNode(((Node)yyVals[-1+yyTop]).getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
-                    } else if (node instanceof DStrNode) {
-                        yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), (DStrNode) node, options, (options & ReOptions.RE_OPTION_ONCE) != 0);
-                    } else {
-                        yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
-                    }
+                    yyVal = support.newRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]), (RegexpNode) ((RegexpNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3607,7 +3596,7 @@ states[413] = new ParserState() {
 };
 states[414] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                     yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]) instanceof EvStrNode ? new DStrNode(((ListNode)yyVals[-2+yyTop]).getPosition()).add(((Node)yyVals[-1+yyTop])) : ((Node)yyVals[-1+yyTop]));
+                     yyVal = ((ListNode)yyVals[-2+yyTop]).add(((Node)yyVals[-1+yyTop]) instanceof EvStrNode ? new DStrNode(((ListNode)yyVals[-2+yyTop]).getPosition(), lexer.getEncoding()).add(((Node)yyVals[-1+yyTop])) : ((Node)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -4006,8 +3995,7 @@ states[486] = new ParserState() {
 };
 states[487] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    support.arg_var(((Token)yyVals[0+yyTop]));
-                    yyVal = new ArgumentNode(((ISourcePositionHolder)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
+                    yyVal = support.arg_var(((Token)yyVals[0+yyTop]));
   /*
                     $$ = new ArgAuxiliaryNode($1.getPosition(), (String) $1.getValue(), 1);
   */
@@ -4096,7 +4084,7 @@ states[499] = new ParserState() {
                         support.yyerror("duplicate rest argument name");
                     }
                     support.shadowing_lvar(((Token)yyVals[0+yyTop]));
-                    yyVal = new RestArgNode(((Token)yyVals[-1+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue(), support.arg_var(((Token)yyVals[0+yyTop])));
+                    yyVal = new RestArgNode(support.arg_var(((Token)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -4108,13 +4096,11 @@ states[500] = new ParserState() {
 };
 states[503] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    String identifier = (String) ((Token)yyVals[0+yyTop]).getValue();
-
                     if (!support.is_local_id(((Token)yyVals[0+yyTop]))) {
                         support.yyerror("block argument must be local variable");
                     }
                     support.shadowing_lvar(((Token)yyVals[0+yyTop]));
-                    yyVal = new BlockArgNode(((Token)yyVals[-1+yyTop]).getPosition(), support.arg_var(((Token)yyVals[0+yyTop])), identifier);
+                    yyVal = new BlockArgNode(support.arg_var(((Token)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -4220,7 +4206,7 @@ states[541] = new ParserState() {
   }
 };
 }
-					// line 2021 "Ruby19Parser.y"
+					// line 2007 "Ruby19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4253,4 +4239,4 @@ states[541] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8044 "-"
+					// line 8030 "-"

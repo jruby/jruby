@@ -85,7 +85,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     // This lets us implement next/redo/break/retry easily for the non-closure cases
     private Stack<IRLoop> loopStack;
 
-    private Map<String, LocalVariable> localVariables;
     protected int requiredArgs = 0;
     protected int optionalArgs = 0;
     protected int restArg = -1;
@@ -94,7 +93,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         instructions = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
         loopStack = new Stack<IRLoop>();
-        localVariables = new HashMap<String, LocalVariable>();
 
         // All flags are true by default!
         canModifyCode = true;
@@ -136,6 +134,15 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     @Override
     public List<Instr> getInstrs() {
         return instructions;
+    }
+
+    public IRMethod getClosestMethodAncestor() {
+        IRExecutionScope s = this;
+        while (!(s instanceof IRMethod)) {
+            s = (IRExecutionScope)s.getLexicalParent();
+        }
+
+        return (IRMethod) s;
     }
 
     public void setCodeModificationFlag(boolean f) { 
@@ -365,15 +372,10 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     }
 
     public LocalVariable getLocalVariable(String name) {
-        LocalVariable variable = localVariables.get(name);
+        return getClosestMethodAncestor().getLocalVariable(name);
+    }
 
-        if (variable == null) {
-            // We use addVariable here because variable inlining may add new lvars
-            variable = new LocalVariable(name, getStaticScope().addVariable(name));
-
-            localVariables.put(name, variable);
-        }
-
-        return variable;
+    public int getLocalVariablesCount() {
+        return getClosestMethodAncestor().getLocalVariablesCount();
     }
 }

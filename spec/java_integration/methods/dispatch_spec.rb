@@ -48,15 +48,13 @@ describe "An overloaded Java static method" do
   end
 
   it "should raise error when called with too few args" do
-    pending do
-      lambda do
-        CoreTypeMethods.getType()
-      end.should raise_error(ArgumentError)
+    lambda do
+      CoreTypeMethods.getType()
+    end.should raise_error(ArgumentError)
 
-      lambda do
-        CoreTypeMethods.getType()
-      end.should raise_error(ArgumentError)
-    end
+    lambda do
+      CoreTypeMethods.getType()
+    end.should raise_error(ArgumentError)
   end
 end
 
@@ -110,15 +108,13 @@ describe "An overloaded Java instance method" do
   end
 
   it "should raise error when called with too few args" do
-    pending "not sure why these are failing" do
-      lambda do
-        CoreTypeMethods.new.getTypeInstance()
-      end.should raise_error(ArgumentError)
+    lambda do
+      CoreTypeMethods.new.getTypeInstance()
+    end.should raise_error(ArgumentError)
 
-      lambda do
-        CoreTypeMethods.new.getTypeInstance()
-      end.should raise_error(ArgumentError)
-    end
+    lambda do
+      CoreTypeMethods.new.getTypeInstance()
+    end.should raise_error(ArgumentError)
   end
 end
 

@@ -2,12 +2,14 @@ package org.jruby.compiler.ir;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.ArrayList;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.parser.LocalStaticScope;
@@ -20,17 +22,22 @@ public class IRMethod extends IRExecutionScope {
     public final Label endLabel;   // Label for the end of the method
 
     // SSS FIXME: Token can be final for a method -- implying that the token is only for this particular implementation of the method
-    // But, if the mehod is modified, we create a new method object which in turn gets a new token.  What makes sense??  Intuitively,
+    // But, if the method is modified, we create a new method object which in turn gets a new token.  What makes sense??  Intuitively,
     // it seems the first one ... but let us see ...
     private CodeVersion version;   // Current code version for this method -- can change during execution as methods get redefined!
 
     // Call parameters
     private List<Operand> callArgs;
 
-    // Local variables (their names) are mapped a slot in a binding shared across all call sites encountered in this method's lexical scope
-    // (including all nested closures)
-    int nextAvailableSlot;
-    Map<String, Integer> bindingSlotMap;
+    // All local variables (their names) are mapped to an integer id in this method's lexical scope (including all nested closures)
+    private int nextLocalVariableSlot;
+    private Map<String, LocalVariable> localVariables;
+
+    // Local variables (their names) are mapped to a slot in a binding shared across all call sites encountered in this method's lexical scope
+    // (including all nested closures) -- only variables that need a slot get a slot.  This info is determined by the Binding*PlacementAnalysis
+    // dataflow passes in dataflow/analyses/
+    private int nextAvailableBindingSlot;
+    private Map<String, Integer> bindingSlotMap;
 
     public IRMethod(IRScope lexicalParent, Operand container, String name, boolean isInstanceMethod, StaticScope staticScope) {
         super(lexicalParent, container, name, staticScope);
@@ -38,8 +45,10 @@ public class IRMethod extends IRExecutionScope {
         startLabel = getNewLabel("_METH_START");
         endLabel = getNewLabel("_METH_END");
         callArgs = new ArrayList<Operand>();
-        bindingSlotMap = new java.util.HashMap<String, Integer>();
-        nextAvailableSlot = 0;
+        bindingSlotMap = new HashMap<String, Integer>();
+        nextAvailableBindingSlot = 0;
+        localVariables = new HashMap<String, LocalVariable>();
+        nextLocalVariableSlot = 0;
         updateVersion();
     }
 
@@ -111,11 +120,26 @@ public class IRMethod extends IRExecutionScope {
         return newScope;
     }
 
-    public void recordBindingVariable(String varName) {
-        if (bindingSlotMap.get(varName) == null) {
-            bindingSlotMap.put(varName, nextAvailableSlot);
-            nextAvailableSlot++;
+    @Override
+    public LocalVariable getLocalVariable(String name) {
+        LocalVariable variable = localVariables.get(name);
+        if (variable == null) {
+            variable = new LocalVariable(name, nextLocalVariableSlot);
+            localVariables.put(name, variable);
+            nextLocalVariableSlot++;
         }
+
+        return variable;
+    }
+
+    public int assignBindingSlot(String varName) {
+        Integer slot = bindingSlotMap.get(varName);
+        if (slot == null) {
+            slot = nextAvailableBindingSlot;
+            bindingSlotMap.put(varName, nextAvailableBindingSlot);
+            nextAvailableBindingSlot++;
+        }
+        return slot;
     }
 
     public Integer getBindingSlot(String varName) {
@@ -123,6 +147,11 @@ public class IRMethod extends IRExecutionScope {
     }
 
     public int getBindingSlotsCount() {
-        return nextAvailableSlot;
+        return nextAvailableBindingSlot;
+    }
+
+    @Override
+    public int getLocalVariablesCount() {
+        return nextLocalVariableSlot;
     }
 }

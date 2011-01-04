@@ -5,7 +5,6 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Block;

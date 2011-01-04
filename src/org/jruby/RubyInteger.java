@@ -40,11 +40,9 @@ import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
 
 import org.jcodings.Encoding;
-import org.jcodings.EncodingDB;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -55,7 +53,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
-import org.jruby.util.StringSupport;
 
 /** Implementation of the Integer class.
  *

@@ -722,14 +722,15 @@ public class RubyEnumerable {
         return collectCommon19(context, self, block, "map");
     }
 
-    private static IRubyObject collectCommon19(ThreadContext context, final IRubyObject self, final Block block, String methodName) {
+    private static IRubyObject collectCommon19(ThreadContext context, IRubyObject self, final Block block, String methodName) {
         final Ruby runtime = context.getRuntime();
         if (block.isGiven()) {
             final RubyArray result = runtime.newArray();
 
             callEach19(runtime, context, self, block.arity(), new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject value = block.yieldArray(ctx, runtime.newArrayNoCopyLight(largs), null, null);
+                    IRubyObject larg = checkArgs(runtime, largs);
+                    IRubyObject value = block.yield(ctx, larg);
                     synchronized (result) {
                         result.append(value);
                     }

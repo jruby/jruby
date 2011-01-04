@@ -1,1 +1,0 @@
-fails(JRUBY-5244):Kernel#require_relative raises a TypeError if argument does not respond to #to_str

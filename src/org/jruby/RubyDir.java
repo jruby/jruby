@@ -390,7 +390,9 @@ public class RubyDir extends RubyObject {
     public static RubyString getwd(IRubyObject recv) {
         Ruby ruby = recv.getRuntime();
 
-        return RubyString.newUnicodeString(ruby, getCWD(ruby));
+        RubyString pwd = RubyString.newUnicodeString(ruby, getCWD(ruby));
+        pwd.setTaint(true);
+        return pwd;
     }
 
     /**

@@ -93,7 +93,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -1300,16 +1299,7 @@ public class RubyModule extends RubyObject {
             getRuntime().secure(4);
         }
 
-        DynamicMethod method = searchMethod(name);
-
-        if (method.isUndefined() && isModule()) {
-            method = runtime.getObject().searchMethod(name);
-        }
-
-        if (method.isUndefined()) {
-            throw getRuntime().newNameError("undefined method '" + name + "' for " +
-                                (isModule() ? "module" : "class") + " '" + getName() + "'", name);
-        }
+        DynamicMethod method = deepMethodSearch(name, runtime);
 
         if (method.getVisibility() != visibility) {
             if (this == method.getImplementationClass()) {
@@ -1321,6 +1311,20 @@ public class RubyModule extends RubyObject {
 
             invalidateCacheDescendants();
         }
+    }
+
+    private DynamicMethod deepMethodSearch(String name, Ruby runtime) {
+        DynamicMethod method = searchMethod(name);
+
+        if (method.isUndefined() && isModule()) {
+            method = runtime.getObject().searchMethod(name);
+        }
+
+        if (method.isUndefined()) {
+            throw runtime.newNameError("undefined method '" + name + "' for " +
+                                (isModule() ? "module" : "class") + " '" + getName() + "'", name);
+        }
+        return method;
     }
 
     /**
@@ -2088,17 +2092,9 @@ public class RubyModule extends RubyObject {
         } else {
             setMethodVisibility(args, PRIVATE);
 
-            // FIXME: This is duplicated in exportMethod; should be unified.
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].asJavaString().intern();
-                DynamicMethod method = searchMethod(name);
-                if (method.isUndefined() && isModule()) {
-                    method = runtime.getObject().searchMethod(name);
-                }
-                if (method.isUndefined()) {
-                    throw getRuntime().newNameError("undefined method '" + name + "' for " +
-                                (isModule() ? "module" : "class") + " '" + getName() + "'", name);
-                }
+                DynamicMethod method = deepMethodSearch(name, runtime);
                 getSingletonClass().addMethod(name, new WrapperMethod(getSingletonClass(), method, PUBLIC));
                 callMethod(context, "singleton_method_added", context.getRuntime().fastNewSymbol(name));
             }
@@ -2396,18 +2392,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "remove_class_variable", required = 1, visibility = PRIVATE)
     public IRubyObject remove_class_variable(ThreadContext context, IRubyObject name) {
-        String javaName = validateClassVariable(name.asJavaString());
-        IRubyObject value;
-
-        if ((value = deleteClassVariable(javaName)) != null) {
-            return value;
-        }
-
-        if (fastIsClassVarDefined(javaName)) {
-            throw cannotRemoveError(javaName);
-        }
-
-        throw context.getRuntime().newNameError("class variable " + javaName + " not defined for " + getName(), javaName);
+        return removeClassVariable(name.asJavaString());
     }
 
     /** rb_mod_class_variables
@@ -2694,21 +2679,26 @@ public class RubyModule extends RubyObject {
     
     /** rb_mod_remove_cvar
      *
-     * FIXME: any good reason to have two identical methods? (same as remove_class_variable)
+     * @deprecated - use {@link #removeClassVariable(String)}
      */
-    public IRubyObject removeCvar(IRubyObject name) { // Wrong Parameter ?
-        String internedName = validateClassVariable(name.asJavaString());
+    @Deprecated
+    public IRubyObject removeCvar(IRubyObject name) {
+        return removeClassVariable(name.asJavaString());
+    }
+
+    public IRubyObject removeClassVariable(String name) {
+        String javaName = validateClassVariable(name);
         IRubyObject value;
 
-        if ((value = deleteClassVariable(internedName)) != null) {
+        if ((value = deleteClassVariable(javaName)) != null) {
             return value;
         }
 
-        if (fastIsClassVarDefined(internedName)) {
-            throw cannotRemoveError(internedName);
+        if (fastIsClassVarDefined(javaName)) {
+            throw cannotRemoveError(javaName);
         }
 
-        throw getRuntime().newNameError("class variable " + internedName + " not defined for " + getName(), internedName);
+        throw getRuntime().newNameError("class variable " + javaName + " not defined for " + getName(), javaName);
     }
 
 

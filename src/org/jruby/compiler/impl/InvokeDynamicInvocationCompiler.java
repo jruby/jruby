@@ -35,7 +35,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.*;
-import org.objectweb.asm.Label;
 
 /**
  *

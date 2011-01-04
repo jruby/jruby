@@ -38,7 +38,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;

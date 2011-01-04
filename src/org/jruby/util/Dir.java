@@ -519,15 +519,21 @@ public class Dir {
     }
 
     private static boolean BASE(byte[] base) {
+        int length = base.length;
         return DOSISH ? 
-            (base.length > 0 && !((isdirsep(base[0]) && base.length < 2) || (base.length > 2 && base[1] == ':' && isdirsep(base[2]) && base.length < 4)))
-            :
-            (base.length > 0 && !(isdirsep(base[0]) && base.length < 2));
+            (length > 0 && !((isdirsep(base[0]) && length < 2) ||
+            (length > 2 && base[1] == ':' && isdirsep(base[2]) && length < 4))) :
+            (length > 0 && !(isdirsep(base[0]) && length < 2));
     }
     
     private static boolean isJarFilePath(byte[] bytes, int begin, int end) {
         return end > 6 && bytes[begin] == 'f' && bytes[begin+1] == 'i' &&
             bytes[begin+2] == 'l' && bytes[begin+3] == 'e' && bytes[begin+4] == ':';
+    }
+    
+    private static boolean isAbsolutePath(byte[] path, int begin, int length) {
+        return path[begin] == '/' || (DOSISH &&
+                begin+2 < length && path[begin+1] == ':' && isdirsep(path[begin+2]));
     }
 
     private static String[] files(File directory) {
@@ -555,12 +561,64 @@ public class Dir {
         }
     }
 
+    private static int addToResultIfExists(String cwd, byte[] bytes, int begin, int end, int flags, GlobFunc func, GlobArgs arg) {
+        String fileName = newStringFromUTF8(bytes, begin, end - begin);
+        JavaSecuredFile file = cwd != null ? new JavaSecuredFile(cwd, fileName) :
+            new JavaSecuredFile(fileName);
+
+        if (file.exists()) {
+            // On case-insenstive file systems any case string will 'exists',
+            // but what does it display as if you ls/dir it?
+            if ((flags & FNM_CASEFOLD) != 0) {
+                try {
+                    String realName = file.getCanonicalFile().getName();
+                    // TODO: This is only being done to the name of the file,
+                    // but it should do for all parent directories too...
+                    int newEnd = fileName.lastIndexOf('/');
+                    if (newEnd != -1) {
+                        realName = fileName.substring(0, newEnd + 1) + realName;
+                    }
+                    bytes = realName.getBytes();
+                    begin = 0;
+                    end = bytes.length;
+                } catch (Exception e) {} // Failure will just use what we pass in
+            }
+            
+            return func.call(bytes, begin, end - begin, arg);
+        }
+
+        return 0;
+    }
+
+    private static ZipEntry getZipEntryFor(byte[] bytes, int begin, int end) {
+        int ix = end;
+        for (int i = 0; i < end; i++) {
+            if (bytes[begin + i] == '!') {
+                ix = i;
+                break;
+            }
+        }
+
+        File file = new JavaSecuredFile(newStringFromUTF8(bytes, begin + 5, ix - 5));
+        try {
+            String jar = newStringFromUTF8(bytes, begin + ix + 1, end - (ix + 1));
+            JarFile jf = new JarFile(file);
+
+            if (jar.startsWith("/")) jar = jar.substring(1);
+
+            return RubyFile.getDirOrFileEntry(jf, jar);
+        } catch (Exception e) {}
+        
+        return null;
+    }
+
     private static int glob_helper(String cwd, byte[] bytes, int begin, int end, int sub, int flags, GlobFunc func, GlobArgs arg) {
         int p,m;
         int status = 0;
         byte[] newpath = null;
         File st;
         p = sub != -1 ? sub : begin;
+
         if (!has_magic(bytes, p, end, flags)) {
             if (DOSISH || (flags & FNM_NOESCAPE) == 0) {
                 newpath = new byte[end];
@@ -575,34 +633,14 @@ public class Dir {
                 }
             }
 
-            if (bytes[begin] == '/' || (DOSISH && begin+2<end && bytes[begin+1] == ':' && isdirsep(bytes[begin+2]))) {
-                if (new JavaSecuredFile(newStringFromUTF8(bytes, begin, end - begin)).exists()) {
-                    status = func.call(bytes, begin, end - begin, arg);
-                }
+            if (isAbsolutePath(bytes, begin, end)) {
+                status = addToResultIfExists(null, bytes, begin, end, flags, func, arg);
             } else if (isJarFilePath(bytes, begin, end)) {
-                int ix = end;
-                for(int i = 0;i<end;i++) {
-                    if(bytes[begin+i] == '!') {
-                        ix = i;
-                        break;
-                    }
+                if (getZipEntryFor(bytes, begin, end) != null) {
+                    status = func.call(bytes, begin, end, arg);
                 }
-
-                st = new JavaSecuredFile(newStringFromUTF8(bytes, begin+5, ix-5));
-                try {
-                    String jar = newStringFromUTF8(bytes, begin+ix+1, end-(ix+1));
-                    JarFile jf = new JarFile(st);
-                    
-                    if (jar.startsWith("/")) jar = jar.substring(1);
-                    ZipEntry entry = RubyFile.getDirOrFileEntry(jf, jar);
-                    if (entry != null) {
-                        status = func.call(bytes, begin, end, arg);
-                    }
-                } catch(Exception e) {}
-            } else if ((end - begin) > 0) { // Length check is a hack.  We should not be reeiving "" as a filename ever. 
-                if (new JavaSecuredFile(cwd, newStringFromUTF8(bytes, begin, end - begin)).exists()) {
-                    status = func.call(bytes, begin, end - begin, arg);
-                }
+            } else if ((end - begin) > 0) { // Length check is a hack.  We should not be reeiving "" as a filename ever.
+                status = addToResultIfExists(cwd, bytes, begin, end, flags, func, arg);
             }
 
             return status;
@@ -623,7 +661,7 @@ public class Dir {
                     String jar = null;
                     JarFile jf = null;
 
-                    if(dir[0] == '/'  || (DOSISH && 2<dir.length && dir[1] == ':' && isdirsep(dir[2]))) {
+                    if(isAbsolutePath(dir, 0, dir.length)) {
                         st = new JavaSecuredFile(newStringFromUTF8(dir));
                     } else if(isJarFilePath(dir, 0, dir.length)) {
                         int ix = dir.length;
@@ -682,8 +720,7 @@ public class Dir {
                                 buf.append(base);
                                 buf.append( BASE(base) ? SLASH : EMPTY );
                                 buf.append(getBytesInUTF8(dirp[i]));
-                                if (buf.getUnsafeBytes()[0] == '/' || (DOSISH && 2<buf.getRealSize() &&
-                                        buf.getUnsafeBytes()[1] == ':' && isdirsep(buf.getUnsafeBytes()[2]))) {
+                                if (isAbsolutePath(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize())) {
                                     st = new JavaSecuredFile(newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
                                 } else {
                                     st = new JavaSecuredFile(cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
@@ -793,7 +830,7 @@ public class Dir {
                     for (DirGlobber globber : link) {
                         ByteList b = globber.link;
                         if (status == 0) {
-                            if(b.getUnsafeBytes()[0] == '/'  || (DOSISH && 2<b.getRealSize() && b.getUnsafeBytes()[1] == ':' && isdirsep(b.getUnsafeBytes()[2]))) {
+                            if(isAbsolutePath(b.getUnsafeBytes(), b.begin(), b.getRealSize())) {
                                 st = new JavaSecuredFile(newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
                             } else {
                                 st = new JavaSecuredFile(cwd, newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));

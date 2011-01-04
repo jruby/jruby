@@ -7,12 +7,6 @@
 require 'rubygems/user_interaction'
 require 'rubygems/specification'
 
-# :stopdoc:
-module Gem
-  autoload :SpecFetcher, 'rubygems/spec_fetcher'
-end
-# :startdoc:
-
 ##
 # The SourceIndex object indexes all the gems available from a
 # particular source (e.g. a list of gem directories, or a remote
@@ -83,33 +77,7 @@ class Gem::SourceIndex
     # loaded spec.
 
     def load_specification(file_name)
-      return nil unless file_name and File.exist? file_name
-
-      spec_code = if defined? Encoding then
-                    File.read file_name, :encoding => 'UTF-8'
-                  else
-                    File.read file_name
-                  end.untaint
-
-      begin
-        gemspec = eval spec_code, binding, file_name
-
-        if gemspec.is_a?(Gem::Specification)
-          gemspec.loaded_from = file_name
-          return gemspec
-        end
-        alert_warning "File '#{file_name}' does not evaluate to a gem specification"
-      rescue SignalException, SystemExit
-        raise
-      rescue SyntaxError => e
-        alert_warning e
-        alert_warning spec_code
-      rescue Exception => e
-        alert_warning "#{e.inspect}\n#{spec_code}"
-        alert_warning "Invalid .gemspec format in '#{file_name}'"
-      end
-
-      return nil
+      Gem::Specification.load file_name
     end
 
   end
@@ -150,7 +118,7 @@ class Gem::SourceIndex
       spec_files = Dir.glob File.join(spec_dir, '*.gemspec')
 
       spec_files.each do |spec_file|
-        gemspec = self.class.load_specification spec_file.untaint
+        gemspec = Gem::Specification.load spec_file
         add_spec gemspec if gemspec
       end
     end
@@ -275,8 +243,8 @@ class Gem::SourceIndex
   ##
   # Find a gem by an exact match on the short name.
 
-  def find_name(gem_name, version_requirement = Gem::Requirement.default)
-    dep = Gem::Dependency.new gem_name, version_requirement
+  def find_name(gem_name, requirement = Gem::Requirement.default)
+    dep = Gem::Dependency.new gem_name, requirement
     search dep
   end
 
@@ -290,7 +258,7 @@ class Gem::SourceIndex
   # behavior is deprecated and will be removed.
 
   def search(gem_pattern, platform_only = false)
-    version_requirement = nil
+    requirement = nil
     only_platform = false
 
     # TODO - Remove support and warning for legacy arguments after 2008/11
@@ -300,10 +268,10 @@ class Gem::SourceIndex
 
     case gem_pattern
     when Regexp then
-      version_requirement = platform_only || Gem::Requirement.default
+      requirement = platform_only || Gem::Requirement.default
     when Gem::Dependency then
       only_platform = platform_only
-      version_requirement = gem_pattern.requirement
+      requirement = gem_pattern.requirement
       gem_pattern = if Regexp === gem_pattern.name then
                       gem_pattern.name
                     elsif gem_pattern.name.empty? then
@@ -312,17 +280,17 @@ class Gem::SourceIndex
                       /^#{Regexp.escape gem_pattern.name}$/
                     end
     else
-      version_requirement = platform_only || Gem::Requirement.default
+      requirement = platform_only || Gem::Requirement.default
       gem_pattern = /#{gem_pattern}/i
     end
 
-    unless Gem::Requirement === version_requirement then
-      version_requirement = Gem::Requirement.create version_requirement
+    unless Gem::Requirement === requirement then
+      requirement = Gem::Requirement.create requirement
     end
 
     specs = all_gems.values.select do |spec|
       spec.name =~ gem_pattern and
-        version_requirement.satisfied_by? spec.version
+        requirement.satisfied_by? spec.version
     end
 
     if only_platform then
@@ -357,7 +325,7 @@ class Gem::SourceIndex
       begin
         fetcher = Gem::SpecFetcher.fetcher
         remotes = fetcher.find_matching dependency
-        remotes = remotes.map { |(name, version,_),_| version }
+        remotes = remotes.map { |(_, version, _), _| version }
       rescue Gem::RemoteFetcher::FetchError => e
         raise unless fetcher.warn_legacy e do
           require 'rubygems/source_info_cache'
@@ -514,7 +482,8 @@ class Gem::SourceIndex
   end
 
   def remove_extra(spec_names)
-    dictionary = spec_names.inject({}) { |h, k| h[k] = true; h }
+    dictionary = {}
+    spec_names.each { |k| dictionary[k] = true }
     each do |name, spec|
       remove_spec name unless dictionary.include? spec.original_name
     end

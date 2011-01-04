@@ -287,6 +287,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         runtime.getFileTest().extend_object(fileClass);
         
         fileClass.defineAnnotatedMethods(RubyFile.class);
+
+        // For JRUBY-5276, physically define FileTest methods on File's singleton
+        fileClass.getSingletonClass().defineAnnotatedMethods(RubyFileTest.FileTestFileMethods.class);
         
         return fileClass;
     }
@@ -554,7 +557,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     path,
                     modes,
                     perm,
-                    getRuntime().getPosix());
+                    getRuntime().getPosix(),
+                    getRuntime().getJRubyClassLoader());
 
             // TODO: check if too many open files, GC and try again
 
@@ -636,6 +640,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(required = 1)
     public IRubyObject chmod(ThreadContext context, IRubyObject arg) {
+        checkClosed(context);
         int mode = (int) arg.convertToInteger().getLongValue();
 
         if (!new File(path).exists()) {
@@ -647,6 +652,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(required = 2)
     public IRubyObject chown(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+        checkClosed(context);
         int owner = -1;
         if (!arg1.isNil()) {
             owner = RubyNumeric.num2int(arg1);
@@ -666,11 +672,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject atime(ThreadContext context) {
+        checkClosed(context);
         return context.getRuntime().newFileStat(path, false).atime();
     }
 
     @JRubyMethod
     public IRubyObject ctime(ThreadContext context) {
+        checkClosed(context);
         return context.getRuntime().newFileStat(path, false).ctime();
     }
 
@@ -707,11 +715,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject lstat(ThreadContext context) {
+        checkClosed(context);
         return context.getRuntime().newFileStat(path, true);
     }
     
     @JRubyMethod
     public IRubyObject mtime(ThreadContext context) {
+        checkClosed(context);
         return getLastModified(context.getRuntime(), path);
     }
 
@@ -757,13 +767,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
-        return path == null ? context.getRuntime().getNil() : context.getRuntime().newString(path);
+        IRubyObject newPath = context.getRuntime().getNil();
+        if (path != null) {
+            newPath = context.getRuntime().newString(path);
+            newPath.setTaint(true);
+        }
+        return newPath;
     }
 
     @JRubyMethod
     @Override
     public IRubyObject stat(ThreadContext context) {
-        openFile.checkClosed(context.getRuntime());
+        checkClosed(context);
         return context.getRuntime().newFileStat(path, false);
     }
 
@@ -1823,5 +1838,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         return runtime.newTime(file.lastModified());
+    }
+
+    private void checkClosed(ThreadContext context) {
+        openFile.checkClosed(context.getRuntime());
     }
 }

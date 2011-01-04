@@ -18,11 +18,13 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-public class JRubyClassLoader extends URLClassLoader {
+public class JRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
     private final static ProtectionDomain DEFAULT_DOMAIN
             = JRubyClassLoader.class.getProtectionDomain();
 
     private final Map<URL,Set<String>> jarIndexes = new LinkedHashMap<URL,Set<String>>();
+
+    private Runnable unloader;
 
     public JRubyClassLoader(ClassLoader parent) {
         super(new URL[0], parent);
@@ -33,6 +35,35 @@ public class JRubyClassLoader extends URLClassLoader {
     public void addURL(URL url) {
         super.addURL(url);
         indexJarContents(url);
+    }
+
+    /**
+     * Called when the parent runtime is torn down.
+     */
+    public void tearDown() {
+        // A hack to allow unloading all JDBC Drivers loaded by this classloader.
+        // See http://bugs.jruby.org/4226
+        getJDBCDriverUnloader().run();
+    }
+
+    public synchronized Runnable getJDBCDriverUnloader() {
+        if (unloader == null) {
+            try {
+                InputStream unloaderStream = getClass().getResourceAsStream("/org/jruby/util/JDBCDriverUnloader.class");
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] buf = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = unloaderStream.read(buf)) != -1) {
+                    baos.write(buf, 0, bytesRead);
+                }
+
+                Class unloaderClass = defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
+                unloader = (Runnable) unloaderClass.newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return unloader;
     }
 
     public Class<?> defineClass(String name, byte[] bytes) {
