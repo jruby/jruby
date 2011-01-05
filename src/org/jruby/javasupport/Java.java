@@ -96,6 +96,7 @@ import org.jruby.java.proxies.MapJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.util.ClassCache;
 import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.CodegenUtils;
@@ -518,7 +519,13 @@ public class Java implements Library {
         RubyClass superClass = (RubyClass) baseType;
         proxyClass = RubyClass.newClass(runtime, superClass);
         proxyClass.makeMetaClass(superClass.getMetaClass());
-        proxyClass.setAllocator(superClass.getAllocator());
+        try {
+            javaClass.javaClass().asSubclass(java.util.Map.class);
+            proxyClass.setAllocator(runtime.getJavaSupport().getMapJavaProxyClass().getAllocator());
+            proxyClass.defineAnnotatedMethods(MapJavaProxy.class);
+        } catch (ClassCastException e) {
+            proxyClass.setAllocator(superClass.getAllocator());
+        }
         if (invokeInherited) {
             proxyClass.inherit(superClass);
         }

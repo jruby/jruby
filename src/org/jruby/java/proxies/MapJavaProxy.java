@@ -73,7 +73,9 @@ public class MapJavaProxy extends ConcreteJavaProxy {
                 return new MapJavaProxy(runtime, klazz);
             }
         });
-        mapJavaProxy.defineAnnotatedMethods(MapJavaProxy.class);
+        // this is done while proxy class is created.
+        // See org.jruby.javasuppoer.java.createProxyClass()
+        //mapJavaProxy.defineAnnotatedMethods(MapJavaProxy.class);
         ConcreteJavaProxy.initialize(mapJavaProxy);
         return mapJavaProxy;
     }
