@@ -39,7 +39,6 @@ import org.jruby.runtime.load.Library;
  * These methods get loaded when you require 'fiber'.
  */
 public class FiberExtLibrary implements Library {
-    @SuppressWarnings(value = "deprecation")
     public void load(final Ruby runtime, boolean wrap) {
         RubyClass cFiber = runtime.getClass("Fiber");
         cFiber.defineAnnotatedMethods(FiberExtMeta.class);
