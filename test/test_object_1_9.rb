@@ -34,4 +34,16 @@ class TestObject19 < Test::Unit::TestCase
     assert_equal(false, (o != o)) # always false
     assert_equal(false, (o != 1)) # always false
   end
+
+  def test_const_defined?
+    assert_equal(true, Object.const_defined?('Object', false))
+    assert_equal(false, Hash.const_defined?('Object', false))
+    assert_equal(true, Hash.const_defined?('Object', true))
+  end
+
+  def test_const_get
+    assert_equal(Object, Object.const_get('Object', false))
+    assert_raise(NameError) { Hash.const_get('Object', false) }
+    assert_equal(Object, Hash.const_get('Object', true))
+  end
 end

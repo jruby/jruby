@@ -2780,22 +2780,21 @@ public class RubyModule extends RubyObject {
     public IRubyObject getConstantNoConstMissing(String name, boolean inherit) {
         assert IdUtil.isConstant(name);
 
-        IRubyObject constant = iterateConstentNoConstMissing(name, this, inherit);
+        IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit);
 
         if (constant == null && !isClass()) {
-            constant = iterateConstentNoConstMissing(name, getRuntime().getObject(), inherit);
+            constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit);
         }
 
         return constant;
     }
 
-    private IRubyObject iterateConstentNoConstMissing(String name, RubyModule init, boolean inherit) {
-        RubyModule end = inherit? null : init;
-
-        for (RubyModule p = init; p != end; p = p.getSuperClass()) {
+    private IRubyObject iterateConstantNoConstMissing(String name, RubyModule init, boolean inherit) {
+        for (RubyModule p = init; p != null; p = p.getSuperClass()) {
             IRubyObject value = p.getConstantInner(name);
 
             if (value != null) return value == UNDEF ? null : value;
+            if (!inherit) break;
         }
         return null;
     }
@@ -2995,15 +2994,16 @@ public class RubyModule extends RubyObject {
     public boolean fastIsConstantDefined19(String internedName, boolean inherit) {
         assert internedName == internedName.intern() : internedName + " is not interned";
         assert IdUtil.isConstant(internedName);
-        
-        RubyModule end = inherit ? null : this;
 
-        for (RubyModule module = this; module != end; module = module.getSuperClass()) {
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             Object value;
             if ((value = module.constantTableFastFetch(internedName)) != null) {
                 if (value != UNDEF) return true;
                 return getRuntime().getLoadService().autoloadFor(
                         module.getName() + "::" + internedName) != null;
+            }
+            if (!inherit) {
+                break;
             }
         }
 
