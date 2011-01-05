@@ -4280,7 +4280,7 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         IRubyObject item = JavaUtil.convertJavaToUsableRubyObject(runtime, element);
-        Boolean listchanged = false;
+        boolean listchanged = false;
 
         for (int i1 = 0; i1 < realLength; i1++) {
             IRubyObject e = values[begin + i1];

@@ -162,7 +162,7 @@ public class Main {
             config.getError().println("Error: Your application used more memory than the safety cap" + message + ".");
             config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
             
-            if (config.getVerbose()) {
+            if (config.isVerbose()) {
                 config.getError().println("Exception trace follows:");
                 oome.printStackTrace();
             } else {
@@ -181,7 +181,7 @@ public class Main {
             config.getError().println("Error: Your application used more stack memory than the safety cap" + message + ".");
             config.getError().println("Specify -J-Xss####k to increase it (#### = cap size in KB).");
             
-            if (config.getVerbose()) {
+            if (config.isVerbose()) {
                 config.getError().println("Exception trace follows:");
                 soe.printStackTrace();
             } else {
@@ -192,7 +192,7 @@ public class Main {
             config.getError().println("Error: Some library (perhaps JRuby) was built with a later JVM version.");
             config.getError().println("Please use libraries built with the version you intend to use or an earlier one.");
             
-            if (config.getVerbose()) {
+            if (config.isVerbose()) {
                 config.getError().println("Exception trace follows:");
                 ucve.printStackTrace();
             } else {

@@ -987,7 +987,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             if (id == null) {
                 return initObjectId(objectIdAccessor);
             }
-            return id;
+            return id.longValue();
         }
     }
 

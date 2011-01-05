@@ -1060,7 +1060,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public boolean wait_timeout(IRubyObject o, Double timeout) throws InterruptedException {
         if ( timeout != null ) {
-            long delay_ns = (long)(timeout * 1000000000.0);
+            long delay_ns = (long)(timeout.doubleValue() * 1000000000.0);
             long start_ns = System.nanoTime();
             if (delay_ns > 0) {
                 long delay_ms = delay_ns / 1000000;
