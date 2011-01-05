@@ -212,7 +212,11 @@ test_equal(nil, compile_and_run("def mycall; yield; end; public :mycall; self.my
 
 # blocks with some basic single arguments
 test_no_exception {
-  test_equal(1, compile_and_run("a = 0; [1].each {|a|}; a"))
+  if is19
+    test_equal(0, compile_and_run("a = 0; [1].each {|a|}; a"))
+  else
+    test_equal(1, compile_and_run("a = 0; [1].each {|a|}; a"))
+  end
   test_equal(1, compile_and_run("a = 0; [1].each {|x| a = x}; a"))
 }
 
@@ -288,6 +292,12 @@ test_exception { compile_and_run("foo(1, 2, 3)") }
 compile_and_run("def foo(a=(b=1)); end")
 compile_and_run("def foo(a, b=(c=1)); end")
 
+# new post args and masgn args in method signatures
+if is19
+  result = compile_and_run("def foo(a, (b, *, c), d, *e, f, (g, *h, i), j); [a,b,c,d,e,f,g,h,i,j]; end; foo(1,[2,3,4],5,6,7,8,[9,10,11],12)")
+  test_equal([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12], result)
+end
+
 class CoercibleToArray
   def to_ary
     [2, 3]
@@ -309,7 +319,7 @@ test_equal([1, 2, nil], compile_and_run("a, (b, c) = 1, 2; [a, b, c]"))
 test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]"))
 test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, CoercibleToArray.new; [a, b, c]"))
 if is19
-  result = compile_and_run("a, (b, *, c), d, *e, f, (g, *h, i), j = 1,2,3,4,5,6,7,8,9,10,11,12; [a,b,c,d,e,f,g,h,i,j]")
+  result = compile_and_run("a, (b, *, c), d, *e, f, (g, *h, i), j = 1,[2,3,4],5,6,7,8,[9,10,11],12; [a,b,c,d,e,f,g,h,i,j]")
   test_equal([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12], result)
 end
 
@@ -395,7 +405,7 @@ test_equal([1, 4, 7, 10], compile_and_run("s = true; (1..10).reject { true if (s
 big_flip = <<EOS
 s = true; (1..10).inject([]) do |ary, v|; ary << [] unless (s = !s) .. (s = !s); ary.last << v; ary; end
 EOS
-test_equal([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]], compile_and_run(big_flip)) unless is19 # does not compile
+test_equal([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]], compile_and_run(big_flip))
 big_triple_flip = <<EOS
 s = true
 (1..64).inject([]) do |ary, v|
@@ -414,12 +424,12 @@ expected = [[1, 2, 3, 4, 5, 6, 7, 8],
       [41, 42, 43, 44, 45, 46, 47, 48],
       [49, 50, 51, 52, 53, 54, 55, 56],
       [57, 58, 59, 60, 61, 62, 63, 64]]
-test_equal(expected, compile_and_run(big_triple_flip)) unless is19 # does not compile
+test_equal(expected, compile_and_run(big_triple_flip))
 
 silence_warnings {
   # bug 1305, no values yielded to single-arg block assigns a null into the arg
   test_equal(NilClass, compile_and_run("def foo; yield; end; foo {|x| x.class}"))
-} unless is19 # does not compile
+}
 
 # ensure that invalid classes and modules raise errors
 AFixnum = 1;
@@ -433,7 +443,7 @@ test_equal(["foo", "bar"], compile_and_run("a = []; a[0], a[1] = 'foo', 'bar'; a
 
 # for loops
 test_equal([2, 4, 6], compile_and_run("a = []; for b in [1, 2, 3]; a << b * 2; end; a"))
-test_equal([1, 2, 3], compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort")) unless is19 # does not compile
+test_equal([1, 2, 3], compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort"))
 
 # ensure blocks
 test_equal(1, compile_and_run("a = 2; begin; a = 3; ensure; a = 1; end; a"))
@@ -493,7 +503,7 @@ test_no_exception {
 
 # JRUBY-2043
 test_equal(5, compile_and_run("def foo; 1.times { a, b = [], 5; a[1] = []; return b; }; end; foo"))
-test_equal({"1" => 2}, compile_and_run("def foo; x = {1 => 2}; x.inject({}) do |hash, (key, value)|; hash[key.to_s] = value; hash; end; end; foo")) unless is19 # does not compile
+test_equal({"1" => 2}, compile_and_run("def foo; x = {1 => 2}; x.inject({}) do |hash, (key, value)|; hash[key.to_s] = value; hash; end; end; foo"))
 
 # JRUBY-2246
 long_src = "a = 1\n"

@@ -32,6 +32,7 @@ package org.jruby.compiler;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.HashNode;
@@ -110,8 +111,19 @@ public class ASTCompiler19 extends ASTCompiler {
         if (required > 0) {
             requiredAssignment = new ArrayCallback() {
                 public void nextValue(BodyCompiler context, Object object, int index) {
-                    // FIXME: Somehow I'd feel better if this could get the appropriate var index from the ArgumentNode
-                    context.getVariableCompiler().assignLocalVariable(index, false);
+                    ArrayNode arguments = (ArrayNode)object;
+                    Node argNode = arguments.get(index);
+                    switch (argNode.getNodeType()) {
+                    case MULTIPLEASGN19NODE:
+                        compileMultipleAsgn19Assignment(argNode, context, false);
+                        break;
+                    case ARGUMENTNODE:
+                        int varIndex = ((ArgumentNode)argNode).getIndex();
+                        context.getVariableCompiler().assignLocalVariable(varIndex, false);
+                        break;
+                    default:
+                        throw new NotCompilableException("unknown argument type: " + argNode);
+                    }
                 }
             };
         }
@@ -181,10 +193,6 @@ public class ASTCompiler19 extends ASTCompiler {
     public void compileIter(Node node, BodyCompiler context) {
         final IterNode iterNode = (IterNode)node;
         final ArgsNode argsNode = (ArgsNode)iterNode.getVarNode();
-
-//        if (argsNode.getArity().getValue() != 0) {
-//            throw new NotCompilableException("can't compile block with arguments at: " + iterNode.getPosition());
-//        }
 
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
