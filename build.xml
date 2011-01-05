@@ -204,23 +204,26 @@
     </jar>
     <property name="RDOCS_EXTRACTED" value="true"/>
   </target>
-
-  <target name="update-constants" unless="update-constants.hasrun">
-    <exec osfamily="unix" executable="git" outputproperty="jruby.revision" failonerror="false" failifexecutionfails="false">
-      <arg line="log -1 --format=format:%h"/>
-    </exec>
-    <exec osfamily="windows" executable="cmd" outputproperty="jruby.revision" failonerror="false" failifexecutionfails="false">
-      <arg line="/c git log -1 --format=format:%h"/>
-    </exec>
+  
+  <macrodef name="update-constants">
+    <attribute name="tzdata-version" default="${tzdata.distributed.version}"/>
+    <sequential>
+      <echo message="Updating constants with @{tzdata-version}"/>
+        <exec osfamily="unix" executable="git" outputproperty="jruby.revision" failonerror="false" failifexecutionfails="false">
+          <arg line="log -1 --format=format:%h"/>
+        </exec>
+        <exec osfamily="windows" executable="cmd" outputproperty="jruby.revision" failonerror="false" failifexecutionfails="false">
+          <arg line="/c git log -1 --format=format:%h"/>
+        </exec>
     
     <!-- avoid overwriting if it hasn't changed, to avoid recompiles -->
-    <copy file="${basedir}/src_gen/org/jruby/runtime/Constants.java"
+        <copy file="${basedir}/src_gen/org/jruby/runtime/Constants.java"
         tofile="${basedir}/src_gen/org/jruby/runtime/Constants.java.old"
         preservelastmodified="true" failonerror="false"/>
-    <copy file="${basedir}/src/org/jruby/runtime/Constants.java"
+        <copy file="${basedir}/src/org/jruby/runtime/Constants.java"
         overwrite="true"
         tofile="${basedir}/src_gen/org/jruby/runtime/Constants.java.gen" >
-        <filterset>
+          <filterset>
             <filter token="version.ruby.major" value="${version.ruby.major}"/>
             <filter token="version.ruby" value="${version.ruby}"/>
             <filter token="version.ruby.patchlevel" value="${version.ruby.patchlevel}"/>
@@ -235,16 +238,22 @@
             <filter token="os.arch" value="${os.arch}"/>
             <filter token="jruby.revision" value="${jruby.revision}"/>
             <filter token="joda.time.version" value="${joda.time.version}"/>
-            <filter token="tzdata.version" value="${tzdata.version}"/>
-        </filterset>
-    </copy>
+            <filter token="tzdata.version" value="@{tzdata-version}"/>
+          </filterset>
+        </copy>
 
-    <condition property="constants.java.is.same">
-      <filesmatch file1="${basedir}/src_gen/org/jruby/runtime/Constants.java.gen" file2="${basedir}/src_gen/org/jruby/runtime/Constants.java.old" textfile="true"/>
-    </condition>
-    <antcall target="_uc_internal_"/>
+        <condition property="constants.java.is.same">
+          <filesmatch file1="${basedir}/src_gen/org/jruby/runtime/Constants.java.gen" file2="${basedir}/src_gen/org/jruby/runtime/Constants.java.old" textfile="true"/>
+        </condition>
+        <antcall target="_uc_internal_"/>
     
-    <property name="update-constants.hasrun" value="true"/>
+        <property name="update-constants.hasrun" value="true"/>
+        
+    </sequential>
+  </macrodef>
+
+  <target name="update-constants" unless="update-constants.hasrun">
+    <update-constants/>
   </target>
   
   <target name="_uc_internal_" unless="constants.java.is.same">
@@ -1597,7 +1606,7 @@
   <target name="bench-language" depends="jar"><rake task="bench:language"/></target>
 
   <target name="fetch-tzdata" description="Fetch tzdata into build/tzdata">
-    <available property="tzdata.present" filepath="${tzdata.builddir}/src" file="tzdata${tzdata.version}.tar.gz" />
+    <available property="tzdata.present" filepath="${tzdata.builddir}/src" file="tzdata${tzdata.latest.version}.tar.gz" />
     <mkdir dir="${tzdata.builddir}/src" />
     <ftp server="${tzdata.ftpserver}"
          action="get"
@@ -1608,23 +1617,23 @@
          remotedir="/pub"
          newer="yes">
       <fileset dir="${tzdata.builddir}/src">
-        <include name="tzdata${tzdata.version}.tar.gz" />
+        <include name="tzdata${tzdata.latest.version}.tar.gz" />
       </fileset>
     </ftp>
   </target>
 
   <target name="expand-tzdata" depends="fetch-tzdata" description="Expand tzdata into build/tzdata">
-    <untar src="${tzdata.builddir}/src/tzdata${tzdata.version}.tar.gz"
+    <untar src="${tzdata.builddir}/src/tzdata${tzdata.latest.version}.tar.gz"
            compression="gzip"
            dest="${tzdata.builddir}/src"
     />
   </target>
 
   <!-- basically a copy of joda-time's compile.zoneinfo task -->
-  <target name="compile-tzdata" depends="expand-tzdata" description="Compile tzdata in build/tzdata">
+  <target name="compile-tzdata" depends="prepare, expand-tzdata" description="Compile tzdata in build/tzdata">
     <mkdir dir="${tzdata.builddir}/build" />
     <mkdir dir="${tzdata.builddir}/build/org/joda/time/tz/data" />
-    <echo message="Compiling tzdata version ${tzdata.version}" />
+    <echo message="Compiling tzdata version ${tzdata.latest.version}" />
     <java classname="org.joda.time.tz.ZoneInfoCompiler"
           fork="true"
           output="${dev.null}"
@@ -1648,6 +1657,8 @@
       <arg value="backward" />
       <arg value="systemv" />
     </java>
+    <update-constants tzdata-version="${tzdata.latest.version}"/>
+    <property name="constants.java.is.same" value="true"/>
   </target>
 
   <target name="update-tzdata" depends="compile-tzdata" description="Update joda-time's zone info with one we compiled">
