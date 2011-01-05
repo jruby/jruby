@@ -2896,7 +2896,7 @@ public final class Ruby {
         getBeanManager().unregisterClassCache();
         getBeanManager().unregisterMethodCache();
 
-        getJRubyClassLoader().tearDown();
+        getJRubyClassLoader().tearDown(isDebug());
 
         if (systemExit && status != 0) {
             throw newSystemExit(status);
