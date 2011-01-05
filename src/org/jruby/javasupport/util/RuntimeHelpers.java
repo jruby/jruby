@@ -1169,6 +1169,15 @@ public class RuntimeHelpers {
             return input[element];
         }
     }
+
+    public static IRubyObject postElementOrNil(IRubyObject[] input, int postCount, int postIndex, IRubyObject nil) {
+        int aryIndex = input.length - postCount + postIndex;
+        if (aryIndex >= input.length || aryIndex < 0) {
+            return nil;
+        } else {
+            return input[aryIndex];
+        }
+    }
     
     public static RubyBoolean isWhenTriggered(IRubyObject expression, IRubyObject expressionsObject, ThreadContext context) {
         RubyArray expressions = RuntimeHelpers.splatValue(expressionsObject);
