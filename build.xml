@@ -208,7 +208,7 @@
   <macrodef name="update-constants">
     <attribute name="tzdata-version" default="${tzdata.distributed.version}"/>
     <sequential>
-      <echo message="Updating constants with @{tzdata-version}"/>
+      <echo message="Updating constants with tzdata version @{tzdata-version}"/>
         <exec osfamily="unix" executable="git" outputproperty="jruby.revision" failonerror="false" failifexecutionfails="false">
           <arg line="log -1 --format=format:%h"/>
         </exec>
