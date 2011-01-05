@@ -34,6 +34,7 @@ package org.jruby.lexer.yacc;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import org.jcodings.Encoding;
 
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.util.ByteList;
@@ -207,6 +208,27 @@ public abstract class LexerSource {
         buf.append('^');
 
         return buf.toString();
+    }
+
+    // Super slow codepoint reader when we detect non-asci chars
+    public int readCodepoint(Encoding encoding) throws IOException {
+        int count = 0;
+        byte[] value = new byte[6];
+
+        for (count = 0; count < 6; count++) {
+            int c = read();
+            if (c == RubyYaccLexer.EOF) break; // Maybe we have enough bytes read to mbc at EOF.
+            value[count] = (byte) c;
+        }
+
+        int codepoint = encoding.mbcToCode(value, 0, count);
+        int length = encoding.codeToMbcLength(codepoint);
+
+        for (int i = count - 1; i >= length; i--) {
+            unread(value[i]);
+        }
+
+        return codepoint;
     }
 
     /**

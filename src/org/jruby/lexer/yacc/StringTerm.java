@@ -300,7 +300,11 @@ public class StringTerm extends StrTerm {
                 if (buffer.getEncoding() != encoding) {
                     mixedEscape(lexer, buffer.getEncoding(), encoding);
                 }
-                lexer.tokenAddMBCFromSrc(c, buffer);
+                src.unread(c);
+                c = src.readCodepoint(encoding);
+                if (lexer.tokenAddMBC(c, buffer) == RubyYaccLexer.EOF) {
+                    return RubyYaccLexer.EOF;
+                }
                 continue;
             } else if (qwords && Character.isWhitespace(c)) {
                 src.unread(c);
