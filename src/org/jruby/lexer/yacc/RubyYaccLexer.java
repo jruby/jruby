@@ -2371,9 +2371,14 @@ public class RubyYaccLexer {
     // to grow by 6 (which may be wasteful).  Another idea is to make Encoding accept an interface
     // for populating bytes and then make ByteList implement that interface.  I like this last idea
     // since it would not leak bytelist impl details all over the place.
-    public void tokenAddMBC(int codepoint, ByteList buffer) {
+    public int tokenAddMBC(int codepoint, ByteList buffer) {
         int length = buffer.getEncoding().codeToMbc(codepoint, mbcBuf, 0);
+
+        if (length <= 0) return EOF;
+
         buffer.append(mbcBuf, 0, length);
+
+        return length;
     }
 
     public void tokenAddMBCFromSrc(int c, ByteList buffer) throws IOException {
