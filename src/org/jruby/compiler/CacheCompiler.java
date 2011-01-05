@@ -31,7 +31,7 @@ public interface CacheCompiler {
 
     public void cachedSetVariable(BaseBodyCompiler method, String name, CompilerCallback value);
 
-    public void cacheRegexp(BaseBodyCompiler method, String pattern, int options);
+    public void cacheRegexp(BaseBodyCompiler method, ByteList pattern, int options);
 
     public void cacheDRegexp(BaseBodyCompiler method, CompilerCallback createStringCallback, int options);
 

@@ -289,7 +289,14 @@ public abstract class AbstractScript implements Script {
     }
 
     public void setByteList(int index, String str) {
-        runtimeCache.byteLists[index] = ByteList.create(str);
+        // decode chars back into bytes
+        char[] chars = str.toCharArray();
+        byte[] bytes = new byte[chars.length];
+        for (int i = 0; i < chars.length; i++) {
+            bytes[i] = (byte)chars[i];
+        }
+        
+        runtimeCache.byteLists[index] = new ByteList(bytes, false);
     }
 
     public static CallSite[] setCallSite(CallSite[] callSites, int index, String name) {

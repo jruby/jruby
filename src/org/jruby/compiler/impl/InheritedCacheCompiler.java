@@ -5,6 +5,7 @@
 
 package org.jruby.compiler.impl;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -121,17 +122,19 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
     }
 
-    public void cacheRegexp(BaseBodyCompiler method, String pattern, int options) {
+    public void cacheRegexp(BaseBodyCompiler method, ByteList pattern, int options) {
+        String asString = RuntimeHelpers.rawBytesToString(pattern.bytes());
+
         method.loadThis();
         method.loadRuntime();
         int index = inheritedRegexpCount++;
         if (index < AbstractScript.NUMBERED_REGEXP_COUNT) {
-            method.method.ldc(pattern);
+            method.method.ldc(asString);
             method.method.ldc(options);
             method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp" + index, sig(RubyRegexp.class, Ruby.class, String.class, int.class));
         } else {
             method.method.pushInt(index);
-            method.method.ldc(pattern);
+            method.method.ldc(asString);
             method.method.ldc(options);
             method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, Ruby.class, int.class, String.class, int.class));
         }
@@ -245,7 +248,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
 
     public void cacheString(BaseBodyCompiler method, ByteList contents) {
-        String asString = contents.toString();
+        String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        
         Integer index = stringIndices.get(asString);
         if (index == null) {
             index = Integer.valueOf(inheritedStringCount++);

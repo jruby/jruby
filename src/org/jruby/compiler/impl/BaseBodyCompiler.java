@@ -1337,7 +1337,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void createNewRegexp(final ByteList value, final int options) {
-        script.getCacheCompiler().cacheRegexp(this, value.toString(), options);
+        script.getCacheCompiler().cacheRegexp(this, value, options);
     }
 
     public void createNewRegexp(CompilerCallback createStringCallback, final int options) {

@@ -2020,4 +2020,18 @@ public class RuntimeHelpers {
             ((RubyBasicObject)object).getMetaClass() :
             object.getMetaClass();
     }
+
+    public static String rawBytesToString(byte[] bytes) {
+        // stuff bytes into chars
+        char[] chars = new char[bytes.length];
+        for (int i = 0; i < bytes.length; i++) chars[i] = (char)bytes[i];
+        return new String(chars);
+    }
+
+    public static byte[] stringToRawBytes(String string) {
+        char[] chars = string.toCharArray();
+        byte[] bytes = new byte[chars.length];
+        for (int i = 0; i < chars.length; i++) bytes[i] = (byte)chars[i];
+        return bytes;
+    }
 }
