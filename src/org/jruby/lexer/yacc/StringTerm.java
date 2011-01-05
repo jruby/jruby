@@ -65,7 +65,7 @@ public class StringTerm extends StrTerm {
     protected ByteList createByteList(RubyYaccLexer lexer) {
         if (lexer.isOneEight()) return new ByteList();
 
-        Encoding encoding = lexer.getEncoding();
+        Encoding encoding = isRegexp() ? RubyYaccLexer.USASCII_ENCODING : lexer.getEncoding();
 
         return new ByteList(new byte[]{}, encoding);
     }
@@ -296,15 +296,20 @@ public class StringTerm extends StrTerm {
                         buffer.append('\\');
                     }
                 }
-            } else if (!lexer.isOneEight() && lexer.isMultiByteChar(c)) {
+            } else if (!lexer.isOneEight() && !Encoding.isAscii((byte) c)) {
                 if (buffer.getEncoding() != encoding) {
                     mixedEscape(lexer, buffer.getEncoding(), encoding);
                 }
                 src.unread(c);
                 c = src.readCodepoint(encoding);
-                if (lexer.tokenAddMBC(c, buffer) == RubyYaccLexer.EOF) {
-                    return RubyYaccLexer.EOF;
+                if (c == -2) { // FIXME: Hack
+                    throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
+                            null, "invalid multibyte char (" + encoding + ")");
                 }
+
+                // FIXME: We basically go from bytes to codepoint back to bytes to append them...fix this
+                if (lexer.tokenAddMBC(c, buffer) == RubyYaccLexer.EOF) return RubyYaccLexer.EOF;
+
                 continue;
             } else if (qwords && Character.isWhitespace(c)) {
                 src.unread(c);
