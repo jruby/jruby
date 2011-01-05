@@ -87,6 +87,9 @@ public class RubyTime extends RubyObject {
     // understood by Java API.
     private static final Pattern TZ_PATTERN
             = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
+    
+    private static final Pattern TIME_OFFSET_PATTERN
+            = Pattern.compile("([\\+-])(\\d\\d):\\d\\d");
 
     private static final ByteList TZ_STRING = ByteList.create("TZ");
     
@@ -99,6 +102,14 @@ public class RubyTime extends RubyObject {
         put("ROC", "Asia/Taipei"); // Republic of China
         put("WET", "Europe/Lisbon"); // Western European Time
         
+    }};
+    
+    /* Some TZ values need to be overriden for Time#zone
+     */
+    private static final Map<String, String> SHORT_TZNAME = new HashMap<String, String>() {{
+        put("Etc/UCT", "UCT");
+        put("MET", "MET"); // needs to be overriden
+        put("UCT","UCT");
     }};
 
     @Override
@@ -637,11 +648,32 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "zone")
     public RubyString zone() {
+        Ruby runtime = getRuntime();
+        String envTZ = getEnvTimeZone(runtime).toString();
+        // see declaration of SHORT_TZNAME
+        if (SHORT_TZNAME.containsKey(envTZ)) return runtime.newString(SHORT_TZNAME.get(envTZ));
+        
         String zone = dt.getZone().getShortName(dt.getMillis());
-        if(zone.equals("+00:00")) {
-            zone = "GMT";
+        
+        Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
+        
+        if (offsetMatcher.matches()) {
+            boolean minus_p = offsetMatcher.group(1).toString().equals("-");
+            int hourOffset  = Integer.valueOf(offsetMatcher.group(2));
+                        
+            if (zone.equals("+00:00")) {
+                zone = "GMT";
+            } else {
+                // try non-localized time zone name
+                zone = dt.getZone().getNameKey(dt.getMillis());
+                if (zone == null) {
+                    char sign = minus_p ? '+' : '-';
+                    zone = "GMT" + sign + hourOffset;
+                }
+            }
         }
-        return getRuntime().newString(zone);
+        
+        return runtime.newString(zone);
     }
 
     public void setDateTime(DateTime dt) {
