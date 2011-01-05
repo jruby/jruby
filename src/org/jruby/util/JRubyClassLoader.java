@@ -40,10 +40,16 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
     /**
      * Called when the parent runtime is torn down.
      */
-    public void tearDown() {
-        // A hack to allow unloading all JDBC Drivers loaded by this classloader.
-        // See http://bugs.jruby.org/4226
-        getJDBCDriverUnloader().run();
+    public void tearDown(boolean debug) {
+        try {
+            // A hack to allow unloading all JDBC Drivers loaded by this classloader.
+            // See http://bugs.jruby.org/4226
+            getJDBCDriverUnloader().run();
+        } catch (Exception e) {
+            if (debug) {
+                e.printStackTrace(System.out);
+            }
+        }
     }
 
     public synchronized Runnable getJDBCDriverUnloader() {
