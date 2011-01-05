@@ -27,7 +27,11 @@ public class ConcreteJavaProxy extends JavaProxy {
                 return new ConcreteJavaProxy(runtime, klazz);
             }
         });
-        
+        initialize(concreteJavaProxy);
+        return concreteJavaProxy;
+    }
+
+    protected static void initialize(RubyClass concreteJavaProxy) {
         concreteJavaProxy.addMethod("initialize", new org.jruby.internal.runtime.methods.JavaMethod(concreteJavaProxy, Visibility.PUBLIC) {
             private final CallSite jcreateSite = MethodIndex.getFunctionalCallSite("__jcreate!");
             @Override
@@ -155,8 +159,6 @@ public class ConcreteJavaProxy extends JavaProxy {
                 return proxy;
             }
         });
-        
-        return concreteJavaProxy;
     }
 
     // This alternate ivar logic is disabled because it can cause self-referencing
