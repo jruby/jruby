@@ -1183,7 +1183,7 @@ public class RubyYaccLexer {
                 }
             }*/
             c = src.read();
-        } while (isIdentifierChar(c));
+        } while (c != EOF && isIdentifierChar(c));
         
         return c;
     }
