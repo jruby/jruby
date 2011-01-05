@@ -39,7 +39,6 @@ import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.LASTLINE;
 
 import java.lang.ref.SoftReference;
-import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

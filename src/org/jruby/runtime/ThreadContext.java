@@ -179,12 +179,6 @@ public final class ThreadContext {
     private Continuation[] catchStack = EMPTY_CATCHTARGET_STACK;
     private int catchIndex = -1;
     
-    // File where current executing unit is being evaluated
-    private String file = "";
-    
-    // Line where current executing unit is being evaluated
-    private int line = 0;
-    
     private boolean isProfiling = false;
     // The flat profile data for this thread
 	private IProfileData profileData;

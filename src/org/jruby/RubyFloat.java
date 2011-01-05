@@ -848,11 +848,6 @@ public class RubyFloat extends RubyNumeric {
         return getRuntime().getTrue();
     }
 
-    // CRuby uses sprintf(buf, "%.*g", FLOAT_DIG, d);
-    // This pattern adjusts the output of String.pattern("%g") to mimic
-    // the C version.
-    private static final Pattern pattern = Pattern.compile("\\.?0+(e|$)");
-
     private static ByteList formatDouble(RubyFloat x) {
         ByteList byteList = new ByteList();
         Sprintf.sprintf(byteList, "%.17g", RubyArray.newArray(x.getRuntime(), x, x));
