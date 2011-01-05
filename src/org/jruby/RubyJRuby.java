@@ -597,11 +597,19 @@ public class RubyJRuby {
         @JRubyMethod(name = "times", module = true)
         public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
             Ruby runtime = recv.getRuntime();
-            double system = threadBean.getCurrentThreadCpuTime() / 1000000000.0;
-            double user = threadBean.getCurrentThreadUserTime() / 1000000000.0;
+            long cpu = threadBean.getCurrentThreadCpuTime();
+            long user = threadBean.getCurrentThreadUserTime();
+            if (cpu == -1) {
+                cpu = 0L;
+            }
+            if (user == -1) {
+                user = 0L;
+            }
+            double system_d = (cpu - user) / 1000000000.0;
+            double user_d = user / 1000000000.0;
             RubyFloat zero = runtime.newFloat(0.0);
             return RubyStruct.newStruct(runtime.getTmsStruct(),
-                    new IRubyObject[] { RubyFloat.newFloat(runtime, user), RubyFloat.newFloat(runtime, system), zero, zero },
+                    new IRubyObject[] { RubyFloat.newFloat(runtime, user_d), RubyFloat.newFloat(runtime, system_d), zero, zero },
                     Block.NULL_BLOCK);
         }
     }
