@@ -84,6 +84,16 @@ public class ASTCompiler19 extends ASTCompiler {
         compileMethodArgs(node, context, expr);
     }
 
+    public void compileAssignment(Node node, BodyCompiler context, boolean expr) {
+        switch (node.getNodeType()) {
+            case MULTIPLEASGN19NODE:
+                compileMultipleAsgn19Assignment(node, context, expr);
+                break;
+            default:
+                super.compileAssignment(node, context, expr);
+        }
+    }
+
     public void compileMethodArgs(Node node, BodyCompiler context, boolean expr) {
         final ArgsNode argsNode = (ArgsNode) node;
 
@@ -172,9 +182,9 @@ public class ASTCompiler19 extends ASTCompiler {
         final IterNode iterNode = (IterNode)node;
         final ArgsNode argsNode = (ArgsNode)iterNode.getVarNode();
 
-        if (argsNode.getArity().getValue() != 0) {
-            throw new NotCompilableException("can't compile block with arguments at: " + iterNode.getPosition());
-        }
+//        if (argsNode.getArity().getValue() != 0) {
+//            throw new NotCompilableException("can't compile block with arguments at: " + iterNode.getPosition());
+//        }
 
         // create the closure class and instantiate it
         final CompilerCallback closureBody = new CompilerCallback() {
@@ -308,7 +318,7 @@ public class ASTCompiler19 extends ASTCompiler {
         final MultipleAsgn19Node multipleAsgn19Node = (MultipleAsgn19Node) node;
 
         // normal items at the front or back of the masgn
-        ArrayCallback preAssignCallback = new ArrayCallback() {
+        ArrayCallback prePostAssignCallback = new ArrayCallback() {
 
                     public void nextValue(BodyCompiler context, Object sourceArray,
                             int index) {
@@ -350,9 +360,9 @@ public class ASTCompiler19 extends ASTCompiler {
             context.ensureMultipleAssignableRubyArray(multipleAsgn19Node.getPreCount() != 0 || multipleAsgn19Node.getPostCount() != 0);
 
             if (multipleAsgn19Node.getRest() == null) {
-                context.forEachInValueArray(0, multipleAsgn19Node.getPreCount(), multipleAsgn19Node.getPre(), multipleAsgn19Node.getPostCount(), multipleAsgn19Node.getPost(), preAssignCallback, null);
+                context.forEachInValueArray(0, multipleAsgn19Node.getPreCount(), multipleAsgn19Node.getPre(), multipleAsgn19Node.getPostCount(), multipleAsgn19Node.getPost(), prePostAssignCallback, null);
             } else {
-                context.forEachInValueArray(0, multipleAsgn19Node.getPreCount(), multipleAsgn19Node.getPre(), multipleAsgn19Node.getPostCount(), multipleAsgn19Node.getPost(), preAssignCallback, restCallback);
+                context.forEachInValueArray(0, multipleAsgn19Node.getPreCount(), multipleAsgn19Node.getPre(), multipleAsgn19Node.getPostCount(), multipleAsgn19Node.getPost(), prePostAssignCallback, restCallback);
             }
         }
         // TODO: don't require pop
