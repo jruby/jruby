@@ -2,8 +2,10 @@ require 'jruby'
 require 'java'
 require 'test/minirunit'
 
+is19 = RUBY_VERSION =~ /1\.9/
+
 StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
-ASTCompiler = org.jruby.compiler.ASTCompiler
+ASTCompiler = is19 ? org.jruby.compiler.ASTCompiler19 : org.jruby.compiler.ASTCompiler
 ASTInspector = org.jruby.compiler.ASTInspector
 Block = org.jruby.runtime.Block
 IRubyObject = org.jruby.runtime.builtin.IRubyObject
@@ -86,7 +88,11 @@ test_equal(/foo/, compile_and_run(regexpLiteral))
 test_equal(nil, compile_and_run('$2'))
 test_equal(0, compile_and_run(match1))
 test_equal(0, compile_and_run(match2))
-test_equal(false, compile_and_run(match3))
+if is19 # API difference
+  test_equal(nil, compile_and_run(match3))
+else
+  test_equal(false, compile_and_run(match3))
+end
 
 def foo(arg)
   arg + '2'
@@ -199,31 +205,34 @@ test_no_exception {
   test_equal(nil, compile_and_run(whileNoBody))
 }
 
-test_no_exception {
-  # fcall with empty block
-  test_equal(nil, compile_and_run("def myfcall; yield; end; myfcall {}"))
-  # call with empty block
-  test_equal(nil, compile_and_run("def mycall; yield; end; public :mycall; self.mycall {}"))
-}
+# fcall with empty block
+test_equal(nil, compile_and_run("def myfcall; yield; end; myfcall {}"))
+# call with empty block
+test_equal(nil, compile_and_run("def mycall; yield; end; public :mycall; self.mycall {}"))
 
 # blocks with some basic single arguments
 test_no_exception {
   test_equal(1, compile_and_run("a = 0; [1].each {|a|}; a"))
   test_equal(1, compile_and_run("a = 0; [1].each {|x| a = x}; a"))
+} unless is19 # does not compile
+
+test_no_exception {
   test_equal(1, compile_and_run("[1].each {|@a|}; @a"))
   # make sure incoming array isn't treated as args array
   test_equal([1], compile_and_run("[[1]].each {|@a|}; @a"))
-}
+} unless is19 # unsupported syntax in 1.9
 
 # blocks with tail (rest) arguments
 test_no_exception {
   test_equal([2,3], compile_and_run("[[1,2,3]].each {|x,*y| break y}"))
   test_equal([], compile_and_run("1.times {|x,*y| break y}"))
   test_no_exception { compile_and_run("1.times {|x,*|}")}
-}
+} unless is19 # does not compile
 
-compile_and_run("1.times {|@@a|}")
-compile_and_run("a = []; 1.times {|a[0]|}")
+unless is19 # unsupported syntax in 1.9
+  compile_and_run("1.times {|@@a|}") 
+  compile_and_run("a = []; 1.times {|a[0]|}")
+end
 
 class_string = <<EOS
 class CompiledClass1
@@ -267,6 +276,7 @@ def foo(a, b = 1)
   [a, b]
 end
 EOS
+
 test_no_exception {
   compile_and_run(optargs_method)
 }
@@ -294,10 +304,12 @@ test_equal([1, 2, 3], compile_and_run("foo(1, *CoercibleToArray.new)"))
 
 # multiple assignment
 test_equal([1, 2, 3], compile_and_run("a = nil; 1.times { a, b, @c = 1, 2, 3; a = [a, b, @c] }; a"))
-test_equal([1, nil, nil], compile_and_run("a, (b, c) = 1; [a, b, c]"))
-test_equal([1, 2, nil], compile_and_run("a, (b, c) = 1, 2; [a, b, c]"))
-test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]"))
-test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, CoercibleToArray.new; [a, b, c]"))
+unless is19 # does not compile
+  test_equal([1, nil, nil], compile_and_run("a, (b, c) = 1; [a, b, c]"))
+  test_equal([1, 2, nil], compile_and_run("a, (b, c) = 1, 2; [a, b, c]"))
+  test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]"))
+  test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, CoercibleToArray.new; [a, b, c]"))
+end
 
 # until loops
 test_equal(3, compile_and_run("a = 1; until a == 3; a += 1; end; a"))
@@ -381,7 +393,7 @@ test_equal([1, 4, 7, 10], compile_and_run("s = true; (1..10).reject { true if (s
 big_flip = <<EOS
 s = true; (1..10).inject([]) do |ary, v|; ary << [] unless (s = !s) .. (s = !s); ary.last << v; ary; end
 EOS
-test_equal([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]], compile_and_run(big_flip))
+test_equal([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]], compile_and_run(big_flip)) unless is19 # does not compile
 big_triple_flip = <<EOS
 s = true
 (1..64).inject([]) do |ary, v|
@@ -400,12 +412,12 @@ expected = [[1, 2, 3, 4, 5, 6, 7, 8],
       [41, 42, 43, 44, 45, 46, 47, 48],
       [49, 50, 51, 52, 53, 54, 55, 56],
       [57, 58, 59, 60, 61, 62, 63, 64]]
-test_equal(expected, compile_and_run(big_triple_flip))
+test_equal(expected, compile_and_run(big_triple_flip)) unless is19 # does not compile
 
 silence_warnings {
   # bug 1305, no values yielded to single-arg block assigns a null into the arg
   test_equal(NilClass, compile_and_run("def foo; yield; end; foo {|x| x.class}"))
-}
+} unless is19 # does not compile
 
 # ensure that invalid classes and modules raise errors
 AFixnum = 1;
@@ -419,7 +431,7 @@ test_equal(["foo", "bar"], compile_and_run("a = []; a[0], a[1] = 'foo', 'bar'; a
 
 # for loops
 test_equal([2, 4, 6], compile_and_run("a = []; for b in [1, 2, 3]; a << b * 2; end; a"))
-test_equal([1, 2, 3], compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort"))
+test_equal([1, 2, 3], compile_and_run("a = []; for b, c in {:a => 1, :b => 2, :c => 3}; a << c; end; a.sort")) unless is19 # does not compile
 
 # ensure blocks
 test_equal(1, compile_and_run("a = 2; begin; a = 3; ensure; a = 1; end; a"))
@@ -479,7 +491,7 @@ test_no_exception {
 
 # JRUBY-2043
 test_equal(5, compile_and_run("def foo; 1.times { a, b = [], 5; a[1] = []; return b; }; end; foo"))
-test_equal({"1" => 2}, compile_and_run("def foo; x = {1 => 2}; x.inject({}) do |hash, (key, value)|; hash[key.to_s] = value; hash; end; end; foo"))
+test_equal({"1" => 2}, compile_and_run("def foo; x = {1 => 2}; x.inject({}) do |hash, (key, value)|; hash[key.to_s] = value; hash; end; end; foo")) unless is19 # does not compile
 
 # JRUBY-2246
 long_src = "a = 1\n"
@@ -542,8 +554,8 @@ test_equal false, false.self_check
 
 # JRUBY-4757 and JRUBY-2621: can't compile large array/hash
 large_array = (1..10000).to_a.inspect
-large_hash = large_array
+large_hash = large_array.clone
 large_hash.gsub!('[', '{')
 large_hash.gsub!(']', '}')
 test_equal(eval(large_array), compile_and_run(large_array))
-test_equal(eval(large_hash), compile_and_run(large_hash))
+test_equal(eval(large_hash), compile_and_run(large_hash)) unless is19 # invalid syntax in 1.9
