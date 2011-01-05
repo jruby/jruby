@@ -221,9 +221,12 @@ public abstract class LexerSource {
             value[count] = (byte) c;
         }
 
-        int codepoint = encoding.mbcToCode(value, 0, count);
-        int length = encoding.codeToMbcLength(codepoint);
+        int length = encoding.length(value, 0, count);
+        if (length < 0) {
+            return -2; // TODO: Hack
+        }
 
+        int codepoint = encoding.mbcToCode(value, 0, length);
         for (int i = count - 1; i >= length; i--) {
             unread(value[i]);
         }
