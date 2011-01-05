@@ -375,7 +375,8 @@ public class RubyEncoding extends RubyObject {
         IRubyObject defaultExternal = convertEncodingToRubyEncoding(runtime, runtime.getDefaultExternalEncoding());
 
         if (defaultExternal.isNil()) {
-            ByteList encodingName = ByteList.create(Charset.defaultCharset().name());
+            // TODO: MRI seems to default blindly to US-ASCII and we were using Charset default from Java...which is right?
+            ByteList encodingName = ByteList.create("US-ASCII");
             Encoding encoding = runtime.getEncodingService().loadEncoding(encodingName);
 
             runtime.setDefaultExternalEncoding(encoding);
