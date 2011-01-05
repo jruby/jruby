@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import org.jcodings.Encoding;
 
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTCompiler;
@@ -57,7 +58,7 @@ import org.jruby.compiler.ASTCompiler19;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.profile.ProfileData;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.profile.IProfileData;
 import org.jruby.runtime.profile.AbstractProfilePrinter;
 import org.jruby.runtime.profile.FlatProfilePrinter;
@@ -174,6 +175,9 @@ public class RubyInstanceConfig {
     private int jitMaxSize;
     private final boolean samplingEnabled;
     private CompatVersion compatVersion;
+
+    private String internalEncoding = null;
+    private String externalEncoding = null;
 
     public enum ProfilingMode {
 		OFF, API, FLAT, GRAPH
@@ -477,6 +481,7 @@ public class RubyInstanceConfig {
                 .append("  -Cdirectory     cd to directory, before executing your script\n")
                 .append("  -d              set debugging flags (set $DEBUG to true)\n")
                 .append("  -e 'command'    one line of script. Several -e's allowed. Omit [programfile]\n")
+                .append("  -E [int:ext]    specifid internal and external encoding")
                 .append("  -Fpattern       split() pattern for autosplit (-a)\n")
                 .append("  -i[extension]   edit ARGV files in place (make backup if extension supplied)\n")
                 .append("  -Idirectory     specify $LOAD_PATH directory (may be used more than once)\n")
@@ -492,6 +497,7 @@ public class RubyInstanceConfig {
                 .append("  -s              enable some switch parsing for switches after script name\n")
                 .append("  -S              look for the script in bin or using PATH environment variable\n")
                 .append("  -T[level]       turn on tainting checks\n")
+                .append("  -U              use UTF-8 as default internal encoding")
                 .append("  -v              print version number, then turn on verbose mode\n")
                 .append("  -w              turn warnings on for your script\n")
                 .append("  -W[level]       set warning level; 0=silence, 1=medium, 2=verbose (default)\n")
@@ -1042,6 +1048,9 @@ public class RubyInstanceConfig {
                     inlineScript.append('\n');
                     hasInlineScript = true;
                     break FOR;
+                case 'E':
+                    processEncodingOption(grabValue(getArgumentError("unknown encoding name")));
+                    break FOR;
                 case 'F':
                     inputFieldSeparator = grabValue(getArgumentError(" -F must be followed by a pattern for input field separation"));
                     break FOR;
@@ -1104,6 +1113,9 @@ public class RubyInstanceConfig {
 
                     break FOR;
                 }
+                case 'U':
+                    internalEncoding = "UTF-8";
+                    break;
                 case 'v':
                     verbose = Boolean.TRUE;
                     setShowVersion(true);
@@ -1263,6 +1275,20 @@ public class RubyInstanceConfig {
                 default:
                     throw new MainExitException(1, "jruby: unknown option " + argument);
                 }
+            }
+        }
+
+        private void processEncodingOption(String value) {
+            String[] encodings = value.split(":", 3);
+
+            switch(encodings.length) {
+                case 3:
+                    throw new MainExitException(1, "extra argument for -E: " + encodings[2]);
+                case 2:
+                    internalEncoding = encodings[1];
+                case 1:
+                    externalEncoding = encodings[0];
+                // Zero is impossible
             }
         }
 
@@ -1583,6 +1609,14 @@ public class RubyInstanceConfig {
 
     public void setKCode(KCode kcode) {
         this.kcode = kcode;
+    }
+
+    public String getInternalEncoding() {
+        return internalEncoding;
+    }
+
+    public String getExternalEncoding() {
+        return externalEncoding;
     }
 
     public String getRecordSeparator() {
