@@ -627,11 +627,7 @@
     <echo message="${jar-complete-gems}"/>
     <fail>
       <condition>
-        <not><and>
-          <contains string="${jar-complete-gems}" substring="rake"/>
-          <contains string="${jar-complete-gems}" substring="rspec"/>
-          <contains string="${jar-complete-gems}" substring="sources"/>
-        </and></not>
+        <not><contains string="${jar-complete-gems}" substring="rake"/></not>
       </condition>
     </fail>
     <java jar="lib/jruby-complete.jar" fork="true" failonerror="true" outputproperty="jar-complete-rake">
@@ -746,39 +742,62 @@
     </emma>
   </target>
 
-  <target name="install-gems" depends="install-dist-gems,install-jruby-launcher-gem"/>
+  <target name="install-gems" depends="install-dev-gems,install-jruby-launcher-gem"/>
 
-  <target name="install-dist-gems" depends="jar" unless="install-dist-gems.hasrun">
-    <available property="dist.gems.installed" value="true"
-        file="${basedir}/lib/ruby/gems/1.8/gems/rake-0.8.7"/>
-    <antcall target="_idg_internal_"/>
-    <property name="install-dist-gems.hasrun" value="true"/>
-  </target>
+  <condition property="dev.gems.installed">
+    <uptodate>
+      <srcfiles dir="${basedir}" includes="${dev.gems}"/>
+      <chainedmapper>
+        <flattenmapper/>
+        <globmapper from="*.gem" to="${basedir}/lib/ruby/gems/1.8/specifications/*.gemspec"/>
+      </chainedmapper>
+    </uptodate>
+  </condition>
 
-  <target name="_idg_internal_" unless="dist.gems.installed">
+  <target name="install-dev-gems" depends="jar" unless="dev.gems.installed">
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
+      <arg line="-S gem uninstall ${dev.gem.names}"/>
+    </java>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
-      <arg line="--command maybe_install_gems ${dev.gems}"/>
+      <arg line="-S gem install ${dev.gems}"/>
     </java>
   </target>
 
-  <target name="install-jruby-launcher-gem" depends="jar" unless="install-jruby-launcher-gem.hasrun">
-    <available property="dist.gems.installed" value="true"
-        file="${basedir}/lib/ruby/gems/1.8/gems/jruby-launcher-1.0.3-java"/>
-    <antcall target="_idg_internal_"/>
-    <property name="install-jruby-launcher-gem.hasrun" value="true"/>
-  </target>
+  <condition property="jruby-launcher.gem.installed">
+    <or>
+      <os family="windows"/> <!-- windows doesn't need the launcher -->
+      <uptodate>
+        <srcfiles dir="${basedir}" includes="${jruby.launcher.gem}"/>
+        <chainedmapper>
+          <flattenmapper/>
+          <globmapper from="*.gem" to="${basedir}/lib/ruby/gems/1.8/specifications/*.gemspec"/>
+        </chainedmapper>
+      </uptodate>
+    </or>
+  </condition>
 
-  <target name="_ijlg_internal_" unless="jruby.launcher.gem.installed">
+  <target name="install-jruby-launcher-gem" depends="jar" unless="jruby-launcher.gem.installed">
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
+      <classpath refid="build.classpath"/>
+      <classpath path="${jruby.classes.dir}"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
+      <arg line="-S gem uninstall jruby-launcher"/>
+    </java>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
-      <arg line="--command maybe_install_gems ${jruby.launcher.gem}"/>
+      <arg line="-S gem install ${jruby.launcher.gem}"/>
     </java>
   </target>
 
@@ -1501,7 +1520,7 @@
     </antcall>
   </target>
 
-  <target name="dist" depends="install-dist-gems,dist-bin,dist-src,dist-jar-complete">
+  <target name="dist" depends="install-dev-gems,dist-bin,dist-src,dist-jar-complete">
     <rake task="gem"/>
     <rake task="installer"/>
   </target>
