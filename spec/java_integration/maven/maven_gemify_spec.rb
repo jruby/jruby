@@ -24,6 +24,13 @@ begin
     end
   end
 
+  describe Gem::SpecFetcher do
+    it "downloads specs for maven artifacts" do
+      matching = Gem::SpecFetcher.fetcher.find_matching Gem::Dependency.new("commons-lang.commons-lang")
+      matching.should_not be_empty
+    end
+  end
+
   describe Gem::Maven::Gemify do
     it "creates an instance of the Maven class" do
       Gem::Maven::Gemify.maven.should be_kind_of(org.apache.maven.Maven)
@@ -73,6 +80,7 @@ begin
       Gem::Maven::Gemify.new(["http://repository.codehaus.org/"]).repositories.map(&:to_s).should == expected
       Gem::Maven::Gemify.new("mvn://repository.codehaus.org/").repositories.map(&:to_s).should == expected
       Gem::Maven::Gemify.new(URI.parse("mvn://repository.codehaus.org/")).repositories.map(&:to_s).should == expected
+      Gem::Maven::Gemify.new(URI.parse("mvn:central")).repositories.map(&:to_s).should == [Gem::Maven::Gemify::MAVEN_REPOS["central"]]
     end
   end
 rescue => e

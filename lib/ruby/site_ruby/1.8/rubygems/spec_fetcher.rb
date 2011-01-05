@@ -97,7 +97,7 @@ class Gem::SpecFetcher
     # from rubygems/maven_gemify.rb
     is_maven = Gem::Specification.maven_name? spec[0]
     if is_maven
-      uri = URI.parse("http://maven/#{spec_file_name}")
+      uri = source_uri + spec_file_name
     else
       uri = source_uri + "#{Gem::MARSHAL_SPEC_DIR}#{spec_file_name}"
     end
@@ -138,11 +138,6 @@ class Gem::SpecFetcher
   # is false, gems for all platforms are returned.
 
   def find_matching_with_errors(dependency, all = false, matching_platform = true, prerelease = false)
-    # from rubygems/maven_gemify.rb
-    if Gem::Specification.maven_name? dependency.name
-      return find_matching_using_maven(dependency)
-    end
-
     found = {}
 
     rejected_specs = {}

@@ -1,4 +1,7 @@
 require 'uri'
+require 'rubygems/specification'
+require 'rubygems/spec_fetcher'
+require 'rubygems/remote_fetcher'
 
 module Gem
   class Specification
@@ -19,7 +22,7 @@ module Gem
 
   class SpecFetcher
     def gemify_generate_spec(spec)
-      specfile = Gem::Maven::Gemify.new.generate_spec(spec[0], spec[1])
+      specfile = Gem::Maven::Gemify.new(maven_sources).generate_spec(spec[0], spec[1])
       Marshal.dump(Gem::Specification.from_yaml(File.read(specfile)))
     end
     private :gemify_generate_spec
@@ -33,7 +36,7 @@ module Gem
         dep_name = dependency.name
       end
 
-      Gem::Maven::Gemify.new.get_versions(dep_name).each do |version|
+      Gem::Maven::Gemify.new(maven_sources).get_versions(dep_name).each do |version|
         # maven-versions which start with an letter get "0.0.0." prepended to
         # satisfy gem-version requirements
         if dependency.requirement.satisfied_by? Gem::Version.new "#{version.sub(/^0.0.0./, '1.')}"
@@ -44,21 +47,56 @@ module Gem
       [specs_and_sources, []]
     end
     private :find_matching_using_maven
+
+    def maven_sources
+      Gem.sources.select {|x| x =~ /^mvn:/}
+    end
+
+    alias orig_find_matching_with_errors find_matching_with_errors
+    def find_matching_with_errors(dependency, all = false, matching_platform = true, prerelease = false)
+      if Gem::Specification.maven_name? dependency.name
+        find_matching_using_maven(dependency)
+      else
+        orig_find_matching_with_errors(dependency, all, matching_platform, prerelease)
+      end
+    end
+
+    alias orig_list list
+    def list(*args)
+      sources = Gem.sources
+      begin
+        Gem.sources -= maven_sources
+        return orig_list(*args)
+      ensure
+        Gem.sources = sources
+      end
+    end
+
+    alias orig_load_specs load_specs
+    def load_specs(source_uri, file)
+      return if source_uri.scheme == "mvn"
+      orig_load_specs(source_uri, file)
+    end
   end
 
   module Maven
     class Gemify
       BASE_GOAL = "de.saumya.mojo:gemify-maven-plugin:0.22.0"
-      MAVEN_REPOS = { "central" => "http://repo1.maven.org/maven2" }
+      MAVEN_REPOS = { "central" => nil } # gets updated at maven load time
 
       attr_reader :repositories
 
       def initialize(*repositories)
+        maven                   # ensure maven initialized
         @repositories = repositories.length > 0 ? [repositories].flatten : [MAVEN_REPOS["central"]]
         @repositories.map! do |r|
           u = URI === r ? r : URI.parse(r)
           if u.scheme == "mvn"
-            u.scheme = "http"
+            if u.opaque == "central"
+              u = URI.parse(MAVEN_REPOS["central"])
+            else
+              u.scheme = "http"
+            end
           end
           u
         end
@@ -93,6 +131,7 @@ module Gem
            org.codehaus.plexus.DefaultContainerConfiguration
            org.codehaus.plexus.DefaultPlexusContainer
            org.apache.maven.Maven
+           org.apache.maven.repository.RepositorySystem
            org.apache.maven.execution.DefaultMavenExecutionRequest
            org.apache.maven.artifact.repository.MavenArtifactRepository
            org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout
@@ -156,6 +195,8 @@ module Gem
         config = DefaultContainerConfiguration.new
         config.set_class_world class_world
         config.set_name "ruby-tools"
+        MAVEN_REPOS["central"] = RepositorySystem::DEFAULT_REMOTE_REPO_URL
+        MAVEN_REPOS["local"] = RepositorySystem::defaultUserLocalRepository.toURI.toString
         container = DefaultPlexusContainer.new(config);
         container.lookup(Maven.java_class)
       end
@@ -163,9 +204,7 @@ module Gem
       def self.maven
         @maven ||= create_maven
       end
-      def maven
-        self.class.maven
-      end
+      def maven; self.class.maven; end
 
       def self.temp_dir
         @temp_dir ||=
@@ -177,10 +216,7 @@ module Gem
             f.absolute_path
           end
       end
-
-      def temp_dir
-        self.class.temp_dir
-      end
+      def temp_dir; self.class.temp_dir; end
 
       def execute(goal, gemname, version, props = {})
         request = DefaultMavenExecutionRequest.new
