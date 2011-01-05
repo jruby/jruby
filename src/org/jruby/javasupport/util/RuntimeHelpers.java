@@ -1132,6 +1132,10 @@ public class RuntimeHelpers {
     public static RubyArray createSubarray(RubyArray input, int start) {
         return (RubyArray)input.subseqLight(start, input.size() - start);
     }
+
+    public static RubyArray createSubarray(RubyArray input, int start, int post) {
+        return (RubyArray)input.subseqLight(start, input.size() - post - start);
+    }
     
     public static RubyArray createSubarray(IRubyObject[] input, Ruby runtime, int start) {
         if (start >= input.length) {
@@ -1769,10 +1773,50 @@ public class RuntimeHelpers {
             return array.getRuntime().getNil();
         }
     }
+
+    public static IRubyObject arrayPostOrNil(RubyArray array, int post, int index) {
+        if (index < array.getLength()) {
+            return array.eltInternal(array.size() - post + index);
+        } else {
+            return array.getRuntime().getNil();
+        }
+    }
+
+    public static IRubyObject arrayPostOrNilZero(RubyArray array, int post) {
+        if (0 < array.getLength()) {
+            return array.eltInternal(array.size() - post + 0);
+        } else {
+            return array.getRuntime().getNil();
+        }
+    }
+
+    public static IRubyObject arrayPostOrNilOne(RubyArray array, int post) {
+        if (1 < array.getLength()) {
+            return array.eltInternal(array.size() - post + 1);
+        } else {
+            return array.getRuntime().getNil();
+        }
+    }
+
+    public static IRubyObject arrayPostOrNilTwo(RubyArray array, int post) {
+        if (2 < array.getLength()) {
+            return array.eltInternal(array.size() - post + 2);
+        } else {
+            return array.getRuntime().getNil();
+        }
+    }
     
     public static RubyArray subarrayOrEmpty(RubyArray array, Ruby runtime, int index) {
         if (index < array.getLength()) {
             return createSubarray(array, index);
+        } else {
+            return RubyArray.newEmptyArray(runtime);
+        }
+    }
+
+    public static RubyArray subarrayOrEmpty(RubyArray array, Ruby runtime, int index, int post) {
+        if (index + post < array.getLength()) {
+            return createSubarray(array, index, post);
         } else {
             return RubyArray.newEmptyArray(runtime);
         }

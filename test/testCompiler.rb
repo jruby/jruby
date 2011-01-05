@@ -214,7 +214,7 @@ test_equal(nil, compile_and_run("def mycall; yield; end; public :mycall; self.my
 test_no_exception {
   test_equal(1, compile_and_run("a = 0; [1].each {|a|}; a"))
   test_equal(1, compile_and_run("a = 0; [1].each {|x| a = x}; a"))
-} unless is19 # does not compile
+}
 
 test_no_exception {
   test_equal(1, compile_and_run("[1].each {|@a|}; @a"))
@@ -227,7 +227,7 @@ test_no_exception {
   test_equal([2,3], compile_and_run("[[1,2,3]].each {|x,*y| break y}"))
   test_equal([], compile_and_run("1.times {|x,*y| break y}"))
   test_no_exception { compile_and_run("1.times {|x,*|}")}
-} unless is19 # does not compile
+}
 
 unless is19 # unsupported syntax in 1.9
   compile_and_run("1.times {|@@a|}") 
@@ -304,11 +304,13 @@ test_equal([1, 2, 3], compile_and_run("foo(1, *CoercibleToArray.new)"))
 
 # multiple assignment
 test_equal([1, 2, 3], compile_and_run("a = nil; 1.times { a, b, @c = 1, 2, 3; a = [a, b, @c] }; a"))
-unless is19 # does not compile
-  test_equal([1, nil, nil], compile_and_run("a, (b, c) = 1; [a, b, c]"))
-  test_equal([1, 2, nil], compile_and_run("a, (b, c) = 1, 2; [a, b, c]"))
-  test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]"))
-  test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, CoercibleToArray.new; [a, b, c]"))
+test_equal([1, nil, nil], compile_and_run("a, (b, c) = 1; [a, b, c]"))
+test_equal([1, 2, nil], compile_and_run("a, (b, c) = 1, 2; [a, b, c]"))
+test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]"))
+test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, CoercibleToArray.new; [a, b, c]"))
+if is19
+  result = compile_and_run("a, (b, *, c), d, *e, f, (g, *h, i), j = 1,2,3,4,5,6,7,8,9,10,11,12; [a,b,c,d,e,f,g,h,i,j]")
+  test_equal([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12], result)
 end
 
 # until loops

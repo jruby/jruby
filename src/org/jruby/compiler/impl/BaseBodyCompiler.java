@@ -1293,12 +1293,30 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 getVariableCompiler().getTempLocal(tempLocal);
                 loadRuntime();
                 method.pushInt(start);
-                invokeUtilityMethod("subarrayOrEmpty", sig(RubyArray.class, RubyArray.class, Ruby.class, int.class));
+                method.pushInt(postCount);
+                invokeUtilityMethod("subarrayOrEmpty", sig(RubyArray.class, RubyArray.class, Ruby.class, int.class, int.class));
                 argsCallback.call(this);
             }
 
-            if (postCount > 0) {
-                throw new NotCompilableException("1.9 mode can't handle post variables in masgn yet");
+            for (int postStart = 0; postStart < postCount; postStart++) {
+                getVariableCompiler().getTempLocal(tempLocal);
+                method.pushInt(postCount);
+                switch (postStart) {
+                case 0:
+                    invokeUtilityMethod("arrayPostOrNilZero", sig(IRubyObject.class, RubyArray.class, int.class));
+                    break;
+                case 1:
+                    invokeUtilityMethod("arrayPostOrNilOne", sig(IRubyObject.class, RubyArray.class, int.class));
+                    break;
+                case 2:
+                    invokeUtilityMethod("arrayPostOrNilTwo", sig(IRubyObject.class, RubyArray.class, int.class));
+                    break;
+                default:
+                    method.pushInt(postStart);
+                    invokeUtilityMethod("arrayPostOrNil", sig(IRubyObject.class, RubyArray.class, int.class, int.class));
+                    break;
+                }
+                callback.nextValue(this, postSource, postStart);
             }
 
             getVariableCompiler().getTempLocal(tempLocal);
