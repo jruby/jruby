@@ -4914,7 +4914,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         RubyString result = new RubyString(runtime, getMetaClass(), res);
-        result.infectBy(this);
+        if ((!runtime.is1_9()) && (RubyFixnum.num2int(result.length())   > RubyFixnum.num2int(length())) ||
+             (runtime.is1_9()  && (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())))) {
+                 result.infectBy(this);
+             }
         return result;
     }
 
@@ -4934,11 +4937,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc = checkEncoding(padStr);
         int padCharLen = padStr.strLength(enc);
         if (pad.getRealSize() == 0 || padCharLen == 0) throw runtime.newArgumentError("zero width padding");
+        int width = RubyFixnum.num2int(arg0);
         RubyString result = justifyCommon(runtime, pad, 
                                                    padCharLen, 
                                                    padStr.singleByteOptimizable(), 
-                                                   enc, RubyFixnum.num2int(arg0), jflag);
-        result.infectBy(padStr);
+                                                   enc, width, jflag);
+        if (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())) result.infectBy(padStr);
         int cr = codeRangeAnd(getCodeRange(), padStr.getCodeRange());
         if (cr != CR_BROKEN) result.setCodeRange(cr);
         return result;
@@ -5001,7 +5005,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         res.setRealSize(p);
 
         RubyString result = new RubyString(runtime, getMetaClass(), res);
-        result.infectBy(this);
+        if ((!runtime.is1_9()) && (RubyFixnum.num2int(result.length())   > RubyFixnum.num2int(length())) ||
+             (runtime.is1_9()  && (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())))) {
+                 result.infectBy(this);
+             }
         result.associateEncoding(enc);
         return result;
     }
