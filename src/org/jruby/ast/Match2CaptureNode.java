@@ -41,7 +41,7 @@ public class Match2CaptureNode extends Match2Node {
             IRubyObject[] namedValues = matchData.getNamedBackrefValues(runtime);
 
             for (int i = 0; i < scopeOffsets.length; i++) {
-                scope.setValue(namedValues[i], scopeOffsets[i], 0);
+                scope.setValue(namedValues[i], scopeOffsets[i] & 0xffff, scopeOffsets[i] >> 16);
             }
         }
 
