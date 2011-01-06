@@ -106,9 +106,15 @@ public class RubyTime extends RubyObject {
     
     /* Some TZ values need to be overriden for Time#zone
      */
-    private static final Map<String, String> SHORT_TZNAME = new HashMap<String, String>() {{
+    private static final Map<String, String> SHORT_STD_TZNAME = new HashMap<String, String>() {{
         put("Etc/UCT", "UCT");
         put("MET", "MET"); // needs to be overriden
+        put("UCT","UCT");
+    }};
+
+    private static final Map<String, String> SHORT_DL_TZNAME = new HashMap<String, String>() {{
+        put("Etc/UCT", "UCT");
+        put("MET", "MEST"); // needs to be overriden
         put("UCT","UCT");
     }};
 
@@ -651,7 +657,13 @@ public class RubyTime extends RubyObject {
         Ruby runtime = getRuntime();
         String envTZ = getEnvTimeZone(runtime).toString();
         // see declaration of SHORT_TZNAME
-        if (SHORT_TZNAME.containsKey(envTZ)) return runtime.newString(SHORT_TZNAME.get(envTZ));
+        if (SHORT_STD_TZNAME.containsKey(envTZ) && ! dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
+            return runtime.newString(SHORT_STD_TZNAME.get(envTZ));
+        }
+        
+        if (SHORT_DL_TZNAME.containsKey(envTZ) && dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
+            return runtime.newString(SHORT_DL_TZNAME.get(envTZ));
+        }
         
         String zone = dt.getZone().getShortName(dt.getMillis());
         
