@@ -1080,10 +1080,10 @@ primary         : literal
                 | kDEFINED opt_nl tLPAREN2 expr rparen {
                     $$ = new DefinedNode($1.getPosition(), $4);
                 }
-                | kNOT tLPAREN2 expr rparen {
+                | kNOT tLPAREN expr rparen {
                     $$ = support.getOperatorCallNode(support.getConditionNode($3), "!");
                 }
-                | kNOT tLPAREN2 rparen {
+                | kNOT tLPAREN rparen {
                     $$ = support.getOperatorCallNode(NilImplicitNode.NIL, "!");
                 }
                 | operation brace_block {
