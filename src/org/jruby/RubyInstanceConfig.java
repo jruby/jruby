@@ -777,8 +777,6 @@ public class RubyInstanceConfig {
     }
 
     public void setCompatVersion(CompatVersion compatVersion) {
-        // Until we get a little more solid on 1.9 support we will only run interpreted mode
-        if (compatVersion == CompatVersion.RUBY1_9) compileMode = CompileMode.OFF;
         if (compatVersion == null) compatVersion = CompatVersion.RUBY1_8;
 
         this.compatVersion = compatVersion;

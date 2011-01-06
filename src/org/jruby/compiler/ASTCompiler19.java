@@ -40,6 +40,7 @@ import org.jruby.ast.Hash19Node;
 import org.jruby.ast.Node;
 import org.jruby.ast.LambdaNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.Match2CaptureNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
@@ -385,6 +386,13 @@ public class ASTCompiler19 extends ASTCompiler {
     @Override
     protected void createNewHash(BodyCompiler context, HashNode hashNode, ArrayCallback hashCallback) {
         context.createNewHash19(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
+    }
+
+    public void compileMatch2(Node node, BodyCompiler context, boolean expr) {
+        if (node instanceof Match2CaptureNode) {
+            throw new NotCompilableException("match with capture does not compile yet at: " + node.getPosition());
+        }
+        super.compileMatch2(node, context, expr);
     }
 
     @Override
