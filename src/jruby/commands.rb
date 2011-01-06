@@ -83,7 +83,8 @@ module JRuby
       end
 
       def method_missing(name, *)
-        $stderr.puts "jruby: No such file, directory, or command -- #{name}"
+        $stderr.puts "jruby: No such file or directory -- #{name} (LoadError)" # matches MRI's output
+        exit 1
       end
     end
   end
