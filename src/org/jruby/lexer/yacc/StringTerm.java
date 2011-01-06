@@ -317,10 +317,11 @@ public class StringTerm extends StrTerm {
             }
 
             if (!lexer.isOneEight()) {
-                if (c == '\0' && symbol) {
+                // Hmm did they change this?
+/*                if (c == '\0' && symbol) {
                     throw new SyntaxException(PID.NUL_IN_SYMBOL, lexer.getPosition(),
                             src.getCurrentLine(), "symbol cannot contain '\\0'");
-                } else if ((c & 0x80) != 0) {
+                } else*/ if ((c & 0x80) != 0) {
                     hasNonAscii = true;
                     if (buffer.getEncoding() != encoding) {
                         mixedEscape(lexer, buffer.getEncoding(), encoding);
