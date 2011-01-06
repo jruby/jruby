@@ -128,7 +128,7 @@ public interface BodyCompiler {
     /**
      * Generate a new "String" value.
      */
-    public void createNewString(ByteList value);
+    public void createNewString(ByteList value, int codeRange);
 
     /**
      * Generate a new dynamic "String" value.

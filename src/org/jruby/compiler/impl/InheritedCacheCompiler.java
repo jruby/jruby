@@ -246,7 +246,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedConstantCount++;
     }
 
-    public void cacheString(BaseBodyCompiler method, ByteList contents) {
+    public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange) {
         String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
         
         Integer index = stringIndices.get(asString);
@@ -258,10 +258,12 @@ public class InheritedCacheCompiler implements CacheCompiler {
         method.loadThis();
         method.loadRuntime();
         if (index < AbstractScript.NUMBERED_STRING_COUNT) {
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getString" + index, sig(RubyString.class, Ruby.class));
+            method.method.pushInt(codeRange);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getString" + index, sig(RubyString.class, Ruby.class, int.class));
         } else {
-            method.method.ldc(index.intValue());
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getString", sig(RubyString.class, Ruby.class, int.class));
+            method.method.pushInt(index.intValue());
+            method.method.pushInt(codeRange);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getString", sig(RubyString.class, Ruby.class, int.class, int.class));
         }
     }
 

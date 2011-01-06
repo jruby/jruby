@@ -19,7 +19,7 @@ import org.jruby.util.ByteList;
 public interface CacheCompiler {
     public void cacheCallSite(BaseBodyCompiler method, String name, CallType callType);
     
-    public void cacheString(BaseBodyCompiler method, ByteList contents);
+    public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange);
     
     public void cacheSymbol(BaseBodyCompiler method, String symbol);
     

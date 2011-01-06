@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.jcodings.CodeRange;
+import org.jcodings.Encoding;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -149,6 +151,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.util.StringSupport;
 
 /**
  *
@@ -3799,7 +3802,7 @@ public class ASTCompiler {
             if (strNode instanceof FileNode) {
                 context.loadFilename();
             } else {
-                context.createNewString(strNode.getValue());
+                context.createNewString(strNode.getValue(), strNode.getCodeRange());
             }
         }
         if (popit) context.consumeCurrentValue();
@@ -3980,7 +3983,8 @@ public class ASTCompiler {
             }
 
             public void call(BodyCompiler context) {
-                context.createNewString(xstrNode.getValue());
+                // FIXME: shouldn't this have codeRange like StrNode?
+                context.createNewString(xstrNode.getValue(), StringSupport.CR_UNKNOWN);
             }
         };
         context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);
