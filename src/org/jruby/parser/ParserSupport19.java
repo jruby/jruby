@@ -144,8 +144,13 @@ public class ParserSupport19 extends ParserSupport {
         if (firstNode instanceof DRegexpNode) {
             return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
         } else if (firstNode instanceof RegexpNode) {
-            return new Match2CaptureNode(firstNode.getPosition(), firstNode, secondNode,
-                    allocateNamedLocals((RegexpNode) firstNode));
+            int[] locals = allocateNamedLocals((RegexpNode) firstNode);
+
+            if (locals.length > 0) {
+                return new Match2CaptureNode(firstNode.getPosition(), firstNode, secondNode, locals);
+            } else {
+                return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
+            }
         } else if (secondNode instanceof DRegexpNode || secondNode instanceof RegexpNode) {
             return new Match3Node(firstNode.getPosition(), secondNode, firstNode);
         }
