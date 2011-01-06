@@ -128,9 +128,8 @@ public class ParserSupport19 extends ParserSupport {
         for (int i = 0; i < length; i++) {
             // TODO: Pass by non-local-varnamed things but make sure consistent with list we get from regexp
 
-            int slot = scope.exists(names[i]);
+            int slot = scope.isDefined(names[i]);
             if (slot >= 0) {
-                warn(ID.NAMED_CAPTURE_CONFLICT, regexpNode.getPosition(), lexer.getCurrentLine(), names[i]);
                 locals[i] = slot;
             } else {
                 locals[i] = getCurrentScope().addVariableThisScope(names[i]);
