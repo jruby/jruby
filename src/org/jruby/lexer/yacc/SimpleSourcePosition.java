@@ -51,6 +51,6 @@ public class SimpleSourcePosition implements ISourcePosition {
 
     @Override
     public String toString() {
-        return getFile() + ":" + getStartLine();
+        return getFile() + ":" + (getStartLine() + 1);
     }
 }
