@@ -388,17 +388,6 @@ public class ASTCompiler19 extends ASTCompiler {
     }
 
     @Override
-    public void compileStr(Node node, BodyCompiler context, boolean expr) {
-        StrNode strNode = (StrNode) node;
-
-        if (strNode.getCodeRange() != StringSupport.CR_7BIT) {
-            throw new NotCompilableException("can't compile non-ASCII string at: " + strNode.getPosition());
-        }
-
-        super.compileStr(node, context, expr);
-    }
-
-    @Override
     protected void splatCurrentValue(BodyCompiler context) {
         context.splatCurrentValue("splatValue19");
     }
