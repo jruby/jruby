@@ -100,8 +100,8 @@ public class RuntimeCache {
         return symbol;
     }
 
-    public final RubyString getString(Ruby runtime, int index) {
-        return RubyString.newStringShared(runtime, byteLists[index]);
+    public final RubyString getString(Ruby runtime, int index, int codeRange) {
+        return RubyString.newStringShared(runtime, byteLists[index], codeRange);
     }
 
     public final RubyFixnum getFixnum(Ruby runtime, int index, int value) {

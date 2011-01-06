@@ -466,8 +466,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         invokeRuby("newSymbol", sig(RubySymbol.class, params(String.class)));
     }
 
-    public void createNewString(ByteList value) {
-        script.getCacheCompiler().cacheString(this, value);
+    public void createNewString(ByteList value, int codeRange) {
+        script.getCacheCompiler().cacheString(this, value, codeRange);
     }
 
     public void createNewSymbol(String name) {

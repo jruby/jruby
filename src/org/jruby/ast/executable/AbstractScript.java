@@ -141,17 +141,17 @@ public abstract class AbstractScript implements Script {
 
     public static final int NUMBERED_STRING_COUNT = 10;
 
-    public final RubyString getString(Ruby runtime, int i) {return runtimeCache.getString(runtime, i);}
-    public final RubyString getString0(Ruby runtime) {return runtimeCache.getString(runtime, 0);}
-    public final RubyString getString1(Ruby runtime) {return runtimeCache.getString(runtime, 1);}
-    public final RubyString getString2(Ruby runtime) {return runtimeCache.getString(runtime, 2);}
-    public final RubyString getString3(Ruby runtime) {return runtimeCache.getString(runtime, 3);}
-    public final RubyString getString4(Ruby runtime) {return runtimeCache.getString(runtime, 4);}
-    public final RubyString getString5(Ruby runtime) {return runtimeCache.getString(runtime, 5);}
-    public final RubyString getString6(Ruby runtime) {return runtimeCache.getString(runtime, 6);}
-    public final RubyString getString7(Ruby runtime) {return runtimeCache.getString(runtime, 7);}
-    public final RubyString getString8(Ruby runtime) {return runtimeCache.getString(runtime, 8);}
-    public final RubyString getString9(Ruby runtime) {return runtimeCache.getString(runtime, 9);}
+    public final RubyString getString(Ruby runtime, int i, int codeRange) {return runtimeCache.getString(runtime, i, codeRange);}
+    public final RubyString getString0(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 0, codeRange);}
+    public final RubyString getString1(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 1, codeRange);}
+    public final RubyString getString2(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 2, codeRange);}
+    public final RubyString getString3(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 3, codeRange);}
+    public final RubyString getString4(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 4, codeRange);}
+    public final RubyString getString5(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 5, codeRange);}
+    public final RubyString getString6(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 6, codeRange);}
+    public final RubyString getString7(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 7, codeRange);}
+    public final RubyString getString8(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 8, codeRange);}
+    public final RubyString getString9(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 9, codeRange);}
 
     public static final int NUMBERED_FIXNUM_COUNT = 10;
 
