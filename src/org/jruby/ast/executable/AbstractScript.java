@@ -6,6 +6,8 @@
 package org.jruby.ast.executable;
 
 import java.math.BigInteger;
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -21,6 +23,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 
 /**
@@ -288,15 +291,18 @@ public abstract class AbstractScript implements Script {
         return runtimeCache. getMethod(context, self, 9, methodName);
     }
 
-    public void setByteList(int index, String str) {
+    public void setByteList(int index, String str, String encStr) {
         // decode chars back into bytes
         char[] chars = str.toCharArray();
         byte[] bytes = new byte[chars.length];
         for (int i = 0; i < chars.length; i++) {
             bytes[i] = (byte)chars[i];
         }
+
+        // look up encoding
+        Encoding encoding = EncodingDB.getEncodings().get(encStr.getBytes()).getEncoding();
         
-        runtimeCache.byteLists[index] = new ByteList(bytes, false);
+        runtimeCache.byteLists[index] = new ByteList(bytes, encoding, false);
     }
 
     public static CallSite[] setCallSite(CallSite[] callSites, int index, String name) {

@@ -46,6 +46,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     List<String> callSiteList = new ArrayList<String>();
     List<CallType> callTypeList = new ArrayList<CallType>();
     Map<String, Integer> stringIndices = new HashMap<String, Integer>();
+    Map<String, String> stringEncodings = new HashMap<String, String>();
     Map<String, Integer> symbolIndices = new HashMap<String, Integer>();
     Map<Long, Integer> fixnumIndices = new HashMap<Long, Integer>();
     int inheritedSymbolCount = 0;
@@ -248,11 +249,13 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
     public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange) {
         String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        String encoding = new String(contents.getEncoding().getName());
         
         Integer index = stringIndices.get(asString);
         if (index == null) {
             index = Integer.valueOf(inheritedStringCount++);
             stringIndices.put(asString, index);
+            stringEncodings.put(asString, encoding);
         }
 
         method.loadThis();
@@ -482,7 +485,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
                     initMethod.aload(0);
                     initMethod.ldc(entry.getValue());
                     initMethod.ldc(entry.getKey());
-                    initMethod.invokevirtual(p(AbstractScript.class), "setByteList", sig(void.class, int.class, String.class));
+                    initMethod.ldc(stringEncodings.get(entry.getKey()));
+                    initMethod.invokevirtual(p(AbstractScript.class), "setByteList", sig(void.class, int.class, String.class, String.class));
                 }
             }
         }

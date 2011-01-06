@@ -78,6 +78,13 @@ test_no_exception {
   compile_to_class(asgnFixnumCode);
 }
 
+if is19
+  str8bit = '"\300"'
+  str8bit_result = compile_and_run(str8bit)
+  test_equal "\300", str8bit_result
+  test_equal Encoding::ASCII_8BIT, str8bit_result.encoding
+end
+
 # clone this since we're generating classnames based on object_id above
 test_equal(5, compile_and_run(asgnFixnumCode.clone))
 test_equal(5.5, compile_and_run(asgnFloatCode))
