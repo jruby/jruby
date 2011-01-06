@@ -439,8 +439,8 @@ expr            : command_call
                 | expr kOR expr {
                     $$ = support.newOrNode($2.getPosition(), $1, $3);
                 }
-                | kNOT expr {
-                    $$ = support.getOperatorCallNode(support.getConditionNode($2), "!");
+                | kNOT opt_nl expr {
+                    $$ = support.getOperatorCallNode(support.getConditionNode($3), "!");
                 }
                 | tBANG command_call {
                     $$ = support.getOperatorCallNode(support.getConditionNode($2), "!");
@@ -1080,10 +1080,10 @@ primary         : literal
                 | kDEFINED opt_nl tLPAREN2 expr rparen {
                     $$ = new DefinedNode($1.getPosition(), $4);
                 }
-                | kNOT tLPAREN expr rparen {
+                | kNOT tLPAREN2 expr rparen {
                     $$ = support.getOperatorCallNode(support.getConditionNode($3), "!");
                 }
-                | kNOT tLPAREN rparen {
+                | kNOT tLPAREN2 rparen {
                     $$ = support.getOperatorCallNode(NilImplicitNode.NIL, "!");
                 }
                 | operation brace_block {
