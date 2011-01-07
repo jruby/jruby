@@ -128,6 +128,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
@@ -1181,6 +1182,8 @@ public final class Ruby {
             Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
             if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
             setDefaultExternalEncoding(loadedEncoding);
+        } else {
+            setDefaultExternalEncoding(USASCIIEncoding.INSTANCE);
         }
         
         encoding = config.getInternalEncoding();

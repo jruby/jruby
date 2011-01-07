@@ -92,6 +92,8 @@ import org.jruby.util.io.ChannelDescriptor;
 
 import org.jruby.util.io.SelectorFactory;
 import java.nio.channels.spi.SelectorProvider;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -629,8 +631,7 @@ public class RubyIO extends RubyObject {
                 incrementLineno(runtime, myOpenFile);
                 return str;
             } else if (limit == 0) {
-                return RubyString.newEmptyString(runtime,
-                        RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
+                return RubyString.newEmptyString(runtime, externalEncoding);
             } else if (separator.length() == 1 && limit < 0) {
                 return getlineFast(runtime, separator.get(0) & 0xFF, cache);
             } else {
@@ -718,9 +719,7 @@ public class RubyIO extends RubyObject {
     }
 
     private Encoding getExternalEncoding(Ruby runtime) {
-        return externalEncoding != null ?
-            RubyEncoding.getEncodingFromObject(runtime, externalEncoding) :
-            runtime.getDefaultExternalEncoding();
+        return externalEncoding != null ? externalEncoding : runtime.getDefaultExternalEncoding();
     }
 
     private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
@@ -1001,12 +1000,16 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject external_encoding(ThreadContext context) {
-        return externalEncoding != null ? externalEncoding : RubyEncoding.getDefaultExternal(context.getRuntime());
+        return externalEncoding != null ?
+            context.getRuntime().getEncodingService().getEncoding(externalEncoding) :
+            context.getRuntime().getNil();
     }
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject internal_encoding(ThreadContext context) {
-        return internalEncoding != null ? internalEncoding : context.getRuntime().getNil();
+        return internalEncoding != null ?
+            context.getRuntime().getEncodingService().getEncoding(internalEncoding) :
+            context.getRuntime().getNil();
     }
 
     @JRubyMethod(compat=RUBY1_9)
@@ -1035,9 +1038,9 @@ public class RubyIO extends RubyObject {
 
 
     private void setInternalEncoding(ThreadContext context, IRubyObject encoding) {
-        IRubyObject internalEncodingOption = getEncodingCommon(context, encoding);
+        Encoding internalEncodingOption = getEncodingCommon(context, encoding);
 
-        if (internalEncodingOption.toString().equals(external_encoding(context).toString())) {
+        if (internalEncodingOption == externalEncoding) {
             context.getRuntime().getWarnings().warn("Ignoring internal encoding " + encoding
                     + ": it is identical to external encoding " + external_encoding(context));
         } else {
@@ -1045,15 +1048,10 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    private IRubyObject getEncodingCommon(ThreadContext context, IRubyObject encoding) {
-        IRubyObject rubyEncoding = null;
-        if (encoding instanceof RubyEncoding) {
-            rubyEncoding = encoding;
-        } else {
-            Encoding encodingObj = RubyEncoding.getEncodingFromObject(context.getRuntime(), encoding);
-            rubyEncoding = RubyEncoding.convertEncodingToRubyEncoding(context.getRuntime(), encodingObj);            
-        }
-        return rubyEncoding;
+    private Encoding getEncodingCommon(ThreadContext context, IRubyObject encoding) {
+        if (encoding instanceof RubyEncoding) return ((RubyEncoding) encoding).getEncoding();
+        
+        return RubyEncoding.getEncodingFromObject(context.getRuntime(), encoding);
     }
 
     @JRubyMethod(required = 1, optional = 2, meta = true)
@@ -1166,8 +1164,11 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "binmode")
     public IRubyObject binmode() {
-        if (isClosed()) {
-            throw getRuntime().newIOError("closed stream");
+        if (isClosed()) throw getRuntime().newIOError("closed stream");
+
+        Ruby runtime = getRuntime();
+        if (getExternalEncoding(runtime) == USASCIIEncoding.INSTANCE) {
+            externalEncoding = ASCIIEncoding.INSTANCE;
         }
         openFile.setBinmode();
         return this;
@@ -2489,7 +2490,7 @@ public class RubyIO extends RubyObject {
 
             ByteList newBuf = empty ? ByteList.EMPTY_BYTELIST.dup() : buf;
             if (externalEncoding != null) { // TODO: Encapsulate into something more central (when adding trancoding)
-                newBuf.setEncoding(RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
+                newBuf.setEncoding(externalEncoding);
             }
             string.view(newBuf);
 
@@ -2988,9 +2989,7 @@ public class RubyIO extends RubyObject {
             byte c = (byte)RubyNumeric.fix2int(ch);
             int n = runtime.getKCode().getEncoding().length(c);
             RubyString str = runtime.newString();
-            if (externalEncoding != null) {
-                str.setEncoding(RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
-            }
+            if (externalEncoding != null) str.setEncoding(externalEncoding);
             str.setTaint(true);
             str.cat(c);
 
@@ -3287,7 +3286,7 @@ public class RubyIO extends RubyObject {
                 }
             }
 
-            if (r.size() == 0 && w.size() == 0 && e.size() == 0) {
+            if (r.isEmpty() && w.isEmpty() && e.isEmpty()) {
                 return runtime.getNil();
             }
 
@@ -3975,6 +3974,6 @@ public class RubyIO extends RubyObject {
     
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
-    protected IRubyObject externalEncoding;
-    protected IRubyObject internalEncoding;
+    protected Encoding externalEncoding;
+    protected Encoding internalEncoding;
 }
