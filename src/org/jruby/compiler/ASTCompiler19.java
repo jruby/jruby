@@ -45,6 +45,7 @@ import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.OptArgNode;
+import org.jruby.ast.SValue19Node;
 import org.jruby.ast.StarNode;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -403,6 +404,17 @@ public class ASTCompiler19 extends ASTCompiler {
         };
 
         context.match2Capture(value, matchNode.getScopeOffsets());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
+    }
+
+    @Override
+    public void compileSValue(Node node, BodyCompiler context, boolean expr) {
+        SValue19Node svalueNode = (SValue19Node)node;
+
+        compile(svalueNode.getValue(), context,true);
+
+        context.singlifySplattedValue19();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
