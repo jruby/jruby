@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.jcodings.Encoding;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -43,6 +44,7 @@ import org.jruby.compiler.BranchCallback;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.BodyCompiler;
+import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.FastSwitchType;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
@@ -2855,5 +2857,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void argsPush() {
         invokeUtilityMethod("argsPush", sig(RubyArray.class, RubyArray.class, IRubyObject.class));
+    }
+
+    public void loadEncoding(Encoding encoding) {
+        script.getCacheCompiler().cacheEncoding(this, encoding);
     }
 }
