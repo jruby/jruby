@@ -79,9 +79,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        IRubyObject value = args.length == 1 ? args[0] : context.getRuntime().newArrayNoCopy(args);
-
-        return yield(context, value, null, null, true, binding, type, block);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type, block);
     }
 
     @Override
@@ -91,13 +89,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-        IRubyObject[] args;
-        if (arg0 instanceof RubyArray) {
-            args = ((RubyArray)arg0).toJavaArray();
-        } else {
-            args = new IRubyObject[] {arg0};
-        }
-        return yieldSpecificInternal(context, args, binding, type);
+        return yield(context, arg0, binding, type);
     }
 
     @Override
@@ -154,7 +146,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
             self = prepareSelf(binding);
         }
 
-        IRubyObject[] realArgs = setupBlockArgs(args);
+        IRubyObject[] realArgs = setupBlockArgs(args, aValue);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, klass, binding);
         
@@ -179,68 +171,37 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
     }
 
-    private IRubyObject[] setupBlockArgs(IRubyObject value) {
+    private IRubyObject[] setupBlockArgs(IRubyObject value, boolean alreadyArray) {
+        Arity arity = arity();
+        int requiredCount = arity.required();
+        boolean isRest = !arity.isFixed();
+        
         IRubyObject[] parameters;
-
-        if (value instanceof RubyArray) {// && args.getMaxArgumentsCount() != 1) {
+        if (value == null) {
+            parameters = IRubyObject.NULL_ARRAY;
+        } else if (value instanceof RubyArray && (alreadyArray || (isRest && requiredCount > 0))) {
             parameters = ((RubyArray) value).toJavaArray();
         } else {
             parameters = new IRubyObject[] { value };
         }
 
         return parameters;
-//        if (!(args instanceof ArgsNoArgNode)) {
-//            Ruby runtime = context.getRuntime();
-//
-//            // FIXME: This needs to happen for lambdas
-////            args.checkArgCount(runtime, parameters.length);
-//            args.prepare(context, runtime, self, parameters, block);
-//        }
-    }
-    
-    private IRubyObject defaultArgsLogic(Ruby ruby, IRubyObject value) {
-        int length = ArgsUtil.arrayLength(value);
-        switch (length) {
-        case 0:
-            return ruby.getNil();
-        case 1:
-            return ((RubyArray)value).eltInternal(0);
-        default:
-            blockArgWarning(ruby, length);
-        }
-        return value;
-    }
-    
-    private void blockArgWarning(Ruby ruby, int length) {
-        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
-                    length + " for 1)");
     }
 
     protected IRubyObject[] setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {
-        switch (argumentType) {
-        case ZERO_ARGS:
-            return null;
-        case MULTIPLE_ASSIGNMENT:
-        case SINGLE_RESTARG:
-            return ArgsUtil.convertToRubyArray(ruby, value, hasMultipleArgsHead).toJavaArray();
-        default:
-            return defaultArgLogic(ruby, value);
-        }
-    }
-    
-    private IRubyObject[] defaultArgLogic(Ruby ruby, IRubyObject value) {
-        if (value == null) {
-//            return warnMultiReturnNil(ruby);
-            return new IRubyObject[] {ruby.getNil()};
-        } else if (value instanceof RubyArray) {
-            return ((RubyArray)value).toJavaArray();
-        }
-        return new IRubyObject[] {value};
-    }
+        Arity arity = arity();
+        int requiredCount = arity.required();
+        boolean isRest = !arity.isFixed();
 
-    private IRubyObject[] warnMultiReturnNil(Ruby ruby) {
-        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
-        return IRubyObject.NULL_ARRAY;
+        IRubyObject[] parameters;
+        if (value == null) {
+            parameters = IRubyObject.NULL_ARRAY;
+        } else if (value instanceof RubyArray && ((isRest && requiredCount > 0) || (!isRest && requiredCount > 1))) {
+            parameters = ((RubyArray) value).toJavaArray();
+        } else {
+            parameters = new IRubyObject[] { value };
+        }
+        return parameters;
     }
 
     public String getFile() {
