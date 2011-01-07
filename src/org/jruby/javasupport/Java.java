@@ -469,9 +469,9 @@ public class Java implements Library {
                     Class<?>[] interfaces = c.getInterfaces();
                     for (int i = interfaces.length; --i >= 0;) {
                         JavaClass ifc = JavaClass.get(runtime, interfaces[i]);
-                        //if (interfaces[i] != java.util.Map.class) {
+                        if (interfaces[i] != java.util.Map.class) {
                             proxyClass.includeModule(getInterfaceModule(runtime, ifc));
-                        //}
+                        }
                     }
                     if (Modifier.isPublic(c.getModifiers())) {
                         addToJavaPackageModule(proxyClass, javaClass);
