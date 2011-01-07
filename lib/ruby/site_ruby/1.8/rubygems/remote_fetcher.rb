@@ -91,16 +91,16 @@ class Gem::RemoteFetcher
 
     FileUtils.mkdir_p cache_dir rescue nil unless File.exist? cache_dir
 
-    # if it's a maven artifact, use maven to fetch it
-    if Gem::Specification.maven_name? spec.name
-      return download_maven(spec, local_gem_path)
-    end
-
    # Always escape URI's to deal with potential spaces and such
     unless URI::Generic === source_uri
       source_uri = URI.parse(URI.const_defined?(:DEFAULT_PARSER) ?
                              URI::DEFAULT_PARSER.escape(source_uri) :
                              URI.escape(source_uri))
+    end
+
+    # if it's a maven artifact, use maven to fetch it
+    if maven_spec? spec.name, source_uri
+      return download_maven(spec, local_gem_path)
     end
 
     scheme = source_uri.scheme
