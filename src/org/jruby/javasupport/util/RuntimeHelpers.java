@@ -2137,4 +2137,8 @@ public class RuntimeHelpers {
             }
         }
     }
+
+    public static RubyArray argsPush(RubyArray first, IRubyObject second) {
+        return ((RubyArray)first.dup()).append(second);
+    }
 }

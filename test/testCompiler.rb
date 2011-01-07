@@ -606,3 +606,7 @@ if is19 # named groups with capture
   end
   foo"))
 end
+
+if is19 # chained argscat and argspush
+  test_equal([1,2,3,1,2,4,5], compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]"))
+end
