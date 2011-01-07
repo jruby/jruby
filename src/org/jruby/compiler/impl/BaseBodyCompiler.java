@@ -2848,4 +2848,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             throw new RuntimeException("invalid preMultiAssign args: " + head + ", " + args);
         }
     }
+
+    public void argsPush() {
+        invokeUtilityMethod("argsPush", sig(RubyArray.class, RubyArray.class, IRubyObject.class));
+    }
 }

@@ -46,10 +46,8 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.StarNode;
-import org.jruby.ast.StrNode;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
-import org.jruby.util.StringSupport;
 
 /**
  *
@@ -185,7 +183,7 @@ public class ASTCompiler19 extends ASTCompiler {
 
         compile(argsPush.getFirstNode(), context,true);
         compile(argsPush.getSecondNode(), context,true);
-        context.appendToArray();
+        context.argsPush();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

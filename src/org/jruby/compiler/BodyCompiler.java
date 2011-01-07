@@ -640,4 +640,9 @@ public interface BodyCompiler {
      * @return
      */
     public boolean isSimpleRoot();
+
+    /**
+     * Pass two stack elements, the first an array, to the "argsPush" utility method.
+     */
+    public void argsPush();
 }
