@@ -1127,7 +1127,8 @@ public class Pack {
                             lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
                         }
                     }
-                    result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, encoding, false)));
+                    result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index,
+                            ASCIIEncoding.INSTANCE, false)));
                 }
                 break;
 
@@ -1162,7 +1163,8 @@ public class Pack {
                                 lElem[index++] = value;
                             }
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, encoding, false)));
+                        result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index,
+                                ASCIIEncoding.INSTANCE, false)));
                     }
                     break;
                 case 'U' :
