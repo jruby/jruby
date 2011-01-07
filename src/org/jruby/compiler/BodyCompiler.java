@@ -29,6 +29,7 @@ package org.jruby.compiler;
 
 import java.util.List;
 import java.util.Map;
+import org.jcodings.Encoding;
 import org.jruby.ast.NodeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -650,4 +651,9 @@ public interface BodyCompiler {
      * Pass two stack elements, the first an array, to the "argsPush" utility method.
      */
     public void argsPush();
+
+    /**
+     * Load the specified encoding.
+     */
+    public void loadEncoding(Encoding encoding);
 }

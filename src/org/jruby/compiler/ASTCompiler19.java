@@ -34,6 +34,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.EncodingNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.Hash19Node;
@@ -62,6 +63,9 @@ public class ASTCompiler19 extends ASTCompiler {
             return;
         }
         switch (node.getNodeType()) {
+        case ENCODINGNODE:
+            compileEncoding(node, context, expr);
+            break;
         case LAMBDANODE:
             compileLambda(node, context, expr);
             break;
@@ -114,12 +118,12 @@ public class ASTCompiler19 extends ASTCompiler {
                     ArrayNode arguments = (ArrayNode)object;
                     Node argNode = arguments.get(index);
                     switch (argNode.getNodeType()) {
-                    case MULTIPLEASGN19NODE:
-                        compileMultipleAsgn19Assignment(argNode, context, false);
-                        break;
                     case ARGUMENTNODE:
                         int varIndex = ((ArgumentNode)argNode).getIndex();
                         context.getVariableCompiler().assignLocalVariable(varIndex, false);
+                        break;
+                    case MULTIPLEASGN19NODE:
+                        compileMultipleAsgn19Assignment(argNode, context, false);
                         break;
                     default:
                         throw new NotCompilableException("unknown argument type: " + argNode);
@@ -187,6 +191,19 @@ public class ASTCompiler19 extends ASTCompiler {
         context.argsPush();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
+    }
+
+    public void compileEncoding(Node node, BodyCompiler context, boolean expr) {
+        final EncodingNode encodingNode = (EncodingNode)node;
+
+        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
+        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
+
+        if (doit) {
+            context.loadEncoding(encodingNode.getEncoding());
+        }
+
+        if (popit) context.consumeCurrentValue();
     }
 
     @Override

@@ -6,6 +6,7 @@
 package org.jruby.compiler;
 
 import java.math.BigInteger;
+import org.jcodings.Encoding;
 import org.jruby.ast.NodeType;
 import org.jruby.compiler.impl.BaseBodyCompiler;
 import org.jruby.parser.StaticScope;
@@ -20,6 +21,8 @@ public interface CacheCompiler {
     public void cacheCallSite(BaseBodyCompiler method, String name, CallType callType);
     
     public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange);
+
+    public void cacheEncoding(BaseBodyCompiler method, Encoding encoding);
     
     public void cacheSymbol(BaseBodyCompiler method, String symbol);
     
