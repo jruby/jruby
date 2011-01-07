@@ -2822,7 +2822,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return gsub19(context, arg0, arg1, block, true);
     }
 
-    private final IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
+    private IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
         Ruby runtime = context.getRuntime();
         IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(arg1, runtime.getHash(), "to_hash");
 
@@ -6554,16 +6554,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
                         int c = codePoint(runtime, enc, buf, t.p, t.pend);
                         t.p += codeLength(runtime, enc, c);
                         if (t.now > c) {
-                            if (runtime.is1_9()) {
-                                if (t.now < 0x80 && c < 0x80) {
-                                    throw runtime.newArgumentError("invalid range \""
-                                            + (char) t.now + "-" + (char) c + "\" in string transliteration");
-                                } else {
-                                    throw runtime.newArgumentError("invalid range in string transliteration");
-                                }
-                            } else {
-                                continue;
+                            if (t.now < 0x80 && c < 0x80) {
+                                throw runtime.newArgumentError("invalid range \""
+                                        + (char) t.now + "-" + (char) c + "\" in string transliteration");
                             }
+
+                            throw runtime.newArgumentError("invalid range in string transliteration");
                         }
                         t.gen = true;
                         t.max = c;
