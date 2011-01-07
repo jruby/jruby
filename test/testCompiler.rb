@@ -578,3 +578,13 @@ large_hash.gsub!('[', '{')
 large_hash.gsub!(']', '}')
 test_equal(eval(large_array), compile_and_run(large_array))
 test_equal(eval(large_hash), compile_and_run(large_hash)) unless is19 # invalid syntax in 1.9
+
+if is19 # block arg spreading cases
+  test_equal([1], compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}"))
+  test_equal([1], compile_and_run("x = nil; [[1]].each {|a| x = a}; x"))
+  test_equal([1,2], compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}"))
+end
+
+# non-expr case statement with return with if modified with call
+# broke in 1.9 compiler due to null "else" node pushing a nil when non-expr
+test_equal(3, compile_and_run("def foo; case 0; when 1; return 2 if self.nil?; end; return 3; end; foo"))
