@@ -703,6 +703,7 @@ public class JRubyEngineTest {
     public void testMultipleEngineStates() throws ScriptException {
         logger1.info("Multiple Engine States");
         System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
+        System.setProperty("org.jruby.embed.localvariable.behavior", "global");
         ScriptEngineManager manager = new ScriptEngineManager();
         List<ScriptEngineFactory> factories = manager.getEngineFactories();
         ScriptEngineFactory factory = null;
