@@ -59,7 +59,7 @@ public class ASTCompiler19 extends ASTCompiler {
     @Override
     public void compile(Node node, BodyCompiler context, boolean expr) {
         if (node == null) {
-            context.loadNil();
+            if (expr) context.loadNil();
             return;
         }
         switch (node.getNodeType()) {
