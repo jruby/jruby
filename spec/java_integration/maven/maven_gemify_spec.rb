@@ -9,18 +9,19 @@ begin
   Gem::Maven::Gemify.verbose = true if $DEBUG || ENV['DEBUG']
   Gem::Maven::Gemify.maven
 
-  describe Gem::Specification, "maven_name?" do
+  describe Gem::MavenUtils, "maven_name?" do
+    include Gem::MavenUtils
     it "matches dot-separated artifacts" do
-      Gem::Specification.maven_name?('commons-lang.commons-lang').should be_true
+      maven_name?('commons-lang.commons-lang').should be_true
     end
 
     it "matches colon-separated artifacts" do
-      Gem::Specification.maven_name?('commons-lang:commons-lang').should be_true
+      maven_name?('commons-lang:commons-lang').should be_true
     end
 
     it "does not match things that look like a windows filename" do
-      Gem::Specification.maven_name?('c:ommons-lang:commons-lang').should be_false
-      Gem::Specification.maven_name?('c:/temp/somefile').should be_false
+      maven_name?('c:ommons-lang:commons-lang').should be_false
+      maven_name?('c:/temp/somefile').should be_false
     end
   end
 

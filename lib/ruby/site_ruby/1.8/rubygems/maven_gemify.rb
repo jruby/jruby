@@ -1,24 +1,24 @@
 require 'uri'
-require 'rubygems/specification'
 require 'rubygems/spec_fetcher'
 require 'rubygems/remote_fetcher'
 
 module Gem
-  class Specification
-    # return whether the spec name represents a maven artifact
-    def self.maven_name?(name)
+  module MavenUtils
+    def maven_name?(name)
       name = name.source if Regexp === name
       name =~ /^[^:.]{2,}[.:]/
     end
-  end
 
-  module MavenUtils
+    def maven_source_uri?(source_uri)
+      source_uri.scheme == "mvn" || source_uri.host == "maven"
+    end
+
     def maven_sources
       Gem.sources.select {|x| x =~ /^mvn:/}
     end
 
     def maven_spec?(gemname, source_uri)
-      Gem::Specification.maven_name?(gemname) && source_uri.scheme == "mvn" || source_uri.host == "maven"
+      maven_name?(gemname) && maven_source_uri?(source_uri)
     end
   end
 
@@ -35,40 +35,14 @@ module Gem
   class SpecFetcher
     include MavenUtils
 
-    def gemify_generate_spec(spec)
-      specfile = Gem::Maven::Gemify.new(maven_sources).generate_spec(spec[0], spec[1])
-      return nil unless specfile
-      Marshal.dump(Gem::Specification.from_yaml(File.read(specfile)))
-    end
-    private :gemify_generate_spec
-
-    # use maven to locate (generate) the specification for the dependency in question
-    def find_matching_using_maven(dependency)
-      specs_and_sources = []
-      if dependency.name.is_a? Regexp
-        dep_name = dependency.name.source.sub(/\^/, '')
-      else
-        dep_name = dependency.name
-      end
-
-      Gem::Maven::Gemify.new(maven_sources).get_versions(dep_name).each do |version|
-        # maven-versions which start with an letter get "0.0.0." prepended to
-        # satisfy gem-version requirements
-        if dependency.requirement.satisfied_by? Gem::Version.new "#{version.sub(/^0.0.0./, '1.')}"
-          specs_and_sources.push [[dep_name, version, "java"], "http://maven/"]
-        end
-      end
-
-      [specs_and_sources, []]
-    end
-    private :find_matching_using_maven
-
     alias orig_find_matching_with_errors find_matching_with_errors
     def find_matching_with_errors(dependency, all = false, matching_platform = true, prerelease = false)
-      if Gem::Specification.maven_name? dependency.name
-        result = find_matching_using_maven(dependency)
+      if maven_name? dependency.name
+        result = maven_find_matching_with_errors(dependency)
       end
-      if result.nil? || result.flatten.empty?
+      if result && !result.flatten.empty?
+        result
+      else
         orig_find_matching_with_errors(dependency, all, matching_platform, prerelease)
       end
     end
@@ -88,6 +62,33 @@ module Gem
     def load_specs(source_uri, file)
       return if source_uri.scheme == "mvn"
       orig_load_specs(source_uri, file)
+    end
+
+    private
+    def maven_generate_spec(spec)
+      specfile = Gem::Maven::Gemify.new(maven_sources).generate_spec(spec[0], spec[1])
+      return nil unless specfile
+      Marshal.dump(Gem::Specification.from_yaml(File.read(specfile)))
+    end
+
+    # use maven to locate (generate) the specification for the dependency in question
+    def maven_find_matching_with_errors(dependency)
+      specs_and_sources = []
+      if dependency.name.is_a? Regexp
+        dep_name = dependency.name.source.sub(/\^/, '')
+      else
+        dep_name = dependency.name
+      end
+
+      Gem::Maven::Gemify.new(maven_sources).get_versions(dep_name).each do |version|
+        # maven-versions which start with an letter get "0.0.0." prepended to
+        # satisfy gem-version requirements
+        if dependency.requirement.satisfied_by? Gem::Version.new "#{version.sub(/^0.0.0./, '1.')}"
+          specs_and_sources.push [[dep_name, version, "java"], "http://maven/"]
+        end
+      end
+
+      [specs_and_sources, []]
     end
   end
 

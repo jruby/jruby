@@ -2,7 +2,6 @@ require 'rubygems/remote_fetcher'
 require 'rubygems/user_interaction'
 require 'rubygems/errors'
 require 'rubygems/text'
-require 'rubygems/maven_gemify'
 
 ##
 # SpecFetcher handles metadata updates from remote gem repositories.
@@ -105,7 +104,7 @@ class Gem::SpecFetcher
     else
       spec = if maven_spec?(spec[0], source_uri)
         # from rubygems/maven_gemify.rb
-        gemify_generate_spec(spec)
+        maven_generate_spec(spec)
       end
       unless spec
         uri.path << '.rz'

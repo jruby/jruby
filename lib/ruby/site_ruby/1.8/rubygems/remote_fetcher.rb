@@ -1,6 +1,5 @@
 require 'rubygems'
 require 'rubygems/user_interaction'
-require 'rubygems/maven_gemify'
 require 'uri'
 
 ##
