@@ -14,7 +14,7 @@ module Gem
 
   class RemoteFetcher
     def download_maven(spec, local_gem_path)
-      FileUtils.cp Gem::Maven::Gemify.new.generate_gem(spec.name, spec.version), local_gem_path
+      FileUtils.cp Gem::Maven::Gemify.new(maven_sources).generate_gem(spec.name, spec.version), local_gem_path
       local_gem_path
     end
     private :download_maven
@@ -104,7 +104,7 @@ module Gem
 
       @@verbose = false
       def self.verbose?
-        @@verbose
+        @@verbose || $DEBUG
       end
       def verbose?
         self.class.verbose?
