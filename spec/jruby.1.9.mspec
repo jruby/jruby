@@ -15,8 +15,6 @@ class MSpecScript
   # Language features specs
   set :language, [
     SPEC_DIR + '/language',
-
-    '^' + SPEC_DIR + '/language/symbol_spec.rb'
   ]
 
   # Core library specs
@@ -24,7 +22,6 @@ class MSpecScript
     SPEC_DIR + '/core',
 
     '^' + SPEC_DIR + '/core/continuation',
-    '^' + SPEC_DIR + '/core/module/name_spec.rb'
   ]
 
   # Filter out ObjectSpace specs if ObjectSpace is disabled
