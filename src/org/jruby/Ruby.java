@@ -1535,11 +1535,9 @@ public final class Ruby {
 
         if(is1_9()) {
             // see ruby.c's ruby_init_gems function
-            if (LOAD_PRELUDE) {
-                defineModule("Gem"); // dummy Gem module for prelude
-                loadFile("builtin/prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/prelude.rb"), false);
-                loadFile("builtin/gem_prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/gem_prelude.rb"), false);
-            }
+            defineModule("Gem"); // dummy Gem module for prelude
+            loadFile("builtin/prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/prelude.rb"), false);
+            loadFile("builtin/gem_prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/gem_prelude.rb"), false);
         }
 
         getLoadService().require("enumerator");
@@ -4102,7 +4100,4 @@ public final class Ruby {
 
     // The method objects for serial numbers
     public DynamicMethod[] profiledMethods = new DynamicMethod[0];
-
-    // whether to load prelude and gem_prelude. Disable to skip them for debugging.
-    public static final boolean LOAD_PRELUDE = false;
 }
