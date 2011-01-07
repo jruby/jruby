@@ -514,6 +514,8 @@ public interface BodyCompiler {
 
     public void match2(CompilerCallback value);
 
+    public void match2Capture(CompilerCallback value, int[] scopeOffsets);
+
     public void match3();
 
     public void createNewRegexp(ByteList value, int options);
