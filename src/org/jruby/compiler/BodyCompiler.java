@@ -471,6 +471,11 @@ public interface BodyCompiler {
      * zero, use nil
      */
     public void singlifySplattedValue();
+
+    /**
+     * 1.9 version of singlifySplattedValue.
+     */
+    public void singlifySplattedValue19();
     
     /**
      * Given an IRubyObject[] on the stack (or otherwise available as the present object)
