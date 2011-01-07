@@ -12,7 +12,15 @@ module Gem
     end
   end
 
+  module MavenSources
+    def maven_sources
+      Gem.sources.select {|x| x =~ /^mvn:/}
+    end
+  end
+
   class RemoteFetcher
+    include MavenSources
+
     def download_maven(spec, local_gem_path)
       FileUtils.cp Gem::Maven::Gemify.new(maven_sources).generate_gem(spec.name, spec.version), local_gem_path
       local_gem_path
@@ -21,6 +29,8 @@ module Gem
   end
 
   class SpecFetcher
+    include MavenSources
+
     def gemify_generate_spec(spec)
       specfile = Gem::Maven::Gemify.new(maven_sources).generate_spec(spec[0], spec[1])
       Marshal.dump(Gem::Specification.from_yaml(File.read(specfile)))
@@ -47,10 +57,6 @@ module Gem
       [specs_and_sources, []]
     end
     private :find_matching_using_maven
-
-    def maven_sources
-      Gem.sources.select {|x| x =~ /^mvn:/}
-    end
 
     alias orig_find_matching_with_errors find_matching_with_errors
     def find_matching_with_errors(dependency, all = false, matching_platform = true, prerelease = false)
