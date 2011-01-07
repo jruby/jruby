@@ -12,14 +12,18 @@ module Gem
     end
   end
 
-  module MavenSources
+  module MavenUtils
     def maven_sources
       Gem.sources.select {|x| x =~ /^mvn:/}
+    end
+
+    def maven_spec?(gemname, source_uri)
+      Gem::Specification.maven_name?(gemname) && source_uri.scheme == "mvn" || source_uri.host == "maven"
     end
   end
 
   class RemoteFetcher
-    include MavenSources
+    include MavenUtils
 
     def download_maven(spec, local_gem_path)
       FileUtils.cp Gem::Maven::Gemify.new(maven_sources).generate_gem(spec.name, spec.version), local_gem_path
@@ -29,10 +33,11 @@ module Gem
   end
 
   class SpecFetcher
-    include MavenSources
+    include MavenUtils
 
     def gemify_generate_spec(spec)
       specfile = Gem::Maven::Gemify.new(maven_sources).generate_spec(spec[0], spec[1])
+      return nil unless specfile
       Marshal.dump(Gem::Specification.from_yaml(File.read(specfile)))
     end
     private :gemify_generate_spec
@@ -61,8 +66,9 @@ module Gem
     alias orig_find_matching_with_errors find_matching_with_errors
     def find_matching_with_errors(dependency, all = false, matching_platform = true, prerelease = false)
       if Gem::Specification.maven_name? dependency.name
-        find_matching_using_maven(dependency)
-      else
+        result = find_matching_using_maven(dependency)
+      end
+      if result.nil? || result.flatten.empty?
         orig_find_matching_with_errors(dependency, all, matching_platform, prerelease)
       end
     end
@@ -258,9 +264,10 @@ module Gem
 
       public
       def get_versions(gemname)
-        result = execute("#{BASE_GOAL}:versions", maven_name(gemname), nil)
+        name = maven_name(gemname)
+        result = execute("#{BASE_GOAL}:versions", name, nil)
 
-        if result =~ /\[/ && result =~ /\]/
+        if result =~ /#{name} \[/
           result = result.gsub(/\n/, '').sub(/.*\[/, "").sub(/\]/, '').gsub(/ /, '').split(',')
           puts "versions: #{result.inspect}" if verbose?
           result
