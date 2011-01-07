@@ -6553,7 +6553,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     if (t.p < t.pend) {
                         int c = codePoint(runtime, enc, buf, t.p, t.pend);
                         t.p += codeLength(runtime, enc, c);
-                        if (t.now > c) continue;
+                        if (t.now > c) {
+                            if (runtime.is1_9()) {
+                                if (t.now < 0x80 && c < 0x80) {
+                                    throw runtime.newArgumentError("invalid range \""
+                                            + (char) t.now + "-" + (char) c + "\" in string transliteration");
+                                } else {
+                                    throw runtime.newArgumentError("invalid range in string transliteration");
+                                }
+                            } else {
+                                continue;
+                            }
+                        }
                         t.gen = true;
                         t.max = c;
                     }
