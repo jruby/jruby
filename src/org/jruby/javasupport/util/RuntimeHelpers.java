@@ -2087,4 +2087,54 @@ public class RuntimeHelpers {
         for (int i = 0; i < chars.length; i++) bytes[i] = (byte)chars[i];
         return bytes;
     }
+
+    public static String encodeCaptureOffsets(int[] scopeOffsets) {
+        char[] encoded = new char[scopeOffsets.length * 2];
+        for (int i = 0; i < scopeOffsets.length; i++) {
+            int offDepth = scopeOffsets[i];
+            char off = (char)(offDepth & 0xFFFF);
+            char depth = (char)(offDepth >> 16);
+            encoded[2 * i] = off;
+            encoded[2 * i + 1] = depth;
+        }
+        return new String(encoded);
+    }
+
+    public static int[] decodeCaptureOffsets(String encoded) {
+        char[] chars = encoded.toCharArray();
+        int[] scopeOffsets = new int[chars.length / 2];
+        for (int i = 0; i < scopeOffsets.length; i++) {
+            char off = chars[2 * i];
+            char depth = chars[2 * i + 1];
+            scopeOffsets[i] = (((int)depth) << 16) | (int)off;
+        }
+        return scopeOffsets;
+    }
+
+    public static IRubyObject match2AndUpdateScope(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
+        DynamicScope scope = context.getCurrentScope();
+        IRubyObject match = ((RubyRegexp)receiver).op_match(context, value);
+        updateScopeWithCaptures(context, scope, decodeCaptureOffsets(scopeOffsets), value);
+        return match;
+    }
+
+    public static void updateScopeWithCaptures(ThreadContext context, DynamicScope scope, int[] scopeOffsets, IRubyObject result) {
+        Ruby runtime = context.runtime;
+        if (result.isNil()) { // match2 directly calls match so we know we can count on result
+            IRubyObject nil = runtime.getNil();
+
+            for (int i = 0; i < scopeOffsets.length; i++) {
+                scope.setValue(nil, scopeOffsets[i], 0);
+            }
+        } else {
+            RubyMatchData matchData = (RubyMatchData)scope.getBackRef(runtime);
+            // FIXME: Mass assignment is possible since we know they are all locals in the same
+            //   scope that are also contiguous
+            IRubyObject[] namedValues = matchData.getNamedBackrefValues(runtime);
+
+            for (int i = 0; i < scopeOffsets.length; i++) {
+                scope.setValue(namedValues[i], scopeOffsets[i] & 0xffff, scopeOffsets[i] >> 16);
+            }
+        }
+    }
 }

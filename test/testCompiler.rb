@@ -588,3 +588,21 @@ end
 # non-expr case statement with return with if modified with call
 # broke in 1.9 compiler due to null "else" node pushing a nil when non-expr
 test_equal(3, compile_and_run("def foo; case 0; when 1; return 2 if self.nil?; end; return 3; end; foo"))
+
+if is19 # named groups with capture
+  test_equal([nil,'ell', 'o', 'ell'], compile_and_run("
+  def foo
+    ary = []
+    a = nil
+    b = nil
+    1.times {
+      /(?<b>ell)(?<c>o)/ =~ 'hello'
+      ary << a
+      ary << b
+      ary << c
+    }
+    ary << b
+    ary
+  end
+  foo"))
+end

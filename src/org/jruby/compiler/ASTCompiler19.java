@@ -389,10 +389,24 @@ public class ASTCompiler19 extends ASTCompiler {
     }
 
     public void compileMatch2(Node node, BodyCompiler context, boolean expr) {
-        if (node instanceof Match2CaptureNode) {
-            throw new NotCompilableException("match with capture does not compile yet at: " + node.getPosition());
+        if (!(node instanceof Match2CaptureNode)) {
+            super.compileMatch2(node, context, expr);
+            return;
         }
-        super.compileMatch2(node, context, expr);
+
+        // match with capture logic
+        final Match2CaptureNode matchNode = (Match2CaptureNode) node;
+
+        compile(matchNode.getReceiverNode(), context,true);
+        CompilerCallback value = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                compile(matchNode.getValueNode(), context,true);
+            }
+        };
+
+        context.match2Capture(value, matchNode.getScopeOffsets());
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 
     @Override

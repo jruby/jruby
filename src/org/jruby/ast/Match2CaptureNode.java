@@ -2,6 +2,7 @@ package org.jruby.ast;
 
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -28,22 +29,7 @@ public class Match2CaptureNode extends Match2Node {
         IRubyObject result = super.interpret(runtime, context, self, aBlock);
         DynamicScope scope = context.getCurrentScope();
 
-        if (result.isNil()) { // match2 directly calls match so we know we can count on result
-            IRubyObject nil = runtime.getNil();
-            
-            for (int i = 0; i < scopeOffsets.length; i++) {
-                scope.setValue(nil, scopeOffsets[i], 0);
-            }
-        } else {
-            RubyMatchData matchData = (RubyMatchData) context.getCurrentScope().getBackRef(runtime);
-            // FIXME: Mass assignment is possible since we know they are all locals in the same
-            //   scope that are also contiguous
-            IRubyObject[] namedValues = matchData.getNamedBackrefValues(runtime);
-
-            for (int i = 0; i < scopeOffsets.length; i++) {
-                scope.setValue(namedValues[i], scopeOffsets[i] & 0xffff, scopeOffsets[i] >> 16);
-            }
-        }
+        RuntimeHelpers.updateScopeWithCaptures(context, scope, scopeOffsets, result);
 
         return result;
     }

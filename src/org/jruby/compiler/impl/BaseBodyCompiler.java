@@ -1349,6 +1349,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(p(RubyRegexp.class), "op_match", sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class)));
     }
 
+    public void match2Capture(CompilerCallback value, int[] scopeOffsets) {
+        loadThreadContext();
+        value.call(this);
+        method.ldc(RuntimeHelpers.encodeCaptureOffsets(scopeOffsets));
+        invokeUtilityMethod("match2AndUpdateScope", sig(IRubyObject.class, params(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class)));
+    }
+
     public void match3() {
         loadThreadContext();
         invokeUtilityMethod("match3", sig(IRubyObject.class, RubyRegexp.class, IRubyObject.class, ThreadContext.class));
