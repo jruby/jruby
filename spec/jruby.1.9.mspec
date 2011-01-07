@@ -70,6 +70,7 @@ class MSpecScript
   MSpec.enable_feature :fiber
   MSpec.enable_feature :fiber_library
   MSpec.enable_feature :encoding
+  MSpec.enable_feature :encoding_transition
   MSpec.enable_feature :readline
 
   if WINDOWS

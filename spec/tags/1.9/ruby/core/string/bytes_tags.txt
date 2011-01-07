@@ -1,2 +1,0 @@
-fails:String#bytes agrees with #getbyte
-fails:String#bytes is unaffected by #force_encoding
