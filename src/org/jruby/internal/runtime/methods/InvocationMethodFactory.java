@@ -221,7 +221,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 }
 
                 CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
-                compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig);
+                compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position);
                 return compiledMethod;
             } catch(Exception e) {
                 e.printStackTrace();
