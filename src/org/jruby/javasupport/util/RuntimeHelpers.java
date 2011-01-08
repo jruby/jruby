@@ -22,9 +22,11 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.LiteralNode;
+import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
@@ -2242,7 +2244,14 @@ public class RuntimeHelpers {
             for (Node optNode : argsNode.getOptArgs().childNodes()) {
                 if (added) builder.append(';');
                 added = true;
-                builder.append("o").append(((OptArgNode)optNode).getName());
+                builder.append("o");
+                if (optNode instanceof OptArgNode) {
+                    builder.append(((OptArgNode)optNode).getName());
+                } else if (optNode instanceof LocalAsgnNode) {
+                    builder.append(((LocalAsgnNode)optNode).getName());
+                } else if (optNode instanceof DAsgnNode) {
+                    builder.append(((DAsgnNode)optNode).getName());
+                }
             }
         }
 
@@ -2283,22 +2292,33 @@ public class RuntimeHelpers {
 
             RubyArray elem = RubyArray.newEmptyArray(runtime);
             if (param.equals("nil")) {
+                // marker for masgn args (the parens in "a, b, (c, d)"
                 elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
                 parms.add(elem);
                 continue;
             }
 
             if (param.charAt(0) == 'q') {
+                // required/normal arg
                 elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
             } else if (param.charAt(0) == 'r') {
+                // named rest arg
                 elem.add(RubySymbol.newSymbol(runtime, "rest"));
             } else if (param.charAt(0) == 'R') {
+                // unnamed rest arg (star)
                 elem.add(RubySymbol.newSymbol(runtime, "rest"));
                 parms.add(elem);
                 continue;
             } else if (param.charAt(0) == 'o') {
+                // optional arg
                 elem.add(RubySymbol.newSymbol(runtime, "opt"));
+                if (param.length() == 1) {
+                    // no name; continue
+                    parms.add(elem);
+                    continue;
+                }
             } else if (param.charAt(0) == 'b') {
+                // block arg
                 elem.add(RubySymbol.newSymbol(runtime, "block"));
             }
             elem.add(RubySymbol.newSymbol(runtime, param.substring(1)));
