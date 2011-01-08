@@ -2861,6 +2861,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         invokeUtilityMethod("argsPush", sig(RubyArray.class, RubyArray.class, IRubyObject.class));
     }
 
+    public void argsCat() {
+        invokeUtilityMethod("argsCat", sig(RubyArray.class, IRubyObject.class, IRubyObject.class));
+    }
+
     public void loadEncoding(Encoding encoding) {
         script.getCacheCompiler().cacheEncoding(this, encoding);
     }

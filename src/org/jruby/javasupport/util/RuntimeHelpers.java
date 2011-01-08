@@ -2224,6 +2224,18 @@ public class RuntimeHelpers {
         return ((RubyArray)first.dup()).append(second);
     }
 
+    public static RubyArray argsCat(IRubyObject first, IRubyObject second) {
+        Ruby runtime = first.getRuntime();
+        IRubyObject secondArgs;
+        if (runtime.is1_9()) {
+            secondArgs = RuntimeHelpers.splatValue19(second);
+        } else {
+            secondArgs = RuntimeHelpers.splatValue(second);
+        }
+
+        return ((RubyArray)RuntimeHelpers.ensureRubyArray(runtime, first).dup()).concat(secondArgs);
+    }
+
     public static String encodeParameterList(ArgsNode argsNode) {
         StringBuilder builder = new StringBuilder();
         

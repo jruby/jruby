@@ -698,10 +698,9 @@ public class ASTCompiler {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
         compile(argsCatNode.getFirstNode(), context,true);
-        context.ensureRubyArray();
         compile(argsCatNode.getSecondNode(), context,true);
-        splatCurrentValue(context);
-        context.concatArrays();
+        context.argsCat();
+
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

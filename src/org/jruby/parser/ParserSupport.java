@@ -1410,10 +1410,17 @@ public class ParserSupport {
         // Zero-Argument declaration
         if (optional == null && rest == null && post == null && block == null) {
             if (pre == null || pre.size() == 0) return new ArgsNoArgNode(position);
-            if (pre.size() == 1) return new ArgsPreOneArgNode(position, pre);
-            if (pre.size() == 2) return new ArgsPreTwoArgNode(position, pre);
+            if (pre.size() == 1 && !hasAssignableArgs(pre)) return new ArgsPreOneArgNode(position, pre);
+            if (pre.size() == 2 && !hasAssignableArgs(pre)) return new ArgsPreTwoArgNode(position, pre);
         }
         return new ArgsNode(position, pre, optional, rest, post, block);
+    }
+
+    private boolean hasAssignableArgs(ListNode list) {
+        for (Node node : list.childNodes()) {
+            if (node instanceof AssignableNode) return true;
+        }
+        return false;
     }
 
     public Node newAlias(ISourcePosition position, Node newNode, Node oldNode) {
