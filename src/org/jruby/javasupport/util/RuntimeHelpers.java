@@ -1186,6 +1186,14 @@ public class RuntimeHelpers {
         }
     }
 
+    public static IRubyObject optElementOrNull(IRubyObject[] input, int element, int postCount) {
+        if (element + postCount >= input.length) {
+            return null;
+        } else {
+            return input[element];
+        }
+    }
+
     public static IRubyObject elementOrNil(IRubyObject[] input, int element, IRubyObject nil) {
         if (element >= input.length) {
             return nil;
@@ -1865,33 +1873,41 @@ public class RuntimeHelpers {
         }
     }
 
-    public static IRubyObject arrayPostOrNil(RubyArray array, int post, int index) {
-        if (index < array.getLength()) {
-            return array.eltInternal(array.size() - post + index);
+    public static IRubyObject arrayPostOrNil(RubyArray array, int pre, int post, int index) {
+        if (pre + post < array.getLength()) {
+            return array.eltInternal(array.getLength() - post + index);
+        } else if (pre + index < array.getLength()) {
+            return array.eltInternal(pre + index);
         } else {
             return array.getRuntime().getNil();
         }
     }
 
-    public static IRubyObject arrayPostOrNilZero(RubyArray array, int post) {
-        if (0 < array.getLength()) {
-            return array.eltInternal(array.size() - post + 0);
+    public static IRubyObject arrayPostOrNilZero(RubyArray array, int pre, int post) {
+        if (pre + post < array.getLength()) {
+            return array.eltInternal(array.getLength() - post + 0);
+        } else if (pre + 0 < array.getLength()) {
+            return array.eltInternal(pre + 0);
         } else {
             return array.getRuntime().getNil();
         }
     }
 
-    public static IRubyObject arrayPostOrNilOne(RubyArray array, int post) {
-        if (1 < array.getLength()) {
-            return array.eltInternal(array.size() - post + 1);
+    public static IRubyObject arrayPostOrNilOne(RubyArray array, int pre, int post) {
+        if (pre + post < array.getLength()) {
+            return array.eltInternal(array.getLength() - post + 1);
+        } else if (pre + 1 < array.getLength()) {
+            return array.eltInternal(pre + 1);
         } else {
             return array.getRuntime().getNil();
         }
     }
 
-    public static IRubyObject arrayPostOrNilTwo(RubyArray array, int post) {
-        if (2 < array.getLength()) {
-            return array.eltInternal(array.size() - post + 2);
+    public static IRubyObject arrayPostOrNilTwo(RubyArray array, int pre, int post) {
+        if (pre + post < array.getLength()) {
+            return array.eltInternal(array.getLength() - post + 2);
+        } else if (pre + 2 < array.getLength()) {
+            return array.eltInternal(pre + 2);
         } else {
             return array.getRuntime().getNil();
         }

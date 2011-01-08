@@ -281,7 +281,8 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                     for (int optArgElement = 0; optArgElement < optArgsCount; currentArgElement++, optArgElement++) {
                         method.aload(argsIndex);
                         method.pushInt(currentArgElement); // index for the item
-                        methodCompiler.invokeUtilityMethod("elementOrNull", sig(IRubyObject.class, IRubyObject[].class, int.class));
+                        method.pushInt(postArgsCount);
+                        methodCompiler.invokeUtilityMethod("optElementOrNull", sig(IRubyObject.class, IRubyObject[].class, int.class, int.class));
                         method.dup();
                         method.ifnull(optLabels[optArgElement]);
 
