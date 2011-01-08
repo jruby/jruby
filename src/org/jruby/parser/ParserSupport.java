@@ -1562,7 +1562,7 @@ public class ParserSupport {
     private Encoding extractEncodingFromOptions(int options) {
         switch(options & ~0xf) {
         case 16: 
-            return RubyYaccLexer.USASCII_ENCODING;
+            return null;
         case 32:
             return org.jcodings.specific.EUCJPEncoding.INSTANCE;
         case 48:
@@ -1597,13 +1597,15 @@ public class ParserSupport {
     public void setRegexpEncoding(RegexpNode end, ByteList value) {
         Encoding optionsEncoding = extractEncodingFromOptions(end.getOptions());
 
+//        System.out.println("OPTIONS = " + end.getOptions());
+//        System.out.println("OPTS ENC: " + optionsEncoding + ", vENC: " + value.getEncoding());
         // Change encoding to one specified by regexp options as long as the string is compatible.
         if (optionsEncoding != null) {
             if (optionsEncoding != value.getEncoding() && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }
             value.setEncoding(optionsEncoding);
-        } else if ((end.getOptions() & 32) != 0) {
+        } else if (((end.getOptions() & ~0xf) & 16) != 0) {
             if (value.getEncoding() == RubyYaccLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }
