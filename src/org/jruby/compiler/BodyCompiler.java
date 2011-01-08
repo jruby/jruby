@@ -637,6 +637,11 @@ public interface BodyCompiler {
     public void argsPush();
 
     /**
+     * Pass two stack elements, converting the first to an array, to the "argsCat" utility method.
+     */
+    public void argsCat();
+
+    /**
      * Load the specified encoding.
      */
     public void loadEncoding(Encoding encoding);
