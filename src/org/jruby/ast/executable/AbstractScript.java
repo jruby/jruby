@@ -23,7 +23,6 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 
 /**

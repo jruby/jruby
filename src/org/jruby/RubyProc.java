@@ -47,6 +47,7 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.OptArgNode;
 import org.jruby.exceptions.JumpException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
@@ -357,78 +358,14 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "parameters", compat = RUBY1_9)
     public IRubyObject parameters(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        RubyArray parms = RubyArray.newEmptyArray(runtime);
-        ArgsNode args;
         BlockBody body = this.getBlock().getBody();
 
-        if (!(body instanceof Interpreted19Block)) {
-            if (body instanceof MethodBlock) {
-                MethodBlock methodBlock = (MethodBlock)body;
-                return methodBlock.getMethod().parameters(context);
-            }
-            return parms;
+        if (body instanceof MethodBlock) {
+            MethodBlock methodBlock = (MethodBlock)body;
+            return methodBlock.getMethod().parameters(context);
         }
 
-        // argument names are easily accessible from interpreter
-        RubyArray elem = RubyArray.newEmptyArray(runtime);
-        args = ((Interpreted19Block) this.getBlock().getBody()).getArgs();
-
-        // required parameters
-        List<Node> children = new ArrayList();
-        if (args.getPreCount() > 0) children.addAll(args.getPre().childNodes());
-        if (args.getPostCount() > 0) children.addAll(args.getPost().childNodes());
-
-        Iterator iter = children.iterator();
-        while (iter.hasNext()) {
-            Node node = (Node) iter.next();
-            elem = RubyArray.newEmptyArray(runtime);
-            elem.add(RubySymbol.newSymbol(runtime, this.isLambda() ? "req" : "opt"));
-            if (node instanceof ArgumentNode) {
-                elem.add(RubySymbol.newSymbol(runtime, ((ArgumentNode) node).getName()));
-            }
-            parms.add(elem);
-        }
-
-        // optional parameters
-        if (args.getOptArgs() != null) {
-             children = args.getOptArgs().childNodes();
-            if (! children.isEmpty()) {
-                iter = children.iterator();
-                while (iter.hasNext()) {
-                    Node node = (Node) iter.next();
-                    elem = RubyArray.newEmptyArray(runtime);
-                    elem.add(RubySymbol.newSymbol(runtime, "opt"));
-                    if (node instanceof OptArgNode) {
-                        elem.add(RubySymbol.newSymbol(runtime, ((OptArgNode) node).getName()));
-                    }
-                    parms.add(elem);
-                }
-            }
-        }
-
-        if (args instanceof ArgsNoArgNode) {
-            elem = RubyArray.newEmptyArray(runtime);
-            elem.add(RubySymbol.newSymbol(runtime, "rest"));
-            parms.add(elem);
-        } else {
-            ArgumentNode rest = args.getRestArgNode();
-            if (rest != null) {
-                elem = RubyArray.newEmptyArray(runtime);
-                elem.add(RubySymbol.newSymbol(runtime, "rest"));
-                elem.add(RubySymbol.newSymbol(runtime, rest.getName()));
-                parms.add(elem);
-            }
-        }
-
-        BlockArgNode blockArg = args.getBlock();
-        if (blockArg != null) {
-            elem = RubyArray.newEmptyArray(runtime);
-            elem.add(RubySymbol.newSymbol(runtime, "block"));
-            elem.add(RubySymbol.newSymbol(runtime, blockArg.getName()));
-            parms.add(elem);
-        }
-        
-       return parms;
+        return RuntimeHelpers.parameterListToParameters(runtime, body.getParameterList(), isLambda());
     }
 
     @JRubyMethod(name = "lambda?", compat = RUBY1_9)
@@ -439,10 +376,7 @@ public class RubyProc extends RubyObject implements DataType {
     private boolean isLambda() {
         return type.equals(Block.Type.LAMBDA);
     }
-
-    private boolean isNormal() {
-        return type.equals(Block.Type.NORMAL);
-    }
+    
     private boolean isProc() {
         return type.equals(Block.Type.PROC);
     }
