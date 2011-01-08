@@ -1306,20 +1306,21 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
             for (int postStart = 0; postStart < postCount; postStart++) {
                 getVariableCompiler().getTempLocal(tempLocal);
+                method.pushInt(preCount);
                 method.pushInt(postCount);
                 switch (postStart) {
                 case 0:
-                    invokeUtilityMethod("arrayPostOrNilZero", sig(IRubyObject.class, RubyArray.class, int.class));
+                    invokeUtilityMethod("arrayPostOrNilZero", sig(IRubyObject.class, RubyArray.class, int.class, int.class));
                     break;
                 case 1:
-                    invokeUtilityMethod("arrayPostOrNilOne", sig(IRubyObject.class, RubyArray.class, int.class));
+                    invokeUtilityMethod("arrayPostOrNilOne", sig(IRubyObject.class, RubyArray.class, int.class, int.class));
                     break;
                 case 2:
-                    invokeUtilityMethod("arrayPostOrNilTwo", sig(IRubyObject.class, RubyArray.class, int.class));
+                    invokeUtilityMethod("arrayPostOrNilTwo", sig(IRubyObject.class, RubyArray.class, int.class, int.class));
                     break;
                 default:
                     method.pushInt(postStart);
-                    invokeUtilityMethod("arrayPostOrNil", sig(IRubyObject.class, RubyArray.class, int.class, int.class));
+                    invokeUtilityMethod("arrayPostOrNil", sig(IRubyObject.class, RubyArray.class, int.class, int.class, int.class));
                     break;
                 }
                 callback.nextValue(this, postSource, postStart);
