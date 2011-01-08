@@ -494,7 +494,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 + inheritedBlockBodyCount
                 + inheritedBlockCallbackCount
                 + inheritedMethodCount
-                + inheritedStringCount;
+                + inheritedStringCount
+                + inheritedEncodingCount;
         if (callSiteListSize + otherCount != 0) {
             ensureRuntimeCacheInited(initMethod);
 
