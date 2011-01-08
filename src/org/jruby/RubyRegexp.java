@@ -1168,7 +1168,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private IRubyObject initializeByRegexp19(RubyRegexp regexp) {
         regexp.check();
-        return initializeCommon19(regexp.str, regexp.getEncoding(), regexp.pattern.getOptions());
+        return initializeCommon19(regexp.str, regexp.getEncoding(), regexp.getOptions());
     }
 
     // rb_reg_initialize_str
@@ -1190,6 +1190,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RubyRegexp initializeCommon19(ByteList bytes, Encoding enc, int options) {
         Ruby runtime = getRuntime();        
         setKCode(runtime, options);
+
         if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
@@ -1211,8 +1212,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             enc = USASCIIEncoding.INSTANCE;
         }
 
-        if ((options & ARG_ENCODING_FIXED) == 0 && fixedEnc[0] == null) setKCodeDefault();
+        if ((options & ARG_ENCODING_FIXED) != 0 && fixedEnc[0] == null) setKCodeDefault();
         if ((options & ARG_ENCODING_NONE) != 0) setEncodingNone();
+
         pattern = getRegexpFromCache(runtime, unescaped, enc, options & ARG_OPTION_MASK);
         str = bytes;
         return this;
@@ -1770,8 +1772,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "fixed_encoding?", compat = CompatVersion.RUBY1_9)
     public IRubyObject fixed_encoding_p(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
-        return isKCodeDefault() ? runtime.getFalse() : runtime.getTrue();
+        return context.getRuntime().newBoolean(isKCodeDefault());
     }
 
     /** rb_reg_nth_match
