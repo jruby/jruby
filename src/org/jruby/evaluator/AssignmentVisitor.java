@@ -56,12 +56,12 @@ public class AssignmentVisitor {
             throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
-        int assigned = 0;
-        for (assigned = 0; assigned < node.getPreCount(); assigned++) {
-            if (assigned >= valueLen) {
-                node.getPre().get(assigned).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, false);
+        int offset = 0;
+        for (offset = 0; offset < node.getPreCount(); offset++) {
+            if (offset >= valueLen) {
+                node.getPre().get(offset).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, false);
             } else {
-                node.getPre().get(assigned).assign(runtime, context, self, value.eltInternal(assigned), Block.NULL_BLOCK, false);
+                node.getPre().get(offset).assign(runtime, context, self, value.eltInternal(offset), Block.NULL_BLOCK, false);
             }
         }
 
@@ -69,19 +69,19 @@ public class AssignmentVisitor {
         if (restArgument != null) {
             int restLen = valueLen - varLen;
             if (restLen > 0) {
-                restArgument.assign(runtime, context, self, value.subseqLight(assigned, restLen), Block.NULL_BLOCK, false);
-                assigned += restLen;
+                restArgument.assign(runtime, context, self, value.subseqLight(offset, restLen), Block.NULL_BLOCK, false);
+                offset += restLen;
             } else {
                 restArgument.assign(runtime, context, self, RubyArray.newEmptyArray(runtime), Block.NULL_BLOCK, false);
             }
         }
 
         for (int i = 0; i < node.getPostCount(); i++) {
-            assigned += i;
-            if (assigned >= valueLen) {
+            offset += i;
+            if (offset >= valueLen) {
                 node.getPost().get(i).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, false);
             } else {
-                node.getPost().get(i).assign(runtime, context, self, value.eltInternal(assigned), Block.NULL_BLOCK, false);
+                node.getPost().get(i).assign(runtime, context, self, value.eltInternal(offset), Block.NULL_BLOCK, false);
             }
         }
 
