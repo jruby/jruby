@@ -1017,6 +1017,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             CompilerCallback args,
             boolean hasMultipleArgsHead,
             NodeType argsNodeId,
+            String parameterList,
             ASTInspector inspector) {
         String blockInMethod = JavaNameMangler.mangleMethodName(rubyName);
         if (rubyName == null || rubyName.length() == 0) {
@@ -1036,7 +1037,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         loadThreadContext();
         loadSelf();
-        script.getCacheCompiler().cacheClosure19(this, closureMethodName, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, inspector);
+        script.getCacheCompiler().cacheClosure19(this, closureMethodName, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, parameterList, inspector);
 
         script.addBlockCallback19Descriptor(closureMethodName, file, line);
 

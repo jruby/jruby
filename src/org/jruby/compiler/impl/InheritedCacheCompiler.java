@@ -401,8 +401,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedBlockBodyCount++;
     }
 
-    public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
-        String descriptor = RuntimeHelpers.buildBlockDescriptor(
+    public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, String parameterList, ASTInspector inspector) {
+        String descriptor = RuntimeHelpers.buildBlockDescriptor19(
                 closureMethod,
                 arity,
                 scope,
@@ -410,6 +410,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 line,
                 hasMultipleArgsHead,
                 argsNodeId,
+                parameterList,
                 inspector);
 
         method.loadThis();

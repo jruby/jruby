@@ -51,6 +51,9 @@ public abstract class BlockBody {
     public static final int MULTIPLE_ASSIGNMENT = 1;
     public static final int ARRAY = 2;
     public static final int SINGLE_RESTARG = 3;
+
+    public static final String[] EMPTY_PARAMETER_LIST = new String[0];
+    
     protected final int argumentType;
 
     public BlockBody(int argumentType) {
@@ -233,6 +236,10 @@ public abstract class BlockBody {
         }
 
         return args;
+    }
+
+    public String[] getParameterList() {
+        return EMPTY_PARAMETER_LIST;
     }
 
     public static NodeType getArgumentTypeWackyHack(IterNode iterNode) {

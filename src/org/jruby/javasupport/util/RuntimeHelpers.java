@@ -20,11 +20,15 @@ import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.LiteralNode;
+import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
+import org.jruby.ast.OptArgNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
@@ -178,6 +182,20 @@ public class RuntimeHelpers {
         return factory.getBlockCallback19Offline(closureMethod, file, line, classPath);
     }
 
+    public static String buildBlockDescriptor19(
+            String closureMethod,
+            int arity,
+            StaticScope scope,
+            String file,
+            int line,
+            boolean hasMultipleArgsHead,
+            NodeType argsNodeId,
+            String parameterList,
+            ASTInspector inspector) {
+        return buildBlockDescriptor(closureMethod, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, inspector) +
+                "," + parameterList;
+    }
+
     public static String buildBlockDescriptor(
             String closureMethod,
             int arity,
@@ -254,11 +272,11 @@ public class RuntimeHelpers {
         String[][] splitDesc = parseBlockDescriptor(descriptor);
         String[] firstSplit = splitDesc[0];
         String[] secondSplit = splitDesc[1];
-        return createCompiledBlockBody19(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), firstSplit[5], Integer.parseInt(firstSplit[6]), Boolean.valueOf(firstSplit[7]));
+        return createCompiledBlockBody19(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), firstSplit[5], Integer.parseInt(firstSplit[6]), Boolean.valueOf(firstSplit[7]), firstSplit[8]);
     }
 
     public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String closureMethod, int arity,
-            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light) {
+            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light, String parameterList) {
         StaticScope staticScope =
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
@@ -267,12 +285,12 @@ public class RuntimeHelpers {
             return CompiledBlockLight19.newCompiledBlockLight(
                     Arity.createArity(arity), staticScope,
                     createBlockCallback19(context.getRuntime(), scriptObject, closureMethod, file, line),
-                    hasMultipleArgsHead, argsNodeType);
+                    hasMultipleArgsHead, argsNodeType, parameterList.split(";"));
         } else {
             return CompiledBlock19.newCompiledBlock(
                     Arity.createArity(arity), staticScope,
                     createBlockCallback19(context.getRuntime(), scriptObject, closureMethod, file, line),
-                    hasMultipleArgsHead, argsNodeType);
+                    hasMultipleArgsHead, argsNodeType, parameterList.split(";"));
         }
     }
     
@@ -2140,5 +2158,91 @@ public class RuntimeHelpers {
 
     public static RubyArray argsPush(RubyArray first, IRubyObject second) {
         return ((RubyArray)first.dup()).append(second);
+    }
+
+    public static String encodeParameterList(ArgsNode argsNode) {
+        StringBuilder builder = new StringBuilder();
+        
+        boolean added = false;
+        if (argsNode.getPre() != null) {
+            for (Node preNode : argsNode.getPre().childNodes()) {
+                if (added) builder.append(';');
+                added = true;
+                if (preNode instanceof MultipleAsgn19Node) {
+                    builder.append("nil");
+                } else {
+                    builder.append("q").append(((ArgumentNode)preNode).getName());
+                }
+            }
+        }
+
+        if (argsNode.getOptArgs() != null) {
+            for (Node optNode : argsNode.getOptArgs().childNodes()) {
+                if (added) builder.append(';');
+                added = true;
+                builder.append("o").append(((OptArgNode)optNode).getName());
+            }
+        }
+
+        if (argsNode.getRestArg() >= 0) {
+            if (added) builder.append(';');
+            added = true;
+            builder.append("r").append(argsNode.getRestArgNode().getName());
+        }
+
+        if (argsNode.getPost() != null) {
+            for (Node postNode : argsNode.getPost().childNodes()) {
+                if (added) builder.append(';');
+                added = true;
+                if (postNode instanceof MultipleAsgn19Node) {
+                    builder.append("nil");
+                } else {
+                    builder.append("q").append(((ArgumentNode)postNode).getName());
+                }
+            }
+        }
+
+        if (argsNode.getBlock() != null) {
+            if (added) builder.append(';');
+            added = true;
+            builder.append("b").append(argsNode.getBlock().getName());
+        }
+
+        if (!added) builder.append("NONE");
+
+        return builder.toString();
+    }
+
+    public static RubyArray parameterListToParameters(Ruby runtime, String[] parameterList, boolean isLambda) {
+        RubyArray parms = RubyArray.newEmptyArray(runtime);
+
+        for (String param : parameterList) {
+            if (param.equals("NONE")) break;
+
+            RubyArray elem = RubyArray.newEmptyArray(runtime);
+            if (param.equals("nil")) {
+                elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
+                parms.add(elem);
+                continue;
+            }
+
+            if (param.charAt(0) == 'q') {
+                elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
+            } else if (param.charAt(0) == 'r') {
+                elem.add(RubySymbol.newSymbol(runtime, "rest"));
+            } else if (param.charAt(0) == 'R') {
+                elem.add(RubySymbol.newSymbol(runtime, "rest"));
+                parms.add(elem);
+                continue;
+            } else if (param.charAt(0) == 'o') {
+                elem.add(RubySymbol.newSymbol(runtime, "opt"));
+            } else if (param.charAt(0) == 'b') {
+                elem.add(RubySymbol.newSymbol(runtime, "block"));
+            }
+            elem.add(RubySymbol.newSymbol(runtime, param.substring(1)));
+            parms.add(elem);
+        }
+
+        return parms;
     }
 }

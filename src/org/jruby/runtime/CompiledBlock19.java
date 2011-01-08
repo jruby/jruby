@@ -44,11 +44,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CompiledBlock19 extends ContextAwareBlockBody {
     protected final CompiledBlockCallback19 callback;
     protected final boolean hasMultipleArgsHead;
+    protected final String[] parameterList;
     
     public static Block newCompiledClosure(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
-        BlockBody body = new CompiledBlock19(arity, scope, callback, hasMultipleArgsHead, argumentType);
+        BlockBody body = new CompiledBlock19(arity, scope, callback, hasMultipleArgsHead, argumentType, EMPTY_PARAMETER_LIST);
 
         return new Block(body, binding);
     }
@@ -59,15 +60,16 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     }
     
     public static BlockBody newCompiledBlock(Arity arity,
-            StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
-        return new CompiledBlock19(arity, scope, callback, hasMultipleArgsHead, argumentType);
+            StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
+        return new CompiledBlock19(arity, scope, callback, hasMultipleArgsHead, argumentType, parameterList);
     }
 
-    protected CompiledBlock19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
+    protected CompiledBlock19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
         super(scope, arity, argumentType);
         
         this.callback = callback;
         this.hasMultipleArgsHead = hasMultipleArgsHead;
+        this.parameterList = parameterList;
     }
 
     @Override
@@ -210,5 +212,9 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
 
     public int getLine() {
         return callback.getLine();
+    }
+
+    public String[] getParameterList() {
+        return parameterList;
     }
 }

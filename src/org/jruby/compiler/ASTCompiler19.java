@@ -48,6 +48,7 @@ import org.jruby.ast.NodeType;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.SValue19Node;
 import org.jruby.ast.StarNode;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 
@@ -258,10 +259,10 @@ public class ASTCompiler19 extends ASTCompiler {
         if (argsNodeId == null) {
             // no args, do not pass args processor
             context.createNewClosure19(iterNode.getPosition().getFile(), iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                    closureBody, null, hasMultipleArgsHead, argsNodeId, inspector);
+                    closureBody, null, hasMultipleArgsHead, argsNodeId, RuntimeHelpers.encodeParameterList(argsNode), inspector);
         } else {
             context.createNewClosure19(iterNode.getPosition().getFile(), iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()).getValue(),
-                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, inspector);
+                    closureBody, closureArgs, hasMultipleArgsHead, argsNodeId, RuntimeHelpers.encodeParameterList(argsNode), inspector);
         }
     }
 

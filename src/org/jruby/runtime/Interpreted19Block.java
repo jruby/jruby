@@ -40,6 +40,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 /**
@@ -54,6 +55,9 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
 
     /** The argument list, pulled out of iterNode */
     private final ArgsNode args;
+
+    /** The parameter names, for Proc#parameters */
+    private final String[] parameterList;
 
     /** The body of the block, pulled out of bodyNode */
     private final Node body;
@@ -78,6 +82,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         super(iterNode.getScope(), ((ArgsNode)iterNode.getVarNode()).getArity(), -1); // We override that the logic which uses this
 
         this.args = (ArgsNode)iterNode.getVarNode();
+        this.parameterList = RuntimeHelpers.encodeParameterList(args).split(";");
         this.body = iterNode.getBodyNode() == null ? NilImplicitNode.NIL : iterNode.getBodyNode();
         this.position = iterNode.getPosition();
     }
@@ -86,6 +91,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         super(lambdaNode.getScope(), lambdaNode.getArgs().getArity(), -1); // We override that the logic which uses this
 
         this.args = lambdaNode.getArgs();
+        this.parameterList = RuntimeHelpers.encodeParameterList(args).split(";");
         this.body = lambdaNode.getBody() == null ? NilImplicitNode.NIL : lambdaNode.getBody();
         this.position = lambdaNode.getPosition();
     }
@@ -282,5 +288,10 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
 
     public int getLine() {
         return position.getLine();
+    }
+
+    @Override
+    public String[] getParameterList() {
+        return parameterList;
     }
 }
