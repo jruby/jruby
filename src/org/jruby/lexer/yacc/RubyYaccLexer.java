@@ -516,6 +516,7 @@ public class RubyYaccLexer {
         return encoding.codeToMbcLength(c) != 1;
     }
 
+    // STR_NEW3/parser_str_new
     public StrNode createStrNode(ISourcePosition position, ByteList buffer, int flags) {
         Encoding bufferEncoding = buffer.getEncoding();
         int codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer);
