@@ -64,8 +64,19 @@ public class ReflectionMethodFactory extends MethodFactory {
      */
     public DynamicMethod getCompiledMethodLazily(RubyModule implementationClass,
             String methodName, Arity arity, Visibility visibility, 
-            StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position) {
-        return getCompiledMethod(implementationClass, methodName, arity, visibility, scope, scriptObject, callConfig, position);
+            StaticScope scope, Object scriptObject, CallConfiguration callConfig,
+            ISourcePosition position, String parameterDesc) {
+
+        return getCompiledMethod(
+                implementationClass,
+                methodName,
+                arity,
+                visibility,
+                scope,
+                scriptObject,
+                callConfig,
+                position,
+                parameterDesc);
     }
     
     /**
@@ -75,11 +86,21 @@ public class ReflectionMethodFactory extends MethodFactory {
      */
     public DynamicMethod getCompiledMethod(RubyModule implementationClass,
             String methodName, Arity arity, Visibility visibility, 
-            StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position) {
+            StaticScope scope, Object scriptObject, CallConfiguration callConfig,
+            ISourcePosition position, String parameterDesc) {
         try {
             Class scriptClass = scriptObject.getClass();
             Method method = scriptClass.getMethod(methodName, scriptClass, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
-            return new ReflectedCompiledMethod(implementationClass, arity, visibility, scope, scriptObject, method, callConfig, position);
+            return new ReflectedCompiledMethod(
+                    implementationClass,
+                    arity,
+                    visibility,
+                    scope,
+                    scriptObject,
+                    method,
+                    callConfig,
+                    position,
+                    parameterDesc);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException("No method with name " + methodName + " found in " + scriptObject.getClass());
         }

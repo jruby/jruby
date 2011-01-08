@@ -67,7 +67,9 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.util.Map;
 import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.internal.runtime.methods.MethodArgs2;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
 import static org.jruby.runtime.Visibility.*;
@@ -632,8 +634,10 @@ public class RubyJRuby {
             RubySymbol opt = runtime.newSymbol("opt");
             RubySymbol rest = runtime.newSymbol("rest");
             RubySymbol block = runtime.newSymbol("block");
-            
-            if (method instanceof MethodArgs) {
+
+            if (method instanceof MethodArgs2) {
+                return RuntimeHelpers.parameterListToParameters(runtime, ((MethodArgs2)method).getParameterList(), true);
+            } else if (method instanceof MethodArgs) {
                 MethodArgs interpMethod = (MethodArgs)method;
                 ArgsNode args = interpMethod.getArgsNode();
                 

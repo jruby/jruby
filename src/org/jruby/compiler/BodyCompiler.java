@@ -335,7 +335,8 @@ public interface BodyCompiler {
      */
     public void defineNewMethod(String name, int methodArity, StaticScope scope,
             CompilerCallback body, CompilerCallback args,
-            CompilerCallback receiver, ASTInspector inspector, boolean root, String filename, int line);
+            CompilerCallback receiver, ASTInspector inspector, boolean root,
+            String filename, int line, String parameterDesc);
     
     /**
      * Define an alias for a new name to an existing oldName'd method.

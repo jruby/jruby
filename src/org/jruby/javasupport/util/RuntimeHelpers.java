@@ -333,7 +333,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String name, String javaName, String scopeString,
-            int arity, String filename, int line, CallConfiguration callConfig) {
+            int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
         
@@ -348,7 +348,8 @@ public class RuntimeHelpers {
         DynamicMethod method = constructNormalMethod(
                 factory, javaName,
                 name, containingClass, new SimpleSourcePosition(filename, line), arity, scope, visibility, scriptObject,
-                callConfig);
+                callConfig,
+                parameterDesc);
         
         addInstanceMethod(containingClass, name, method, visibility,context, runtime);
         
@@ -356,7 +357,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String name, String javaName, String scopeString,
-            int arity, String filename, int line, CallConfiguration callConfig) {
+            int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
 
@@ -365,7 +366,10 @@ public class RuntimeHelpers {
         StaticScope scope = createScopeForClass(context, scopeString);
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
-        DynamicMethod method = constructSingletonMethod( factory, javaName, rubyClass, new SimpleSourcePosition(filename, line), arity, scope,scriptObject, callConfig);
+        DynamicMethod method = constructSingletonMethod(
+                factory, javaName, rubyClass,
+                new SimpleSourcePosition(filename, line), arity, scope,
+                scriptObject, callConfig, parameterDesc);
         
         rubyClass.addMethod(name, method);
         
@@ -1649,7 +1653,19 @@ public class RuntimeHelpers {
         receiver.callMethod(context, "singleton_method_added", name);
     }
 
-    private static DynamicMethod constructNormalMethod( MethodFactory factory, String javaName, String name, RubyModule containingClass, ISourcePosition position, int arity, StaticScope scope, Visibility visibility, Object scriptObject, CallConfiguration callConfig) {
+    private static DynamicMethod constructNormalMethod(
+            MethodFactory factory,
+            String javaName,
+            String name,
+            RubyModule containingClass,
+            ISourcePosition position,
+            int arity,
+            StaticScope scope,
+            Visibility visibility,
+            Object scriptObject,
+            CallConfiguration callConfig,
+            String parameterDesc) {
+        
         DynamicMethod method;
 
         if (name.equals("initialize") || name.equals("initialize_copy") || visibility == Visibility.MODULE_FUNCTION) {
@@ -1657,19 +1673,65 @@ public class RuntimeHelpers {
         }
         
         if (RubyInstanceConfig.LAZYHANDLES_COMPILE) {
-            method = factory.getCompiledMethodLazily(containingClass, javaName, Arity.createArity(arity), visibility, scope, scriptObject, callConfig, position);
+            method = factory.getCompiledMethodLazily(
+                    containingClass,
+                    javaName,
+                    Arity.createArity(arity),
+                    visibility,
+                    scope,
+                    scriptObject,
+                    callConfig,
+                    position,
+                    parameterDesc);
         } else {
-            method = factory.getCompiledMethod(containingClass, javaName, Arity.createArity(arity), visibility, scope, scriptObject, callConfig, position);
+            method = factory.getCompiledMethod(
+                    containingClass,
+                    javaName,
+                    Arity.createArity(arity),
+                    visibility,
+                    scope,
+                    scriptObject,
+                    callConfig,
+                    position,
+                    parameterDesc);
         }
 
         return method;
     }
 
-    private static DynamicMethod constructSingletonMethod(MethodFactory factory, String javaName, RubyClass rubyClass, ISourcePosition position, int arity, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+    private static DynamicMethod constructSingletonMethod(
+            MethodFactory factory,
+            String javaName,
+            RubyClass rubyClass,
+            ISourcePosition position,
+            int arity,
+            StaticScope scope,
+            Object scriptObject,
+            CallConfiguration callConfig,
+            String parameterDesc) {
+        
         if (RubyInstanceConfig.LAZYHANDLES_COMPILE) {
-            return factory.getCompiledMethodLazily(rubyClass, javaName, Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig, position);
+            return factory.getCompiledMethodLazily(
+                    rubyClass,
+                    javaName,
+                    Arity.createArity(arity),
+                    Visibility.PUBLIC,
+                    scope,
+                    scriptObject,
+                    callConfig,
+                    position,
+                    parameterDesc);
         } else {
-            return factory.getCompiledMethod(rubyClass, javaName, Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig, position);
+            return factory.getCompiledMethod(
+                    rubyClass,
+                    javaName,
+                    Arity.createArity(arity),
+                    Visibility.PUBLIC,
+                    scope,
+                    scriptObject,
+                    callConfig,
+                    position,
+                    parameterDesc);
         }
     }
 

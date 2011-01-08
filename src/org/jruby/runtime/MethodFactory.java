@@ -103,7 +103,8 @@ public abstract class MethodFactory {
     public abstract DynamicMethod getCompiledMethod(
             RubyModule implementationClass, String method, 
             Arity arity, Visibility visibility, StaticScope scope, 
-            Object scriptObject, CallConfiguration callConfig, ISourcePosition position);
+            Object scriptObject, CallConfiguration callConfig,
+            ISourcePosition position, String parameterDesc);
 
     /**
      * Like getCompiledMethod, but produces the actual bytes for the compiled
@@ -146,7 +147,8 @@ public abstract class MethodFactory {
     public abstract DynamicMethod getCompiledMethodLazily(
             RubyModule implementationClass, String method, 
             Arity arity, Visibility visibility, StaticScope scope, 
-            Object scriptObject, CallConfiguration callConfig, ISourcePosition position);
+            Object scriptObject, CallConfiguration callConfig,
+            ISourcePosition position, String parameterDesc);
     
     /**
      * Based on a list of annotated Java methods, generate a method handle using
