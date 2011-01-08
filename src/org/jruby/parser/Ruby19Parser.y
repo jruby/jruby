@@ -1530,7 +1530,9 @@ strings         : string {
 
 // [!null]
 string          : tCHAR {
-                    $$ = new StrNode($<Token>0.getPosition(), ByteList.create((String) $1.getValue()));
+                    ByteList aChar = ByteList.create((String) $1.getValue());
+                    aChar.setEncoding(lexer.getEncoding());
+                    $$ = lexer.createStrNode($<Token>0.getPosition(), aChar, 0);
                 }
                 | string1 {
                     $$ = $1;
@@ -1609,7 +1611,9 @@ qword_list      : /* none */ {
                 }
 
 string_contents : /* none */ {
-                    $$ = new StrNode($<Token>0.getPosition(), ByteList.create(""));
+                    ByteList aChar = ByteList.create("");
+                    aChar.setEncoding(lexer.getEncoding());
+                    $$ = lexer.createStrNode($<Token>0.getPosition(), aChar, 0);
                 }
                 | string_contents string_content {
                     $$ = support.literal_concat($1.getPosition(), $1, $2);

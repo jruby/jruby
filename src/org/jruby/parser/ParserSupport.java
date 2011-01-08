@@ -1587,18 +1587,16 @@ public class ParserSupport {
         return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
     }
 
-    // TODO: The weird USASCII_ENCODING logic in the ifs are because I don't understand how
-    // MRI differentiates between 'n' in their weird bit logic  (mri: reg_fragment_setenc_gen)
     public void setRegexpEncoding(RegexpNode end, ByteList value) {
         Encoding optionsEncoding = extractEncodingFromOptions(end.getOptions());
 
         // Change encoding to one specified by regexp options as long as the string is compatible.
-        if (optionsEncoding != null && optionsEncoding != RubyYaccLexer.USASCII_ENCODING) {
+        if (optionsEncoding != null) {
             if (optionsEncoding != value.getEncoding() && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }
             value.setEncoding(optionsEncoding);
-        } else if (optionsEncoding == RubyYaccLexer.USASCII_ENCODING) {
+        } else if ((end.getOptions() & 32) != 0) {
             if (value.getEncoding() == RubyYaccLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }

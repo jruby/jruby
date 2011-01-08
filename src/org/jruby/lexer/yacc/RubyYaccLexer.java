@@ -59,6 +59,7 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 
 /** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
@@ -513,6 +514,23 @@ public class RubyYaccLexer {
      */
     protected boolean isMultiByteChar(int c) {
         return encoding.codeToMbcLength(c) != 1;
+    }
+
+    public StrNode createStrNode(ISourcePosition position, ByteList buffer, int flags) {
+        Encoding bufferEncoding = buffer.getEncoding();
+        int codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer);
+
+        if ((flags & RubyYaccLexer.STR_FUNC_REGEXP) == 0 && bufferEncoding.isAsciiCompatible()) {
+            // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
+            if (codeRange == StringSupport.CR_7BIT) {
+                // Do nothing like MRI
+            } else if (getEncoding() == RubyYaccLexer.USASCII_ENCODING &&
+                    bufferEncoding != RubyYaccLexer.UTF8_ENCODING) {
+                buffer.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
+            }
+        }
+
+        return new StrNode(position, buffer, codeRange);
     }
     
     /**

@@ -30,12 +30,10 @@ package org.jruby.lexer.yacc;
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.ast.RegexpNode;
-import org.jruby.ast.StrNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 public class StringTerm extends StrTerm {
     private static final int ASCII = 16;
@@ -65,28 +63,7 @@ public class StringTerm extends StrTerm {
     protected ByteList createByteList(RubyYaccLexer lexer) {
         if (lexer.isOneEight()) return new ByteList();
 
-        Encoding encoding = isRegexp() ? RubyYaccLexer.USASCII_ENCODING : lexer.getEncoding();
-
-        return new ByteList(new byte[]{}, encoding);
-    }
-
-    protected boolean isRegexp() {
-        return (flags & RubyYaccLexer.STR_FUNC_REGEXP) != 0;
-    }
-
-    protected StrNode createStrNode(RubyYaccLexer lexer, ByteList buffer) {
-        Encoding encoding = buffer.getEncoding();
-
-        if (!isRegexp() && encoding.isAsciiCompatible()) {
-            // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
-            if (StringSupport.codeRangeScan(buffer.getEncoding(), buffer) != StringSupport.CR_7BIT &&
-                    lexer.getEncoding() == RubyYaccLexer.USASCII_ENCODING &&
-                    encoding != RubyYaccLexer.UTF8_ENCODING) {
-                buffer.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
-            }
-        }
-
-        return new StrNode(lexer.getPosition(), buffer);
+        return new ByteList(new byte[]{}, lexer.getEncoding());
     }
 
     private int endFound(RubyYaccLexer lexer, LexerSource src) throws IOException {
@@ -156,7 +133,7 @@ public class StringTerm extends StrTerm {
                     src.getCurrentLine(), "unterminated string meets end of file");
         }
 
-        lexer.setValue(createStrNode(lexer, buffer));
+        lexer.setValue(lexer.createStrNode(lexer.getPosition(), buffer, flags));
         return Tokens.tSTRING_CONTENT;
     }
 
