@@ -44,7 +44,6 @@ import org.jruby.compiler.BranchCallback;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.BodyCompiler;
-import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.FastSwitchType;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
@@ -2569,7 +2568,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void defineNewMethod(String name, int methodArity, StaticScope scope,
             CompilerCallback body, CompilerCallback args,
-            CompilerCallback receiver, ASTInspector inspector, boolean root, String filename, int line) {
+            CompilerCallback receiver, ASTInspector inspector, boolean root,
+            String filename, int line, String parameterDesc) {
         // TODO: build arg list based on number of args, optionals, etc
         String newMethodName;
         if (root && SafePropertyAccessor.getBoolean("jruby.compile.toplevel", false)) {
@@ -2609,13 +2609,14 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.ldc(filename);
         method.ldc(line);
         method.getstatic(p(CallConfiguration.class), inspector.getCallConfig().name(), ci(CallConfiguration.class));
+        method.ldc(parameterDesc);
 
         if (receiver != null) {
             invokeUtilityMethod("defs", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, String.class, int.class, String.class, int.class, CallConfiguration.class)));
+                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, String.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
         } else {
             invokeUtilityMethod("def", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String.class, int.class, String.class, int.class, CallConfiguration.class)));
+                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
         }
 
         script.addInvokerDescriptor(newMethodName, methodArity, scope, inspector.getCallConfig(), filename, line);
