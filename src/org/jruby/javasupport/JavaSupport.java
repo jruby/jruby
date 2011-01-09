@@ -106,6 +106,7 @@ public class JavaSupport {
     private RubyModule packageModuleTemplate;
     private RubyClass arrayProxyClass;
     private RubyClass concreteProxyClass;
+    private RubyClass mapJavaProxy;
     
     private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>();
 
@@ -272,13 +273,13 @@ public class JavaSupport {
         if ((clazz = javaClassClass) != null) return clazz;
         return javaClassClass = getJavaModule().fastGetClass("JavaClass");
     }
-    
+
     public RubyModule getJavaInterfaceTemplate() {
         RubyModule module;
         if ((module = javaInterfaceTemplate) != null) return module;
         return javaInterfaceTemplate = runtime.fastGetModule("JavaInterfaceTemplate");
     }
-    
+
     public RubyModule getPackageModuleTemplate() {
         RubyModule module;
         if ((module = packageModuleTemplate) != null) return module;
@@ -301,6 +302,12 @@ public class JavaSupport {
         RubyClass clazz;
         if ((clazz = concreteProxyClass) != null) return clazz;
         return concreteProxyClass = runtime.fastGetClass("ConcreteJavaProxy");
+    }
+
+    public RubyClass getMapJavaProxyClass() {
+        RubyClass clazz;
+        if ((clazz = mapJavaProxy) != null) return clazz;
+        return mapJavaProxy = runtime.fastGetClass("MapJavaProxy");
     }
     
     public RubyClass getArrayProxyClass() {

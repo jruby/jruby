@@ -69,7 +69,7 @@ public class JavaProxy extends RubyObject {
         // this resulted in object being null after unmarshalling...
         if (object == null) {
             if (javaObject == null) {
-                throw getRuntime().newRuntimeError("Java wrapper with no contents: " + this);
+                throw getRuntime().newRuntimeError("Java wrapper with no contents: " + this.getMetaClass().getName());
             } else {
                 object = javaObject.getValue();
             }

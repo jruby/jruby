@@ -214,7 +214,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private RubyHashEntry[] table;
-    private int size = 0;
+    protected int size = 0;
     private int threshold;
 
     private static final int PROCDEFAULT_HASH_F = 1 << 10;
@@ -292,13 +292,13 @@ public class RubyHash extends RubyObject implements Map {
     private static final int INITIAL_THRESHOLD = JAVASOFT_INITIAL_CAPACITY - (JAVASOFT_INITIAL_CAPACITY >> 2);
     private static final int MAXIMUM_CAPACITY = 1 << 30;
 
-    private static final RubyHashEntry NO_ENTRY = new RubyHashEntry();
+    public static final RubyHashEntry NO_ENTRY = new RubyHashEntry();
     private int generation = 0; // generation count for O(1) clears
     private final RubyHashEntry head = new RubyHashEntry();
 
     { head.prevAdded = head.nextAdded = head; }
 
-    static final class RubyHashEntry implements Map.Entry {
+    public static final class RubyHashEntry implements Map.Entry {
         private IRubyObject key;
         private IRubyObject value;
         private RubyHashEntry next;
@@ -310,12 +310,14 @@ public class RubyHash extends RubyObject implements Map {
             key = NEVER;
         }
 
-        RubyHashEntry(int h, IRubyObject k, IRubyObject v, RubyHashEntry e, RubyHashEntry head) {
+        public RubyHashEntry(int h, IRubyObject k, IRubyObject v, RubyHashEntry e, RubyHashEntry head) {
             key = k; value = v; next = e; hash = h;
-            prevAdded = head.prevAdded;
-            nextAdded = head;
-            nextAdded.prevAdded = this;
-            prevAdded.nextAdded = this;
+            if (head != null) {
+                prevAdded = head.prevAdded;
+                nextAdded = head;
+                nextAdded.prevAdded = this;
+                prevAdded.nextAdded = this;
+            }
         }
 
         public void detach() {
@@ -443,7 +445,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final boolean MRI_HASH = true;
     private static final boolean MRI_HASH_RESIZE = true;
 
-    private static int hashValue(final int h) {
+    protected static int hashValue(final int h) {
         return MRI_HASH ? MRIHashValue(h) : JavaSoftHashValue(h);
     }
 
@@ -469,7 +471,7 @@ public class RubyHash extends RubyObject implements Map {
         internalPut(key, value, true);
     }
 
-    private final void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
+    protected void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         checkResize();
         final int hash = hashValue(key.hashCode());
         final int i = bucketIndex(hash, table.length);
@@ -493,11 +495,11 @@ public class RubyHash extends RubyObject implements Map {
 
     // get implementation
 
-    private final IRubyObject internalGet(IRubyObject key) { // specialized for value
+    protected IRubyObject internalGet(IRubyObject key) { // specialized for value
         return internalGetEntry(key).value;
     }
 
-    private final RubyHashEntry internalGetEntry(IRubyObject key) {
+    protected RubyHashEntry internalGetEntry(IRubyObject key) {
         final int hash = hashValue(key.hashCode());
         for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
             if (internalKeyExist(entry, hash, key)) {
@@ -515,11 +517,11 @@ public class RubyHash extends RubyObject implements Map {
     // delete implementation
 
 
-    private final RubyHashEntry internalDelete(final IRubyObject key) {
+    protected RubyHashEntry internalDelete(final IRubyObject key) {
         return internalDelete(hashValue(key.hashCode()), MATCH_KEY, key);
     }
 
-    private final RubyHashEntry internalDeleteEntry(final RubyHashEntry entry) {
+    protected RubyHashEntry internalDeleteEntry(final RubyHashEntry entry) {
         // n.b. we need to recompute the hash in case the key object was modified
         return internalDelete(hashValue(entry.key.hashCode()), MATCH_ENTRY, entry);
     }
@@ -892,7 +894,7 @@ public class RubyHash extends RubyObject implements Map {
         return value;
     }
 
-    private void op_asetForString(Ruby runtime, RubyString key, IRubyObject value) {
+    protected void op_asetForString(Ruby runtime, RubyString key, IRubyObject value) {
         final RubyHashEntry entry = internalGetEntry(key);
         if (entry != NO_ENTRY) {
             entry.value = value;

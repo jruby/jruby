@@ -92,9 +92,11 @@ import org.jruby.java.invokers.StaticMethodInvoker;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ArrayJavaProxyCreator;
 import org.jruby.java.proxies.ConcreteJavaProxy;
+import org.jruby.java.proxies.MapJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.util.ClassCache;
 import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.CodegenUtils;
@@ -134,6 +136,9 @@ public class Java implements Library {
         ConcreteJavaProxy.createConcreteJavaProxy(context);
         InterfaceJavaProxy.createInterfaceJavaProxy(context);
         ArrayJavaProxy.createArrayJavaProxy(context);
+
+        // creates ruby's hash methods' proxy for Map interface
+        MapJavaProxy.createMapJavaProxy(context);
 
         // also create the JavaProxy* classes
         JavaProxyClass.createJavaProxyModule(runtime);
@@ -419,6 +424,17 @@ public class Java implements Library {
             return getInterfaceModule(runtime, javaClass);
         }
         javaClass.lockProxy();
+        /*
+        try {
+            // Map type object should have RubyHash methods
+            c.asSubclass(java.util.Map.class);
+            proxyClass = createProxyClass(runtime,
+                runtime.getJavaSupport().getMapJavaProxyClass(),
+                javaClass, true);
+            System.out.println("it is Map!!!");
+        } catch (ClassCastException e) {
+            // do nothing
+        }*/
         try {
             if ((proxyClass = javaClass.getProxyClass()) == null) {
 
@@ -447,14 +463,15 @@ public class Java implements Library {
                 } else {
                     // other java proxy classes added under their superclass' java proxy
                     proxyClass = createProxyClass(runtime,
-                            (RubyClass) getProxyClass(runtime, JavaClass.get(runtime, c.getSuperclass())),
-                            javaClass, false);
-
+                        (RubyClass) getProxyClass(runtime, JavaClass.get(runtime, c.getSuperclass())),
+                        javaClass, false);
                     // include interface modules into the proxy class
                     Class<?>[] interfaces = c.getInterfaces();
                     for (int i = interfaces.length; --i >= 0;) {
                         JavaClass ifc = JavaClass.get(runtime, interfaces[i]);
-                        proxyClass.includeModule(getInterfaceModule(runtime, ifc));
+                        if (interfaces[i] != java.util.Map.class) {
+                            proxyClass.includeModule(getInterfaceModule(runtime, ifc));
+                        }
                     }
                     if (Modifier.isPublic(c.getModifiers())) {
                         addToJavaPackageModule(proxyClass, javaClass);
@@ -502,7 +519,13 @@ public class Java implements Library {
         RubyClass superClass = (RubyClass) baseType;
         proxyClass = RubyClass.newClass(runtime, superClass);
         proxyClass.makeMetaClass(superClass.getMetaClass());
-        proxyClass.setAllocator(superClass.getAllocator());
+        try {
+            javaClass.javaClass().asSubclass(java.util.Map.class);
+            proxyClass.setAllocator(runtime.getJavaSupport().getMapJavaProxyClass().getAllocator());
+            proxyClass.defineAnnotatedMethods(MapJavaProxy.class);
+        } catch (ClassCastException e) {
+            proxyClass.setAllocator(superClass.getAllocator());
+        }
         if (invokeInherited) {
             proxyClass.inherit(superClass);
         }
