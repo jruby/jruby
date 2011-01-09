@@ -21,7 +21,8 @@ class MSpecScript
   set :core, [
     SPEC_DIR + '/core',
 
-    '^' + SPEC_DIR + '/core/continuation'
+    '^' + SPEC_DIR + '/core/continuation',
+    '^' + SPEC_DIR + '/core/encoding/converter'
   ]
 
   # Filter out ObjectSpace specs if ObjectSpace is disabled

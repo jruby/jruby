@@ -1,5 +1,5 @@
-error:IO#gets with ASCII separator returns the separator's character representation
-error:IO#gets with an empty String separator returns the next paragraph
+failed:IO#gets with ASCII separator returns the separator's character representation
+failed:IO#gets with an empty String separator returns the next paragraph
 windows:IO#gets accepts an integer as second parameter to limit the output's size
 windows:IO#gets accepts an integer as limit parameter which is same as IO size
 
