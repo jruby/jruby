@@ -4,8 +4,8 @@ require 'rbconfig'
 
 module Gem
 
-  ConfigFile::PLATFORM_DEFAULTS['install'] = '--env-shebang'
-  ConfigFile::PLATFORM_DEFAULTS['update']  = '--env-shebang'
+  ConfigFile::PLATFORM_DEFAULTS['install'] = '--no-rdoc --no-ri --env-shebang'
+  ConfigFile::PLATFORM_DEFAULTS['update']  = '--no-rdoc --no-ri --env-shebang'
 
   class << self
     alias_method :original_ensure_gem_subdirectories, :ensure_gem_subdirectories
