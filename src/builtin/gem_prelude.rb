@@ -267,7 +267,19 @@ if defined?(Gem) then
           undef_method :gem if method_defined? :gem
         end
 
-        $".delete path_to_full_rubygems_library
+        # Case insenstive filesystems on any OS can have this issue, but
+        # rubygems may have been loaded with a slightly different case (e.g.
+        # C:rg/heh versus c:rg/heh).  Insensitive compare rules :(
+        if RbConfig::CONFIG["host_os"] == "mswin32"
+          $".reject! do |p|
+            p =~ /#{Regexp.escape path_to_full_rubygems_library}/i
+          end
+        else
+          $".reject! do |p|
+            p =~ /#{Regexp.escape path_to_full_rubygems_library}/
+          end
+        end
+
         $".each do |path|
           if /#{Regexp.escape File::SEPARATOR}rubygems\.rb\z/ =~ path
             raise LoadError, "another rubygems is already loaded from #{path}"
