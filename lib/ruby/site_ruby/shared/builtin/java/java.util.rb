@@ -2,7 +2,11 @@
 module java::util::Map
   include Enumerable
   def each(&block)
-    entrySet.each { |pair| block.call([pair.key, pair.value]) }
+    if block.arity > 1
+      entrySet.each { |pair| block.call(pair.key, pair.value) }
+    else
+      entrySet.each { |pair| block.call([pair.key, pair.value]) }
+    end
   end
   def [](key)
     get(key)
