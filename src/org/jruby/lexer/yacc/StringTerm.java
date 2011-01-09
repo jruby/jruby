@@ -29,7 +29,6 @@ package org.jruby.lexer.yacc;
 
 import java.io.IOException;
 import org.jcodings.Encoding;
-import org.jruby.RubyRegexp;
 import org.jruby.ast.RegexpNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ReOptions;

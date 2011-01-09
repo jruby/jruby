@@ -1559,6 +1559,8 @@ public class ParserSupport {
         return new ArgsPushNode(position(node1, node2), node1, node2);
     }
 
+    private static ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'});
+
     private Encoding extractEncodingFromOptions(int options) {
         switch(options & ~0xf) {
         case 16: 
@@ -1566,7 +1568,7 @@ public class ParserSupport {
         case 32:
             return org.jcodings.specific.EUCJPEncoding.INSTANCE;
         case 48:
-            return org.jcodings.specific.SJISEncoding.INSTANCE;
+            return getConfiguration().getRuntime().getEncodingService().loadEncoding(WINDOWS31J);
         case 64:
             return RubyYaccLexer.UTF8_ENCODING;
         }
