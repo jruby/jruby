@@ -29,6 +29,7 @@
  */
 package org.jruby.embed;
 
+import org.jruby.embed.internal.ConcurrentLocalContextProvider;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -200,6 +201,15 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         result = instance.getProvider();
         assertTrue(result instanceof SingletonLocalContextProvider);
+        instance = null;
+        
+        instance = new ScriptingContainer(LocalContextScope.CONCURRENT);
+        instance.setError(pstream);
+        instance.setOutput(pstream);
+        instance.setWriter(writer);
+        instance.setErrorWriter(writer);
+        result = instance.getProvider();
+        assertTrue(result instanceof ConcurrentLocalContextProvider);
         instance = null;
     }
 
