@@ -72,19 +72,24 @@ public class ProfileData implements IProfileData {
      * @return the serial number of the previous method being profiled
      */
     public int profileExit(int callingMethod, long startTime) {
-        long now = System.nanoTime();
-        long duration = now - startTime;
-        Invocation current = currentInvocation;
-
-        current.addDuration(duration);
-
-        int previousMethod = current.getMethodSerialNumber();
-
-        decRecursionFor(previousMethod);
-
-        currentInvocation = current.getParent();
-
-        return previousMethod;
+        if (currentInvocation.getMethodSerialNumber() != 0) {
+            long now = System.nanoTime();
+            long duration = now - startTime;
+            Invocation current = currentInvocation;
+            
+            current.addDuration(duration);
+            
+            int previousMethod = current.getMethodSerialNumber();
+            
+            decRecursionFor(previousMethod);
+            
+            currentInvocation = current.getParent();
+            
+            return previousMethod;
+        }
+        else {
+            return 0;
+        }
     }
 
     public void decRecursionFor(int serial) {

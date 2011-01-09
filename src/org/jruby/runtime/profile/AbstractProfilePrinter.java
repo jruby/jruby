@@ -68,7 +68,16 @@ public class AbstractProfilePrinter {
         return formatter.format((double) nanoTime / 1.0E9);
     }
 
-    protected String methodName(int serial) {
+    public boolean isProfilerInvocation(Invocation inv) {
+        String name = methodName(inv.getMethodSerialNumber());
+        return (name.length() > 15 && name.substring(0, 15).equals("JRuby::Profiler")) || (inv.getParent() != null && isProfilerInvocation(inv.getParent()));
+    }
+    
+    public String methodName(int serial) {
+        return AbstractProfilePrinter.getMethodName(serial);
+    }
+    
+    public static String getMethodName(int serial) {
         if (serial == 0) {
             return "(top)";
         }
@@ -79,8 +88,8 @@ public class AbstractProfilePrinter {
         DynamicMethod method = profiledMethods[serial];
         return moduleHashMethod(method.getImplementationClass(), name);
     }
-
-    protected String moduleHashMethod(RubyModule module, String name) {
+    
+    protected static String moduleHashMethod(RubyModule module, String name) {
         if (module instanceof MetaClass) {
             IRubyObject obj = ((MetaClass) module).getAttached();
             if (obj instanceof RubyModule) {

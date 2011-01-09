@@ -5,6 +5,7 @@ module JRuby
   module Profiler
     import org.jruby.runtime.profile.GraphProfilePrinter
     import org.jruby.runtime.profile.FlatProfilePrinter
+    import org.jruby.Ruby
     
     def self.start
       current_thread_context.start_profiling
@@ -19,13 +20,15 @@ module JRuby
     end
     
     def self.profile
+      start
       yield
+      stop
     end
     
     private
     
     def self.runtime
-      org.jruby.Ruby.getGlobalRuntime
+      JRuby::Profiler::Ruby.getGlobalRuntime
     end
     
     def self.current_thread_context
