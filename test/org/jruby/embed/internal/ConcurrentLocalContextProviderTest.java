@@ -29,6 +29,7 @@
  */
 package org.jruby.embed.internal;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -56,7 +57,6 @@ public class ConcurrentLocalContextProviderTest {
     static Logger logger0 = Logger.getLogger(ConcurrentLocalContextProviderTest.class.getName());
     static Logger logger1 = Logger.getLogger(ConcurrentLocalContextProviderTest.class.getName());
     static OutputStream outStream = null;
-    private Starter calamari, dumplings;
 
     public ConcurrentLocalContextProviderTest() {
     }
@@ -80,27 +80,68 @@ public class ConcurrentLocalContextProviderTest {
         logger1.setUseParentHandlers(false);
         logger1.addHandler(new ConsoleHandler());
         logger1.setLevel(Level.WARNING);
-
-        calamari = new Starter(); new Thread(calamari).start();
-        dumplings = new Starter(); new Thread(dumplings).start();
     }
 
     private class Starter implements Runnable {
         private ConcurrentLocalContextProvider provider;
+        private Ruby runtime;
+        private RubyInstanceConfig config;
+        private BiVariableMap map;
+        private Map attributes;
 
-        LocalContextProvider getProvider() {
-            while(provider == null) {
+        Starter(ConcurrentLocalContextProvider provider) {
+            this.provider = provider;
+        }
+
+        Ruby getRuntime() {
+            while(runtime == null) {
                 try {
                     Thread.currentThread().sleep(1000L);
                 } catch (InterruptedException e) {
                     // no-op
                 }
             }
-            return provider;
+            return runtime;
+        }
+
+        RubyInstanceConfig getRubyInstanceConfig() {
+            while(config == null) {
+                try {
+                    Thread.currentThread().sleep(1000L);
+                } catch (InterruptedException e) {
+                    // no-op
+                }
+            }
+            return config;
+        }
+
+        BiVariableMap getVarMap() {
+            while(map == null) {
+                try {
+                    Thread.currentThread().sleep(1000L);
+                } catch (InterruptedException e) {
+                    // no-op
+                }
+            }
+            return map;
+        }
+
+        Map getAttributeMap() {
+            while(attributes == null) {
+                try {
+                    Thread.currentThread().sleep(1000L);
+                } catch (InterruptedException e) {
+                    // no-op
+                }
+            }
+            return attributes;
         }
 
         public void run() {
-            provider = new ConcurrentLocalContextProvider(LocalVariableBehavior.TRANSIENT, true);
+            runtime = provider.getRuntime();
+            config = provider.getRubyInstanceConfig();
+            map = provider.getVarMap();
+            attributes = provider.getAttributeMap();
             Thread.currentThread().yield();
         }
     }
@@ -120,9 +161,13 @@ public class ConcurrentLocalContextProviderTest {
         Ruby tiramisu = cook.getRuntime();
         assertEquals(true, Ruby.isGlobalRuntimeReady());
         assertEquals(Ruby.getGlobalRuntime(), tiramisu); // only one tiramisu in the world?
-        assertFalse(calamari.getProvider().getRuntime() == null);
-        assertFalse(dumplings.getProvider().getRuntime() == null);
-        assertTrue(calamari.getProvider().getRuntime() == dumplings.getProvider().getRuntime());
+
+        Starter calamari = new Starter(cook); new Thread(calamari).start();
+        Starter dumplings = new Starter(cook); new Thread(dumplings).start();
+
+        assertFalse(calamari.getRuntime() == null);
+        assertFalse(dumplings.getRuntime() == null);
+        assertTrue(calamari.getRuntime() == dumplings.getRuntime());
     }
 
     /**
@@ -134,10 +179,13 @@ public class ConcurrentLocalContextProviderTest {
         ConcurrentLocalContextProvider cook =
                 new ConcurrentLocalContextProvider(LocalVariableBehavior.TRANSIENT, true);
         if (Ruby.isGlobalRuntimeReady()) {
+            Starter calamari = new Starter(cook); new Thread(calamari).start();
+            Starter dumplings = new Starter(cook); new Thread(dumplings).start();
+
             assertTrue(Ruby.getGlobalRuntime().getInstanceConfig() == cook.getRubyInstanceConfig());
-            assertFalse(calamari.getProvider().getRubyInstanceConfig() == null);
-            assertFalse(dumplings.getProvider().getRubyInstanceConfig() == null);
-            assertTrue(calamari.getProvider().getRubyInstanceConfig() == dumplings.getProvider().getRubyInstanceConfig());
+            assertFalse(calamari.getRubyInstanceConfig() == null);
+            assertFalse(dumplings.getRubyInstanceConfig() == null);
+            assertTrue(calamari.getRubyInstanceConfig() == dumplings.getRubyInstanceConfig());
         } else {
             // no need to test
         }
@@ -155,9 +203,14 @@ public class ConcurrentLocalContextProviderTest {
 
         assertFalse(pizza == null);
         assertEquals(0, pizza.size()); // Orz, hungry...
-        assertFalse(calamari.getProvider().getVarMap() == null);
-        assertFalse(dumplings.getProvider().getVarMap() == null);
-        assertFalse(calamari.getProvider().getVarMap() == dumplings.getProvider().getVarMap());
+
+        Starter calamari = new Starter(cook); new Thread(calamari).start();
+        Starter dumplings = new Starter(cook); new Thread(dumplings).start();
+
+        assertFalse(calamari.getVarMap() == null);
+        assertFalse(dumplings.getVarMap() == null);
+        // BiVariableMap should be thread local
+        assertFalse(calamari.getVarMap() == dumplings.getVarMap());
     }
 
     /**
@@ -171,9 +224,14 @@ public class ConcurrentLocalContextProviderTest {
         Map lasagna = cook.getAttributeMap();
         assertFalse(lasagna == null);
         assertEquals(3, lasagna.size()); // Thank god! I've stored some.
-        assertFalse(calamari.getProvider().getAttributeMap() == null);
-        assertFalse(dumplings.getProvider().getAttributeMap() == null);
-        assertFalse(calamari.getProvider().getAttributeMap() == dumplings.getProvider().getAttributeMap());
+
+        Starter calamari = new Starter(cook); new Thread(calamari).start();
+        Starter dumplings = new Starter(cook); new Thread(dumplings).start();
+
+        assertFalse(calamari.getAttributeMap() == null);
+        assertFalse(dumplings.getAttributeMap() == null);
+        // AttributeMap should be thread local
+        assertFalse(calamari.getAttributeMap() == dumplings.getAttributeMap());
     }
 
     /**

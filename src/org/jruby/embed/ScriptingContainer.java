@@ -48,6 +48,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyInstanceConfig.LoadServiceCreator;
 import org.jruby.embed.internal.BiVariableMap;
+import org.jruby.embed.internal.ConcurrentLocalContextProvider;
 import org.jruby.embed.internal.EmbedRubyInterfaceAdapterImpl;
 import org.jruby.embed.internal.EmbedRubyObjectAdapterImpl;
 import org.jruby.embed.internal.EmbedRubyRuntimeAdapterImpl;
@@ -231,6 +232,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         switch(scope) {
             case THREADSAFE :
                 return new ThreadSafeLocalContextProvider(behavior, lazy);
+            case CONCURRENT :
+                return new ConcurrentLocalContextProvider(behavior, lazy);
             case SINGLETHREAD :
                 return new SingleThreadLocalContextProvider(behavior, lazy);
             case SINGLETON :
