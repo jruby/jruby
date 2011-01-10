@@ -521,7 +521,7 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_NANOSEC:
                     value = dt.getMillisOfSecond() * 1000000;
-                    output = formatTruncate(String.valueOf(value), Integer.valueOf(formatter.getFormatter()));
+                    output = formatTruncate(String.valueOf(value), Integer.valueOf(formatter.getFormatter()), "0");
                     break;
                 case FORMAT_WEEKYEAR:
                     output = Integer.toString(dt.getWeekyear());
@@ -565,12 +565,17 @@ public class RubyDateFormat extends DateFormat {
      * @param len Maximum length for the returned String
      * @return String thus obtained
      */
-    private String formatTruncate(String orig, int len) {
+    private String formatTruncate(String orig, int len, String pad) {
         if (len == 0) return "";
         if (orig.length() > len) {
             return orig.substring(0, len);
         } else {
-            return orig;
+            StringBuilder sb = new StringBuilder(len);
+            sb.append(orig);
+            while (sb.length() < len) {
+                sb = sb.append(pad);
+            }
+            return sb.toString().substring(0,len);
         }
     }
 }
