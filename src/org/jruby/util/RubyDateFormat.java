@@ -520,9 +520,8 @@ public class RubyDateFormat extends DateFormat {
                     output = String.format("%02d", value);
                     break;
                 case FORMAT_NANOSEC:
-                    long nano = System.nanoTime();
-                    value = (int) (nano % 1000000000);
-                    output = Integer.toString(value);
+                    value = dt.getMillisOfSecond() * 1000000;
+                    output = formatTruncate(String.valueOf(value), Integer.valueOf(formatter.getFormatter()));
                     break;
                 case FORMAT_WEEKYEAR:
                     output = Integer.toString(dt.getWeekyear());
@@ -557,5 +556,21 @@ public class RubyDateFormat extends DateFormat {
      */
     public Date parse(String source, ParsePosition pos) {
         throw new UnsupportedOperationException();
+    }
+    
+    /**
+     * Return the String obtained by truncating orig to the first len characters
+     * 
+     * @param orig Original string
+     * @param len Maximum length for the returned String
+     * @return String thus obtained
+     */
+    private String formatTruncate(String orig, int len) {
+        if (len == 0) return "";
+        if (orig.length() > len) {
+            return orig.substring(0, len);
+        } else {
+            return orig;
+        }
     }
 }
