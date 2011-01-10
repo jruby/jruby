@@ -100,6 +100,11 @@ public class ASTCompiler19 extends ASTCompiler {
         }
     }
 
+    @Override
+    public void compileDefined(Node node, BodyCompiler context, boolean expr) {
+        throw new NotCompilableException("1.9 mode does not compile defined? properly yet: " + node.getPosition());
+    }
+
     public void compileMethodArgs(Node node, BodyCompiler context, boolean expr) {
         final ArgsNode argsNode = (ArgsNode) node;
 
