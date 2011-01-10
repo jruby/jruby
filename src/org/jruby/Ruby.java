@@ -1538,11 +1538,13 @@ public final class Ruby {
 
         if(is1_9()) {
             // see ruby.c's ruby_init_gems function
-            // NOTE: This has been disabled because gem_prelude is terribly broken.
-            //       We now just require 'rubygems' in gem_prelude, at least for now.
-//            defineModule("Gem"); // dummy Gem module for prelude
             loadFile("builtin/prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/prelude.rb"), false);
-            loadFile("builtin/gem_prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/gem_prelude.rb"), false);
+            if (!config.isDisableGems()) {
+                // NOTE: This has been disabled because gem_prelude is terribly broken.
+                //       We just require 'rubygems' in gem_prelude, at least for now.
+                //defineModule("Gem"); // dummy Gem module for prelude
+                loadFile("builtin/gem_prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/gem_prelude.rb"), false);
+            }
         }
 
         getLoadService().require("enumerator");

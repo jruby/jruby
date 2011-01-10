@@ -223,6 +223,7 @@ public class RubyInstanceConfig {
     private boolean parserDebug = false;
     private String threadDumpSignal = null;
     private boolean hardExit = false;
+    private boolean disableGems = false;
 
     private int safeLevel = 0;
 
@@ -1262,6 +1263,9 @@ public class RubyInstanceConfig {
                     } else if (argument.equals("--1.8")) {
                         setCompatVersion(CompatVersion.RUBY1_8);
                         break FOR;
+                    } else if (argument.equals("--disable-gems")) {
+                        disableGems = true;
+                        break FOR;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
@@ -1693,5 +1697,13 @@ public class RubyInstanceConfig {
             return new GraphProfilePrinter(profileData);
         }
         return null;
+    }
+
+    public boolean isDisableGems() {
+        return disableGems;
+    }
+
+    public void setDisableGems(boolean dg) {
+        this.disableGems = dg;
     }
 }
