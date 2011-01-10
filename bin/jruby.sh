@@ -73,15 +73,17 @@ for opt in ${JRUBY_OPTS[@]}; do
 done
 JRUBY_OPTS=${JRUBY_OPTS_TEMP}
 
-if [ -z "$JAVA_HOME" ] ; then
-  JAVA_CMD='java'
-else
-  JAVA_CMD="$JAVA_HOME/bin/java"
+if [ -z "$JAVACMD" ] ; then
+  if [ -z "$JAVA_HOME" ] ; then
+    JAVACMD='java'
+  else
+    JAVACMD="$JAVA_HOME/bin/java"
+  fi
 fi
 
 # If you're seeing odd exceptions, you may have a bad JVM install.
 # Uncomment this and report the version to the JRuby team along with error.
-#$JAVA_CMD -version
+#$JAVACMD -version
 
 JRUBY_SHELL=/bin/sh
 
@@ -161,11 +163,11 @@ do
         elif [ "${val:0:4}" = "-Xss" ]; then
             JAVA_STACK=$val
         elif [ "${val}" = "" ]; then
-            $JAVA_CMD -help
+            $JAVACMD -help
             echo "(Prepend -J in front of these options when using 'jruby' command)" 
             exit
         elif [ "${val}" = "-X" ]; then
-            $JAVA_CMD -X
+            $JAVACMD -X
             echo "(Prepend -J in front of these options when using 'jruby' command)" 
             exit
         elif [ "${val}" = "-classpath" ]; then
@@ -206,9 +208,9 @@ do
      # Run under JDB
      --jdb)
         if [ -z "$JAVA_HOME" ] ; then
-          JAVA_CMD='jdb'
+          JAVACMD='jdb'
         else
-          JAVA_CMD="$JAVA_HOME/bin/jdb"
+          JAVACMD="$JAVA_HOME/bin/jdb"
         fi 
         java_args="${java_args} -sourcepath $JRUBY_HOME/lib/ruby/1.8:."
         JRUBY_OPTS="${JRUBY_OPTS} -X+C" ;;
@@ -279,7 +281,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       echo "Running with instrumented profiler"
   fi
 
-  "$JAVA_CMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
+  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
@@ -297,7 +299,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
 
   exit $JRUBY_STATUS
 else
-  exec $JAVA_CMD $JAVA_OPTS $JFFI_OPTS ${java_args} -Xbootclasspath/a:$JRUBY_CP -classpath $CP$CP_DELIMITER$CLASSPATH \
+  exec $JAVACMD $JAVA_OPTS $JFFI_OPTS ${java_args} -Xbootclasspath/a:$JRUBY_CP -classpath $CP$CP_DELIMITER$CLASSPATH \
       -Djruby.home=$JRUBY_HOME \
       -Djruby.lib=$JRUBY_HOME/lib -Djruby.script=jruby \
       -Djruby.shell=$JRUBY_SHELL \
