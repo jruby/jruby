@@ -809,6 +809,29 @@ public class JavaClass extends JavaObject {
         }
     }
 
+    private String fixScalaNames(String name) {
+	name = name.replace("$plus", "+");
+	name = name.replace("$minus", "-");
+	name = name.replace("$colon", ":");
+	name = name.replace("$div", "/");
+	name = name.replace("$eq", "=");
+	name = name.replace("$less", "<");
+	name = name.replace("$greater", ">");
+	name = name.replace("$bslash", "\\");
+	name = name.replace("$hash", "#");
+	name = name.replace("$times", "*");
+	name = name.replace("$bang", "!");
+	name = name.replace("$at", "@");
+	name = name.replace("$percent", "%");
+	name = name.replace("$up", "^");
+	name = name.replace("$amp", "&");
+	name = name.replace("$tilde", "~");
+	name = name.replace("$qmark", "?");
+	name = name.replace("$bar", "|");
+
+	return name;
+    }
+
     private void setupClassMethods(Class<?> javaClass, InitializerState state) {
         // TODO: protected methods.  this is going to require a rework of some of the mechanism.
         Method[] methods = getMethods(javaClass);
@@ -818,6 +841,19 @@ public class JavaClass extends JavaObject {
             // install the ones that are named in this class
             Method method = methods[i];
             String name = method.getName();
+
+	    // Fix Scala names
+	    if (name.indexOf("$") >= 0) {
+		name = fixScalaNames(name);
+	    }
+
+	    if (name.equals("map")) {
+		Class<?>[] pt = method.getParameterTypes();
+		System.out.println("For map on class "+javaClass.getName());
+		for (int j = pt.length; --j >= 0;) {
+		    System.out.println("Param "+j+" "+pt[j].getName());
+		}
+	    }
 
             if (Modifier.isStatic(method.getModifiers())) {
                 AssignedName assignedName = state.staticNames.get(name);
