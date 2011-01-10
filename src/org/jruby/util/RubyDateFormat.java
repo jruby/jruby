@@ -521,7 +521,9 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_NANOSEC:
                     value = dt.getMillisOfSecond() * 1000000;
-                    output = formatTruncate(String.valueOf(value), Integer.valueOf(formatter.getFormatter()), "0");
+                    String width = "3";
+                    if (formatter != null) width = formatter.getFormatter();
+                    output = formatTruncate(String.valueOf(value), Integer.valueOf(width), "0");
                     break;
                 case FORMAT_WEEKYEAR:
                     output = Integer.toString(dt.getWeekyear());
