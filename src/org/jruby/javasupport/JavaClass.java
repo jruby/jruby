@@ -20,6 +20,7 @@
  * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
  * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
+ * Copyright (C) 2011 David Pollak <feeder.of.the.bears@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -642,6 +643,16 @@ public class JavaClass extends JavaObject {
             Class<?> resultType = method.getReturnType();
             int argCount = argTypes.length;
 
+	    // alias apply() to []
+	    if (rubyCasedName.equals("apply")) {
+		addUnassignedAlias("[]", assignedNames, installer);
+	    }
+
+	    // alias update() to []
+	    if (rubyCasedName.equals("update") && argCount == 2) {
+		addUnassignedAlias("[]=", assignedNames, installer);
+	    }
+
             // Add property name aliases
             if (javaPropertyName != null) {
                 if (rubyCasedName.startsWith("get_")) {
@@ -847,14 +858,6 @@ public class JavaClass extends JavaObject {
 		name = fixScalaNames(name);
 	    }
 
-	    if (name.equals("map")) {
-		Class<?>[] pt = method.getParameterTypes();
-		System.out.println("For map on class "+javaClass.getName());
-		for (int j = pt.length; --j >= 0;) {
-		    System.out.println("Param "+j+" "+pt[j].getName());
-		}
-	    }
-
             if (Modifier.isStatic(method.getModifiers())) {
                 AssignedName assignedName = state.staticNames.get(name);
 
@@ -897,6 +900,51 @@ public class JavaClass extends JavaObject {
                 installInstanceMethods(state.instanceCallbacks, javaClass, method, name);
             }
         }
+
+	// check for Scala companion object
+	try {
+	    Class<?> companion = javaClass.getClassLoader().loadClass(javaClass.getName() + "$");
+	    Field field = companion.getField("MODULE$");
+	    Object singleton = field.get(null);
+	    if (singleton) {
+		Method[] sMethods = getMethods(companion);
+		for (j = sMethods.length; j-- >= 0;) {
+		    Method method = sMethods[j];
+		    String name = method.getName();
+		    
+		    // Fix Scala names
+		    if (name.indexOf("$") >= 0) {
+			name = fixScalaNames(name);
+		    }
+
+		    // Don't deal with static methods on companion
+		    if (!Modifier.isStatic(method.getModifiers())) {
+			AssignedName assignedName = state.instanceNames.get(name);
+			
+			// For JRUBY-4505, restore __method methods for reserved names
+			if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
+			    installSingltonMethods(state.staticCallbacks, javaClass, singleton, method, name + METHOD_MANGLE);
+			    continue;
+			}
+			
+			if (assignedName == null) {
+			    state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
+			} else {
+			    if (Priority.METHOD.lessImportantThan(assignedName)) continue;
+			    if (!Priority.METHOD.asImportantAs(assignedName)) {
+				state.staticCallbacks.remove(name);
+				state.staticCallbacks.remove(name + '=');
+				state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
+			    }
+			}
+			installSingletonMethods(state.instanceCallbacks, javaClass, singleton, method, name);
+		    }
+		    
+		}
+	    }
+	} catch (Exception e) {
+	    // ignore... there's no companion object
+	}
 
         // now iterate over all installers and make sure they also have appropriate aliases
         for (Map.Entry<String, NamedInstaller> entry : state.staticCallbacks.entrySet()) {
