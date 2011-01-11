@@ -38,6 +38,7 @@ package org.jruby.javasupport;
 
 import org.jruby.java.invokers.StaticFieldGetter;
 import org.jruby.java.invokers.StaticMethodInvoker;
+import org.jruby.java.invokers.SingletonMethodInvoker;
 import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
 import org.jruby.java.invokers.InstanceMethodInvoker;
@@ -350,6 +351,27 @@ public class JavaClass extends JavaObject {
                 singleton.addMethod(name, method);
                 if (aliases != null && isPublic() ) {
                     singleton.defineAliases(aliases, this.name);
+                    aliases = null;
+                }
+            }
+        }
+    }
+
+    private static class SingletonMethodInvokerInstaller extends StaticMethodInvokerInstaller {
+	private Object singleton;
+
+        SingletonMethodInvokerInstaller(String name, Object singleton) {
+            super(name);
+	    this.singleton = singleton;
+        }
+
+        void install(RubyModule proxy) {
+            if (hasLocalMethod()) {
+                RubyClass rubySingleton = proxy.getSingletonClass();
+                DynamicMethod method = new SingletonMethodInvoker(this.singleton, rubySingleton, methods);
+                rubySingleton.addMethod(name, method);
+                if (aliases != null && isPublic() ) {
+                    rubySingleton.defineAliases(aliases, this.name);
                     aliases = null;
                 }
             }
@@ -903,14 +925,16 @@ public class JavaClass extends JavaObject {
 
 	// check for Scala companion object
 	try {
-	    Class<?> companion = javaClass.getClassLoader().loadClass(javaClass.getName() + "$");
-	    Field field = companion.getField("MODULE$");
+	    Class<?> companionClass = javaClass.getClassLoader().loadClass(javaClass.getName() + "$");
+	    Field field = companionClass.getField("MODULE$");
 	    Object singleton = field.get(null);
-	    if (singleton) {
-		Method[] sMethods = getMethods(companion);
-		for (j = sMethods.length; j-- >= 0;) {
+	    if (singleton != null) {
+		Method[] sMethods = getMethods(companionClass);
+		for (int j = sMethods.length; j-- >= 0;) {
 		    Method method = sMethods[j];
 		    String name = method.getName();
+
+		    System.out.println("Companion object method "+name+" for "+companionClass);
 		    
 		    // Fix Scala names
 		    if (name.indexOf("$") >= 0) {
@@ -919,25 +943,33 @@ public class JavaClass extends JavaObject {
 
 		    // Don't deal with static methods on companion
 		    if (!Modifier.isStatic(method.getModifiers())) {
-			AssignedName assignedName = state.instanceNames.get(name);
+			AssignedName assignedName = state.staticNames.get(name);
 			
 			// For JRUBY-4505, restore __method methods for reserved names
 			if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-			    installSingltonMethods(state.staticCallbacks, javaClass, singleton, method, name + METHOD_MANGLE);
+			    System.out.println("in reserved "+name);
+			    installSingletonMethods(state.staticCallbacks, javaClass, singleton, method, name + METHOD_MANGLE);
 			    continue;
 			}
 			
 			if (assignedName == null) {
 			    state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
+			    System.out.println("Assigned name is null");
 			} else {
-			    if (Priority.METHOD.lessImportantThan(assignedName)) continue;
+			    if (Priority.METHOD.lessImportantThan(assignedName)) {
+				System.out.println("Less important");
+				continue;
+			    }
 			    if (!Priority.METHOD.asImportantAs(assignedName)) {
 				state.staticCallbacks.remove(name);
 				state.staticCallbacks.remove(name + '=');
 				state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
 			    }
 			}
-			installSingletonMethods(state.instanceCallbacks, javaClass, singleton, method, name);
+			System.out.println("Installing "+name+" "+method+" "+singleton);
+			installSingletonMethods(state.staticCallbacks, javaClass, singleton, method, name);
+		    } else {
+			System.out.println("Method "+method+" is sadly static");
 		    }
 		    
 		}
@@ -978,6 +1010,15 @@ public class JavaClass extends JavaObject {
         MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
         if (invoker == null) {
             invoker = new StaticMethodInvokerInstaller(name);
+            methodCallbacks.put(name, invoker);
+        }
+        invoker.addMethod(method, javaClass);
+    }
+    
+    private void installSingletonMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Object singleton, Method method, String name) {
+        MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
+        if (invoker == null) {
+            invoker = new SingletonMethodInvokerInstaller(name, singleton);
             methodCallbacks.put(name, invoker);
         }
         invoker.addMethod(method, javaClass);
