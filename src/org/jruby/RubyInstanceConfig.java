@@ -692,7 +692,10 @@ public class RubyInstanceConfig {
             } else {
                 rubyopt = System.getenv("RUBYOPT");
             }
-            if (rubyopt != null && rubyopt.split("\\s").length != 0) {
+            
+            if (rubyopt == null || rubyopt.isEmpty()) return;
+
+            if (rubyopt.split("\\s").length != 0) {
                 String[] rubyoptArgs = rubyopt.split("\\s+");
                 new ArgumentProcessor(rubyoptArgs, false, true).processArguments();
             }
