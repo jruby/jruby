@@ -648,18 +648,16 @@ public class RubyInstanceConfig {
 
     public String getVersionString() {
         String ver = null;
-        String patchDelimeter = null;
+        String patchDelimeter = " patchlevel ";
         int patchlevel = 0;
         switch (getCompatVersion()) {
         case RUBY1_8:
             ver = Constants.RUBY_VERSION;
             patchlevel = Constants.RUBY_PATCHLEVEL;
-            patchDelimeter = " patchlevel ";
             break;
         case RUBY1_9:
             ver = Constants.RUBY1_9_VERSION;
             patchlevel = Constants.RUBY1_9_PATCHLEVEL;
-            patchDelimeter = " trunk ";
             break;
         }
 
