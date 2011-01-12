@@ -1150,6 +1150,7 @@
         <sysproperty key="emma.verbosity.level" value="silent" />
 
         <arg line="@{jruby.args} -S rake @{task} ${rake.args}"/>
+        <env key="JRUBY_OPTS" value=""/>
       </java>
     </sequential>
   </macrodef>
