@@ -1044,6 +1044,10 @@ public class RubyTime extends RubyObject {
                     .plusMinutes(int_args[2])
                     .plusSeconds(int_args[3]);
 
+            double millis = RubyFloat.num2dbl(args[5]);
+            int int_millis = (int) (millis * 1000) % 1000;
+            dt = dt.plusMillis(int_millis);
+
 	    dt = dt.withZoneRetainFields(dtz);
 
 	    // we might need to perform a DST correction
