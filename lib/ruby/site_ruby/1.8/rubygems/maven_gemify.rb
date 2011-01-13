@@ -6,7 +6,7 @@ module Gem
   module MavenUtils
     def maven_name?(name)
       name = name.source if Regexp === name
-      name =~ /^[^:.]{2,}[.:]/
+      name =~ /^[^:.\/!?#%]{2,}[.:][^:.\/!?#%]{2,}/
     end
 
     def maven_source_uri?(source_uri)

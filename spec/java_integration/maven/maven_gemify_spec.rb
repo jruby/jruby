@@ -23,6 +23,10 @@ begin
       maven_name?('c:ommons-lang:commons-lang').should be_false
       maven_name?('c:/temp/somefile').should be_false
     end
+
+    it "does not match URLs" do
+      maven_name?('http://example.com/some.gem').should be_false
+    end
   end
 
   describe Gem::SpecFetcher do
