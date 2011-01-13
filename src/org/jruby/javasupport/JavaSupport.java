@@ -149,7 +149,8 @@ public class JavaSupport {
         } catch (LinkageError le) {
             throw runtime.newNameError("cannot link Java class " + className + ", probable missing dependency: " + le.getLocalizedMessage(), className, le);
         } catch (SecurityException se) {
-            throw runtime.newNameError("security exception loading Java class " + className, className, se);
+            if (runtime.isVerbose()) se.printStackTrace(runtime.getErrorStream());
+            throw runtime.newSecurityError(se.getLocalizedMessage());
         }
     }
     
@@ -163,7 +164,7 @@ public class JavaSupport {
         } catch (LinkageError le) {
             throw runtime.newNameError("cannot link Java class " + className, className, le, false);
         } catch (SecurityException se) {
-            throw runtime.newNameError("security: cannot load Java class " + className, className, se, false);
+            throw runtime.newSecurityError(se.getLocalizedMessage());
         }
     }
 
