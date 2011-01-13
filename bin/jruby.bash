@@ -185,6 +185,7 @@ JAVA_ENCODING=""
 
 declare -a java_args
 declare -a ruby_args
+mode=""
 
 java_class=org.jruby.Main
 
@@ -274,6 +275,10 @@ do
      --ng)
         # Use native Nailgun client to toss commands to server
         process_special_opts "--ng" ;;
+     # Special pass --1.9 along so when processing cygwin we don't think it is
+     # a file (this is fairly gross that we special case this -- my bash-fu
+     # is weak)
+     --1.9) mode=--1.9 ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby
@@ -315,7 +320,7 @@ JFFI_OPTS="-Djffi.boot.library.path=$JFFI_BOOT"
 if $cygwin; then
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
-  
+
   if [[ ( "${1:0:1}" = "/" ) && ( ( -f "$1" ) || ( -d "$1" )) ]]; then
     win_arg=`cygpath -w "$1"`
     shift
@@ -371,7 +376,7 @@ else
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class "$@"
+      $java_class $mode "$@"
 
     # Record the exit status immediately, or it will be overridden.
     JRUBY_STATUS=$?
@@ -384,7 +389,7 @@ else
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class "$@"
+      $java_class $mode "$@"
   fi
 fi
 fi
