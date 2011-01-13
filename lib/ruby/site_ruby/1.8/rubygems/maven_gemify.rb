@@ -38,7 +38,11 @@ module Gem
     alias orig_find_matching_with_errors find_matching_with_errors
     def find_matching_with_errors(dependency, all = false, matching_platform = true, prerelease = false)
       if maven_name? dependency.name
-        result = maven_find_matching_with_errors(dependency)
+        begin
+          result = maven_find_matching_with_errors(dependency)
+        rescue => e
+          warn "maven find dependency failed for #{dependency}: #{e.to_s}" if Gem::Maven::Gemify.verbose?
+        end
       end
       if result && !result.flatten.empty?
         result
