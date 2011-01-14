@@ -95,7 +95,7 @@ if [ -z "$JAVA_MEM" ] ; then
 fi
 
 if [ -z "$JAVA_STACK" ] ; then
-  JAVA_STACK=-Xss1024k
+  JAVA_STACK=-Xss2048k
 fi
 
 # process JAVA_OPTS
