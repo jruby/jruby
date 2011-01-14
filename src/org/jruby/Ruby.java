@@ -73,7 +73,6 @@ import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.JITCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
-import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
@@ -564,30 +563,20 @@ public final class Ruby {
     public IRubyObject runNormally(Node scriptNode) {
         Script script = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
-        boolean forceCompile = getInstanceConfig().getCompileMode().shouldPrecompileAll();
-        if (compile) {
+        if (compile || config.isShowBytecode()) {
             script = tryCompile(scriptNode, null, new JRubyClassLoader(getJRubyClassLoader()), config.isShowBytecode());
-            if (forceCompile && script == null) {
-                return getNil();
-            }
         }
 
-        if (config.isShowBytecode()) {
-            if (script == null) {
-                // try to force compile the script again, in case we are in a -X-C or dynopt mode
-                script = tryCompile(scriptNode, null, new JRubyClassLoader(getJRubyClassLoader()), config.isShowBytecode());
+        if (script != null) {
+            if (config.isShowBytecode()) {
+                return getNil();
             }
-            // if still null, print error and return
-            if (script == null) {
-                System.err.print("error: bytecode printing only works with JVM bytecode");
-            }
-            return nilObject;
+            
+            return runScript(script);
         } else {
-            if (script != null) {
-                return runScript(script);
-            } else {
-                return runInterpreter(scriptNode);
-            }
+            failForcedCompile(scriptNode);
+            
+            return runInterpreter(scriptNode);
         }
     }
 
@@ -616,6 +605,19 @@ public final class Ruby {
      */
     public Script tryCompile(Node node, ASTInspector inspector) {
         return tryCompile(node, null, new JRubyClassLoader(getJRubyClassLoader()), inspector, false);
+    }
+
+    private void failForcedCompile(Node scriptNode) throws RaiseException {
+        if (config.getCompileMode().shouldPrecompileAll()) {
+            throw newRuntimeError("could not compile and compile mode is 'force': " + scriptNode.getPosition().getFile());
+        }
+    }
+
+    private void handeCompileError(Node node, Throwable t) {
+        if (config.isJitLoggingVerbose() || config.isDebug()) {
+            System.err.println("warning: could not compile: " + node.getPosition().getFile() + "; full trace follows");
+            t.printStackTrace();
+        }
     }
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
@@ -655,41 +657,8 @@ public final class Ruby {
             if (config.isJitLogging()) {
                 System.err.println("compiled: " + node.getPosition().getFile());
             }
-        } catch (NotCompilableException nce) {
-            if (config.isJitLoggingVerbose() || config.isDebug()) {
-                System.err.println("warning: not compileable: " + nce.getMessage());
-                nce.printStackTrace();
-            } else {
-                System.err.println("warning: could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
-            }
-        } catch (ClassNotFoundException e) {
-            if (config.isJitLoggingVerbose() || config.isDebug()) {
-                System.err.println("warning: not compileable: " + e.getMessage());
-                e.printStackTrace();
-            } else {
-                System.err.println("warning: could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
-            }
-        } catch (InstantiationException e) {
-            if (config.isJitLoggingVerbose() || config.isDebug()) {
-                System.err.println("warning: not compilable: " + e.getMessage());
-                e.printStackTrace();
-            } else {
-                System.err.println("warning: could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
-            }
-        } catch (IllegalAccessException e) {
-            if (config.isJitLoggingVerbose() || config.isDebug()) {
-                System.err.println("warning: not compilable: " + e.getMessage());
-                e.printStackTrace();
-            } else {
-                System.err.println("warning: could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
-            }
         } catch (Throwable t) {
-            if (config.isJitLoggingVerbose() || config.isDebug()) {
-                System.err.println("warning: could not compile: " + node.getPosition().getFile() + " because of: \"" + t.getMessage() + "\"");
-                t.printStackTrace();
-            } else {
-                System.err.println("warning: could not compile; pass -d or -J-Djruby.jit.logging.verbose=true for more details");
-            }
+            handeCompileError(node, t);
         }
         
         return script;
@@ -2453,146 +2422,8 @@ public final class Ruby {
             return;
         }
 
-        if (RubyException.TRACE_TYPE == RubyException.RUBINIUS) {
-            printRubiniusTrace(excp);
-            return;
-        }
-
-        ThreadContext context = getCurrentContext();
-        IRubyObject backtrace = excp.callMethod(context, "backtrace");
-
         PrintStream errorStream = getErrorStream();
-        if (backtrace.isNil() || !(backtrace instanceof RubyArray)) {
-            if (context.getFile() != null) {
-                errorStream.print(context.getFile() + ":" + context.getLine());
-            } else {
-                errorStream.print(context.getLine());
-            }
-        } else if (((RubyArray) backtrace).getLength() == 0) {
-            printErrorPos(context, errorStream);
-        } else {
-            IRubyObject mesg = ((RubyArray) backtrace).first();
-
-            if (mesg.isNil()) {
-                printErrorPos(context, errorStream);
-            } else {
-                errorStream.print(mesg);
-            }
-        }
-
-        RubyClass type = excp.getMetaClass();
-        String info = excp.toString();
-
-        if (type == getRuntimeError() && (info == null || info.length() == 0)) {
-            errorStream.print(": unhandled exception\n");
-        } else {
-            String path = type.getName();
-
-            if (info.length() == 0) {
-                errorStream.print(": " + path + '\n');
-            } else {
-                if (path.startsWith("#")) {
-                    path = null;
-                }
-
-                String tail = null;
-                if (info.indexOf("\n") != -1) {
-                    tail = info.substring(info.indexOf("\n") + 1);
-                    info = info.substring(0, info.indexOf("\n"));
-                }
-
-                errorStream.print(": " + info);
-
-                if (path != null) {
-                    errorStream.print(" (" + path + ")\n");
-                }
-
-                if (tail != null) {
-                    errorStream.print(tail + '\n');
-                }
-            }
-        }
-
-        excp.printBacktrace(errorStream);
-    }
-
-    private static final String FIRST_COLOR = "\033[0;31m";
-    private static final String KERNEL_COLOR = "\033[0;36m";
-    private static final String EVAL_COLOR = "\033[0;33m";
-    private static final String CLEAR_COLOR = "\033[0m";
-
-    private void printRubiniusTrace(RubyException exception) {
-        ThreadContext.RubyStackTraceElement[] frames = exception.getBacktraceElements();
-
-        ArrayList firstParts = new ArrayList();
-        int longestFirstPart = 0;
-        for (ThreadContext.RubyStackTraceElement frame : frames) {
-            String firstPart = frame.getClassName() + "#" + frame.getMethodName();
-            if (firstPart.length() > longestFirstPart) longestFirstPart = firstPart.length();
-            firstParts.add(firstPart);
-        }
-
-        // determine spacing
-        int center = longestFirstPart
-                + 2 // initial spaces
-                + 1; // spaces before "at"
-
-        StringBuilder buffer = new StringBuilder();
-
-        buffer
-                .append("An exception has occurred:\n")
-                .append("    ");
-
-        if (exception.getMetaClass() == getRuntimeError() && exception.message(getCurrentContext()).toString().length() == 0) {
-            buffer.append("No current exception (RuntimeError)");
-        } else {
-            buffer.append(exception.message(getCurrentContext()).toString());
-        }
-
-        buffer
-                .append('\n')
-                .append('\n')
-                .append("Backtrace:\n");
-
-        int i = 0;
-        for (ThreadContext.RubyStackTraceElement frame : frames) {
-            String firstPart = (String)firstParts.get(i);
-            String secondPart = frame.getFileName() + ":" + frame.getLineNumber();
-
-            if (i == 0) {
-                buffer.append(FIRST_COLOR);
-            } else if (frame.isBinding() || frame.getFileName().equals("(eval)")) {
-                buffer.append(EVAL_COLOR);
-            } else if (frame.getFileName().indexOf(".java") != -1) {
-                buffer.append(KERNEL_COLOR);
-            }
-            buffer.append("  ");
-            for (int j = 0; j < center - firstPart.length(); j++) {
-                buffer.append(' ');
-            }
-            buffer.append(firstPart);
-            buffer.append(" at ");
-            buffer.append(secondPart);
-            buffer.append(CLEAR_COLOR);
-            buffer.append('\n');
-            i++;
-        }
-
-        PrintStream errorStream = getErrorStream();
-        errorStream.print(buffer.toString());
-    }
-
-    private void printErrorPos(ThreadContext context, PrintStream errorStream) {
-        if (context.getFile() != null) {
-            if (context.getFrameName() != null) {
-                errorStream.print(context.getFile() + ":" + context.getLine());
-                errorStream.print(":in '" + context.getFrameName() + '\'');
-            } else if (context.getLine() != 0) {
-                errorStream.print(context.getFile() + ":" + context.getLine());
-            } else {
-                errorStream.print(context.getFile());
-            }
-        }
+        errorStream.print(RubyInstanceConfig.TRACE_TYPE.printBacktrace(excp));
     }
     
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
@@ -2667,17 +2498,18 @@ public final class Ruby {
             }
 
             // script was not found in cache above, so proceed to compile
+            Node scriptNode = parseFile(readStream, filename, null);
             if (script == null) {
-                Node scriptNode = parseFile(readStream, filename, null);
-
                 script = tryCompile(scriptNode, className, new JRubyClassLoader(jrubyClassLoader), false);
             }
-            
-            if (script == null) {
-                System.err.println("Error, could not compile; pass -J-Djruby.jit.logging.verbose=true for more details");
-            }
 
-            runScript(script);
+            if (script == null) {
+                failForcedCompile(scriptNode);
+
+                runInterpreter(scriptNode);
+            } else {
+                runScript(script);
+            }
         } catch (JumpException.ReturnJump rj) {
             return;
         } finally {

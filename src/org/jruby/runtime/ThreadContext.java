@@ -1092,23 +1092,6 @@ public final class ThreadContext {
         RubyStackTraceElement[] rubyStackTrace = new RubyStackTraceElement[trace.size()];
         return (RubyStackTraceElement[])trace.toArray(rubyStackTrace);
     }
-
-    public static IRubyObject renderBacktraceMRI(Ruby runtime, RubyStackTraceElement[] trace) {
-        if (trace == null) {
-            return runtime.getNil();
-        }
-        
-        RubyArray traceArray = RubyArray.newArray(runtime);
-
-        for (int i = 0; i < trace.length; i++) {
-            RubyStackTraceElement element = trace[i];
-
-            RubyString str = RubyString.newString(runtime, element.getFileName() + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'");
-            traceArray.append(str);
-        }
-
-        return traceArray;
-    }
     
     public void preAdoptThread() {
         pushFrame();

@@ -49,13 +49,13 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.TraceType;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.SafePropertyAccessor;
 
 /**
  *
@@ -147,41 +147,9 @@ public class RubyException extends RubyObject {
 
     public void prepareBacktrace(ThreadContext context, boolean nativeException) {
         // if it's null, build a backtrace
-        boolean fullTrace = false;
         if (backtraceElements == null) {
-            switch (TRACE_TYPE) {
-            case RAW:
-                backtraceElements = ThreadContext.gatherRawBacktrace(getRuntime(), Thread.currentThread().getStackTrace());
-                break;
-            case FULL:
-                fullTrace = true;
-            default:
-                backtraceElements = ThreadContext.gatherHybridBacktrace(
-                        context.getRuntime(),
-                        context.createBacktrace2(0, nativeException),
-                        Thread.currentThread().getStackTrace(),
-                        fullTrace);
-            }
+            backtraceElements = RubyInstanceConfig.TRACE_TYPE.getBacktrace(context, nativeException);
         }
-    }
-    
-    public static final int RAW = 0;
-    public static final int RUBY_FRAMED = 2;
-    public static final int RUBINIUS = 5;
-    public static final int FULL = 6;
-
-    public static final int RAW_FRAME_CROP_COUNT = 10;
-    
-    public static int TRACE_TYPE;
-    
-    static {
-        String style = SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed").toLowerCase();
-        
-        if (style.equalsIgnoreCase("raw")) TRACE_TYPE = RAW;
-        else if (style.equalsIgnoreCase("ruby_framed")) TRACE_TYPE = RUBY_FRAMED;
-        else if (style.equalsIgnoreCase("rubinius")) TRACE_TYPE = RUBINIUS;
-        else if (style.equalsIgnoreCase("full")) TRACE_TYPE = FULL;
-        else TRACE_TYPE = RUBY_FRAMED;
     }
     
     public IRubyObject getBacktrace() {
@@ -192,7 +160,7 @@ public class RubyException extends RubyObject {
     }
     
     public void initBacktrace() {
-        backtrace = ThreadContext.renderBacktraceMRI(getRuntime(), backtraceElements);
+        backtrace = TraceType.generateMRIBacktrace(getRuntime(), backtraceElements);
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)

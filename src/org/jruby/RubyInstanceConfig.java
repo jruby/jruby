@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -50,7 +51,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import org.jcodings.Encoding;
 
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTCompiler;
@@ -58,7 +58,7 @@ import org.jruby.compiler.ASTCompiler19;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.runtime.TraceType;
 import org.jruby.runtime.profile.IProfileData;
 import org.jruby.runtime.profile.AbstractProfilePrinter;
 import org.jruby.runtime.profile.FlatProfilePrinter;
@@ -322,6 +322,9 @@ public class RubyInstanceConfig {
     public static final boolean JIT_LOADING_DEBUG = SafePropertyAccessor.getBoolean("jruby.jit.debug", false);
 
     public static final boolean CAN_SET_ACCESSIBLE = SafePropertyAccessor.getBoolean("jruby.ji.setAccessible", true);
+
+    public static TraceType TRACE_TYPE =
+            TraceType.traceTypeFor(SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed"));
 
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
@@ -700,6 +703,80 @@ public class RubyInstanceConfig {
         } catch (SecurityException se) {
             // ignore and do nothing
         }
+    }
+
+    /**
+     * The intent here is to gather up any options that might have
+     * been specified in the shebang line and return them so they can
+     * be merged into the ones specified on the commandline.  This is
+     * kind of a hopeless task because it's impossible to figure out
+     * where the command invocation stops and the parameters start.
+     * We try to work with the common scenarios where /usr/bin/env is
+     * used to invoke the jruby shell script, and skip any parameters
+     * it might have.  Then we look for the interpreter invokation and
+     * assume that the binary will have the word "ruby" in the name.
+     * This is error prone but should cover more cases than the
+     * previous code.
+     */
+    public String[] parseShebangOptions(InputStream in) {
+        BufferedReader reader = null;
+        String[] result = new String[0];
+        if (in == null) return result;
+        try {
+            in.mark(1024);
+            reader = new BufferedReader(new InputStreamReader(in, "iso-8859-1"), 8192);
+            String firstLine = reader.readLine();
+
+            // Search for the shebang line in the given stream
+            // if it wasn't found on the first line and the -x option
+            // was specified
+            if (isxFlag()) {
+                while (firstLine != null && !isShebangLine(firstLine)) {
+                    firstLine = reader.readLine();
+                }
+            }
+
+            boolean usesEnv = false;
+            if (firstLine.length() > 2 && firstLine.charAt(0) == '#' && firstLine.charAt(1) == '!') {
+                String[] options = firstLine.substring(2).split("\\s+");
+                int i;
+                for (i = 0; i < options.length; i++) {
+                    // Skip /usr/bin/env if it's first
+                    if (i == 0 && options[i].endsWith("/env")) {
+                        usesEnv = true;
+                        continue;
+                    }
+                    // Skip any assignments if /usr/bin/env is in play
+                    if (usesEnv && options[i].indexOf('=') > 0) {
+                        continue;
+                    }
+                    // Skip any commandline args if /usr/bin/env is in play
+                    if (usesEnv && options[i].startsWith("-")) {
+                        continue;
+                    }
+                    String basename = (new File(options[i])).getName();
+                    if (basename.indexOf("ruby") > 0) {
+                        break;
+                    }
+                }
+                setHasShebangLine(true);
+                System.arraycopy(options, i, result, 0, options.length - i);
+            } else {
+                // No shebang line found
+                setHasShebangLine(false);
+            }
+        } catch (Exception ex) {
+            // ignore error
+        } finally {
+            try {
+                in.reset();
+            } catch (IOException ex) {}
+        }
+        return result;
+    }
+
+    protected static boolean isShebangLine(String line) {
+        return (line.length() > 2 && line.charAt(0) == '#' && line.charAt(1) == '!');
     }
 
     public CompileMode getCompileMode() {

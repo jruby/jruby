@@ -37,10 +37,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.File;
 
@@ -65,16 +62,8 @@ import org.jruby.util.SimpleSampler;
  * @author  jpetersen
  */
 public class Main {
-    private boolean hasPrintedUsage = false;
-    private final RubyInstanceConfig config;
-
     public Main(RubyInstanceConfig config) {
         this(config, false);
-    }
-
-    private Main(RubyInstanceConfig config, boolean hardExit) {
-        this.config = config;
-        config.setHardExit(hardExit);
     }
 
     public Main(final InputStream in, final PrintStream out, final PrintStream err) {
@@ -89,8 +78,38 @@ public class Main {
         this(new RubyInstanceConfig());
     }
 
+    private Main(RubyInstanceConfig config, boolean hardExit) {
+        this.config = config;
+        config.setHardExit(hardExit);
+    }
+
     private Main(boolean hardExit) {
         this(new RubyInstanceConfig(), hardExit);
+    }
+
+    public static class Status {
+        private boolean isExit = false;
+        private int status = 0;
+
+        /**
+         * Creates a status object with the specified value and with explicit
+         * exit flag. An exit flag means that Kernel.exit() has been explicitly
+         * invoked during the run.
+         *
+         * @param staus The status value.
+         */
+        Status(int status) {
+            this.isExit = true;
+            this.status = status;
+        }
+
+        /**
+         * Creates a status object with 0 value and no explicit exit flag.
+         */
+        Status() {}
+
+        public boolean isExit() { return isExit; }
+        public int getStatus() { return status; }
     }
 
     /**
@@ -101,11 +120,7 @@ public class Main {
      * @param args command-line args, provided by the JVM.
      */
     public static void main(String[] args) {
-        // Ensure we're not running on GCJ, since it's not supported and leads to weird errors
-        if (Platform.IS_GCJ) {
-            System.err.println("Fatal: GCJ (GNU Compiler for Java) is not supported by JRuby.");
-            System.exit(1);
-        }
+        doGCJCheck();
         
         Main main = new Main(true);
         
@@ -115,18 +130,7 @@ public class Main {
                 System.exit(status.getStatus());
             }
         } catch (RaiseException rj) {
-            RubyException raisedException = rj.getException();
-            Ruby runtime = raisedException.getRuntime();
-            if (runtime.getSystemExit().isInstance(raisedException)) {
-                IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
-
-                if (status != null && !status.isNil()) {
-                    System.exit(RubyNumeric.fix2int(status));
-                }
-            } else {
-                rj.printStackTrace(System.err);
-                System.exit(1);
-            }
+            System.exit(handleRaiseException(rj));
         } catch (Throwable t) {
             // print out as a nice Ruby backtrace
             System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t));
@@ -143,312 +147,253 @@ public class Main {
             config.processArguments(args);
             return run();
         } catch (MainExitException mee) {
-            if (!mee.isAborted()) {
-                config.getOutput().println(mee.getMessage());
-                if (mee.isUsageError()) {
-                    printUsage();
-                }
-            }
-            return new Status(mee.getStatus());
+            return handleMainExit(mee);
         } catch (OutOfMemoryError oome) {
-            // produce a nicer error since Rubyists aren't used to seeing this
-            System.gc();
-            
-            String memoryMax = SafePropertyAccessor.getProperty("jruby.memory.max");
-            String message = "";
-            if (memoryMax != null) {
-                message = " of " + memoryMax;
-            }
-            config.getError().println("Error: Your application used more memory than the safety cap" + message + ".");
-            config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
-            
-            if (config.isVerbose()) {
-                config.getError().println("Exception trace follows:");
-                oome.printStackTrace();
-            } else {
-                config.getError().println("Specify -w for full OutOfMemoryError stack trace");
-            }
-            return new Status(1);
+            return handleOutOfMemory(oome);
         } catch (StackOverflowError soe) {
-            // produce a nicer error since Rubyists aren't used to seeing this
-            System.gc();
-            
-            String stackMax = SafePropertyAccessor.getProperty("jruby.stack.max");
-            String message = "";
-            if (stackMax != null) {
-                message = " of " + stackMax;
-            }
-            config.getError().println("Error: Your application used more stack memory than the safety cap" + message + ".");
-            config.getError().println("Specify -J-Xss####k to increase it (#### = cap size in KB).");
-            
-            if (config.isVerbose()) {
-                config.getError().println("Exception trace follows:");
-                soe.printStackTrace();
-            } else {
-                config.getError().println("Specify -w for full StackOverflowError stack trace");
-            }
-            return new Status(1);
+            return handleStackOverflow(soe);
         } catch (UnsupportedClassVersionError ucve) {
-            config.getError().println("Error: Some library (perhaps JRuby) was built with a later JVM version.");
-            config.getError().println("Please use libraries built with the version you intend to use or an earlier one.");
-            
-            if (config.isVerbose()) {
-                config.getError().println("Exception trace follows:");
-                ucve.printStackTrace();
-            } else {
-                config.getError().println("Specify -w for full UnsupportedClassVersionError stack trace");
-            }
-            return new Status(1);
+            return handleUnsupportedClassVersion(ucve);
         } catch (ThreadKill kill) {
             return new Status();
         }
     }
 
+    @Deprecated
     public Status run() {
-        if (config.isShowVersion()) {
-            showVersion();
-        }
-        
-        if (config.isShowCopyright()) {
-            showCopyright();
-        }
+        return internalRun();
+    }
+
+    private Status internalRun() {
+        doShowVersion();
+        doShowCopyright();
 
         if (!config.shouldRunInterpreter() ) {
-            if (config.shouldPrintUsage()) {
-                printUsage();
-            }
-            if (config.shouldPrintProperties()) {
-                printProperties();
-            }
+            doPrintUsage(false);
+            doPrintProperties();
             return new Status();
         }
 
         InputStream in   = config.getScriptSource();
         String filename  = config.displayedFileName();
-
-        String[] args = parseShebangOptions(in);
-        if (args.length > 0) {
-            config.processArguments(args);
-        }
+        
+        doProcessArguments(in);
         
         Ruby runtime     = Ruby.newInstance(config);
 
         try {
-            // set thread context JRuby classloader here, for the main thread
-            try {
-                Thread.currentThread().setContextClassLoader(runtime.getJRubyClassLoader());
-            } catch (SecurityException se) {
-                // can't set TC classloader
-                if (runtime.getInstanceConfig().isVerbose()) {
-                    config.getError().println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
-                }
-            }
+            doSetContextClassLoader(runtime);
 
             if (in == null) {
-                // no script to run, return success below
+                // no script to run, return success
+                return new Status();
             } else if (config.isxFlag() && !config.hasShebangLine()) {
                 // no shebang was found and x option is set
                 throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
             } else if (config.isShouldCheckSyntax()) {
-                int status = 0;
-                try {
-                    runtime.parseFromMain(in, filename);
-                    config.getOutput().println("Syntax OK for " + filename);
-                } catch (RaiseException re) {
-                    status = -1;
-                    if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
-                        config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
-                    } else {
-                        throw re;
-                    }
-                }
-
-                if (config.getArgv().length > 0) {
-                    for (String arg : config.getArgv()) {
-                        File argFile = new File(arg);
-                        if (argFile.exists()) {
-                            try {
-                                runtime.parseFromMain(new FileInputStream(argFile), arg);
-                                config.getOutput().println("Syntax OK for " + arg);
-                            } catch (FileNotFoundException fnfe) {
-                                status = -1;
-                                config.getOutput().println("File not found: " + arg);
-                            } catch (RaiseException re) {
-                                status = -1;
-                                if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
-                                    config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
-                                } else {
-                                    throw re;
-                                }
-                            }
-                        } else {
-                            status = -1;
-                            config.getOutput().println("File not found: " + arg);
-                        }
-                    }
-                }
-                return new Status(status);
+                // check syntax only and exit
+                return doCheckSyntax(runtime, in, filename);
             } else {
-                long now = -1;
-
-                try {
-                    if (config.isBenchmarking()) {
-                        now = System.currentTimeMillis();
-                    }
-
-                    if (config.isSamplingEnabled()) {
-                        SimpleSampler.startSampleThread();
-                    }
-
-                    try {
-                        runtime.runFromMain(in, filename);
-                    } finally {
-                        if (config.isBenchmarking()) {
-                            config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
-                        }
-
-                        if (config.isSamplingEnabled()) {
-                            org.jruby.util.SimpleSampler.report();
-                        }
-                    }
-                } catch (RaiseException rj) {
-                    RubyException raisedException = rj.getException();
-                    if (runtime.getSystemExit().isInstance(raisedException)) {
-                        IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
-
-                        if (status != null && !status.isNil()) {
-                            return new Status(RubyNumeric.fix2int(status));
-                        } else {
-                            return new Status(0);
-                        }
-                    } else {
-                        runtime.printError(raisedException);
-                        return new Status(1);
-                    }
-                }
+                // proceed to run the script
+                return doRunFromMain(runtime, in, filename);
             }
-            return new Status();
         } finally {
             runtime.tearDown();
         }
     }
 
-    private void showVersion() {
-        config.getOutput().println(config.getVersionString());
-    }
-
-    private void showCopyright() {
-        config.getOutput().println(config.getCopyrightString());
-    }
-
-    public void printUsage() {
-        if (!hasPrintedUsage) {
-            config.getOutput().print(config.getBasicUsageHelp());
-            hasPrintedUsage = true;
+    private Status handleUnsupportedClassVersion(UnsupportedClassVersionError ucve) {
+        config.getError().println("Error: Some library (perhaps JRuby) was built with a later JVM version.");
+        config.getError().println("Please use libraries built with the version you intend to use or an earlier one.");
+        if (config.isVerbose()) {
+            config.getError().println("Exception trace follows:");
+            ucve.printStackTrace();
+        } else {
+            config.getError().println("Specify -w for full UnsupportedClassVersionError stack trace");
         }
+        return new Status(1);
     }
-    
-    public void printProperties() {
-        config.getOutput().print(config.getPropertyHelp());
+
+    private Status handleStackOverflow(StackOverflowError soe) {
+        // produce a nicer error since Rubyists aren't used to seeing this
+        System.gc();
+        String stackMax = SafePropertyAccessor.getProperty("jruby.stack.max");
+        String message = "";
+        if (stackMax != null) {
+            message = " of " + stackMax;
+        }
+        config.getError().println("Error: Your application used more stack memory than the safety cap" + message + ".");
+        config.getError().println("Specify -J-Xss####k to increase it (#### = cap size in KB).");
+        if (config.isVerbose()) {
+            config.getError().println("Exception trace follows:");
+            soe.printStackTrace();
+        } else {
+            config.getError().println("Specify -w for full StackOverflowError stack trace");
+        }
+        return new Status(1);
     }
-    /**
-     * The intent here is to gather up any options that might have
-     * been specified in the shebang line and return them so they can
-     * be merged into the ones specified on the commandline.  This is
-     * kind of a hopeless task because it's impossible to figure out
-     * where the command invocation stops and the parameters start.
-     * We try to work with the common scenarios where /usr/bin/env is
-     * used to invoke the jruby shell script, and skip any parameters
-     * it might have.  Then we look for the interpreter invokation and
-     * assume that the binary will have the word "ruby" in the name.
-     * This is error prone but should cover more cases than the
-     * previous code.
-     */
-    private String[] parseShebangOptions(InputStream in) {
-        BufferedReader reader = null;
-        String[] result = new String[0];
-        if (in == null) return result;
+
+    private Status handleOutOfMemory(OutOfMemoryError oome) {
+        // produce a nicer error since Rubyists aren't used to seeing this
+        System.gc();
+        String memoryMax = SafePropertyAccessor.getProperty("jruby.memory.max");
+        String message = "";
+        if (memoryMax != null) {
+            message = " of " + memoryMax;
+        }
+        config.getError().println("Error: Your application used more memory than the safety cap" + message + ".");
+        config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
+        if (config.isVerbose()) {
+            config.getError().println("Exception trace follows:");
+            oome.printStackTrace();
+        } else {
+            config.getError().println("Specify -w for full OutOfMemoryError stack trace");
+        }
+        return new Status(1);
+    }
+
+    private Status handleMainExit(MainExitException mee) {
+        if (!mee.isAborted()) {
+            config.getOutput().println(mee.getMessage());
+            if (mee.isUsageError()) {
+                doPrintUsage(true);
+            }
+        }
+        return new Status(mee.getStatus());
+    }
+
+    private Status doRunFromMain(Ruby runtime, InputStream in, String filename) {
+        long now = -1;
         try {
-            in.mark(1024);
-            reader = new BufferedReader(new InputStreamReader(in, "iso-8859-1"), 8192);
-            String firstLine = reader.readLine();
-
-            // Search for the shebang line in the given stream
-            // if it wasn't found on the first line and the -x option
-            // was specified
-            if (config.isxFlag()) {
-                while (firstLine != null && !isShebangLine(firstLine)) {
-                    firstLine = reader.readLine();
-                }
+            if (config.isBenchmarking()) {
+                now = System.currentTimeMillis();
             }
-
-            boolean usesEnv = false;
-            if (firstLine.length() > 2 && firstLine.charAt(0) == '#' && firstLine.charAt(1) == '!') {
-                String[] options = firstLine.substring(2).split("\\s+");
-                int i;
-                for (i = 0; i < options.length; i++) {
-                    // Skip /usr/bin/env if it's first
-                    if (i == 0 && options[i].endsWith("/env")) {
-                        usesEnv = true;
-                        continue;
-                    }
-                    // Skip any assignments if /usr/bin/env is in play
-                    if (usesEnv && options[i].indexOf('=') > 0) {
-                        continue;
-                    }
-                    // Skip any commandline args if /usr/bin/env is in play
-                    if (usesEnv && options[i].startsWith("-")) {
-                        continue;
-                    }
-                    String basename = (new File(options[i])).getName();
-                    if (basename.indexOf("ruby") > 0) {
-                        break;
-                    }
-                }
-                config.setHasShebangLine(true);
-                System.arraycopy(options, i, result, 0, options.length - i);
-            } else {
-                // No shebang line found
-                config.setHasShebangLine(false);
+            if (config.isSamplingEnabled()) {
+                SimpleSampler.startSampleThread();
             }
-        } catch (Exception ex) {
-            // ignore error
-        } finally {
             try {
-                in.reset();
-            } catch (IOException ex) {}
+                runtime.runFromMain(in, filename);
+            } finally {
+                if (config.isBenchmarking()) {
+                    config.getOutput().println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
+                }
+                if (config.isSamplingEnabled()) {
+                    org.jruby.util.SimpleSampler.report();
+                }
+            }
+        } catch (RaiseException rj) {
+            return new Status(handleRaiseException(rj));
         }
-        return result;
+        return new Status();
     }
 
-    public static class Status {
-        private boolean isExit = false;
-        private int status = 0;
-
-        /**
-         * Creates a status object with the specified value and with explicit
-         * exit flag. An exit flag means that Kernel.exit() has been explicitly
-         * invoked during the run.
-         *
-         * @param status
-         *            The status value.
-         */
-        Status(int status) {
-            this.isExit = true;
-            this.status = status;
+    private Status doCheckSyntax(Ruby runtime, InputStream in, String filename) throws RaiseException {
+        int status = 0;
+        try {
+            runtime.parseFromMain(in, filename);
+            config.getOutput().println("Syntax OK for " + filename);
+        } catch (RaiseException re) {
+            status = -1;
+            if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
+                config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+            } else {
+                throw re;
+            }
         }
-
-        /**
-         * Creates a status object with 0 value and no explicit exit flag. 
-         */
-        Status() {}
-
-        public boolean isExit() { return isExit; }
-        public int getStatus() { return status; }
+        if (config.getArgv().length > 0) {
+            for (String arg : config.getArgv()) {
+                File argFile = new File(arg);
+                if (argFile.exists()) {
+                    try {
+                        runtime.parseFromMain(new FileInputStream(argFile), arg);
+                        config.getOutput().println("Syntax OK for " + arg);
+                    } catch (FileNotFoundException fnfe) {
+                        status = -1;
+                        config.getOutput().println("File not found: " + arg);
+                    } catch (RaiseException re) {
+                        status = -1;
+                        if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
+                            config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+                        } else {
+                            throw re;
+                        }
+                    }
+                } else {
+                    status = -1;
+                    config.getOutput().println("File not found: " + arg);
+                }
+            }
+        }
+        return new Status(status);
     }
 
-    protected boolean isShebangLine(String line) {
-        return (line.length() > 2 && line.charAt(0) == '#' && line.charAt(1) == '!');
+    private void doSetContextClassLoader(Ruby runtime) {
+        // set thread context JRuby classloader here, for the main thread
+        try {
+            Thread.currentThread().setContextClassLoader(runtime.getJRubyClassLoader());
+        } catch (SecurityException se) {
+            // can't set TC classloader
+            if (runtime.getInstanceConfig().isVerbose()) {
+                config.getError().println("WARNING: Security restrictions disallowed setting context classloader for main thread.");
+            }
+        }
     }
+
+    private void doProcessArguments(InputStream in) {
+        String[] args = config.parseShebangOptions(in);
+        if (args.length > 0) {
+            config.processArguments(args);
+        }
+    }
+
+    private void doPrintProperties() {
+        if (config.shouldPrintProperties()) {
+            config.getOutput().print(config.getPropertyHelp());
+        }
+    }
+
+    private void doPrintUsage(boolean force) {
+        if (config.shouldPrintUsage() || force) {
+            config.getOutput().print(config.getBasicUsageHelp());
+        }
+    }
+
+    private void doShowCopyright() {
+        if (config.isShowCopyright()) {
+            config.getOutput().println(config.getCopyrightString());
+        }
+    }
+
+    private void doShowVersion() {
+        if (config.isShowVersion()) {
+            config.getOutput().println(config.getVersionString());
+        }
+    }
+
+    private static void doGCJCheck() {
+        // Ensure we're not running on GCJ, since it's not supported and leads to weird errors
+        if (Platform.IS_GCJ) {
+            System.err.println("Fatal: GCJ (GNU Compiler for Java) is not supported by JRuby.");
+            System.exit(1);
+        }
+    }
+
+    private static int handleRaiseException(RaiseException rj) {
+        RubyException raisedException = rj.getException();
+        Ruby runtime = raisedException.getRuntime();
+        if (runtime.getSystemExit().isInstance(raisedException)) {
+            IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
+            if (status != null && !status.isNil()) {
+                return RubyNumeric.fix2int(status);
+            } else {
+                return 0;
+            }
+        } else {
+            System.err.print(RubyInstanceConfig.TRACE_TYPE.printBacktrace(raisedException));
+            return 1;
+        }
+    }
+
+    private final RubyInstanceConfig config;
 }
 
