@@ -43,4 +43,7 @@ public interface IProfileData {
      * @return the serial number of the previous method being profiled
      */
     public int profileExit(int nextMethod, long startTime);
+    
+    /* Clear all data */
+    public void clear();
 }

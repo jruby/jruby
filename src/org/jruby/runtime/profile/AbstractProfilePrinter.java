@@ -69,8 +69,13 @@ public class AbstractProfilePrinter {
     }
 
     public boolean isProfilerInvocation(Invocation inv) {
-        String name = methodName(inv.getMethodSerialNumber());
-        return (name.length() > 15 && name.substring(0, 15).equals("JRuby::Profiler")) || (inv.getParent() != null && isProfilerInvocation(inv.getParent()));
+        return isThisProfilerInvocation(inv.getMethodSerialNumber()) || 
+                (inv.getParent() != null && isProfilerInvocation(inv.getParent()));
+    }
+    
+    public boolean isThisProfilerInvocation(int serial) {
+        String name = methodName(serial);
+        return name.length() > 15 && name.substring(0, 15).equals("JRuby::Profiler");
     }
     
     public String methodName(int serial) {

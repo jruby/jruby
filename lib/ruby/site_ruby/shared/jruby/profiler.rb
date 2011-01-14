@@ -3,6 +3,7 @@ require 'java'
 
 module JRuby
   module Profiler
+    import org.jruby.runtime.profile.AbstractProfilePrinter
     import org.jruby.runtime.profile.GraphProfilePrinter
     import org.jruby.runtime.profile.FlatProfilePrinter
     import org.jruby.Ruby
@@ -23,6 +24,10 @@ module JRuby
       start
       yield
       stop
+    end
+    
+    def self.clear
+      current_thread_context.profile_data.clear
     end
     
     private

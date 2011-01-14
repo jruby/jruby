@@ -92,6 +92,12 @@ public class ProfileData implements IProfileData {
         }
     }
 
+    public void clear() {
+        methodRecursion = new int[1000];
+        currentInvocation = new Invocation(0);
+        topInvocation = currentInvocation;
+    }
+    
     public void decRecursionFor(int serial) {
         ensureRecursionSize(serial);
         int[] mr = methodRecursion;
@@ -148,6 +154,13 @@ public class ProfileData implements IProfileData {
      */
     public Invocation getTopInvocation() {
         return topInvocation;
+    }
+
+    /**
+     * @return the currentInvocation
+     */
+    public Invocation getCurrentInvocation() {
+        return currentInvocation;
     }
 
     /**

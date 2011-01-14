@@ -50,8 +50,8 @@ public class MethodData extends InvocationSet {
         }
 
         public boolean contains(int i) {
-            for (int i2 : ints) {
-                if (i2 == i) {
+            for (int j = 0; j < size; j++) {
+                if (ints[j] == i) {
                     return true;
                 }
             }
