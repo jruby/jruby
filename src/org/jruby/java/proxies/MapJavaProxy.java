@@ -40,7 +40,6 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
-import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -84,6 +83,13 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         if (wrappedMap == null) {
             wrappedMap = new RubyHashMap(getRuntime(), this);
         }
+        // (JavaProxy)recv).getObject() might raise exception when
+        // wrong number of args are given to the constructor.
+        try {
+            wrappedMap.setSize(((Map)((JavaProxy)this).getObject()).size());
+        } catch (RaiseException e) {
+            wrappedMap.setSize(0);
+        }
         return wrappedMap;
     }
 
@@ -93,13 +99,10 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         public RubyHashMap(Ruby runtime, IRubyObject receiver) {
             super(runtime);
             this.receiver = receiver;
-            // (JavaProxy)recv).getObject() might raise exception when
-            // wrong number of args are given to the constructor.
-            try {
-                size = ((Map)((JavaProxy)receiver).getObject()).size();
-            } catch (RaiseException e) {
-                size = 0;
-            }
+        }
+        
+        private void setSize(int size) {
+            this.size = size;
         }
 
         @Override
@@ -225,6 +228,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             if (map != null) {
                 map.clear();
                 ((JavaProxy)receiver).setObject(map);
+                size = 0;
             }
             return this;
         }

@@ -523,6 +523,7 @@ public class Java implements Library {
             javaClass.javaClass().asSubclass(java.util.Map.class);
             proxyClass.setAllocator(runtime.getJavaSupport().getMapJavaProxyClass().getAllocator());
             proxyClass.defineAnnotatedMethods(MapJavaProxy.class);
+            proxyClass.includeModule(runtime.getEnumerable());
         } catch (ClassCastException e) {
             proxyClass.setAllocator(superClass.getAllocator());
         }
