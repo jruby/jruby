@@ -126,34 +126,34 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
     // adjusts paths started with '/' or '\\', on windows.
     static String adjustRootPathOnWindows(Ruby runtime, String path, String dir) {
-        if (path == null) return path;
-        if (Platform.IS_WINDOWS) {
-            // MRI behavior on Windows: it treats '/' as a root of
-            // a current drive (but only if SINGLE slash is present!):
-            // E.g., if current work directory is
-            // 'D:/home/directory', then '/' means 'D:/'.
-            //
-            // Basically, '/path' is treated as a *RELATIVE* path,
-            // relative to the current drive. '//path' is treated
-            // as absolute one.
-            if ((path.startsWith("/") && !(path.length()>2 && path.charAt(2) == ':')) || path.startsWith("\\")) {
-                if (path.length() > 1 && (path.charAt(1) == '/' || path.charAt(1) == '\\')) {
-                    return path;
-                }
-                
-                // First try to use drive letter from supplied dir value,
-                // then try current work dir.
-                if (!startsWithDriveLetterOnWindows(dir)) {
-                    dir = runtime.getCurrentDirectory();
-                }
-                if (dir.length() >= 2) {
-                    path = dir.substring(0, 2) + path;
-                }
-            } else if (startsWithDriveLetterOnWindows(path) && path.length() == 2) {
-               // compensate for missing slash after drive letter on windows
-                path += "/";
+        if (path == null || !Platform.IS_WINDOWS) return path;
+
+        // MRI behavior on Windows: it treats '/' as a root of
+        // a current drive (but only if SINGLE slash is present!):
+        // E.g., if current work directory is
+        // 'D:/home/directory', then '/' means 'D:/'.
+        //
+        // Basically, '/path' is treated as a *RELATIVE* path,
+        // relative to the current drive. '//path' is treated
+        // as absolute one.
+        if ((path.startsWith("/") && !(path.length() > 2 && path.charAt(2) == ':')) || path.startsWith("\\")) {
+            if (path.length() > 1 && (path.charAt(1) == '/' || path.charAt(1) == '\\')) {
+                return path;
             }
+
+            // First try to use drive letter from supplied dir value,
+            // then try current work dir.
+            if (!startsWithDriveLetterOnWindows(dir)) {
+                dir = runtime.getCurrentDirectory();
+            }
+            if (dir.length() >= 2) {
+                path = dir.substring(0, 2) + path;
+            }
+        } else if (startsWithDriveLetterOnWindows(path) && path.length() == 2) {
+            // compensate for missing slash after drive letter on windows
+            path += "/";
         }
+
         return path;
     }
 
@@ -447,10 +447,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private IRubyObject openFile19(ThreadContext context, IRubyObject args[]) {
+        Ruby runtime = context.getRuntime();
         RubyString filename = get_path(context, args[0]);
-        context.getRuntime().checkSafeString(filename);
+        runtime.checkSafeString(filename);
 
-        path = filename.getUnicodeValue();
+        path = adjustRootPathOnWindows(runtime, filename.getUnicodeValue(), runtime.getCurrentDirectory());
 
         String modeString = "r";
         ModeFlags modes = new ModeFlags();
@@ -465,7 +466,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     modeString = args[1].convertToString().toString();
                 }
             } else {
-                modes = parseModes19(context, RubyString.newString(context.getRuntime(), modeString));
+                modes = parseModes19(context, RubyString.newString(runtime, modeString));
             }
             if (args.length > 2 && !args[2].isNil()) {
                 if (args[2] instanceof RubyHash) {
@@ -480,17 +481,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 openInternal(path, modeString, modes);
             }
         } catch (InvalidValueException ex) {
-            throw context.getRuntime().newErrnoEINVALError();
+            throw runtime.newErrnoEINVALError();
         }
 
         return this;
     }
     
     private IRubyObject openFile(IRubyObject args[]) {
-        RubyString filename = get_path(getRuntime().getCurrentContext(), args[0]);
-        getRuntime().checkSafeString(filename);
+        Ruby runtime = getRuntime();
+        RubyString filename = get_path(runtime.getCurrentContext(), args[0]);
+        runtime.checkSafeString(filename);
         
-        path = filename.getUnicodeValue();
+        path = adjustRootPathOnWindows(runtime, filename.getUnicodeValue(), runtime.getCurrentDirectory());
         
         String modeString;
         ModeFlags modes;
