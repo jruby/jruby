@@ -553,7 +553,7 @@ public class RubyObject extends RubyBasicObject {
      *
      * Old id version. This one is bound to the "id" name and will emit a deprecation warning.
      */
-    @JRubyMethod(name = "id")
+    @JRubyMethod(name = "id", compat = RUBY1_8)
     public IRubyObject id_deprecated() {
         getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#id will be deprecated; use Object#object_id", "Object#id", "Object#object_id");
         return id();
