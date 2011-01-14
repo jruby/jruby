@@ -694,7 +694,7 @@ public class RubyInstanceConfig {
                 rubyopt = System.getenv("RUBYOPT");
             }
             
-            if (rubyopt == null || rubyopt.isEmpty()) return;
+            if (rubyopt == null || "".equals(rubyopt) return;
 
             if (rubyopt.split("\\s").length != 0) {
                 String[] rubyoptArgs = rubyopt.split("\\s+");
