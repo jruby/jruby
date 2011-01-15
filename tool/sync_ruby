@@ -57,12 +57,6 @@ class Sync
         cp_r "#{@source}/#{file}", "#{@target}/lib/ruby/#{@version}/#{target}", :verbose => true
       end
     end
-
-    if defined? YAML_FILES
-      for file in YAML_FILES
-        cp_r "#{@source}/lib/#{file}", "#{@target}/src/builtin", :verbose => true
-      end
-    end
   end
 
   def sync_rubygems

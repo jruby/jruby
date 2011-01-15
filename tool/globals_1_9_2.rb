@@ -81,6 +81,8 @@ STDLIB_FILES = %w[
   webrick
   webrick.rb
   xmlrpc
+  yaml.rb
+  yaml
 ]
 
 EXT_FILES = {
@@ -97,10 +99,3 @@ EXT_FILES = {
   'ext/ripper/lib/ripper.rb' => 'ripper.rb',
   'ext/ripper/lib/ripper' => 'ripper'
 }
-
-# yaml files go into src/builtin for jruby
-# disabled; need to reconcile 1.8 and 1.9 yaml
-#YAML_FILES = %w[
-#  yaml.rb
-#  yaml
-#]

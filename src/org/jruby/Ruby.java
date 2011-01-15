@@ -1491,14 +1491,7 @@ public final class Ruby {
             }
         });
         
-        String[] builtins = {"yaml", 
-                             "yaml/yecht", "yaml/baseemitter", "yaml/basenode", 
-                             "yaml/compat", "yaml/constants", "yaml/dbm", 
-                             "yaml/emitter", "yaml/encoding", "yaml/error", 
-                             "yaml/rubytypes", "yaml/store", "yaml/stream", 
-                             "yaml/stringio", "yaml/tag", "yaml/types", 
-                             "yaml/yamlnode", "yaml/ypath", 
-                             "jsignal_internal", "generator_internal"};
+        String[] builtins = {"jsignal_internal", "generator_internal"};
         for (String library : builtins) {
             addBuiltinIfAllowed(library + ".rb", new BuiltinScript(library));
         }

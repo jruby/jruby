@@ -65,8 +65,7 @@ public class IOOutputStream extends OutputStream {
         } else if (checkAppend && io.respondsTo("<<")) {
             writeAdapter = MethodIndex.getFunctionalCallSite("<<");
         } else if (verifyCanWrite) {
-            throw new IllegalArgumentException(
-                    "Object: " + io + " is not a legal argument to this wrapper, " +
+            throw io.getRuntime().newArgumentError("Object: " + io + " is not a legal argument to this wrapper, " +
                         "cause it doesn't respond to \"write\".");
         } else {
             writeAdapter = writeSite;
