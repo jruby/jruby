@@ -1518,18 +1518,22 @@ public final class ThreadContext {
         return profileData;
     }
 
+    private int currentMethodSerial = 0;
+    
     public int profileEnter(int nextMethod) {
+        int previousMethodSerial = currentMethodSerial;
+        currentMethodSerial = nextMethod;
         if (isProfiling)
-            return getProfileData().profileEnter(nextMethod);
-        else
-            return -1;
+            getProfileData().profileEnter(nextMethod);
+        return previousMethodSerial;
     }
 
     public int profileExit(int nextMethod, long startTime) {
+        int previousMethodSerial = currentMethodSerial;
+        currentMethodSerial = nextMethod;
         if (isProfiling)
-            return getProfileData().profileExit(nextMethod, startTime);
-        else
-            return -1;
+            getProfileData().profileExit(nextMethod, startTime);
+        return previousMethodSerial;
     }
     
     public void startProfiling() {

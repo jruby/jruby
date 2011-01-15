@@ -27,6 +27,8 @@ package org.jruby.runtime.profile;
 
 import java.io.PrintStream;
 import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
@@ -36,6 +38,7 @@ import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.util.collections.IntHashMap.Entry;
 
 public class AbstractProfilePrinter {
     public void printProfile(PrintStream out) {
@@ -75,7 +78,8 @@ public class AbstractProfilePrinter {
     
     public boolean isThisProfilerInvocation(int serial) {
         String name = methodName(serial);
-        return name.length() > 15 && name.substring(0, 15).equals("JRuby::Profiler");
+        return name.length() > 15 && 
+                (name.equals("JRuby::Profiler.start") || name.equals("JRuby::Profiler.stop"));
     }
     
     public String methodName(int serial) {
@@ -91,7 +95,9 @@ public class AbstractProfilePrinter {
         DynamicMethod[] profiledMethods = runtime.profiledMethods;
         String name = profiledNames[serial];
         DynamicMethod method = profiledMethods[serial];
-        return moduleHashMethod(method.getImplementationClass(), name);
+        String displayName = moduleHashMethod(method.getImplementationClass(), name);
+        // System.out.printf("%d - %s\n", serial, displayName);
+        return displayName;
     }
     
     protected static String moduleHashMethod(RubyModule module, String name) {
@@ -111,4 +117,28 @@ public class AbstractProfilePrinter {
             return module.getName() + "#" + name;
         }
     }
+    
+    protected Map<Integer, MethodData> methodData(Invocation top) {
+        Map<Integer, MethodData> methods = new HashMap();
+        MethodData data = new MethodData(0);
+        methods.put(0, data);
+        data.invocations.add(top);
+        methodData1(methods, top);
+        return methods;
+    }
+
+    protected void methodData1(Map<Integer, MethodData> methods, Invocation inv) {
+        for (Entry<Invocation> entry : inv.getChildren().entrySet()) {
+            Invocation child = entry.getValue();
+            int serial = child.getMethodSerialNumber();
+            MethodData data = methods.get(serial);
+            if (data == null) {
+                data = new MethodData(serial);
+                methods.put(serial, data);
+            }
+            data.invocations.add(child);
+            methodData1(methods, child);
+        }
+    }
+
 }

@@ -45,5 +45,8 @@ public interface IProfileData {
     public int profileExit(int nextMethod, long startTime);
     
     /* Clear all data */
+    
     public void clear();
+    
+    public Invocation getResults();
 }

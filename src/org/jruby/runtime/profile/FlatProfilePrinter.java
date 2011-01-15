@@ -36,18 +36,17 @@ public class FlatProfilePrinter extends AbstractProfilePrinter {
     private static final int SELFTIME_OFFSET = 1;
     private static final int COUNT_OFFSET = 2;
     private static final int AGGREGATETIME_OFFSET = 3;
-    private ProfileData profileData;
+    private final Invocation topInvocation;
 
-    public FlatProfilePrinter(IProfileData iProfileData) {
-        profileData = (ProfileData) iProfileData;
+    public FlatProfilePrinter(Invocation top) {
+        topInvocation = top;
     }
 
     public void printProfile(PrintStream out) {
-        profileData.getTopInvocation().setDuration(profileData.totalTime());
+        
+        out.printf("Total time: %s\n\n", nanoString(topInvocation.getDuration()));
 
-        out.printf("Total time: %s\n\n", nanoString(profileData.totalTime()));
-
-        Map<Integer, MethodData> serialsToMethods = profileData.methodData();
+        Map<Integer, MethodData> serialsToMethods = methodData(topInvocation);
 
         long[][] tuples = new long[serialsToMethods.size()][];
 

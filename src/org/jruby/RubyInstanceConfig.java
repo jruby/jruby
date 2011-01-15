@@ -1769,10 +1769,10 @@ public class RubyInstanceConfig {
     
     public AbstractProfilePrinter makeDefaultProfilePrinter(IProfileData profileData) {
         if (profilingMode == ProfilingMode.FLAT) {
-            return new FlatProfilePrinter(profileData);
+            return new FlatProfilePrinter(profileData.getResults());
         }
         else if (profilingMode == ProfilingMode.GRAPH) {
-            return new GraphProfilePrinter(profileData);
+            return new GraphProfilePrinter(profileData.getResults());
         }
         return null;
     }

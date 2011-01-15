@@ -5,50 +5,24 @@ require 'spec/profiler/profiler_spec_helpers'
 describe JRuby::Profiler, "::ProfileData" do
   include JRuby::Profiler::SpecHelpers
   
-  context "before any profiling" do
-    it "can clear the current thread's data" do
-      JRuby::Profiler.clear
-    end
-    
-    it "has a top invocation" do
-      top.should_not be_nil
-    end
-    
-    it "has a current invocation" do
-      current.should_not be_nil
-    end
-    
-    describe "the top invocation" do
-      it "has method serial 0" do
-        top.method_serial_number.should == 0
-      end
-      
-      it "is also the current invocation" do
-        top.should == current
-      end
-      
-      it "has no children" do
-        top.children.size.should == 0
-      end
-    end
-  end
-  
   context "after profiling an empty block" do
     before do
-      clear
-      JRuby::Profiler.profile {}
+      @top = JRuby::Profiler.profile {}
     end
     
-    it "should have one invocation from the stop profiling method" do
-      top.children.size.should == 1
-      method_name(top.children.values.to_a.first).should == "JRuby::Profiler.stop"
+    it "should have no invocations" do
+      top.children.size.should == 0
+    end
+    
+    it "the top invocation should be named (top)" do
+      method_name(top).should == "(top)"
     end
   end
   
   context "after profiling method calls at the top level" do
-    def profile
+    before do
       obj = ProfilerTest.new
-      JRuby::Profiler.profile do
+      @top = JRuby::Profiler.profile do
         obj.test_instance_method
         ProfilerTest.test_static_method
         ProfilerTest.test_static_method
@@ -58,13 +32,8 @@ describe JRuby::Profiler, "::ProfileData" do
       end
     end
     
-    before do
-      clear
-      profile
-    end
-    
-    it "should have invocations for each method called plus stop" do
-      top.children.size.should == 4
+    it "should have invocations for each method called" do
+      top.children.size.should == 3
     end
     
     it "the instance method should have a correct invocation" do
@@ -87,20 +56,15 @@ describe JRuby::Profiler, "::ProfileData" do
   end
   
   context "after profiling methods on several levels" do
-    def profile
+    before do
       obj = ProfilerTest.new
-      JRuby::Profiler.profile do
+      @top = JRuby::Profiler.profile do
         obj.level1
       end
     end
     
-    before do
-      clear
-      profile
-    end
-    
     it "should should the correct number of invocations at the top level" do
-      top.children.size.should == 2
+      top.children.size.should == 1
     end
     
     it "should have each level correct" do
@@ -119,13 +83,12 @@ describe JRuby::Profiler, "::ProfileData" do
   context "after profiling recursive methods" do
     def profile
       obj = ProfilerTest.new
-      JRuby::Profiler.profile do
+      @top = JRuby::Profiler.profile do
         obj.recurse(3)
       end
     end
     
     before do
-      clear
       profile
     end
     
@@ -141,14 +104,11 @@ describe JRuby::Profiler, "::ProfileData" do
   end
   
   context "after profiling that starts and stops in different methods" do
-    
     before do
-      clear
       obj = ProfilerTest.new
       obj.start
       1 + 2
-      obj.stop
-      puts graph_output
+      @top = obj.stop
     end
     
     it "methods that are lower in the tree that the highest level should not be attached to top" do

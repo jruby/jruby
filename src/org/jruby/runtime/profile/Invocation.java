@@ -1,4 +1,3 @@
-
 /***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
@@ -30,21 +29,27 @@ import org.jruby.util.collections.IntHashMap;
 
 public class Invocation {
     private final int methodSerialNumber;
-    private final int recursiveDepth;
-    private final Invocation parent;
-    private final IntHashMap<Invocation> children = new IntHashMap<Invocation>();
+    private int recursiveDepth;
+    private Invocation parent;
+    private final IntHashMap<Invocation> children;
     
     private long duration     = 0;
     private int count         = 0;
     
     public Invocation(int serial) {
-        this(null, serial, 1);
+        this(null, serial);
     }
     
-    public Invocation(Invocation parent, int serial, int recursiveDepth) {
+    public Invocation(Invocation parent, int serial) {
         this.parent             = parent;
         this.methodSerialNumber = serial;
-        this.recursiveDepth     = recursiveDepth;
+        this.children           = new IntHashMap<Invocation>();
+    }
+
+    public Invocation(Invocation parent, int serial, IntHashMap<Invocation> children) {
+        this.parent             = parent;
+        this.methodSerialNumber = serial;
+        this.children           = children;
     }
 
     public int getMethodSerialNumber() {
@@ -54,9 +59,17 @@ public class Invocation {
     public int getRecursiveDepth() {
         return recursiveDepth;
     }
+    
+    public void setRecursiveDepth(int d) {
+        recursiveDepth = d;
+    }
 
     public Invocation getParent() {
         return parent;
+    }
+    
+    public void setParent(Invocation p) {
+        parent = p;
     }
 
     public IntHashMap<Invocation> getChildren() {
@@ -71,31 +84,50 @@ public class Invocation {
         duration = d;
     }
 
+    public void addDuration(long d) {
+        duration += d;
+    }
+    
     public int getCount() {
         return count;
+    }
+
+    public void setCount(int c) {
+        count = c;
     }
 
     public void incrementCount() {
         count++;
     }
 
-    public void addDuration(long d) {
-        duration += d;
-    }
-    
-    public Invocation childInvocationFor(int serial, int recursiveDepth) {
+    public Invocation childInvocationFor(int serial) {
         Invocation child;
         if ((child = children.get(serial)) == null) {
-            child = new Invocation(this, serial, recursiveDepth);
+            child = new Invocation(this, serial);
             children.put(serial, child);
         }
         return child;
     }
     
+    public Invocation copyWithNewSerialAndParent(int serial, Invocation newParent) {
+        Invocation newInv = new Invocation(newParent, serial, children);
+        newInv.setDuration(duration);
+        newInv.setCount(count);
+        newInv.setRecursiveDepth(recursiveDepth);
+        for (Invocation child : children.values()) {
+            child.setParent(newInv);
+        }
+        return newInv;
+    }
+
+    public void addChild(Invocation child) {
+        children.put(child.getMethodSerialNumber(), child);
+    }
+    
     public long childTime() {
         long t = 0;
         for (Invocation inv : children.values()) {
-            t += inv.duration;
+            t += inv.getDuration();
         }
         return t;
     }

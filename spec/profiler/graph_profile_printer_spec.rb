@@ -10,8 +10,7 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
   
   context "empty profile data" do
     before do
-      clear
-      JRuby::Profiler.profile {}
+      @top = JRuby::Profiler.profile {}
     end
     
     it "should print total time 0" do
@@ -23,9 +22,9 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
         @top_line = line_for(graph_output, "(top)")
       end
       
-      it "should have calls 0" do
+      it "should have calls 1" do
         @top_line.should_not be_nil
-        @top_line[:calls].should == 0
+        @top_line[:calls].should == 1
       end
       
       it "should all times zero" do
@@ -48,9 +47,8 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
   context "with profiling" do
     
     before do
-      clear
       obj = ProfilerTest.new
-      JRuby::Profiler.profile do
+      @top = JRuby::Profiler.profile do
         obj.wait(0.01)
         obj.test_instance_method
       end
@@ -96,9 +94,8 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
   context "with recursive profiling" do
     describe "calls, children and parents" do
       before do
-        clear
         obj = ProfilerTest.new
-        JRuby::Profiler.profile do
+        @top = JRuby::Profiler.profile do
           obj.recurse(3)
         end
       end
@@ -138,9 +135,8 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
     
     describe "durations" do
       before do
-        clear
         obj = ProfilerTest.new
-        JRuby::Profiler.profile do
+        @top = JRuby::Profiler.profile do
           obj.recurse_wait(3, 0.05)
         end
       end
@@ -161,6 +157,28 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
         main = find_row(graph, "ProfilerTest#recurse_wait")
         parent = find_row(main[:children], "ProfilerTest#recurse_wait")[:total].should == 0
       end
+    end
+  end
+  
+  context "with recursive methods where the profiling is started inside the recursion" do
+    before do
+      obj = ProfilerTest.new
+      obj.recurse_and_start_profiling(3)
+      @top = JRuby::Profiler.stop
+    end
+    
+    it "should have the correct call info" do
+      recursive_method = "ProfilerTest#recurse_and_start_profiling"
+      graph = decode_graph(graph_output)
+      
+      row = find_row(graph, recursive_method)
+      row[:calls].should == 4
+      
+      parent = find_row(row[:parents], recursive_method)
+      parent[:calls].should == [3, 4]
+      
+      child = find_row(row[:children], recursive_method)
+      child[:calls].should == [3, 4]
     end
   end
 end

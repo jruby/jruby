@@ -3,19 +3,7 @@ require 'jruby/profiler'
 
 module JRuby::Profiler::SpecHelpers
   def top
-    results.top_invocation
-  end
-  
-  def current
-    results.current_invocation
-  end
-  
-  def results
-    JRuby::Profiler.results
-  end
-  
-  def clear
-    JRuby::Profiler.clear
+    @top
   end
   
   def method_name(inv)
@@ -26,11 +14,18 @@ module JRuby::Profiler::SpecHelpers
     inv.children.values.detect {|inv| method_name(inv) == name}
   end
   
+  def tree(inv, indent = 0)
+    puts " "*indent + method_name(inv) + "(#{inv.method_serial_number}@#{inv.recursive_depth}) x#{inv.count}"
+    inv.children.values.to_a.each do |c|
+      tree(c, indent + 2)
+    end
+  end
+
   def graph_output
     my_output_stream = java.io.ByteArrayOutputStream.new
     print_stream = java.io.PrintStream.new(my_output_stream)
 
-    JRuby::Profiler::GraphProfilePrinter.new(JRuby::Profiler.results).printProfile(print_stream)
+    JRuby::Profiler::GraphProfilePrinter.new(top).printProfile(print_stream)
     my_output_stream.toString
   end
   
@@ -153,6 +148,14 @@ class ProfilerTest
       s = Time.now
       true until Time.now - s > wait
       recurse_wait(x-1, wait)
+    end
+  end
+  
+  def recurse_and_start_profiling(x)
+    if x > 0
+      recurse_and_start_profiling(x - 1)
+    else
+      JRuby::Profiler.start
     end
   end
   

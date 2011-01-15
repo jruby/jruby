@@ -42,7 +42,7 @@ public class ProfileData implements IProfileData {
     private Invocation topInvocation = currentInvocation;
     private int[] methodRecursion = new int[1000];
     private ThreadContext threadContext;
-
+    
     public ProfileData(ThreadContext tc) {
         threadContext = tc;
     }
@@ -57,8 +57,7 @@ public class ProfileData implements IProfileData {
     public int profileEnter(int calledMethod) {
         Invocation parentInvocation = currentInvocation;
 
-        int recursiveDepth = incRecursionFor(calledMethod);
-        Invocation childInvocation = parentInvocation.childInvocationFor(calledMethod, recursiveDepth);
+        Invocation childInvocation = parentInvocation.childInvocationFor(calledMethod);
         childInvocation.incrementCount();
 
         currentInvocation = childInvocation;
@@ -72,23 +71,41 @@ public class ProfileData implements IProfileData {
      * @return the serial number of the previous method being profiled
      */
     public int profileExit(int callingMethod, long startTime) {
-        if (currentInvocation.getMethodSerialNumber() != 0) {
-            long now = System.nanoTime();
-            long duration = now - startTime;
-            Invocation current = currentInvocation;
+        long now = System.nanoTime();
+        long duration = now - startTime;
+        int oldSerial = currentInvocation.getMethodSerialNumber();
+        currentInvocation.addDuration(duration);
+        
+        if (currentInvocation == topInvocation) { 
+            Invocation newTopInvocation = new Invocation(0);
+            Invocation newCurrentInvocation = 
+                currentInvocation.copyWithNewSerialAndParent(callingMethod, newTopInvocation);
             
-            current.addDuration(duration);
+            newTopInvocation.addChild(newCurrentInvocation);
+            newCurrentInvocation.incrementCount();
+
             
-            int previousMethod = current.getMethodSerialNumber();
+            topInvocation     = newTopInvocation;
+            currentInvocation = newCurrentInvocation;
             
-            decRecursionFor(previousMethod);
+            return oldSerial;
+        } else if (currentInvocation.getParent() == topInvocation && callingMethod != 0) {
+            Invocation newTopInvocation = new Invocation(0);
+            Invocation newCurrentInvocation = newTopInvocation.childInvocationFor(callingMethod);
+            Invocation newChildInvocation = 
+                currentInvocation.copyWithNewSerialAndParent(currentInvocation.getMethodSerialNumber(), newCurrentInvocation);
             
-            currentInvocation = current.getParent();
-            
-            return previousMethod;
+            newCurrentInvocation.addChild(newChildInvocation);
+            newCurrentInvocation.incrementCount();
+
+            topInvocation = newTopInvocation;
+            currentInvocation = newCurrentInvocation;
+            return oldSerial;
         }
         else {
-            return 0;
+            currentInvocation = currentInvocation.getParent();
+            
+            return oldSerial;
         }
     }
 
@@ -121,32 +138,29 @@ public class ProfileData implements IProfileData {
             methodRecursion = newRecursion;
         }
     }
+    
+    private void setRecursiveDepths() {
+        int topSerial = topInvocation.getMethodSerialNumber();
+        int depth = incRecursionFor(topSerial);
+        topInvocation.setRecursiveDepth(depth);
+        setRecursiveDepths1(topInvocation);
+    }
+    
+    private void setRecursiveDepths1(Invocation inv) {
+        int depth;
+        int childSerial;
+        for (Invocation child : inv.getChildren().values()) {
+            childSerial = child.getMethodSerialNumber();
+            depth = incRecursionFor(childSerial);
+            child.setRecursiveDepth(depth);
+            setRecursiveDepths1(child);
+            
+            decRecursionFor(childSerial);
+        }
+    }
 
     public long totalTime() {
         return topInvocation.childTime();
-    }
-
-    public Map<Integer, MethodData> methodData() {
-        Map<Integer, MethodData> methods = new HashMap();
-        MethodData data = new MethodData(0);
-        methods.put(0, data);
-        data.invocations.add(topInvocation);
-        methodData1(methods, topInvocation);
-        return methods;
-    }
-
-    private static void methodData1(Map<Integer, MethodData> methods, Invocation inv) {
-        for (Entry<Invocation> entry : inv.getChildren().entrySet()) {
-            Invocation child = entry.getValue();
-            int serial = child.getMethodSerialNumber();
-            MethodData data = methods.get(serial);
-            if (data == null) {
-                data = new MethodData(serial);
-                methods.put(serial, data);
-            }
-            data.invocations.add(child);
-            methodData1(methods, child);
-        }
     }
 
     /**
@@ -156,6 +170,35 @@ public class ProfileData implements IProfileData {
         return topInvocation;
     }
 
+    public Invocation getResults() {
+        setRecursiveDepths();
+        
+        if (topInvocation.getChildren().size() != 1) {
+            return addDuration(topInvocation);
+        }
+        if (topInvocation.getChildren().size() == 1) {
+            Invocation singleTopChild = null;
+            for (Invocation inv : topInvocation.getChildren().values() ) {
+                singleTopChild = inv;
+            }
+            String singleTopChildName = AbstractProfilePrinter.getMethodName(singleTopChild.getMethodSerialNumber());
+            if (singleTopChildName.equals("JRuby::Profiler.profile")) {
+                Invocation profiledCodeInvocation = null;
+                for (Invocation inv : singleTopChild.getChildren().values() ) {
+                    if (AbstractProfilePrinter.getMethodName(inv.getMethodSerialNumber()).equals("JRuby::Profiler.profiled_code")) {
+                        return addDuration(inv.copyWithNewSerialAndParent(0, null));
+                    }
+                }
+            }
+        }
+        return addDuration(topInvocation);
+    }
+    
+    public Invocation addDuration(Invocation inv) {
+        inv.setDuration(inv.childTime());
+        return inv;
+    }
+    
     /**
      * @return the currentInvocation
      */

@@ -32,20 +32,18 @@ import java.util.Map;
 
 public class GraphProfilePrinter extends AbstractProfilePrinter {
     public static MethodData currentData;
-    private ProfileData profileData;
+    private Invocation topInvocation;
 
-    public GraphProfilePrinter(IProfileData iProfileData) {
-        profileData = (ProfileData) iProfileData;
+    public GraphProfilePrinter(Invocation top) {
+        topInvocation = top;
     }
 
     public void printProfile(PrintStream out) {
-        profileData.getTopInvocation().setDuration(profileData.totalTime());
-        
-        out.printf("\nTotal time: %s\n\n", nanoString(profileData.totalTime()));
+        out.printf("\nTotal time: %s\n\n", nanoString(topInvocation.getDuration()));
 
         out.println(" %total   %self       total        self    children                 calls  name");
 
-        Map<Integer, MethodData> methods = profileData.methodData();
+        Map<Integer, MethodData> methods = methodData(topInvocation);
         MethodData[] sortedMethods = methods.values().toArray(new MethodData[0]);
         
         Arrays.sort(sortedMethods, new Comparator<MethodData>() {
@@ -63,46 +61,48 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
                 out.println("---------------------------------------------------------------------------------------------------------");
                 int serial = data.serialNumber;
                 
-                int[] parentSerialsInts = data.parents();
-                Integer[] parentSerials = new Integer[parentSerialsInts.length];
-                for (int i = 0; i < parentSerialsInts.length; i++) {
-                    parentSerials[i] = parentSerialsInts[i];
-                }
-                
-                Arrays.sort(parentSerials, new Comparator<Integer>() {
-                    public int compare(Integer parent1, Integer parent2) {
-                        long time1 = GraphProfilePrinter.currentData.rootInvocationsFromParent(parent1).totalTime();
-                        long time2 = GraphProfilePrinter.currentData.rootInvocationsFromParent(parent2).totalTime();
-                        return time1 == time2 ? 0 : (time1 < time2 ? -1 : 1);
+                if (serial != 0) {
+                    int[] parentSerialsInts = data.parents();
+                    Integer[] parentSerials = new Integer[parentSerialsInts.length];
+                    for (int i = 0; i < parentSerialsInts.length; i++) {
+                        parentSerials[i] = parentSerialsInts[i];
                     }
-                });
-                
-                if (parentSerials.length > 0) {
-                    for (int parentSerial : parentSerials) {
-                        String callerName = methodName(parentSerial);
-                        InvocationSet invs = data.rootInvocationsFromParent(parentSerial);
-                        out.print("                 ");
-                        pad(out, 10, nanoString(invs.totalTime()));
-                        out.print("  ");
-                        pad(out, 10, nanoString(invs.selfTime()));
-                        out.print("  ");
-                        pad(out, 10, nanoString(invs.childTime()));
-                        out.print("  ");
-                        pad(out, 20, Integer.toString(data.invocationsFromParent(parentSerial).totalCalls()) + "/" + Integer.toString(data.totalCalls()));
-                        out.print("  ");
-                        out.print(callerName);
-                        out.println("");
+                    
+                    Arrays.sort(parentSerials, new Comparator<Integer>() {
+                        public int compare(Integer parent1, Integer parent2) {
+                            long time1 = GraphProfilePrinter.currentData.rootInvocationsFromParent(parent1).totalTime();
+                            long time2 = GraphProfilePrinter.currentData.rootInvocationsFromParent(parent2).totalTime();
+                            return time1 == time2 ? 0 : (time1 < time2 ? -1 : 1);
+                        }
+                    });
+                    
+                    if (parentSerials.length > 0) {
+                        for (int parentSerial : parentSerials) {
+                            String callerName = methodName(parentSerial);
+                            InvocationSet invs = data.rootInvocationsFromParent(parentSerial);
+                            out.print("                 ");
+                            pad(out, 10, nanoString(invs.totalTime()));
+                            out.print("  ");
+                            pad(out, 10, nanoString(invs.selfTime()));
+                            out.print("  ");
+                            pad(out, 10, nanoString(invs.childTime()));
+                            out.print("  ");
+                            pad(out, 20, Integer.toString(data.invocationsFromParent(parentSerial).totalCalls()) + "/" + Integer.toString(data.totalCalls()));
+                            out.print("  ");
+                            out.print(callerName);
+                            out.println("");
+                        }
                     }
                 }
                 
                 String displayName = methodName(serial);
-                if (profileData.totalTime() == 0) {
+                if (topInvocation.getDuration() == 0) {
                     out.print("   100%    100%  ");
                 } else {
                     out.print("  ");
-                    pad(out, 4, Long.toString(data.totalTime() * 100 / profileData.totalTime()));
+                    pad(out, 4, Long.toString(data.totalTime() * 100 / topInvocation.getDuration()));
                     out.print("%   ");
-                    pad(out, 4, Long.toString(data.selfTime() * 100 / profileData.totalTime()));
+                    pad(out, 4, Long.toString(data.selfTime() * 100 / topInvocation.getDuration()));
                     out.print("%  ");
                 }
                 pad(out, 10, nanoString(data.totalTime()));
