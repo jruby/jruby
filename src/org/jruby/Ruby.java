@@ -423,7 +423,7 @@ public final class Ruby {
             context.setFileAndLine(oldFile, oldLine);
             if (config.isProfilingEntireRun()) {
                 IProfileData profileData = (IProfileData) context.getProfileData();
-                config.makeDefaultProfilePrinter(profileData).printProfile(System.out);
+                config.makeDefaultProfilePrinter(profileData).printProfile(System.err);
             }
         }
     }
