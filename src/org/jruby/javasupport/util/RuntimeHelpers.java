@@ -31,6 +31,7 @@ import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.OptArgNode;
+import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
@@ -2286,7 +2287,9 @@ public class RuntimeHelpers {
         if (argsNode.getRestArg() >= 0) {
             if (added) builder.append(';');
             added = true;
-            builder.append("r").append(argsNode.getRestArgNode().getName());
+            if (!(argsNode.getRestArgNode() instanceof UnnamedRestArgNode)) {
+                builder.append("r").append(argsNode.getRestArgNode().getName());
+            }
         }
 
         if (argsNode.getPost() != null) {
