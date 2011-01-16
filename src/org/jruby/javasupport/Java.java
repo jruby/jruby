@@ -96,7 +96,6 @@ import org.jruby.java.proxies.MapJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.util.ClassCache;
 import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.CodegenUtils;
@@ -424,17 +423,6 @@ public class Java implements Library {
             return getInterfaceModule(runtime, javaClass);
         }
         javaClass.lockProxy();
-        /*
-        try {
-            // Map type object should have RubyHash methods
-            c.asSubclass(java.util.Map.class);
-            proxyClass = createProxyClass(runtime,
-                runtime.getJavaSupport().getMapJavaProxyClass(),
-                javaClass, true);
-            System.out.println("it is Map!!!");
-        } catch (ClassCastException e) {
-            // do nothing
-        }*/
         try {
             if ((proxyClass = javaClass.getProxyClass()) == null) {
 
@@ -469,9 +457,11 @@ public class Java implements Library {
                     Class<?>[] interfaces = c.getInterfaces();
                     for (int i = interfaces.length; --i >= 0;) {
                         JavaClass ifc = JavaClass.get(runtime, interfaces[i]);
-                        if (interfaces[i] != java.util.Map.class) {
+                        // java.util.Map type object has its own proxy, but following
+                        // is needed. Unless kind_of?(is_a?) test will fail.
+                        //if (interfaces[i] != java.util.Map.class) {
                             proxyClass.includeModule(getInterfaceModule(runtime, ifc));
-                        }
+                        //}
                     }
                     if (Modifier.isPublic(c.getModifiers())) {
                         addToJavaPackageModule(proxyClass, javaClass);

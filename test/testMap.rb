@@ -3,6 +3,7 @@ test_check "Test java.util.Map:"
 
 require 'java'
 h = java.util.HashMap.new
+test_ok(h.kind_of? java.util.Map)
 h.put(1, 2); h.put(3, 4); h.put(5, 6)
 test_equal("{1=>2, 3=>4, 5=>6}", h.inspect)
 test_equal(4, h[3])
