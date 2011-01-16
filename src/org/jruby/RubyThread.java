@@ -65,6 +65,7 @@ import org.jruby.runtime.ObjectMarshal;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.SelectorFactory;
+import static org.jruby.CompatVersion.*;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -850,7 +851,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return this;
     }
     
-    @JRubyMethod(name = {"kill!", "exit!", "terminate!"})
+    @JRubyMethod(name = {"kill!", "exit!", "terminate!"}, compat = RUBY1_8)
     public IRubyObject kill_bang() {
         throw getRuntime().newNotImplementedError("Thread#kill!, exit!, and terminate! are not safe and not supported");
     }
