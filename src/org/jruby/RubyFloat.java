@@ -802,6 +802,40 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "round")
     @Override
     public IRubyObject round() {
+        return dbl2num(getRuntime(), val2dbl());
+    }
+    
+    @JRubyMethod(name = "round", optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject round(ThreadContext context, IRubyObject[] args) {
+        if (args.length == 0) return round();
+        double digits = num2dbl(args[0]);
+        double magnifier = Math.pow(10.0, Math.abs(digits));
+        double number = value;
+        
+        if (Double.isInfinite(magnifier)) {
+            if (digits < 0) number = 0;
+        } else {
+            if (digits < 0) {
+                number /= magnifier;
+            } else {
+                number *= magnifier;
+            }
+            number = Math.round(number);
+            if (digits < 0) {
+                number *= magnifier;
+            } else {
+                number /= magnifier;
+            }
+        }
+        
+        if (digits > 0) {
+            return RubyFloat.newFloat(context.getRuntime(), number);
+        } else {
+            return dbl2num(context.getRuntime(), (long)number);
+        }
+    }
+    
+    private double val2dbl() {
         double f = value;
         if (f > 0.0) {
             f = Math.floor(f);
@@ -814,7 +848,8 @@ public class RubyFloat extends RubyNumeric {
                 f -= 1.0;
             }
         }
-        return dbl2num(getRuntime(), f);
+        
+        return f;
     }
         
     /** flo_is_nan_p
