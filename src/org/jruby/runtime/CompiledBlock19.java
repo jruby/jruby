@@ -122,11 +122,11 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         IRubyObject self = prepareSelf(binding);
 
-        IRubyObject[] realArgs = setupBlockArg(context.getRuntime(), value, self);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, null, binding);
         
         try {
+            IRubyObject[] realArgs = setupBlockArg(context.getRuntime(), value, self);
             return callback.call(context, self, realArgs, Block.NULL_BLOCK);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
@@ -146,11 +146,11 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
             self = prepareSelf(binding);
         }
 
-        IRubyObject[] realArgs = setupBlockArgs(args, aValue);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, klass, binding);
         
         try {
+            IRubyObject[] realArgs = setupBlockArgs(args, aValue);
             return callback.call(context, self, realArgs, block);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
