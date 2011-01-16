@@ -129,7 +129,6 @@ public class ArgsNode extends Node {
     }
 
     protected Arity calculateArity() {
-        if (restArgNode instanceof UnnamedRestArgNode) return Arity.optional();
         if (getOptArgs() != null || getRestArg() >= 0) return Arity.required(getRequiredArgsCount());
 
         return Arity.createArity(getRequiredArgsCount());
