@@ -286,8 +286,8 @@ describe "A Java primitive Array of type" do
 
       arr.length.should == 2
 
-      arr[0].should be_close(1.2, 0.00001)
-      arr[1].should be_close(2.3, 0.00001)
+      arr[0].should be_within(0.00001).of(1.2)
+      arr[1].should be_within(0.00001).of(2.3)
 
 
       # Check with type
@@ -296,8 +296,8 @@ describe "A Java primitive Array of type" do
 
       arr.length.should == 2
 
-      arr[0].should be_close(1.2, 0.00001)
-      arr[1].should be_close(2.3, 0.00001)
+      arr[0].should be_within(0.00001).of(1.2)
+      arr[1].should be_within(0.00001).of(2.3)
     end
     
     it "should be possible to set values in primitive array" do 
@@ -306,9 +306,9 @@ describe "A Java primitive Array of type" do
       arr[1] = 20.3
       arr[2] = 42.4
       
-      arr[0].should be_close(12.2, 0.00001)
-      arr[1].should be_close(20.3, 0.00001)
-      arr[2].should be_close(42.4, 0.00001)
+      arr[0].should be_within(0.00001).of(12.2)
+      arr[1].should be_within(0.00001).of(20.3)
+      arr[2].should be_within(0.00001).of(42.4)
       arr[3].should == 0.0
       arr[4].should == 0.0
     end
@@ -316,18 +316,18 @@ describe "A Java primitive Array of type" do
     it "should be possible to get values from primitive array" do 
       arr = [13.2, 42.3, 120.4].to_java :float
 
-      arr[0].should be_close(13.2, 0.00001)
-      arr[1].should be_close(42.3, 0.00001)
-      arr[2].should be_close(120.4, 0.00001)
+      arr[0].should be_within(0.00001).of(13.2)
+      arr[1].should be_within(0.00001).of(42.3)
+      arr[2].should be_within(0.00001).of(120.4)
     end
 
     it "should be possible to call methods that take primitive array" do 
       arr = [13.2, 42.3, 120.4].to_java :float
       ret = ArrayReceiver::call_with_float(arr)
       ret.length.should == 3
-      ret[0].should be_close(13.2, 0.00001)
-      ret[1].should be_close(42.3, 0.00001)
-      ret[2].should be_close(120.4, 0.00001)
+      ret[0].should be_within(0.00001).of(13.2)
+      ret[1].should be_within(0.00001).of(42.3)
+      ret[2].should be_within(0.00001).of(120.4)
     end
   end
 

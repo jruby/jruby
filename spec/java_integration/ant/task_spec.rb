@@ -1,6 +1,8 @@
 require File.expand_path('../../ant_spec_helper', __FILE__)
 
-describe Ant, "tasks:", :type => :ant do
+describe Ant, "tasks:" do
+  include Ant::RSpec::AntExampleGroup
+
   before :all do
     # The single example ant project these specs will validate
     @output = output = "ant-file#{rand}.txt"
