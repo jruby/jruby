@@ -30,9 +30,7 @@ module YAML
   ENGINE = YAML::EngineManager.new
 end
 
-# JRuby defaults to Psych, to avoid having to use Yecht in 1.9 mode
-engine = 'psych'
-# engine = (!defined?(Yecht) && defined?(Psych) ? 'psych' : 'syck')
+engine = (!defined?(Syck) && defined?(Psych) ? 'psych' : 'syck')
 
 module Syck
   ENGINE = YAML::ENGINE

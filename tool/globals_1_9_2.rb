@@ -97,5 +97,8 @@ EXT_FILES = {
   'ext/psych/lib/psych.rb' => 'psych.rb',
   'ext/psych/lib/psych' => 'psych',
   'ext/ripper/lib/ripper.rb' => 'ripper.rb',
-  'ext/ripper/lib/ripper' => 'ripper'
+  'ext/ripper/lib/ripper' => 'ripper',
+  'ext/syck/lib/syck.rb' => 'syck.rb',
+  'ext/syck/lib/syck' => 'syck',
+  'ext/syck/lib/yaml' => 'yaml'
 }
