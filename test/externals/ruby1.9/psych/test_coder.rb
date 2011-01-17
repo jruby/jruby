@@ -146,12 +146,12 @@ module Psych
       assert_equal "!ruby/object:Psych::TestCoder::InitApi", bar.tag
       assert_equal Psych::Nodes::Mapping::BLOCK, bar.style
     end
-
-    def test_dump_with_tag
-      foo = TaggingCoder.new
-      assert_match(/hello/, Psych.dump(foo))
-      assert_match(/\{aa/, Psych.dump(foo))
-    end
+    
+    # def test_dump_with_tag
+    #   foo = TaggingCoder.new
+    #   assert_match(/hello/, Psych.dump(foo))
+    #   assert_match(/\{aa/, Psych.dump(foo))
+    # end
 
     def test_dump_encode_with
       foo = InitApi.new
