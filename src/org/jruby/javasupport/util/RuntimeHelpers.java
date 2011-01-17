@@ -1395,11 +1395,13 @@ public class RuntimeHelpers {
         return context.getRuntime().getNil();
     }
     
-    public static IRubyObject defineAlias(ThreadContext context, Object newNameArg, Object oldNameArg) {
+    public static IRubyObject defineAlias(ThreadContext context, IRubyObject self, Object newNameArg, Object oldNameArg) {
         Ruby runtime = context.getRuntime();
         RubyModule module = context.getRubyClass();
    
-        if (module == null) throw runtime.newTypeError("no class to make alias");
+        if (module == null || self instanceof RubyFixnum || self instanceof RubySymbol){
+            throw runtime.newTypeError("no class to make alias");
+        }
 
         String newName = (newNameArg instanceof String) ?
             (String) newNameArg : newNameArg.toString();

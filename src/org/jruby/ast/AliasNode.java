@@ -90,6 +90,6 @@ public class AliasNode extends Node {
         String newerName = RuntimeHelpers.interpretAliasUndefName(newName, runtime, context, self, aBlock);
         String olderName = RuntimeHelpers.interpretAliasUndefName(oldName, runtime, context, self, aBlock);
 
-        return RuntimeHelpers.defineAlias(context, newerName, olderName);
+        return RuntimeHelpers.defineAlias(context, self, newerName, olderName);
     }
 }

@@ -1136,8 +1136,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void defineAlias(CompilerCallback args) {
         loadThreadContext();
+        loadSelf();
         args.call(this);
-        invokeUtilityMethod("defineAlias", sig(IRubyObject.class, ThreadContext.class, Object.class, Object.class));
+        invokeUtilityMethod("defineAlias", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, Object.class, Object.class));
     }
 
     public void literal(String value) {
