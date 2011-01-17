@@ -3652,15 +3652,13 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    private static int combinationLength(ThreadContext context, int n, int k) {
-        if (k * 2 > n) k = n - k;
-        if (k == 0) return 1;
-        if (k < 0) return 0;
+    private static int combinationLength(int myLength, int n) {
+        if (n * 2 > myLength) n = myLength - n;
+        if (n == 0) return 1;
+        if (n < 0) return 0;
         int val = 1;
-        for (int i = 1; i <= k; i++, n--) {
-            long m = val;
-            val *= n;
-            if (val < m) throw context.getRuntime().newRangeError("too big for combination");
+        for (int i = 1; i <= n; i++, myLength--) {
+            val *= myLength;
             val /= i;
         }
         return val;
@@ -3685,7 +3683,7 @@ public class RubyArray extends RubyObject implements List {
                 }
             } else if (n >= 0 && realLength >= n) {
                 int stack[] = new int[n + 1];
-                int nlen = combinationLength(context, (int)realLength, n);
+                int nlen = combinationLength((int)realLength, n);
                 IRubyObject chosen[] = new IRubyObject[n];
                 int lev = 0;
 
