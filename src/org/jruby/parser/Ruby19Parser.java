@@ -2140,14 +2140,14 @@ states[100] = new ParserState() {
 };
 states[104] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   lexer.setState(LexState.EXPR_END);
+                   lexer.setState(LexState.EXPR_ENDFN);
                    yyVal = ((Token)yyVals[0+yyTop]);
     return yyVal;
   }
 };
 states[105] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   lexer.setState(LexState.EXPR_END);
+                   lexer.setState(LexState.EXPR_ENDFN);
                    yyVal = ((Token)yyVals[0+yyTop]);
     return yyVal;
   }
@@ -2982,7 +2982,7 @@ states[308] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     support.setInSingle(support.getInSingle() + 1);
                     support.pushLocalScope();
-                    lexer.setState(LexState.EXPR_END); /* force for args */
+                    lexer.setState(LexState.EXPR_ENDFN); /* force for args */
     return yyVal;
   }
 };
@@ -3684,6 +3684,8 @@ states[427] = new ParserState() {
 states[428] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                    yyVal = lexer.getStrTerm();
+                   lexer.getConditionState().stop();
+                   lexer.getCmdArgumentState().stop();
                    lexer.setStrTerm(null);
                    lexer.setState(LexState.EXPR_BEG);
     return yyVal;
@@ -3691,6 +3693,8 @@ states[428] = new ParserState() {
 };
 states[429] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                   lexer.getConditionState().restart();
+                   lexer.getCmdArgumentState().restart();
                    lexer.setStrTerm(((StrTerm)yyVals[-2+yyTop]));
 
                    yyVal = support.newEvStrNode(((Token)yyVals[-3+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
@@ -4211,7 +4215,7 @@ states[541] = new ParserState() {
   }
 };
 }
-					// line 2012 "Ruby19Parser.y"
+					// line 2016 "Ruby19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4244,4 +4248,4 @@ states[541] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8033 "-"
+					// line 8037 "-"

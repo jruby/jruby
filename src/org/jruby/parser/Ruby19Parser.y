@@ -667,11 +667,11 @@ cpath           : tCOLON3 cname {
 // Token:fname - A function name [!null]
 fname          : tIDENTIFIER | tCONSTANT | tFID 
                | op {
-                   lexer.setState(LexState.EXPR_END);
+                   lexer.setState(LexState.EXPR_ENDFN);
                    $$ = $1;
                }
                | reswords {
-                   lexer.setState(LexState.EXPR_END);
+                   lexer.setState(LexState.EXPR_ENDFN);
                    $$ = $1;
                }
 
@@ -1188,7 +1188,7 @@ primary         : literal
                 } fname {
                     support.setInSingle(support.getInSingle() + 1);
                     support.pushLocalScope();
-                    lexer.setState(LexState.EXPR_END); /* force for args */
+                    lexer.setState(LexState.EXPR_ENDFN); /* force for args */
                 } f_arglist bodystmt kEND {
                     // TODO: We should use implicit nil for body, but problem (punt til later)
                     Node body = $8; //$8 == null ? NilImplicitNode.NIL : $8;
@@ -1639,9 +1639,13 @@ string_content  : tSTRING_CONTENT {
                 }
                 | tSTRING_DBEG {
                    $$ = lexer.getStrTerm();
+                   lexer.getConditionState().stop();
+                   lexer.getCmdArgumentState().stop();
                    lexer.setStrTerm(null);
                    lexer.setState(LexState.EXPR_BEG);
                 } compstmt tRCURLY {
+                   lexer.getConditionState().restart();
+                   lexer.getCmdArgumentState().restart();
                    lexer.setStrTerm($<StrTerm>2);
 
                    $$ = support.newEvStrNode($1.getPosition(), $3);
