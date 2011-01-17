@@ -564,6 +564,11 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(getTimeInMillis() / 1000);
     }
 
+    @JRubyMethod(name = {"nsec", "tv_nsec"}, compat = RUBY1_9)
+    public RubyInteger nsec() {
+        return getRuntime().newFixnum(0);
+    }
+
     @JRubyMethod(name = "to_r", backtrace = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject to_r(ThreadContext context) {
         IRubyObject rational = to_f().to_r(context);
