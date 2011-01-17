@@ -211,11 +211,14 @@ public abstract class LexerSource {
     }
 
     // Super slow codepoint reader when we detect non-asci chars
-    public int readCodepoint(Encoding encoding) throws IOException {
+    public int readCodepoint(int first, Encoding encoding) throws IOException {
         int count = 0;
         byte[] value = new byte[6];
 
-        for (count = 0; count < 6; count++) {
+        // We know this will never be EOF
+        value[0] = (byte) first;
+
+        for (count = 1; count < 6; count++) {
             int c = read();
             if (c == RubyYaccLexer.EOF) break; // Maybe we have enough bytes read to mbc at EOF.
             value[count] = (byte) c;

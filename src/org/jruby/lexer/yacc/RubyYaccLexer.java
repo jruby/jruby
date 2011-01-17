@@ -1203,22 +1203,23 @@ public class RubyYaccLexer {
         return result;
     }
 
-    private int getIdentifier(int c) throws IOException {
-        do {
-            tokenBuffer.append((char) c);
-            /* no special multibyte character handling is needed in Java
-             * if (ismbchar(c)) {
-                int i, len = mbclen(c)-1;
+    private int getIdentifier(int first) throws IOException {
+        if (isMultiByteChar(first)) first = src.readCodepoint(first, encoding);
+        if (!isIdentifierChar(first)) return first;
 
-                for (i = 0; i < len; i++) {
-                    c = src.read();
-                    tokenBuffer.append(c);
-                }
-            }*/
-            c = src.read();
-        } while (c != EOF && isIdentifierChar(c));
-        
-        return c;
+        tokenBuffer.append((char) first);
+
+        int c;
+        for (c = src.read(); c != EOF; c = src.read()) {
+            if (isMultiByteChar(c)) c = src.readCodepoint(c, encoding);
+            if (!isIdentifierChar(c)) break;
+
+            tokenBuffer.append((char) c);
+        }
+
+        src.unread(c);
+
+        return first;
     }
     
     private int ampersand(boolean spaceSeen) throws IOException {
@@ -1289,8 +1290,7 @@ public class RubyYaccLexer {
             return '@';
         }
 
-        c = getIdentifier(c);
-        src.unread(c);
+        getIdentifier(c);
 
         LexState last_state = lex_state;
         setState(LexState.EXPR_END);
@@ -1439,8 +1439,7 @@ public class RubyYaccLexer {
             if (isIdentifierChar(c)) {
                 tokenBuffer.setLength(0);
                 tokenBuffer.append("$_");
-                c = getIdentifier(c);
-                src.unread(c);
+                getIdentifier(c);
                 last_state = lex_state;
                 setState(LexState.EXPR_END);
 
@@ -1526,8 +1525,7 @@ public class RubyYaccLexer {
             // $blah
             tokenBuffer.setLength(0);
             tokenBuffer.append('$');
-            int d = getIdentifier(c);
-            src.unread(d);
+            getIdentifier(c);
             last_state = lex_state;
             setState(LexState.EXPR_END);
 
@@ -1602,9 +1600,8 @@ public class RubyYaccLexer {
         }
     
         tokenBuffer.setLength(0);
-        int first = c;
-
-        c = getIdentifier(c);
+        int first = getIdentifier(c);
+        c = src.read();
         boolean lastBangOrPredicate = false;
 
         // methods 'foo!' and 'foo?' are possible but if followed by '=' it is relop

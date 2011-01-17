@@ -277,8 +277,7 @@ public class StringTerm extends StrTerm {
                 if (buffer.getEncoding() != encoding) {
                     mixedEscape(lexer, buffer.getEncoding(), encoding);
                 }
-                src.unread(c);
-                c = src.readCodepoint(encoding);
+                c = src.readCodepoint(c, encoding);
                 if (c == -2) { // FIXME: Hack
                     throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
                             null, "invalid multibyte char (" + encoding + ")");
