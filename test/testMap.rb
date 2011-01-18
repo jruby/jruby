@@ -99,6 +99,7 @@ test_equal("a20d10c30b0e20", h.to_s)
 test_ok(h.all? {|k,v| k.length == 1})
 test_ok(!h.all? {|k,v| v > 100})
 test_equal([["a", 20], ["d", 10], ["c", 30], ["b", 0], ["e", 20]], h.map)
+test_equal([true, false, false, false, false], h.collect {|k,v| k == "a"})
 test_equal([["a", 20], ["d", 10]], h.take(2))
 
 h.replace({"a"=>100, "b"=>200})
