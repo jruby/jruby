@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.ast.RestArgNode;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -67,6 +68,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.util.Map;
 import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.internal.runtime.methods.MethodArgs2;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -666,7 +668,15 @@ public class RubyJRuby {
                 }
 
                 if (args.getRestArg() >= 0) {
-                    argsArray.append(RubyArray.newArray(runtime, rest, getNameFrom(runtime, args.getRestArgNode())));
+                    RestArgNode restArg = (RestArgNode) args.getRestArgNode();
+
+                    if (restArg instanceof UnnamedRestArgNode) {
+                        if (((UnnamedRestArgNode) restArg).isStar()) {
+                            argsArray.append(RubyArray.newArray(runtime, rest));
+                        }
+                    } else {
+                        argsArray.append(RubyArray.newArray(runtime, rest, getNameFrom(runtime, args.getRestArgNode())));
+                    }
                 }
                 
                 ListNode requiredArgsPost = args.getPost();

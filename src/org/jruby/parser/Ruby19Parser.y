@@ -1297,7 +1297,7 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_f_block_arg {
                     $$ = support.new_args($1.getPosition(), $1, null, $3, null, $4);
                 }
                 | f_arg ',' {
-                    RestArgNode rest = new UnnamedRestArgNode($1.getPosition(), support.getCurrentScope().addVariable("*"));
+                    RestArgNode rest = new UnnamedRestArgNode($1.getPosition(), null, support.getCurrentScope().addVariable("*"));
                     $$ = support.new_args($1.getPosition(), $1, null, rest, null, null);
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_f_block_arg {
@@ -1914,7 +1914,7 @@ f_rest_arg      : restarg_mark tIDENTIFIER {
                     $$ = new RestArgNode(support.arg_var($2));
                 }
                 | restarg_mark {
-                    $$ = new UnnamedRestArgNode($1.getPosition(), support.getCurrentScope().addVariable("*"));
+                    $$ = new UnnamedRestArgNode($1.getPosition(), "", support.getCurrentScope().addVariable("*"));
                 }
 
 // [!null]

@@ -2289,7 +2289,9 @@ public class RuntimeHelpers {
         if (argsNode.getRestArg() >= 0) {
             if (added) builder.append(';');
             added = true;
-            if (!(argsNode.getRestArgNode() instanceof UnnamedRestArgNode)) {
+            if (argsNode.getRestArgNode() instanceof UnnamedRestArgNode) {
+                if (((UnnamedRestArgNode) argsNode.getRestArgNode()).isStar()) builder.append("R");
+            } else {
                 builder.append("r").append(argsNode.getRestArgNode().getName());
             }
         }
