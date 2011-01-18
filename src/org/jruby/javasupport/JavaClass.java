@@ -60,6 +60,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -97,6 +99,7 @@ import org.jruby.util.SafePropertyAccessor;
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
     public static final String METHOD_MANGLE = "__method";
+    public static final boolean DEBUG_SCALA = false;
 
     public static final boolean CAN_SET_ACCESSIBLE;
 
@@ -120,6 +123,67 @@ public class JavaClass extends JavaObject {
         }
 
         CAN_SET_ACCESSIBLE = canSetAccessible;
+    }
+
+    private void handleScalaSingletons(Class<?> javaClass, InitializerState state) {
+        // check for Scala companion object
+        try {
+            Class<?> companionClass = javaClass.getClassLoader().loadClass(javaClass.getName() + "$");
+            Field field = companionClass.getField("MODULE$");
+            Object singleton = field.get(null);
+            if (singleton != null) {
+                Method[] sMethods = getMethods(companionClass);
+                for (int j = sMethods.length; j-- >= 0;) {
+                    Method method = sMethods[j];
+                    String name = method.getName();
+                    if (DEBUG_SCALA) {
+                        System.out.println("Companion object method " + name + " for " + companionClass);
+                    }
+                    if (name.indexOf("$") >= 0) {
+                        name = fixScalaNames(name);
+                    }
+                    if (!Modifier.isStatic(method.getModifiers())) {
+                        AssignedName assignedName = state.staticNames.get(name);
+                        // For JRUBY-4505, restore __method methods for reserved names
+                        if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
+                            if (DEBUG_SCALA) {
+                                System.out.println("in reserved " + name);
+                            }
+                            installSingletonMethods(state.staticCallbacks, javaClass, singleton, method, name + METHOD_MANGLE);
+                            continue;
+                        }
+                        if (assignedName == null) {
+                            state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
+                            if (DEBUG_SCALA) {
+                                System.out.println("Assigned name is null");
+                            }
+                        } else {
+                            if (Priority.METHOD.lessImportantThan(assignedName)) {
+                                if (DEBUG_SCALA) {
+                                    System.out.println("Less important");
+                                }
+                                continue;
+                            }
+                            if (!Priority.METHOD.asImportantAs(assignedName)) {
+                                state.staticCallbacks.remove(name);
+                                state.staticCallbacks.remove(name + '=');
+                                state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
+                            }
+                        }
+                        if (DEBUG_SCALA) {
+                            System.out.println("Installing " + name + " " + method + " " + singleton);
+                        }
+                        installSingletonMethods(state.staticCallbacks, javaClass, singleton, method, name);
+                    } else {
+                        if (DEBUG_SCALA) {
+                            System.out.println("Method " + method + " is sadly static");
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // ignore... there's no companion object
+        }
     }
     
     /**
@@ -358,11 +422,11 @@ public class JavaClass extends JavaObject {
     }
 
     private static class SingletonMethodInvokerInstaller extends StaticMethodInvokerInstaller {
-	private Object singleton;
+        private Object singleton;
 
         SingletonMethodInvokerInstaller(String name, Object singleton) {
             super(name);
-	    this.singleton = singleton;
+            this.singleton = singleton;
         }
 
         void install(RubyModule proxy) {
@@ -370,7 +434,7 @@ public class JavaClass extends JavaObject {
                 RubyClass rubySingleton = proxy.getSingletonClass();
                 DynamicMethod method = new SingletonMethodInvoker(this.singleton, rubySingleton, methods);
                 rubySingleton.addMethod(name, method);
-                if (aliases != null && isPublic() ) {
+                if (aliases != null && isPublic()) {
                     rubySingleton.defineAliases(aliases, this.name);
                     aliases = null;
                 }
@@ -665,15 +729,13 @@ public class JavaClass extends JavaObject {
             Class<?> resultType = method.getReturnType();
             int argCount = argTypes.length;
 
-	    // alias apply() to []
-	    if (rubyCasedName.equals("apply")) {
-		addUnassignedAlias("[]", assignedNames, installer);
-	    }
-
-	    // alias update() to []
-	    if (rubyCasedName.equals("update") && argCount == 2) {
-		addUnassignedAlias("[]=", assignedNames, installer);
-	    }
+            // Add scala aliases for apply/update to roughly equivalent Ruby names
+            if (rubyCasedName.equals("apply")) {
+                addUnassignedAlias("[]", assignedNames, installer);
+            }
+            if (rubyCasedName.equals("update") && argCount == 2) {
+                addUnassignedAlias("[]=", assignedNames, installer);
+            }
 
             // Add property name aliases
             if (javaPropertyName != null) {
@@ -842,27 +904,49 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private String fixScalaNames(String name) {
-	name = name.replace("$plus", "+");
-	name = name.replace("$minus", "-");
-	name = name.replace("$colon", ":");
-	name = name.replace("$div", "/");
-	name = name.replace("$eq", "=");
-	name = name.replace("$less", "<");
-	name = name.replace("$greater", ">");
-	name = name.replace("$bslash", "\\");
-	name = name.replace("$hash", "#");
-	name = name.replace("$times", "*");
-	name = name.replace("$bang", "!");
-	name = name.replace("$at", "@");
-	name = name.replace("$percent", "%");
-	name = name.replace("$up", "^");
-	name = name.replace("$amp", "&");
-	name = name.replace("$tilde", "~");
-	name = name.replace("$qmark", "?");
-	name = name.replace("$bar", "|");
+    private static String fixScalaNames(String name) {
+        Matcher m = SCALA_OPERATOR_PATTERN.matcher(name);
+        m.find();
+        if (m.matches()) {
+            return SCALA_OPERATORS.get(m.group(1));
+        }
 
-	return name;
+        return name;
+    }
+
+    private static final Map<String, String> SCALA_OPERATORS;
+    private static final Pattern SCALA_OPERATOR_PATTERN;
+    static {
+        Map<String, String> tmp = new HashMap();
+        tmp.put("plus", "+");
+        tmp.put("minus", "-");
+        tmp.put("colon", ":");
+        tmp.put("div", "/");
+        tmp.put("eq", "=");
+        tmp.put("less", "<");
+        tmp.put("greater", ">");
+        tmp.put("bslash", "\\");
+        tmp.put("hash", "#");
+        tmp.put("times", "*");
+        tmp.put("bang", "!");
+        tmp.put("at", "@");
+        tmp.put("percent", "%");
+        tmp.put("up", "^");
+        tmp.put("amp", "&");
+        tmp.put("tilde", "~");
+        tmp.put("qmark", "?");
+        tmp.put("bar", "|");
+        SCALA_OPERATORS = Collections.unmodifiableMap(tmp);
+
+        StringBuilder regexp = new StringBuilder("^\\$(");
+        boolean bar = true;
+        for (String name : SCALA_OPERATORS.keySet()) {
+            if (bar) regexp.append("|");
+            bar = true;
+            regexp.append(name);
+        }
+        regexp.append(")$");
+        SCALA_OPERATOR_PATTERN = Pattern.compile(regexp.toString());
     }
 
     private void setupClassMethods(Class<?> javaClass, InitializerState state) {
@@ -875,10 +959,10 @@ public class JavaClass extends JavaObject {
             Method method = methods[i];
             String name = method.getName();
 
-	    // Fix Scala names
-	    if (name.indexOf("$") >= 0) {
-		name = fixScalaNames(name);
-	    }
+            // Fix Scala names to be their Ruby equivalents
+            if (name.startsWith("$")) {
+                name = fixScalaNames(name);
+            }
 
             if (Modifier.isStatic(method.getModifiers())) {
                 AssignedName assignedName = state.staticNames.get(name);
@@ -923,60 +1007,8 @@ public class JavaClass extends JavaObject {
             }
         }
 
-	// check for Scala companion object
-	try {
-	    Class<?> companionClass = javaClass.getClassLoader().loadClass(javaClass.getName() + "$");
-	    Field field = companionClass.getField("MODULE$");
-	    Object singleton = field.get(null);
-	    if (singleton != null) {
-		Method[] sMethods = getMethods(companionClass);
-		for (int j = sMethods.length; j-- >= 0;) {
-		    Method method = sMethods[j];
-		    String name = method.getName();
-
-		    System.out.println("Companion object method "+name+" for "+companionClass);
-		    
-		    // Fix Scala names
-		    if (name.indexOf("$") >= 0) {
-			name = fixScalaNames(name);
-		    }
-
-		    // Don't deal with static methods on companion
-		    if (!Modifier.isStatic(method.getModifiers())) {
-			AssignedName assignedName = state.staticNames.get(name);
-			
-			// For JRUBY-4505, restore __method methods for reserved names
-			if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-			    System.out.println("in reserved "+name);
-			    installSingletonMethods(state.staticCallbacks, javaClass, singleton, method, name + METHOD_MANGLE);
-			    continue;
-			}
-			
-			if (assignedName == null) {
-			    state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-			    System.out.println("Assigned name is null");
-			} else {
-			    if (Priority.METHOD.lessImportantThan(assignedName)) {
-				System.out.println("Less important");
-				continue;
-			    }
-			    if (!Priority.METHOD.asImportantAs(assignedName)) {
-				state.staticCallbacks.remove(name);
-				state.staticCallbacks.remove(name + '=');
-				state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-			    }
-			}
-			System.out.println("Installing "+name+" "+method+" "+singleton);
-			installSingletonMethods(state.staticCallbacks, javaClass, singleton, method, name);
-		    } else {
-			System.out.println("Method "+method+" is sadly static");
-		    }
-		    
-		}
-	    }
-	} catch (Exception e) {
-	    // ignore... there's no companion object
-	}
+        // try to wire up Scala singleton logic if present
+        handleScalaSingletons(javaClass, state);
 
         // now iterate over all installers and make sure they also have appropriate aliases
         for (Map.Entry<String, NamedInstaller> entry : state.staticCallbacks.entrySet()) {
