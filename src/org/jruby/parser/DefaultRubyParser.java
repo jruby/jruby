@@ -41,7 +41,6 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
-import org.jcodings.Encoding;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
@@ -53,6 +52,7 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
+import org.jruby.ast.CaseNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon3Node;
@@ -100,6 +100,7 @@ import org.jruby.ast.RestArgNode;
 import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.SClassNode;
+import org.jruby.ast.SValueNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StarNode;
@@ -150,7 +151,7 @@ public class DefaultRubyParser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 156 "-"
+					// line 155 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -3853,7 +3854,7 @@ states[471] = new ParserState() {
 };
 states[472] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = new UnnamedRestArgNode(((Token)yyVals[0+yyTop]).getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
+                  yyVal = new UnnamedRestArgNode(((Token)yyVals[0+yyTop]).getPosition(), "", support.getCurrentScope().getLocalScope().addVariable("*"));
     return yyVal;
   }
 };
@@ -3963,7 +3964,7 @@ states[511] = new ParserState() {
   }
 };
 }
-					// line 1903 "DefaultRubyParser.y"
+					// line 1902 "DefaultRubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -3997,4 +3998,4 @@ states[511] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 7854 "-"
+					// line 7853 "-"

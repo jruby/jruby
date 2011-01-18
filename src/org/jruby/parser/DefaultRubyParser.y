@@ -1807,7 +1807,7 @@ f_rest_arg    : restarg_mark tIDENTIFIER {
                   $$ = new RestArgNode($1.getPosition(), (String) $2.getValue(), support.getCurrentScope().getLocalScope().addVariable(identifier));
               }
               | restarg_mark {
-                  $$ = new UnnamedRestArgNode($1.getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
+                  $$ = new UnnamedRestArgNode($1.getPosition(), "", support.getCurrentScope().getLocalScope().addVariable("*"));
               }
 
 // Token:blkarg_mark - '&' as in '&block' [!null]
