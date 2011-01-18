@@ -30,8 +30,10 @@
 package org.jruby.embed.util;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.embed.PropertyName;
@@ -168,7 +170,7 @@ public class SystemPropertyCatcher {
      * @throws URISyntaxException exceptions thrown while inspecting jruby-complete.jar
      */
     @Deprecated
-    public static void setJRubyHome(ScriptingContainer container) throws URISyntaxException {
+    public static void setJRubyHome(ScriptingContainer container) throws URISyntaxException, UnsupportedEncodingException {
         String jrubyhome = findJRubyHome(container);
         if (jrubyhome != null) {
             container.getProvider().getRubyInstanceConfig().setJRubyHome(jrubyhome);
@@ -181,10 +183,10 @@ public class SystemPropertyCatcher {
      * is used.
      *
      * @param instance any instance to get a resource
-     * @return JRuby home path if exists, null when failed to fint it.
+     * @return JRuby home path if exists, null when failed to find it.
      * @throws URISyntaxException
      */
-    public static String findJRubyHome(Object instance) throws URISyntaxException {
+    public static String findJRubyHome(Object instance) throws URISyntaxException, UnsupportedEncodingException {
         String jrubyhome;
         if ((jrubyhome = System.getenv("JRUBY_HOME")) != null) {
             return jrubyhome;
@@ -197,7 +199,7 @@ public class SystemPropertyCatcher {
         }
     }
 
-    private static String findFromJar(Object instance) throws URISyntaxException {
+    private static String findFromJar(Object instance) throws URISyntaxException, UnsupportedEncodingException {
         URL resource = instance.getClass().getResource("/META-INF/jruby.home");
         if (resource == null) {
             return null;
@@ -205,7 +207,7 @@ public class SystemPropertyCatcher {
 
         String location = null;
         if (resource.getProtocol().equals("jar")) {
-            location = resource.getPath();
+            location = URLDecoder.decode(resource.getPath(), "UTF-8");
         } else {
             location = "classpath:/META-INF/jruby.home";
         }

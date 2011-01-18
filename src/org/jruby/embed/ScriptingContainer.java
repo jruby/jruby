@@ -29,6 +29,7 @@
  */
 package org.jruby.embed;
 
+import java.io.UnsupportedEncodingException;
 import org.jruby.embed.internal.LocalContextProvider;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -220,7 +221,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         provider = getProviderInstance(scope, behavior, lazy);
         try {
             initConfig();
-        } catch (URISyntaxException ex) {
+        } catch (Exception ex) {
             Writer w = getErrorWriter();
             ex.printStackTrace((PrintWriter)w);
             throw new RuntimeException(ex);
@@ -242,7 +243,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         }
     }
 
-    private void initConfig() throws URISyntaxException {
+    private void initConfig() throws URISyntaxException, UnsupportedEncodingException {
         List<String> paths = SystemPropertyCatcher.findLoadPaths();
         provider.getRubyInstanceConfig().setLoadPaths(paths);
         String home = SystemPropertyCatcher.findJRubyHome(this);
