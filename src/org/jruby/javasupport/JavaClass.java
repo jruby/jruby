@@ -905,48 +905,35 @@ public class JavaClass extends JavaObject {
     }
 
     private static String fixScalaNames(String name) {
-        Matcher m = SCALA_OPERATOR_PATTERN.matcher(name);
-        m.find();
-        if (m.matches()) {
-            return SCALA_OPERATORS.get(m.group(1));
+        for (Map.Entry<String, String> entry : SCALA_OPERATORS.entrySet()) {
+            name.replaceAll(entry.getKey(), entry.getValue());
         }
 
         return name;
     }
 
     private static final Map<String, String> SCALA_OPERATORS;
-    private static final Pattern SCALA_OPERATOR_PATTERN;
     static {
         Map<String, String> tmp = new HashMap();
-        tmp.put("plus", "+");
-        tmp.put("minus", "-");
-        tmp.put("colon", ":");
-        tmp.put("div", "/");
-        tmp.put("eq", "=");
-        tmp.put("less", "<");
-        tmp.put("greater", ">");
-        tmp.put("bslash", "\\");
-        tmp.put("hash", "#");
-        tmp.put("times", "*");
-        tmp.put("bang", "!");
-        tmp.put("at", "@");
-        tmp.put("percent", "%");
-        tmp.put("up", "^");
-        tmp.put("amp", "&");
-        tmp.put("tilde", "~");
-        tmp.put("qmark", "?");
-        tmp.put("bar", "|");
+        tmp.put("$plus", "+");
+        tmp.put("$minus", "-");
+        tmp.put("$colon", ":");
+        tmp.put("$div", "/");
+        tmp.put("$eq", "=");
+        tmp.put("$less", "<");
+        tmp.put("$greater", ">");
+        tmp.put("$bslash", "\\");
+        tmp.put("$hash", "#");
+        tmp.put("$times", "*");
+        tmp.put("$bang", "!");
+        tmp.put("$at", "@");
+        tmp.put("$percent", "%");
+        tmp.put("$up", "^");
+        tmp.put("$amp", "&");
+        tmp.put("$tilde", "~");
+        tmp.put("$qmark", "?");
+        tmp.put("$bar", "|");
         SCALA_OPERATORS = Collections.unmodifiableMap(tmp);
-
-        StringBuilder regexp = new StringBuilder("^\\$(");
-        boolean bar = true;
-        for (String name : SCALA_OPERATORS.keySet()) {
-            if (bar) regexp.append("|");
-            bar = true;
-            regexp.append(name);
-        }
-        regexp.append(")$");
-        SCALA_OPERATOR_PATTERN = Pattern.compile(regexp.toString());
     }
 
     private void setupClassMethods(Class<?> javaClass, InitializerState state) {
