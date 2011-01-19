@@ -1071,6 +1071,10 @@ public final class Ruby {
         // initialize builtin libraries
         initBuiltins();
         
+        if(config.isProfiling()) {
+            getLoadService().require("jruby/profiler/shutdown_hook");
+        }
+
         // Require in all libraries specified on command line
         for (String scriptName : config.requiredLibraries()) {
             loadService.smartLoad(scriptName);
