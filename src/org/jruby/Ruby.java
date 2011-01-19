@@ -421,10 +421,6 @@ public final class Ruby {
             }
         } finally {
             context.setFileAndLine(oldFile, oldLine);
-            if (config.isProfilingEntireRun()) {
-                IProfileData profileData = (IProfileData) context.getProfileData();
-                config.makeDefaultProfilePrinter(profileData).printProfile(System.err);
-            }
         }
     }
 
@@ -2747,6 +2743,11 @@ public final class Ruby {
         getBeanManager().unregisterMethodCache();
 
         getJRubyClassLoader().tearDown(isDebug());
+
+        if (config.isProfilingEntireRun()) {
+            IProfileData profileData = (IProfileData) threadService.getMainThread().getContext().getProfileData();
+            config.makeDefaultProfilePrinter(profileData).printProfile(System.err);
+        }
 
         if (systemExit && status != 0) {
             throw newSystemExit(status);
