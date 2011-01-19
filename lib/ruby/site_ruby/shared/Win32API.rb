@@ -1,5 +1,7 @@
 require 'rbconfig'
-raise  LoadError.new("Win32API only supported on win32") unless Config::CONFIG['host_os'] =~ /mswin/
+
+# only load this stuff on Windows
+if Config::CONFIG['host_os'] == 'mswin32'
 
 require 'ffi-internal.so'
 
@@ -95,4 +97,6 @@ class Win32API
     end
     "#<Win32API::#{@func} library=#{@lib} function=#{@func} parameters=[ #{params.join(',')} ], return=#{Win32API.find_type(@return)}>"
   end
+end
+
 end
