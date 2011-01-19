@@ -1007,9 +1007,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "*", required = 1, compat = RUBY1_9)
     public IRubyObject op_mul19(ThreadContext context, IRubyObject other) {
         RubyString result = multiplyByteList(context, other);
-        Encoding encoding = value.getEncoding();
-        result.value.setEncoding(encoding);
-        result.copyCodeRangeForSubstr(this, encoding);
+        result.value.setEncoding(value.getEncoding());
+        result.copyCodeRange(this);
         return result;
     }
 
