@@ -58,6 +58,7 @@ import org.yaml.snakeyaml.parser.Parser;
 import org.yaml.snakeyaml.parser.ParserException;
 import org.yaml.snakeyaml.parser.ParserImpl;
 import org.yaml.snakeyaml.reader.StreamReader;
+import org.yaml.snakeyaml.scanner.ScannerException;
 import static org.jruby.javasupport.util.RuntimeHelpers.invoke;
 
 public class PsychParser extends RubyObject {
@@ -238,11 +239,16 @@ public class PsychParser extends RubyObject {
                 }
             } catch (ParserException pe) {
                 parser = null;
-                RubyKernel.raise(
-                        context,
-                        runtime.getModule("Psych").getConstant("SyntaxError"),
-                        new IRubyObject[] {runtime.newString(pe.getLocalizedMessage())},
-                        Block.NULL_BLOCK);
+                RubyKernel.raise(context, runtime.getModule("Psych").getConstant("SyntaxError"),
+                    new IRubyObject[] {runtime.newString(pe.getLocalizedMessage())},
+                    Block.NULL_BLOCK);
+            } catch (ScannerException se) {
+                parser = null;
+                StringBuilder message = new StringBuilder("syntax error");
+                if (se.getProblemMark() != null) {
+                    message.append(se.getProblemMark().toString());
+                }
+                throw runtime.newArgumentError(message.toString());
             }
         }
 
