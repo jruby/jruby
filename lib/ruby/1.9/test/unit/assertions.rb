@@ -16,7 +16,7 @@ module Test
           bt.delete_if {|s| s.rindex(MiniTest::MINI_DIR, 0)}
           raise ArgumentError, "assertion message must be String or Proc, but #{msg.class} was given.", bt
         end
-        super
+        super(test, msg)
       end
 
       def assert_raise(*args, &b)
