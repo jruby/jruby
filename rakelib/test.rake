@@ -8,7 +8,6 @@ namespace :test do
   desc "Compile test code"
   task :compile do
     ant "compile-test"
-    system "jar cf build/jruby-test-classes.jar -C build/classes/test ."
   end
 
   desc "Run the basic set of tests"
@@ -74,8 +73,4 @@ namespace :test do
       end
     end
   end
-end
-
-file "build/jruby-test-classes.jar" do
-  Rake::Task['test:compile'].invoke
 end

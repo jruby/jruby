@@ -158,7 +158,7 @@ namespace :spec do
   gem 'rspec'
   require 'rspec/core/rake_task'
   desc "Runs Java Integration Specs"
-  RSpec::Core::RakeTask.new("ji" => "build/jruby-test-classes.jar") do |t|
+  RSpec::Core::RakeTask.new("ji" => "test:compile") do |t|
     t.ruby_opts = " -I#{rake_location}"
     t.rspec_opts ||= []
     t.rspec_opts << "--options" << "spec/java_integration/spec.opts"
@@ -166,7 +166,7 @@ namespace :spec do
   end
 
   desc "Runs Java Integration specs quietly"
-  RSpec::Core::RakeTask.new("ji:quiet" => "build/jruby-test-classes.jar") do |t|
+  RSpec::Core::RakeTask.new("ji:quiet" => "test:compile") do |t|
     t.ruby_opts = " -I#{rake_location}"
     t.rspec_opts ||= []
     t.rspec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
@@ -174,12 +174,12 @@ namespace :spec do
   end
 
   desc "Runs Compiler Specs"
-  RSpec::Core::RakeTask.new("compiler" => "build/jruby-test-classes.jar") do |t|
+  RSpec::Core::RakeTask.new("compiler" => "test:compile") do |t|
     t.pattern = 'spec/compiler/**/*_spec.rb'
   end
 
   desc "Runs FFI specs"
-  RSpec::Core::RakeTask.new("ffi" => "build/jruby-test-classes.jar") do |t|
+  RSpec::Core::RakeTask.new("ffi" => "test:compile") do |t|
     t.pattern = 'spec/ffi/**/*_spec.rb'
   end
 

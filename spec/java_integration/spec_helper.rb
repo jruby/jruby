@@ -1,5 +1,5 @@
 require 'java'
-require File.expand_path('../../../build/jruby-test-classes.jar', __FILE__)
+$CLASSPATH << File.expand_path('../../../build/classes/test', __FILE__)
 require 'rspec'
 
 RSpec.configure do |config|
