@@ -1041,42 +1041,43 @@ public class RubyTime extends RubyObject {
         DateTime dt;
         // set up with min values and then add to allow rolling over
         try {
-            dt = new DateTime(year, 1, 1, 0, 0 , 0, 0, DateTimeZone.UTC);
+            dt = new DateTime(year, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC);
 
             dt = dt.plusMonths(month - 1)
                     .plusDays(int_args[0] - 1)
                     .plusHours(int_args[1])
                     .plusMinutes(int_args[2])
                     .plusSeconds(int_args[3]);
-            if (runtime.is1_9() &&  ! args[5].isNil()) {
+            if (runtime.is1_9() && !args[5].isNil()) {
                 double millis = RubyFloat.num2dbl(args[5]);
                 int int_millis = (int) (millis * 1000) % 1000;
                 dt = dt.plusMillis(int_millis);
             }
 
-	    dt = dt.withZoneRetainFields(dtz);
+            dt = dt.withZoneRetainFields(dtz);
 
-	    // we might need to perform a DST correction
-	    if(isDst != null) {
+            // we might need to perform a DST correction
+            if (isDst != null) {
                 // the instant at which we will ask dtz what the difference between DST and
                 // standard time is
                 long offsetCalculationInstant = dt.getMillis();
 
                 // if we might be moving this time from !DST -> DST, the offset is assumed
                 // to be the same as it was just before we last moved from DST -> !DST
-                if(dtz.isStandardOffset(dt.getMillis()))
+                if (dtz.isStandardOffset(dt.getMillis())) {
                     offsetCalculationInstant = dtz.previousTransition(offsetCalculationInstant);
+                }
 
-                int offset = dtz.getStandardOffset(offsetCalculationInstant) -
-                             dtz.getOffset(offsetCalculationInstant);
+                int offset = dtz.getStandardOffset(offsetCalculationInstant)
+                        - dtz.getOffset(offsetCalculationInstant);
 
                 if (!isDst && !dtz.isStandardOffset(dt.getMillis())) {
                     dt = dt.minusMillis(offset);
                 }
-                if (isDst &&  dtz.isStandardOffset(dt.getMillis())) {
+                if (isDst && dtz.isStandardOffset(dt.getMillis())) {
                     dt = dt.plusMillis(offset);
                 }
-	    }
+            }
         } catch (org.joda.time.IllegalFieldValueException e) {
             throw runtime.newArgumentError("time out of range");
         }
