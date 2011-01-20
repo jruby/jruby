@@ -172,7 +172,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public ThreadContext getContext() {
         return contextRef.get();
     }
-    
+
+
+    public Thread getNativeThread() {
+        return threadImpl instanceof NativeThread ? ((NativeThread) threadImpl).getThread() : null;
+    }
     /**
      * Dispose of the current thread by removing it from its parent ThreadGroup.
      */
@@ -863,7 +867,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(compat = CompatVersion.RUBY1_9)
     public IRubyObject backtrace(ThreadContext context) {
-        return context.createCallerBacktrace(context.getRuntime(), 0);
+        return getContext().createCallerBacktrace(context.getRuntime(), 0);
     }
 
     public StackTraceElement[] javaBacktrace() {

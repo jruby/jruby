@@ -795,12 +795,18 @@ public final class ThreadContext {
     }
     
     public RubyStackTraceElement[] gatherCallerBacktrace(int level) {
+        Thread nativeThread = thread.getNativeThread();
+
+        // Future thread or otherwise unforthgiving thread impl.
+        if (nativeThread == null) return new RubyStackTraceElement[] {};
+
         Backtrace[] copy = new Backtrace[backtraceIndex + 1];
+
         System.arraycopy(backtrace, 0, copy, 0, backtraceIndex + 1);
         RubyStackTraceElement[] trace = gatherHybridBacktrace(
                 runtime,
                 copy,
-                Thread.currentThread().getStackTrace(),
+                nativeThread.getStackTrace(),
                 false);
 
         return trace;
