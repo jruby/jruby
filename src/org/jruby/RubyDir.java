@@ -164,16 +164,22 @@ public class RubyDir extends RubyObject {
     }
 
     @JRubyMethod(name = "[]", required = 1, rest = true, meta = true)
-    public static IRubyObject aref(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject aref(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
         List<ByteList> dirs;
         if (args.length == 1) {
-            ByteList globPattern = args[0].convertToString().getByteList();
-            dirs = Dir.push_glob(getCWD(recv.getRuntime()), globPattern, 0);
+            ByteList globPattern = null;
+            if (runtime.is1_9() && args[0].respondsTo("to_path")) {
+                globPattern = args[0].callMethod(context, "to_path").convertToString().getByteList();
+            } else {
+                globPattern = args[0].convertToString().getByteList();
+            }
+            dirs = Dir.push_glob(getCWD(runtime), globPattern, 0);
         } else {
-            dirs = dirGlobs(getCWD(recv.getRuntime()), args, 0);
+            dirs = dirGlobs(getCWD(runtime), args, 0);
         }
 
-        return asRubyStringList(recv.getRuntime(), dirs);
+        return asRubyStringList(runtime, dirs);
     }
 
     /**
@@ -190,7 +196,12 @@ public class RubyDir extends RubyObject {
         List<ByteList> dirs;
         IRubyObject tmp = args[0].checkArrayType();
         if (tmp.isNil()) {
-            ByteList globPattern = args[0].convertToString().getByteList();
+            ByteList globPattern = null;
+            if (runtime.is1_9() && args[0].respondsTo("to_path")) {
+                globPattern = args[0].callMethod(context, "to_path").convertToString().getByteList();
+            } else {
+                globPattern = args[0].convertToString().getByteList();
+            }
             dirs = Dir.push_glob(runtime.getCurrentDirectory(), globPattern, flags);
         } else {
             dirs = dirGlobs(getCWD(runtime), ((RubyArray) tmp).toJavaArray(), flags);
