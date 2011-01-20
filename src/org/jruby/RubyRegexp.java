@@ -331,6 +331,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         regexp.pattern = regex;
         regexp.str = ByteList.EMPTY_BYTELIST;
         regexp.kcode = KCode.NONE;
+        regexp.isFixed = true;
         return regexp;
     }
 
@@ -402,7 +403,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         Encoding enc = str.getEncoding();
         if (!enc.isAsciiCompatible()) {
             if (enc != pattern.getEncoding()) encodingMatchError(getRuntime(), pattern, enc);
-        } else if (!isKCodeDefault()) {
+        } else if (isFixed) {
             if (enc != pattern.getEncoding() && 
                (!pattern.getEncoding().isAsciiCompatible() ||
                str.scanForCodeRange() != StringSupport.CR_7BIT)) encodingMatchError(getRuntime(), pattern, enc);
@@ -1209,7 +1210,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RubyRegexp initializeCommon19(ByteList bytes, Encoding enc, int options) {
         Ruby runtime = getRuntime();        
         setKCode(runtime, options);
-        setIsFixed(isFixedEncoding(options));// || enc == ASCIIEncoding.INSTANCE);
+        setIsFixed(isFixedEncoding(options) || enc == ASCIIEncoding.INSTANCE);
 
         if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
