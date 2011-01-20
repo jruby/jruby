@@ -148,11 +148,9 @@ public class RubyMethod extends RubyObject implements DataType {
         if (!(other instanceof RubyMethod)) return context.getRuntime().getFalse();
         if (method instanceof ProcMethod) return context.getRuntime().newBoolean(((ProcMethod) method).isSame(((RubyMethod) other).getMethod()));
         RubyMethod otherMethod = (RubyMethod)other;
-        return context.getRuntime().newBoolean(implementationModule == otherMethod.implementationModule &&
-                                       originModule == otherMethod.originModule &&
-                                       receiver == otherMethod.receiver &&
-                                       (method.getRealMethod() == otherMethod.method.getRealMethod() ||
-                                       method.getRealMethod().equals(otherMethod.method)));
+        return context.getRuntime().newBoolean(receiver == otherMethod.receiver &&
+                originModule == otherMethod.originModule &&
+                method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber());
     }
 
     @JRubyMethod(name = "eql?", required = 1, compat = CompatVersion.RUBY1_9)
