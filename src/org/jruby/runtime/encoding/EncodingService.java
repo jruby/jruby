@@ -1,5 +1,6 @@
 package org.jruby.runtime.encoding;
 
+import java.nio.charset.Charset;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
@@ -50,6 +51,12 @@ public final class EncodingService {
     public Entry findEncodingOrAliasEntry(ByteList bytes) {
         Entry e = findEncodingEntry(bytes);
         return e != null ? e : findAliasEntry(bytes);
+    }
+
+    // rb_locale_charmap...mostly
+    public Encoding getLocaleEncoding() {
+        Entry entry = findEncodingOrAliasEntry(new ByteList(Charset.defaultCharset().name().getBytes()));
+        return entry == null ? ASCIIEncoding.INSTANCE : entry.getEncoding();
     }
 
     public IRubyObject[] getEncodingList() {

@@ -108,7 +108,7 @@ public class RubyEncoding extends RubyObject {
         return encoding;
     }
 
-    public static final Encoding areCompatible(IRubyObject obj1, IRubyObject obj2) {
+    public static Encoding areCompatible(IRubyObject obj1, IRubyObject obj2) {
         if (obj1 instanceof EncodingCapable && obj2 instanceof EncodingCapable) {
             Encoding enc1 = ((EncodingCapable)obj1).getEncoding();
             Encoding enc2 = ((EncodingCapable)obj2).getEncoding();
@@ -207,8 +207,9 @@ public class RubyEncoding extends RubyObject {
     public static IRubyObject locale_charmap(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         EncodingService service = runtime.getEncodingService();
-        Entry entry = service.findEncodingOrAliasEntry(new ByteList(Charset.defaultCharset().name().getBytes()));
-        return RubyString.newUsAsciiStringNoCopy(runtime, new ByteList(entry.getEncoding().getName()));
+        ByteList name = new ByteList(service.getLocaleEncoding().getName());
+        
+        return RubyString.newUsAsciiStringNoCopy(runtime, name);
     }
 
     @SuppressWarnings("unchecked")
@@ -260,13 +261,9 @@ public class RubyEncoding extends RubyObject {
         result.fastASet(runtime.newString(EXTERNAL),
                 runtime.newString(new ByteList(runtime.getDefaultExternalEncoding().getName())));
         result.fastASet(runtime.newString(LOCALE),
-                runtime.newString(getLocaleEncodingName()));
+                runtime.newString(new ByteList(service.getLocaleEncoding().getName())));
 
         return result;
-    }
-
-    private static ByteList getLocaleEncodingName() {
-        return ByteList.create(Charset.defaultCharset().name());
     }
 
     private static IRubyObject findWithError(Ruby runtime, ByteList name) {
@@ -280,15 +277,17 @@ public class RubyEncoding extends RubyObject {
 
     @JRubyMethod(name = "find", meta = true)
     public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
+        Ruby runtime = context.getRuntime();
+
         // TODO: check for ascii string
         ByteList name = str.convertToString().getByteList();
         if (name.caseInsensitiveCmp(LOCALE) == 0) {
-            name = getLocaleEncodingName();
+            name = new ByteList(runtime.getEncodingService().getLocaleEncoding().getName());
         } else if (name.caseInsensitiveCmp(EXTERNAL) == 0) {
-            name = new ByteList(context.getRuntime().getDefaultExternalEncoding().getName());
+            name = new ByteList(runtime.getDefaultExternalEncoding().getName());
         }
 
-        return findWithError(context.getRuntime(), name);
+        return findWithError(runtime, name);
     }
 
     @JRubyMethod(name = "_dump")

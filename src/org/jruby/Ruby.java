@@ -1148,7 +1148,7 @@ public final class Ruby {
             if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
             setDefaultExternalEncoding(loadedEncoding);
         } else {
-            setDefaultExternalEncoding(USASCIIEncoding.INSTANCE);
+            setDefaultExternalEncoding(encodingService.getLocaleEncoding());
         }
         
         encoding = config.getInternalEncoding();
