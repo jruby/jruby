@@ -362,7 +362,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         hasBlock |= pd.getType().toString().equals("org.jruby.runtime.Block");
                     }
 
-                    int actualRequired = calculateActualRequired(md.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
+                    int actualRequired = calculateActualRequired(md, md.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
 
                     String annotatedBindingName = CodegenUtils.getAnnotatedBindingClassName(
                             md.getSimpleName(),
@@ -404,7 +404,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         hasBlock |= pd.getType().toString().equals("org.jruby.runtime.Block");
                     }
 
-                    int actualRequired = calculateActualRequired(md.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
+                    int actualRequired = calculateActualRequired(md, md.getParameters().size(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
 
                     String annotatedBindingName = CodegenUtils.getAnnotatedBindingClassName(
                             md.getSimpleName(),
@@ -454,7 +454,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                 return qualifiedName;
             }
 
-            private int calculateActualRequired(int paramsLength, int optional, boolean rest, boolean isStatic, boolean hasContext, boolean hasBlock) {
+            private int calculateActualRequired(MethodDeclaration md, int paramsLength, int optional, boolean rest, boolean isStatic, boolean hasContext, boolean hasBlock) {
                 int actualRequired;
                 if (optional == 0 && !rest) {
                     int args = paramsLength;
@@ -495,7 +495,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     }
 
                     if (actualRequired != 0) {
-                        throw new RuntimeException("Combining specific args with IRubyObject[] is not yet supported");
+                        throw new RuntimeException("Combining specific args with IRubyObject[] is not yet supported: "
+                                + md.getDeclaringType().getQualifiedName() + "." + md.toString());
                     }
                 }
 
