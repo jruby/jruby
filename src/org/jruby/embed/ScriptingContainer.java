@@ -745,7 +745,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Returns a script filename to run. The default value is "<script>".
+     * Returns a script filename to run. The default value is "&lt;script&gt;".
      *
      * @since JRuby 1.5.0.
      *
@@ -756,7 +756,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Changes a script filename to run. The default value is "<script>".
+     * Changes a script filename to run. The default value is "&lt;script&gt;".
      * Call this before you use put/get, runScriptlet, and parse methods so that
      * initial configurations will work.
      *
