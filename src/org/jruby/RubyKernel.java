@@ -106,7 +106,6 @@ public class RubyKernel {
         runtime.setKernel(module);
 
         module.defineAnnotatedMethods(RubyKernel.class);
-        module.defineAnnotatedMethods(RubyObject.class);
         
         runtime.setRespondToMethod(module.searchMethod("respond_to?"));
         
@@ -1817,5 +1816,342 @@ public class RubyKernel {
     public static IRubyObject public_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         recv.getMetaClass().checkMethodBound(context, args, PUBLIC);
         return ((RubyObject)recv).send19(context, args, Block.NULL_BLOCK);
+    }
+
+    // Moved binding of these methods here, since Kernel can be included into
+    // BasicObject subclasses, and these methods must still work.
+    // See JRUBY-4871
+
+    @JRubyMethod(name = "==", required = 1, compat = RUBY1_8)
+    public static IRubyObject op_equal(ThreadContext context, IRubyObject self, IRubyObject other) {
+        return ((RubyBasicObject)self).op_equal(context, other);
+    }
+
+    @JRubyMethod(name = "equal?", required = 1, compat = RUBY1_8)
+    public static IRubyObject equal_p(ThreadContext context, IRubyObject self, IRubyObject other) {
+        return ((RubyBasicObject)self).equal_p(context, other);
+    }
+
+    @JRubyMethod(name = "eql?", required = 1)
+    public static IRubyObject eql_p(IRubyObject self, IRubyObject obj) {
+        return ((RubyBasicObject)self).eql_p(obj);
+    }
+
+    @JRubyMethod(name = "===", required = 1)
+    public static IRubyObject op_eqq(ThreadContext context, IRubyObject self, IRubyObject other) {
+        return ((RubyBasicObject)self).op_eqq(context, other);
+    }
+
+    @JRubyMethod(name = "<=>", required = 1, compat = RUBY1_9)
+    public static IRubyObject op_cmp(ThreadContext context, IRubyObject self, IRubyObject other) {
+        return ((RubyBasicObject)self).op_cmp(context, other);
+    }
+
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
+    public static IRubyObject initialize_copy(IRubyObject self, IRubyObject original) {
+        return ((RubyBasicObject)self).initialize_copy(original);
+    }
+
+    @JRubyMethod(name = "respond_to?", compat = RUBY1_8)
+    public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname) {
+        return ((RubyBasicObject)self).respond_to_p(mname);
+    }
+
+    @JRubyMethod(name = "respond_to?", compat = RUBY1_9)
+    public static IRubyObject respond_to_p19(IRubyObject self, IRubyObject mname) {
+        return ((RubyBasicObject)self).respond_to_p19(mname);
+    }
+
+    @JRubyMethod(name = "respond_to?", compat = RUBY1_8)
+    public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
+        return ((RubyBasicObject)self).respond_to_p(mname, includePrivate);
+    }
+
+    @JRubyMethod(name = "respond_to?", compat = RUBY1_9)
+    public static IRubyObject respond_to_p19(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
+        return ((RubyBasicObject)self).respond_to_p19(mname, includePrivate);
+    }
+
+    @JRubyMethod(name = {"object_id", "__id__"})
+    public static IRubyObject id(IRubyObject self) {
+        return ((RubyBasicObject)self).id();
+    }
+
+    @JRubyMethod(name = "id", compat = RUBY1_8)
+    public static IRubyObject id_deprecated(IRubyObject self) {
+        return ((RubyBasicObject)self).id_deprecated();
+    }
+
+    @JRubyMethod(name = "hash")
+    public static RubyFixnum hash(IRubyObject self) {
+        return ((RubyBasicObject)self).hash();
+    }
+
+    @JRubyMethod(name = "class")
+    public static RubyClass type(IRubyObject self) {
+        return ((RubyBasicObject)self).type();
+    }
+
+    @JRubyMethod(name = "type")
+    public static RubyClass type_deprecated(IRubyObject self) {
+        return ((RubyBasicObject)self).type_deprecated();
+    }
+
+    @JRubyMethod(name = "clone")
+    public static IRubyObject rbClone(IRubyObject self) {
+        return ((RubyBasicObject)self).rbClone();
+    }
+
+    @JRubyMethod
+    public static IRubyObject dup(IRubyObject self) {
+        return ((RubyBasicObject)self).dup();
+    }
+
+    @JRubyMethod(name = "display", optional = 1)
+    public static IRubyObject display(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).display(context, args);
+    }
+
+    @JRubyMethod(name = "tainted?")
+    public static RubyBoolean tainted_p(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).tainted_p(context);
+    }
+
+    @JRubyMethod(name = "taint")
+    public static IRubyObject taint(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).taint(context);
+    }
+
+    @JRubyMethod(name = "untaint")
+    public static IRubyObject untaint(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).untaint(context);
+    }
+
+    @JRubyMethod(name = "freeze")
+    public static IRubyObject freeze(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).freeze(context);
+    }
+
+    @JRubyMethod(name = "frozen?")
+    public static RubyBoolean frozen_p(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).frozen_p(context);
+    }
+
+    @JRubyMethod(name = "untrusted?", compat = RUBY1_9)
+    public static RubyBoolean untrusted_p(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).untrusted_p(context);
+    }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public static IRubyObject untrust(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).untrust(context);
+    }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public static IRubyObject trust(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).trust(context);
+    }
+
+    @JRubyMethod(name = "inspect")
+    public static IRubyObject inspect(IRubyObject self) {
+        return ((RubyBasicObject)self).inspect();
+    }
+
+    @JRubyMethod(name = "instance_of?", required = 1)
+    public static RubyBoolean instance_of_p(ThreadContext context, IRubyObject self, IRubyObject type) {
+        return ((RubyBasicObject)self).instance_of_p(context, type);
+    }
+
+    @JRubyMethod(name = {"kind_of?", "is_a?"}, required = 1)
+    public static RubyBoolean kind_of_p(ThreadContext context, IRubyObject self, IRubyObject type) {
+        return ((RubyBasicObject)self).kind_of_p(context, type);
+    }
+
+    @JRubyMethod(name = "methods", optional = 1, compat = RUBY1_8)
+    public static IRubyObject methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).methods(context, args);
+    }
+    @JRubyMethod(name = "methods", optional = 1, compat = RUBY1_9)
+    public static IRubyObject methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).methods19(context, args);
+    }
+
+    @JRubyMethod(name = "public_methods", optional = 1, compat = RUBY1_8)
+    public static IRubyObject public_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).public_methods(context, args);
+    }
+
+    @JRubyMethod(name = "public_methods", optional = 1, compat = RUBY1_9)
+    public static IRubyObject public_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).public_methods19(context, args);
+    }
+
+    @JRubyMethod(name = "protected_methods", optional = 1, compat = RUBY1_8)
+    public static IRubyObject protected_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).protected_methods(context, args);
+    }
+
+    @JRubyMethod(name = "protected_methods", optional = 1, compat = RUBY1_9)
+    public static IRubyObject protected_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).protected_methods19(context, args);
+    }
+
+    @JRubyMethod(name = "private_methods", optional = 1, compat = RUBY1_8)
+    public static IRubyObject private_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).private_methods(context, args);
+    }
+
+    @JRubyMethod(name = "private_methods", optional = 1, compat = RUBY1_9)
+    public static IRubyObject private_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).private_methods19(context, args);
+    }
+
+    @JRubyMethod(name = "singleton_methods", optional = 1, compat = RUBY1_8)
+    public static RubyArray singleton_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).singleton_methods(context, args);
+    }
+
+    @JRubyMethod(name = "singleton_methods", optional = 1 , compat = RUBY1_9)
+    public static RubyArray singleton_methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).singleton_methods19(context, args);
+    }
+
+    @JRubyMethod(name = "method", required = 1)
+    public static IRubyObject method(IRubyObject self, IRubyObject symbol) {
+        return ((RubyBasicObject)self).method(symbol);
+    }
+
+    @JRubyMethod(name = "method", required = 1, compat = RUBY1_9)
+    public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
+        return ((RubyBasicObject)self).method19(symbol);
+    }
+
+    @JRubyMethod(name = "to_s")
+    public static IRubyObject to_s(IRubyObject self) {
+        return ((RubyBasicObject)self).to_s();
+    }
+
+    @JRubyMethod(name = "to_a", visibility = PUBLIC, compat = RUBY1_8)
+    public static RubyArray to_a(IRubyObject self) {
+        return ((RubyBasicObject)self).to_a();
+    }
+
+    @JRubyMethod(compat = RUBY1_8)
+    public static IRubyObject instance_eval(ThreadContext context, IRubyObject self, Block block) {
+        return ((RubyBasicObject)self).instance_eval(context, block);
+    }
+    @JRubyMethod(compat = RUBY1_8)
+    public static IRubyObject instance_eval(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
+        return ((RubyBasicObject)self).instance_eval(context, arg0, block);
+    }
+    @JRubyMethod(compat = RUBY1_8)
+    public static IRubyObject instance_eval(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return ((RubyBasicObject)self).instance_eval(context, arg0, arg1, block);
+    }
+    @JRubyMethod(compat = RUBY1_8)
+    public static IRubyObject instance_eval(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return ((RubyBasicObject)self).instance_eval(context, arg0, arg1, arg2, block);
+    }
+
+    @JRubyMethod(optional = 3, rest = true, compat = RUBY1_8)
+    public static IRubyObject instance_exec(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return ((RubyBasicObject)self).instance_exec(context, args, block);
+    }
+
+    @JRubyMethod(name = "extend", required = 1, rest = true)
+    public static IRubyObject extend(IRubyObject self, IRubyObject[] args) {
+        return ((RubyBasicObject)self).extend(args);
+    }
+
+    @JRubyMethod(name = {"send", "__send__"}, compat = RUBY1_8)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, Block block) {
+        return ((RubyBasicObject)self).send(context, block);
+    }
+    @JRubyMethod(name = {"send", "__send__"}, compat = RUBY1_8)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
+        return ((RubyBasicObject)self).send(context, arg0, block);
+    }
+    @JRubyMethod(name = {"send", "__send__"}, compat = RUBY1_8)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return ((RubyBasicObject)self).send(context, arg0, arg1, block);
+    }
+    @JRubyMethod(name = {"send", "__send__"}, compat = RUBY1_8)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return ((RubyBasicObject)self).send(context, arg0, arg1, arg2, block);
+    }
+    @JRubyMethod(name = {"send", "__send__"}, rest = true, compat = RUBY1_8)
+    public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return ((RubyBasicObject)self).send(context, args, block);
+    }
+
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, Block block) {
+        return ((RubyBasicObject)self).send19(context, block);
+    }
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
+        return ((RubyBasicObject)self).send19(context, arg0, block);
+    }
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return ((RubyBasicObject)self).send19(context, arg0, arg1, block);
+    }
+    @JRubyMethod(name = {"send"}, compat = RUBY1_9)
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return ((RubyBasicObject)self).send19(context, arg0, arg1, arg2, block);
+    }
+    @JRubyMethod(name = {"send"}, rest = true, compat = RUBY1_9)
+    public static IRubyObject send19(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return ((RubyBasicObject)self).send19(context, args, block);
+    }
+
+    @JRubyMethod(name = "nil?")
+    public static IRubyObject nil_p(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).nil_p(context);
+    }
+
+    @JRubyMethod(name = "=~", required = 1, compat = RUBY1_8)
+    public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        return ((RubyBasicObject)self).op_match(context, arg);
+    }
+
+    @JRubyMethod(name = "=~", required = 1, compat = RUBY1_9)
+    public static IRubyObject op_match19(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        return ((RubyBasicObject)self).op_match19(context, arg);
+    }
+
+    @JRubyMethod(name = "!~", required = 1, compat = RUBY1_9)
+    public static IRubyObject op_not_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        return ((RubyBasicObject)self).op_not_match(context, arg);
+    }
+
+    @JRubyMethod(name = "instance_variable_defined?", required = 1)
+    public static IRubyObject instance_variable_defined_p(ThreadContext context, IRubyObject self, IRubyObject name) {
+        return ((RubyBasicObject)self).instance_variable_defined_p(context, name);
+    }
+
+    @JRubyMethod(name = "instance_variable_get", required = 1)
+    public static IRubyObject instance_variable_get(ThreadContext context, IRubyObject self, IRubyObject name) {
+        return ((RubyBasicObject)self).instance_variable_get(context, name);
+    }
+
+    @JRubyMethod(name = "instance_variable_set", required = 2)
+    public static IRubyObject instance_variable_set(IRubyObject self, IRubyObject name, IRubyObject value) {
+        return ((RubyBasicObject)self).instance_variable_set(name, value);
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public static IRubyObject remove_instance_variable(ThreadContext context, IRubyObject self, IRubyObject name, Block block) {
+        return ((RubyBasicObject)self).remove_instance_variable(context, name, block);
+    }
+
+    @JRubyMethod(name = "instance_variables")
+    public static RubyArray instance_variables(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).instance_variables(context);
+    }
+
+    @JRubyMethod(name = "instance_variables", compat = RUBY1_9)
+    public static RubyArray instance_variables19(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject)self).instance_variables19(context);
     }
 }
