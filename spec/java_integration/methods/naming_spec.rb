@@ -1,144 +1,141 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java_integration.fixtures.MethodNames"
+java_import "java_integration.fixtures.MethodNames"
+java_import "java_integration.fixtures.ArrayReceiver"
+java_import "java_integration.fixtures.BeanLikeInterface"
 
 describe "Java static method names" do
-  it "should present as both camel-case and ruby-case" do
-    methods = MethodNames.methods
-    
-    methods.should include("lowercase1")
-    methods.should include("camelCase1")
-    methods.should include("camel_case1")
-    methods.should include("camelWithUPPER1")
-    methods.should include("camel_with_upper1")
-    methods.should include("camelWITHUpper1")
-    methods.should include("CAMELWithUpper1")
+  let(:class_methods) { MethodNames.methods }
 
-    methods.should_not include("camel_withupper1")
-    methods.should_not include("camelwith_upper1")
+  it "should present as both camel-case and ruby-case" do
+    class_methods.should have_strings("lowercase1",
+                                      "camelCase1",
+                                      "camel_case1",
+                                      "camelWithUPPER1",
+                                      "camel_with_upper1",
+                                      "camelWITHUpper1",
+                                      "CAMELWithUpper1")
+
+    class_methods.should_not have_strings("camel_withupper1",
+                                          "camelwith_upper1")
   end
-  
+
+  it "keeps all caps in a name together as a single downcased word" do
+    class_methods.should have_strings("value_objs",
+                                      "value_objs=",
+                                      "value_objs_here",
+                                      "value_objs_here=")
+  end
+
   it "should present javabean properties as attribute readers and writers" do
-    methods = MethodNames.methods
-    
-    methods.should include("getValue1")
-    methods.should include("get_value1")
-    methods.should include("value1")
-    
-    methods.should include("setValue1")
-    methods.should include("set_value1")
-    methods.should include("value1=")
-    
-    methods.should include("getValues1")
-    methods.should include("get_values1")
-    methods.should_not include("values1")
-    
-    methods.should include("setValues1")
-    methods.should include("set_values1")
-    methods.should_not include("values1=")
+    class_methods.should have_strings("getValue1",
+                                      "get_value1",
+                                      "value1",
+                                      "setValue1",
+                                      "set_value1",
+                                      "value1=",
+                                      "getValues1",
+                                      "get_values1",
+                                      "setValues1",
+                                      "set_values1")
+
+    class_methods.should_not have_strings("values1",
+                                          "values1=")
   end
 
   it "should present boolean javabean property accessors as '?' method" do
-    methods = MethodNames.methods
-    
-    methods.should include("isFirst1")
-    methods.should include("first1")
-    methods.should include("first1?")
+    class_methods.should have_strings("isFirst1",
+                                      "first1",
+                                      "first1?",
+                                      "isSecond1",
+                                      "second1",
+                                      "second1?",
+                                      "hasThird1",
+                                      "has_third1",
+                                      "has_third1?",
+                                      "hasFourth1",
+                                      "has_fourth1",
+                                      "has_fourth1?")
 
-    methods.should include("isSecond1")
-    methods.should include("second1")
-    methods.should include("second1?")
-    
-    methods.should include("hasThird1")
-    methods.should include("has_third1")
-    methods.should include("has_third1?")
-
-    methods.should include("hasFourth1")
-    methods.should include("has_fourth1");
-    methods.should include("has_fourth1?");
-
-    pending("not implemented") do
-      methods.should include("third1?")
-    end
-    methods.should_not include("fourth1?")
+    class_methods.should_not have_strings("fourth1?")
   end
-  
+
   it "should not overwrite critical core Ruby methods" do
     pending("need a better way to separate class and instance methods in the java code")
   end
 end
 
 describe "Java instance method names" do
+  let(:members) { MethodNames.instance_methods }
+
   it "should present as both camel-case and ruby-case" do
-    methods = MethodNames.instance_methods
-    
-    methods.should include("lowercase2")
-    methods.should include("camelCase2")
-    methods.should include("camel_case2")
-    methods.should include("camelWithUPPER2")
-    methods.should include("camel_with_upper2")
-    methods.should include("camelWITHUpper2")
-    methods.should include("CAMELWithUpper2")
+    members.should have_strings("lowercase2",
+                                "camelCase2",
+                                "camel_case2",
+                                "camelWithUPPER2",
+                                "camel_with_upper2",
+                                "camelWITHUpper2",
+                                "CAMELWithUpper2")
 
-    methods.should_not include("camel_withupper2")
-    methods.should_not include("camelwith_upper2")
+    members.should_not have_strings("camel_withupper2",
+                                    "camelwith_upper2")
   end
-  
+
   it "should present javabean properties as attribute readers and writers" do
-    methods = MethodNames.instance_methods
-    
-    methods.should include("getValue2")
-    methods.should include("get_value2")
-    methods.should include("value2")
-    
-    methods.should include("setValue2")
-    methods.should include("set_value2")
-    methods.should include("value2=")
-    
-    methods.should include("getValues2")
-    methods.should include("get_values2")
-    methods.should_not include("values2")
-    
-    methods.should include("setValues2")
-    methods.should include("set_values2")
-    methods.should_not include("values2=")
+    members.should have_strings("getValue2",
+                                "get_value2",
+                                "value2",
+                                "setValue2",
+                                "set_value2",
+                                "value2=",
+                                "getValues2",
+                                "get_values2",
+                                "setValues2",
+                                "set_values2",
+                                "get_my_value",
+                                "my_value",
+                                "set_my_value",
+                                "my_value=")
+
+    members.should_not have_strings("values2",
+                                    "values2=",
+                                    "get_myvalue",
+                                    "set_myvalue",
+                                    "myvalue=")
   end
-  
+
+  it "keeps all caps in a name together as a single downcased word" do
+    members.should have_strings("value_obj",
+                                "value_obj=",
+                                "value_obj_here",
+                                "value_obj_here=")
+  end
+
   it "should treat consecutive caps as part of one property name" do
-    methods = MethodNames.instance_methods
-
-    methods.should include("jconsecutive_caps")
-    methods.should include("jconsecutive_caps=")
+    members.should have_strings("jconsecutive_caps",
+                                "jconsecutive_caps=")
   end
-  
+
   it "should present boolean javabean property accessors as '?' method" do
-    methods = MethodNames.instance_methods
-    
-    methods.should include("isFirst2")
-    methods.should include("first2")
-    methods.should include("first2?")
+    members.should have_strings("isFirst2",
+                                "first2",
+                                "first2?",
+                                "isSecond2",
+                                "second2",
+                                "second2?",
+                                "hasThird2",
+                                "has_third2",
+                                "has_third2?",
+                                "hasFourth2",
+                                "has_fourth2",
+                                "has_fourth2?")
 
-    methods.should include("isSecond2")
-    methods.should include("second2")
-    methods.should include("second2?")
-    
-    methods.should include("hasThird2")
-    methods.should include("has_third2")
-    methods.should include("has_third2?")
-
-    methods.should include("hasFourth2")
-    methods.should include("has_fourth2")
-    methods.should include("has_fourth2?")
-
-    pending("not implemented") do
-      methods.should include("third2?")
-    end
-    methods.should_not include("fourth2?")
+    members.should_not have_strings("fourth2?")
   end
-  
+
   it "should not overwrite critical core Ruby methods" do
     obj = MethodNames.new
-    
+
     obj.send(:initialize).should_not == "foo"
     obj.object_id.should_not == "foo"
     obj.__id__.should_not == "foo"
@@ -146,79 +143,80 @@ describe "Java instance method names" do
   end
 end
 
-describe "Needed implementation methods for concrete classes" do 
-  it "should have __id__ method" do 
-    ArrayReceiver.new.methods.should include("__id__")
+describe "Needed implementation methods for concrete classes" do
+  it "should have __id__ method" do
+    ArrayReceiver.new.methods.should have_strings("__id__")
   end
-  it "should have __send__ method" do 
-    ArrayReceiver.new.methods.should include("__send__")
+  it "should have __send__ method" do
+    ArrayReceiver.new.methods.should have_strings("__send__")
   end
-  it "should have == method" do 
-    ArrayReceiver.new.methods.should include("==")
+  it "should have == method" do
+    ArrayReceiver.new.methods.should have_strings("==")
   end
-  it "should have inspect method" do 
-    ArrayReceiver.new.methods.should include("inspect")
+  it "should have inspect method" do
+    ArrayReceiver.new.methods.should have_strings("inspect")
   end
-  it "should have respond_to? method" do 
-    ArrayReceiver.new.methods.should include("respond_to?")
+  it "should have respond_to? method" do
+    ArrayReceiver.new.methods.should have_strings("respond_to?")
   end
-  it "should have class method" do 
-    ArrayReceiver.new.methods.should include("class")
+  it "should have class method" do
+    ArrayReceiver.new.methods.should have_strings("class")
   end
-  it "should have methods method" do 
-    ArrayReceiver.new.methods.should include("methods")
+  it "should have methods method" do
+    ArrayReceiver.new.methods.should have_strings("methods")
   end
-  it "should have send method" do 
-    ArrayReceiver.new.methods.should include("send")
+  it "should have send method" do
+    ArrayReceiver.new.methods.should have_strings("send")
   end
-  it "should have equal? method" do 
-    ArrayReceiver.new.methods.should include("equal?")
+  it "should have equal? method" do
+    ArrayReceiver.new.methods.should have_strings("equal?")
   end
-  it "should have eql? method" do 
-    ArrayReceiver.new.methods.should include("eql?")
+  it "should have eql? method" do
+    ArrayReceiver.new.methods.should have_strings("eql?")
   end
-  it "should have to_s method" do 
-    ArrayReceiver.new.methods.should include("to_s")
+  it "should have to_s method" do
+    ArrayReceiver.new.methods.should have_strings("to_s")
   end
 end
 
-describe "Needed implementation methods for interfaces" do 
-  it "should have __id__ method" do 
-    BeanLikeInterface.new.methods.should include("__id__")
+describe "Needed implementation methods for interfaces" do
+  it "should have __id__ method" do
+    BeanLikeInterface.new.methods.should have_strings("__id__")
   end
-  it "should have __send__ method" do 
-    BeanLikeInterface.new.methods.should include("__send__")
+  it "should have __send__ method" do
+    BeanLikeInterface.new.methods.should have_strings("__send__")
   end
-  it "should have == method" do 
-    BeanLikeInterface.new.methods.should include("==")
+  it "should have == method" do
+    BeanLikeInterface.new.methods.should have_strings("==")
   end
-  it "should have inspect method" do 
-    BeanLikeInterface.new.methods.should include("inspect")
+  it "should have inspect method" do
+    BeanLikeInterface.new.methods.should have_strings("inspect")
   end
-  it "should have respond_to? method" do 
-    BeanLikeInterface.new.methods.should include("respond_to?")
+  it "should have respond_to? method" do
+    BeanLikeInterface.new.methods.should have_strings("respond_to?")
   end
-  it "should have class method" do 
-    BeanLikeInterface.new.methods.should include("class")
+  it "should have class method" do
+    BeanLikeInterface.new.methods.should have_strings("class")
   end
-  it "should have methods method" do 
-    BeanLikeInterface.new.methods.should include("methods")
+  it "should have methods method" do
+    BeanLikeInterface.new.methods.should have_strings("methods")
   end
-  it "should have send method" do 
-    BeanLikeInterface.new.methods.should include("send")
+  it "should have send method" do
+    BeanLikeInterface.new.methods.should have_strings("send")
   end
-  it "should have equal? method" do 
-    BeanLikeInterface.new.methods.should include("equal?")
+  it "should have equal? method" do
+    BeanLikeInterface.new.methods.should have_strings("equal?")
   end
-  it "should have eql? method" do 
-    BeanLikeInterface.new.methods.should include("eql?")
+  it "should have eql? method" do
+    BeanLikeInterface.new.methods.should have_strings("eql?")
   end
-  it "should have to_s method" do 
-    BeanLikeInterface.new.methods.should include("to_s")
+  it "should have to_s method" do
+    BeanLikeInterface.new.methods.should have_strings("to_s")
   end
 
-  it "should be able to access Java methods of core Ruby Methods via $method" do
+  it "should be able to access Java methods of core Ruby Methods via __method" do
     MethodNames.new.initialize__method.should == "foo"
     MethodNames.__send____method.should == "foo"
   end
 end
+

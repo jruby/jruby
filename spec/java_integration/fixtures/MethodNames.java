@@ -11,7 +11,13 @@ public class MethodNames {
     public static Object getValues1(Object otherValue) {return null;}
     public static void setValue1(Object value) {}
     public static void setValues1(Object value, Object otherValue) {}
-    
+
+    /** Should preserve these names by downcasing all trailing caps */
+    public static Object getValueOBJS() {return null;}
+    public static void setValueOBJS(Object value) {}
+    public static Object getValueOBJSHere() {return null;}
+    public static void setValueOBJSHere(Object value) {}
+
     public static boolean isFirst1() {return false;}
     public static boolean isSecond1(Object something) {return false;}
     public static boolean hasThird1() {return false;}
@@ -28,7 +34,17 @@ public class MethodNames {
     public Object getValues2(Object something) {return null;}
     public void setValue2(Object value) {}
     public void setValues2(Object value, Object otherValue) {}
-    
+
+    // Another case [A-Z].[A-Z] that is tricky to get split correctly
+    public Object getMyValue() {return null;}
+    public void setMyValue(Object value) {}
+
+    // Should preserve these names by downcasing all trailing caps.
+    public Object getValueOBJ() {return null;}
+    public void setValueOBJ(Object value) {}
+    public Object getValueOBJHere() {return null;}
+    public void setValueOBJHere(Object value) {}
+
     public Object getJConsecutiveCaps() {return null;}
     public void setJConsecutiveCaps(Object value) {}
 
