@@ -183,7 +183,7 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         if ((args.length & 1) != 0) {
-            throw runtime.newArgumentError("odd number of args for Hash");
+            throw runtime.newArgumentError("odd number of arguments for Hash");
         }
 
         hash = (RubyHash)klass.allocate();
