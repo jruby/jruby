@@ -1048,6 +1048,11 @@ public class RubyTime extends RubyObject {
                     .plusHours(int_args[1])
                     .plusMinutes(int_args[2])
                     .plusSeconds(int_args[3]);
+            if (! args[5].isNil()) {
+                double millis = RubyFloat.num2dbl(args[5]);
+                int int_millis = (int) (millis * 1000) % 1000;
+                dt = dt.plusMillis(int_millis);
+            }
 
 	    dt = dt.withZoneRetainFields(dtz);
 
