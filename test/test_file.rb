@@ -209,8 +209,26 @@ class TestFile < Test::Unit::TestCase
 
     def test_expand_path_with_file_prefix
       jruby_specific_test
-      assert_equal("file:/foo/bar", File.expand_path("file:/foo/bar"))
-      assert_equal("file:/bar", File.expand_path("file:/foo/../bar"))
+      assert_equal "file:/foo/bar", File.expand_path("file:/foo/bar")
+      assert_equal "file:/bar", File.expand_path("file:/foo/../bar")
+      assert_equal "file:/foo/bar/baz", File.expand_path("baz", "file:/foo/bar")
+      assert_equal "file:/foo/bar", File.expand_path("file:/foo/bar", "file:/baz/quux")
+    end
+
+    def test_expand_path_with_file_url_relative_path
+      jruby_specific_test
+      assert_equal "file:#{Dir.pwd}/foo/bar", File.expand_path("file:foo/bar")
+    end
+
+    # JRUBY-5219
+    def test_expand_path_looks_like_url
+      jruby_specific_test
+      assert_equal "classpath:/META-INF/jruby.home", File.expand_path("classpath:/META-INF/jruby.home")
+      assert_equal "http://example.com/a.jar", File.expand_path("http://example.com/a.jar")
+      assert_equal "http://example.com/", File.expand_path("..", "http://example.com/a.jar")
+      assert_equal "classpath:/foo/bar/baz", File.expand_path("baz", "classpath:/foo/bar")
+      assert_equal "classpath:/foo/bar", File.expand_path("classpath:/foo/bar", "classpath:/baz/quux")
+      assert_equal "classpath:/foo", File.expand_path("..", "classpath:/foo/bar")
     end
 
     def test_expand_path_corner_case
@@ -418,7 +436,6 @@ class TestFile < Test::Unit::TestCase
   def with_load_path(entry)
     begin
       $LOAD_PATH.unshift entry
-      puts "adding to load path: #{entry}"
       yield
     ensure
       $LOAD_PATH.shift

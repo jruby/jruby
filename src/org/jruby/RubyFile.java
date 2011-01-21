@@ -44,9 +44,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.net.URI;
+import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -1115,9 +1119,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.getRuntime();
 
         String relativePath = get_path(context, args[0]).getUnicodeValue();
-
-        boolean isAbsoluteWithFilePrefix = relativePath.startsWith("file:");
-
+        String[] uriParts = splitURI(relativePath);
         String cwd = null;
 
         // Handle ~user paths 
@@ -1125,19 +1127,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             relativePath = expandUserPath(context, relativePath);
         }
 
-        // If there's a second argument, it's the path to which the first 
+        if (uriParts != null) {
+            relativePath = uriParts[1];
+        }
+
+        // If there's a second argument, it's the path to which the first
         // argument is relative.
         if (args.length == 2 && !args[1].isNil()) {
-
             cwd = get_path(context, args[1]).getUnicodeValue();
-
-            if (!isAbsoluteWithFilePrefix) {
-                isAbsoluteWithFilePrefix = cwd.startsWith("file:");
-            }
 
             // Handle ~user paths.
             if (expandUser) {
                 cwd = expandUserPath(context, cwd);
+            }
+
+            String[] cwdURIParts = splitURI(cwd);
+            if (uriParts == null && cwdURIParts != null) {
+                uriParts = cwdURIParts;
+                cwd = cwdURIParts[1];
             }
 
             cwd = adjustRootPathOnWindows(runtime, cwd, null);
@@ -1152,8 +1159,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (!startsWithSlashNotOnWindows && !startsWithDriveLetterOnWindows(cwd)) {
                 cwd = new File(runtime.getCurrentDirectory(), cwd).getAbsolutePath();
             }
+
         } else {
-            // If there's no second argument, simply use the working directory 
+            // If there's no second argument, simply use the working directory
             // of the runtime.
             cwd = runtime.getCurrentDirectory();
         }
@@ -1189,7 +1197,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         // Find out which string to check.
         String padSlashes = "";
-        if (!Platform.IS_WINDOWS) {
+        if (uriParts != null) {
+            padSlashes = uriParts[0];
+        } else if (!Platform.IS_WINDOWS) {
             if (relativePath.length() > 0 && relativePath.charAt(0) == '/') {
                 padSlashes = countSlashes(relativePath);
             } else if (cwd.length() > 0 && cwd.charAt(0) == '/') {
@@ -1205,16 +1215,30 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             relativePath = adjustRootPathOnWindows(runtime, relativePath, cwd);
             path = JRubyFile.create(cwd, relativePath);
         }
-        
-        String tempResult = padSlashes + canonicalize(path.getAbsolutePath());
 
-        if(isAbsoluteWithFilePrefix) {
-            tempResult = tempResult.substring(tempResult.indexOf("file:"));
-        }
-
-        return runtime.newString(tempResult);
+        return runtime.newString(padSlashes + canonicalize(path.getAbsolutePath()));
     }
-    
+
+    private static Pattern URI_PREFIX = Pattern.compile("^[a-z]{2,}:");
+    private static String[] splitURI(String path) {
+        Matcher m = URI_PREFIX.matcher(path);
+        if (m.find()) {
+            try {
+                URI u = new URI(path);
+                String pathPart = u.getPath();
+                return new String[] {path.substring(0, path.indexOf(pathPart)), pathPart};
+            } catch (Exception e) {
+                try {
+                    URL u = new URL(path);
+                    String pathPart = u.getPath();
+                    return new String[] {path.substring(0, path.indexOf(pathPart)), pathPart};
+                } catch (Exception e2) {
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * This method checks a path, and if it starts with ~, then it expands 
      * the path to the absolute path of the user's home directory. If the 
@@ -1260,7 +1284,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         return path;
     }
-    
+
+    private static final String[] SLASHES = {"", "/", "//"};
     /**
      * Returns a string consisting of <code>n-1</code> slashes, where 
      * <code>n</code> is the number of slashes at the beginning of the input 
@@ -1269,7 +1294,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @return
      */
     private static String countSlashes( String stringToCheck ) {
-        
         // Count number of extra slashes in the beginning of the string.
         int slashCount = 0;
         for (int i = 0; i < stringToCheck.length(); i++) {
@@ -1284,15 +1308,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (slashCount > 0) {
             slashCount--;
         }
+
+        if (slashCount < SLASHES.length) {
+            return SLASHES[slashCount];
+        }
         
         // Prepare a string with the same number of redundant slashes so that 
         // we easily can prepend it to the result.
-        byte[] slashes = new byte[slashCount];
+        char[] slashes = new char[slashCount];
         for (int i = 0; i < slashCount; i++) {
             slashes[i] = '/';
         }
-        return new String(slashes); 
-        
+        return new String(slashes);
     }
 
     public static String canonicalize(String path) {
