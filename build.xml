@@ -93,37 +93,15 @@
   <condition property="is.windows" value="true">
     <os family="windows"/>
   </condition>
-  <condition property="run.jvm.model" value="">
-    <os family="windows"/>
-  </condition>
-  <condition property="run.jvm.model" value="-d64">
-    <or>
-      <os arch="amd64"/>
-      <os arch="x86_64"/>
-      <os arch="sparcv9"/>
-      <os arch="s390x"/>
-    </or>
-  </condition>
-  <condition property="run.jvm.model" value="-d32">
-    <or>
-      <os arch="i386"/>
-      <os arch="x86"/>
-      <os arch="powerpc"/>
-      <os arch="ppc"/>
-      <os arch="sparc"/>
-    </or>
-  </condition>
-  <condition property="run.jvm.model" value="">
-    <not><isset property="run.jvm.model"/></not>
-  </condition>
-  <condition property="spec.jvm.model.option" value="">
-    <equals arg1="${run.jvm.model}" arg2=""/>
-  </condition>
 
   <tstamp><format property="build.date" pattern="yyyy-MM-dd"/></tstamp>
   <property environment="env"/>
+  
+  <!-- Use JAVA_OPTS env var if set, -ea (supported by all JVMs) otherwise -->
+  <condition property="java.opts" value="${env.JAVA_OPTS}"><isset property="env.JAVA_OPTS"/></condition>
+  <condition property="java.opts" value="-ea"><not><isset property="java.opts"/></not></condition>
+  
   <property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
-  <property name="spec.jvm.model.option" value="-T -J${run.jvm.model}"/>
   <property name="rdoc.archive" value="docs/rdocs.tar.gz"/>
 
   <!-- Initializes the build -->
@@ -313,7 +291,7 @@
     <echo message="Generating invokers..."/>
     <java classname="org.jruby.anno.InvokerGenerator" fork="true" failonerror="true">
       <classpath refid="jruby.execute.classpath"/>
-      <jvmarg value="${run.jvm.model}"/>
+      <jvmarg line="${java.opts}"/>
       <!-- uncomment this line when building on a JVM with invokedynamic
       <jvmarg line="-XX:+InvokeDynamic"/>
       -->
@@ -343,7 +321,7 @@
     <echo message="Generating Unsafe impl..."/>
     <java classname="org.jruby.util.unsafe.UnsafeGenerator" fork="true" failonerror="true">
       <classpath refid="jruby.execute.classpath"/>
-      <jvmarg value="${run.jvm.model}"/>
+      <jvmarg line="${java.opts}"/>
       <!-- uncomment this line when building on a JVM with invokedynamic
            <jvmarg line="-XX:+InvokeDynamic"/>
            -->
@@ -555,7 +533,7 @@
       <sysproperty key="jruby.home" value="${jar-complete-home}"/>
       <env key="RUBYOPT" value=""/>
       <env key="GEM_HOME" value="${jar-complete-home}/lib/ruby/gems/1.8"/>
-      <jvmarg value="${run.jvm.model}"/>
+      <jvmarg line="${java.opts}"/>
       <arg line="-S gem install ${complete.jar.gems}"/>
       <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
     </java>
@@ -652,7 +630,7 @@
 
   <target name="compile-test" depends="jar" description="Compile the unit tests">
     <javac destdir="${test.classes.dir}" deprecation="true" encoding="UTF-8" debug="true"
-           source="${javac.version}">
+           source="${javac.version}" includeantruntime="false">
       <classpath>
         <path refid="jruby.execute.classpath"/>
         <pathelement path="${lib.dir}/jruby.jar"/>
@@ -680,7 +658,7 @@
       <classpath refid="jruby.execute.classpath"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <sysproperty key="jruby.objectspace.enabled" value="true"/>
-      <jvmarg line="-ea ${run.jvm.model}"/>
+      <jvmarg line="-ea ${java.opts}"/>
       <arg line="-I bin/ -S jrubyc ."/>
     </java>
   </target>
@@ -907,7 +885,7 @@
 
         <!-- force client VM to improve test run times AND -->
         <!-- set a larger max permgen, since the tests load a lot of bytecode -->
-        <jvmarg line="-ea ${run.jvm.model} -client -XX:MaxPermSize=256M -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles -XX:+EnableInvokeDynamic"/>
+        <jvmarg line="-ea ${java.opts} -client -XX:MaxPermSize=256M -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles -XX:+EnableInvokeDynamic"/>
 
 	<formatter type="xml"/>
 	<formatter type="brief" usefile="false" />
@@ -961,7 +939,7 @@
 
         <!-- force client VM to improve test run times AND -->
         <!-- set a larger max permgen, since the tests load a lot of bytecode -->
-        <jvmarg line="-ea ${run.jvm.model} -client -XX:MaxPermSize=256M"/>
+        <jvmarg line="-ea ${java.opts} -client -XX:MaxPermSize=256M"/>
 
 	<formatter type="xml"/>
 	<formatter type="brief" usefile="false" />
@@ -1085,7 +1063,7 @@
       <!-- Note the extra '=' in the value, it *is* intentional -->
       <sysproperty key="java.security.policy" value="=file:test/restricted.policy"/>
       <sysproperty key="java.awt.headless" value="true"/>
-      <jvmarg value="${run.jvm.model}"/>
+      <jvmarg line="${java.opts}"/>
       <arg line="-ve"/>
       <arg value="puts 'Restricted policy looks ok'"/>
     </java>
@@ -1114,7 +1092,7 @@
         <classpath refid="test.class.path"/>
 
         <jvmarg line="@{jvm.args}"/>
-        <jvmarg value="${run.jvm.model}"/>
+        <jvmarg line="${java.opts}"/>
 
         <sysproperty key="jruby.home" value="${basedir}"/>
         <sysproperty key="jruby.launch.inproc" value="false"/>
