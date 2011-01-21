@@ -1,1 +1,0 @@
-fails:String#chars is unicode aware
