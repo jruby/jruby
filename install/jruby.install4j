@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<install4j version="4.2.7" transformSequenceNumber="2">
+<install4j version="4.2.4" transformSequenceNumber="2">
   <directoryPresets config="" />
   <application name="JRuby" distributionSourceDir="" applicationId="4535-5096-5383-5182" mediaDir="../build/installers" mediaFilePattern="" compression="9" lzmaCompression="false" pack200Compression="true" excludeSignedFromPacking="true" keepModificationTimes="false" missingFilesStrategy="warn" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="${compiler:jruby.version}" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="true" macSignature="????" installerName="" javaMinVersion="1.5" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
     <languages skipLanguageSelection="false" languageSelectionInPrincipalLanguage="false">
@@ -468,7 +468,7 @@
     </applications>
   </installerGui>
   <mediaSets>
-    <win32 name="Windows" id="20" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+    <win32 name="Windows" id="20" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
       <excludedLaunchers />
       <excludedComponents />
       <excludedBeans>
@@ -478,7 +478,7 @@
       <exclude />
       <variables />
     </win32>
-    <win32 name="Windows (64bit)" id="24" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_x64_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="true" jreBitType="64" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+    <win32 name="Windows (64bit)" id="24" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_x64_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="true" jreBitType="64" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
       <excludedLaunchers />
       <excludedComponents />
       <excludedBeans>
@@ -488,7 +488,7 @@
       <exclude />
       <variables />
     </win32>
-    <win32 name="Windows w/ JRE" id="21" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-x86-1.6.0_23" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+    <win32 name="Windows w/ JRE" id="21" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-x86-1.6.0_23" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
       <excludedLaunchers />
       <excludedComponents />
       <excludedBeans>
@@ -509,7 +509,7 @@
       <exclude />
       <variables />
     </macosFolder>
-    <unixInstaller name="Unix Installer" id="23" mediaFileName="" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="all" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="">
+    <unixInstaller name="Unix Installer" id="23" mediaFileName="" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="all" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="">
       <excludedLaunchers />
       <excludedComponents />
       <excludedBeans />
@@ -520,6 +520,16 @@
         <scriptLines />
       </installerScript>
     </unixInstaller>
+    <win32 name="Windows 64-bit w/ JRE" id="198" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_x64_jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="true" jreBitType="64" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-amd64-1.6.0_23" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+      <excludedLaunchers />
+      <excludedComponents />
+      <excludedBeans>
+        <bean refId="26" />
+      </excludedBeans>
+      <overriddenPrincipalLanguage id="en" customLocalizationFile="" />
+      <exclude />
+      <variables />
+    </win32>
   </mediaSets>
   <buildIds buildAll="false">
     <mediaSet refId="20" />
