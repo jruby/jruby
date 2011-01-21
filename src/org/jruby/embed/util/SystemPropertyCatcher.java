@@ -107,7 +107,7 @@ public class SystemPropertyCatcher {
      * Gets a local variable behavior from System property. If no value is assigned to
      * PropertyName.LOCALVARIABLE_BEHAVIOR, given default value is applied.
      *
-     * @param defaultBehavior a default local variable behavior
+     * @param defaultLaziness a default local variable behavior
      * @return a local variable behavior
      */
     public static boolean isLazy(boolean defaultLaziness) {
@@ -167,10 +167,9 @@ public class SystemPropertyCatcher {
      * jruby.home system property, or jury.home in jruby-complete.jar
      *
      * @param container ScriptingContainer to be set jruby home.
-     * @throws URISyntaxException exceptions thrown while inspecting jruby-complete.jar
      */
     @Deprecated
-    public static void setJRubyHome(ScriptingContainer container) throws URISyntaxException, UnsupportedEncodingException {
+    public static void setJRubyHome(ScriptingContainer container) {
         String jrubyhome = findJRubyHome(container);
         if (jrubyhome != null) {
             container.getProvider().getRubyInstanceConfig().setJRubyHome(jrubyhome);
@@ -184,9 +183,8 @@ public class SystemPropertyCatcher {
      *
      * @param instance any instance to get a resource
      * @return JRuby home path if exists, null when failed to find it.
-     * @throws URISyntaxException
      */
-    public static String findJRubyHome(Object instance) throws URISyntaxException, UnsupportedEncodingException {
+    public static String findJRubyHome(Object instance) {
         String jrubyhome;
         if ((jrubyhome = System.getenv("JRUBY_HOME")) != null) {
             return jrubyhome;
@@ -199,7 +197,7 @@ public class SystemPropertyCatcher {
         }
     }
 
-    private static String findFromJar(Object instance) throws URISyntaxException, UnsupportedEncodingException {
+    public static String findFromJar(Object instance) {
         URL resource = instance.getClass().getResource("/META-INF/jruby.home");
         if (resource == null) {
             return null;
@@ -207,7 +205,11 @@ public class SystemPropertyCatcher {
 
         String location = null;
         if (resource.getProtocol().equals("jar")) {
-            location = URLDecoder.decode(resource.getPath(), "UTF-8");
+            try { // http://weblogs.java.net/blog/2007/04/25/how-convert-javaneturl-javaiofile
+                location = resource.toURI().getSchemeSpecificPart();
+            } catch (URISyntaxException urise) {
+                location = resource.getPath();
+            }
         } else {
             location = "classpath:/META-INF/jruby.home";
         }

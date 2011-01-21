@@ -621,27 +621,9 @@
 
   <target name="test-jar-complete" depends="init,unzip-native-libs,jar-complete"
           description="Do some sanity checks on the complete jar.">
-    <java jar="lib/jruby-complete.jar" fork="true" failonerror="true" outputproperty="jar-complete-gems">
-      <arg line="-v -S gem list"/>
+    <java jar="lib/jruby-complete.jar" fork="true" failonerror="true">
+      <arg line="-v test/test_jar_complete.rb"/>
     </java>
-    <echo message="${jar-complete-gems}"/>
-    <fail>
-      <condition>
-        <not><contains string="${jar-complete-gems}" substring="rake"/></not>
-      </condition>
-    </fail>
-    <java jar="lib/jruby-complete.jar" fork="true" failonerror="true" outputproperty="jar-complete-rake">
-      <arg line="-v -S rake --help"/>
-    </java>
-    <echo message="${jar-complete-rake}"/>
-    <fail>
-      <condition>
-        <not><and>
-          <contains string="${jar-complete-rake}" substring="rakefile"/>
-          <contains string="${jar-complete-rake}" substring="dry-run"/>
-        </and></not>
-      </condition>
-    </fail>
   </target>
 
   <target name="dist-jar-complete" depends="jar-complete">

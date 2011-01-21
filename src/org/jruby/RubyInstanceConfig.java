@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007-2010 Nick Sieger <nicksieger@gmail.com>
+ * Copyright (C) 2007-2011 Nick Sieger <nicksieger@gmail.com>
  * Copyright (C) 2009 Joseph LaFata <joe@quibb.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -56,6 +56,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.ASTCompiler19;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.TraceType;
@@ -941,16 +942,7 @@ public class RubyInstanceConfig {
                 jrubyHome = verifyHome(jrubyHome);
             } else {
                 try {
-                    // try loading from classloader resources
-                    final String jrubyHomePath = "/META-INF/jruby.home";
-                    URL jrubyHomeURL = getClass().getResource(jrubyHomePath);
-                    // special case for jar:file (most typical case)
-                    if (jrubyHomeURL.getProtocol().equals("jar")) {
-                        jrubyHome = URLDecoder.decode(jrubyHomeURL.getPath(), "UTF-8");
-                    } else {
-                        jrubyHome = "classpath:" + jrubyHomePath;
-                        return jrubyHome;
-                    }
+                    jrubyHome = SystemPropertyCatcher.findFromJar(this);
                 } catch (Exception e) {}
 
                 if (jrubyHome != null) {
