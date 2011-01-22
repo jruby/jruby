@@ -13,7 +13,11 @@ require 'pathname'
 prefix = Config::CONFIG['prefix']
 abort "error: test must be launched from complete jar (found prefix = #{prefix})" unless prefix =~ %r{^file.*!/META-INF/jruby\.home}
 def file_from_url(path)
-  path[%r{^file:\/*?(/[^!]+)}, 1]
+  if Config::CONFIG['host_os'] =~ /Windows|mswin/
+    path[%r{^file:\/*?([a-zA-Z]:/[^!]+)}, 1]
+  else
+    path[%r{^file:\/*?(/[^!]+)}, 1]
+  end
 end
 COMPLETE_JAR = file_from_url prefix
 abort "error: could not figure out complete jar from Config::CONFIG['prefix'] (#{prefix})" unless COMPLETE_JAR
@@ -56,7 +60,7 @@ class JarCompleteTest < Test::Unit::TestCase
   end
 
   def test_complete_jar
-    assert_equal "hi\n", jruby_complete("-e 'puts \"hi\"'")
+    assert_equal "hi\n", jruby_complete("-e \"puts 'hi'\"")
   end
 
   def test_rubygems_home
