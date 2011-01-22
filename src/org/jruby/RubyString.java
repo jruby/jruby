@@ -1500,8 +1500,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
             int cl, ocl;
             if (Encoding.isAscii(c) && Encoding.isAscii(oc)) {
-                if (AsciiTables.ToUpperCaseTable[c] != AsciiTables.ToUpperCaseTable[oc]) {
-                    return c < oc ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime); 
+                byte uc = AsciiTables.ToUpperCaseTable[c];
+                byte uoc = AsciiTables.ToUpperCaseTable[oc];
+                if (uc != uoc) {
+                    return uc < uoc ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime);
                 }
                 cl = ocl = 1;
             } else {
