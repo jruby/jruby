@@ -263,7 +263,7 @@ public class ParserSupport {
         case GLOBALASGNNODE:
             return new GlobalVarNode(node.getPosition(), ((INameNode) node).getName());
         }
-        
+
         getterIdentifierError(node.getPosition(), ((INameNode) node).getName());
         return null;
     }
@@ -1481,7 +1481,7 @@ public class ParserSupport {
     public boolean is_local_id(Token identifier) {
         String name = (String) identifier.getValue();
 
-        return getCurrentScope().getLocalScope().isDefined(name) < 0;
+        return lexer.isIdentifierChar(name.charAt(0));
     }
 
     // 1.9

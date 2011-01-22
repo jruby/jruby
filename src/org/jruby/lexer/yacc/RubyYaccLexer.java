@@ -507,7 +507,7 @@ public class RubyYaccLexer {
      *
      * mri: is_identchar
      */
-    protected boolean isIdentifierChar(int c) {
+    public boolean isIdentifierChar(int c) {
         return Character.isLetterOrDigit(c) || c == '_' || isMultiByteChar(c);
     }
 

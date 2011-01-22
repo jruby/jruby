@@ -44,7 +44,6 @@ import org.jruby.ast.SValue19Node;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.Splat19Node;
 import org.jruby.ast.SplatNode;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
