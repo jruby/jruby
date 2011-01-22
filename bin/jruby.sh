@@ -189,11 +189,13 @@ do
         ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
-	val=${1:2}
-	if expr "$val" : '.*[.]' > /dev/null; then
-	  java_args="${java_args} -Djruby.${val}"
-	fi
-	;;
+     val=${1:2}
+     if expr "$val" : '.*[.]' > /dev/null; then
+       java_args="${java_args} -Djruby.${val}"
+     else
+       ruby_args="${ruby_args} -X"
+     fi
+     ;;
      # Match switches that take an argument
      -C|-e|-I|-S) ruby_args="${ruby_args} $1 $2"; shift ;;
      # Match same switches with argument stuck together
