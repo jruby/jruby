@@ -40,8 +40,7 @@ below. Also see LICENSE.RUBY for most files found in src/lib/ruby/1.8.
  Version 1.1 (license file inside the jars).
 
  build_lib/constantine.jar (http://kenai.com/projects/constantine),
- build_lib/jcodings.jar (http://github.com/jruby/jcodings),
- build_lib/jaffl.jar (http://projectkenai.com/projects/jaffl) and
+ build_lib/jcodings.jar (http://github.com/jruby/jcodings) and
  build_lib/joni.jar (http://github.com/jruby/joni) are distributed
  under the MIT license.
 
@@ -56,7 +55,8 @@ below. Also see LICENSE.RUBY for most files found in src/lib/ruby/1.8.
  build_lib/junit.jar (http://www.junit.org) are distributed under the
  Common Public License v1.0.
 
- build_lib/jffi*jar (http://kenai.com/projects/jffi) and
+ build_lib/jffi*jar (https://github.com/wmeissner/jffi),
+ build_lib/jaffl.jar (https://github.com/wmeissner/jaffl) and
  build_lib/jgrapht-jdk1.5.jar (http://jgrapht.sourceforge.net) are
  distributed under the GPL v3.
 

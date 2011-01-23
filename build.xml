@@ -389,6 +389,41 @@
       <property name="jar-jruby.hasrun" value="true"/>
   </target>
 
+  <target name="jar-jruby-nogpl" depends="init, compile, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
+      <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true" update="true">
+        <fileset dir="${jruby.classes.dir}"/>
+        <zipfileset src="${asm.jar}"/>
+        <zipfileset src="${asm-commons.jar}"/>
+        <zipfileset src="${asm-util.jar}"/>
+        <zipfileset src="${asm-analysis.jar}"/>
+        <zipfileset src="${asm-tree.jar}"/>
+        <zipfileset src="${build.lib.dir}/bytelist.jar"/>
+        <zipfileset src="${build.lib.dir}/constantine.jar"/>
+        <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
+        <zipfileset src="${build.lib.dir}/jcodings.jar"/>
+        <zipfileset src="${build.lib.dir}/joni.jar"/>
+        <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
+        <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
+        <zipfileset src="${build.lib.dir}/jaffl.jar"/>
+        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+        <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
+        <zipfileset src="${build.lib.dir}/yydebug.jar"/>
+        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+        <metainf dir="${base.dir}/spi">
+          <include name="services/**"/>
+        </metainf>
+        <manifest>
+          <attribute name="Built-By" value="${user.name}"/>
+          <attribute name="Main-Class" value="org.jruby.Main"/>
+        </manifest>
+      </jar>
+
+      <antcall target="add-emma-jars"/>
+      <antcall target="generate-ri-cache"/>
+
+      <property name="jar-jruby.hasrun" value="true"/>
+  </target>
+
   <target name="add-emma-jars" if="coverage.enabled">
     <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true" update="true">
       <zipfileset src="${build.lib.dir}/emma.jar"/>
