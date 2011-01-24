@@ -77,6 +77,7 @@ public class RaiseException extends JumpException {
                 "new",
                 RubyString.newUnicodeString(excptnClass.getRuntime(), msg)),
                 nativeException);
+        preRaise(runtime.getCurrentContext());
     }
 
     public RaiseException(RubyException exception, boolean isNativeException) {
@@ -86,6 +87,14 @@ public class RaiseException extends JumpException {
         }
         this.nativeException = isNativeException;
         setException(exception, isNativeException);
+        preRaise(exception.getRuntime().getCurrentContext());
+    }
+
+    public RaiseException(Throwable cause, NativeException nativeException) {
+        super(buildMessage(cause), cause);
+        providedMessage = buildMessage(cause);
+        setException(nativeException, true);
+        preRaise(nativeException.getRuntime().getCurrentContext());
     }
 
     /**
@@ -113,12 +122,6 @@ public class RaiseException extends JumpException {
         sb.append("StackTrace: ").append(stackTrace.getBuffer().toString());
 
         return sb.toString();
-    }
-
-    public RaiseException(Throwable cause, NativeException nativeException) {
-        super(buildMessage(cause), cause);
-        providedMessage = buildMessage(cause);
-        setException(nativeException, true);
     }
 
     @Override

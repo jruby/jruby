@@ -280,9 +280,7 @@ public class RubyKernel {
             exArgs = new IRubyObject[]{msg, symbol};
         }
 
-        RaiseException exception = new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
-        exception.preRaise(context);
-        throw exception;
+        throw new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
     }
 
     @JRubyMethod(required = 1, optional = 2, module = true, visibility = PRIVATE, compat = RUBY1_8)

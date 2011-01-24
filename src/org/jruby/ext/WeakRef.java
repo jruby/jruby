@@ -81,10 +81,13 @@ public class WeakRef extends RubyObject {
     }
     
     private RaiseException newRefError(String message) {
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
         RubyException exception =
-                (RubyException)getRuntime().getClass("RefError").newInstance(getRuntime().getCurrentContext(),
-                new IRubyObject[] {getRuntime().newString(message)}, Block.NULL_BLOCK);
+                (RubyException)runtime.getClass("RefError").newInstance(context,
+                new IRubyObject[] {runtime.newString(message)}, Block.NULL_BLOCK);
         
-        return new RaiseException(exception);
+        RaiseException re = new RaiseException(exception);
+        return re;
     }
 }

@@ -3108,9 +3108,7 @@ public final class Ruby {
     }
 
     public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
-        RaiseException exception = new RaiseException(new RubyNoMethodError(this, getNoMethodError(), message, name, args), true);
-        exception.preRaise(getCurrentContext());
-        return exception;
+        return new RaiseException(new RubyNoMethodError(this, getNoMethodError(), message, name, args), true);
     }
 
     public RaiseException newNameError(String message, String name) {
@@ -3126,17 +3124,12 @@ public final class Ruby {
             origException.printStackTrace(getErrorStream());
         }
         
-        RaiseException exception = new RaiseException(new RubyNameError(
+        return new RaiseException(new RubyNameError(
                 this, getNameError(), message, name), false);
-        exception.preRaise(getCurrentContext());
-
-        return exception;
     }
 
     public RaiseException newLocalJumpError(RubyLocalJumpError.Reason reason, IRubyObject exitValue, String message) {
-        RaiseException exception = new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), message, reason, exitValue), true);
-        exception.preRaise(getCurrentContext());
-        return exception;
+        return new RaiseException(new RubyLocalJumpError(this, getLocalJumpError(), message, reason, exitValue), true);
     }
 
     public RaiseException newLocalJumpErrorNoBlock() {
@@ -3172,9 +3165,7 @@ public final class Ruby {
     }
 
     public RaiseException newSystemExit(int status) {
-        RaiseException exception = new RaiseException(RubySystemExit.newInstance(this, status));
-        exception.preRaise(getCurrentContext());
-        return exception;
+        return new RaiseException(RubySystemExit.newInstance(this, status));
     }
 
     public RaiseException newIOError(String message) {
@@ -3254,9 +3245,7 @@ public final class Ruby {
      * @return
      */
     private RaiseException newRaiseException(RubyClass exceptionClass, String message) {
-        RaiseException re = new RaiseException(this, exceptionClass, message, true);
-        re.preRaise(getCurrentContext());
-        return re;
+        return new RaiseException(this, exceptionClass, message, true);
     }
 
     // Equivalent of Data_Wrap_Struct
