@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
-import org.jruby.util.ReferenceReaper;
+import org.jruby.util.PhantomReferenceReaper;
 
 final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements AllocatedDirectMemoryIO {
     /** Keeps strong references to the MemoryHolder until cleanup */
@@ -65,7 +65,7 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         holder.autorelease = release;
     }
 
-    private static final class MemoryHolder extends ReferenceReaper.Phantom<AllocatedNativeMemoryIO> implements Runnable {        
+    private static final class MemoryHolder extends PhantomReferenceReaper<AllocatedNativeMemoryIO> implements Runnable {
 
         private final long storage;
         private volatile boolean released = false;

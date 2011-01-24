@@ -42,7 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.ReferenceReaper;
+import org.jruby.util.PhantomReferenceReaper;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
@@ -272,7 +272,7 @@ public class RubyTempfile extends RubyFile {
         return tempfile;
     }
 
-    private static final class Reaper extends ReferenceReaper.Phantom<RubyTempfile> implements Runnable {
+    private static final class Reaper extends PhantomReferenceReaper<RubyTempfile> implements Runnable {
         private volatile boolean released = false;
         private final Ruby runtime;
         private final File tmpFile;

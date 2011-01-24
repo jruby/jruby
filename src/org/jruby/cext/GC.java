@@ -37,7 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
-import org.jruby.util.ReferenceReaper;
+import org.jruby.util.SoftReferenceReaper;
 
 /**
  * The cext {@link GC} keeps track of native handles and associates them with their corresponding Java objects
@@ -103,7 +103,7 @@ public class GC {
         // soft references.
         //
         if (reaper == null) {
-            reaper = new ReferenceReaper.Soft<Object>(new Object()) {
+            reaper = new SoftReferenceReaper<Object>(new Object()) {
                 public void run() {
                     reaper = null;
                     GC.trigger();
