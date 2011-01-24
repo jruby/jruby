@@ -115,11 +115,11 @@ public class OSGiFileLocator {
 				if (BUNDLE_URL_CONNECTION_getLocalURL == null && 
 						conn.getClass().getName().equals(
 								"org.eclipse.osgi.framework.internal.core.BundleURLConnection")) {
-					BUNDLE_URL_CONNECTION_getLocalURL = conn.getClass().getMethod("getLocalURL", null);
+					BUNDLE_URL_CONNECTION_getLocalURL = conn.getClass().getMethod("getLocalURL");
 					BUNDLE_URL_CONNECTION_getLocalURL.setAccessible(true);
 				}
 				if (BUNDLE_URL_CONNECTION_getLocalURL != null) {
-					return (URL)BUNDLE_URL_CONNECTION_getLocalURL.invoke(conn, null);
+					return (URL)BUNDLE_URL_CONNECTION_getLocalURL.invoke(conn);
 				}
 			} catch (Throwable t) {
 				t.printStackTrace();
@@ -148,12 +148,12 @@ public class OSGiFileLocator {
 						conn.getClass().getName().equals(
 								"org.eclipse.osgi.framework.internal.core.BundleURLConnection"))
 				{
-					BUNDLE_URL_CONNECTION_getFileURL = conn.getClass().getMethod("getFileURL", null);
+					BUNDLE_URL_CONNECTION_getFileURL = conn.getClass().getMethod("getFileURL");
 					BUNDLE_URL_CONNECTION_getFileURL.setAccessible(true);
 				}
 				if (BUNDLE_URL_CONNECTION_getFileURL != null)
 				{
-					return (URL)BUNDLE_URL_CONNECTION_getFileURL.invoke(conn, null);
+					return (URL)BUNDLE_URL_CONNECTION_getFileURL.invoke(conn);
 				}
 			}
 			catch (Throwable t)
