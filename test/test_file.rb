@@ -231,6 +231,19 @@ class TestFile < Test::Unit::TestCase
       assert_equal "classpath:/foo", File.expand_path("..", "classpath:/foo/bar")
     end
 
+    def test_mkdir_with_non_file_uri_raises_error
+      assert_raises(Errno::ENOTDIR) { FileUtils.mkdir_p("classpath:/META-INF/jruby.home") }
+      assert !File.directory?("classpath:/META-INF/jruby.home")
+    end
+
+    def test_mkdir_with_file_uri_works_as_expected
+      FileUtils.mkdir("file:test_mkdir_with_file_uri_works_as_expected")
+      assert File.directory?("test_mkdir_with_file_uri_works_as_expected")
+      assert File.directory?("file:test_mkdir_with_file_uri_works_as_expected")
+    ensure
+      FileUtils.rm_rf("test_mkdir_with_file_uri_works_as_expected")
+    end
+
     def test_expand_path_corner_case
       # this would fail on MRI 1.8.6 (MRI returns "/foo").
       assert_equal("//foo", File.expand_path("../foo", "//bar"))
@@ -530,7 +543,6 @@ class TestFile < Test::Unit::TestCase
 
   # JRUBY-2524
   def test_filetest_exists_uri_prefixes
-    assert(!FileTest.exists?("file:/"))
     assert(!FileTest.exists?("file:/!"))
   end
 

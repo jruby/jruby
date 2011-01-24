@@ -766,8 +766,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (pathOrFile instanceof RubyFile) {
             return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyFile) pathOrFile).getPath());
         } else {
-            RubyString path = get_path(runtime.getCurrentContext(), pathOrFile);
-            return JRubyFile.create(runtime.getCurrentDirectory(), path.getUnicodeValue());
+            RubyString pathStr = get_path(runtime.getCurrentContext(), pathOrFile);
+            String path = pathStr.getUnicodeValue();
+            String[] pathParts = splitURI(path);
+            if (pathParts != null && pathParts[0].startsWith("file:")) {
+                path = pathParts[1];
+            }
+            return JRubyFile.create(runtime.getCurrentDirectory(), path);
         }
     }
 
@@ -1220,7 +1225,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static Pattern URI_PREFIX = Pattern.compile("^[a-z]{2,}:");
-    private static String[] splitURI(String path) {
+    public static String[] splitURI(String path) {
         Matcher m = URI_PREFIX.matcher(path);
         if (m.find()) {
             try {

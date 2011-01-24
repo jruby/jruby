@@ -596,16 +596,30 @@ public class RubyDir extends RubyObject {
      * @throws  IOError if <code>path</code> is not a directory.
      */
     protected static JRubyFile getDir(final Ruby runtime, final String path, final boolean mustExist) {
-        JRubyFile result = JRubyFile.create(runtime.getCurrentDirectory(), path);
-        if (mustExist && !result.exists()) {
-            throw runtime.newErrnoENOENTError("No such file or directory - " + path);
+        String dir = path;
+        String[] pathParts = RubyFile.splitURI(path);
+        if (pathParts != null) {
+            if (pathParts[0].startsWith("file:") && pathParts[1].indexOf("!/") == -1) {
+                dir = pathParts[1];
+            } else {
+                throw runtime.newErrnoENOTDIRError(dir + " is not a directory");
+            }
         }
+
+        JRubyFile result = JRubyFile.create(runtime.getCurrentDirectory(), dir);
+
+        if (mustExist && !result.exists()) {
+            throw runtime.newErrnoENOENTError("No such file or directory - " + dir);
+        }
+
         boolean isDirectory = result.isDirectory();
 
-        if (path.startsWith("file:") || (mustExist && !isDirectory)) {
+        if (mustExist && !isDirectory) {
             throw runtime.newErrnoENOTDIRError(path + " is not a directory");
-        } else if (!mustExist && isDirectory) {
-            throw runtime.newErrnoEEXISTError("File exists - " + path);
+        }
+
+        if (!mustExist && isDirectory) {
+            throw runtime.newErrnoEEXISTError("File exists - " + dir);
         }
 
         return result;
