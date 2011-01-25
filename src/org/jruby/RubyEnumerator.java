@@ -384,15 +384,8 @@ public class RubyEnumerator extends RubyObject {
             return arg.isNil() ? enumeratorize(runtime, self , rubyMethodName) :
                 enumeratorize(runtime, self , rubyMethodName, runtime.newFixnum(index));
         }
-        
-        IRubyObject[] args = new IRubyObject[0];
 
-        RubyEnumerator e = (RubyEnumerator)self;
-        if(e.methodArgs != null) {
-            args = e.methodArgs;
-        }
-
-        return RubyEnumerable.callEach(runtime, context, self, args, Arity.TWO_ARGUMENTS, new EachWithIndex(context, block, index));
+        return RubyEnumerable.callEach(runtime, context, self, new EachWithIndex(context, block, index));
     }
 
     @JRubyMethod

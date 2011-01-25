@@ -78,6 +78,7 @@ public class RubyEnumerable {
                 Arity.OPTIONAL, callback, context));
     }
 
+    @Deprecated
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject[] args,
             BlockCallback callback) {
         return RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), Arity.OPTIONAL, callback, context));
@@ -95,6 +96,7 @@ public class RubyEnumerable {
                 arity, callback, context));
     }
 
+    @Deprecated
     public static IRubyObject callEach(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject[] args,
             Arity arity, BlockCallback callback) {
         return RuntimeHelpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(), arity, callback, context));
