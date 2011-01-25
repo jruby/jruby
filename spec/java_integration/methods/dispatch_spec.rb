@@ -324,3 +324,35 @@ describe "A class with varargs static methods" do
     ClassWithVarargs.varargs_static('foo', 'bar', 'baz', [1,2,3].to_java).should == "3: [1, 2, 3]"
   end
 end
+
+# JRUBY-5418
+describe "A Java method dispatch downstream from a Kernel#catch block" do
+  it "should propagate rather than wrap the 'throw' exception" do
+    lambda do
+      catch(:foo) do
+        UsesSingleMethodInterface.new { throw :foo }
+      end
+    end.should_not raise_error
+    lambda do
+      catch(:foo) do
+        UsesSingleMethodInterface.new(nil) { throw :foo }
+      end
+    end.should_not raise_error
+    lambda do
+      catch(:foo) do
+        UsesSingleMethodInterface.new(nil, nil) { throw :foo }
+      end
+    end.should_not raise_error
+    lambda do
+      catch(:foo) do
+        UsesSingleMethodInterface.new(nil, nil, nil) { throw :foo }
+      end
+    end.should_not raise_error
+    # 3 normal args is our cutoff for specific-arity optz, so test four
+    lambda do
+      catch(:foo) do
+        UsesSingleMethodInterface.new(nil, nil, nil, nil) { throw :foo }
+      end
+    end.should_not raise_error
+  end
+end

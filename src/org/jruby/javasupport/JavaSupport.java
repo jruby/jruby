@@ -43,6 +43,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
@@ -178,7 +179,15 @@ public class JavaSupport {
 
     public void handleNativeException(Throwable exception, Member target) {
         if (exception instanceof RaiseException) {
+            // allow RaiseExceptions to propagate
             throw (RaiseException) exception;
+        } else if (exception instanceof Unrescuable) {
+            // allow "unrescuable" flow-control exceptions to propagate
+            if (exception instanceof Error) {
+                throw (Error)exception;
+            } else if (exception instanceof RuntimeException) {
+                throw (RuntimeException)exception;
+            }
         }
         throw createRaiseException(exception, target);
     }
