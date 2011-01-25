@@ -56,15 +56,15 @@ public interface ISourcePosition extends PositionAware {
     /** For nodes which are added to the AST which are not proper syntactical elements. */
     public static final ISourcePosition INVALID_POSITION = new ISourcePosition() {
         public String getFile() {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return "dummy";
         }
 
         public int getStartLine() {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return -1;
         }
 
         public int getLine() {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return -1;
         }
     };
 }

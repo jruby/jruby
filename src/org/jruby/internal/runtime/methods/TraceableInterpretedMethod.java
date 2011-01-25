@@ -60,29 +60,9 @@ public class TraceableInterpretedMethod extends InterpretedMethod {
     }
 
     @Override
-    protected void pre(ThreadContext context, String name, IRubyObject self, Block block, Ruby runtime) {
-        context.preMethodFrameAndScope(getImplementationClass(), name, self, block, staticScope);
-
-        // disabled now because it happens in ASTInterpreter.INTERPRET_METHOD
-//        if (runtime.hasEventHooks()) traceCall(context, runtime, name);
+    protected boolean isTraceable() {
+        return true;
     }
-
-    @Override
-    protected void post(Ruby runtime, ThreadContext context, String name) {
-        // disabled now because it happens in ASTInterpreter.INTERPRET_METHOD
-//        if (runtime.hasEventHooks()) traceReturn(context, runtime, name);
-
-        context.postMethodFrameAndScope();
-    }
-
-        // disabled now because it happens in ASTInterpreter.INTERPRET_METHOD
-//    private void traceReturn(ThreadContext context, Ruby runtime, String name) {
-//        context.trace(RubyEvent.RETURN, name, getImplementationClass());
-//    }
-//
-//    private void traceCall(ThreadContext context, Ruby runtime, String name) {
-//        context.trace(RubyEvent.CALL, name, getImplementationClass());
-//    }
 
     @Override
     public DynamicMethod dup() {

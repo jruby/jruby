@@ -94,7 +94,7 @@ public final class ThreadContext {
     private Frame[] frameStack = new Frame[INITIAL_FRAMES_SIZE];
     private int frameIndex = -1;
 
-    private Backtrace[] backtrace = new Backtrace[1000];
+    private Backtrace[] backtrace = new Backtrace[INITIAL_FRAMES_SIZE];
     private int backtraceIndex = -1;
 
     public static class Backtrace {
@@ -114,23 +114,17 @@ public final class ThreadContext {
         public Backtrace clone() {
             return new Backtrace(klass, method, filename, line);
         }
-        public void update(String klass, String method, ISourcePosition position) {
-            this.method = method;
-            if (position == ISourcePosition.INVALID_POSITION) {
-                // use dummy values; there's no need for a real position here anyway
-                this.filename = "dummy";
-                this.line = -1;
-            } else {
-                this.filename = position.getFile();
-                this.line = position.getLine();
-            }
-            this.klass = klass;
+        public static void update(Backtrace backtrace, String klass, String method, ISourcePosition position) {
+            backtrace.method = method;
+            backtrace.filename = position.getFile();
+            backtrace.line = position.getLine();
+            backtrace.klass = klass;
         }
-        public void update(String klass, String method, String file, int line) {
-            this.method = method;
-            this.filename = file;
-            this.line = line;
-            this.klass = klass;
+        public static void update(Backtrace backtrace, String klass, String method, String file, int line) {
+            backtrace.method = method;
+            backtrace.filename = file;
+            backtrace.line = line;
+            backtrace.klass = klass;
         }
         
         public String getFilename() {
@@ -217,8 +211,8 @@ public final class ThreadContext {
         for (int i = 0; i < length2; i++) {
             stack2[i] = new Backtrace();
         }
-        pushBacktrace("", "", "", 0);
-        pushBacktrace("", "", "", 0);
+        ThreadContext.pushBacktrace(this, "", "", "", 0);
+        ThreadContext.pushBacktrace(this, "", "", "", 0);
     }
 
     @Override
@@ -521,41 +515,41 @@ public final class ThreadContext {
 
     /////////////////// BACKTRACE ////////////////////
 
-    private void expandBacktraceIfNecessary() {
-        int newSize = backtrace.length * 2;
-        backtrace = fillNewBacktrace(new Backtrace[newSize], newSize);
+    private static void expandBacktraceIfNecessary(ThreadContext context) {
+        int newSize = context.backtrace.length * 2;
+        context.backtrace = fillNewBacktrace(context, new Backtrace[newSize], newSize);
     }
 
-    private Backtrace[] fillNewBacktrace(Backtrace[] newBacktrace, int newSize) {
-        System.arraycopy(backtrace, 0, newBacktrace, 0, backtrace.length);
+    private static Backtrace[] fillNewBacktrace(ThreadContext context, Backtrace[] newBacktrace, int newSize) {
+        System.arraycopy(context.backtrace, 0, newBacktrace, 0, context.backtrace.length);
 
-        for (int i = backtrace.length; i < newSize; i++) {
+        for (int i = context.backtrace.length; i < newSize; i++) {
             newBacktrace[i] = new Backtrace();
         }
 
         return newBacktrace;
     }
 
-    public void pushBacktrace(String klass, String method, ISourcePosition position) {
-        int index = ++this.backtraceIndex;
-        Backtrace[] stack = backtrace;
-        stack[index].update(klass, method, position);
+    public static void pushBacktrace(ThreadContext context, String klass, String method, ISourcePosition position) {
+        int index = ++context.backtraceIndex;
+        Backtrace[] stack = context.backtrace;
+        Backtrace.update(stack[index], klass, method, position);
         if (index + 1 == stack.length) {
-            expandBacktraceIfNecessary();
+            ThreadContext.expandBacktraceIfNecessary(context);
         }
     }
 
-    public void pushBacktrace(String klass, String method, String file, int line) {
-        int index = ++this.backtraceIndex;
-        Backtrace[] stack = backtrace;
-        stack[index].update(klass, method, file, line);
+    public static void pushBacktrace(ThreadContext context, String klass, String method, String file, int line) {
+        int index = ++context.backtraceIndex;
+        Backtrace[] stack = context.backtrace;
+        Backtrace.update(stack[index], klass, method, file, line);
         if (index + 1 == stack.length) {
-            expandBacktraceIfNecessary();
+            ThreadContext.expandBacktraceIfNecessary(context);
         }
     }
 
-    public void popBacktrace() {
-        backtraceIndex--;
+    public static void popBacktrace(ThreadContext context) {
+        context.backtraceIndex--;
     }
 
     /**

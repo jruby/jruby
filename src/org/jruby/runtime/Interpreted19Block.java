@@ -53,6 +53,12 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     /** The position for the block */
     private final ISourcePosition position;
 
+    /** Filename from position */
+    private final String file;
+
+    /** Line from position */
+    private final int line;
+
     /** The argument list, pulled out of iterNode */
     private final ArgsNode args;
 
@@ -85,6 +91,10 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         this.parameterList = RuntimeHelpers.encodeParameterList(args).split(";");
         this.body = iterNode.getBodyNode() == null ? NilImplicitNode.NIL : iterNode.getBodyNode();
         this.position = iterNode.getPosition();
+
+        // precache these
+        this.file = position.getFile();
+        this.line = position.getLine();
     }
 
     public Interpreted19Block(LambdaNode lambdaNode) {
@@ -94,6 +104,10 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         this.parameterList = RuntimeHelpers.encodeParameterList(args).split(";");
         this.body = lambdaNode.getBody() == null ? NilImplicitNode.NIL : lambdaNode.getBody();
         this.position = lambdaNode.getPosition();
+
+        // precache these
+        this.file = position.getFile();
+        this.line = position.getLine();
     }
 
     @Override
@@ -186,7 +200,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         // This while loop is for restarting the block call in case a 'redo' fires.
         while (true) {
             try {
-                return ASTInterpreter.INTERPRET_BLOCK(context.getRuntime(), context, body, binding.getMethod(), self, Block.NULL_BLOCK);
+                return ASTInterpreter.INTERPRET_BLOCK(context.getRuntime(), context, file, line, body, binding.getMethod(), self, Block.NULL_BLOCK);
             } catch (JumpException.RedoJump rj) {
                 context.pollThreadEvents();
                 // do nothing, allow loop to redo

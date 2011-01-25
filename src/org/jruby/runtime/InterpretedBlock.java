@@ -86,6 +86,12 @@ public class InterpretedBlock extends ContextAwareBlockBody {
     /** The position for the block */
     private final ISourcePosition position;
 
+    /** Filename from position */
+    private final String file;
+
+    /** Line from position */
+    private final int line;
+
     /** The body of the block, pulled out of bodyNode */
     private final Node bodyNode;
     
@@ -210,6 +216,11 @@ public class InterpretedBlock extends ContextAwareBlockBody {
         this.bodyNode = iterNode.getBodyNode() == null ? NilImplicitNode.NIL : iterNode.getBodyNode();
         this.scope = iterNode.getScope();
         this.position = iterNode.getPosition();
+
+        // precache these
+        this.file = position.getFile();
+        this.line = position.getLine();
+
         assignerFor(iterNode);
     }
 
@@ -360,7 +371,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
         // This while loop is for restarting the block call in case a 'redo' fires.
         while (true) {
             try {
-                return ASTInterpreter.INTERPRET_BLOCK(context.getRuntime(), context, bodyNode, binding.getMethod(), self, Block.NULL_BLOCK);
+                return ASTInterpreter.INTERPRET_BLOCK(context.getRuntime(), context, file, line, bodyNode, binding.getMethod(), self, Block.NULL_BLOCK);
             } catch (JumpException.RedoJump rj) {
                 context.pollThreadEvents();
                 // do nothing, allow loop to redo
