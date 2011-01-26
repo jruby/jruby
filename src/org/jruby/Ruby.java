@@ -3715,8 +3715,12 @@ public final class Ruby {
             System.arraycopy(profiledMethods, 0, newProfiledMethods, 0, profiledMethods.length);
             profiledMethods = newProfiledMethods;
         }
-        profiledNames[index] = name;
-        profiledMethods[index] = method;
+
+        // only add the first one we encounter, since others will probably share the original
+        if (profiledNames[index] == null) {
+            profiledNames[index] = name;
+            profiledMethods[index] = method;
+        }
     }
 
     private volatile int constantGeneration = 1;
