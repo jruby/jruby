@@ -71,8 +71,10 @@ public class OSGiFileLocator {
 			throw new IOException("Unable to find the " + path + " folder in the bundle '" 
 					+ bundle.getSymbolicName() + "'; is the org.jruby.jruby bundle unzipped? ");
 		} catch (Exception e) {
-			throw new IOException("Unable to find the " + path + " folder in the bundle '" 
-					+ bundle.getSymbolicName() + "'", e);
+            IOException exception = new IOException("Unable to find the " + path + 
+                    " folder in the bundle '" + bundle.getSymbolicName() + "'");
+            exception.initCause(e); // Should be safe since IOException(String) should call super(String).
+            throw exception;
 		}
 	}
 
