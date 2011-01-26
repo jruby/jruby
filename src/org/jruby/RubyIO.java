@@ -92,6 +92,7 @@ import org.jruby.util.io.ChannelDescriptor;
 
 import org.jruby.util.io.SelectorFactory;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Arrays;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -3490,7 +3491,7 @@ public class RubyIO extends RubyObject {
         }
     }
    
-    @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true, compat = RUBY1_8)
     public static IRubyObject popen(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         int mode;
@@ -3535,6 +3536,107 @@ public class RubyIO extends RubyObject {
                 }
             }
             
+            RubyIO io = new RubyIO(runtime, process, modes);
+
+            if (block.isGiven()) {
+                try {
+                    return block.yield(context, io);
+                } finally {
+                    if (io.openFile.isOpen()) {
+                        io.close();
+                    }
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor())));
+                }
+            }
+            return io;
+        } catch (InvalidValueException ex) {
+            throw runtime.newErrnoEINVALError();
+        } catch (IOException e) {
+            throw runtime.newIOErrorFromException(e);
+        } catch (InterruptedException e) {
+            throw runtime.newThreadError("unexpected interrupt");
+        }
+    }
+
+    @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true, compat = RUBY1_9)
+    public static IRubyObject popen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.getRuntime();
+        int mode;
+
+        IRubyObject[] cmdPlusArgs = null;
+        RubyHash env = null;
+        RubyHash opts = null;
+        IRubyObject cmdObj = null;
+        IRubyObject arg0 = args[0].checkArrayType();
+        
+        if (!arg0.isNil()) {
+            List argList = new ArrayList(Arrays.asList(((RubyArray)arg0).toJavaArray()));
+            if (argList.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
+            if (argList.get(0) instanceof RubyHash) {
+                // leading hash, use for env
+                env = (RubyHash)argList.remove(0);
+            }
+            if (argList.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
+            if (argList.size() > 1 && argList.get(argList.size() - 1) instanceof RubyHash) {
+                // trailing hash, use for opts
+                env = (RubyHash)argList.get(argList.size() - 1);
+            }
+            cmdPlusArgs = (IRubyObject[])argList.toArray(new IRubyObject[argList.size()]);
+
+            if (Platform.IS_WINDOWS) {
+                String commandString = cmdPlusArgs[0].convertToString().toString().replace('/', '\\');
+                cmdPlusArgs[0] = runtime.newString(commandString);
+            } else {
+                cmdPlusArgs[0] = cmdPlusArgs[0].convertToString();
+            }
+            cmdObj = cmdPlusArgs[0];
+        } else {
+            if (Platform.IS_WINDOWS) {
+                String[] tokens = args[0].convertToString().toString().split(" ", 2);
+                String commandString = tokens[0].replace('/', '\\') +
+                        (tokens.length > 1 ? ' ' + tokens[1] : "");
+                cmdObj = runtime.newString(commandString);
+            } else {
+                cmdObj = args[0].convertToString();
+            }
+        }
+        
+        runtime.checkSafeString(cmdObj);
+
+        if ("-".equals(cmdObj.toString())) {
+            throw runtime.newNotImplementedError("popen(\"-\") is unimplemented");
+        }
+
+        try {
+            if (args.length == 1) {
+                mode = ModeFlags.RDONLY;
+            } else if (args[1] instanceof RubyFixnum) {
+                mode = RubyFixnum.num2int(args[1]);
+            } else {
+                mode = getIOModesIntFromString(runtime, args[1].convertToString().toString());
+            }
+
+            ModeFlags modes = new ModeFlags(mode);
+
+            ShellLauncher.POpenProcess process;
+            if (cmdPlusArgs == null) {
+                process = ShellLauncher.popen(runtime, cmdObj, modes);
+            } else {
+                process = ShellLauncher.popen(runtime, cmdPlusArgs, env, modes);
+            }
+
+            // Yes, this is gross. java.lang.Process does not appear to be guaranteed
+            // "ready" when we get it back from Runtime#exec, so we try to give it a
+            // chance by waiting for 10ms before we proceed. Only doing this on 1.5
+            // since Hotspot 1.6+ does not seem to exhibit the problem.
+            if (System.getProperty("java.specification.version", "").equals("1.5")) {
+                synchronized (process) {
+                    try {
+                        process.wait(100);
+                    } catch (InterruptedException ie) {}
+                }
+            }
+
             RubyIO io = new RubyIO(runtime, process, modes);
 
             if (block.isGiven()) {

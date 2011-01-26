@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -209,13 +210,27 @@ public class ShellLauncher {
     }
 
     private static String[] getCurrentEnv(Ruby runtime) {
-        RubyHash hash = (RubyHash)runtime.getObject().fastGetConstant("ENV");
-        String[] ret = new String[hash.size()];
-        int i=0;
+        return getCurrentEnv(runtime, null);
+    }
 
-        for(Iterator iter = hash.directEntrySet().iterator();iter.hasNext();i++) {
-            Map.Entry e = (Map.Entry)iter.next();
+    private static String[] getCurrentEnv(Ruby runtime, Map mergeEnv) {
+        RubyHash hash = (RubyHash)runtime.getObject().fastGetConstant("ENV");
+        String[] ret;
+        
+        if (mergeEnv != null && !mergeEnv.isEmpty()) {
+            ret = new String[hash.size() + mergeEnv.size()];
+        } else {
+            ret = new String[hash.size()];
+        }
+
+        int i=0;
+        for(Map.Entry e : (Set<Map.Entry>)hash.directEntrySet()) {
             ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
+            i++;
+        }
+        if (mergeEnv != null) for(Map.Entry e : (Set<Map.Entry>)mergeEnv.entrySet()) {
+            ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
+            i++;
         }
 
         return ret;
@@ -525,11 +540,19 @@ public class ShellLauncher {
         return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}), runtime, modes);
     }
 
+    public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, ModeFlags modes) throws IOException {
+        return new POpenProcess(popenShared(runtime, strings, env), runtime, modes);
+    }
+
     public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings) throws IOException {
         return new POpenProcess(popenShared(runtime, strings));
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings) throws IOException {
+        return popenShared(runtime, strings, null);
+    }
+
+    private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env) throws IOException {
         String shell = getShell(runtime);
         Process childProcess = null;
         File pwd = new File(runtime.getCurrentDirectory());
@@ -547,9 +570,9 @@ public class ShellLauncher {
                     argArray[0] = shell;
                     argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
                     argArray[2] = strings[0].asJavaString();
-                    childProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
+                    childProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime, env), pwd);
                 } else {
-                    childProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);
+                    childProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime, env), pwd);
                 }
             } else {
                 if (useShell) {
@@ -557,10 +580,10 @@ public class ShellLauncher {
                     argArray[0] = shell;
                     argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
                     System.arraycopy(args, 0, argArray, 2, args.length);
-                    childProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime), pwd);
+                    childProcess = Runtime.getRuntime().exec(argArray, getCurrentEnv(runtime, env), pwd);
                 } else {
                     // direct invocation of the command
-                    childProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime), pwd);
+                    childProcess = Runtime.getRuntime().exec(args, getCurrentEnv(runtime, env), pwd);
                 }
             }
         } catch (SecurityException se) {
