@@ -43,7 +43,7 @@ public class CompiledScriptLoader {
             if (Script.class.isAssignableFrom(clazz)) {
                 return (Script)clazz.newInstance();
             } else {
-                throw runtime.newLoadError("use `java_import' to load normal Java classes");
+                throw runtime.newLoadError("use `java_import' to load normal Java classes: "+className);
             }
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
