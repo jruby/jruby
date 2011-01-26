@@ -1118,7 +1118,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "!=", required = 1, compat = RUBY1_9)
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
-        return context.getRuntime().newBoolean(!callMethod("==", other).isTrue());
+        return context.getRuntime().newBoolean(!callMethod(context, "==", other).isTrue());
     }
 
     public int compareTo(IRubyObject other) {
@@ -2051,7 +2051,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String name = mname.asJavaString();
         IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, true));
         if (!respond.isTrue()) {
-            respond = callMethod("respond_to_missing?", mname, getRuntime().getFalse());
+            respond = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, getRuntime().getFalse());
             respond = getRuntime().newBoolean(respond.isTrue());
         }
         return respond;
@@ -2083,7 +2083,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String name = mname.asJavaString();
         IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
         if (!respond.isTrue()) {
-            respond = callMethod("respond_to_missing?", mname, includePrivate);
+            respond = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, includePrivate);
             respond = getRuntime().newBoolean(respond.isTrue());
         }
         return respond;

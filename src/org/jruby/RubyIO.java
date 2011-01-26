@@ -94,6 +94,7 @@ import org.jruby.util.io.SelectorFactory;
 import java.nio.channels.spi.SelectorProvider;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.javasupport.util.RuntimeHelpers;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -3434,7 +3435,7 @@ public class RubyIO extends RubyObject {
         } else if (args.length > 1) {
             length = args[1];
         }
-        RubyIO file = (RubyIO)runtime.getFile().callMethod("new", path, runtime.newString("rb:ASCII-8BIT"));
+        RubyIO file = (RubyIO)RuntimeHelpers.invoke(context, runtime.getFile(), "new", path, runtime.newString("rb:ASCII-8BIT"));
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
