@@ -1425,9 +1425,8 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.getRuntime();
         String name = arg0.asJavaString().intern();
         DynamicMethod newMethod = null;
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility visibility = PUBLIC;
 
-        if (visibility == MODULE_FUNCTION) visibility = PRIVATE;
         RubyProc proc = runtime.newProc(Block.Type.LAMBDA, block);
 
         // a normal block passed to define_method changes to do arity checking; make it a lambda
@@ -1435,7 +1434,7 @@ public class RubyModule extends RubyObject {
         
         newMethod = createProcMethod(name, visibility, proc);
         
-        RuntimeHelpers.addInstanceMethod(this, name, newMethod, context.getCurrentVisibility(), context, runtime);
+        RuntimeHelpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
         return proc;
     }
@@ -1446,9 +1445,8 @@ public class RubyModule extends RubyObject {
         IRubyObject body;
         String name = arg0.asJavaString().intern();
         DynamicMethod newMethod = null;
-        Visibility visibility = context.getCurrentVisibility();
+        Visibility visibility = PUBLIC;
 
-        if (visibility == MODULE_FUNCTION) visibility = PRIVATE;
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
@@ -1464,7 +1462,7 @@ public class RubyModule extends RubyObject {
             throw runtime.newTypeError("wrong argument type " + arg1.getType().getName() + " (expected Proc/Method)");
         }
         
-        RuntimeHelpers.addInstanceMethod(this, name, newMethod, context.getCurrentVisibility(), context, runtime);
+        RuntimeHelpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
         return body;
     }
