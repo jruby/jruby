@@ -996,7 +996,8 @@ public final class ThreadContext {
                     element.getFileName().equals("-e") ||
                     // FIXME: Formalize jitted method structure so this isn't quite as hacky
                     element.getClassName().startsWith(JITCompiler.RUBY_JIT_PREFIX) ||
-                    element.getMethodName().contains("$RUBY$"))) {
+                    element.getMethodName().contains("$RUBY$") ||
+                    element.getMethodName().contains("__file__"))) {
                 if (element.getLineNumber() == -1) continue;
                 
                 String methodName = element.getMethodName();
