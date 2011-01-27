@@ -92,7 +92,7 @@ public class ParserConfiguration {
 
     private static final ByteList USASCII = new ByteList(new byte[]{'U', 'S', '-', 'A', 'S', 'C', 'I', 'I'});
 
-    void setDefaultEncoding(Encoding encoding) {
+    public void setDefaultEncoding(Encoding encoding) {
         this.defaultEncoding = encoding;
     }
 

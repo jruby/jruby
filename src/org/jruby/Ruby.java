@@ -2283,8 +2283,10 @@ public final class Ruby {
 
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
         if (parserStats != null) parserStats.addEvalParse();
-        return parser.parse(file, in, scope, new ParserConfiguration(this,
-                0, false, true, false, config));
+        ParserConfiguration parserConfig =
+                new ParserConfiguration(this, 0, false, true, false, config);
+        if (is1_9) parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
+        return parser.parse(file, in, scope, parserConfig);
     }
 
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
