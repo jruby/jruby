@@ -171,13 +171,29 @@ public class RubyString extends RubyObject implements EncodingCapable {
         setCodeRange(cr);
     }
 
+    private static final ByteList EXTERNAL_BL = ByteList.create("external");
+    private static final ByteList INTERNAL_BL = ByteList.create("internal");
+    private static final ByteList LOCALE_BL = ByteList.create("locale");
+    private static final ByteList FILESYSTEM_BL = ByteList.create("filesystem");
+
     public final Encoding toEncoding(Ruby runtime) {
         if (!value.getEncoding().isAsciiCompatible()) {
             throw runtime.newArgumentError("invalid name encoding (non ASCII)");
         }
         Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(value);
         if (entry == null) {
-            throw runtime.newArgumentError("unknown encoding name - " + value);
+            // attempt to look it up with one of the special aliases
+            if (value.equal(EXTERNAL_BL)) return runtime.getDefaultExternalEncoding();
+            else if(value.equal(INTERNAL_BL)) return runtime.getDefaultInternalEncoding();
+            else if(value.equal(LOCALE_BL)) {
+                entry = runtime.getEncodingService().findEncodingOrAliasEntry(ByteList.create(Charset.defaultCharset().name()));
+            } else if (value.equal(FILESYSTEM_BL)) {
+                // This needs to do something different on Windows. See encoding.c,
+                // in the enc_set_filesystem_encoding function.
+                return runtime.getDefaultExternalEncoding();
+            } else {
+                throw runtime.newArgumentError("unknown encoding name - " + value);
+            }
         }
         return entry.getEncoding();
     }
