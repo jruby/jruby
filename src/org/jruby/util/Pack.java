@@ -2187,7 +2187,7 @@ public class Pack {
                     break;
                 case 2:
                     output.force_encoding(runtime.getCurrentContext(),
-                            RubyEncoding.convertEncodingToRubyEncoding(runtime, UTF8));
+                            runtime.getEncodingService().convertEncodingToRubyEncoding(UTF8));
                     break;
                 default:
                     /* do nothing, keep ASCII-8BIT */

@@ -171,31 +171,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         setCodeRange(cr);
     }
 
-    private static final ByteList EXTERNAL_BL = ByteList.create("external");
-    private static final ByteList INTERNAL_BL = ByteList.create("internal");
-    private static final ByteList LOCALE_BL = ByteList.create("locale");
-    private static final ByteList FILESYSTEM_BL = ByteList.create("filesystem");
-
     public final Encoding toEncoding(Ruby runtime) {
-        if (!value.getEncoding().isAsciiCompatible()) {
-            throw runtime.newArgumentError("invalid name encoding (non ASCII)");
-        }
-        Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(value);
-        if (entry == null) {
-            // attempt to look it up with one of the special aliases
-            if (value.equal(EXTERNAL_BL)) return runtime.getDefaultExternalEncoding();
-            else if(value.equal(INTERNAL_BL)) return runtime.getDefaultInternalEncoding();
-            else if(value.equal(LOCALE_BL)) {
-                entry = runtime.getEncodingService().findEncodingOrAliasEntry(ByteList.create(Charset.defaultCharset().name()));
-            } else if (value.equal(FILESYSTEM_BL)) {
-                // This needs to do something different on Windows. See encoding.c,
-                // in the enc_set_filesystem_encoding function.
-                return runtime.getDefaultExternalEncoding();
-            } else {
-                throw runtime.newArgumentError("unknown encoding name - " + value);
-            }
-        }
-        return entry.getEncoding();
+        return runtime.getEncodingService().findEncoding(this);
     }
 
     public final int getCodeRange() {
@@ -7071,7 +7048,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
     public IRubyObject encode_bang(ThreadContext context) {
         modify19();
-        IRubyObject defaultInternal = RubyEncoding.getDefaultInternal(context.getRuntime());
+        IRubyObject defaultInternal = context.getRuntime().getEncodingService().getDefaultInternal();
         if (!defaultInternal.isNil()) {
             encode_bang(context, defaultInternal);
         }
@@ -7115,7 +7092,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        IRubyObject defaultInternal = RubyEncoding.getDefaultInternal(runtime);
+        IRubyObject defaultInternal = runtime.getEncodingService().getDefaultInternal();
 
         if (!defaultInternal.isNil()) {
             ByteList encoded = encodeCommon(context, runtime, value, defaultInternal,
@@ -7226,7 +7203,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private static Encoding getEncoding(Ruby runtime, IRubyObject toEnc) {
         try {
-            return RubyEncoding.getEncodingFromObject(runtime, toEnc);
+            return runtime.getEncodingService().getEncodingFromObject(toEnc);
         } catch (Exception e) {
             throw runtime.newConverterNotFoundError("code converter not found (" + toEnc.toString() + ")");
         }
@@ -7234,7 +7211,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private static Charset getCharset(Ruby runtime, IRubyObject toEnc) {
         try {
-            Encoding encoding = RubyEncoding.getEncodingFromObject(runtime, toEnc);
+            Encoding encoding = runtime.getEncodingService().getEncodingFromObject(toEnc);
 
             return getCharset(runtime, encoding);
         } catch (Exception e) {
@@ -7256,7 +7233,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "force_encoding", compat = RUBY1_9)
     public IRubyObject force_encoding(ThreadContext context, IRubyObject enc) {
         modify19();
-        Encoding encoding = RubyEncoding.getEncodingFromObject(context.getRuntime(), enc);
+        Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(enc);
         associateEncoding(encoding);
         return this;
     }

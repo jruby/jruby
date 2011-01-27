@@ -35,6 +35,7 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -266,28 +267,11 @@ public class RubyEncoding extends RubyObject {
         return result;
     }
 
-    private static IRubyObject findWithError(Ruby runtime, ByteList name) {
-        EncodingService service = runtime.getEncodingService();
-        Entry e = service.findEncodingOrAliasEntry(name);
-
-        if (e == null) throw runtime.newArgumentError("unknown encoding name - " + name);
-
-        return service.getEncodingList()[e.getIndex()];
-    }
-
     @JRubyMethod(name = "find", meta = true)
     public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.getRuntime();
 
-        // TODO: check for ascii string
-        ByteList name = str.convertToString().getByteList();
-        if (name.caseInsensitiveCmp(LOCALE) == 0) {
-            name = new ByteList(runtime.getEncodingService().getLocaleEncoding().getName());
-        } else if (name.caseInsensitiveCmp(EXTERNAL) == 0) {
-            name = new ByteList(runtime.getDefaultExternalEncoding().getName());
-        }
-
-        return findWithError(runtime, name);
+        return runtime.getEncodingService().rubyEncodingFromObject(str);
     }
 
     @JRubyMethod(name = "_dump")
@@ -367,63 +351,51 @@ public class RubyEncoding extends RubyObject {
 
     @JRubyMethod(name = "default_external", meta = true, compat = RUBY1_9)
     public static IRubyObject getDefaultExternal(IRubyObject recv) {
-        return getDefaultExternal(recv.getRuntime());
-    }
-
-    public static IRubyObject getDefaultExternal(Ruby runtime) {
-        IRubyObject defaultExternal = convertEncodingToRubyEncoding(runtime, runtime.getDefaultExternalEncoding());
-
-        if (defaultExternal.isNil()) {
-            // TODO: MRI seems to default blindly to US-ASCII and we were using Charset default from Java...which is right?
-            ByteList encodingName = ByteList.create("US-ASCII");
-            Encoding encoding = runtime.getEncodingService().loadEncoding(encodingName);
-
-            runtime.setDefaultExternalEncoding(encoding);
-            defaultExternal = convertEncodingToRubyEncoding(runtime, encoding);
-        }
-
-        return defaultExternal;
+        return recv.getRuntime().getEncodingService().getDefaultExternal();
     }
 
     @JRubyMethod(name = "default_external=", meta = true, compat = RUBY1_9)
     public static void setDefaultExternal(IRubyObject recv, IRubyObject encoding) {
+        Ruby runtime = recv.getRuntime();
+        EncodingService service = runtime.getEncodingService();
         if (encoding.isNil()) {
             throw recv.getRuntime().newArgumentError("default_external can not be nil");
         }
-        recv.getRuntime().setDefaultExternalEncoding(getEncodingFromObject(recv.getRuntime(), encoding));
+        runtime.setDefaultExternalEncoding(service.getEncodingFromObject(encoding));
     }
 
     @JRubyMethod(name = "default_internal", meta = true, compat = RUBY1_9)
     public static IRubyObject getDefaultInternal(IRubyObject recv) {
-        return getDefaultInternal(recv.getRuntime());
-    }
-
-    public static IRubyObject getDefaultInternal(Ruby runtime) {
-        return convertEncodingToRubyEncoding(runtime, runtime.getDefaultInternalEncoding());
+        return recv.getRuntime().getEncodingService().getDefaultInternal();
     }
 
     @JRubyMethod(name = "default_internal=", required = 1, meta = true, compat = RUBY1_9)
     public static void setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
+        Ruby runtime = recv.getRuntime();
+        EncodingService service = runtime.getEncodingService();
         if (encoding.isNil()) {
             recv.getRuntime().newArgumentError("default_internal can not be nil");
         }
-        recv.getRuntime().setDefaultInternalEncoding(getEncodingFromObject(recv.getRuntime(), encoding));
+        recv.getRuntime().setDefaultInternalEncoding(service.getEncodingFromObject(encoding));
     }
 
+    @Deprecated
+    public static IRubyObject getDefaultExternal(Ruby runtime) {
+        return runtime.getEncodingService().getDefaultExternal();
+    }
+
+    @Deprecated
+    public static IRubyObject getDefaultInternal(Ruby runtime) {
+        return runtime.getEncodingService().getDefaultInternal();
+    }
+
+    @Deprecated
     public static IRubyObject convertEncodingToRubyEncoding(Ruby runtime, Encoding defaultEncoding) {
-        return defaultEncoding != null ?
-            runtime.getEncodingService().getEncoding(defaultEncoding) : runtime.getNil();
+        return runtime.getEncodingService().convertEncodingToRubyEncoding(defaultEncoding);
     }
 
+    @Deprecated
     public static Encoding getEncodingFromObject(Ruby runtime, IRubyObject arg) {
-        if (arg == null) return null;
-
-        Encoding encoding = null;
-        if (arg instanceof RubyEncoding) {
-            encoding = ((RubyEncoding) arg).getEncoding();
-        } else if (!arg.isNil()) {
-            encoding = arg.convertToString().toEncoding(runtime);
-        }
-        return encoding;
+        return runtime.getEncodingService().getEncodingFromObject(arg);
     }
 }

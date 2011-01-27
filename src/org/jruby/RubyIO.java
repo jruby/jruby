@@ -1053,7 +1053,7 @@ public class RubyIO extends RubyObject {
     private Encoding getEncodingCommon(ThreadContext context, IRubyObject encoding) {
         if (encoding instanceof RubyEncoding) return ((RubyEncoding) encoding).getEncoding();
         
-        return RubyEncoding.getEncodingFromObject(context.getRuntime(), encoding);
+        return context.getRuntime().getEncodingService().getEncodingFromObject(encoding);
     }
 
     @JRubyMethod(required = 1, optional = 2, meta = true)
@@ -3946,14 +3946,14 @@ public class RubyIO extends RubyObject {
         RubyString dash = runtime.newString("-");
         if (externalEncodingOption != null && !externalEncodingOption.isNil()) {
             if (dash.eql(externalEncodingOption)) {
-                externalEncodingOption = RubyEncoding.getDefaultExternal(runtime);
+                externalEncodingOption = context.getRuntime().getEncodingService().getDefaultExternal();
             }
             setExternalEncoding(context, externalEncodingOption);
         }
 
         if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
             if (dash.eql(internalEncodingOption)) {
-                internalEncodingOption = RubyEncoding.getDefaultInternal(runtime);
+                internalEncodingOption = context.getRuntime().getEncodingService().getDefaultInternal();
             }
             setInternalEncoding(context, internalEncodingOption);
         }
