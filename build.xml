@@ -372,6 +372,7 @@
         <zipfileset src="${build.lib.dir}/jgrapht-jdk1.5.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
+        <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -407,6 +408,7 @@
         <zipfileset src="${build.lib.dir}/jaffl.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
+        <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -507,6 +509,7 @@
         <zipfileset src="${build.lib.dir}/jgrapht-jdk1.5.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
+        <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -613,6 +616,7 @@
       <zipfileset src="${build.lib.dir}/jgrapht-jdk1.5.jar"/>
       <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
       <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
+      <zipfileset src="${build.lib.dir}/yecht.jar"/>
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
       <zipfileset src="${shared.lib.dir}/yecht.jar"/>

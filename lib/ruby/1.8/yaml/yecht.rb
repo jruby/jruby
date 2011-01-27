@@ -2,7 +2,7 @@
 # YAML::Yecht module
 # .. glues yecht and yaml.rb together ..
 #
-require 'yecht'
+require 'yecht.jar'
 require 'yaml/basenode'
 
 module YAML
