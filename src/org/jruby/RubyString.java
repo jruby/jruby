@@ -660,7 +660,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
             return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
         } catch (UnsupportedEncodingException uee) {
-            return toString();
+            return value.toString();
         }
     }
 
