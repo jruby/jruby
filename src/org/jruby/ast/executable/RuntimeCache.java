@@ -2,6 +2,7 @@ package org.jruby.ast.executable;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyClass.VariableAccessor;
@@ -100,8 +101,16 @@ public class RuntimeCache {
         return symbol;
     }
 
-    public final RubyString getString(Ruby runtime, int index) {
-        return RubyString.newStringShared(runtime, byteLists[index]);
+    public final RubyString getString(Ruby runtime, int index, int codeRange) {
+        return RubyString.newStringShared(runtime, getByteList(index), codeRange);
+    }
+
+    public final ByteList getByteList(int index) {
+        return byteLists[index];
+    }
+
+    public final Encoding getEncoding(int index) {
+        return encodings[index];
     }
 
     public final RubyFixnum getFixnum(Ruby runtime, int index, int value) {
@@ -120,7 +129,7 @@ public class RuntimeCache {
         return fixnum;
     }
 
-    public final RubyRegexp getRegexp(Ruby runtime, int index, String pattern, int options) {
+    public final RubyRegexp getRegexp(Ruby runtime, int index, ByteList pattern, int options) {
         RubyRegexp regexp = regexps[index];
         if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
             regexp = RubyRegexp.newRegexp(runtime, pattern, options);
@@ -245,6 +254,7 @@ public class RuntimeCache {
     private static final int BLOCKCALLBACK = BLOCKBODY + 1;
     private static final int METHOD = BLOCKCALLBACK + 1;
     private static final int STRING = METHOD + 1;
+    private static final int ENCODING = STRING + 1;
 
     /**
      * Given a packed descriptor of other cache sizes, construct the cache arrays
@@ -292,6 +302,8 @@ public class RuntimeCache {
         if (methodCount > 0) initMethodCache(methodCount);
         int stringCount = getDescriptorValue(descriptor, STRING);
         if (stringCount > 0) initStrings(stringCount);
+        int encodingCount = getDescriptorValue(descriptor, ENCODING);
+        if (encodingCount > 0) initEncodings(encodingCount);
     }
 
     private static int getDescriptorValue(String descriptor, int type) {
@@ -312,6 +324,10 @@ public class RuntimeCache {
 
     public final ByteList[] initStrings(int size) {
         return byteLists = new ByteList[size];
+    }
+
+    public final Encoding[] initEncodings(int size) {
+        return encodings = new Encoding[size];
     }
 
     public final void initFixnums(int size) {
@@ -605,6 +621,8 @@ public class RuntimeCache {
     public RubySymbol[] symbols = EMPTY_RUBYSYMBOLS;
     private static final ByteList[] EMPTY_BYTELISTS = {};
     public ByteList[] byteLists = EMPTY_BYTELISTS;
+    private static final Encoding[] EMPTY_ENCODINGS = {};
+    public Encoding[] encodings = EMPTY_ENCODINGS;
     private static final RubyFixnum[] EMPTY_FIXNUMS = {};
     public RubyFixnum[] fixnums = EMPTY_FIXNUMS;
     private static final RubyRegexp[] EMPTY_RUBYREGEXPS = {};

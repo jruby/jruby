@@ -4,10 +4,8 @@
 # See LICENSE.txt for permissions.
 #++
 
-require 'fileutils'
-require 'rbconfig'
-
 require 'rubygems/format'
+require 'rubygems/exceptions'
 require 'rubygems/ext'
 require 'rubygems/require_paths_builder'
 
@@ -91,6 +89,8 @@ class Gem::Installer
   # :wrappers:: Install wrappers if true, symlinks if false.
 
   def initialize(gem, options={})
+    require 'fileutils'
+
     @gem = gem
 
     options = {
@@ -318,7 +318,7 @@ class Gem::Installer
   def generate_bin_script(filename, bindir)
     bin_script_path = File.join bindir, formatted_program_filename(filename)
 
-    exec_path = File.join @gem_dir, @spec.bindir, filename
+    File.join @gem_dir, @spec.bindir, filename
 
     # HACK some gems don't have #! in their executables, restore 2008/06
     #if File.read(exec_path, 2) == '#!' then
@@ -466,7 +466,7 @@ TEXT
 
         say results.join("\n") if Gem.configuration.really_verbose
 
-      rescue => ex
+      rescue
         results = results.join "\n"
 
         File.open('gem_make.out', 'wb') { |f| f.puts results }
@@ -497,6 +497,8 @@ Results logged to #{File.join(Dir.pwd, 'gem_make.out')}
 
     raise ArgumentError, "format required to extract from" if @format.nil?
 
+    dirs = []
+
     @format.file_entries.each do |entry, file_data|
       path = entry['path'].untaint
 
@@ -514,7 +516,12 @@ Results logged to #{File.join(Dir.pwd, 'gem_make.out')}
       end
 
       FileUtils.rm_rf(path) if File.exists?(path)
-      FileUtils.mkdir_p File.dirname(path)
+
+      dir = File.dirname(path)
+      if !dirs.include?(dir)
+        dirs << dir
+        FileUtils.mkdir_p dir
+      end
 
       File.open(path, "wb") do |out|
         out.write file_data

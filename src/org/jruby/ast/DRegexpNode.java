@@ -41,40 +41,51 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * A regexp which contains some expressions which will need to be evaluated everytime the regexp 
  * is used for a match.
  */
-public class DRegexpNode extends ListNode implements ILiteralNode {
+public class DRegexpNode extends DNode implements ILiteralNode {
     private final int options;
     private final boolean once;
     private RubyRegexp onceRegexp;
-    
-    public DRegexpNode(ISourcePosition position) {
-        this(position, 0, false);
-    }
+    private boolean is19;
 
-    public DRegexpNode(ISourcePosition position, DStrNode node, int options, boolean once) {
-        this(position, options, once);
-        addAll(node);
-    }
-
+    // 1.8 constructor
     public DRegexpNode(ISourcePosition position, int options, boolean once) {
-        super(position);
-
-        this.options = options;
-        this.once = once;
+        this(position, options, once, false);
     }
 
+    // 1.9 constructor
+    public DRegexpNode(ISourcePosition position, int options, boolean once, boolean is19) {
+        super(position, null);
+        this.once = once;
+        this.options = options;
+        this.is19 = is19;
+    }
+
+    @Override
     public NodeType getNodeType() {
         return NodeType.DREGEXPNODE;
+    }
+
+    @Override
+    protected RubyString allocateString(Ruby runtime) {
+        return runtime.newString(new ByteList());
+    }
+
+    @Override
+    public boolean is19() {
+        return is19;
     }
 
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
+    @Override
     public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitDRegxNode(this);
     }
@@ -116,22 +127,11 @@ public class DRegexpNode extends ListNode implements ILiteralNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (once && onceRegexp != null) return onceRegexp;
 
-        RubyString string = DStrNode.buildDynamicString(runtime, context, self, aBlock, this);
-
+        RubyString string = (RubyString) super.interpret(runtime, context, self, aBlock);
         RubyRegexp regexp = RubyRegexp.newDRegexp(runtime, string, options);
         
         if (once) setOnceRegexp(regexp);
 
         return regexp;
-    }
-
-    @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String definition = super.definition(runtime, context, self, aBlock);
-        if (definition == null && context.getRuntime().is1_9()) {
-            definition = "expression";
-        }
-
-        return definition;
     }
 }

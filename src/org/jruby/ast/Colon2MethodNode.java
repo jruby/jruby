@@ -6,7 +6,6 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;

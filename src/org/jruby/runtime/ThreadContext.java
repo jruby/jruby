@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.runtime.profile.IProfileData;
 import java.util.ArrayList;
 import org.jruby.runtime.profile.ProfileData;
 import java.util.HashMap;
@@ -64,7 +65,6 @@ import org.jruby.util.JavaNameMangler;
 public final class ThreadContext {
     public static ThreadContext newContext(Ruby runtime) {
         ThreadContext context = new ThreadContext(runtime);
-
         return context;
     }
     
@@ -94,7 +94,7 @@ public final class ThreadContext {
     private Frame[] frameStack = new Frame[INITIAL_FRAMES_SIZE];
     private int frameIndex = -1;
 
-    private Backtrace[] backtrace = new Backtrace[1000];
+    private Backtrace[] backtrace = new Backtrace[INITIAL_FRAMES_SIZE];
     private int backtraceIndex = -1;
 
     public static class Backtrace {
@@ -114,23 +114,17 @@ public final class ThreadContext {
         public Backtrace clone() {
             return new Backtrace(klass, method, filename, line);
         }
-        public void update(String klass, String method, ISourcePosition position) {
-            this.method = method;
-            if (position == ISourcePosition.INVALID_POSITION) {
-                // use dummy values; there's no need for a real position here anyway
-                this.filename = "dummy";
-                this.line = -1;
-            } else {
-                this.filename = position.getFile();
-                this.line = position.getLine();
-            }
-            this.klass = klass;
+        public static void update(Backtrace backtrace, String klass, String method, ISourcePosition position) {
+            backtrace.method = method;
+            backtrace.filename = position.getFile();
+            backtrace.line = position.getLine();
+            backtrace.klass = klass;
         }
-        public void update(String klass, String method, String file, int line) {
-            this.method = method;
-            this.filename = file;
-            this.line = line;
-            this.klass = klass;
+        public static void update(Backtrace backtrace, String klass, String method, String file, int line) {
+            backtrace.method = method;
+            backtrace.filename = file;
+            backtrace.line = line;
+            backtrace.klass = klass;
         }
         
         public String getFilename() {
@@ -179,15 +173,10 @@ public final class ThreadContext {
     private Continuation[] catchStack = EMPTY_CATCHTARGET_STACK;
     private int catchIndex = -1;
     
-    // File where current executing unit is being evaluated
-    private String file = "";
-    
-    // Line where current executing unit is being evaluated
-    private int line = 0;
-
-    // The profile data for this thread (TODO: don't create if we're not profiling)
-    private final ProfileData profileData = new ProfileData();
-
+    private boolean isProfiling = false;
+    // The flat profile data for this thread
+	private IProfileData profileData;
+	
     // In certain places, like grep, we don't use real frames for the
     // call blocks. This has the effect of not setting the backref in
     // the correct frame - this delta is activated to the place where
@@ -202,6 +191,9 @@ public final class ThreadContext {
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();
+        if (runtime.getInstanceConfig().isProfilingEntireRun())
+            startProfiling();
+
         this.runtimeCache = runtime.getRuntimeCache();
         
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
@@ -219,8 +211,8 @@ public final class ThreadContext {
         for (int i = 0; i < length2; i++) {
             stack2[i] = new Backtrace();
         }
-        pushBacktrace("", "", "", 0);
-        pushBacktrace("", "", "", 0);
+        ThreadContext.pushBacktrace(this, "", "", "", 0);
+        ThreadContext.pushBacktrace(this, "", "", "", 0);
     }
 
     @Override
@@ -475,10 +467,7 @@ public final class ThreadContext {
     }
         
     private void popFrameReal(Frame oldFrame) {
-        int index = frameIndex;
-        Frame frame = frameStack[index];
-        frameStack[index] = oldFrame;
-        frameIndex = index - 1;
+        frameStack[frameIndex--] = oldFrame;
     }
     
     public Frame getCurrentFrame() {
@@ -526,41 +515,41 @@ public final class ThreadContext {
 
     /////////////////// BACKTRACE ////////////////////
 
-    private void expandBacktraceIfNecessary() {
-        int newSize = backtrace.length * 2;
-        backtrace = fillNewBacktrace(new Backtrace[newSize], newSize);
+    private static void expandBacktraceIfNecessary(ThreadContext context) {
+        int newSize = context.backtrace.length * 2;
+        context.backtrace = fillNewBacktrace(context, new Backtrace[newSize], newSize);
     }
 
-    private Backtrace[] fillNewBacktrace(Backtrace[] newBacktrace, int newSize) {
-        System.arraycopy(backtrace, 0, newBacktrace, 0, backtrace.length);
+    private static Backtrace[] fillNewBacktrace(ThreadContext context, Backtrace[] newBacktrace, int newSize) {
+        System.arraycopy(context.backtrace, 0, newBacktrace, 0, context.backtrace.length);
 
-        for (int i = backtrace.length; i < newSize; i++) {
+        for (int i = context.backtrace.length; i < newSize; i++) {
             newBacktrace[i] = new Backtrace();
         }
 
         return newBacktrace;
     }
 
-    public void pushBacktrace(String klass, String method, ISourcePosition position) {
-        int index = ++this.backtraceIndex;
-        Backtrace[] stack = backtrace;
-        stack[index].update(klass, method, position);
+    public static void pushBacktrace(ThreadContext context, String klass, String method, ISourcePosition position) {
+        int index = ++context.backtraceIndex;
+        Backtrace[] stack = context.backtrace;
+        Backtrace.update(stack[index], klass, method, position);
         if (index + 1 == stack.length) {
-            expandBacktraceIfNecessary();
+            ThreadContext.expandBacktraceIfNecessary(context);
         }
     }
 
-    public void pushBacktrace(String klass, String method, String file, int line) {
-        int index = ++this.backtraceIndex;
-        Backtrace[] stack = backtrace;
-        stack[index].update(klass, method, file, line);
+    public static void pushBacktrace(ThreadContext context, String klass, String method, String file, int line) {
+        int index = ++context.backtraceIndex;
+        Backtrace[] stack = context.backtrace;
+        Backtrace.update(stack[index], klass, method, file, line);
         if (index + 1 == stack.length) {
-            expandBacktraceIfNecessary();
+            ThreadContext.expandBacktraceIfNecessary(context);
         }
     }
 
-    public void popBacktrace() {
-        backtraceIndex--;
+    public static void popBacktrace(ThreadContext context) {
+        context.backtraceIndex--;
     }
 
     /**
@@ -772,7 +761,6 @@ public final class ThreadContext {
                 String rubyName = runtime.getBoundMethods().get(classDotMethod);
                 // find first Ruby file+line
                 RubyStackTraceElement rubyElement = null;
-                int rubyIndex;
                 for (int j = i; j < trace.length; j++) {
                     rubyElement = trace[j];
                     if (!rubyElement.getFileName().endsWith(".java")) {
@@ -801,12 +789,18 @@ public final class ThreadContext {
     }
     
     public RubyStackTraceElement[] gatherCallerBacktrace(int level) {
+        Thread nativeThread = thread.getNativeThread();
+
+        // Future thread or otherwise unforthgiving thread impl.
+        if (nativeThread == null) return new RubyStackTraceElement[] {};
+
         Backtrace[] copy = new Backtrace[backtraceIndex + 1];
+
         System.arraycopy(backtrace, 0, copy, 0, backtraceIndex + 1);
         RubyStackTraceElement[] trace = gatherHybridBacktrace(
                 runtime,
                 copy,
-                Thread.currentThread().getStackTrace(),
+                nativeThread.getStackTrace(),
                 false);
 
         return trace;
@@ -1002,7 +996,8 @@ public final class ThreadContext {
                     element.getFileName().equals("-e") ||
                     // FIXME: Formalize jitted method structure so this isn't quite as hacky
                     element.getClassName().startsWith(JITCompiler.RUBY_JIT_PREFIX) ||
-                    element.getMethodName().contains("$RUBY$"))) {
+                    element.getMethodName().contains("$RUBY$") ||
+                    element.getMethodName().contains("__file__"))) {
                 if (element.getLineNumber() == -1) continue;
                 
                 String methodName = element.getMethodName();
@@ -1097,23 +1092,6 @@ public final class ThreadContext {
 
         RubyStackTraceElement[] rubyStackTrace = new RubyStackTraceElement[trace.size()];
         return (RubyStackTraceElement[])trace.toArray(rubyStackTrace);
-    }
-
-    public static IRubyObject renderBacktraceMRI(Ruby runtime, RubyStackTraceElement[] trace) {
-        if (trace == null) {
-            return runtime.getNil();
-        }
-        
-        RubyArray traceArray = RubyArray.newArray(runtime);
-
-        for (int i = 0; i < trace.length; i++) {
-            RubyStackTraceElement element = trace[i];
-
-            RubyString str = RubyString.newString(runtime, element.getFileName() + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'");
-            traceArray.append(str);
-        }
-
-        return traceArray;
     }
     
     public void preAdoptThread() {
@@ -1535,15 +1513,39 @@ public final class ThreadContext {
      *
      * @return the thread's profile data
      */
-    public ProfileData getProfileData() {
+    public IProfileData getProfileData() {
+        if (profileData == null)
+            profileData = new ProfileData(this);
         return profileData;
     }
 
+    private int currentMethodSerial = 0;
+    
     public int profileEnter(int nextMethod) {
-        return profileData.profileEnter(nextMethod);
+        int previousMethodSerial = currentMethodSerial;
+        currentMethodSerial = nextMethod;
+        if (isProfiling)
+            getProfileData().profileEnter(nextMethod);
+        return previousMethodSerial;
     }
 
-    public int profileExit(int nextMethod) {
-        return profileData.profileExit(nextMethod);
+    public int profileExit(int nextMethod, long startTime) {
+        int previousMethodSerial = currentMethodSerial;
+        currentMethodSerial = nextMethod;
+        if (isProfiling)
+            getProfileData().profileExit(nextMethod, startTime);
+        return previousMethodSerial;
+    }
+    
+    public void startProfiling() {
+        isProfiling = true;
+    }
+    
+    public void stopProfiling() {
+        isProfiling = false;
+    }
+    
+    public boolean isProfiling() {
+        return isProfiling;
     }
 }

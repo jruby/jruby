@@ -120,7 +120,7 @@ final class Native {
             try {
                 return new File(fileUrl.toURI());
             } catch (URISyntaxException e) {
-                throw new UnsatisfiedLinkError(e.getLocalizedMessage());
+                return new File(fileUrl.getPath());
             }
         } else if (fileUrl.getProtocol().equals("jar")) {
             return loadFromJar();

@@ -39,7 +39,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
-import static org.jruby.anno.FrameField.*;
 import org.jruby.util.JRubyObjectInputStream;
 
 public class JavaProxy extends RubyObject {
@@ -70,7 +69,7 @@ public class JavaProxy extends RubyObject {
         // this resulted in object being null after unmarshalling...
         if (object == null) {
             if (javaObject == null) {
-                throw getRuntime().newRuntimeError("Java wrapper with no contents: " + this);
+                throw getRuntime().newRuntimeError("Java wrapper with no contents: " + this.getMetaClass().getName());
             } else {
                 object = javaObject.getValue();
             }

@@ -1,1 +1,0 @@
-fails:String#each_char is unicode aware

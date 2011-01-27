@@ -38,11 +38,14 @@ class Ant
       load_from_ant
     end
 
-    # Explicitly add javac path to classpath
-    if ENV['JAVA_HOME'] && File.exist?(ENV['JAVA_HOME'])
-      const_set(:JAVA_HOME, ENV['JAVA_HOME'])
-      load_if_exist "#{JAVA_HOME}/lib/tools.jar"
-      load_if_exist "#{JAVA_HOME}/lib/classes.zip"
+    # Explicitly add javac path to classpath.
+    # 'java.home' usually contains the JRE home on Windows and Linux. We
+    # want the directory above that which contains lib/tools.jar.
+    java_home = ENV['JAVA_HOME'] || ENV_JAVA['java.home'].sub(/\/jre$/,'')
+    if java_home && File.exist?(java_home)
+      const_set(:JAVA_HOME, java_home)
+      load_if_exist "#{java_home}/lib/tools.jar"
+      load_if_exist "#{java_home}/lib/classes.zip"
     end
   end
 

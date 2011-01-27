@@ -35,7 +35,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.ffi.Factory;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;

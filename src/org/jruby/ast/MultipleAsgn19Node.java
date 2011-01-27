@@ -103,9 +103,8 @@ public class MultipleAsgn19Node extends AssignableNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject value = getValueNode().interpret(runtime, context, self, aBlock);
 
-        //assert !(value instanceof RubyArray)  : "Not an array";
         if (!(value instanceof RubyArray)) {
-            value = RubyArray.newArray(runtime, value);
+            value = ArgsUtil.convertToRubyArray(runtime, value, pre != null);
         }
 
         return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray) value);

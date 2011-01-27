@@ -81,6 +81,8 @@ STDLIB_FILES = %w[
   webrick
   webrick.rb
   xmlrpc
+  yaml.rb
+  yaml
 ]
 
 EXT_FILES = {
@@ -95,12 +97,8 @@ EXT_FILES = {
   'ext/psych/lib/psych.rb' => 'psych.rb',
   'ext/psych/lib/psych' => 'psych',
   'ext/ripper/lib/ripper.rb' => 'ripper.rb',
-  'ext/ripper/lib/ripper' => 'ripper'
+  'ext/ripper/lib/ripper' => 'ripper',
+  'ext/syck/lib/syck.rb' => 'syck.rb',
+  'ext/syck/lib/syck' => 'syck',
+  'ext/syck/lib/yaml' => 'yaml'
 }
-
-# yaml files go into src/builtin for jruby
-# disabled; need to reconcile 1.8 and 1.9 yaml
-#YAML_FILES = %w[
-#  yaml.rb
-#  yaml
-#]

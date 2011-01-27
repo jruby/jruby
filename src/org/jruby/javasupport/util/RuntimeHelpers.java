@@ -16,16 +16,22 @@ import org.jruby.RubyKernel;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.LiteralNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
 import org.jruby.ast.NodeType;
+import org.jruby.ast.OptArgNode;
+import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
@@ -179,6 +185,20 @@ public class RuntimeHelpers {
         return factory.getBlockCallback19Offline(closureMethod, file, line, classPath);
     }
 
+    public static String buildBlockDescriptor19(
+            String closureMethod,
+            int arity,
+            StaticScope scope,
+            String file,
+            int line,
+            boolean hasMultipleArgsHead,
+            NodeType argsNodeId,
+            String parameterList,
+            ASTInspector inspector) {
+        return buildBlockDescriptor(closureMethod, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, inspector) +
+                "," + parameterList;
+    }
+
     public static String buildBlockDescriptor(
             String closureMethod,
             int arity,
@@ -255,11 +275,11 @@ public class RuntimeHelpers {
         String[][] splitDesc = parseBlockDescriptor(descriptor);
         String[] firstSplit = splitDesc[0];
         String[] secondSplit = splitDesc[1];
-        return createCompiledBlockBody19(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), firstSplit[5], Integer.parseInt(firstSplit[6]), Boolean.valueOf(firstSplit[7]));
+        return createCompiledBlockBody19(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), firstSplit[5], Integer.parseInt(firstSplit[6]), Boolean.valueOf(firstSplit[7]), firstSplit[8]);
     }
 
     public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String closureMethod, int arity,
-            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light) {
+            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light, String parameterList) {
         StaticScope staticScope =
             new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
@@ -268,12 +288,12 @@ public class RuntimeHelpers {
             return CompiledBlockLight19.newCompiledBlockLight(
                     Arity.createArity(arity), staticScope,
                     createBlockCallback19(context.getRuntime(), scriptObject, closureMethod, file, line),
-                    hasMultipleArgsHead, argsNodeType);
+                    hasMultipleArgsHead, argsNodeType, parameterList.split(";"));
         } else {
             return CompiledBlock19.newCompiledBlock(
                     Arity.createArity(arity), staticScope,
                     createBlockCallback19(context.getRuntime(), scriptObject, closureMethod, file, line),
-                    hasMultipleArgsHead, argsNodeType);
+                    hasMultipleArgsHead, argsNodeType, parameterList.split(";"));
         }
     }
     
@@ -316,7 +336,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String name, String javaName, String scopeString,
-            int arity, String filename, int line, CallConfiguration callConfig) {
+            int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
         
@@ -331,7 +351,8 @@ public class RuntimeHelpers {
         DynamicMethod method = constructNormalMethod(
                 factory, javaName,
                 name, containingClass, new SimpleSourcePosition(filename, line), arity, scope, visibility, scriptObject,
-                callConfig);
+                callConfig,
+                parameterDesc);
         
         addInstanceMethod(containingClass, name, method, visibility,context, runtime);
         
@@ -339,7 +360,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String name, String javaName, String scopeString,
-            int arity, String filename, int line, CallConfiguration callConfig) {
+            int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
 
@@ -348,7 +369,10 @@ public class RuntimeHelpers {
         StaticScope scope = createScopeForClass(context, scopeString);
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
-        DynamicMethod method = constructSingletonMethod( factory, javaName, rubyClass, new SimpleSourcePosition(filename, line), arity, scope,scriptObject, callConfig);
+        DynamicMethod method = constructSingletonMethod(
+                factory, javaName, rubyClass,
+                new SimpleSourcePosition(filename, line), arity, scope,
+                scriptObject, callConfig, parameterDesc);
         
         rubyClass.addMethod(name, method);
         
@@ -1133,6 +1157,10 @@ public class RuntimeHelpers {
     public static RubyArray createSubarray(RubyArray input, int start) {
         return (RubyArray)input.subseqLight(start, input.size() - start);
     }
+
+    public static RubyArray createSubarray(RubyArray input, int start, int post) {
+        return (RubyArray)input.subseqLight(start, input.size() - post - start);
+    }
     
     public static RubyArray createSubarray(IRubyObject[] input, Ruby runtime, int start) {
         if (start >= input.length) {
@@ -1159,11 +1187,28 @@ public class RuntimeHelpers {
         }
     }
 
+    public static IRubyObject optElementOrNull(IRubyObject[] input, int element, int postCount) {
+        if (element + postCount >= input.length) {
+            return null;
+        } else {
+            return input[element];
+        }
+    }
+
     public static IRubyObject elementOrNil(IRubyObject[] input, int element, IRubyObject nil) {
         if (element >= input.length) {
             return nil;
         } else {
             return input[element];
+        }
+    }
+
+    public static IRubyObject postElementOrNil(IRubyObject[] input, int postCount, int postIndex, IRubyObject nil) {
+        int aryIndex = input.length - postCount + postIndex;
+        if (aryIndex >= input.length || aryIndex < 0) {
+            return nil;
+        } else {
+            return input[aryIndex];
         }
     }
     
@@ -1350,11 +1395,13 @@ public class RuntimeHelpers {
         return context.getRuntime().getNil();
     }
     
-    public static IRubyObject defineAlias(ThreadContext context, Object newNameArg, Object oldNameArg) {
+    public static IRubyObject defineAlias(ThreadContext context, IRubyObject self, Object newNameArg, Object oldNameArg) {
         Ruby runtime = context.getRuntime();
         RubyModule module = context.getRubyClass();
    
-        if (module == null) throw runtime.newTypeError("no class to make alias");
+        if (module == null || self instanceof RubyFixnum || self instanceof RubySymbol){
+            throw runtime.newTypeError("no class to make alias");
+        }
 
         String newName = (newNameArg instanceof String) ?
             (String) newNameArg : newNameArg.toString();
@@ -1619,7 +1666,19 @@ public class RuntimeHelpers {
         receiver.callMethod(context, "singleton_method_added", name);
     }
 
-    private static DynamicMethod constructNormalMethod( MethodFactory factory, String javaName, String name, RubyModule containingClass, ISourcePosition position, int arity, StaticScope scope, Visibility visibility, Object scriptObject, CallConfiguration callConfig) {
+    private static DynamicMethod constructNormalMethod(
+            MethodFactory factory,
+            String javaName,
+            String name,
+            RubyModule containingClass,
+            ISourcePosition position,
+            int arity,
+            StaticScope scope,
+            Visibility visibility,
+            Object scriptObject,
+            CallConfiguration callConfig,
+            String parameterDesc) {
+        
         DynamicMethod method;
 
         if (name.equals("initialize") || name.equals("initialize_copy") || visibility == Visibility.MODULE_FUNCTION) {
@@ -1627,19 +1686,65 @@ public class RuntimeHelpers {
         }
         
         if (RubyInstanceConfig.LAZYHANDLES_COMPILE) {
-            method = factory.getCompiledMethodLazily(containingClass, javaName, Arity.createArity(arity), visibility, scope, scriptObject, callConfig, position);
+            method = factory.getCompiledMethodLazily(
+                    containingClass,
+                    javaName,
+                    Arity.createArity(arity),
+                    visibility,
+                    scope,
+                    scriptObject,
+                    callConfig,
+                    position,
+                    parameterDesc);
         } else {
-            method = factory.getCompiledMethod(containingClass, javaName, Arity.createArity(arity), visibility, scope, scriptObject, callConfig, position);
+            method = factory.getCompiledMethod(
+                    containingClass,
+                    javaName,
+                    Arity.createArity(arity),
+                    visibility,
+                    scope,
+                    scriptObject,
+                    callConfig,
+                    position,
+                    parameterDesc);
         }
 
         return method;
     }
 
-    private static DynamicMethod constructSingletonMethod(MethodFactory factory, String javaName, RubyClass rubyClass, ISourcePosition position, int arity, StaticScope scope, Object scriptObject, CallConfiguration callConfig) {
+    private static DynamicMethod constructSingletonMethod(
+            MethodFactory factory,
+            String javaName,
+            RubyClass rubyClass,
+            ISourcePosition position,
+            int arity,
+            StaticScope scope,
+            Object scriptObject,
+            CallConfiguration callConfig,
+            String parameterDesc) {
+        
         if (RubyInstanceConfig.LAZYHANDLES_COMPILE) {
-            return factory.getCompiledMethodLazily(rubyClass, javaName, Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig, position);
+            return factory.getCompiledMethodLazily(
+                    rubyClass,
+                    javaName,
+                    Arity.createArity(arity),
+                    Visibility.PUBLIC,
+                    scope,
+                    scriptObject,
+                    callConfig,
+                    position,
+                    parameterDesc);
         } else {
-            return factory.getCompiledMethod(rubyClass, javaName, Arity.createArity(arity), Visibility.PUBLIC, scope, scriptObject, callConfig, position);
+            return factory.getCompiledMethod(
+                    rubyClass,
+                    javaName,
+                    Arity.createArity(arity),
+                    Visibility.PUBLIC,
+                    scope,
+                    scriptObject,
+                    callConfig,
+                    position,
+                    parameterDesc);
         }
     }
 
@@ -1770,10 +1875,58 @@ public class RuntimeHelpers {
             return array.getRuntime().getNil();
         }
     }
+
+    public static IRubyObject arrayPostOrNil(RubyArray array, int pre, int post, int index) {
+        if (pre + post < array.getLength()) {
+            return array.eltInternal(array.getLength() - post + index);
+        } else if (pre + index < array.getLength()) {
+            return array.eltInternal(pre + index);
+        } else {
+            return array.getRuntime().getNil();
+        }
+    }
+
+    public static IRubyObject arrayPostOrNilZero(RubyArray array, int pre, int post) {
+        if (pre + post < array.getLength()) {
+            return array.eltInternal(array.getLength() - post + 0);
+        } else if (pre + 0 < array.getLength()) {
+            return array.eltInternal(pre + 0);
+        } else {
+            return array.getRuntime().getNil();
+        }
+    }
+
+    public static IRubyObject arrayPostOrNilOne(RubyArray array, int pre, int post) {
+        if (pre + post < array.getLength()) {
+            return array.eltInternal(array.getLength() - post + 1);
+        } else if (pre + 1 < array.getLength()) {
+            return array.eltInternal(pre + 1);
+        } else {
+            return array.getRuntime().getNil();
+        }
+    }
+
+    public static IRubyObject arrayPostOrNilTwo(RubyArray array, int pre, int post) {
+        if (pre + post < array.getLength()) {
+            return array.eltInternal(array.getLength() - post + 2);
+        } else if (pre + 2 < array.getLength()) {
+            return array.eltInternal(pre + 2);
+        } else {
+            return array.getRuntime().getNil();
+        }
+    }
     
     public static RubyArray subarrayOrEmpty(RubyArray array, Ruby runtime, int index) {
         if (index < array.getLength()) {
             return createSubarray(array, index);
+        } else {
+            return RubyArray.newEmptyArray(runtime);
+        }
+    }
+
+    public static RubyArray subarrayOrEmpty(RubyArray array, Ruby runtime, int index, int post) {
+        if (index + post < array.getLength()) {
+            return createSubarray(array, index, post);
         } else {
             return RubyArray.newEmptyArray(runtime);
         }
@@ -2020,5 +2173,193 @@ public class RuntimeHelpers {
         return object instanceof RubyBasicObject ?
             ((RubyBasicObject)object).getMetaClass() :
             object.getMetaClass();
+    }
+
+    public static String rawBytesToString(byte[] bytes) {
+        // stuff bytes into chars
+        char[] chars = new char[bytes.length];
+        for (int i = 0; i < bytes.length; i++) chars[i] = (char)bytes[i];
+        return new String(chars);
+    }
+
+    public static byte[] stringToRawBytes(String string) {
+        char[] chars = string.toCharArray();
+        byte[] bytes = new byte[chars.length];
+        for (int i = 0; i < chars.length; i++) bytes[i] = (byte)chars[i];
+        return bytes;
+    }
+
+    public static String encodeCaptureOffsets(int[] scopeOffsets) {
+        char[] encoded = new char[scopeOffsets.length * 2];
+        for (int i = 0; i < scopeOffsets.length; i++) {
+            int offDepth = scopeOffsets[i];
+            char off = (char)(offDepth & 0xFFFF);
+            char depth = (char)(offDepth >> 16);
+            encoded[2 * i] = off;
+            encoded[2 * i + 1] = depth;
+        }
+        return new String(encoded);
+    }
+
+    public static int[] decodeCaptureOffsets(String encoded) {
+        char[] chars = encoded.toCharArray();
+        int[] scopeOffsets = new int[chars.length / 2];
+        for (int i = 0; i < scopeOffsets.length; i++) {
+            char off = chars[2 * i];
+            char depth = chars[2 * i + 1];
+            scopeOffsets[i] = (((int)depth) << 16) | (int)off;
+        }
+        return scopeOffsets;
+    }
+
+    public static IRubyObject match2AndUpdateScope(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
+        DynamicScope scope = context.getCurrentScope();
+        IRubyObject match = ((RubyRegexp)receiver).op_match(context, value);
+        updateScopeWithCaptures(context, scope, decodeCaptureOffsets(scopeOffsets), value);
+        return match;
+    }
+
+    public static void updateScopeWithCaptures(ThreadContext context, DynamicScope scope, int[] scopeOffsets, IRubyObject result) {
+        Ruby runtime = context.runtime;
+        if (result.isNil()) { // match2 directly calls match so we know we can count on result
+            IRubyObject nil = runtime.getNil();
+
+            for (int i = 0; i < scopeOffsets.length; i++) {
+                scope.setValue(nil, scopeOffsets[i], 0);
+            }
+        } else {
+            RubyMatchData matchData = (RubyMatchData)scope.getBackRef(runtime);
+            // FIXME: Mass assignment is possible since we know they are all locals in the same
+            //   scope that are also contiguous
+            IRubyObject[] namedValues = matchData.getNamedBackrefValues(runtime);
+
+            for (int i = 0; i < scopeOffsets.length; i++) {
+                scope.setValue(namedValues[i], scopeOffsets[i] & 0xffff, scopeOffsets[i] >> 16);
+            }
+        }
+    }
+
+    public static RubyArray argsPush(RubyArray first, IRubyObject second) {
+        return ((RubyArray)first.dup()).append(second);
+    }
+
+    public static RubyArray argsCat(IRubyObject first, IRubyObject second) {
+        Ruby runtime = first.getRuntime();
+        IRubyObject secondArgs;
+        if (runtime.is1_9()) {
+            secondArgs = RuntimeHelpers.splatValue19(second);
+        } else {
+            secondArgs = RuntimeHelpers.splatValue(second);
+        }
+
+        return ((RubyArray)RuntimeHelpers.ensureRubyArray(runtime, first).dup()).concat(secondArgs);
+    }
+
+    public static String encodeParameterList(ArgsNode argsNode) {
+        StringBuilder builder = new StringBuilder();
+        
+        boolean added = false;
+        if (argsNode.getPre() != null) {
+            for (Node preNode : argsNode.getPre().childNodes()) {
+                if (added) builder.append(';');
+                added = true;
+                if (preNode instanceof MultipleAsgn19Node) {
+                    builder.append("nil");
+                } else {
+                    builder.append("q").append(((ArgumentNode)preNode).getName());
+                }
+            }
+        }
+
+        if (argsNode.getOptArgs() != null) {
+            for (Node optNode : argsNode.getOptArgs().childNodes()) {
+                if (added) builder.append(';');
+                added = true;
+                builder.append("o");
+                if (optNode instanceof OptArgNode) {
+                    builder.append(((OptArgNode)optNode).getName());
+                } else if (optNode instanceof LocalAsgnNode) {
+                    builder.append(((LocalAsgnNode)optNode).getName());
+                } else if (optNode instanceof DAsgnNode) {
+                    builder.append(((DAsgnNode)optNode).getName());
+                }
+            }
+        }
+
+        if (argsNode.getRestArg() >= 0) {
+            if (added) builder.append(';');
+            added = true;
+            if (argsNode.getRestArgNode() instanceof UnnamedRestArgNode) {
+                if (((UnnamedRestArgNode) argsNode.getRestArgNode()).isStar()) builder.append("R");
+            } else {
+                builder.append("r").append(argsNode.getRestArgNode().getName());
+            }
+        }
+
+        if (argsNode.getPost() != null) {
+            for (Node postNode : argsNode.getPost().childNodes()) {
+                if (added) builder.append(';');
+                added = true;
+                if (postNode instanceof MultipleAsgn19Node) {
+                    builder.append("nil");
+                } else {
+                    builder.append("q").append(((ArgumentNode)postNode).getName());
+                }
+            }
+        }
+
+        if (argsNode.getBlock() != null) {
+            if (added) builder.append(';');
+            added = true;
+            builder.append("b").append(argsNode.getBlock().getName());
+        }
+
+        if (!added) builder.append("NONE");
+
+        return builder.toString();
+    }
+
+    public static RubyArray parameterListToParameters(Ruby runtime, String[] parameterList, boolean isLambda) {
+        RubyArray parms = RubyArray.newEmptyArray(runtime);
+
+        for (String param : parameterList) {
+            if (param.equals("NONE")) break;
+
+            RubyArray elem = RubyArray.newEmptyArray(runtime);
+            if (param.equals("nil")) {
+                // marker for masgn args (the parens in "a, b, (c, d)"
+                elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
+                parms.add(elem);
+                continue;
+            }
+
+            if (param.charAt(0) == 'q') {
+                // required/normal arg
+                elem.add(RubySymbol.newSymbol(runtime, isLambda ? "req" : "opt"));
+            } else if (param.charAt(0) == 'r') {
+                // named rest arg
+                elem.add(RubySymbol.newSymbol(runtime, "rest"));
+            } else if (param.charAt(0) == 'R') {
+                // unnamed rest arg (star)
+                elem.add(RubySymbol.newSymbol(runtime, "rest"));
+                parms.add(elem);
+                continue;
+            } else if (param.charAt(0) == 'o') {
+                // optional arg
+                elem.add(RubySymbol.newSymbol(runtime, "opt"));
+                if (param.length() == 1) {
+                    // no name; continue
+                    parms.add(elem);
+                    continue;
+                }
+            } else if (param.charAt(0) == 'b') {
+                // block arg
+                elem.add(RubySymbol.newSymbol(runtime, "block"));
+            }
+            elem.add(RubySymbol.newSymbol(runtime, param.substring(1)));
+            parms.add(elem);
+        }
+
+        return parms;
     }
 }

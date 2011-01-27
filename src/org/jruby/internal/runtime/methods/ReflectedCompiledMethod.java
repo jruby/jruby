@@ -38,7 +38,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -49,9 +48,9 @@ public class ReflectedCompiledMethod extends CompiledMethod {
     private final ISourcePosition position;
     
     public ReflectedCompiledMethod(RubyModule implementationClass, Arity arity,
-            Visibility visibility, StaticScope staticScope, Object scriptObject, Method method, CallConfiguration callConfig, ISourcePosition position) {
+            Visibility visibility, StaticScope staticScope, Object scriptObject, Method method, CallConfiguration callConfig, ISourcePosition position, String parameterDesc) {
         super();
-        init(implementationClass, arity, visibility, staticScope, scriptObject, callConfig);
+        init(implementationClass, arity, visibility, staticScope, scriptObject, callConfig, position, parameterDesc);
         
         this.method = method;
         this.position = position;

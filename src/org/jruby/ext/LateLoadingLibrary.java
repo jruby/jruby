@@ -30,7 +30,6 @@ package org.jruby.ext;
 
 import java.io.IOException;
 import org.jruby.Ruby;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 

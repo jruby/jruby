@@ -48,6 +48,7 @@ import org.jruby.runtime.load.Library;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.anno.JRubyModule;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -230,6 +231,9 @@ public class RbConfigLibrary implements Library {
         if (gemhome != null) setConfig(configHash, "default_gem_home", gemhome);
         if (gempath != null) setConfig(configHash, "default_gem_path", gempath);
         
+        setConfig(configHash, "joda-time.version", Constants.JODA_TIME_VERSION);
+        setConfig(configHash, "tzdata.version",    Constants.TZDATA_VERSION);
+        
         RubyHash mkmfHash = RubyHash.newHash(runtime);
         
 
@@ -365,7 +369,7 @@ public class RbConfigLibrary implements Library {
         IRubyObject ruby_install_name = configHash.op_aref(context, runtime.newString("ruby_install_name"));
         IRubyObject exeext            = configHash.op_aref(context, runtime.newString("EXEEXT"));
 
-        return runtime.getClass("File").callMethod("join", bindir, ruby_install_name.callMethod(context, "+", exeext));
+        return RuntimeHelpers.invoke(context, runtime.getClass("File"), "join", bindir, ruby_install_name.callMethod(context, "+", exeext));
     }
 
     private static String getRubyEnv(RubyHash envHash, String var, String default_value) {

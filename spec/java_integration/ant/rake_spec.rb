@@ -4,7 +4,9 @@ require 'rake'
 def import(*args); java_import(*args); end
 require 'ant/rake'
 
-describe Ant, "Rake helpers", :type => :ant do
+describe Ant, "Rake helpers" do
+  include Ant::RSpec::AntExampleGroup
+
   it "should set FileLists as task attributes by joining them with commas" do
     ant = Ant.new
     ant.property :name => "files", :value => FileList['*.*']
@@ -13,7 +15,9 @@ describe Ant, "Rake helpers", :type => :ant do
 
 end
 
-describe Ant, "Rake #ant_task", :type => :ant do
+describe Ant, "Rake #ant_task" do
+  include Ant::RSpec::AntExampleGroup
+
   before :each do
     @app = Rake.application
     Rake.application = Rake::Application.new

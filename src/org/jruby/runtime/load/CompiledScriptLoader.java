@@ -37,13 +37,13 @@ public class CompiledScriptLoader {
             ClassReader cr = new ClassReader(buf);
             String className = cr.getClassName().replace('/', '.');
 
-            Class clazz = clazz = oscl.defineClass(className, buf);
+            Class clazz = oscl.defineClass(className, buf);
 
             // if it's a compiled JRuby script, instantiate and run it
             if (Script.class.isAssignableFrom(clazz)) {
                 return (Script)clazz.newInstance();
             } else {
-                throw runtime.newLoadError("use `java_import' to load normal Java classes");
+                throw runtime.newLoadError("use `java_import' to load normal Java classes: "+className);
             }
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);

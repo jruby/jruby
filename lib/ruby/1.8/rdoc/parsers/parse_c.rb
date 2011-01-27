@@ -653,7 +653,7 @@ module RDoc
         
 #        meth_obj.params = params
         meth_obj.start_collecting_tokens
-        meth_obj.add_token(RubyToken::Token.new(1,1).set_text(body_text))
+        meth_obj.add_token(RDoc::RubyToken::Token.new(1,1).set_text(body_text))
         meth_obj.comment = mangle_comment(comment)
       when %r{((?>/\*.*?\*/\s*))^\s*\#\s*define\s+#{meth_name}\s+(\w+)}m
         comment = $1

@@ -35,16 +35,24 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * Simple Node that allows editor projects to keep position info in AST
- * (evaluation does not need this).
+ * Simple Node for named entities.  Things like the name of a method will make a node
+ * for the name.  Also local variables will make a ArgumentNode. In the case of a local
+ * variable we will also keep a list of it's location.
  */
 public class ArgumentNode extends Node implements INameNode {
     private String identifier;
+    private int location;
 
     public ArgumentNode(ISourcePosition position, String identifier) {
         super(position);
 
         this.identifier = identifier;
+    }
+
+    public ArgumentNode(ISourcePosition position, String identifier, int location) {
+        this(position, identifier);
+
+        this.location = location; // All variables should be depth 0 in this case
     }
 
     public NodeType getNodeType() {
@@ -53,6 +61,25 @@ public class ArgumentNode extends Node implements INameNode {
     
     public Object accept(NodeVisitor visitor) {
         throw new RuntimeException("ArgumentNode should never be evaluated");
+    }
+
+    /**
+     * How many scopes should we burrow down to until we need to set the block variable value.
+     *
+     * @return 0 for current scope, 1 for one down, ...
+     */
+    public int getDepth() {
+        return location >> 16;
+    }
+
+    /**
+     * Gets the index within the scope construct that actually holds the eval'd value
+     * of this local variable
+     *
+     * @return Returns an int offset into storage structure
+     */
+    public int getIndex() {
+        return location & 0xffff;
     }
     
     public String getName() {

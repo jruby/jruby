@@ -68,25 +68,31 @@ class TestLoad < Test::Unit::TestCase
   end
 
   def test_require_jar_should_make_its_scripts_accessible
-    $hello = nil
-    require 'test/jar_with_ruby_files'
-    require 'hello_from_jar'
-    assert "hi", $hello
+    assert_equal "hi", run_in_sub_runtime(%{
+      $hello = nil
+      require 'test/jar_with_ruby_files'
+      require 'hello_from_jar'
+      $hello
+    })
   end
 
   def test_require_nested_jar_should_make_its_scripts_accessible
-    $hello = nil
-    require 'test/jar_with_ruby_files_in_jar'
-    require 'jar_with_ruby_file'
-    require 'hello_from_nested_jar'
-    assert "hi from nested jar", $hello
+    assert_equal "hi from nested jar", run_in_sub_runtime(%{
+      $hello = nil
+      require 'test/jar_with_ruby_files_in_jar'
+      require 'jar_with_ruby_file'
+      require 'hello_from_nested_jar'
+      $hello
+    })
   end
 
   def test_require_nested_jar_enables_class_loading_from_that_jar
-    require 'test/jar_with_nested_classes_jar'
-    require 'jar_with_classes'
-    java_import "test.HelloThere"
-    assert HelloThere.new.message
+    assert_in_sub_runtime %{
+      require 'test/jar_with_nested_classes_jar'
+      require 'jar_with_classes'
+      java_import "test.HelloThere"
+      HelloThere.new.message
+    }
   end
 
   def call_extern_load_foo_bar(classpath = nil)
@@ -197,34 +203,40 @@ DEPS
 
   # JRUBY-3894
   def test_require_relative_from_jar_in_classpath
-    $CLASSPATH << File.join(
-      File.dirname(__FILE__), 'jar_with_relative_require1.jar')
-    require 'test/require_relative1'
-    assert $loaded_relative_foo
+    assert_in_sub_runtime %{
+      $CLASSPATH << File.join(
+        File.dirname('#{__FILE__}'), 'jar_with_relative_require1.jar')
+      require 'test/require_relative1'
+      $loaded_relative_foo
+    }
   end
 
   # JRUBY-4875
   def test_require_relative_from_jar_in_classpath_with_different_cwd
-    Dir.chdir("test") do
-      $CLASSPATH << File.join(File.dirname(__FILE__), 'jar_with_relative_require1.jar')
-      require 'test/require_relative1'
-      assert $loaded_relative_foo
-    end
+    assert_in_sub_runtime %{
+      Dir.chdir("test") do
+        $CLASSPATH << File.join(File.dirname('#{__FILE__}'), 'jar_with_relative_require1.jar')
+        require 'test/require_relative1'
+        $loaded_relative_foo
+      end
+    }
   end
 
   def test_loading_jar_with_dot_so
-    assert_nothing_raised {
+    assert_in_sub_runtime %{
       require 'test/jruby-3977.so.jar'
       load 'jruby-3977.rb'
-      assert $jruby3977
+      $jruby3977
     }
   end
 
   # JRUBY-5045
   def test_cwd_plus_dotdot_jar_loading
-    $hello = nil
-    require './test/../test/jar_with_ruby_files'
-    require 'hello_from_jar'
-    assert "hi", $hello
+    assert_equal "hi", run_in_sub_runtime(%{
+      $hello = nil
+      require './test/../test/jar_with_ruby_files'
+      require 'hello_from_jar'
+      $hello
+    })
   end
 end

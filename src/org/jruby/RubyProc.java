@@ -36,18 +36,11 @@ package org.jruby;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.ast.ArgsNoArgNode;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArgumentNode;
-import org.jruby.ast.BlockArgNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NodeType;
-import org.jruby.ast.OptArgNode;
 import org.jruby.exceptions.JumpException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
@@ -55,11 +48,9 @@ import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Interpreted19Block;
 import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
@@ -73,20 +64,20 @@ public class RubyProc extends RubyObject implements DataType {
     private Block.Type type;
     private ISourcePosition sourcePosition;
 
-    public RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
+    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
         super(runtime, rubyClass);
         
         this.type = type;
     }
 
-    public RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, ISourcePosition sourcePosition) {
+    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, ISourcePosition sourcePosition) {
         this(runtime, rubyClass, type);
         this.sourcePosition = sourcePosition;
     }
     
     private static ObjectAllocator PROC_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyProc instance = RubyProc.newProc(runtime, Block.Type.PROC);
+            RubyProc instance = new RubyProc(runtime, runtime.getProc(), Block.Type.PROC);
 
             instance.setMetaClass(klass);
 
@@ -112,8 +103,9 @@ public class RubyProc extends RubyObject implements DataType {
 
     // Proc class
 
+    @Deprecated
     public static RubyProc newProc(Ruby runtime, Block.Type type) {
-        return new RubyProc(runtime, runtime.getProc(), type);
+        throw runtime.newRuntimeError("deprecated RubyProc.newProc with no block; do not use");
     }
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
@@ -122,7 +114,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
-        proc.callInit(NULL_ARRAY, block);
+        proc.setup(block);
 
         return proc;
     }
@@ -145,14 +137,14 @@ public class RubyProc extends RubyObject implements DataType {
             return block.getProcObject();
         }
         
-        IRubyObject obj = ((RubyClass) recv).allocate();
+        RubyProc obj = (RubyProc)((RubyClass) recv).allocate();
+        obj.setup(block);
         
         obj.callMethod(context, "initialize", args, block);
         return obj;
     }
     
-    @JRubyMethod(visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, Block procBlock) {
+    private void setup(Block procBlock) {
         if (!procBlock.isGiven()) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
         }
@@ -179,14 +171,12 @@ public class RubyProc extends RubyObject implements DataType {
 
         block.type = type;
         block.setProcObject(this);
-        return this;
     }
     
     @JRubyMethod(name = "clone")
     @Override
     public IRubyObject rbClone() {
-    	RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), type);
-    	newProc.block = getBlock();
+    	RubyProc newProc = newProc(getRuntime(), block, type, sourcePosition);
     	// TODO: CLONE_SETUP here
     	return newProc;
     }
@@ -194,8 +184,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "dup")
     @Override
     public IRubyObject dup() {
-        RubyProc newProc = new RubyProc(getRuntime(), getRuntime().getProc(), type);
-        newProc.block = getBlock();
+    	RubyProc newProc = newProc(getRuntime(), block, type, sourcePosition);
         return newProc;
     }
     
@@ -361,78 +350,14 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "parameters", compat = RUBY1_9)
     public IRubyObject parameters(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        RubyArray parms = RubyArray.newEmptyArray(runtime);
-        ArgsNode args;
         BlockBody body = this.getBlock().getBody();
 
-        if (!(body instanceof Interpreted19Block)) {
-            if (body instanceof MethodBlock) {
-                MethodBlock methodBlock = (MethodBlock)body;
-                return methodBlock.getMethod().parameters(context);
-            }
-            return parms;
+        if (body instanceof MethodBlock) {
+            MethodBlock methodBlock = (MethodBlock)body;
+            return methodBlock.getMethod().parameters(context);
         }
 
-        // argument names are easily accessible from interpreter
-        RubyArray elem = RubyArray.newEmptyArray(runtime);
-        args = ((Interpreted19Block) this.getBlock().getBody()).getArgs();
-
-        // required parameters
-        List<Node> children = new ArrayList();
-        if (args.getPreCount() > 0) children.addAll(args.getPre().childNodes());
-        if (args.getPostCount() > 0) children.addAll(args.getPost().childNodes());
-
-        Iterator iter = children.iterator();
-        while (iter.hasNext()) {
-            Node node = (Node) iter.next();
-            elem = RubyArray.newEmptyArray(runtime);
-            elem.add(RubySymbol.newSymbol(runtime, this.isLambda() ? "req" : "opt"));
-            if (node instanceof ArgumentNode) {
-                elem.add(RubySymbol.newSymbol(runtime, ((ArgumentNode) node).getName()));
-            }
-            parms.add(elem);
-        }
-
-        // optional parameters
-        if (args.getOptArgs() != null) {
-             children = args.getOptArgs().childNodes();
-            if (! children.isEmpty()) {
-                iter = children.iterator();
-                while (iter.hasNext()) {
-                    Node node = (Node) iter.next();
-                    elem = RubyArray.newEmptyArray(runtime);
-                    elem.add(RubySymbol.newSymbol(runtime, "opt"));
-                    if (node instanceof OptArgNode) {
-                        elem.add(RubySymbol.newSymbol(runtime, ((OptArgNode) node).getName()));
-                    }
-                    parms.add(elem);
-                }
-            }
-        }
-
-        if (args instanceof ArgsNoArgNode) {
-            elem = RubyArray.newEmptyArray(runtime);
-            elem.add(RubySymbol.newSymbol(runtime, "rest"));
-            parms.add(elem);
-        } else {
-            ArgumentNode rest = args.getRestArgNode();
-            if (rest != null) {
-                elem = RubyArray.newEmptyArray(runtime);
-                elem.add(RubySymbol.newSymbol(runtime, "rest"));
-                elem.add(RubySymbol.newSymbol(runtime, rest.getName()));
-                parms.add(elem);
-            }
-        }
-
-        BlockArgNode blockArg = args.getBlock();
-        if (blockArg != null) {
-            elem = RubyArray.newEmptyArray(runtime);
-            elem.add(RubySymbol.newSymbol(runtime, "block"));
-            elem.add(RubySymbol.newSymbol(runtime, blockArg.getName()));
-            parms.add(elem);
-        }
-        
-       return parms;
+        return RuntimeHelpers.parameterListToParameters(runtime, body.getParameterList(), isLambda());
     }
 
     @JRubyMethod(name = "lambda?", compat = RUBY1_9)
@@ -443,10 +368,7 @@ public class RubyProc extends RubyObject implements DataType {
     private boolean isLambda() {
         return type.equals(Block.Type.LAMBDA);
     }
-
-    private boolean isNormal() {
-        return type.equals(Block.Type.NORMAL);
-    }
+    
     private boolean isProc() {
         return type.equals(Block.Type.PROC);
     }

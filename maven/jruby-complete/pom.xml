@@ -4,14 +4,14 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>shared</artifactId>
-    <version>1.6.0.dev</version>
+    <version>1.6.0.RC1</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-complete</artifactId>
   <packaging>jar</packaging>
-  <version>1.6.0.dev</version>
+  <version>1.6.0.RC1</version>
   <name>JRuby Complete</name>
 
   <dependencies>
@@ -24,37 +24,37 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>1.1.4</version>
+      <version>1.1.5</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
-      <version>3.2</version>
+      <version>3.3.1</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-commons</artifactId>
-      <version>3.2</version>
+      <version>3.3.1</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-util</artifactId>
-      <version>3.2</version>
+      <version>3.3.1</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-analysis</artifactId>
-      <version>3.2</version>
+      <version>3.3.1</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-tree</artifactId>
-      <version>3.2</version>
+      <version>3.3.1</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -78,7 +78,7 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>bytelist</artifactId>
-      <version>1.0.6</version>
+      <version>1.0.8</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -90,13 +90,13 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.4</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jaffl</artifactId>
-      <version>0.5.5</version>
+      <version>0.5.6</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

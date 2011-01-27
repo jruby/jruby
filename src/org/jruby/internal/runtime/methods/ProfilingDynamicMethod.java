@@ -37,107 +37,120 @@ import org.jruby.runtime.builtin.IRubyObject;
  * A DynamicMethod wrapper that performs timed profiling for each call.
  */
 public class ProfilingDynamicMethod extends DelegatingDynamicMethod {
+    final int serialNumber;
+
     public ProfilingDynamicMethod(DynamicMethod delegate) {
         super(delegate);
+        serialNumber = (int)delegate.getSerialNumber();
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        int previousSerial = context.profileEnter((int)getSerialNumber());
+        long start = System.nanoTime();
+        int previousSerial = context.profileEnter(serialNumber);
         try {
             return delegate.call(context, self, clazz, name);
         } finally {
-            context.profileExit(previousSerial);
+            context.profileExit(previousSerial, start);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        int previousSerial = context.profileEnter((int)getSerialNumber());
+        long start = System.nanoTime();
+        int previousSerial = context.profileEnter(serialNumber);
         try {
             return delegate.call(context, self, clazz, name, arg0);
         } finally {
-            context.profileExit(previousSerial);
+            context.profileExit(previousSerial, start);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        int previousSerial = context.profileEnter((int)getSerialNumber());
+        long start = System.nanoTime();
+        int previousSerial = context.profileEnter(serialNumber);
         try {
             return delegate.call(context, self, clazz, name, arg0, arg1);
         } finally {
-            context.profileExit(previousSerial);
+            context.profileExit(previousSerial, start);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        int previousSerial = context.profileEnter((int)getSerialNumber());
+        long start = System.nanoTime();
+        int previousSerial = context.profileEnter(serialNumber);
         try {
             return delegate.call(context, self, clazz, name, arg0, arg1, arg2);
         } finally {
-            context.profileExit(previousSerial);
+            context.profileExit(previousSerial, start);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        int previousSerial = context.profileEnter((int)getSerialNumber());
+        long start = System.nanoTime();
+        int previousSerial = context.profileEnter(serialNumber);
         try {
             return delegate.call(context, self, clazz, name, args);
         } finally {
-            context.profileExit(previousSerial);
+            context.profileExit(previousSerial, start);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        int previousSerial = context.profileEnter((int)getSerialNumber());
+        long start = System.nanoTime();
+        int previousSerial = context.profileEnter(serialNumber);
         try {
             return delegate.call(context, self, clazz, name, block);
         } finally {
-            context.profileExit(previousSerial);
+            context.profileExit(previousSerial, start);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        int previousSerial = context.profileEnter((int)getSerialNumber());
+        long start = System.nanoTime();
+        int previousSerial = context.profileEnter(serialNumber);
         try {
             return delegate.call(context, self, clazz, name, arg0, block);
         } finally {
-            context.profileExit(previousSerial);
+            context.profileExit(previousSerial, start);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        int previousSerial = context.profileEnter((int)getSerialNumber());
+        long start = System.nanoTime();
+        int previousSerial = context.profileEnter(serialNumber);
         try {
             return delegate.call(context, self, clazz, name, arg0, arg1, block);
         } finally {
-            context.profileExit(previousSerial);
+            context.profileExit(previousSerial, start);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        int previousSerial = context.profileEnter((int)getSerialNumber());
+        long start = System.nanoTime();
+        int previousSerial = context.profileEnter(serialNumber);
         try {
             return delegate.call(context, self, clazz, name, arg0, arg1, arg2, block);
         } finally {
-            context.profileExit(previousSerial);
+            context.profileExit(previousSerial, start);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        int previousSerial = context.profileEnter((int)getSerialNumber());
+        long start = System.nanoTime();
+        int previousSerial = context.profileEnter(serialNumber);
         try {
             return delegate.call(context, self, clazz, name, args, block);
         } finally {
-            context.profileExit(previousSerial);
+            context.profileExit(previousSerial, start);
         }
     }
 

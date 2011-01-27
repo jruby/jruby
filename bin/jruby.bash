@@ -78,13 +78,15 @@ for opt in ${JRUBY_OPTS[@]}; do
 done
 JRUBY_OPTS=${JRUBY_OPTS_TEMP}
 
-if [ -z "$JAVA_HOME" ] ; then
-  JAVA_CMD='java'
-else
-  if $cygwin; then
-    JAVA_CMD="`cygpath -u "$JAVA_HOME"`/bin/java"
+if [ -z "$JAVACMD" ] ; then
+  if [ -z "$JAVA_HOME" ] ; then
+    JAVACMD='java'
   else
-    JAVA_CMD="$JAVA_HOME/bin/java"
+    if $cygwin; then
+      JAVACMD="`cygpath -u "$JAVA_HOME"`/bin/java"
+    else
+      JAVACMD="$JAVA_HOME/bin/java"
+    fi
   fi
 fi
 
@@ -93,7 +95,7 @@ if [ -z "$JAVA_MEM" ] ; then
 fi
 
 if [ -z "$JAVA_STACK" ] ; then
-  JAVA_STACK=-Xss1024k
+  JAVA_STACK=-Xss2048k
 fi
 
 # process JAVA_OPTS
@@ -119,7 +121,7 @@ JAVA_OPTS=$JAVA_OPTS_TEMP
 
 # If you're seeing odd exceptions, you may have a bad JVM install.
 # Uncomment this and report the version to the JRuby team along with error.
-#$JAVA_CMD -version
+#$JAVACMD -version
 
 JRUBY_SHELL=/bin/sh
 
@@ -183,6 +185,7 @@ JAVA_ENCODING=""
 
 declare -a java_args
 declare -a ruby_args
+mode=""
 
 java_class=org.jruby.Main
 
@@ -202,11 +205,11 @@ do
         elif [ "${val:0:4}" = "-Xss" ]; then
             JAVA_STACK=$val
         elif [ "${val}" = "" ]; then
-            $JAVA_CMD -help
+            $JAVACMD -help
             echo "(Prepend -J in front of these options when using 'jruby' command)" 
             exit
         elif [ "${val}" = "-X" ]; then
-            $JAVA_CMD -X
+            $JAVACMD -X
             echo "(Prepend -J in front of these options when using 'jruby' command)" 
             exit
         elif [ "${val}" = "-classpath" ]; then
@@ -226,6 +229,13 @@ do
             java_args=("${java_args[@]}" "${1:2}")
         fi
         ;;
+     # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
+     -X*)
+	val=${1:2}
+	if expr "$val" : '.*[.]' > /dev/null; then
+	  java_args=("${java_args[@]}" "-Djruby.${val}")
+	fi
+	;;
      # Match switches that take an argument
      -C|-e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
      # Match same switches with argument stuck together
@@ -240,12 +250,12 @@ do
      # Run under JDB
      --jdb)
         if [ -z "$JAVA_HOME" ] ; then
-          JAVA_CMD='jdb'
+          JAVACMD='jdb'
         else
           if $cygwin; then
-            JAVA_CMD="`cygpath -u "$JAVA_HOME"`/bin/jdb"
+            JAVACMD="`cygpath -u "$JAVA_HOME"`/bin/jdb"
           else
-            JAVA_CMD="$JAVA_HOME/bin/jdb"
+            JAVACMD="$JAVA_HOME/bin/jdb"
           fi
         fi 
         java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.8:.")
@@ -265,6 +275,10 @@ do
      --ng)
         # Use native Nailgun client to toss commands to server
         process_special_opts "--ng" ;;
+     # Special pass --1.9 along so when processing cygwin we don't think it is
+     # a file (this is fairly gross that we special case this -- my bash-fu
+     # is weak)
+     --1.9) mode=--1.9 ;;
      # Abort processing on the double dash
      --) break ;;
      # Other opts go to ruby
@@ -306,7 +320,7 @@ JFFI_OPTS="-Djffi.boot.library.path=$JFFI_BOOT"
 if $cygwin; then
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
-  
+
   if [[ ( "${1:0:1}" = "/" ) && ( ( -f "$1" ) || ( -d "$1" )) ]]; then
     win_arg=`cygpath -w "$1"`
     shift
@@ -335,7 +349,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
       echo "Running with instrumented profiler"
   fi
 
-  "$JAVA_CMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
+  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
@@ -358,11 +372,11 @@ if [ "$VERIFY_JRUBY" != "" ]; then
 else
   if $cygwin; then
     # exec doed not work correctly with cygwin bash
-    "$JAVA_CMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class "$@"
+      $java_class $mode "$@"
 
     # Record the exit status immediately, or it will be overridden.
     JRUBY_STATUS=$?
@@ -371,11 +385,11 @@ else
 
     exit $JRUBY_STATUS
   else
-    exec "$JAVA_CMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class "$@"
+      $java_class $mode "$@"
   fi
 fi
 fi

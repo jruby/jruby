@@ -2,8 +2,10 @@ require 'jruby'
 require 'java'
 require 'test/minirunit'
 
+is19 = RUBY_VERSION =~ /1\.9/
+
 StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
-ASTCompiler = org.jruby.compiler.ASTCompiler
+ASTCompiler = is19 ? org.jruby.compiler.ASTCompiler19 : org.jruby.compiler.ASTCompiler
 ASTInspector = org.jruby.compiler.ASTInspector
 Block = org.jruby.runtime.Block
 IRubyObject = org.jruby.runtime.builtin.IRubyObject
@@ -76,6 +78,13 @@ test_no_exception {
   compile_to_class(asgnFixnumCode);
 }
 
+if is19
+  str8bit = '"\300"'
+  str8bit_result = compile_and_run(str8bit)
+  test_equal "\300", str8bit_result
+  test_equal Encoding::ASCII_8BIT, str8bit_result.encoding
+end
+
 # clone this since we're generating classnames based on object_id above
 test_equal(5, compile_and_run(asgnFixnumCode.clone))
 test_equal(5.5, compile_and_run(asgnFloatCode))
@@ -86,7 +95,11 @@ test_equal(/foo/, compile_and_run(regexpLiteral))
 test_equal(nil, compile_and_run('$2'))
 test_equal(0, compile_and_run(match1))
 test_equal(0, compile_and_run(match2))
-test_equal(false, compile_and_run(match3))
+if is19 # API difference
+  test_equal(nil, compile_and_run(match3))
+else
+  test_equal(false, compile_and_run(match3))
+end
 
 def foo(arg)
   arg + '2'
@@ -199,21 +212,26 @@ test_no_exception {
   test_equal(nil, compile_and_run(whileNoBody))
 }
 
-test_no_exception {
-  # fcall with empty block
-  test_equal(nil, compile_and_run("def myfcall; yield; end; myfcall {}"))
-  # call with empty block
-  test_equal(nil, compile_and_run("def mycall; yield; end; public :mycall; self.mycall {}"))
-}
+# fcall with empty block
+test_equal(nil, compile_and_run("def myfcall; yield; end; myfcall {}"))
+# call with empty block
+test_equal(nil, compile_and_run("def mycall; yield; end; public :mycall; self.mycall {}"))
 
 # blocks with some basic single arguments
 test_no_exception {
-  test_equal(1, compile_and_run("a = 0; [1].each {|a|}; a"))
+  if is19
+    test_equal(0, compile_and_run("a = 0; [1].each {|a|}; a"))
+  else
+    test_equal(1, compile_and_run("a = 0; [1].each {|a|}; a"))
+  end
   test_equal(1, compile_and_run("a = 0; [1].each {|x| a = x}; a"))
+}
+
+test_no_exception {
   test_equal(1, compile_and_run("[1].each {|@a|}; @a"))
   # make sure incoming array isn't treated as args array
   test_equal([1], compile_and_run("[[1]].each {|@a|}; @a"))
-}
+} unless is19 # unsupported syntax in 1.9
 
 # blocks with tail (rest) arguments
 test_no_exception {
@@ -222,8 +240,10 @@ test_no_exception {
   test_no_exception { compile_and_run("1.times {|x,*|}")}
 }
 
-compile_and_run("1.times {|@@a|}")
-compile_and_run("a = []; 1.times {|a[0]|}")
+unless is19 # unsupported syntax in 1.9
+  compile_and_run("1.times {|@@a|}") 
+  compile_and_run("a = []; 1.times {|a[0]|}")
+end
 
 class_string = <<EOS
 class CompiledClass1
@@ -267,6 +287,7 @@ def foo(a, b = 1)
   [a, b]
 end
 EOS
+
 test_no_exception {
   compile_and_run(optargs_method)
 }
@@ -277,6 +298,12 @@ test_exception { compile_and_run("foo(1, 2, 3)") }
 # opt args that cause other vars to be assigned, as in def (a=(b=1))
 compile_and_run("def foo(a=(b=1)); end")
 compile_and_run("def foo(a, b=(c=1)); end")
+
+# new post args and masgn args in method signatures
+if is19
+  result = compile_and_run("def foo(a, (b, *, c), d, *e, f, (g, *h, i), j); [a,b,c,d,e,f,g,h,i,j]; end; foo(1,[2,3,4],5,6,7,8,[9,10,11],12)")
+  test_equal([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12], result)
+end
 
 class CoercibleToArray
   def to_ary
@@ -298,6 +325,10 @@ test_equal([1, nil, nil], compile_and_run("a, (b, c) = 1; [a, b, c]"))
 test_equal([1, 2, nil], compile_and_run("a, (b, c) = 1, 2; [a, b, c]"))
 test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, [2, 3]; [a, b, c]"))
 test_equal([1, 2, 3], compile_and_run("a, (b, c) = 1, CoercibleToArray.new; [a, b, c]"))
+if is19
+  result = compile_and_run("a, (b, *, c), d, *e, f, (g, *h, i), j = 1,[2,3,4],5,6,7,8,[9,10,11],12; [a,b,c,d,e,f,g,h,i,j]")
+  test_equal([1, 2, 4, 5, [6, 7], 8, 9, [10], 11, 12], result)
+end
 
 # until loops
 test_equal(3, compile_and_run("a = 1; until a == 3; a += 1; end; a"))
@@ -542,8 +573,40 @@ test_equal false, false.self_check
 
 # JRUBY-4757 and JRUBY-2621: can't compile large array/hash
 large_array = (1..10000).to_a.inspect
-large_hash = large_array
+large_hash = large_array.clone
 large_hash.gsub!('[', '{')
 large_hash.gsub!(']', '}')
 test_equal(eval(large_array), compile_and_run(large_array))
-test_equal(eval(large_hash), compile_and_run(large_hash))
+test_equal(eval(large_hash), compile_and_run(large_hash)) unless is19 # invalid syntax in 1.9
+
+if is19 # block arg spreading cases
+  test_equal([1], compile_and_run("def foo; a = [1]; yield a; end; foo {|a| a}"))
+  test_equal([1], compile_and_run("x = nil; [[1]].each {|a| x = a}; x"))
+  test_equal([1,2], compile_and_run("def foo; yield [1, 2]; end; foo {|x, y| [x, y]}"))
+end
+
+# non-expr case statement with return with if modified with call
+# broke in 1.9 compiler due to null "else" node pushing a nil when non-expr
+test_equal(3, compile_and_run("def foo; case 0; when 1; return 2 if self.nil?; end; return 3; end; foo"))
+
+if is19 # named groups with capture
+  test_equal([nil,'ell', 'o', 'ell'], compile_and_run("
+  def foo
+    ary = []
+    a = nil
+    b = nil
+    1.times {
+      /(?<b>ell)(?<c>o)/ =~ 'hello'
+      ary << a
+      ary << b
+      ary << c
+    }
+    ary << b
+    ary
+  end
+  foo"))
+end
+
+if is19 # chained argscat and argspush
+  test_equal([1,2,3,1,2,4,5], compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]"))
+end

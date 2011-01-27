@@ -1,22 +1,16 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.jruby.ast;
 
 import java.util.List;
-import org.jruby.lexer.yacc.ISourcePosition;
 
-/**
- *
- * @author enebo
+/*
+ * Duby type extension for methods
  */
 public class TypedArgumentNode extends ArgumentNode {
     private Node typeNode;
     
-    public TypedArgumentNode(ISourcePosition position, String identifier, Node typeNode) {
-        super(position, identifier);
+    public TypedArgumentNode(ArgumentNode argNode,  Node typeNode) {
+        // getIndex should be ok since this is all called at a method local scope.
+        super(argNode.getPosition(), argNode.getName(), argNode.getIndex());
         
         this.typeNode = typeNode;
     }
@@ -25,6 +19,7 @@ public class TypedArgumentNode extends ArgumentNode {
         return typeNode;
     }
     
+    @Override
     public List<Node> childNodes() {
         return createList(typeNode);
     }

@@ -36,15 +36,16 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * The rest argument for a method (def foo(a, *b, c)).
  */
 public class RestArgNode extends ArgumentNode implements INameNode {
-    // index of variable for this arg
-    protected int index;
-
     public RestArgNode(ISourcePosition position, String name, int index) {
-        super(position, name);
-
-        this.index = index;
+        super(position, name, index);
     }
 
+    // 1.9 only - lvar assign logic returns an Argument node
+    public RestArgNode(ArgumentNode argNode) {
+        this(argNode.getPosition(), argNode.getName(), argNode.getIndex());
+    }
+
+    @Override
     public NodeType getNodeType() {
         return NodeType.RESTARG;
     }
@@ -52,9 +53,5 @@ public class RestArgNode extends ArgumentNode implements INameNode {
     @Override
     public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitRestArgNode(this);
-    }
-
-    public int getIndex() {
-        return index;
     }
 }

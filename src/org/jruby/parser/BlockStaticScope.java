@@ -37,6 +37,9 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class BlockStaticScope extends StaticScope {
     private static final long serialVersionUID = -3882063260379968149L;
 
+    // Is this block and argument scope of a define_method (for the purposes of zsuper).
+    private boolean isArgumentScope = false;
+
     public BlockStaticScope(StaticScope parentScope) {
         super(parentScope, new String[0]);
     }
@@ -54,6 +57,16 @@ public class BlockStaticScope extends StaticScope {
         if (slot >= 0) return (depth << 16) | slot;
         
         return enclosingScope.isDefined(name, depth + 1);
+    }
+
+    @Override
+    public boolean isArgumentScope() {
+        return isArgumentScope;
+    }
+
+    @Override
+    public void makeArgumentScope() {
+        this.isArgumentScope = true;
     }
     
     /**

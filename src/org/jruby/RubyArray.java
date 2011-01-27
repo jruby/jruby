@@ -117,7 +117,11 @@ public class RubyArray extends RubyObject implements List {
     }
 
     private final void concurrentModification() {
-        throw getRuntime().newConcurrencyError("Detected invalid array contents due to unsynchronized modifications with concurrent users");
+        concurrentModification(getRuntime());
+    }
+
+    private static void concurrentModification(Ruby runtime) {
+        throw runtime.newConcurrencyError("Detected invalid array contents due to unsynchronized modifications with concurrent users");
     }
 
     /** rb_ary_s_create
@@ -644,17 +648,15 @@ public class RubyArray extends RubyObject implements List {
         int myBegin = this.begin;
         int end = myBegin + realLength;
         IRubyObject[] values = this.values;
-        
-        for (int i = myBegin; i < end; i++) {
-            final IRubyObject value;
-            try {
-                value = values[i];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                concurrentModification();
-                continue;
+        try {
+            for (int i = myBegin; i < end; i++) {
+                final IRubyObject value;
+                    value = values[i];
+                if (equalInternal(context, value, item)) return true;
             }
-            if (equalInternal(context, value, item)) return true;
-    	}
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
+        }
         
         return false;
     }
@@ -671,16 +673,15 @@ public class RubyArray extends RubyObject implements List {
             runtime.registerInspecting(this);
             int myBegin = this.begin;
             int h = realLength;
-            for (int i = myBegin; i < myBegin + realLength; i++) {
-                h = (h << 1) | (h < 0 ? 1 : 0);
-                final IRubyObject value;
-                try {
-                    value = values[i];
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    concurrentModification();
-                    continue;
+            try {
+                for (int i = myBegin; i < myBegin + realLength; i++) {
+                    h = (h << 1) | (h < 0 ? 1 : 0);
+                    final IRubyObject value;
+                        value = values[i];
+                    h ^= RubyNumeric.num2long(value.callMethod(context, "hash"));
                 }
-                h ^= RubyNumeric.num2long(value.callMethod(context, "hash"));
+            } catch (ArrayIndexOutOfBoundsException e) {
+                concurrentModification();
             }
             return runtime.newFixnum(h);
         } finally {
@@ -700,16 +701,15 @@ public class RubyArray extends RubyObject implements List {
                     if(recur) {
                         h ^= RubyNumeric.num2long(getRuntime().getArray().callMethod(context, "hash"));
                     } else {
-                        for(int i = begin; i < begin + realLength; i++) {
-                            h = (h << 1) | (h < 0 ? 1 : 0);
-                            final IRubyObject value;
-                            try {
-                                value = values[i];
-                            } catch (ArrayIndexOutOfBoundsException e) {
-                                concurrentModification();
-                                continue;
+                        try {
+                            for(int i = begin; i < begin + realLength; i++) {
+                                h = (h << 1) | (h < 0 ? 1 : 0);
+                                final IRubyObject value;
+                                    value = values[i];
+                                h ^= RubyNumeric.num2long(value.callMethod(context, "hash"));
                             }
-                            h ^= RubyNumeric.num2long(value.callMethod(context, "hash"));
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                            concurrentModification();
                         }
                     }
                     return getRuntime().newFixnum(h);
@@ -1058,21 +1058,25 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = getRuntime();
         int elen = -1;
         int end = begin + alen;
-        for (int i = begin; i < end; i++) {
-            tmp = elt(i).convertToArray();
-            if (elen < 0) {
-                elen = tmp.realLength;
-                result = new RubyArray(runtime, elen);
-                for (int j = 0; j < elen; j++) {
-                    result.store(j, new RubyArray(runtime, alen));
+        try {
+            for (int i = begin; i < end; i++) {
+                tmp = elt(i).convertToArray();
+                if (elen < 0) {
+                    elen = tmp.realLength;
+                    result = new RubyArray(runtime, elen);
+                    for (int j = 0; j < elen; j++) {
+                        result.store(j, new RubyArray(runtime, alen));
+                    }
+                } else if (elen != tmp.realLength) {
+                    throw runtime.newIndexError("element size differs (" + tmp.realLength
+                            + " should be " + elen + ")");
                 }
-            } else if (elen != tmp.realLength) {
-                throw runtime.newIndexError("element size differs (" + tmp.realLength
-                        + " should be " + elen + ")");
+                for (int j = 0; j < elen; j++) {
+                    ((RubyArray) result.elt(j)).store(i - begin, tmp.elt(j));
+                }
             }
-            for (int j = 0; j < elen; j++) {
-                ((RubyArray) result.elt(j)).store(i - begin, tmp.elt(j));
-            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
         return result;
     }
@@ -1083,26 +1087,30 @@ public class RubyArray extends RubyObject implements List {
     private final IRubyObject values_at(long olen, IRubyObject[] args) {
         RubyArray result = new RubyArray(getRuntime(), args.length);
 
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof RubyFixnum) {
-                result.append(entry(((RubyFixnum)args[i]).getLongValue()));
-                continue;
-            }
-
-            long beglen[];
-            if (!(args[i] instanceof RubyRange)) {
-            } else if ((beglen = ((RubyRange) args[i]).begLen(olen, 0)) == null) {
-                continue;
-            } else {
-                int beg = (int) beglen[0];
-                int len = (int) beglen[1];
-                int end = begin + len;
-                for (int j = begin; j < end; j++) {
-                    result.append(entry(j + beg));
+        try {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] instanceof RubyFixnum) {
+                    result.append(entry(((RubyFixnum)args[i]).getLongValue()));
+                    continue;
                 }
-                continue;
+
+                long beglen[];
+                if (!(args[i] instanceof RubyRange)) {
+                } else if ((beglen = ((RubyRange) args[i]).begLen(olen, 0)) == null) {
+                    continue;
+                } else {
+                    int beg = (int) beglen[0];
+                    int len = (int) beglen[1];
+                    int end = begin + len;
+                    for (int j = begin; j < end; j++) {
+                        result.append(entry(j + beg));
+                    }
+                    continue;
+                }
+                result.append(entry(RubyNumeric.num2long(args[i])));
             }
-            result.append(entry(RubyNumeric.num2long(args[i])));
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
 
         RuntimeHelpers.fillNil(result.values, result.realLength, result.values.length, getRuntime());
@@ -1461,6 +1469,7 @@ public class RubyArray extends RubyObject implements List {
 
     @JRubyMethod(name = "[]=", compat = RUBY1_9)
     public IRubyObject aset19(IRubyObject arg0, IRubyObject arg1) {
+        modifyCheck();
         if (arg0 instanceof RubyFixnum) {
             store(((RubyFixnum)arg0).getLongValue(), arg1);
         } else if (arg0 instanceof RubyRange) {
@@ -1486,6 +1495,7 @@ public class RubyArray extends RubyObject implements List {
 
     @JRubyMethod(name = "[]=", compat = RUBY1_9)
     public IRubyObject aset19(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        modifyCheck();
         splice(RubyNumeric.num2long(arg0), RubyNumeric.num2long(arg1), arg2, true);
         return arg2;
     }
@@ -1524,18 +1534,25 @@ public class RubyArray extends RubyObject implements List {
         ByteList buffer = new ByteList();
         buffer.append('[');
         boolean tainted = isTaint();
+        boolean untrust = isUntrusted();
 
-        for (int i = 0; i < realLength; i++) {
-            if (i > 0) buffer.append(',').append(' ');
+        try {
+            for (int i = 0; i < realLength; i++) {
+                if (i > 0) buffer.append(',').append(' ');
 
-            RubyString str = inspect(context, values[begin + i]);
-            if (str.isTaint()) tainted = true;
-            buffer.append(str.getByteList());
+                RubyString str = inspect(context, values[begin + i]);
+                if (str.isTaint()) tainted = true;
+                if (str.isUntrusted()) untrust = true;
+                buffer.append(str.getByteList());
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
         buffer.append(']');
 
         RubyString str = getRuntime().newString(buffer);
         if (tainted) str.setTaint(true);
+        if (untrust) str.setUntrusted(true);
 
         return str;
     }
@@ -1644,8 +1661,12 @@ public class RubyArray extends RubyObject implements List {
         if (!block.isGiven()) {
             throw context.getRuntime().newLocalJumpErrorNoBlock();
         }
-        for (int i = 0; i < realLength; i++) {
-            block.yield(context, values[begin + i]);
+        try {
+            for (int i = 0; i < realLength; i++) {
+                block.yield(context, values[begin + i]);
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
         return this;
     }
@@ -1720,9 +1741,13 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject reverseEach(ThreadContext context, Block block) {
         int len = realLength;
 
-        while(len-- > 0) {
-            block.yield(context, values[begin + len]);
-            if (realLength < len) len = realLength;
+        try {
+            while(len-- > 0) {
+                block.yield(context, values[begin + len]);
+                if (realLength < len) len = realLength;
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
 
         return this;
@@ -1761,16 +1786,15 @@ public class RubyArray extends RubyObject implements List {
         boolean untrusted = isUntrusted() || sep.isUntrusted();
 
         int len = 1;
-        for (int i = begin; i < begin + realLength; i++) {            
-            IRubyObject value;
-            try {
-                value = values[i];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                concurrentModification();
-                return RubyString.newEmptyString(runtime);
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                IRubyObject value;
+                    value = values[i];
+                IRubyObject tmp = value.checkStringType();
+                len += tmp.isNil() ? 10 : ((RubyString) tmp).getByteList().length();
             }
-            IRubyObject tmp = value.checkStringType();
-            len += tmp.isNil() ? 10 : ((RubyString) tmp).getByteList().length();
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
 
         ByteList sepBytes = null;
@@ -1780,31 +1804,31 @@ public class RubyArray extends RubyObject implements List {
         }
 
         ByteList buf = new ByteList(len);
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject tmp;
-            try {
-                tmp = values[begin + i];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                concurrentModification();
-                return RubyString.newEmptyString(runtime);
-            }
-            if (!(tmp instanceof RubyString)) {
-                if (tmp instanceof RubyArray) {
-                    if (tmp == this || runtime.isInspecting(tmp)) {
-                        tmp = runtime.newString("[...]");
+        try {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject tmp;
+                    tmp = values[begin + i];
+                if (!(tmp instanceof RubyString)) {
+                    if (tmp instanceof RubyArray) {
+                        if (tmp == this || runtime.isInspecting(tmp)) {
+                            tmp = runtime.newString("[...]");
+                        } else {
+                            tmp = inspectJoin(context, (RubyArray)tmp, sep);
+                        }
                     } else {
-                        tmp = inspectJoin(context, (RubyArray)tmp, sep);
+                        tmp = RubyString.objAsString(context, tmp);
                     }
-                } else {
-                    tmp = RubyString.objAsString(context, tmp);
                 }
+
+                if (i > 0 && sepBytes != null) buf.append(sepBytes);
+
+                buf.append(tmp.asString().getByteList());
+                if (tmp.isTaint()) taint = true;
+                if (tmp.isUntrusted()) untrusted = true;
             }
-
-            if (i > 0 && sepBytes != null) buf.append(sepBytes);
-
-            buf.append(tmp.asString().getByteList());
-            if (tmp.isTaint()) taint = true;
-            if (tmp.isUntrusted()) untrusted = true;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
+            return RubyString.newEmptyString(runtime);
         }
 
         RubyString result = runtime.newString(buf); 
@@ -1822,96 +1846,96 @@ public class RubyArray extends RubyObject implements List {
     private boolean[] join0(ThreadContext context, ByteList sep, int max, ByteList result) {
         boolean t = false;
         boolean u = false;
-        for(int i = begin; i < max; i++) {
-            IRubyObject val;
-            try {
-                val = values[i];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                concurrentModification();
-                return new boolean[] {t,u};
-            }
+        try {
+            for(int i = begin; i < max; i++) {
+                IRubyObject val;
+                    val = values[i];
 
-            if(i > begin && sep != null) {
-                result.append(sep);
+                if(i > begin && sep != null) {
+                    result.append(sep);
+                }
+
+                result.append(((RubyString)val).getByteList());
+                if(val.isTaint()) {
+                    t = true;
+                }
+                if(val.isUntrusted()) {
+                    u = true;
+                }
             }
-            
-            result.append(((RubyString)val).getByteList());
-            if(val.isTaint()) {
-                t = true;
-            }
-            if(val.isUntrusted()) {
-                u = true;
-            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
+            return new boolean[] {t,u};
         }
         return new boolean[]{t,u};
     }
 
     private void join1(final ThreadContext context, IRubyObject obj, final ByteList sep, int i, final ByteList result) {
-        for(; i < begin + realLength; i++) {
-            if(i > begin && sep != null) {
-                result.append(sep);
-            }
-
-            IRubyObject val;
-            try {
-                val = values[i];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                concurrentModification();
-                return;
-            }
-
-            if(val instanceof RubyString) {
-                result.append(((RubyString)val).getByteList());
-            } else if(val instanceof RubyArray) {
-                obj = val;
-                if(val == this) {
-                    throw getRuntime().newArgumentError("recursive array join");
-                } else {
-                    final RubyArray ary = (RubyArray)val;
-                    final IRubyObject outobj = obj;
-                    getRuntime().execRecursive(new Ruby.RecursiveFunction() {
-                            public IRubyObject call(IRubyObject obj, boolean recur) {
-                                if(recur) {
-                                    throw getRuntime().newArgumentError("recursive array join");
-                                } else {
-                                    ((RubyArray)ary).join1(context, outobj, sep, 0, result);
-                                }
-                                return getRuntime().getNil();
-                            }
-                        }, obj);
+        try {
+            for(; i < begin + realLength; i++) {
+                if(i > begin && sep != null) {
+                    result.append(sep);
                 }
-            } else {
-                IRubyObject tmp = val.checkStringType19();
-                if(!tmp.isNil()) {
-                    val = tmp;
+
+                IRubyObject val;
+                    val = values[i];
+
+                if(val instanceof RubyString) {
                     result.append(((RubyString)val).getByteList());
-                } else {
-                    tmp = TypeConverter.convertToTypeWithCheck(val, getRuntime().getArray(), "to_a");
-                    if(!tmp.isNil()) {
-                        obj = val;
-                        val = tmp;
-                        if(val == this) {
-                            throw getRuntime().newArgumentError("recursive array join");
-                        } else {
-                            final RubyArray ary = (RubyArray)val;
-                            final IRubyObject outobj = obj;
-                            getRuntime().execRecursive(new Ruby.RecursiveFunction() {
-                                    public IRubyObject call(IRubyObject obj, boolean recur) {
-                                        if(recur) {
-                                            throw getRuntime().newArgumentError("recursive array join");
-                                        } else {
-                                            ((RubyArray)ary).join1(context, outobj, sep, 0, result);
-                                        }
-                                        return getRuntime().getNil();
-                                    }
-                                }, obj);
-                        }
+                } else if(val instanceof RubyArray) {
+                    obj = val;
+                    if(val == this) {
+                        throw getRuntime().newArgumentError("recursive array join");
                     } else {
-                        val = RubyString.objAsString(context, val);
+                        final RubyArray ary = (RubyArray)val;
+                        final IRubyObject outobj = obj;
+                        getRuntime().execRecursive(new Ruby.RecursiveFunction() {
+                                public IRubyObject call(IRubyObject obj, boolean recur) {
+                                    if(recur) {
+                                        throw getRuntime().newArgumentError("recursive array join");
+                                    } else {
+                                        ((RubyArray)ary).join1(context, outobj, sep, 0, result);
+                                    }
+                                    return getRuntime().getNil();
+                                }
+                            }, obj);
+                    }
+                } else {
+                    IRubyObject tmp = val.checkStringType19();
+                    if(!tmp.isNil()) {
+                        val = tmp;
                         result.append(((RubyString)val).getByteList());
+                    } else {
+                        tmp = TypeConverter.convertToTypeWithCheck(val, getRuntime().getArray(), "to_a");
+                        if(!tmp.isNil()) {
+                            obj = val;
+                            val = tmp;
+                            if(val == this) {
+                                throw getRuntime().newArgumentError("recursive array join");
+                            } else {
+                                final RubyArray ary = (RubyArray)val;
+                                final IRubyObject outobj = obj;
+                                getRuntime().execRecursive(new Ruby.RecursiveFunction() {
+                                        public IRubyObject call(IRubyObject obj, boolean recur) {
+                                            if(recur) {
+                                                throw getRuntime().newArgumentError("recursive array join");
+                                            } else {
+                                                ((RubyArray)ary).join1(context, outobj, sep, 0, result);
+                                            }
+                                            return getRuntime().getNil();
+                                        }
+                                    }, obj);
+                            }
+                        } else {
+                            val = RubyString.objAsString(context, val);
+                            result.append(((RubyString)val).getByteList());
+                        }
                     }
                 }
             }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
+            return;
         }
     }
 
@@ -1933,26 +1957,26 @@ public class RubyArray extends RubyObject implements List {
             len += sepBytes.getRealSize() * (realLength - 1);
         }
 
-        for (int i = begin; i < begin + realLength; i++) {            
-            IRubyObject val;
-            try {
-                val = values[i];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                concurrentModification();
-                return RubyString.newEmptyString(runtime);
-            }
-            IRubyObject tmp = val.checkStringType19();
-            if(tmp.isNil() || tmp != val) {
-                ByteList buf = new ByteList(len + ((begin + realLength) - i) * 10);
-                boolean[] tu = join0(context, sepBytes, i, buf);
-                join1(context, this, sepBytes, i, buf);
-                RubyString result = runtime.newString(buf); 
-                if (taint || tu[0]) result.setTaint(true);
-                if (untrusted || tu[1]) result.untrust(context);
-                return result;
-            }
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                IRubyObject val;
+                    val = values[i];
+                IRubyObject tmp = val.checkStringType19();
+                if(tmp.isNil() || tmp != val) {
+                    ByteList buf = new ByteList(len + ((begin + realLength) - i) * 10);
+                    boolean[] tu = join0(context, sepBytes, i, buf);
+                    join1(context, this, sepBytes, i, buf);
+                    RubyString result = runtime.newString(buf);
+                    if (taint || tu[0]) result.setTaint(true);
+                    if (untrusted || tu[1]) result.untrust(context);
+                    return result;
+                }
 
-            len += ((RubyString) tmp).getByteList().length();
+                len += ((RubyString) tmp).getByteList().length();
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
+            return RubyString.newEmptyString(runtime);
         }
 
         ByteList buf = new ByteList(len);
@@ -2043,10 +2067,14 @@ public class RubyArray extends RubyObject implements List {
             return runtime.getFalse();
         }
 
-        for (int i = 0; i < realLength; i++) {
-            if (!RecursiveComparator.compare(context, method, elt(i), ary.elt(i), seen).isTrue()) {
-                return runtime.getFalse();
+        try {
+            for (int i = 0; i < realLength; i++) {
+                if (!RecursiveComparator.compare(context, method, elt(i), ary.elt(i), seen).isTrue()) {
+                    return runtime.getFalse();
+                }
             }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
 
         return runtime.getTrue();
@@ -2071,12 +2099,16 @@ public class RubyArray extends RubyObject implements List {
         int t = p;
         int end = p + realLength;
 
-        while (t < end) {
-            if (values[t].isNil()) {
-                t++;
-            } else {
-                values[p++] = values[t++];
+        try {
+            while (t < end) {
+                if (values[t].isNil()) {
+                    t++;
+                } else {
+                    values[p++] = values[t++];
+                }
             }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
 
         p -= begin;
@@ -2258,8 +2290,12 @@ public class RubyArray extends RubyObject implements List {
      */
     public IRubyObject index(ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.getRuntime();
-        for (int i = begin; i < begin + realLength; i++) {
-            if (equalInternal(context, values[i], obj)) return runtime.newFixnum(i - begin);            
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                if (equalInternal(context, values[i], obj)) return runtime.newFixnum(i - begin);
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
 
         return runtime.getNil();
@@ -2276,8 +2312,12 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "index");
 
-        for (int i = begin; i < begin + realLength; i++) {
-            if (block.yield(context, values[i]).isTrue()) return runtime.newFixnum(i - begin);
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                if (block.yield(context, values[i]).isTrue()) return runtime.newFixnum(i - begin);
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
 
         return runtime.getNil();
@@ -2290,12 +2330,16 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = context.getRuntime();
         int i = realLength;
 
-        while (i-- > 0) {
-            if (i > realLength) {
-                i = realLength;
-                continue;
+        try {
+            while (i-- > 0) {
+                if (i > realLength) {
+                    i = realLength;
+                    continue;
+                }
+                if (equalInternal(context, values[begin + i], obj)) return runtime.newFixnum(i);
             }
-            if (equalInternal(context, values[begin + i], obj)) return runtime.newFixnum(i);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
 
         return runtime.getNil();
@@ -2314,12 +2358,16 @@ public class RubyArray extends RubyObject implements List {
 
         int i = realLength;
 
-        while (i-- > 0) {
-            if (i > realLength) {
-                i = realLength;
-                continue;
+        try {
+            while (i-- > 0) {
+                if (i >= realLength) {
+                    i = realLength;
+                    continue;
+                }
+                if (block.yield(context, values[begin + i]).isTrue()) return runtime.newFixnum(i);
             }
-            if (block.yield(context, values[begin + i]).isTrue()) return runtime.newFixnum(i);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
 
         return runtime.getNil();
@@ -2334,8 +2382,12 @@ public class RubyArray extends RubyObject implements List {
 
         RubyArray ary = new RubyArray(getRuntime(), args.length);
 
-        for (int i = 0; i < args.length; i++) {
-            ary.append(aref(args[i]));
+        try {
+            for (int i = 0; i < args.length; i++) {
+                ary.append(aref(args[i]));
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            concurrentModification();
         }
 
         return ary;
@@ -2408,8 +2460,12 @@ public class RubyArray extends RubyObject implements List {
 
         IRubyObject[] arr = new IRubyObject[realLength];
 
-        for (int i = 0; i < realLength; i++) {
-            arr[i] = block.yield(context, values[i + begin]);
+        try {
+            for (int i = 0; i < realLength; i++) {
+                arr[i] = block.yield(context, values[i + begin]);
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         return new RubyArray(runtime, arr);
@@ -2426,9 +2482,15 @@ public class RubyArray extends RubyObject implements List {
     public RubyArray collectBang(ThreadContext context, Block block) {
         if (!block.isGiven()) throw context.getRuntime().newLocalJumpErrorNoBlock();
         modify();
-        for (int i = 0, len = realLength; i < len; i++) {
-            store(i, block.yield(context, values[begin + i]));
+
+        try {
+            for (int i = 0, len = realLength; i < len; i++) {
+                store(i, block.yield(context, values[begin + i]));
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
+        
         return this;
     }
 
@@ -2455,10 +2517,14 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = context.getRuntime();
         RubyArray result = new RubyArray(runtime, realLength);
 
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject value = values[begin + i];
+        try {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject value = values[begin + i];
 
-            if (block.yield(context, value).isTrue()) result.append(value);
+                if (block.yield(context, value).isTrue()) result.append(value);
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         RuntimeHelpers.fillNil(result.values, result.realLength, result.values.length, runtime);
@@ -2479,15 +2545,20 @@ public class RubyArray extends RubyObject implements List {
 
         int j = 0;
         IRubyObject[] aux = new IRubyObject[values.length];
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject value = values[begin + i];
-            if (!block.yield(context, value).isTrue()) {
-                continue;
+
+        try {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject value = values[begin + i];
+                if (!block.yield(context, value).isTrue()) {
+                    continue;
+                }
+                if (i != j) {
+                    aux[begin + j] = value;
+                }
+                j++;
             }
-            if (i != j) {
-                aux[begin + j] = value;
-            }
-            j++;
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         if (realLength == j) {
@@ -2518,11 +2589,15 @@ public class RubyArray extends RubyObject implements List {
         int i2 = 0;
 
         Ruby runtime = context.getRuntime();
-        for (int i1 = 0; i1 < realLength; i1++) {
-            IRubyObject e = values[begin + i1];
-            if (equalInternal(context, e, item)) continue;
-            if (i1 != i2) store(i2, e);
-            i2++;
+        try {
+            for (int i1 = 0; i1 < realLength; i1++) {
+                IRubyObject e = values[begin + i1];
+                if (equalInternal(context, e, item)) continue;
+                if (i1 != i2) store(i2, e);
+                i2++;
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         if (realLength == i2) {
@@ -2602,11 +2677,15 @@ public class RubyArray extends RubyObject implements List {
         int i2 = 0;
         modify();
 
-        for (int i1 = 0; i1 < realLength; i1++) {
-            IRubyObject v = values[begin + i1];
-            if (block.yield(context, v).isTrue()) continue;
-            if (i1 != i2) store(i2, v);
-            i2++;
+        try {
+            for (int i1 = 0; i1 < realLength; i1++) {
+                IRubyObject v = values[begin + i1];
+                if (block.yield(context, v).isTrue()) continue;
+                if (i1 != i2) store(i2, v);
+                i2++;
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         if (realLength == i2) return context.getRuntime().getNil();
 
@@ -2652,25 +2731,33 @@ public class RubyArray extends RubyObject implements List {
         args = RubyEnumerable.zipCommonConvert(runtime, args, "to_ary");
 
         if (block.isGiven()) {
+            try {
+                for (int i = 0; i < realLength; i++) {
+                    IRubyObject[] tmp = new IRubyObject[args.length + 1];
+                    tmp[0] = values[begin + i];
+                    for (int j = 0; j < args.length; j++) {
+                        tmp[j + 1] = ((RubyArray) args[j]).elt(i);
+                    }
+                    block.yield(context, newArrayNoCopyLight(runtime, tmp));
+                }
+                return runtime.getNil();
+            } catch (ArrayIndexOutOfBoundsException aioob) {
+                concurrentModification();
+            }
+        }
+
+        IRubyObject[] result = new IRubyObject[realLength];
+        try {
             for (int i = 0; i < realLength; i++) {
                 IRubyObject[] tmp = new IRubyObject[args.length + 1];
                 tmp[0] = values[begin + i];
                 for (int j = 0; j < args.length; j++) {
                     tmp[j + 1] = ((RubyArray) args[j]).elt(i);
                 }
-                block.yield(context, newArrayNoCopyLight(runtime, tmp));
+                result[i] = newArrayNoCopyLight(runtime, tmp);
             }
-            return runtime.getNil();
-        }
-
-        IRubyObject[] result = new IRubyObject[realLength];
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject[] tmp = new IRubyObject[args.length + 1];
-            tmp[0] = values[begin + i];
-            for (int j = 0; j < args.length; j++) {
-                tmp[j + 1] = ((RubyArray) args[j]).elt(i);
-            }
-            result[i] = newArrayNoCopyLight(runtime, tmp);
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         return newArrayNoCopy(runtime, result);
     }
@@ -2801,12 +2888,16 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject assoc(ThreadContext context, IRubyObject key) {
         Ruby runtime = context.getRuntime();
 
-        for (int i = begin; i < begin + realLength; i++) {
-            IRubyObject v = values[i];
-            if (v instanceof RubyArray) {
-                RubyArray arr = (RubyArray)v;
-                if (arr.realLength > 0 && equalInternal(context, arr.values[arr.begin], key)) return arr;
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                IRubyObject v = values[i];
+                if (v instanceof RubyArray) {
+                    RubyArray arr = (RubyArray)v;
+                    if (arr.realLength > 0 && equalInternal(context, arr.values[arr.begin], key)) return arr;
+                }
             }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         return runtime.getNil();
@@ -2819,12 +2910,16 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject rassoc(ThreadContext context, IRubyObject value) {
         Ruby runtime = context.getRuntime();
 
-        for (int i = begin; i < begin + realLength; i++) {
-            IRubyObject v = values[i];
-            if (v instanceof RubyArray) {
-                RubyArray arr = (RubyArray)v;
-                if (arr.realLength > 1 && equalInternal(context, arr.values[arr.begin + 1], value)) return arr;
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                IRubyObject v = values[i];
+                if (v instanceof RubyArray) {
+                    RubyArray arr = (RubyArray)v;
+                    if (arr.realLength > 1 && equalInternal(context, arr.values[arr.begin + 1], value)) return arr;
+                }
             }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         return runtime.getNil();
@@ -2840,28 +2935,32 @@ public class RubyArray extends RubyObject implements List {
 
         int i = 0;
 
-        while (true) {
-            IRubyObject tmp;
-            while (i < ary.realLength) {
-                IRubyObject elt = ary.values[ary.begin + i++];
-                tmp = elt.checkArrayType();
-                if (tmp.isNil() || (level >= 0 && stack.realLength / 2 >= level)) {
-                    result.append(elt);
-                } else {
-                    modified = true;
-                    if (memo.get(tmp) != null) throw runtime.newArgumentError("tried to flatten recursive array");
-                    memo.put(tmp, NEVER);
-                    stack.append(ary);
-                    stack.append(RubyFixnum.newFixnum(runtime, i));
-                    ary = (RubyArray)tmp;
-                    i = 0;
+        try {
+            while (true) {
+                IRubyObject tmp;
+                while (i < ary.realLength) {
+                    IRubyObject elt = ary.values[ary.begin + i++];
+                    tmp = elt.checkArrayType();
+                    if (tmp.isNil() || (level >= 0 && stack.realLength / 2 >= level)) {
+                        result.append(elt);
+                    } else {
+                        modified = true;
+                        if (memo.get(tmp) != null) throw runtime.newArgumentError("tried to flatten recursive array");
+                        memo.put(tmp, NEVER);
+                        stack.append(ary);
+                        stack.append(RubyFixnum.newFixnum(runtime, i));
+                        ary = (RubyArray)tmp;
+                        i = 0;
+                    }
                 }
+                if (stack.realLength == 0) break;
+                memo.remove(ary);
+                tmp = stack.pop(context);
+                i = (int)((RubyFixnum)tmp).getLongValue();
+                ary = (RubyArray)stack.pop(context);
             }
-            if (stack.realLength == 0) break;
-            memo.remove(ary);
-            tmp = stack.pop(context);
-            i = (int)((RubyFixnum)tmp).getLongValue();
-            ary = (RubyArray)stack.pop(context);
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         return modified;
     }
@@ -2959,8 +3058,12 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject count(ThreadContext context, Block block) {
         if (block.isGiven()) {
             int n = 0;
-            for (int i = 0; i < realLength; i++) {
-                if (block.yield(context, values[begin + i]).isTrue()) n++;
+            try {
+                for (int i = 0; i < realLength; i++) {
+                    if (block.yield(context, values[begin + i]).isTrue()) n++;
+                }
+            } catch (ArrayIndexOutOfBoundsException aioob) {
+                concurrentModification();
             }
             return RubyFixnum.newFixnum(context.getRuntime(), n);
         } else {
@@ -2973,8 +3076,12 @@ public class RubyArray extends RubyObject implements List {
         if (block.isGiven()) context.getRuntime().getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
 
         int n = 0;
-        for (int i = 0; i < realLength; i++) {
-            if (equalInternal(context, values[begin + i], obj)) n++;
+        try {
+            for (int i = 0; i < realLength; i++) {
+                if (equalInternal(context, values[begin + i], obj)) n++;
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         return RubyFixnum.newFixnum(context.getRuntime(), n);
     }
@@ -2986,8 +3093,12 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject nitems() {
         int n = 0;
 
-        for (int i = begin; i < begin + realLength; i++) {
-            if (!values[i].isNil()) n++;
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                if (!values[i].isNil()) n++;
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         
         return getRuntime().newFixnum(n);
@@ -3127,9 +3238,13 @@ public class RubyArray extends RubyObject implements List {
         if (realLength == hash.size()) return context.getRuntime().getNil();
 
         int j = 0;
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject v = elt(i);
-            if (hash.fastDelete(v)) store(j++, v);
+        try {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject v = elt(i);
+                if (hash.fastDelete(v)) store(j++, v);
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         realLength = j;
         return this;
@@ -3164,9 +3279,13 @@ public class RubyArray extends RubyObject implements List {
         RubyArray result = new RubyArray(context.getRuntime(), getMetaClass(), hash.size()); 
 
         int j = 0;
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject v = elt(i);
-            if (hash.fastDelete(v)) result.values[j++] = v;
+        try {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject v = elt(i);
+                if (hash.fastDelete(v)) result.values[j++] = v;
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         result.realLength = j;
         return result;
@@ -3176,7 +3295,6 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject uniq19(ThreadContext context, Block block) {
         if (!block.isGiven()) return uniq(context);
         RubyHash hash = makeHash(context, block);
-        if (realLength == hash.size()) return context.getRuntime().getNil();
 
         final RubyArray result = new RubyArray(context.getRuntime(), getMetaClass(), hash.size());
         hash.visitAll(new RubyHash.Visitor() {
@@ -3197,9 +3315,13 @@ public class RubyArray extends RubyObject implements List {
         RubyArray ary3 = new RubyArray(getRuntime(), ARRAY_DEFAULT_SIZE);
 
         int myBegin = this.begin;
-        for (int i = myBegin; i < myBegin + realLength; i++) {
-            if (hash.fastARef(values[i]) != null) continue;
-            ary3.append(elt(i - myBegin));
+        try {
+            for (int i = myBegin; i < myBegin + realLength; i++) {
+                if (hash.fastARef(values[i]) != null) continue;
+                ary3.append(elt(i - myBegin));
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         RuntimeHelpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
 
@@ -3215,9 +3337,13 @@ public class RubyArray extends RubyObject implements List {
         RubyHash hash = ary2.makeHash();
         RubyArray ary3 = new RubyArray(getRuntime(), realLength < ary2.realLength ? realLength : ary2.realLength);
 
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject v = elt(i);
-            if (hash.fastDelete(v)) ary3.append(v);
+        try {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject v = elt(i);
+                if (hash.fastDelete(v)) ary3.append(v);
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         RuntimeHelpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
 
@@ -3234,13 +3360,17 @@ public class RubyArray extends RubyObject implements List {
 
         RubyArray ary3 = new RubyArray(getRuntime(), realLength + ary2.realLength);
 
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject v = elt(i);
-            if (set.fastDelete(v)) ary3.append(v);
-        }
-        for (int i = 0; i < ary2.realLength; i++) {
-            IRubyObject v = ary2.elt(i);
-            if (set.fastDelete(v)) ary3.append(v);
+        try {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject v = elt(i);
+                if (set.fastDelete(v)) ary3.append(v);
+            }
+            for (int i = 0; i < ary2.realLength; i++) {
+                IRubyObject v = ary2.elt(i);
+                if (set.fastDelete(v)) ary3.append(v);
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         RuntimeHelpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, getRuntime());
 
@@ -3296,17 +3426,21 @@ public class RubyArray extends RubyObject implements List {
         final boolean fixnumBypass = !honorOverride || context.getRuntime().newFixnum(0).isBuiltin("<=>");
         final boolean stringBypass = !honorOverride || context.getRuntime().newString("").isBuiltin("<=>");
 
-        Qsort.sort(values, begin, begin + realLength, new Comparator() {
-            public int compare(Object o1, Object o2) {
-                if (fixnumBypass && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
-                    return compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
+        try {
+            Qsort.sort(values, begin, begin + realLength, new Comparator() {
+                public int compare(Object o1, Object o2) {
+                    if (fixnumBypass && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
+                        return compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
+                    }
+                    if (stringBypass && o1 instanceof RubyString && o2 instanceof RubyString) {
+                        return ((RubyString) o1).op_cmp((RubyString) o2);
+                    }
+                    return compareOthers(context, (IRubyObject)o1, (IRubyObject)o2);
                 }
-                if (stringBypass && o1 instanceof RubyString && o2 instanceof RubyString) {
-                    return ((RubyString) o1).op_cmp((RubyString) o2);
-                }
-                return compareOthers(context, (IRubyObject)o1, (IRubyObject)o2);
-            }
-        });
+            });
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
+        }
         return this;
     }
 
@@ -3326,16 +3460,20 @@ public class RubyArray extends RubyObject implements List {
     private IRubyObject sortInternal(final ThreadContext context, final Block block) {
         IRubyObject[] newValues = new IRubyObject[realLength];
         int length = realLength;
-        System.arraycopy(values, begin, newValues, 0, length);
-        Qsort.sort(newValues, 0, length, new Comparator() {
-            public int compare(Object o1, Object o2) {
-                IRubyObject obj1 = (IRubyObject) o1;
-                IRubyObject obj2 = (IRubyObject) o2;
-                IRubyObject ret = block.yieldArray(context, getRuntime().newArray(obj1, obj2), null, null);
-                //TODO: ary_sort_check should be done here
-                return RubyComparable.cmpint(context, ret, obj1, obj2);
-            }
-        });
+        try {
+            System.arraycopy(values, begin, newValues, 0, length);
+            Qsort.sort(newValues, 0, length, new Comparator() {
+                public int compare(Object o1, Object o2) {
+                    IRubyObject obj1 = (IRubyObject) o1;
+                    IRubyObject obj2 = (IRubyObject) o2;
+                    IRubyObject ret = block.yieldArray(context, getRuntime().newArray(obj1, obj2), null, null);
+                    //TODO: ary_sort_check should be done here
+                    return RubyComparable.cmpint(context, ret, obj1, obj2);
+                }
+            });
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
+        }
         values = newValues;
         begin = 0;
         realLength = length;
@@ -3378,8 +3516,12 @@ public class RubyArray extends RubyObject implements List {
         if (!block.isGiven()) return enumeratorize(runtime, this, "take_while");
 
         int i = begin;
-        for (; i < begin + realLength; i++) {
-            if (!block.yield(context, values[i]).isTrue()) break; 
+        try {
+            for (; i < begin + realLength; i++) {
+                if (!block.yield(context, values[i]).isTrue()) break;
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         return subseq(0, i - begin);
     }
@@ -3406,8 +3548,12 @@ public class RubyArray extends RubyObject implements List {
         if (!block.isGiven()) return enumeratorize(runtime, this, "drop_while");
 
         int i= begin;
-        for (; i < begin + realLength; i++) {
-            if (!block.yield(context, values[i]).isTrue()) break;
+        try {
+            for (; i < begin + realLength; i++) {
+                if (!block.yield(context, values[i]).isTrue()) break;
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         IRubyObject result = subseq(i - begin, realLength);
         return result.isNil() ? runtime.newEmptyArray() : result;
@@ -3437,10 +3583,14 @@ public class RubyArray extends RubyObject implements List {
     }
 
     private IRubyObject cycleCommon(ThreadContext context, long n, Block block) {
-        while (realLength > 0 && (n < 0 || 0 < n--)) {
-            for (int i=begin; i < begin + realLength; i++) {
-                block.yield(context, values[i]);
+        try {
+            while (realLength > 0 && (n < 0 || 0 < n--)) {
+                for (int i=begin; i < begin + realLength; i++) {
+                    block.yield(context, values[i]);
+                }
             }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         return context.getRuntime().getNil();
     }
@@ -3464,52 +3614,55 @@ public class RubyArray extends RubyObject implements List {
         RubyArray arrays[] = new RubyArray[n];
         int counters[] = new int[n];
 
-        arrays[0] = this;
-        for (int i = 1; i < n; i++) arrays[i] = args[i - 1].convertToArray();
+        try {
+            arrays[0] = this;
+            for (int i = 1; i < n; i++) arrays[i] = args[i - 1].convertToArray();
 
-        int resultLen = 1;
-        for (int i = 0; i < n; i++) {
-            int k = arrays[i].realLength;
-            int l = resultLen;
-            if (k == 0) return useBlock ? this : newEmptyArray(runtime);
-            resultLen *= k;
-            if (resultLen < k || resultLen < l || resultLen / k != l) {
-                throw runtime.newRangeError("too big to product");
+            int resultLen = 1;
+            for (int i = 0; i < n; i++) {
+                int k = arrays[i].realLength;
+                int l = resultLen;
+                if (k == 0) return useBlock ? this : newEmptyArray(runtime);
+                resultLen *= k;
+                if (resultLen < k || resultLen < l || resultLen / k != l) {
+                    if (!block.isGiven()) throw runtime.newRangeError("too big to product");
+                }
             }
-        }
 
-        RubyArray result = useBlock ? null : newArray(runtime, resultLen);
+            RubyArray result = useBlock ? null : newArray(runtime, resultLen);
 
-        for (int i = 0; i < resultLen; i++) {
-            RubyArray sub = newArray(runtime, n);
-            for (int j = 0; j < n; j++) sub.append(arrays[j].entry(counters[j]));
+            for (int i = 0; i < resultLen; i++) {
+                RubyArray sub = newArray(runtime, n);
+                for (int j = 0; j < n; j++) sub.append(arrays[j].entry(counters[j]));
 
-            if (useBlock) {
-                block.yieldSpecific(context, sub);
-            } else {
-                result.append(sub);
-            }
-            int m = n - 1;
-            counters[m]++;
-
-            while (m > 0 && counters[m] == arrays[m].realLength) {
-                counters[m] = 0;
-                m--;
+                if (useBlock) {
+                    block.yieldSpecific(context, sub);
+                } else {
+                    result.append(sub);
+                }
+                int m = n - 1;
                 counters[m]++;
+
+                while (m > 0 && counters[m] == arrays[m].realLength) {
+                    counters[m] = 0;
+                    m--;
+                    counters[m]++;
+                }
             }
+            return useBlock ? this : result;
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
+            return this; // not reached
         }
-        return useBlock ? this : result;
     }
 
-    private int combinationLength(ThreadContext context, int n, int k) {
-        if (k * 2 > n) k = n - k;
-        if (k == 0) return 1;
-        if (k < 0) return 0;
+    private static int combinationLength(int myLength, int n) {
+        if (n * 2 > myLength) n = myLength - n;
+        if (n == 0) return 1;
+        if (n < 0) return 0;
         int val = 1;
-        for (int i = 1; i <= k; i++, n--) {
-            long m = val;
-            val *= n;
-            if (val < m) throw context.getRuntime().newRangeError("too big for combination");
+        for (int i = 1; i <= n; i++, myLength--) {
+            val *= myLength;
             val /= i;
         }
         return val;
@@ -3525,29 +3678,33 @@ public class RubyArray extends RubyObject implements List {
 
         int n = RubyNumeric.num2int(num);
 
-        if (n == 0) {
-            block.yield(context, newEmptyArray(runtime));
-        } else if (n == 1) {
-            for (int i = 0; i < realLength; i++) {
-                block.yield(context, newArray(runtime, values[begin + i]));
-            }
-        } else if (n >= 0 && realLength >= n) {
-            int stack[] = new int[n + 1];
-            int nlen = combinationLength(context, (int)realLength, n);
-            IRubyObject chosen[] = new IRubyObject[n];
-            int lev = 0;
-
-            stack[0] = -1;
-            for (int i = 0; i < nlen; i++) {
-                chosen[lev] = values[begin + stack[lev + 1]];
-                for (lev++; lev < n; lev++) {
-                    chosen[lev] = values[begin + (stack[lev + 1] = stack[lev] + 1)];
+        try {
+            if (n == 0) {
+                block.yield(context, newEmptyArray(runtime));
+            } else if (n == 1) {
+                for (int i = 0; i < realLength; i++) {
+                    block.yield(context, newArray(runtime, values[begin + i]));
                 }
-                block.yield(context, newArray(runtime, chosen));
-                do {
-                    stack[lev--]++;
-                } while (lev != 0 && stack[lev + 1] + n == realLength + lev + 1);
+            } else if (n >= 0 && realLength >= n) {
+                int stack[] = new int[n + 1];
+                int nlen = combinationLength((int)realLength, n);
+                IRubyObject chosen[] = new IRubyObject[n];
+                int lev = 0;
+
+                stack[0] = -1;
+                for (int i = 0; i < nlen; i++) {
+                    chosen[lev] = values[begin + stack[lev + 1]];
+                    for (lev++; lev < n; lev++) {
+                        chosen[lev] = values[begin + (stack[lev + 1] = stack[lev] + 1)];
+                    }
+                    block.yield(context, newArray(runtime, chosen));
+                    do {
+                        stack[lev--]++;
+                    } while (lev != 0 && stack[lev + 1] + n == realLength + lev + 1);
+                }
             }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         return this;
     }
@@ -3558,26 +3715,39 @@ public class RubyArray extends RubyObject implements List {
         if (!block.isGiven()) return enumeratorize(runtime, this, "repeated_combination", num);
 
         int n = RubyNumeric.num2int(num);
+        int myRealLength = realLength;
+        IRubyObject[] myValues = new IRubyObject[realLength];
+        System.arraycopy(values, begin, myValues, 0, realLength);
 
-        if (n == 0) {
-            block.yield(context, newEmptyArray(runtime));
-        } else if (n == 1) {
-            for (int i = 0; i < realLength; i++) {
-                block.yield(context, newArray(runtime, values[begin + i]));
+        try {
+            if (n < 0) {
+                // yield nothing
+            } else if (n == 0) {
+                block.yield(context, newEmptyArray(runtime));
+            } else if (n == 1) {
+                for (int i = 0; i < myRealLength; i++) {
+                    block.yield(context, newArray(runtime, myValues[i]));
+                }
+            } else {
+                int[] stack = new int[n];
+                repeatCombination(context, runtime, myValues, stack, 0, myRealLength - 1, block);
             }
-        } else if (n >= 0 && realLength >= n) {
-            int[] stack = new int[n];
-            repeatCombination(context, runtime, stack, 0, realLength - 1, block);
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         return this;
     }
 
-    private void repeatCombination(ThreadContext context, Ruby runtime, int[] stack, int index, int max, Block block) {
+    private static void repeatCombination(ThreadContext context, Ruby runtime, IRubyObject[] values, int[] stack, int index, int max, Block block) {
         if (index == stack.length) {
             IRubyObject[] obj = new IRubyObject[stack.length];
-            for (int i = 0; i < obj.length; i++) {
-                int idx = stack[i];
-                obj[i] = values[begin + idx];
+            try {
+                for (int i = 0; i < obj.length; i++) {
+                    int idx = stack[i];
+                    obj[i] = values[idx];
+                }
+            } catch (ArrayIndexOutOfBoundsException aioob) {
+                concurrentModification(runtime);
             }
             block.yield(context, newArray(runtime, obj));
         } else {
@@ -3587,7 +3757,7 @@ public class RubyArray extends RubyObject implements List {
             }
             for (int i = minValue; i <= max; i++) {
                 stack[index] = i;
-                repeatCombination(context, runtime, stack, index + 1, max, block);
+                repeatCombination(context, runtime, values, stack, index + 1, max, block);
             }
         }
     }
@@ -3603,8 +3773,12 @@ public class RubyArray extends RubyObject implements List {
                 } else {
                     RubyArray result = newArray(context.getRuntime(), r);
 
-                    for (int j = 0; j < r; j++) {
-                        result.values[result.begin + j] = values.values[values.begin + p[j]];
+                    try {
+                        for (int j = 0; j < r; j++) {
+                            result.values[result.begin + j] = values.values[values.begin + p[j]];
+                        }
+                    } catch (ArrayIndexOutOfBoundsException aioob) {
+                        concurrentModification();
                     }
 
                     result.realLength = r;
@@ -3641,8 +3815,12 @@ public class RubyArray extends RubyObject implements List {
         if (r == 0) {
             block.yield(context, newEmptyArray(context.getRuntime()));
         } else if (r == 1) {
-            for (int i = 0; i < realLength; i++) {
-                block.yield(context, newArray(context.getRuntime(), values[begin + i]));
+            try {
+                for (int i = 0; i < realLength; i++) {
+                    block.yield(context, newArray(context.getRuntime(), values[begin + i]));
+                }
+            } catch (ArrayIndexOutOfBoundsException aioob) {
+                concurrentModification();
             }
         } else if (r >= 0 && realLength >= r) {
             int n = realLength;
@@ -3670,7 +3848,12 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public IRubyObject choiceCommon(ThreadContext context) {
-        return values[begin + context.getRuntime().getRandom().nextInt(realLength)];
+        try {
+            return values[begin + context.getRuntime().getRandom().nextInt(realLength)];
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
+            return this; // not reached
+        }
     }
 
     @JRubyMethod(name = "shuffle!")
@@ -3725,61 +3908,66 @@ public class RubyArray extends RubyObject implements List {
         if (n > realLength) n = realLength;
 
         int i, j, k;
-        switch (n) {
-        case 0: 
-            return newEmptyArray(runtime);
-        case 1:
-            if (realLength <= 0) return newEmptyArray(runtime);
-            
-            return newArray(runtime, values[begin + random.nextInt(realLength)]);
-        case 2:
-            i = random.nextInt(realLength);
-            j = random.nextInt(realLength - 1);
-            if (j >= i) j++;
-            return newArray(runtime, values[begin + i], values[begin + j]);
-        case 3:
-            i = random.nextInt(realLength);
-            j = random.nextInt(realLength - 1);
-            k = random.nextInt(realLength - 2);
-            int l = j, g = i;
-            if (j >= i) {
-                l = i;
-                g = ++j;
-            }
-            if (k >= l && (++k >= g)) ++k;
-            return new RubyArray(runtime, new IRubyObject[] {values[begin + i], values[begin + j], values[begin + k]});
-        }
-        
-        int len = realLength;
-        if (n > len) n = len;
-        if (n < SORTED_THRESHOLD) {
-            int idx[] = new int[SORTED_THRESHOLD];
-            int sorted[] = new int[SORTED_THRESHOLD];
-            sorted[0] = idx[0] = random.nextInt(len);
-            for (i = 1; i < n; i++) {
-                k = random.nextInt(--len);
-                for (j = 0; j < i; j++) {
-                    if (k < sorted[j]) break;
-                    k++;
+        try {
+            switch (n) {
+            case 0:
+                return newEmptyArray(runtime);
+            case 1:
+                if (realLength <= 0) return newEmptyArray(runtime);
+
+                return newArray(runtime, values[begin + random.nextInt(realLength)]);
+            case 2:
+                i = random.nextInt(realLength);
+                j = random.nextInt(realLength - 1);
+                if (j >= i) j++;
+                return newArray(runtime, values[begin + i], values[begin + j]);
+            case 3:
+                i = random.nextInt(realLength);
+                j = random.nextInt(realLength - 1);
+                k = random.nextInt(realLength - 2);
+                int l = j, g = i;
+                if (j >= i) {
+                    l = i;
+                    g = ++j;
                 }
-                System.arraycopy(sorted, j, sorted, j + 1, i - j);
-                sorted[j] = idx[i] = k;
+                if (k >= l && (++k >= g)) ++k;
+                return new RubyArray(runtime, new IRubyObject[] {values[begin + i], values[begin + j], values[begin + k]});
             }
-            IRubyObject[]result = new IRubyObject[n];
-            for (i = 0; i < n; i++) result[i] = values[begin + idx[i]];
-            return new RubyArray(runtime, result);
-        } else {
-            IRubyObject[]result = new IRubyObject[len];
-            System.arraycopy(values, begin, result, 0, len);
-            for (i = 0; i < n; i++) {
-                j = random.nextInt(len - i) + i;
-                IRubyObject tmp = result[j];
-                result[j] = result[i];
-                result[i] = tmp;
+
+            int len = realLength;
+            if (n > len) n = len;
+            if (n < SORTED_THRESHOLD) {
+                int idx[] = new int[SORTED_THRESHOLD];
+                int sorted[] = new int[SORTED_THRESHOLD];
+                sorted[0] = idx[0] = random.nextInt(len);
+                for (i = 1; i < n; i++) {
+                    k = random.nextInt(--len);
+                    for (j = 0; j < i; j++) {
+                        if (k < sorted[j]) break;
+                        k++;
+                    }
+                    System.arraycopy(sorted, j, sorted, j + 1, i - j);
+                    sorted[j] = idx[i] = k;
+                }
+                IRubyObject[]result = new IRubyObject[n];
+                for (i = 0; i < n; i++) result[i] = values[begin + idx[i]];
+                return new RubyArray(runtime, result);
+            } else {
+                IRubyObject[]result = new IRubyObject[len];
+                System.arraycopy(values, begin, result, 0, len);
+                for (i = 0; i < n; i++) {
+                    j = random.nextInt(len - i) + i;
+                    IRubyObject tmp = result[j];
+                    result[j] = result[i];
+                    result[i] = tmp;
+                }
+                RubyArray ary = new RubyArray(runtime, result);
+                ary.realLength = n;
+                return ary;
             }
-            RubyArray ary = new RubyArray(runtime, result);
-            ary.realLength = n;
-            return ary;
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
+            return this; // not reached
         }
     }
 
@@ -3794,18 +3982,22 @@ public class RubyArray extends RubyObject implements List {
 
     private IRubyObject internalRotateBang(ThreadContext context, int cnt) {
         modify();
-        
-        if(cnt != 0) {
-            IRubyObject[] ptr = values;
-            int len = realLength;
-            
-            if(len > 0 && (cnt = rotateCount(cnt, len)) > 0) {
-                --len;
-                if(cnt < len) aryReverse(ptr, begin + cnt, ptr, begin + len);
-                if(--cnt > 0) aryReverse(ptr, begin, ptr, begin + cnt);
-                if(len > 0)   aryReverse(ptr, begin, ptr, begin + len);
-                return this;
+
+        try {
+            if(cnt != 0) {
+                IRubyObject[] ptr = values;
+                int len = realLength;
+
+                if(len > 0 && (cnt = rotateCount(cnt, len)) > 0) {
+                    --len;
+                    if(cnt < len) aryReverse(ptr, begin + cnt, ptr, begin + len);
+                    if(--cnt > 0) aryReverse(ptr, begin, ptr, begin + cnt);
+                    if(len > 0)   aryReverse(ptr, begin, ptr, begin + len);
+                    return this;
+                }
             }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         
         return context.getRuntime().getNil();
@@ -3820,13 +4012,17 @@ public class RubyArray extends RubyObject implements List {
         RubyArray rotated = aryDup();
         rotated.modify();
 
-        if(len > 0) {
-            cnt = rotateCount(cnt, len);
-            IRubyObject[] ptr = this.values;
-            IRubyObject[] ptr2 = rotated.values;
-            len -= cnt;
-            System.arraycopy(ptr, begin + cnt, ptr2, 0, len);
-            System.arraycopy(ptr, begin, ptr2, len, cnt);
+        try {
+            if(len > 0) {
+                cnt = rotateCount(cnt, len);
+                IRubyObject[] ptr = this.values;
+                IRubyObject[] ptr2 = rotated.values;
+                len -= cnt;
+                System.arraycopy(ptr, begin + cnt, ptr2, 0, len);
+                System.arraycopy(ptr, begin, ptr2, len, cnt);
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
         
         return rotated;
@@ -3860,16 +4056,24 @@ public class RubyArray extends RubyObject implements List {
         if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, block);
         if (!block.isGiven()) return all_pBlockless(context);
 
-        for (int i = begin; i < begin + realLength; i++) {
-            if (!block.yield(context, values[i]).isTrue()) return context.getRuntime().getFalse();
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                if (!block.yield(context, values[i]).isTrue()) return context.getRuntime().getFalse();
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         return context.getRuntime().getTrue();
     }
 
     private IRubyObject all_pBlockless(ThreadContext context) {
-        for (int i = begin; i < begin + realLength; i++) {
-            if (!values[i].isTrue()) return context.getRuntime().getFalse();
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                if (!values[i].isTrue()) return context.getRuntime().getFalse();
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         return context.getRuntime().getTrue();
@@ -3879,16 +4083,24 @@ public class RubyArray extends RubyObject implements List {
         if (!isBuiltin("each")) return RubyEnumerable.any_pCommon(context, this, block);
         if (!block.isGiven()) return any_pBlockless(context);
 
-        for (int i = begin; i < begin + realLength; i++) {
-            if (block.yield(context, values[i]).isTrue()) return context.getRuntime().getTrue();
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                if (block.yield(context, values[i]).isTrue()) return context.getRuntime().getTrue();
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         return context.getRuntime().getFalse();
     }
 
     private IRubyObject any_pBlockless(ThreadContext context) {
-        for (int i = begin; i < begin + realLength; i++) {
-            if (values[i].isTrue()) return context.getRuntime().getTrue();
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                if (values[i].isTrue()) return context.getRuntime().getTrue();
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         return context.getRuntime().getFalse();
@@ -3903,8 +4115,12 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject find_index(ThreadContext context, Block block) {
         if (!isBuiltin("each")) return RubyEnumerable.find_indexCommon(context, this, block);
 
-        for (int i = 0; i < realLength; i++) {
-            if (block.yield(context, values[begin + i]).isTrue()) return context.getRuntime().newFixnum(i);
+        try {
+            for (int i = 0; i < realLength; i++) {
+                if (block.yield(context, values[begin + i]).isTrue()) return context.getRuntime().newFixnum(i);
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         return context.getRuntime().getNil();
@@ -3913,18 +4129,26 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject find_index(ThreadContext context, IRubyObject cond) {
         if (!isBuiltin("each")) return RubyEnumerable.find_indexCommon(context, this, cond);
 
-        for (int i = 0; i < realLength; i++) {
-            if (values[begin + i].equals(cond)) return context.getRuntime().newFixnum(i);
+        try {
+            for (int i = 0; i < realLength; i++) {
+                if (values[begin + i].equals(cond)) return context.getRuntime().newFixnum(i);
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         return context.getRuntime().getNil();
     }
 
     public IRubyObject detectCommon(ThreadContext context, IRubyObject ifnone, Block block) {
-        for (int i = begin; i < begin + realLength; i++) {
-            IRubyObject value = values[i];
+        try {
+            for (int i = begin; i < begin + realLength; i++) {
+                IRubyObject value = values[i];
 
-            if (block.yield(context, value).isTrue()) return value;
+                if (block.yield(context, value).isTrue()) return value;
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
         }
 
         return ifnone != null ? ifnone.callMethod(context, "call") : 
@@ -3939,8 +4163,12 @@ public class RubyArray extends RubyObject implements List {
         IRubyObject[] ary = array.values;
         
         output.writeInt(length);
-        for (int i = 0; i < length; i++) {
-            output.dumpObject(ary[i + begin]);
+        try {
+            for (int i = 0; i < length; i++) {
+                output.dumpObject(ary[i + begin]);
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification(array.getRuntime());
         }
     }
 
@@ -3952,8 +4180,12 @@ public class RubyArray extends RubyObject implements List {
         RubyArray result = input.getRuntime().newArrayNoCopy(values);
 
         input.registerLinkTarget(result);
-        for (int i = 0; i < size; i++) {
-            values[i] = input.unmarshalObject();
+        try {
+            for (int i = 0; i < size; i++) {
+                values[i] = input.unmarshalObject();
+            }
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification(input.getRuntime());
         }
         return result;
     }
@@ -3969,13 +4201,23 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "pack", required = 1, compat = RUBY1_8)
     public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = obj.convertToString();
-        return Pack.pack(getRuntime(), this, iFmt.getByteList());
+        try {
+            return Pack.pack(getRuntime(), this, iFmt.getByteList());
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
+            return null; // not reached
+        }
     }
 
     @JRubyMethod(name = "pack", required = 1, compat = RUBY1_9)
     public RubyString pack19(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = obj.convertToString();
-        return Pack.pack19(context, context.getRuntime(), this, iFmt);
+        try {
+            return Pack.pack19(context, context.getRuntime(), this, iFmt);
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
+            return null; // not reached
+        }
     }
 
     @Override
@@ -3997,6 +4239,7 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public Object[] toArray() {
+        // no catch for ArrayIndexOutOfBounds here because this impls a List method
         Object[] array = new Object[realLength];
         for (int i = begin; i < realLength; i++) {
             array[i - begin] = values[i].toJava(Object.class);
@@ -4005,6 +4248,7 @@ public class RubyArray extends RubyObject implements List {
     }
 
     public Object[] toArray(final Object[] arg) {
+        // no catch for ArrayIndexOutOfBounds here because this impls a List method
         Object[] array = arg;
         Class type = array.getClass().getComponentType();
         if (array.length < realLength) {
@@ -4023,7 +4267,11 @@ public class RubyArray extends RubyObject implements List {
         if (target.isArray()) {
             Class type = target.getComponentType();
             Object rawJavaArray = Array.newInstance(type, realLength);
-            ArrayJavaAddons.copyDataToJavaArrayDirect(getRuntime().getCurrentContext(), this, rawJavaArray);
+            try {
+                ArrayJavaAddons.copyDataToJavaArrayDirect(getRuntime().getCurrentContext(), this, rawJavaArray);
+            } catch (ArrayIndexOutOfBoundsException aioob) {
+                concurrentModification();
+            }
             return rawJavaArray;
         } else {
             return super.toJava(target);
@@ -4039,7 +4287,7 @@ public class RubyArray extends RubyObject implements List {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         IRubyObject item = JavaUtil.convertJavaToUsableRubyObject(runtime, element);
-        Boolean listchanged = false;
+        boolean listchanged = false;
 
         for (int i1 = 0; i1 < realLength; i1++) {
             IRubyObject e = values[begin + i1];

@@ -298,10 +298,13 @@ public class JavaUtil {
         return javaPropertyName;
     }
 
-    private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)([A-Z])");
+    // This pattern says, "either match a lowercase letter or number
+    // followed by an uppercase letter, or match any letter or number
+    // followed by an uppercase letter and a lowercase letter."
+    private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("(([a-z0-9])([A-Z])|([A-Za-z0-9])([A-Z][a-z]))");
     public static String getRubyCasedName(String javaCasedName) {
         Matcher m = CAMEL_CASE_SPLITTER.matcher(javaCasedName);
-        return m.replaceAll("$1_$2").toLowerCase();
+        return m.replaceAll("$2$4_$3$5").toLowerCase();
     }
 
     private static final Pattern RUBY_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)_([a-z])");

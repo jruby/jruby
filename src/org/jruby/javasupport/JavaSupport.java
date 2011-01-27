@@ -43,9 +43,9 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
 import org.jruby.util.WeakIdentityHashMap;
 
 public class JavaSupport {
@@ -107,6 +107,7 @@ public class JavaSupport {
     private RubyModule packageModuleTemplate;
     private RubyClass arrayProxyClass;
     private RubyClass concreteProxyClass;
+    private RubyClass mapJavaProxy;
     
     private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>();
 
@@ -149,7 +150,8 @@ public class JavaSupport {
         } catch (LinkageError le) {
             throw runtime.newNameError("cannot link Java class " + className + ", probable missing dependency: " + le.getLocalizedMessage(), className, le);
         } catch (SecurityException se) {
-            throw runtime.newNameError("security exception loading Java class " + className, className, se);
+            if (runtime.isVerbose()) se.printStackTrace(runtime.getErrorStream());
+            throw runtime.newSecurityError(se.getLocalizedMessage());
         }
     }
     
@@ -163,7 +165,7 @@ public class JavaSupport {
         } catch (LinkageError le) {
             throw runtime.newNameError("cannot link Java class " + className, className, le, false);
         } catch (SecurityException se) {
-            throw runtime.newNameError("security: cannot load Java class " + className, className, se, false);
+            throw runtime.newSecurityError(se.getLocalizedMessage());
         }
     }
 
@@ -177,17 +179,21 @@ public class JavaSupport {
 
     public void handleNativeException(Throwable exception, Member target) {
         if (exception instanceof RaiseException) {
+            // allow RaiseExceptions to propagate
             throw (RaiseException) exception;
+        } else if (exception instanceof Unrescuable) {
+            // allow "unrescuable" flow-control exceptions to propagate
+            if (exception instanceof Error) {
+                throw (Error)exception;
+            } else if (exception instanceof RuntimeException) {
+                throw (RuntimeException)exception;
+            }
         }
         throw createRaiseException(exception, target);
     }
 
     private RaiseException createRaiseException(Throwable exception, Member target) {
-        RaiseException re = RaiseException.createNativeRaiseException(runtime, exception, target);
-
-        re.preRaise(runtime.getCurrentContext());
-        
-        return re;
+        return RaiseException.createNativeRaiseException(runtime, exception, target);
     }
 
     public ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache() {
@@ -273,13 +279,13 @@ public class JavaSupport {
         if ((clazz = javaClassClass) != null) return clazz;
         return javaClassClass = getJavaModule().fastGetClass("JavaClass");
     }
-    
+
     public RubyModule getJavaInterfaceTemplate() {
         RubyModule module;
         if ((module = javaInterfaceTemplate) != null) return module;
         return javaInterfaceTemplate = runtime.fastGetModule("JavaInterfaceTemplate");
     }
-    
+
     public RubyModule getPackageModuleTemplate() {
         RubyModule module;
         if ((module = packageModuleTemplate) != null) return module;
@@ -302,6 +308,12 @@ public class JavaSupport {
         RubyClass clazz;
         if ((clazz = concreteProxyClass) != null) return clazz;
         return concreteProxyClass = runtime.fastGetClass("ConcreteJavaProxy");
+    }
+
+    public RubyClass getMapJavaProxyClass() {
+        RubyClass clazz;
+        if ((clazz = mapJavaProxy) != null) return clazz;
+        return mapJavaProxy = runtime.fastGetClass("MapJavaProxy");
     }
     
     public RubyClass getArrayProxyClass() {

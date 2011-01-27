@@ -15,15 +15,15 @@ module Gem::LocalRemoteOptions
   ##
   # Allows OptionParser to handle HTTP URIs.
 
-  def accept_uri_http
-    OptionParser.accept URI::HTTP do |value|
+  def accept_uri http = nil
+    OptionParser.accept(http ? URI::HTTP : URI::Generic) do |value|
       begin
         uri = URI.parse value
       rescue URI::InvalidURIError
         raise OptionParser::InvalidArgument, value
       end
 
-      unless ['http', 'https', 'file'].include?(uri.scheme)
+      if http && !['http', 'https', 'file'].include?(uri.scheme)
          raise OptionParser::InvalidArgument, value
       end
 
@@ -51,6 +51,7 @@ module Gem::LocalRemoteOptions
     end
 
     add_bulk_threshold_option
+    add_clear_sources_option
     add_source_option
     add_proxy_option
     add_update_sources_option
@@ -69,10 +70,22 @@ module Gem::LocalRemoteOptions
   end
 
   ##
+  # Add the --clear-sources option
+
+  def add_clear_sources_option
+    add_option(:"Local/Remote", '--clear-sources',
+               'Clear the gem sources') do |value, options|
+
+      Gem.sources.clear
+      options[:sources_cleared] = true
+    end
+  end
+
+  ##
   # Add the --http-proxy option
 
   def add_proxy_option
-    accept_uri_http
+    accept_uri :http
 
     add_option(:"Local/Remote", '-p', '--[no-]http-proxy [URL]', URI::HTTP,
                'Use HTTP proxy for remote operations') do |value, options|
@@ -85,17 +98,17 @@ module Gem::LocalRemoteOptions
   # Add the --source option
 
   def add_source_option
-    accept_uri_http
+    accept_uri
 
-    add_option(:"Local/Remote", '--source URL', URI::HTTP,
-               'Use URL as the remote source for gems') do |source, options|
+    add_option(:"Local/Remote", '--source URL', URI::Generic,
+               'Add URL as a remote source for gems') do |source, options|
+
       source << '/' if source !~ /\/\z/
 
-      if options[:added_source] then
-        Gem.sources << source unless Gem.sources.include?(source)
+      if options.delete :sources_cleared then
+        Gem.sources = [source]
       else
-        options[:added_source] = true
-        Gem.sources.replace [source]
+        Gem.sources << source unless Gem.sources.include?(source)
       end
     end
   end

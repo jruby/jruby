@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
@@ -31,6 +33,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledBlockCallback;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
 import org.objectweb.asm.Label;
 import static org.jruby.util.CodegenUtils.*;
@@ -46,10 +49,13 @@ public class InheritedCacheCompiler implements CacheCompiler {
     List<String> callSiteList = new ArrayList<String>();
     List<CallType> callTypeList = new ArrayList<CallType>();
     Map<String, Integer> stringIndices = new HashMap<String, Integer>();
+    Map<String, Integer> encodingIndices = new HashMap<String, Integer>();
+    Map<String, Integer> stringEncodings = new HashMap<String, Integer>();
     Map<String, Integer> symbolIndices = new HashMap<String, Integer>();
     Map<Long, Integer> fixnumIndices = new HashMap<Long, Integer>();
     int inheritedSymbolCount = 0;
     int inheritedStringCount = 0;
+    int inheritedEncodingCount = 0;
     int inheritedRegexpCount = 0;
     int inheritedBigIntegerCount = 0;
     int inheritedVariableReaderCount = 0;
@@ -121,19 +127,20 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
     }
 
-    public void cacheRegexp(BaseBodyCompiler method, String pattern, int options) {
+    public void cacheRegexp(BaseBodyCompiler method, ByteList pattern, int options) {
+
         method.loadThis();
         method.loadRuntime();
         int index = inheritedRegexpCount++;
         if (index < AbstractScript.NUMBERED_REGEXP_COUNT) {
-            method.method.ldc(pattern);
+            cacheByteList(method, pattern);
             method.method.ldc(options);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp" + index, sig(RubyRegexp.class, Ruby.class, String.class, int.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp" + index, sig(RubyRegexp.class, Ruby.class, ByteList.class, int.class));
         } else {
             method.method.pushInt(index);
-            method.method.ldc(pattern);
+            cacheByteList(method, pattern);
             method.method.ldc(options);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, Ruby.class, int.class, String.class, int.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, Ruby.class, int.class, ByteList.class, int.class));
         }
     }
 
@@ -244,22 +251,80 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedConstantCount++;
     }
 
-    public void cacheString(BaseBodyCompiler method, ByteList contents) {
-        String asString = contents.toString();
+    public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange) {
+        String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        
         Integer index = stringIndices.get(asString);
         if (index == null) {
             index = Integer.valueOf(inheritedStringCount++);
             stringIndices.put(asString, index);
+            stringEncodings.put(asString, cacheEncoding(contents.getEncoding()));
         }
 
         method.loadThis();
         method.loadRuntime();
         if (index < AbstractScript.NUMBERED_STRING_COUNT) {
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getString" + index, sig(RubyString.class, Ruby.class));
+            method.method.pushInt(codeRange);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getString" + index, sig(RubyString.class, Ruby.class, int.class));
         } else {
-            method.method.ldc(index.intValue());
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getString", sig(RubyString.class, Ruby.class, int.class));
+            method.method.pushInt(index.intValue());
+            method.method.pushInt(codeRange);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getString", sig(RubyString.class, Ruby.class, int.class, int.class));
         }
+    }
+
+    public void cacheByteList(BaseBodyCompiler method, ByteList contents) {
+        String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+
+        Integer index = stringIndices.get(asString);
+        if (index == null) {
+            index = Integer.valueOf(inheritedStringCount++);
+            stringIndices.put(asString, index);
+            stringEncodings.put(asString, cacheEncoding(contents.getEncoding()));
+        }
+
+        method.loadThis();
+        if (index < AbstractScript.NUMBERED_STRING_COUNT) {
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getByteList" + index, sig(ByteList.class));
+        } else {
+            method.method.pushInt(index.intValue());
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getByteList", sig(ByteList.class, int.class));
+        }
+    }
+
+    public void cacheEncoding(BaseBodyCompiler method, Encoding encoding) {
+        // split into three methods since ByteList depends on two parts in different places
+        int encodingIndex = cacheEncoding(encoding);
+        loadEncoding(method.method, encodingIndex);
+        createRubyEncoding(method);
+    }
+
+    private int cacheEncoding(Encoding encoding) {
+        String encodingName = new String(encoding.getName());
+
+        Integer index = encodingIndices.get(encodingName);
+        if (index == null) {
+            index = Integer.valueOf(inheritedEncodingCount++);
+            encodingIndices.put(encodingName, index);
+        }
+        return index;
+    }
+
+    private void loadEncoding(SkinnyMethodAdapter method, int encodingIndex) {
+        method.aload(0);
+        if (encodingIndex < AbstractScript.NUMBERED_ENCODING_COUNT) {
+            method.invokevirtual(scriptCompiler.getClassname(), "getEncoding" + encodingIndex, sig(Encoding.class));
+        } else {
+            method.pushInt(encodingIndex);
+            method.invokevirtual(scriptCompiler.getClassname(), "getEncoding", sig(Encoding.class, int.class));
+        }
+    }
+
+    private void createRubyEncoding(BaseBodyCompiler method) {
+        method.loadRuntime();
+        method.invokeRuby("getEncodingService", sig(EncodingService.class));
+        method.method.swap();
+        method.method.invokevirtual(p(EncodingService.class), "getEncoding", sig(RubyEncoding.class, Encoding.class));
     }
 
     public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint) {
@@ -336,8 +401,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedBlockBodyCount++;
     }
 
-    public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
-        String descriptor = RuntimeHelpers.buildBlockDescriptor(
+    public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, String parameterList, ASTInspector inspector) {
+        String descriptor = RuntimeHelpers.buildBlockDescriptor19(
                 closureMethod,
                 arity,
                 scope,
@@ -345,6 +410,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 line,
                 hasMultipleArgsHead,
                 argsNodeId,
+                parameterList,
                 inspector);
 
         method.loadThis();
@@ -428,7 +494,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 + inheritedBlockBodyCount
                 + inheritedBlockCallbackCount
                 + inheritedMethodCount
-                + inheritedStringCount;
+                + inheritedStringCount
+                + inheritedEncodingCount;
         if (callSiteListSize + otherCount != 0) {
             ensureRuntimeCacheInited(initMethod);
 
@@ -465,11 +532,22 @@ public class InheritedCacheCompiler implements CacheCompiler {
             descriptor.append((char)inheritedBlockCallbackCount);
             descriptor.append((char)inheritedMethodCount);
             descriptor.append((char)inheritedStringCount);
+            descriptor.append((char)inheritedEncodingCount);
 
             // init from descriptor
             initMethod.aload(0);
             initMethod.ldc(descriptor.toString());
             initMethod.invokevirtual(p(AbstractScript.class), "initFromDescriptor", sig(void.class, String.class));
+            
+            if (inheritedEncodingCount > 0) {
+                // init all encodings
+                for (Map.Entry<String, Integer> entry : encodingIndices.entrySet()) {
+                    initMethod.aload(0);
+                    initMethod.ldc(entry.getValue());
+                    initMethod.ldc(entry.getKey());
+                    initMethod.invokevirtual(p(AbstractScript.class), "setEncoding", sig(void.class, int.class, String.class));
+                }
+            }
 
             if (inheritedStringCount > 0) {
                 // init all strings
@@ -477,7 +555,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
                     initMethod.aload(0);
                     initMethod.ldc(entry.getValue());
                     initMethod.ldc(entry.getKey());
-                    initMethod.invokevirtual(p(AbstractScript.class), "setByteList", sig(void.class, int.class, String.class));
+                    loadEncoding(initMethod, stringEncodings.get(entry.getKey()));
+                    initMethod.invokevirtual(p(AbstractScript.class), "setByteList", sig(void.class, int.class, String.class, Encoding.class));
                 }
             }
         }

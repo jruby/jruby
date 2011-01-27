@@ -126,11 +126,10 @@ CODE
   end
 
   it "expands the path relative to the jar" do
-    current = "file:/Users/foo/dev/ruby/jruby/lib/jruby-complete.jar!/META-INF/jruby.home/lib/ruby/site_ruby/1.8"
-    expected = "file:/Users/foo/dev/ruby/jruby/lib/jruby-complete.jar!/META-INF/jruby.home/lib/ruby/site_ruby"
-
+    jar_path = File.expand_path("file:/Users/foo/dev/ruby/jruby/lib/jruby-complete.jar")
+    current = "#{jar_path}!/META-INF/jruby.home/lib/ruby/site_ruby/1.8"
+    expected = "#{jar_path}!/META-INF/jruby.home/lib/ruby/site_ruby"
     File.expand_path(File.join(current, "..")).should == expected
-
     File.expand_path("..", current).should == expected
   end
 end

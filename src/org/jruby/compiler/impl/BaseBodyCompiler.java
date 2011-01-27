@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.jcodings.Encoding;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -466,8 +467,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         invokeRuby("newSymbol", sig(RubySymbol.class, params(String.class)));
     }
 
-    public void createNewString(ByteList value) {
-        script.getCacheCompiler().cacheString(this, value);
+    public void createNewString(ByteList value, int codeRange) {
+        script.getCacheCompiler().cacheString(this, value, codeRange);
     }
 
     public void createNewSymbol(String name) {
@@ -1015,6 +1016,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             CompilerCallback args,
             boolean hasMultipleArgsHead,
             NodeType argsNodeId,
+            String parameterList,
             ASTInspector inspector) {
         String blockInMethod = JavaNameMangler.mangleMethodName(rubyName);
         if (rubyName == null || rubyName.length() == 0) {
@@ -1034,7 +1036,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         loadThreadContext();
         loadSelf();
-        script.getCacheCompiler().cacheClosure19(this, closureMethodName, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, inspector);
+        script.getCacheCompiler().cacheClosure19(this, closureMethodName, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, parameterList, inspector);
 
         script.addBlockCallback19Descriptor(closureMethodName, file, line);
 
@@ -1134,8 +1136,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void defineAlias(CompilerCallback args) {
         loadThreadContext();
+        loadSelf();
         args.call(this);
-        invokeUtilityMethod("defineAlias", sig(IRubyObject.class, ThreadContext.class, Object.class, Object.class));
+        invokeUtilityMethod("defineAlias", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, Object.class, Object.class));
     }
 
     public void literal(String value) {
@@ -1210,6 +1213,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void singlifySplattedValue() {
         method.invokestatic(p(RuntimeHelpers.class), "aValueSplat", sig(IRubyObject.class, params(IRubyObject.class)));
+    }
+
+    public void singlifySplattedValue19() {
+        method.invokestatic(p(RuntimeHelpers.class), "aValueSplat19", sig(IRubyObject.class, params(IRubyObject.class)));
     }
 
     public void aryToAry() {
@@ -1293,12 +1300,31 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 getVariableCompiler().getTempLocal(tempLocal);
                 loadRuntime();
                 method.pushInt(start);
-                invokeUtilityMethod("subarrayOrEmpty", sig(RubyArray.class, RubyArray.class, Ruby.class, int.class));
+                method.pushInt(postCount);
+                invokeUtilityMethod("subarrayOrEmpty", sig(RubyArray.class, RubyArray.class, Ruby.class, int.class, int.class));
                 argsCallback.call(this);
             }
 
-            if (postCount > 0) {
-                throw new NotCompilableException("1.9 mode can't handle post variables in masgn yet");
+            for (int postStart = 0; postStart < postCount; postStart++) {
+                getVariableCompiler().getTempLocal(tempLocal);
+                method.pushInt(preCount);
+                method.pushInt(postCount);
+                switch (postStart) {
+                case 0:
+                    invokeUtilityMethod("arrayPostOrNilZero", sig(IRubyObject.class, RubyArray.class, int.class, int.class));
+                    break;
+                case 1:
+                    invokeUtilityMethod("arrayPostOrNilOne", sig(IRubyObject.class, RubyArray.class, int.class, int.class));
+                    break;
+                case 2:
+                    invokeUtilityMethod("arrayPostOrNilTwo", sig(IRubyObject.class, RubyArray.class, int.class, int.class));
+                    break;
+                default:
+                    method.pushInt(postStart);
+                    invokeUtilityMethod("arrayPostOrNil", sig(IRubyObject.class, RubyArray.class, int.class, int.class, int.class));
+                    break;
+                }
+                callback.nextValue(this, postSource, postStart);
             }
 
             getVariableCompiler().getTempLocal(tempLocal);
@@ -1331,13 +1357,20 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokevirtual(p(RubyRegexp.class), "op_match", sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class)));
     }
 
+    public void match2Capture(CompilerCallback value, int[] scopeOffsets) {
+        loadThreadContext();
+        value.call(this);
+        method.ldc(RuntimeHelpers.encodeCaptureOffsets(scopeOffsets));
+        invokeUtilityMethod("match2AndUpdateScope", sig(IRubyObject.class, params(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class)));
+    }
+
     public void match3() {
         loadThreadContext();
         invokeUtilityMethod("match3", sig(IRubyObject.class, RubyRegexp.class, IRubyObject.class, ThreadContext.class));
     }
 
     public void createNewRegexp(final ByteList value, final int options) {
-        script.getCacheCompiler().cacheRegexp(this, value.toString(), options);
+        script.getCacheCompiler().cacheRegexp(this, value, options);
     }
 
     public void createNewRegexp(CompilerCallback createStringCallback, final int options) {
@@ -2537,7 +2570,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void defineNewMethod(String name, int methodArity, StaticScope scope,
             CompilerCallback body, CompilerCallback args,
-            CompilerCallback receiver, ASTInspector inspector, boolean root, String filename, int line) {
+            CompilerCallback receiver, ASTInspector inspector, boolean root,
+            String filename, int line, String parameterDesc) {
         // TODO: build arg list based on number of args, optionals, etc
         String newMethodName;
         if (root && SafePropertyAccessor.getBoolean("jruby.compile.toplevel", false)) {
@@ -2577,13 +2611,14 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.ldc(filename);
         method.ldc(line);
         method.getstatic(p(CallConfiguration.class), inspector.getCallConfig().name(), ci(CallConfiguration.class));
+        method.ldc(parameterDesc);
 
         if (receiver != null) {
             invokeUtilityMethod("defs", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, String.class, int.class, String.class, int.class, CallConfiguration.class)));
+                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, String.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
         } else {
             invokeUtilityMethod("def", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String.class, int.class, String.class, int.class, CallConfiguration.class)));
+                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
         }
 
         script.addInvokerDescriptor(newMethodName, methodArity, scope, inspector.getCallConfig(), filename, line);
@@ -2822,5 +2857,17 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         } else {
             throw new RuntimeException("invalid preMultiAssign args: " + head + ", " + args);
         }
+    }
+
+    public void argsPush() {
+        invokeUtilityMethod("argsPush", sig(RubyArray.class, RubyArray.class, IRubyObject.class));
+    }
+
+    public void argsCat() {
+        invokeUtilityMethod("argsCat", sig(RubyArray.class, IRubyObject.class, IRubyObject.class));
+    }
+
+    public void loadEncoding(Encoding encoding) {
+        script.getCacheCompiler().cacheEncoding(this, encoding);
     }
 }

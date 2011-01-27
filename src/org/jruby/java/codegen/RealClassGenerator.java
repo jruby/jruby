@@ -27,7 +27,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.util.ClassCache.OneShotClassLoader;
+import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JRubyClassLoader;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.ClassWriter;
@@ -56,11 +56,11 @@ public class RealClassGenerator {
         return simpleToAll;
     }
 
-    public static Class createOldStyleImplClass(Class[] superTypes, RubyClass rubyClass, Ruby ruby, String name) {
+    public static Class createOldStyleImplClass(Class[] superTypes, RubyClass rubyClass, Ruby ruby, String name, ClassDefiningClassLoader classLoader) {
         String[] superTypeNames = new String[superTypes.length];
         Map<String, List<Method>> simpleToAll = buildSimpleToAllMap(superTypes, superTypeNames);
         
-        Class newClass = defineOldStyleImplClass(ruby, name, superTypeNames, simpleToAll);
+        Class newClass = defineOldStyleImplClass(ruby, name, superTypeNames, simpleToAll, classLoader);
         
         return newClass;
     }
@@ -84,7 +84,7 @@ public class RealClassGenerator {
      * @param simpleToAll
      * @return
      */
-    public static Class defineOldStyleImplClass(Ruby ruby, String name, String[] superTypeNames, Map<String, List<Method>> simpleToAll) {
+    public static Class defineOldStyleImplClass(Ruby ruby, String name, String[] superTypeNames, Map<String, List<Method>> simpleToAll, ClassDefiningClassLoader classLoader) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         String pathName = name.replace('.', '/');
         
@@ -233,12 +233,12 @@ public class RealClassGenerator {
         // create the class
         byte[] bytes = cw.toByteArray();
         Class newClass;
-        synchronized (ruby.getJRubyClassLoader()) {
+        synchronized (classLoader) {
             // try to load the specified name; only if that fails, try to define the class
             try {
-                newClass = ruby.getJRubyClassLoader().loadClass(name);
+                newClass = classLoader.loadClass(name);
             } catch (ClassNotFoundException cnfe) {
-                newClass = ruby.getJRubyClassLoader().defineClass(name, cw.toByteArray());
+                newClass = classLoader.defineClass(name, cw.toByteArray());
             }
         }
         

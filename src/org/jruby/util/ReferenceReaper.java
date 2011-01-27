@@ -8,7 +8,7 @@ import java.lang.ref.ReferenceQueue;
  * A general purpose reference tracker & reaper utility class.
  */
 public final class ReferenceReaper {
-    private final ReferenceQueue referenceQueue = new ReferenceQueue();
+    public final ReferenceQueue referenceQueue = new ReferenceQueue();
     private final Thread reaperThread;
     
     private ReferenceReaper() {
@@ -22,24 +22,6 @@ public final class ReferenceReaper {
     }
     public static final ReferenceReaper getInstance() {
         return SingletonHolder.INSTANCE;
-    }
-
-    public static abstract class Weak<T> extends java.lang.ref.WeakReference<T> implements Runnable {
-        public Weak(T referent) {
-            super(referent, ReferenceReaper.getInstance().referenceQueue);
-        }
-    }
-
-    public static abstract class Soft<T> extends java.lang.ref.SoftReference<T> implements Runnable {
-        public Soft(T referent) {
-            super(referent, ReferenceReaper.getInstance().referenceQueue);
-        }
-    }
-
-    public static abstract class Phantom<T> extends java.lang.ref.PhantomReference<T> implements Runnable {
-        public Phantom(T referent) {
-            super(referent, ReferenceReaper.getInstance().referenceQueue);
-        }
     }
 
     private final Runnable reaper = new Runnable() {

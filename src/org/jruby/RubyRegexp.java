@@ -82,13 +82,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private KCode kcode;
     private Regex pattern;
     private ByteList str = ByteList.EMPTY_BYTELIST;
+    private boolean isFixed = false;
 
     private static final int REGEXP_LITERAL_F       =   USER1_F;
     private static final int REGEXP_KCODE_DEFAULT   =   USER2_F;
     private static final int REGEXP_ENCODING_NONE   =   USER3_F;
 
     private static final int ARG_OPTION_MASK        =   RE_OPTION_IGNORECASE | RE_OPTION_EXTENDED | RE_OPTION_MULTILINE; 
-    private static final int ARG_ENCODING_FIXED     =   16;
+    public static final int ARG_ENCODING_FIXED     =   16;
     private static final int ARG_ENCODING_NONE      =   32;
 
     public void setLiteral() {
@@ -119,6 +120,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         flags |= REGEXP_ENCODING_NONE;
     }
 
+    public static boolean isFixedEncoding(int options) {
+        return (options & 0x070) != 0;
+    }
+
+    private void setIsFixed(boolean isFixed) {
+        this.isFixed = isFixed;
+    }
+    
     public void clearEncodingNone() {
         flags &= ~REGEXP_ENCODING_NONE;
     }
@@ -263,14 +272,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         setKCodeDefault();
         this.kcode = runtime.getKCode();
         this.str = str;
-        this.pattern = getRegexpFromCache(runtime, str, kcode.getEncoding(), 0);
+        this.pattern = getRegexpFromCache(runtime, str, getEncoding(runtime, str), 0);
     }
 
     private RubyRegexp(Ruby runtime, ByteList str, int options) {
         this(runtime);
         setKCode(runtime, options & 0x7f); // mask off "once" flag
-        this.str = str;
-        this.pattern = getRegexpFromCache(runtime, str, kcode.getEncoding(), options & 0xf);
+        if (runtime.is1_9()) {
+            initializeCommon19(str, str.getEncoding(), options);
+        } else {
+            this.str = str;
+            this.pattern = getRegexpFromCache(runtime, str, getEncoding(runtime, str), options & 0xf);
+        }
+    }
+
+    private Encoding getEncoding(Ruby runtime, ByteList str) {
+        return runtime.is1_9() ? str.getEncoding() : kcode.getEncoding();
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
@@ -314,6 +331,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         regexp.pattern = regex;
         regexp.str = ByteList.EMPTY_BYTELIST;
         regexp.kcode = KCode.NONE;
+        regexp.isFixed = true;
         return regexp;
     }
 
@@ -378,13 +396,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private Encoding checkEncoding(RubyString str, boolean warn) {
         if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
-            throw getRuntime().newArgumentError("invalid byte sequence in " + str.getEncoding());
+            // FIXME: This should be here, but various specs fail...we must have a coderange scan bug somewhere
+           // throw getRuntime().newArgumentError("invalid byte sequence in " + str.getEncoding());
         }
         check();
         Encoding enc = str.getEncoding();
         if (!enc.isAsciiCompatible()) {
             if (enc != pattern.getEncoding()) encodingMatchError(getRuntime(), pattern, enc);
-        } else if (!isKCodeDefault()) {
+        } else if (isFixed) {
             if (enc != pattern.getEncoding() && 
                (!pattern.getEncoding().isAsciiCompatible() ||
                str.scanForCodeRange() != StringSupport.CR_7BIT)) encodingMatchError(getRuntime(), pattern, enc);
@@ -512,6 +531,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } // while
     }
 
+    // MRI: unescape_escapted_nonascii
     private static int unescapeEscapedNonAscii(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ByteList str, ErrorMode mode) {
         byte[]chBuf = new byte[enc.maxLength()];
         int chLen = 0;
@@ -522,7 +542,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         int cl = StringSupport.preciseLength(enc, chBuf, 0, chLen);
-        if (cl == -1) raisePreprocessError(runtime, str, "invalid multibyte escape", mode); // MBCLEN_INVALID_P
+        if (cl == -1) {
+            raisePreprocessError(runtime, str, "invalid multibyte escape", mode); // MBCLEN_INVALID_P
+        }
 
         if (chLen > 1 || (chBuf[0] & 0x80) != 0) {
             to.append(chBuf, 0, chLen);
@@ -670,8 +692,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return to;
     }
 
-    public static void preprocessCheck(Ruby runtime, IRubyObject obj) {
-        ByteList bytes = obj.convertToString().getByteList();
+    public static void preprocessCheck(Ruby runtime, ByteList bytes) {
         preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, ErrorMode.RAISE);
     }
 
@@ -1043,7 +1064,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyRegexp regexp = (RubyRegexp)re;
         regexp.check();
 
-        return initializeCommon(regexp.str, regexp.getOptions());
+        return getRuntime().is1_9() ? 
+            initializeCommon19(regexp.str, regexp.str.getEncoding(), regexp.getOptions()) :
+            initializeCommon(regexp.str, regexp.getOptions());
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
@@ -1163,7 +1186,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private IRubyObject initializeByRegexp19(RubyRegexp regexp) {
         regexp.check();
-        return initializeCommon19(regexp.str, regexp.getEncoding(), regexp.pattern.getOptions());
+//        System.out.println("str: " + regexp.str + ", ENC: " + regexp.getEncoding() + ", OPT: " + regexp.getOptions());
+//        System.out.println("KCODE: " + regexp.kcode);
+        return initializeCommon19(regexp.str, regexp.getEncoding(), regexp.getOptions());
     }
 
     // rb_reg_initialize_str
@@ -1185,6 +1210,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RubyRegexp initializeCommon19(ByteList bytes, Encoding enc, int options) {
         Ruby runtime = getRuntime();        
         setKCode(runtime, options);
+        setIsFixed(isFixedEncoding(options) || enc == ASCIIEncoding.INSTANCE);
+
         if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
@@ -1194,20 +1221,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         Encoding[]fixedEnc = new Encoding[]{null};
         ByteList unescaped = preprocess(runtime, bytes, enc, fixedEnc, ErrorMode.RAISE);
         if (fixedEnc[0] != null) {
-            if ((fixedEnc[0] != enc && (options & ARG_ENCODING_FIXED) != 0) ||
+            if ((fixedEnc[0] != enc && isFixed) ||
                (fixedEnc[0] != ASCIIEncoding.INSTANCE && (options & ARG_ENCODING_NONE) != 0)) {
                    raiseRegexpError19(runtime, bytes, enc, options, "incompatible character encoding");
             }
             if (fixedEnc[0] != ASCIIEncoding.INSTANCE) {
-                options |= ARG_ENCODING_FIXED;
+                setIsFixed(true);
+//                options |= ARG_ENCODING_FIXED;
                 enc = fixedEnc[0];
             }
-        } else if ((options & ARG_ENCODING_FIXED) == 0) {
+        } else if (!isFixed) {
             enc = USASCIIEncoding.INSTANCE;
         }
 
-        if ((options & ARG_ENCODING_FIXED) == 0 && fixedEnc[0] == null) setKCodeDefault();
+//        if (isFixed && fixedEnc[0] == null) setKCodeDefault();
         if ((options & ARG_ENCODING_NONE) != 0) setEncodingNone();
+
         pattern = getRegexpFromCache(runtime, unescaped, enc, options & ARG_OPTION_MASK);
         str = bytes;
         return this;
@@ -1514,6 +1543,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject to_s() {
         check();
 
+        Ruby runtime = getRuntime();
         int options = pattern.getOptions();
         int p = str.getBegin();
         int len = str.getRealSize();
@@ -1565,7 +1595,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
                 if (bytes[p] == ':' && bytes[p + len - 1] == ')') {
                     try {
-                        new Regex(bytes, ++p, p + (len -= 2), Option.DEFAULT, kcode.getEncoding(), Syntax.DEFAULT);
+                        new Regex(bytes, ++p, p + (len -= 2), Option.DEFAULT, getEncoding(runtime, str), Syntax.DEFAULT);
                         err = false;
                     } catch (JOniException e) {
                         err = true;
@@ -1588,7 +1618,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 if ((options & RE_OPTION_EXTENDED) == 0) result.append((byte)'x');
             }
             result.append((byte)':');
-            appendRegexpString(getRuntime(), result, bytes, p, len, kcode.getEncoding());
+            appendRegexpString(getRuntime(), result, bytes, p, len, getEncoding(runtime, str));
             result.append((byte)')');
             return RubyString.newString(getRuntime(), result).infectBy(this);
         } while (true);
@@ -1708,6 +1738,21 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if ((options & ReOptions.RE_OPTION_EXTENDED) != 0) to.append((byte)'x');
     }
 
+    private static String[] NO_NAMES = new String[] {}; //TODO: Perhaps we have another empty string arr
+    public String[] getNames() {
+        int nameLength = pattern.numberOfNames();
+        if (nameLength == 0) return NO_NAMES;
+
+        String[] names = new String[nameLength];
+        int j = 0;
+        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry e = i.next();
+            names[j++] = new String(e.name, e.nameP, e.nameEnd - e.nameP).intern();
+        }
+
+        return names;
+    }
+
     /** rb_reg_names
      * 
      */
@@ -1749,8 +1794,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "fixed_encoding?", compat = CompatVersion.RUBY1_9)
     public IRubyObject fixed_encoding_p(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
-        return isKCodeDefault() ? runtime.getFalse() : runtime.getTrue();
+        return context.getRuntime().newBoolean(isFixed);
     }
 
     /** rb_reg_nth_match

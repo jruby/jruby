@@ -455,16 +455,16 @@ public class RubyFileStat extends RubyObject {
         // FIXME: Obvious issue that not all platforms can display all attributes.  Ugly hacks.
         // Using generic posix library makes pushing inspect behavior into specific system impls
         // rather painful.
-        try { buf.append("dev=0x").append(Long.toHexString(stat.dev())).append(", "); } catch (Exception e) {}
-        try { buf.append("ino=").append(stat.ino()).append(", "); } catch (Exception e) {}
+        try { buf.append("dev=0x").append(Long.toHexString(stat.dev())); } catch (Exception e) {} finally { buf.append(", "); }
+        try { buf.append("ino=").append(stat.ino()); } catch (Exception e) {} finally { buf.append(", "); }
         buf.append("mode=0").append(Integer.toOctalString(stat.mode())).append(", "); 
-        try { buf.append("nlink=").append(stat.nlink()).append(", "); } catch (Exception e) {}
-        try { buf.append("uid=").append(stat.uid()).append(", "); } catch (Exception e) {}
-        try { buf.append("gid=").append(stat.gid()).append(", "); } catch (Exception e) {}
-        try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())).append(", "); } catch (Exception e) {}
+        try { buf.append("nlink=").append(stat.nlink()); } catch (Exception e) {} finally { buf.append(", "); }
+        try { buf.append("uid=").append(stat.uid()); } catch (Exception e) {} finally { buf.append(", "); }
+        try { buf.append("gid=").append(stat.gid()); } catch (Exception e) {} finally { buf.append(", "); }
+        try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())); } catch (Exception e) {} finally { buf.append(", "); }
         buf.append("size=").append(sizeInternal()).append(", ");
-        try { buf.append("blksize=").append(stat.blockSize()).append(", "); } catch (Exception e) {}
-        try { buf.append("blocks=").append(stat.blocks()).append(", "); } catch (Exception e) {}
+        try { buf.append("blksize=").append(stat.blockSize()); } catch (Exception e) {} finally { buf.append(", "); }
+        try { buf.append("blocks=").append(stat.blocks()); } catch (Exception e) {} finally { buf.append(", "); }
         
         buf.append("atime=").append(atime()).append(", ");
         buf.append("mtime=").append(mtime()).append(", ");

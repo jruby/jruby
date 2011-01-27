@@ -160,7 +160,7 @@ public class DefaultRubyParser implements RubyParser {
 %token <Token> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
 %type <Token> variable 
 %type <Token>  sym symbol operation operation2 operation3 cname fname op
-%type <Token>  f_norm_arg dot_or_colon restarg_mark blkarg_mark
+%type <Token>  dot_or_colon restarg_mark blkarg_mark
 %token <Token> tUPLUS         /* unary+ */
 %token <Token> tUMINUS        /* unary- */
 %token <Token> tUMINUS_NUM    /* unary- */
@@ -237,6 +237,7 @@ public class DefaultRubyParser implements RubyParser {
 %type <Node> for_var 
 %type <ListNode> block_par
 
+%type <ArgumentNode> f_norm_arg
 %type <RestArgNode> f_rest_arg 
    //%type <Token> rparen rbracket reswords f_bad_arg
 
@@ -1501,15 +1502,15 @@ regexp	      : tREGEXP_BEG xstring_contents tREGEXP_END {
 		  Node node = $2;
 
 		  if (node == null) {
-                      $$ = new RegexpNode($1.getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
+          $$ = new RegexpNode($1.getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
 		  } else if (node instanceof StrNode) {
-                      $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
+          $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
 		  } else if (node instanceof DStrNode) {
-                      $$ = new DRegexpNode($1.getPosition(), (DStrNode) node, options, (options & ReOptions.RE_OPTION_ONCE) != 0);
-		  } else {
+          $$ = new DRegexpNode($1.getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) node);
+      } else {
 		      $$ = new DRegexpNode($1.getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
-                  }
-	       }
+      }
+}
 
 // Node:words - collection of words (e.g. %w{a b c}) with delimeters [!null]
 words	       : tWORDS_BEG ' ' tSTRING_END {
@@ -1730,7 +1731,7 @@ f_args         : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
                    $$ = support.new_args(support.createEmptyArgsNodePosition(lexer.getPosition()), null, null, null, null, null);
                }
 
-// Token:f_norm_arg - normal argument to method declaration [!null]
+// ArgumentNode:f_norm_arg - normal argument to method declaration [!null]
 f_norm_arg     : tCONSTANT {
                    support.yyerror("formal argument cannot be a constant");
                }
@@ -1749,30 +1750,28 @@ f_norm_arg     : tCONSTANT {
                        support.yyerror("duplicate argument name");
                    }
 
-		   support.getCurrentScope().getLocalScope().addVariable(identifier);
-                   $$ = $1;
+		               int location = support.getCurrentScope().getLocalScope().addVariable(identifier);
+                   $$ = new ArgumentNode($1.getPosition(), identifier, location);
                }
 
 // ListNode:f_arg - normal arguments in a method definition [!null]
 f_arg          : f_norm_arg tASSOC arg_value {
-                    support.allowDubyExtension($<ISourcePositionHolder>1.getPosition());
-                    $$ = new ListNode($<ISourcePositionHolder>1.getPosition());
-                    ((ListNode) $$).add(new TypedArgumentNode($<ISourcePositionHolder>1.getPosition(), (String) $1.getValue(), $3));
+                    ISourcePosition position = $<ISourcePositionHolder>1.getPosition();
+                    support.allowDubyExtension(position);
+                    $$ = new ListNode(position).add(new TypedArgumentNode($1, $3));
                }
                | f_norm_arg {
-                    $$ = new ListNode($<ISourcePositionHolder>1.getPosition());
-                    ((ListNode) $$).add(new ArgumentNode($<ISourcePositionHolder>1.getPosition(), (String) $1.getValue()));
+                    $$ = new ListNode($<ISourcePositionHolder>1.getPosition()).add($1);
                }
                | f_arg ',' f_norm_arg tASSOC arg_value {
-                   support.allowDubyExtension($<ISourcePositionHolder>1.getPosition());
-                   $1.add(new TypedArgumentNode($<ISourcePositionHolder>3.getPosition(), (String) $3.getValue(), $5));
-                   $1.setPosition($1.getPosition());
-		   $$ = $1;
+                   ISourcePosition position = $<ISourcePositionHolder>1.getPosition();
+                   support.allowDubyExtension(position);
+                   $1.add(new TypedArgumentNode($3, $5));
+                   $$ = $1;
                }
                | f_arg ',' f_norm_arg {
-                   $1.add(new ArgumentNode($<ISourcePositionHolder>3.getPosition(), (String) $3.getValue()));
-                   $1.setPosition($1.getPosition());
-		   $$ = $1;
+                   $1.add($3);
+                   $$ = $1;
                }
 
 // Node:f_opt - optional argument in a method definition [!null]
@@ -1808,7 +1807,7 @@ f_rest_arg    : restarg_mark tIDENTIFIER {
                   $$ = new RestArgNode($1.getPosition(), (String) $2.getValue(), support.getCurrentScope().getLocalScope().addVariable(identifier));
               }
               | restarg_mark {
-                  $$ = new UnnamedRestArgNode($1.getPosition(), support.getCurrentScope().getLocalScope().addVariable("*"));
+                  $$ = new UnnamedRestArgNode($1.getPosition(), "", support.getCurrentScope().getLocalScope().addVariable("*"));
               }
 
 // Token:blkarg_mark - '&' as in '&block' [!null]

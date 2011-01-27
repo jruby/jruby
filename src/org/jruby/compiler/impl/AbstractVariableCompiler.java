@@ -281,7 +281,8 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                     for (int optArgElement = 0; optArgElement < optArgsCount; currentArgElement++, optArgElement++) {
                         method.aload(argsIndex);
                         method.pushInt(currentArgElement); // index for the item
-                        methodCompiler.invokeUtilityMethod("elementOrNull", sig(IRubyObject.class, IRubyObject[].class, int.class));
+                        method.pushInt(postArgsCount);
+                        methodCompiler.invokeUtilityMethod("optElementOrNull", sig(IRubyObject.class, IRubyObject[].class, int.class, int.class));
                         method.dup();
                         method.ifnull(optLabels[optArgElement]);
 
@@ -313,14 +314,15 @@ public abstract class AbstractVariableCompiler implements VariableCompiler {
                 }
 
                 // finally, post args
-                for (; currentArgElement < postArgsCount; currentArgElement++) {
+                for (int postArgIndex = 0; postArgIndex < postArgsCount; postArgIndex++) {
                     // extract item from array
                     method.aload(argsIndex);
-                    method.pushInt(currentArgElement); // index for the item
+                    method.pushInt(postArgsCount);
+                    method.pushInt(postArgIndex); // index for the item
                     // this could probably be more efficient, bailing out on assigning args past the end?
                     methodCompiler.loadNil();
-                    methodCompiler.invokeUtilityMethod("elementOrNil", sig(IRubyObject.class, IRubyObject[].class, int.class, IRubyObject.class));
-                    requiredAssignment.nextValue(methodCompiler, postArgs, currentArgElement);
+                    methodCompiler.invokeUtilityMethod("postElementOrNil", sig(IRubyObject.class, IRubyObject[].class, int.class, int.class, IRubyObject.class));
+                    requiredAssignment.nextValue(methodCompiler, postArgs, postArgIndex);
                 }
             }
         }

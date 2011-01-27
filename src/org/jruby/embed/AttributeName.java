@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -41,41 +41,48 @@ package org.jruby.embed;
  */
 public enum AttributeName {
     /**
-     * A key used in an attribute map to set a reader,
+     * A key used in an attribute map to set a reader. This attribute can be
+     * set using a System property, org.jruby.embed.reader.
      */
     READER("org.jruby.embed.reader"),
 
     /**
-     * A key used in an attribute map to set a writer,
+     * A key used in an attribute map to set a writer. This attribute can be
+     * set using a System property, org.jruby.embed.writer.
      */
     WRITER("org.jruby.embed.writer"),
 
     /**
-     * A key used in an attribute map to set an error writer,
+     * A key used in an attribute map to set an error writer. This attribute can be
+     * set using a System property, org.jruby.embed.errorwriter.
      */
     ERROR_WRITER("org.jruby.embed.errorwriter"),
 
     /**
-     * A key used in an attribute map to set a base directory.
+     * A key used in an attribute map to set a base directory. This attribute can be
+     * set using a System property, org.jruby.embed.basedir.
      */
     BASE_DIR("org.jruby.embed.basedir"),
 
     /**
      * A key used in an attribute map to set a line number in error message.
-     * This attribute is for JSR223 only.
+     * This attribute is for JSR223 only. This attribute can be
+     * set using a System property, org.jruby.embed.linenumber.
      */
     LINENUMBER("org.jruby.embed.linenumber"),
 
     /**
      * A key used in an attribute map to specify that the script to be parsed has
-     * unicode escape in it. Default is false.
+     * unicode escape in it. Default is false. This attribute can be
+     * set using a System property, org.jruby.embed.unicode.escpe.
      */
     UNICODE_ESCAPE("org.jruby.embed.unicode.escpe"),
 
     /**
      * A key used in an attribute map to turn on/off sharing variable feature.
      * Default is true. If false is set, sharing variables goes off, and better
-     * performance will be expected.
+     * performance will be expected. This attribute can be
+     * set using a System property, org.jruby.embed.sharing.variables.
      */
     SHARING_VARIABLES("org.jruby.embed.sharing.variables"),
 
@@ -85,13 +92,15 @@ public enum AttributeName {
      *
      * Default is false, which means JRubyEngine doesn't terminate any state and
      * doesn't execute at_exit blocks. If true is set, JRubyEngine terminates the state
-     * as well as executes at_exit blocks.
+     * as well as executes at_exit blocks. This attribute can be
+     * set using a System property, org.jruby.embed.termination.
      */
     TERMINATION("org.jruby.embed.termination"),
 
     /**
      * A key used in an attribute map to set a receiver object for sharing variables.
-     * This attribute is for JSR223 only.
+     * This attribute is for JSR223 only. This attribute can be
+     * set using a System property, org.jruby.embed.receiver.
      */
     RECEIVER("org.jruby.embed.receiver");
 

@@ -50,30 +50,39 @@ public class AssignmentVisitor {
     public static IRubyObject multiAssign(Ruby runtime, ThreadContext context, IRubyObject self, MultipleAsgn19Node node, RubyArray value, boolean checkArity) {
         // Assign the values.
         int valueLen = value.getLength();
-        int varLen = node.getPre() == null ? 0 : node.getPre().size();
+        int varLen = node.getPreCount() + node.getPostCount();
 
-        int j = 0;
-        for (; j < valueLen && j < varLen; j++) {
-            node.getPre().get(j).assign(runtime, context, self, value.eltInternal(j), Block.NULL_BLOCK, checkArity);
+        if (checkArity && varLen < valueLen) {
+            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
-        if (checkArity && j < varLen) {
-            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
+        int offset = 0;
+        for (offset = 0; offset < node.getPreCount(); offset++) {
+            if (offset >= valueLen) {
+                node.getPre().get(offset).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, false);
+            } else {
+                node.getPre().get(offset).assign(runtime, context, self, value.eltInternal(offset), Block.NULL_BLOCK, false);
+            }
         }
 
         Node restArgument = node.getRest();
         if (restArgument != null) {
-            if (varLen < valueLen) {
-                restArgument.assign(runtime, context, self, value.subseqLight(varLen, valueLen), Block.NULL_BLOCK, checkArity);
+            int restLen = valueLen - varLen;
+            if (restLen > 0) {
+                restArgument.assign(runtime, context, self, value.subseqLight(offset, restLen), Block.NULL_BLOCK, false);
+                offset += restLen;
             } else {
-                restArgument.assign(runtime, context, self, RubyArray.newEmptyArray(runtime), Block.NULL_BLOCK, checkArity);
+                restArgument.assign(runtime, context, self, RubyArray.newEmptyArray(runtime), Block.NULL_BLOCK, false);
             }
-        } else if (checkArity && valueLen < varLen) {
-            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
-        while (j < varLen) {
-            node.getPre().get(j++).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, checkArity);
+        for (int i = 0; i < node.getPostCount(); i++) {
+            offset += i;
+            if (offset >= valueLen) {
+                node.getPost().get(i).assign(runtime, context, self, runtime.getNil(), Block.NULL_BLOCK, false);
+            } else {
+                node.getPost().get(i).assign(runtime, context, self, value.eltInternal(offset), Block.NULL_BLOCK, false);
+            }
         }
 
         return value;

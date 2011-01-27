@@ -45,9 +45,7 @@ public class LocalStaticScope extends StaticScope {
 
     public LocalStaticScope(StaticScope enclosingScope, String[] names) {
         super(enclosingScope, names);
-        
-        // local scopes are argument scopes by default
-        setArgumentScope(true);
+
         setBackrefLastlineScope(true);
     }
 
@@ -57,6 +55,17 @@ public class LocalStaticScope extends StaticScope {
 
     public int isDefined(String name, int depth) {
         return (depth << 16) | exists(name);
+    }
+
+    @Override
+    public boolean isArgumentScope() {
+        return true;
+    }
+
+    @Override
+    public void makeArgumentScope() {
+        // We blindly call this on any scope we encounter which is ok.
+        // define_method(:foo, &Kernel.method(:foo)) is typically where we see this.
     }
 
     /**

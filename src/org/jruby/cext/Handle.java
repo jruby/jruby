@@ -58,7 +58,6 @@ public final class Handle {
     private static final long Qnil = 4L;
     
 
-    @SuppressWarnings("unused")
     private final Ruby runtime;
     private final long address;
     

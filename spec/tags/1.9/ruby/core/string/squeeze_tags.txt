@@ -1,1 +1,0 @@
-fails:String#squeeze raises an error when the parameter is out of the sequence

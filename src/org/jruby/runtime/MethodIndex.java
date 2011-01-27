@@ -29,7 +29,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.runtime.callsite.DivCallSite;
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
@@ -38,10 +37,6 @@ import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.callsite.GtCallSite;
 import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.GeCallSite;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callsite.ArefCallSite;
 import org.jruby.runtime.callsite.AsetCallSite;

@@ -129,6 +129,18 @@ describe "A Ruby subclass of a Java concrete class" do
     my_arraylist.class.superclass.should == java.util.ArrayList
     my_arraylist.to_java.should == my_arraylist
   end
+  
+  it "raises argument error when super does not match superclass constructor arity" do
+    my_arraylist_cls = Class.new(java.util.ArrayList) do
+      def initialize
+        super('foo', 'foo', 'foo')
+      end
+    end
+    
+    proc do
+      my_arraylist_cls.new
+    end.should raise_error(ArgumentError)
+  end
 end
 
 describe "A final Java class" do

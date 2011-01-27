@@ -59,6 +59,10 @@ public class EncodingNode extends Node {
         return Node.EMPTY_LIST;
     }
 
+    public Encoding getEncoding() {
+        return encoding;
+    }
+
     @Override
     public NodeType getNodeType() {
         return NodeType.ENCODINGNODE;

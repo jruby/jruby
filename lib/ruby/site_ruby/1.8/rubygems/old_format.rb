@@ -5,9 +5,6 @@
 #++
 
 require 'rubygems'
-require 'fileutils'
-require 'yaml'
-require 'zlib'
 
 ##
 # The format class knows the guts of the RubyGem .gem file format and provides
@@ -24,6 +21,9 @@ class Gem::OldFormat
   # gem:: [String] The file name of the gem
 
   def initialize(gem_path)
+    require 'fileutils'
+    require 'yaml'
+    require 'zlib'
     @gem_path = gem_path
   end
 
@@ -143,7 +143,7 @@ class Gem::OldFormat
         end
         yield [entry, Zlib::Inflate.inflate(file_data.strip.unpack("m")[0])]
       end
-    rescue Zlib::DataError => e
+    rescue Zlib::DataError
       raise Gem::Exception, errstr
     end
   end

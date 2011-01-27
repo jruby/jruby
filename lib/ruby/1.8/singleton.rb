@@ -9,9 +9,9 @@
 # *  this ensures that only one instance of Klass lets call it
 #    ``the instance'' can be created.
 #
-#    a,b  = Klass.instance, Klass.instance
-#    a == b   # => true
-#    a.new    #  NoMethodError - new is private ...
+#      a,b  = Klass.instance, Klass.instance
+#      a == b    # => true
+#      Klass.new #  NoMethodError - new is private ...
 #
 # *  ``The instance'' is created at instantiation time, in other
 #    words the first call of Klass.instance(), thus
@@ -39,7 +39,7 @@
 #    method body is a simple:
 #
 #       def Klass.instance()
-#         return @__instance__
+#         return @singleton__instance__
 #       end
 #
 # *  Klass._load(str)  -  calling Klass.instance()
@@ -60,7 +60,7 @@
 #    and _dump(depth) hooks allows the (partially) resurrections of
 #    a previous state of ``the instance''.
 
-
+require 'thread'
 
 module Singleton
   #  disable build-in copying methods
@@ -72,55 +72,8 @@ module Singleton
   end
 
   #  default marshalling strategy
-  def _dump(depth=-1)
+  def _dump(depth = -1)
     ''
-  end
-end
-
-
-class << Singleton
-  #  Method body of first instance call.
-  FirstInstanceCall = proc do
-    #  @__instance__ takes on one of the following values
-    #  * nil     -  before and after a failed creation
-    #  * false  -  during creation
-    #  * sub_class instance  -  after a successful creation
-    #  the form makes up for the lack of returns in progs
-    Thread.critical = true
-    if  @__instance__.nil?
-      @__instance__  = false
-      Thread.critical = false
-      begin
-        @__instance__ = new
-      ensure
-        if @__instance__
-          class <<self
-            remove_method :instance
-            def instance; @__instance__ end
-          end
-        else
-          @__instance__ = nil #  failed instance creation
-        end
-      end
-    elsif  _instantiate?()
-      Thread.critical = false
-    else
-      @__instance__  = false
-      Thread.critical = false
-      begin
-        @__instance__ = new
-      ensure
-        if @__instance__
-          class <<self
-            remove_method :instance
-            def instance; @__instance__ end
-          end
-        else
-          @__instance__ = nil
-        end
-      end
-    end
-    @__instance__
   end
 
   module SingletonClassMethods
@@ -141,46 +94,47 @@ class << Singleton
       super
       Singleton.__init__(sub_klass)
     end
+  end
 
-    # waiting-loop hook
-    def _instantiate?()
-      while false.equal?(@__instance__)
-        Thread.critical = false
-        sleep(0.08)   # timeout
-        Thread.critical = true
+  class << Singleton
+    def __init__(klass)
+      klass.instance_eval {
+        @singleton__instance__ = nil
+        @singleton__mutex__ = Mutex.new
+      }
+      def klass.instance
+        return @singleton__instance__ if @singleton__instance__
+        @singleton__mutex__.synchronize {
+          return @singleton__instance__ if @singleton__instance__
+          @singleton__instance__ = new()
+        }
+        @singleton__instance__
       end
-      @__instance__
+      klass
+    end
+
+    private
+
+    #  extending an object with Singleton is a bad idea
+    undef_method :extend_object
+
+    def append_features(mod)
+      #  help out people counting on transitive mixins
+      unless mod.instance_of?(Class)
+        raise TypeError, "Inclusion of the OO-Singleton module in module #{mod}"
+      end
+      super
+    end
+
+    def included(klass)
+      super
+      klass.private_class_method  :new, :allocate
+      klass.extend SingletonClassMethods
+      Singleton.__init__(klass)
     end
   end
 
-  def __init__(klass)
-    klass.instance_eval { @__instance__ = nil }
-    class << klass
-      define_method(:instance,FirstInstanceCall)
-    end
-    klass
-  end
-
-  private
-  #  extending an object with Singleton is a bad idea
-  undef_method :extend_object
-
-  def append_features(mod)
-    #  help out people counting on transitive mixins
-    unless mod.instance_of?(Class)
-      raise TypeError, "Inclusion of the OO-Singleton module in module #{mod}"
-    end
-    super
-  end
-
-  def included(klass)
-    super
-    klass.private_class_method  :new, :allocate
-    klass.extend SingletonClassMethods
-    Singleton.__init__(klass)
-  end
 end
-
 
 
 if __FILE__ == $0
@@ -221,13 +175,13 @@ end
 class << Ups
   def _instantiate?
     @enter.push Thread.current[:i]
-    while false.equal?(@__instance__)
-      Thread.critical = false
+    while false.equal?(@singleton__instance__)
+      @singleton__mutex__.unlock
       sleep 0.08
-      Thread.critical = true
+      @singleton__mutex__.lock
     end
     @leave.push Thread.current[:i]
-    @__instance__
+    @singleton__instance__
   end
 
   def __sleep

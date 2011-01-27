@@ -1,10 +1,7 @@
-require 'zlib'
-require 'fileutils'
-
 require 'rubygems/remote_fetcher'
 require 'rubygems/user_interaction'
 require 'rubygems/errors'
-require 'rubygems/maven_gemify'
+require 'rubygems/text'
 
 ##
 # SpecFetcher handles metadata updates from remote gem repositories.
@@ -12,6 +9,7 @@ require 'rubygems/maven_gemify'
 class Gem::SpecFetcher
 
   include Gem::UserInteraction
+  include Gem::Text
 
   ##
   # The SpecFetcher cache dir.
@@ -44,6 +42,8 @@ class Gem::SpecFetcher
   end
 
   def initialize
+    require 'fileutils'
+
     @dir = File.join Gem.user_home, '.gem', 'specs'
     @update_cache = File.stat(Gem.user_home).uid == Process.uid
 
@@ -93,13 +93,7 @@ class Gem::SpecFetcher
     spec = spec - [nil, 'ruby', '']
     spec_file_name = "#{spec.join '-'}.gemspec"
 
-    # from rubygems/maven_gemify.rb
-    is_maven = Gem::Specification.maven_name? spec[0]
-    if is_maven
-      uri = URI.parse("http://maven/#{spec_file_name}")
-    else
-      uri = source_uri + "#{Gem::MARSHAL_SPEC_DIR}#{spec_file_name}"
-    end
+    uri = source_uri + "#{Gem::MARSHAL_SPEC_DIR}#{spec_file_name}"
 
     cache_dir = cache_dir uri
 
@@ -108,10 +102,11 @@ class Gem::SpecFetcher
     if File.exist? local_spec then
       spec = Gem.read_binary local_spec
     else
-      if is_maven
+      spec = if maven_spec?(spec[0], source_uri)
         # from rubygems/maven_gemify.rb
-        spec = gemify_generate_spec(spec)
-      else
+        maven_generate_spec(spec)
+      end
+      unless spec
         uri.path << '.rz'
 
         spec = @fetcher.fetch_path uri
@@ -137,11 +132,6 @@ class Gem::SpecFetcher
   # is false, gems for all platforms are returned.
 
   def find_matching_with_errors(dependency, all = false, matching_platform = true, prerelease = false)
-    # from rubygems/maven_gemify.rb
-    if Gem::Specification.maven_name? dependency.name
-      return find_matching_using_maven(dependency)
-    end
-
     found = {}
 
     rejected_specs = {}
@@ -161,7 +151,7 @@ class Gem::SpecFetcher
     end
 
     errors = rejected_specs.values
-    
+
     specs_and_sources = []
 
     found.each do |source_uri, specs|
@@ -197,6 +187,34 @@ class Gem::SpecFetcher
         false
       end
     end
+  end
+
+  ##
+  # Suggests a gem based on the supplied +gem_name+. Returns a string
+  # of the gem name if an approximate match can be found or nil
+  # otherwise. NOTE: for performance reasons only gems which exactly
+  # match the first character of +gem_name+ are considered.
+
+  def suggest_gems_from_name gem_name
+    gem_name        = gem_name.downcase
+    max             = gem_name.size / 2
+    specs           = list.values.flatten(1) # flatten(1) is 1.8.7 and up
+
+    matches = specs.map { |name, version, platform|
+      next unless Gem::Platform.match platform
+
+      distance = levenshtein_distance gem_name, name.downcase
+
+      next if distance >= max
+
+      return [name] if distance == 0
+
+      [name, distance]
+    }.compact
+
+    matches = matches.uniq.sort_by { |name, dist| dist }
+
+    matches.first(5).map { |name, dist| name }
   end
 
   ##

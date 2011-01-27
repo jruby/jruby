@@ -1,6 +1,7 @@
 require File.expand_path('../../ant_spec_helper', __FILE__)
 
-describe Ant, "project", :type => :ant do
+describe Ant, "project" do
+  include Ant::RSpec::AntExampleGroup
   before :each do
     @ant = example_ant :name => "spec project", :description => "spec description"
   end

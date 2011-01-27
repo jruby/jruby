@@ -389,7 +389,6 @@ public class RubyDigest {
 
         @JRubyMethod(meta = true)
         public static IRubyObject file(ThreadContext ctx, IRubyObject recv, IRubyObject filename) {
-            Ruby runtime = recv.getRuntime();
             IRubyObject obj = ((RubyClass)recv).newInstance(ctx, new IRubyObject[0], Block.NULL_BLOCK);
             return obj.callMethod(ctx, "file", filename);
         }

@@ -1,6 +1,8 @@
 require File.expand_path('../../ant_spec_helper', __FILE__)
 
-describe Ant, "targets", :type => :ant do
+describe Ant, "targets" do
+  include Ant::RSpec::AntExampleGroup
+
   it "should delay executing tasks in targets until the target is executed" do
     ant = example_ant :name => "foo" do
       target :foo do

@@ -28,6 +28,7 @@ testJavaIntegration.rb
 testJRUBY3155.rb
 testLine.rb
 testLoops.rb
+testMap.rb
 testMarshal.rb
 testMath.rb
 testMethods.rb

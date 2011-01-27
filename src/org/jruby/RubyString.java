@@ -172,14 +172,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public final Encoding toEncoding(Ruby runtime) {
-        if (!value.getEncoding().isAsciiCompatible()) {
-            throw runtime.newArgumentError("invalid name encoding (non ASCII)");
-        }
-        Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(value);
-        if (entry == null) {
-            throw runtime.newArgumentError("unknown encoding name - " + value);
-        }
-        return entry.getEncoding();
+        return runtime.getEncodingService().findEncoding(this);
     }
 
     public final int getCodeRange() {
@@ -649,7 +642,26 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @Override
     public String toString() {
-        return value.toString();
+        return decodeString();
+    }
+
+    /**
+     * Convert this Ruby string to a Java String. This version is encoding-aware.
+     *
+     * @return A decoded Java String, based on this Ruby string's encoding.
+     */
+    public String decodeString() {
+        try {
+            // 1.9 support for encodings
+            // TODO: Fix charset use for JRUBY-4553
+            if (getRuntime().is1_9()) {
+                return new String(value.getUnsafeBytes(), value.begin(), value.length(), getEncoding().toString());
+            }
+
+            return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
+        } catch (UnsupportedEncodingException uee) {
+            return value.toString();
+        }
     }
 
     /** rb_str_dup
@@ -1007,9 +1019,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "*", required = 1, compat = RUBY1_9)
     public IRubyObject op_mul19(ThreadContext context, IRubyObject other) {
         RubyString result = multiplyByteList(context, other);
-        Encoding encoding = value.getEncoding();
-        result.value.setEncoding(encoding);
-        result.copyCodeRangeForSubstr(this, encoding);
+        result.value.setEncoding(value.getEncoding());
+        result.copyCodeRange(this);
         return result;
     }
 
@@ -1501,8 +1512,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
             int cl, ocl;
             if (Encoding.isAscii(c) && Encoding.isAscii(oc)) {
-                if (AsciiTables.ToUpperCaseTable[c] != AsciiTables.ToUpperCaseTable[oc]) {
-                    return c < oc ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime); 
+                byte uc = AsciiTables.ToUpperCaseTable[c];
+                byte uoc = AsciiTables.ToUpperCaseTable[oc];
+                if (uc != uoc) {
+                    return uc < uoc ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime);
                 }
                 cl = ocl = 1;
             } else {
@@ -2814,15 +2827,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject gsub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
+        checkFrozen();
         return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, true, 0) : enumeratorize(context.getRuntime(), this, "gsub!", arg0);
     }
 
     @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject gsub_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        checkFrozen();
         return gsub19(context, arg0, arg1, block, true);
     }
 
-    private final IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
+    private IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
         Ruby runtime = context.getRuntime();
         IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(arg1, runtime.getHash(), "to_hash");
 
@@ -3957,9 +3972,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     final IRubyObject uptoCommon18(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
-        Ruby runtime = context.getRuntime();
         RubyString end = arg.convertToString();
-        Encoding enc = checkEncoding(end);
+        checkEncoding(end);
 
         int n = op_cmp19(end);
         if (n > 0 || (excl && n == 0)) return this;
@@ -4856,7 +4870,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyString padStr = arg1.convertToString();
         ByteList pad = padStr.value;
         if (pad.getRealSize() == 0) throw runtime.newArgumentError("zero width padding");
-        return justifyCommon(runtime, pad, RubyFixnum.num2int(arg0), jflag).infectBy(padStr);
+        int width = RubyFixnum.num2int(arg0);
+        RubyString result = justifyCommon(runtime, pad, width, jflag);
+        if (value.getRealSize() < width) result.infectBy(padStr);
+        return result;
     }
 
     private RubyString justifyCommon(Ruby runtime, ByteList pad, int width, int jflag) {
@@ -4912,7 +4929,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         RubyString result = new RubyString(runtime, getMetaClass(), res);
-        result.infectBy(this);
+        if ((!runtime.is1_9()) && (RubyFixnum.num2int(result.length())   > RubyFixnum.num2int(length())) ||
+             (runtime.is1_9()  && (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())))) {
+                 result.infectBy(this);
+             }
         return result;
     }
 
@@ -4932,11 +4952,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc = checkEncoding(padStr);
         int padCharLen = padStr.strLength(enc);
         if (pad.getRealSize() == 0 || padCharLen == 0) throw runtime.newArgumentError("zero width padding");
+        int width = RubyFixnum.num2int(arg0);
         RubyString result = justifyCommon(runtime, pad, 
                                                    padCharLen, 
                                                    padStr.singleByteOptimizable(), 
-                                                   enc, RubyFixnum.num2int(arg0), jflag);
-        result.infectBy(padStr);
+                                                   enc, width, jflag);
+        if (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())) result.infectBy(padStr);
         int cr = codeRangeAnd(getCodeRange(), padStr.getCodeRange());
         if (cr != CR_BROKEN) result.setCodeRange(cr);
         return result;
@@ -4999,7 +5020,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         res.setRealSize(p);
 
         RubyString result = new RubyString(runtime, getMetaClass(), res);
-        result.infectBy(this);
+        if ((!runtime.is1_9()) && (RubyFixnum.num2int(result.length())   > RubyFixnum.num2int(length())) ||
+             (runtime.is1_9()  && (RubyFixnum.num2int(result.length19()) > RubyFixnum.num2int(length19())))) {
+                 result.infectBy(this);
+             }
         result.associateEncoding(enc);
         return result;
     }
@@ -6544,7 +6568,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     if (t.p < t.pend) {
                         int c = codePoint(runtime, enc, buf, t.p, t.pend);
                         t.p += codeLength(runtime, enc, c);
-                        if (t.now > c) continue;
+                        if (t.now > c) {
+                            if (t.now < 0x80 && c < 0x80) {
+                                throw runtime.newArgumentError("invalid range \""
+                                        + (char) t.now + "-" + (char) c + "\" in string transliteration");
+                            }
+
+                            throw runtime.newArgumentError("invalid range in string transliteration");
+                        }
                         t.gen = true;
                         t.max = c;
                     }
@@ -7036,7 +7067,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
     public IRubyObject encode_bang(ThreadContext context) {
         modify19();
-        IRubyObject defaultInternal = RubyEncoding.getDefaultInternal(context.getRuntime());
+        IRubyObject defaultInternal = context.getRuntime().getEncodingService().getDefaultInternal();
         if (!defaultInternal.isNil()) {
             encode_bang(context, defaultInternal);
         }
@@ -7080,7 +7111,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        IRubyObject defaultInternal = RubyEncoding.getDefaultInternal(runtime);
+        IRubyObject defaultInternal = runtime.getEncodingService().getDefaultInternal();
 
         if (!defaultInternal.isNil()) {
             ByteList encoded = encodeCommon(context, runtime, value, defaultInternal,
@@ -7191,7 +7222,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private static Encoding getEncoding(Ruby runtime, IRubyObject toEnc) {
         try {
-            return RubyEncoding.getEncodingFromObject(runtime, toEnc);
+            return runtime.getEncodingService().getEncodingFromObject(toEnc);
         } catch (Exception e) {
             throw runtime.newConverterNotFoundError("code converter not found (" + toEnc.toString() + ")");
         }
@@ -7199,7 +7230,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private static Charset getCharset(Ruby runtime, IRubyObject toEnc) {
         try {
-            Encoding encoding = RubyEncoding.getEncodingFromObject(runtime, toEnc);
+            Encoding encoding = runtime.getEncodingService().getEncodingFromObject(toEnc);
 
             return getCharset(runtime, encoding);
         } catch (Exception e) {
@@ -7221,7 +7252,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "force_encoding", compat = RUBY1_9)
     public IRubyObject force_encoding(ThreadContext context, IRubyObject enc) {
         modify19();
-        Encoding encoding = RubyEncoding.getEncodingFromObject(context.getRuntime(), enc);
+        Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(enc);
         associateEncoding(encoding);
         return this;
     }
@@ -7274,17 +7305,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @Override
     public Object toJava(Class target) {
         if (target.isAssignableFrom(String.class)) {
-            try {
-                // 1.9 support for encodings
-                // TODO: Fix charset use for JRUBY-4553
-                if (getRuntime().is1_9()) {
-                    return new String(value.getUnsafeBytes(), value.begin(), value.length(), getEncoding().toString());
-                }
-
-                return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
-            } catch (UnsupportedEncodingException uee) {
-                return toString();
-            }
+            return decodeString();
         } else if (target.isAssignableFrom(ByteList.class)) {
             return value;
         } else {

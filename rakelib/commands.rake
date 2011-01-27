@@ -94,6 +94,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     sysproperty :key => "emma.verbosity.level", :value=> "silent"
 
     env :key => "JAVA_OPTS", :value => "-Demma.verbosity.level=silent"
+    env :key => "JRUBY_OPTS", :value => ""
     arg :line => "#{MSPEC_BIN} ci"
     arg :line => "-T -J-ea"
     arg :line => "-T -J-Djruby.launch.inproc=false"

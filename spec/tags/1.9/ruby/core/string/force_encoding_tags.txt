@@ -1,1 +1,0 @@
-fails:String#force_encoding tags the String with the given encoding

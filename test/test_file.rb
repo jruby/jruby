@@ -209,8 +209,39 @@ class TestFile < Test::Unit::TestCase
 
     def test_expand_path_with_file_prefix
       jruby_specific_test
-      assert_equal("file:/foo/bar", File.expand_path("file:/foo/bar"))
-      assert_equal("file:/bar", File.expand_path("file:/foo/../bar"))
+      assert_equal "file:/foo/bar", File.expand_path("file:/foo/bar")
+      assert_equal "file:/bar", File.expand_path("file:/foo/../bar")
+      assert_equal "file:/foo/bar/baz", File.expand_path("baz", "file:/foo/bar")
+      assert_equal "file:/foo/bar", File.expand_path("file:/foo/bar", "file:/baz/quux")
+    end
+
+    def test_expand_path_with_file_url_relative_path
+      jruby_specific_test
+      assert_equal "file:#{Dir.pwd}/foo/bar", File.expand_path("file:foo/bar")
+    end
+
+    # JRUBY-5219
+    def test_expand_path_looks_like_url
+      jruby_specific_test
+      assert_equal "classpath:/META-INF/jruby.home", File.expand_path("classpath:/META-INF/jruby.home")
+      assert_equal "http://example.com/a.jar", File.expand_path("http://example.com/a.jar")
+      assert_equal "http://example.com/", File.expand_path("..", "http://example.com/a.jar")
+      assert_equal "classpath:/foo/bar/baz", File.expand_path("baz", "classpath:/foo/bar")
+      assert_equal "classpath:/foo/bar", File.expand_path("classpath:/foo/bar", "classpath:/baz/quux")
+      assert_equal "classpath:/foo", File.expand_path("..", "classpath:/foo/bar")
+    end
+
+    def test_mkdir_with_non_file_uri_raises_error
+      assert_raises(Errno::ENOTDIR) { FileUtils.mkdir_p("classpath:/META-INF/jruby.home") }
+      assert !File.directory?("classpath:/META-INF/jruby.home")
+    end
+
+    def test_mkdir_with_file_uri_works_as_expected
+      FileUtils.mkdir("file:test_mkdir_with_file_uri_works_as_expected")
+      assert File.directory?("test_mkdir_with_file_uri_works_as_expected")
+      assert File.directory?("file:test_mkdir_with_file_uri_works_as_expected")
+    ensure
+      FileUtils.rm_rf("test_mkdir_with_file_uri_works_as_expected")
     end
 
     def test_expand_path_corner_case
@@ -418,7 +449,6 @@ class TestFile < Test::Unit::TestCase
   def with_load_path(entry)
     begin
       $LOAD_PATH.unshift entry
-      puts "adding to load path: #{entry}"
       yield
     ensure
       $LOAD_PATH.shift
@@ -513,7 +543,6 @@ class TestFile < Test::Unit::TestCase
 
   # JRUBY-2524
   def test_filetest_exists_uri_prefixes
-    assert(!FileTest.exists?("file:/"))
     assert(!FileTest.exists?("file:/!"))
   end
 
@@ -1065,5 +1094,35 @@ class TestFile < Test::Unit::TestCase
       FileUtils.rm_rf(path)
       Dir.chdir(pwd)
     end
+  end
+
+  # JRUBY-5282
+  def test_file_methods_with_closed_stream
+    filename = 'test.txt'
+    begin
+      file = File.open(filename, 'w+')
+      file.close
+
+      %w{atime ctime lstat mtime stat}.each do |method|
+        assert_raise(IOError) { file.send(method.to_sym) }
+      end
+
+      assert_raise(IOError) { file.truncate(0) }
+      assert_raise(IOError) { file.chmod(777) }
+      assert_raise(IOError) { file.chown(0, 0) }
+
+    ensure
+      File.unlink(filename)
+    end
+  end
+
+  # JRUBY-5286
+  def test_file_path_is_tainted
+    filename = 'test.txt'
+    io = File.new(filename, 'w')
+    assert io.path.tainted?
+  ensure
+    io.close
+    File.unlink(filename)
   end
 end

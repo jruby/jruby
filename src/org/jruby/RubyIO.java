@@ -92,6 +92,10 @@ import org.jruby.util.io.ChannelDescriptor;
 
 import org.jruby.util.io.SelectorFactory;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Arrays;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.javasupport.util.RuntimeHelpers;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -629,8 +633,7 @@ public class RubyIO extends RubyObject {
                 incrementLineno(runtime, myOpenFile);
                 return str;
             } else if (limit == 0) {
-                return RubyString.newEmptyString(runtime,
-                        RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
+                return RubyString.newEmptyString(runtime, externalEncoding);
             } else if (separator.length() == 1 && limit < 0) {
                 return getlineFast(runtime, separator.get(0) & 0xFF, cache);
             } else {
@@ -718,9 +721,7 @@ public class RubyIO extends RubyObject {
     }
 
     private Encoding getExternalEncoding(Ruby runtime) {
-        return externalEncoding != null ?
-            RubyEncoding.getEncodingFromObject(runtime, externalEncoding) :
-            runtime.getDefaultExternalEncoding();
+        return externalEncoding != null ? externalEncoding : runtime.getDefaultExternalEncoding();
     }
 
     private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
@@ -1001,12 +1002,16 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject external_encoding(ThreadContext context) {
-        return externalEncoding != null ? externalEncoding : RubyEncoding.getDefaultExternal(context.getRuntime());
+        return externalEncoding != null ?
+            context.getRuntime().getEncodingService().getEncoding(externalEncoding) :
+            context.getRuntime().getNil();
     }
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject internal_encoding(ThreadContext context) {
-        return internalEncoding != null ? internalEncoding : context.getRuntime().getNil();
+        return internalEncoding != null ?
+            context.getRuntime().getEncodingService().getEncoding(internalEncoding) :
+            context.getRuntime().getNil();
     }
 
     @JRubyMethod(compat=RUBY1_9)
@@ -1035,9 +1040,9 @@ public class RubyIO extends RubyObject {
 
 
     private void setInternalEncoding(ThreadContext context, IRubyObject encoding) {
-        IRubyObject internalEncodingOption = getEncodingCommon(context, encoding);
+        Encoding internalEncodingOption = getEncodingCommon(context, encoding);
 
-        if (internalEncodingOption.toString().equals(external_encoding(context).toString())) {
+        if (internalEncodingOption == externalEncoding) {
             context.getRuntime().getWarnings().warn("Ignoring internal encoding " + encoding
                     + ": it is identical to external encoding " + external_encoding(context));
         } else {
@@ -1045,15 +1050,10 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    private IRubyObject getEncodingCommon(ThreadContext context, IRubyObject encoding) {
-        IRubyObject rubyEncoding = null;
-        if (encoding instanceof RubyEncoding) {
-            rubyEncoding = encoding;
-        } else {
-            Encoding encodingObj = RubyEncoding.getEncodingFromObject(context.getRuntime(), encoding);
-            rubyEncoding = RubyEncoding.convertEncodingToRubyEncoding(context.getRuntime(), encodingObj);            
-        }
-        return rubyEncoding;
+    private Encoding getEncodingCommon(ThreadContext context, IRubyObject encoding) {
+        if (encoding instanceof RubyEncoding) return ((RubyEncoding) encoding).getEncoding();
+        
+        return context.getRuntime().getEncodingService().getEncodingFromObject(encoding);
     }
 
     @JRubyMethod(required = 1, optional = 2, meta = true)
@@ -1128,7 +1128,8 @@ public class RubyIO extends RubyObject {
         try {
             ChannelDescriptor descriptor =
                 ChannelDescriptor.open(runtime.getCurrentDirectory(),
-                                       path, modes, perms, runtime.getPosix());
+                                       path, modes, perms, runtime.getPosix(),
+                                       runtime.getJRubyClassLoader());
             // always a new fileno, so ok to use internal only
             fileno = descriptor.getFileno();
         }
@@ -1165,8 +1166,11 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "binmode")
     public IRubyObject binmode() {
-        if (isClosed()) {
-            throw getRuntime().newIOError("closed stream");
+        if (isClosed()) throw getRuntime().newIOError("closed stream");
+
+        Ruby runtime = getRuntime();
+        if (getExternalEncoding(runtime) == USASCIIEncoding.INSTANCE) {
+            externalEncoding = ASCIIEncoding.INSTANCE;
         }
         openFile.setBinmode();
         return this;
@@ -2488,7 +2492,7 @@ public class RubyIO extends RubyObject {
 
             ByteList newBuf = empty ? ByteList.EMPTY_BYTELIST.dup() : buf;
             if (externalEncoding != null) { // TODO: Encapsulate into something more central (when adding trancoding)
-                newBuf.setEncoding(RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
+                newBuf.setEncoding(externalEncoding);
             }
             string.view(newBuf);
 
@@ -2652,7 +2656,6 @@ public class RubyIO extends RubyObject {
     public IRubyObject read(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         OpenFile myOpenFile = getOpenFileChecked();
         
-        RubyString str = null;
         if (arg0.isNil()) {
             try {
                 myOpenFile.checkReadable(getRuntime());
@@ -2988,9 +2991,7 @@ public class RubyIO extends RubyObject {
             byte c = (byte)RubyNumeric.fix2int(ch);
             int n = runtime.getKCode().getEncoding().length(c);
             RubyString str = runtime.newString();
-            if (externalEncoding != null) {
-                str.setEncoding(RubyEncoding.getEncodingFromObject(runtime, externalEncoding));
-            }
+            if (externalEncoding != null) str.setEncoding(externalEncoding);
             str.setTaint(true);
             str.cat(c);
 
@@ -3287,7 +3288,7 @@ public class RubyIO extends RubyObject {
                 }
             }
 
-            if (r.size() == 0 && w.size() == 0 && e.size() == 0) {
+            if (r.isEmpty() && w.isEmpty() && e.isEmpty()) {
                 return runtime.getNil();
             }
 
@@ -3412,6 +3413,39 @@ public class RubyIO extends RubyObject {
         }
     }
 
+    /**
+     * binread is just like read, except it doesn't take options and it forces
+     * mode to be "rb:ASCII-8BIT"
+     *
+     * @param context the current ThreadContext
+     * @param recv the target of the call (IO or a subclass)
+     * @param args arguments; path [, length [, offset]]
+     * @return the binary contents of the given file, at specified length and offset
+     */
+    @JRubyMethod(meta = true, required = 1, optional = 2, compat = RUBY1_9)
+    public static IRubyObject binread(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject nil = context.getRuntime().getNil();
+        IRubyObject path = args[0];
+        IRubyObject length = nil;
+        IRubyObject offset = nil;
+        Ruby runtime = context.runtime;
+
+        if (args.length > 2) {
+            offset = args[2];
+            length = args[1];
+        } else if (args.length > 1) {
+            length = args[1];
+        }
+        RubyIO file = (RubyIO)RuntimeHelpers.invoke(context, runtime.getFile(), "new", path, runtime.newString("rb:ASCII-8BIT"));
+
+        try {
+            if (!offset.isNil()) file.seek(context, offset);
+            return !length.isNil() ? file.read(context, length) : file.read(context);
+        } finally  {
+            file.close();
+        }
+    }
+
     // Enebo: annotation processing forced me to do pangea method here...
     @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, compat = RUBY1_9)
     public static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
@@ -3457,7 +3491,7 @@ public class RubyIO extends RubyObject {
         }
     }
    
-    @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true)
+    @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true, compat = RUBY1_8)
     public static IRubyObject popen(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         int mode;
@@ -3523,6 +3557,107 @@ public class RubyIO extends RubyObject {
             throw runtime.newThreadError("unexpected interrupt");
         }
     }
+
+    @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true, compat = RUBY1_9)
+    public static IRubyObject popen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.getRuntime();
+        int mode;
+
+        IRubyObject[] cmdPlusArgs = null;
+        RubyHash env = null;
+        RubyHash opts = null;
+        IRubyObject cmdObj = null;
+        IRubyObject arg0 = args[0].checkArrayType();
+        
+        if (!arg0.isNil()) {
+            List argList = new ArrayList(Arrays.asList(((RubyArray)arg0).toJavaArray()));
+            if (argList.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
+            if (argList.get(0) instanceof RubyHash) {
+                // leading hash, use for env
+                env = (RubyHash)argList.remove(0);
+            }
+            if (argList.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
+            if (argList.size() > 1 && argList.get(argList.size() - 1) instanceof RubyHash) {
+                // trailing hash, use for opts
+                env = (RubyHash)argList.get(argList.size() - 1);
+            }
+            cmdPlusArgs = (IRubyObject[])argList.toArray(new IRubyObject[argList.size()]);
+
+            if (Platform.IS_WINDOWS) {
+                String commandString = cmdPlusArgs[0].convertToString().toString().replace('/', '\\');
+                cmdPlusArgs[0] = runtime.newString(commandString);
+            } else {
+                cmdPlusArgs[0] = cmdPlusArgs[0].convertToString();
+            }
+            cmdObj = cmdPlusArgs[0];
+        } else {
+            if (Platform.IS_WINDOWS) {
+                String[] tokens = args[0].convertToString().toString().split(" ", 2);
+                String commandString = tokens[0].replace('/', '\\') +
+                        (tokens.length > 1 ? ' ' + tokens[1] : "");
+                cmdObj = runtime.newString(commandString);
+            } else {
+                cmdObj = args[0].convertToString();
+            }
+        }
+        
+        runtime.checkSafeString(cmdObj);
+
+        if ("-".equals(cmdObj.toString())) {
+            throw runtime.newNotImplementedError("popen(\"-\") is unimplemented");
+        }
+
+        try {
+            if (args.length == 1) {
+                mode = ModeFlags.RDONLY;
+            } else if (args[1] instanceof RubyFixnum) {
+                mode = RubyFixnum.num2int(args[1]);
+            } else {
+                mode = getIOModesIntFromString(runtime, args[1].convertToString().toString());
+            }
+
+            ModeFlags modes = new ModeFlags(mode);
+
+            ShellLauncher.POpenProcess process;
+            if (cmdPlusArgs == null) {
+                process = ShellLauncher.popen(runtime, cmdObj, modes);
+            } else {
+                process = ShellLauncher.popen(runtime, cmdPlusArgs, env, modes);
+            }
+
+            // Yes, this is gross. java.lang.Process does not appear to be guaranteed
+            // "ready" when we get it back from Runtime#exec, so we try to give it a
+            // chance by waiting for 10ms before we proceed. Only doing this on 1.5
+            // since Hotspot 1.6+ does not seem to exhibit the problem.
+            if (System.getProperty("java.specification.version", "").equals("1.5")) {
+                synchronized (process) {
+                    try {
+                        process.wait(100);
+                    } catch (InterruptedException ie) {}
+                }
+            }
+
+            RubyIO io = new RubyIO(runtime, process, modes);
+
+            if (block.isGiven()) {
+                try {
+                    return block.yield(context, io);
+                } finally {
+                    if (io.openFile.isOpen()) {
+                        io.close();
+                    }
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor())));
+                }
+            }
+            return io;
+        } catch (InvalidValueException ex) {
+            throw runtime.newErrnoEINVALError();
+        } catch (IOException e) {
+            throw runtime.newIOErrorFromException(e);
+        } catch (InterruptedException e) {
+            throw runtime.newThreadError("unexpected interrupt");
+        }
+    }
    
     @JRubyMethod(rest = true, meta = true)
     public static IRubyObject popen3(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -3541,7 +3676,7 @@ public class RubyIO extends RubyObject {
                     return block.yield(context, yieldArgs);
                 } finally {
                     cleanupPOpen(tuple);
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (tuple.process.waitFor() * 256)));
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor()));
                 }
             }
             return yieldArgs;
@@ -3568,7 +3703,7 @@ public class RubyIO extends RubyObject {
                     return block.yield(context, yieldArgs);
                 } finally {
                     cleanupPOpen(tuple);
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (tuple.process.waitFor() * 256)));
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor()));
                 }
             }
             return yieldArgs;
@@ -3651,14 +3786,11 @@ public class RubyIO extends RubyObject {
         Ruby runtime = context.getRuntime();
 
         RubyIO io1 = null;
-        boolean close_io1 = false;
         RubyIO io2 = null;
-        boolean close_io2 = false;
 
         try {
             if (arg1 instanceof RubyString) {
                 io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg1}, Block.NULL_BLOCK);
-                close_io1 = true;
             } else if (arg1 instanceof RubyIO) {
                 io1 = (RubyIO) arg1;
             } else {
@@ -3669,7 +3801,6 @@ public class RubyIO extends RubyObject {
                 io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
             } else if (arg2 instanceof RubyIO) {
                 io2 = (RubyIO) arg2;
-                close_io2 = true;
             } else {
                 throw runtime.newTypeError("Should be String or IO");
             }
@@ -3815,14 +3946,14 @@ public class RubyIO extends RubyObject {
         RubyString dash = runtime.newString("-");
         if (externalEncodingOption != null && !externalEncodingOption.isNil()) {
             if (dash.eql(externalEncodingOption)) {
-                externalEncodingOption = RubyEncoding.getDefaultExternal(runtime);
+                externalEncodingOption = context.getRuntime().getEncodingService().getDefaultExternal();
             }
             setExternalEncoding(context, externalEncodingOption);
         }
 
         if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
             if (dash.eql(internalEncodingOption)) {
-                internalEncodingOption = RubyEncoding.getDefaultInternal(runtime);
+                internalEncodingOption = context.getRuntime().getEncodingService().getDefaultInternal();
             }
             setInternalEncoding(context, internalEncodingOption);
         }
@@ -3946,6 +4077,6 @@ public class RubyIO extends RubyObject {
     
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
-    protected IRubyObject externalEncoding;
-    protected IRubyObject internalEncoding;
+    protected Encoding externalEncoding;
+    protected Encoding internalEncoding;
 }

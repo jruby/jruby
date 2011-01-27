@@ -12,7 +12,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ReferenceReaper;
+import org.jruby.util.PhantomReferenceReaper;
 
 @JRubyClass(name = "FFI::" + AutoPointer.AUTOPTR_CLASS_NAME, parent = "FFI::Pointer")
 public final class AutoPointer extends Pointer {
@@ -121,7 +121,7 @@ public final class AutoPointer extends Pointer {
         return context.getRuntime().getNil();
     }
 
-    private static final class Reaper extends ReferenceReaper.Phantom<AutoPointer> implements Runnable {
+    private static final class Reaper extends PhantomReferenceReaper<AutoPointer> implements Runnable {
         private final Pointer pointer;
         private final IRubyObject proc;
         private final String methodName;

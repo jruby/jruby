@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.ast.RestArgNode;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -67,7 +68,10 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.util.Map;
 import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.ast.UnnamedRestArgNode;
+import org.jruby.internal.runtime.methods.MethodArgs2;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
 import static org.jruby.runtime.Visibility.*;
@@ -468,7 +472,16 @@ public class RubyJRuby {
                 throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
             }
 
-            return clazz.__subclasses__(context, args);
+            boolean recursive = false;
+            if (args.length == 1) {
+                if (args[0] instanceof RubyBoolean) {
+                    recursive = args[0].isTrue();
+                } else {
+                    context.getRuntime().newTypeError(args[0], context.getRuntime().fastGetClass("Boolean"));
+                }
+            }
+
+            return RubyArray.newArray(context.getRuntime(), clazz.subclasses(recursive)).freeze(context);
         }
 
         @JRubyMethod(name = "become_java!", optional = 1)
@@ -597,11 +610,19 @@ public class RubyJRuby {
         @JRubyMethod(name = "times", module = true)
         public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
             Ruby runtime = recv.getRuntime();
-            double system = threadBean.getCurrentThreadCpuTime() / 1000000000.0;
-            double user = threadBean.getCurrentThreadUserTime() / 1000000000.0;
+            long cpu = threadBean.getCurrentThreadCpuTime();
+            long user = threadBean.getCurrentThreadUserTime();
+            if (cpu == -1) {
+                cpu = 0L;
+            }
+            if (user == -1) {
+                user = 0L;
+            }
+            double system_d = (cpu - user) / 1000000000.0;
+            double user_d = user / 1000000000.0;
             RubyFloat zero = runtime.newFloat(0.0);
             return RubyStruct.newStruct(runtime.getTmsStruct(),
-                    new IRubyObject[] { RubyFloat.newFloat(runtime, user), RubyFloat.newFloat(runtime, system), zero, zero },
+                    new IRubyObject[] { RubyFloat.newFloat(runtime, user_d), RubyFloat.newFloat(runtime, system_d), zero, zero },
                     Block.NULL_BLOCK);
         }
     }
@@ -624,8 +645,10 @@ public class RubyJRuby {
             RubySymbol opt = runtime.newSymbol("opt");
             RubySymbol rest = runtime.newSymbol("rest");
             RubySymbol block = runtime.newSymbol("block");
-            
-            if (method instanceof MethodArgs) {
+
+            if (method instanceof MethodArgs2) {
+                return RuntimeHelpers.parameterListToParameters(runtime, ((MethodArgs2)method).getParameterList(), true);
+            } else if (method instanceof MethodArgs) {
                 MethodArgs interpMethod = (MethodArgs)method;
                 ArgsNode args = interpMethod.getArgsNode();
                 
@@ -645,7 +668,15 @@ public class RubyJRuby {
                 }
 
                 if (args.getRestArg() >= 0) {
-                    argsArray.append(RubyArray.newArray(runtime, rest, getNameFrom(runtime, args.getRestArgNode())));
+                    RestArgNode restArg = (RestArgNode) args.getRestArgNode();
+
+                    if (restArg instanceof UnnamedRestArgNode) {
+                        if (((UnnamedRestArgNode) restArg).isStar()) {
+                            argsArray.append(RubyArray.newArray(runtime, rest));
+                        }
+                    } else {
+                        argsArray.append(RubyArray.newArray(runtime, rest, getNameFrom(runtime, args.getRestArgNode())));
+                    }
                 }
                 
                 ListNode requiredArgsPost = args.getPost();

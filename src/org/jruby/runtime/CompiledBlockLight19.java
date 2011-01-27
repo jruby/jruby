@@ -40,18 +40,18 @@ public class CompiledBlockLight19 extends CompiledBlock19 {
     public static Block newCompiledClosureLight(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
-        BlockBody body = new CompiledBlockLight19(arity, scope, callback, hasMultipleArgsHead, argumentType);
+        BlockBody body = new CompiledBlockLight19(arity, scope, callback, hasMultipleArgsHead, argumentType, EMPTY_PARAMETER_LIST);
 
         return new Block(body, binding);
     }
     
     public static BlockBody newCompiledBlockLight(Arity arity,
-            StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
-        return new CompiledBlockLight19(arity, scope, callback, hasMultipleArgsHead, argumentType);
+            StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
+        return new CompiledBlockLight19(arity, scope, callback, hasMultipleArgsHead, argumentType, parameterList);
     }
 
-    protected CompiledBlockLight19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
-        super(arity, scope, callback, hasMultipleArgsHead, argumentType);
+    protected CompiledBlockLight19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
+        super(arity, scope, callback, hasMultipleArgsHead, argumentType, parameterList);
     }
     
     @Override

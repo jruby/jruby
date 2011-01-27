@@ -1,0 +1,1 @@
+fails:Method#== returns true for the same method missing

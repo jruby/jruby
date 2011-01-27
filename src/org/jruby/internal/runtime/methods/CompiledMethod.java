@@ -37,11 +37,14 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.PositionAware;
 
-public abstract class CompiledMethod extends JavaMethod implements Cloneable {
+public abstract class CompiledMethod extends JavaMethod implements Cloneable, PositionAware, MethodArgs2 {
     protected Object $scriptObject;
+    protected ISourcePosition position;
+    protected String[] parameterList;
     
-    public static class LazyCompiledMethod extends DynamicMethod implements Cloneable {
+    public static class LazyCompiledMethod extends DynamicMethod implements Cloneable, PositionAware, MethodArgs2 {
         private final String method;
         private final Arity arity;
         private final StaticScope scope;
@@ -49,9 +52,21 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable {
         private MethodFactory factory;
         private DynamicMethod compiledMethod;
         private final ISourcePosition position;
+        private final String parameterDesc;
+        private final String[] parameterList;
     
-        public LazyCompiledMethod(RubyModule implementationClass, String method, Arity arity, 
-            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position, MethodFactory factory) {
+        public LazyCompiledMethod(
+                RubyModule implementationClass,
+                String method,
+                Arity arity,
+                Visibility visibility,
+                StaticScope scope,
+                Object scriptObject,
+                CallConfiguration callConfig,
+                ISourcePosition position,
+                String parameterDesc,
+                MethodFactory factory) {
+            
             super(implementationClass, visibility, callConfig);
             this.method = method;
             this.arity = arity;
@@ -59,11 +74,13 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable {
             this.scriptObject = scriptObject;
             this.factory = factory;
             this.position = position;
+            this.parameterDesc = parameterDesc;
+            this.parameterList = parameterDesc.split(";");
         }
         
         private synchronized void initializeMethod() {
             if (compiledMethod != null) return;
-            compiledMethod = factory.getCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig, position);
+            compiledMethod = factory.getCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
             factory = null;
         }
         
@@ -198,13 +215,38 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable {
             if (compiledMethod == null) initializeMethod();
             return compiledMethod.dup();
         }
+
+        public String getFile() {
+            if (compiledMethod == null) initializeMethod();
+            return position.getFile();
+        }
+
+        public int getLine() {
+            if (compiledMethod == null) initializeMethod();
+            return position.getStartLine();
+        }
+
+        public String[] getParameterList() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
         
     }
     
     protected CompiledMethod() {}
     
-    protected void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, Object scriptObject, CallConfiguration callConfig) {
+    protected void init(
+            RubyModule implementationClass,
+            Arity arity,
+            Visibility visibility,
+            StaticScope staticScope,
+            Object scriptObject,
+            CallConfiguration callConfig,
+            ISourcePosition position,
+            String parameterDesc) {
+        
         this.$scriptObject = scriptObject;
+        this.position = position;
+        this.parameterList = parameterDesc.split(";");
         super.init(implementationClass, arity, visibility, staticScope, callConfig);
     }
         
@@ -241,5 +283,17 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable {
     @Override
     public boolean isNative() {
         return false;
+    }
+
+    public String getFile() {
+        return position.getFile();
+    }
+
+    public int getLine() {
+        return position.getStartLine();
+    }
+
+    public String[] getParameterList() {
+        return parameterList;
     }
 }// SimpleInvocationMethod

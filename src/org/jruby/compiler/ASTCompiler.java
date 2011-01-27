@@ -143,12 +143,14 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod.NativeCall;
 import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.internal.runtime.methods.JittedMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.util.StringSupport;
 
 /**
  *
@@ -696,10 +698,9 @@ public class ASTCompiler {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
         compile(argsCatNode.getFirstNode(), context,true);
-        context.ensureRubyArray();
         compile(argsCatNode.getSecondNode(), context,true);
-        splatCurrentValue(context);
-        context.concatArrays();
+        context.argsCat();
+
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2080,7 +2081,8 @@ public class ASTCompiler {
         context.defineNewMethod(
                 defnNode.getName(), defnNode.getArgsNode().getArity().getValue(),
                 defnNode.getScope(), body, args, null, inspector, isAtRoot,
-                defnNode.getPosition().getFile(), defnNode.getPosition().getStartLine());
+                defnNode.getPosition().getFile(), defnNode.getPosition().getStartLine(),
+                RuntimeHelpers.encodeParameterList(argsNode));
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2137,7 +2139,8 @@ public class ASTCompiler {
         context.defineNewMethod(
                 defsNode.getName(), defsNode.getArgsNode().getArity().getValue(),
                 defsNode.getScope(), body, args, receiver, inspector, false,
-                defsNode.getPosition().getFile(), defsNode.getPosition().getStartLine());
+                defsNode.getPosition().getFile(), defsNode.getPosition().getStartLine(),
+                RuntimeHelpers.encodeParameterList(argsNode));
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -3799,7 +3802,7 @@ public class ASTCompiler {
             if (strNode instanceof FileNode) {
                 context.loadFilename();
             } else {
-                context.createNewString(strNode.getValue());
+                context.createNewString(strNode.getValue(), strNode.getCodeRange());
             }
         }
         if (popit) context.consumeCurrentValue();
@@ -3980,7 +3983,8 @@ public class ASTCompiler {
             }
 
             public void call(BodyCompiler context) {
-                context.createNewString(xstrNode.getValue());
+                // FIXME: shouldn't this have codeRange like StrNode?
+                context.createNewString(xstrNode.getValue(), StringSupport.CR_UNKNOWN);
             }
         };
         context.getInvocationCompiler().invokeDynamic("`", null, argsCallback, CallType.FUNCTIONAL, null, false);

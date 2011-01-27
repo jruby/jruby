@@ -4,7 +4,7 @@ require 'jruby/synchronized'
 describe "JRuby::Synchronized" do
   before(:each) do
     @cls = Class.new do
-      include Spec::Matchers
+      include RSpec::Matchers
 
       def call_wait
         JRuby.reference(self).wait(1)

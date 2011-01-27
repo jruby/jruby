@@ -31,7 +31,6 @@ package org.jruby.ext.socket;
 
 import static com.kenai.constantine.platform.AddressFamily.*;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 
 import java.net.ConnectException;
@@ -49,7 +48,6 @@ import java.nio.channels.SocketChannel;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;

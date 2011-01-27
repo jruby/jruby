@@ -6,6 +6,8 @@
 package org.jruby.ast.executable;
 
 import java.math.BigInteger;
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -141,17 +143,43 @@ public abstract class AbstractScript implements Script {
 
     public static final int NUMBERED_STRING_COUNT = 10;
 
-    public final RubyString getString(Ruby runtime, int i) {return runtimeCache.getString(runtime, i);}
-    public final RubyString getString0(Ruby runtime) {return runtimeCache.getString(runtime, 0);}
-    public final RubyString getString1(Ruby runtime) {return runtimeCache.getString(runtime, 1);}
-    public final RubyString getString2(Ruby runtime) {return runtimeCache.getString(runtime, 2);}
-    public final RubyString getString3(Ruby runtime) {return runtimeCache.getString(runtime, 3);}
-    public final RubyString getString4(Ruby runtime) {return runtimeCache.getString(runtime, 4);}
-    public final RubyString getString5(Ruby runtime) {return runtimeCache.getString(runtime, 5);}
-    public final RubyString getString6(Ruby runtime) {return runtimeCache.getString(runtime, 6);}
-    public final RubyString getString7(Ruby runtime) {return runtimeCache.getString(runtime, 7);}
-    public final RubyString getString8(Ruby runtime) {return runtimeCache.getString(runtime, 8);}
-    public final RubyString getString9(Ruby runtime) {return runtimeCache.getString(runtime, 9);}
+    public final RubyString getString(Ruby runtime, int i, int codeRange) {return runtimeCache.getString(runtime, i, codeRange);}
+    public final RubyString getString0(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 0, codeRange);}
+    public final RubyString getString1(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 1, codeRange);}
+    public final RubyString getString2(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 2, codeRange);}
+    public final RubyString getString3(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 3, codeRange);}
+    public final RubyString getString4(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 4, codeRange);}
+    public final RubyString getString5(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 5, codeRange);}
+    public final RubyString getString6(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 6, codeRange);}
+    public final RubyString getString7(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 7, codeRange);}
+    public final RubyString getString8(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 8, codeRange);}
+    public final RubyString getString9(Ruby runtime, int codeRange) {return runtimeCache.getString(runtime, 9, codeRange);}
+
+    public final ByteList getByteList(int i) {return runtimeCache.getByteList(i);}
+    public final ByteList getByteList0() {return runtimeCache.getByteList(0);}
+    public final ByteList getByteList1() {return runtimeCache.getByteList(1);}
+    public final ByteList getByteList2() {return runtimeCache.getByteList(2);}
+    public final ByteList getByteList3() {return runtimeCache.getByteList(3);}
+    public final ByteList getByteList4() {return runtimeCache.getByteList(4);}
+    public final ByteList getByteList5() {return runtimeCache.getByteList(5);}
+    public final ByteList getByteList6() {return runtimeCache.getByteList(6);}
+    public final ByteList getByteList7() {return runtimeCache.getByteList(7);}
+    public final ByteList getByteList8() {return runtimeCache.getByteList(8);}
+    public final ByteList getByteList9() {return runtimeCache.getByteList(9);}
+
+    public static final int NUMBERED_ENCODING_COUNT = 10;
+
+    public final Encoding getEncoding(int i) {return runtimeCache.getEncoding(i);}
+    public final Encoding getEncoding0() {return runtimeCache.getEncoding(0);}
+    public final Encoding getEncoding1() {return runtimeCache.getEncoding(1);}
+    public final Encoding getEncoding2() {return runtimeCache.getEncoding(2);}
+    public final Encoding getEncoding3() {return runtimeCache.getEncoding(3);}
+    public final Encoding getEncoding4() {return runtimeCache.getEncoding(4);}
+    public final Encoding getEncoding5() {return runtimeCache.getEncoding(5);}
+    public final Encoding getEncoding6() {return runtimeCache.getEncoding(6);}
+    public final Encoding getEncoding7() {return runtimeCache.getEncoding(7);}
+    public final Encoding getEncoding8() {return runtimeCache.getEncoding(8);}
+    public final Encoding getEncoding9() {return runtimeCache.getEncoding(9);}
 
     public static final int NUMBERED_FIXNUM_COUNT = 10;
 
@@ -170,17 +198,17 @@ public abstract class AbstractScript implements Script {
 
     public static final int NUMBERED_REGEXP_COUNT = 10;
 
-    public final RubyRegexp getRegexp(Ruby runtime, int i, String name, int options) {return runtimeCache.getRegexp(runtime, i, name, options);}
-    public final RubyRegexp getRegexp0(Ruby runtime, String name, int options) {return runtimeCache.getRegexp(runtime, 0, name, options);}
-    public final RubyRegexp getRegexp1(Ruby runtime, String name, int options) {return runtimeCache.getRegexp(runtime, 1, name, options);}
-    public final RubyRegexp getRegexp2(Ruby runtime, String name, int options) {return runtimeCache.getRegexp(runtime, 2, name, options);}
-    public final RubyRegexp getRegexp3(Ruby runtime, String name, int options) {return runtimeCache.getRegexp(runtime, 3, name, options);}
-    public final RubyRegexp getRegexp4(Ruby runtime, String name, int options) {return runtimeCache.getRegexp(runtime, 4, name, options);}
-    public final RubyRegexp getRegexp5(Ruby runtime, String name, int options) {return runtimeCache.getRegexp(runtime, 5, name, options);}
-    public final RubyRegexp getRegexp6(Ruby runtime, String name, int options) {return runtimeCache.getRegexp(runtime, 6, name, options);}
-    public final RubyRegexp getRegexp7(Ruby runtime, String name, int options) {return runtimeCache.getRegexp(runtime, 7, name, options);}
-    public final RubyRegexp getRegexp8(Ruby runtime, String name, int options) {return runtimeCache.getRegexp(runtime, 8, name, options);}
-    public final RubyRegexp getRegexp9(Ruby runtime, String name, int options) {return runtimeCache.getRegexp(runtime, 9, name, options);}
+    public final RubyRegexp getRegexp(Ruby runtime, int i, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, i, pattern, options);}
+    public final RubyRegexp getRegexp0(Ruby runtime, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, 0, pattern, options);}
+    public final RubyRegexp getRegexp1(Ruby runtime, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, 1, pattern, options);}
+    public final RubyRegexp getRegexp2(Ruby runtime, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, 2, pattern, options);}
+    public final RubyRegexp getRegexp3(Ruby runtime, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, 3, pattern, options);}
+    public final RubyRegexp getRegexp4(Ruby runtime, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, 4, pattern, options);}
+    public final RubyRegexp getRegexp5(Ruby runtime, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, 5, pattern, options);}
+    public final RubyRegexp getRegexp6(Ruby runtime, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, 6, pattern, options);}
+    public final RubyRegexp getRegexp7(Ruby runtime, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, 7, pattern, options);}
+    public final RubyRegexp getRegexp8(Ruby runtime, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, 8, pattern, options);}
+    public final RubyRegexp getRegexp9(Ruby runtime, ByteList pattern, int options) {return runtimeCache.getRegexp(runtime, 9, pattern, options);}
 
     public static final int NUMBERED_BIGINTEGER_COUNT = 10;
 
@@ -288,8 +316,19 @@ public abstract class AbstractScript implements Script {
         return runtimeCache. getMethod(context, self, 9, methodName);
     }
 
-    public void setByteList(int index, String str) {
-        runtimeCache.byteLists[index] = ByteList.create(str);
+    public void setByteList(int index, String str, Encoding encoding) {
+        // decode chars back into bytes
+        char[] chars = str.toCharArray();
+        byte[] bytes = new byte[chars.length];
+        for (int i = 0; i < chars.length; i++) {
+            bytes[i] = (byte)chars[i];
+        }
+
+        runtimeCache.byteLists[index] = new ByteList(bytes, encoding, false);
+    }
+
+    public void setEncoding(int index, String encStr) {
+        runtimeCache.encodings[index] = EncodingDB.getEncodings().get(encStr.getBytes()).getEncoding();
     }
 
     public static CallSite[] setCallSite(CallSite[] callSites, int index, String name) {

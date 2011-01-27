@@ -1,3 +1,0 @@
-fails(JRUBY-5250):not() returns false if the argument is true
-fails(JRUBY-5250):not() returns true if the argument is false
-fails(JRUBY-5250):not() returns true if the argument is nil

@@ -94,6 +94,8 @@ STDLIB_FILES = %w[
   wsdl
   xmlrpc
   xsd
+  yaml.rb
+  yaml
 ]
 
 EXT_FILES = {
@@ -107,9 +109,3 @@ EXT_FILES = {
   'ext/digest/sha2/lib/sha2.rb' => 'digest/sha2.rb',
   'ext/Win32API/lib/win32' => 'win32'
 }
-
-# yaml files go into src/builtin for jruby
-YAML_FILES = %w[
-  yaml.rb
-  yaml
-]

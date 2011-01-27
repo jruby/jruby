@@ -327,6 +327,10 @@ public class RubySymbol extends RubyObject {
         return RubyString.newStringShared(runtime, symbolBytes);
     }
 
+    private RubyString rubyStringFromString(Ruby runtime) {
+        return RubyString.newString(runtime, symbol);
+    }
+
     @JRubyMethod(name = {"succ", "next"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject succ(ThreadContext context) {
         Ruby runtime = context.getRuntime();
@@ -382,25 +386,25 @@ public class RubySymbol extends RubyObject {
     @JRubyMethod(name = "upcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject upcase(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        return newSymbol(runtime, newShared(runtime).upcase19(context).toString());
+        return newSymbol(runtime, rubyStringFromString(runtime).upcase19(context).toString());
     }
 
     @JRubyMethod(name = "downcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject downcase(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        return newSymbol(runtime, newShared(runtime).downcase19(context).toString());
+        return newSymbol(runtime, rubyStringFromString(runtime).downcase19(context).toString());
     }
 
     @JRubyMethod(name = "capitalize", compat = CompatVersion.RUBY1_9)
     public IRubyObject capitalize(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        return newSymbol(runtime, newShared(runtime).capitalize19(context).toString());
+        return newSymbol(runtime, rubyStringFromString(runtime).capitalize19(context).toString());
     }
 
     @JRubyMethod(name = "swapcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject swapcase(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        return newSymbol(runtime, newShared(runtime).swapcase19(context).toString());
+        return newSymbol(runtime, rubyStringFromString(runtime).swapcase19(context).toString());
     }
 
     @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)

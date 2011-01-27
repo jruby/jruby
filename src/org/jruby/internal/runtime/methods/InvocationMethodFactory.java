@@ -189,9 +189,26 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
      */
     public DynamicMethod getCompiledMethodLazily(
-            RubyModule implementationClass, String method, Arity arity, 
-            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position) {
-        return new CompiledMethod.LazyCompiledMethod(implementationClass, method, arity, visibility, scope, scriptObject, callConfig, position,
+            RubyModule implementationClass,
+            String method,
+            Arity arity,
+            Visibility visibility,
+            StaticScope scope,
+            Object scriptObject,
+            CallConfiguration callConfig,
+            ISourcePosition position,
+            String parameterDesc) {
+
+        return new CompiledMethod.LazyCompiledMethod(
+                implementationClass,
+                method,
+                arity,
+                visibility,
+                scope,
+                scriptObject,
+                callConfig,
+                position,
+                parameterDesc,
                 new InvocationMethodFactory(classLoader));
     }
 
@@ -201,8 +218,16 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
      */
     public DynamicMethod getCompiledMethod(
-            RubyModule implementationClass, String method, Arity arity, 
-            Visibility visibility, StaticScope scope, Object scriptObject, CallConfiguration callConfig, ISourcePosition position) {
+            RubyModule implementationClass,
+            String method,
+            Arity arity,
+            Visibility visibility,
+            StaticScope scope,
+            Object scriptObject,
+            CallConfiguration callConfig,
+            ISourcePosition position,
+            String parameterDesc) {
+        
         Class scriptClass = scriptObject.getClass();
         String typePath = p(scriptClass);
         String invokerName = typePath.replaceAll("/", "_") + "Invoker" + method + arity;
@@ -214,14 +239,22 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                         System.err.println("no generated handle in classloader for: " + invokerName);
                     }
-                    byte[] invokerBytes = getCompiledMethodOffline(method, typePath, invokerName, arity, scope, callConfig, position.getFile(), position.getStartLine());
+                    byte[] invokerBytes = getCompiledMethodOffline(
+                            method,
+                            typePath,
+                            invokerName,
+                            arity,
+                            scope,
+                            callConfig,
+                            position.getFile(),
+                            position.getStartLine());
                     generatedClass = endCallWithBytes(invokerBytes, invokerName);
                 } else if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                     System.err.println("found generated handle in classloader: " + invokerName);
                 }
 
                 CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
-                compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig);
+                compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
                 return compiledMethod;
             } catch(Exception e) {
                 e.printStackTrace();

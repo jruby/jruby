@@ -59,7 +59,6 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -1065,17 +1064,6 @@ public class RubyClass extends RubyModule {
 
         return superClazz != null ? superClazz : runtime.getNil();
     }
-
-    @JRubyMethod(optional = 1)
-    public IRubyObject __subclasses__(ThreadContext context, IRubyObject[] args) {
-        boolean recursive = false;
-        if (args.length > 0) {
-            recursive = args[0].isTrue();
-        }
-
-        return RubyArray.newArray(context.getRuntime(), subclasses(recursive)).freeze(context);
-    }
-
 
     private void checkNotInitialized() {
         if (superClass != null || (runtime.is1_9() && this == runtime.getBasicObject())) {

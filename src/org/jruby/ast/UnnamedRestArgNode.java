@@ -31,10 +31,14 @@ package org.jruby.ast;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
- * a bare '*'
+ * a bare '*' or nothing.  Name is "" if it is '*' and null if it is nothing.
  */
 public class UnnamedRestArgNode extends RestArgNode {
-    public UnnamedRestArgNode(ISourcePosition position, int index) {
-        super(position, "", index);
+    public UnnamedRestArgNode(ISourcePosition position, String name, int index) {
+        super(position, name, index);
+    }
+
+    public boolean isStar() {
+        return getName() != null;
     }
 }

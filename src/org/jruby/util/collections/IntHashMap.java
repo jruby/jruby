@@ -7,9 +7,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-@Deprecated
-public class IntHashMap {
-    private transient Entry table[];
+public class IntHashMap<V> {
+    private transient Entry<V>[] table;
 
     private transient int count;
 
@@ -21,17 +20,25 @@ public class IntHashMap {
  
     private final float loadFactor;
  
-    private static class Entry {
+    public static class Entry<V> {
         final int hash;
         final int key;
-        Object value;
+        V value;
         Entry next;
  
-        protected Entry(int hash, int key, Object value, Entry next) {
+        protected Entry(int hash, int key, V value, Entry next) {
             this.hash = hash;
             this.key = key;
             this.value = value;
             this.next = next;
+        }
+
+        public int getKey() {
+            return key;
+        }
+
+        public V getValue() {
+            return value;
         }
     }
  
@@ -89,7 +96,7 @@ public class IntHashMap {
     }
  
     public boolean containsKey(int key) {
-        Entry tab[] = table;
+        Entry[] tab = table;
         int hash = key;
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (Entry e = tab[index]; e != null; e = e.next) {
@@ -100,11 +107,11 @@ public class IntHashMap {
         return false;
     }
  
-    public Object get(int key) {
-        Entry tab[] = table;
+    public V get(int key) {
+        Entry<V>[] tab = table;
         int hash = key;
         int index = (hash & 0x7FFFFFFF) % tab.length;
-        for (Entry e = tab[index]; e != null; e = e.next) {
+        for (Entry<V> e = tab[index]; e != null; e = e.next) {
             if (e.hash == hash) {
                 return e.value;
             }
@@ -114,10 +121,10 @@ public class IntHashMap {
  
     protected void rehash() {
         int oldCapacity = table.length;
-        Entry oldMap[] = table;
+        Entry[] oldMap = table;
  
         int newCapacity = oldCapacity * 2 + 1;
-        Entry newMap[] = new Entry[newCapacity];
+        Entry[] newMap = new Entry[newCapacity];
  
         threshold = (int) (newCapacity * loadFactor);
         table = newMap;
@@ -134,11 +141,11 @@ public class IntHashMap {
         }
     }
 
-	Entry getEntry(int key)	{
-        Entry tab[] = table;
+	Entry<V> getEntry(int key)	{
+        Entry<V>[] tab = table;
         int hash = key;
         int index = (hash & 0x7FFFFFFF) % tab.length;
-        for(Entry e = tab[index]; e != null; e = e.next) {
+        for(Entry<V> e = tab[index]; e != null; e = e.next) {
             if (e.hash == hash) {
                 return e;
             }
@@ -146,14 +153,14 @@ public class IntHashMap {
         return null;
 	} 
 
-    public Object put(int key, Object value) {
+    public V put(int key, V value) {
         // Makes sure the key is not already in the hashtable.
-        Entry tab[] = table;
+        Entry<V>[] tab = table;
         int hash = key;
         int index = (hash & 0x7FFFFFFF) % tab.length;
-        for (Entry e = tab[index]; e != null; e = e.next) {
+        for (Entry<V> e = tab[index]; e != null; e = e.next) {
             if (e.hash == hash) {
-                Object old = e.value;
+                V old = e.value;
                 e.value = value;
                 return old;
             }
@@ -174,11 +181,11 @@ public class IntHashMap {
         return null;
     }
  
-    public Object remove(int key) {
-        Entry tab[] = table;
+    public V remove(int key) {
+        Entry<V>[] tab = table;
         int hash = key;
         int index = (hash & 0x7FFFFFFF) % tab.length;
-        for (Entry e = tab[index], prev = null; e != null; prev = e, e = e.next) {
+        for (Entry<V> e = tab[index], prev = null; e != null; prev = e, e = e.next) {
             if (e.hash == hash) {
                 if (prev != null) {
                     prev.next = e.next;
@@ -186,7 +193,7 @@ public class IntHashMap {
                     tab[index] = e.next;
                 }
                 count--;
-                Object oldValue = e.value;
+                V oldValue = e.value;
                 e.value = null;
                 return oldValue;
             }
@@ -195,21 +202,21 @@ public class IntHashMap {
     }
  
     public synchronized void clear() {
-        Entry tab[] = table;
+        Entry[] tab = table;
         for (int index = tab.length; --index >= 0;) {
             tab[index] = null;
         }
         count = 0;
     }
 
-    private abstract class HashIterator implements Iterator {
-		Entry next; // next entry to return
+    private abstract class HashIterator<V> implements Iterator<V> {
+		Entry<V> next; // next entry to return
 		int index; // current slot
 
 		HashIterator() {
 			Entry[] t = table;
 			int i = t.length;
-			Entry n = null;
+			Entry<V> n = null;
 			if(count != 0) { // advance to first entry
 				while (i > 0 && (n = t[--i]) == null) {
 				}
@@ -222,12 +229,12 @@ public class IntHashMap {
 			return next != null;
 		}
 
-		Entry nextEntry() {
-			Entry e = next;
+		Entry<V> nextEntry() {
+			Entry<V> e = next;
 			if(e == null) {
 				throw new NoSuchElementException();
 			}
-			Entry n = e.next;
+			Entry<V> n = e.next;
 			Entry[] t = table;
 			int i = index;
 			while(n == null && i > 0) {
@@ -276,12 +283,12 @@ public class IntHashMap {
 
 	private transient Set entrySet = null;
 
-	public Set keySet() {
-		Set ks = keySet;
+	public Set<Integer> keySet() {
+		Set<Integer> ks = keySet;
 		return (ks != null ? ks : (keySet = new KeySet()));
 	}
 
-	private class KeySet extends AbstractSet {
+	private class KeySet extends AbstractSet<Integer> {
 		public Iterator iterator() {
 			return newKeyIterator();
 		}
@@ -309,12 +316,12 @@ public class IntHashMap {
 		}
 	}
 
-	public Collection values() {
-		Collection vs = values;
+	public Collection<V> values() {
+		Collection<V> vs = values;
 		return (vs != null ? vs : (values = new Values()));
 	}
 
-	private class Values extends AbstractCollection {
+	private class Values extends AbstractCollection<V> {
 		public Iterator iterator() {
 			return newValueIterator();
 		}
@@ -334,13 +341,13 @@ public class IntHashMap {
 		}
 	}
 
-	public Set entrySet() {
+	public Set<Entry> entrySet() {
 		Set es = entrySet;
 		return (es != null ? es : (entrySet = new EntrySet()));
 	}
 
-	private class EntrySet extends AbstractSet {
-		public Iterator iterator() {
+	private class EntrySet extends AbstractSet<Entry> {
+		public Iterator<Entry> iterator() {
 			return newEntryIterator();
 		}
 

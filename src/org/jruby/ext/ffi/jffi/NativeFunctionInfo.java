@@ -2,7 +2,6 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.CallingConvention;
-import com.kenai.jffi.Type;
 import org.jruby.Ruby;
 
 /**

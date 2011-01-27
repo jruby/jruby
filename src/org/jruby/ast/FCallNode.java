@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Represents a method call with self as an implicit receiver.
  */
 public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
-    private Node argsNode;
+    protected Node argsNode;
     protected Node iterNode;
     public CallSite callAdapter;
 

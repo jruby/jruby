@@ -39,6 +39,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.profile.IProfileData;
 
 public class RubyRunnable implements Runnable {
     private Ruby runtime;
@@ -119,6 +120,12 @@ public class RubyRunnable implements Runnable {
                     if (!warnedAboutTC && runtime.getInstanceConfig().isVerbose()) {
                         System.err.println("WARNING: Security restrictions disallowed setting context classloader for Ruby threads.");
                     }
+                }
+
+                // dump profile, if any
+                if (runtime.getInstanceConfig().isProfilingEntireRun()) {
+                    IProfileData profileData = (IProfileData) context.getProfileData();
+                    runtime.getInstanceConfig().makeDefaultProfilePrinter(profileData).printProfile(System.err);
                 }
             }
         } catch (ThreadKill tk) {

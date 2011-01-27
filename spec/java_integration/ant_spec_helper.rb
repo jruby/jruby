@@ -3,10 +3,14 @@ require 'ant'
 require 'tmpdir'
 
 class Ant
-  module Spec
-    class AntExampleGroup < ::Spec::Example::ExampleGroup
-      after :each do
-        Ant.send(:instance_variable_set, "@ant", nil)
+  module RSpec
+    module AntExampleGroup
+      def self.included(example_group)
+        example_group.after :each do
+          Ant.instance_eval do
+            instance_variable_set "@ant", nil
+          end
+        end
       end
 
       # Allows matching task structure with a nested hash as follows.
@@ -110,8 +114,6 @@ class Ant
       def example_ant(options = {}, &block)
         Ant.new({:basedir => Dir::tmpdir, :run => false, :output_level => 0}.merge(options),&block)
       end
-
-      ::Spec::Example::ExampleGroupFactory.register(:ant, self)
     end
   end
 end

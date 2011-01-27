@@ -48,15 +48,13 @@ describe "An overloaded Java static method" do
   end
 
   it "should raise error when called with too few args" do
-    pending do
-      lambda do
-        CoreTypeMethods.getType()
-      end.should raise_error(ArgumentError)
+    lambda do
+      CoreTypeMethods.getType()
+    end.should raise_error(ArgumentError)
 
-      lambda do
-        CoreTypeMethods.getType()
-      end.should raise_error(ArgumentError)
-    end
+    lambda do
+      CoreTypeMethods.getType()
+    end.should raise_error(ArgumentError)
   end
 end
 
@@ -110,15 +108,13 @@ describe "An overloaded Java instance method" do
   end
 
   it "should raise error when called with too few args" do
-    pending "not sure why these are failing" do
-      lambda do
-        CoreTypeMethods.new.getTypeInstance()
-      end.should raise_error(ArgumentError)
+    lambda do
+      CoreTypeMethods.new.getTypeInstance()
+    end.should raise_error(ArgumentError)
 
-      lambda do
-        CoreTypeMethods.new.getTypeInstance()
-      end.should raise_error(ArgumentError)
-    end
+    lambda do
+      CoreTypeMethods.new.getTypeInstance()
+    end.should raise_error(ArgumentError)
   end
 end
 
@@ -326,5 +322,37 @@ describe "A class with varargs static methods" do
     ClassWithVarargs.varargs_static('foo', [1,2,3].to_java).should == "1: [1, 2, 3]"
     ClassWithVarargs.varargs_static('foo', 'bar', [1,2,3].to_java).should == "2: [1, 2, 3]"
     ClassWithVarargs.varargs_static('foo', 'bar', 'baz', [1,2,3].to_java).should == "3: [1, 2, 3]"
+  end
+end
+
+# JRUBY-5418
+describe "A Java method dispatch downstream from a Kernel#catch block" do
+  it "should propagate rather than wrap the 'throw' exception" do
+    lambda do
+      catch(:foo) do
+        UsesSingleMethodInterface.new { throw :foo }
+      end
+    end.should_not raise_error
+    lambda do
+      catch(:foo) do
+        UsesSingleMethodInterface.new(nil) { throw :foo }
+      end
+    end.should_not raise_error
+    lambda do
+      catch(:foo) do
+        UsesSingleMethodInterface.new(nil, nil) { throw :foo }
+      end
+    end.should_not raise_error
+    lambda do
+      catch(:foo) do
+        UsesSingleMethodInterface.new(nil, nil, nil) { throw :foo }
+      end
+    end.should_not raise_error
+    # 3 normal args is our cutoff for specific-arity optz, so test four
+    lambda do
+      catch(:foo) do
+        UsesSingleMethodInterface.new(nil, nil, nil, nil) { throw :foo }
+      end
+    end.should_not raise_error
   end
 end

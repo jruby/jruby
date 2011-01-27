@@ -156,43 +156,43 @@ namespace :spec do
   # Put Rake on the load path for JI specs without requiring rubygems
   rake_location = File.join(Gem.loaded_specs['rake'].full_gem_path, "lib")
   gem 'rspec'
-  require 'spec/rake/spectask'
+  require 'rspec/core/rake_task'
   desc "Runs Java Integration Specs"
-  Spec::Rake::SpecTask.new("ji" => "build/jruby-test-classes.jar") do |t|
-    t.libs << rake_location
-    t.spec_opts ||= []
-    t.spec_opts << "--options" << "spec/java_integration/spec.opts"
-    t.spec_files = FileList['spec/java_integration/**/*_spec.rb']
+  RSpec::Core::RakeTask.new("ji" => "test:compile") do |t|
+    t.ruby_opts = " -I#{rake_location}"
+    t.rspec_opts ||= []
+    t.rspec_opts << "--options" << "spec/java_integration/spec.opts"
+    t.pattern = 'spec/java_integration/**/*_spec.rb'
   end
 
   desc "Runs Java Integration specs quietly"
-  Spec::Rake::SpecTask.new("ji:quiet" => "build/jruby-test-classes.jar") do |t|
-    t.libs << rake_location
-    t.spec_opts ||= []
-    t.spec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
-    t.spec_files = FileList['spec/java_integration/**/*_spec.rb']
+  RSpec::Core::RakeTask.new("ji:quiet" => "test:compile") do |t|
+    t.ruby_opts = " -I#{rake_location}"
+    t.rspec_opts ||= []
+    t.rspec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
+    t.pattern = 'spec/java_integration/**/*_spec.rb'
   end
 
   desc "Runs Compiler Specs"
-  Spec::Rake::SpecTask.new("compiler" => "build/jruby-test-classes.jar") do |t|
-    t.spec_files = FileList['spec/compiler/**/*_spec.rb']
+  RSpec::Core::RakeTask.new("compiler" => "test:compile") do |t|
+    t.pattern = 'spec/compiler/**/*_spec.rb'
   end
 
-  desc "Runs FFI Specs"
-  Spec::Rake::SpecTask.new("ffi" => "build/jruby-test-classes.jar") do |t|
-    t.spec_files = FileList['spec/ffi/**/*_spec.rb']
+  desc "Runs FFI specs"
+  RSpec::Core::RakeTask.new("ffi" => "test:compile") do |t|
+    t.pattern = 'spec/ffi/**/*_spec.rb'
   end
 
   desc "Runs Java Signature Parser Specs"
-  Spec::Rake::SpecTask.new("java_signature_parser") do |t|
-    t.spec_opts ||= []
+  RSpec::Core::RakeTask.new("java_signature_parser") do |t|
+    t.rspec_opts ||= []
 #    t.spec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
-    t.spec_files = FileList['spec/grammar/**/*_spec.rb']
+    t.pattern = 'spec/grammar/**/*_spec.rb'
   end
 
   desc "Runs Regression Specs"
-  Spec::Rake::SpecTask.new("regression") do |t|
-    t.spec_files = FileList['spec/regression/**/*_spec.rb']
+  RSpec::Core::RakeTask.new("regression") do |t|
+    t.pattern = 'spec/regression/**/*_spec.rb'
   end
 
   # Complimentary tasks for running specs

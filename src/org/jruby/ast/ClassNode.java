@@ -35,7 +35,6 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
@@ -131,8 +130,6 @@ public class ClassNode extends Node implements IScopingNode {
             RubyClass.checkInheritable(superObj);
             superClass = (RubyClass)superObj;
         }
-
-        boolean definedAlready = enclosingClass.isConstantDefined(cpath.getName());
         
         RubyClass clazz = enclosingClass.defineOrGetClassUnder(cpath.getName(), superClass);
 

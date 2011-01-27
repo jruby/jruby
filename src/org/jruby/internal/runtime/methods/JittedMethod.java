@@ -29,6 +29,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.ast.ArgsNode;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -48,7 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * method.
  *
  */
-public class JittedMethod extends DynamicMethod implements PositionAware {
+public class JittedMethod extends DynamicMethod implements MethodArgs, PositionAware {
     private final StaticScope staticScope;
     private final Script jitCompiledScript;
     private final ISourcePosition position;
@@ -300,6 +301,10 @@ public class JittedMethod extends DynamicMethod implements PositionAware {
     @Override
     public Arity getArity() {
         return arity;
+    }
+
+    public ArgsNode getArgsNode() {
+        return realMethod.getArgsNode();
     }
 
     public DynamicMethod dup() {

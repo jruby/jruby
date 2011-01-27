@@ -87,18 +87,51 @@ public class RubyTime extends RubyObject {
     // understood by Java API.
     private static final Pattern TZ_PATTERN
             = Pattern.compile("(\\D+?)([\\+-]?)(\\d+)(:\\d+)?(:\\d+)?");
+    
+    private static final Pattern TIME_OFFSET_PATTERN
+            = Pattern.compile("([\\+-])(\\d\\d):\\d\\d");
 
     private static final ByteList TZ_STRING = ByteList.create("TZ");
+    
+    /* JRUBY-3560
+     * joda-time disallows use of three-letter time zone IDs.
+     * Since MRI accepts these values, we need to translate them.
+     */
+    private static final Map<String, String> LONG_TZNAME = new HashMap<String, String>() {{
+        put("MET", "CET"); // JRUBY-2579
+        put("ROC", "Asia/Taipei"); // Republic of China
+        put("WET", "Europe/Lisbon"); // Western European Time
+        
+    }};
+    
+    /* Some TZ values need to be overriden for Time#zone
+     */
+    private static final Map<String, String> SHORT_STD_TZNAME = new HashMap<String, String>() {{
+        put("Etc/UCT", "UCT");
+        put("MET", "MET"); // needs to be overriden
+        put("UCT","UCT");
+    }};
+
+    private static final Map<String, String> SHORT_DL_TZNAME = new HashMap<String, String>() {{
+        put("Etc/UCT", "UCT");
+        put("MET", "MEST"); // needs to be overriden
+        put("UCT","UCT");
+    }};
 
     @Override
     public int getNativeTypeIndex() {
         return ClassIndex.TIME;
     }
-
-    public static DateTimeZone getLocalTimeZone(Ruby runtime) {
+    
+    private static IRubyObject getEnvTimeZone(Ruby runtime) {
         RubyString tzVar = runtime.newString(TZ_STRING);
         RubyHash h = ((RubyHash)runtime.getObject().fastGetConstant("ENV"));
         IRubyObject tz = h.op_aref(runtime.getCurrentContext(), tzVar);
+        return tz;
+    }
+
+    public static DateTimeZone getLocalTimeZone(Ruby runtime) {
+        IRubyObject tz = getEnvTimeZone(runtime);
 
         if (tz == null || ! (tz instanceof RubyString)) {
             return DateTimeZone.getDefault();
@@ -113,6 +146,7 @@ public class RubyTime extends RubyObject {
         if (cachedZone != null) return cachedZone;
 
         String originalZone = zone;
+        TimeZone tz = TimeZone.getTimeZone(getEnvTimeZone(runtime).toString());
 
         // Value of "TZ" property is of a bit different format,
         // which confuses the Java's TimeZone.getTimeZone(id) method,
@@ -142,6 +176,10 @@ public class RubyTime extends RubyObject {
                     zone += minutes;
                 }
             }
+            
+            tz = TimeZone.getTimeZone(zone);
+        } else {
+            if (LONG_TZNAME.containsKey(zone)) tz.setID(LONG_TZNAME.get(zone.toUpperCase()));
         }
 
         // MRI behavior: With TZ equal to "GMT" or "UTC", Time.now
@@ -153,14 +191,10 @@ public class RubyTime extends RubyObject {
         // Hence, we need to adjust for that.
         if ("GMT".equalsIgnoreCase(zone) || "UTC".equalsIgnoreCase(zone)) {
             zone = "Etc/" + zone;
+            tz = TimeZone.getTimeZone(zone);
         }
 
-        // For JRUBY-2759, when MET choose CET timezone to work around Joda
-        if ("MET".equalsIgnoreCase(zone)) {
-            zone = "CET";
-        }
-
-        DateTimeZone dtz = DateTimeZone.forTimeZone(TimeZone.getTimeZone(zone));
+        DateTimeZone dtz = DateTimeZone.forTimeZone(tz);
         runtime.getTimezoneCache().put(originalZone, dtz);
         return dtz;
     }
@@ -530,6 +564,11 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(getTimeInMillis() / 1000);
     }
 
+    @JRubyMethod(name = {"nsec", "tv_nsec"}, compat = RUBY1_9)
+    public RubyInteger nsec() {
+        return getRuntime().newFixnum(0);
+    }
+
     @JRubyMethod(name = "to_r", backtrace = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject to_r(ThreadContext context) {
         IRubyObject rational = to_f().to_r(context);
@@ -620,11 +659,38 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "zone")
     public RubyString zone() {
-        String zone = dt.getZone().getShortName(dt.getMillis());
-        if(zone.equals("+00:00")) {
-            zone = "GMT";
+        Ruby runtime = getRuntime();
+        String envTZ = getEnvTimeZone(runtime).toString();
+        // see declaration of SHORT_TZNAME
+        if (SHORT_STD_TZNAME.containsKey(envTZ) && ! dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
+            return runtime.newString(SHORT_STD_TZNAME.get(envTZ));
         }
-        return getRuntime().newString(zone);
+        
+        if (SHORT_DL_TZNAME.containsKey(envTZ) && dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
+            return runtime.newString(SHORT_DL_TZNAME.get(envTZ));
+        }
+        
+        String zone = dt.getZone().getShortName(dt.getMillis());
+        
+        Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
+        
+        if (offsetMatcher.matches()) {
+            boolean minus_p = offsetMatcher.group(1).toString().equals("-");
+            int hourOffset  = Integer.valueOf(offsetMatcher.group(2));
+                        
+            if (zone.equals("+00:00")) {
+                zone = "GMT";
+            } else {
+                // try non-localized time zone name
+                zone = dt.getZone().getNameKey(dt.getMillis());
+                if (zone == null) {
+                    char sign = minus_p ? '+' : '-';
+                    zone = "GMT" + sign + hourOffset;
+                }
+            }
+        }
+        
+        return runtime.newString(zone);
     }
 
     public void setDateTime(DateTime dt) {
@@ -678,7 +744,7 @@ public class RubyTime extends RubyObject {
             dumpValue[i] = (byte)(se & 0xFF);
             se >>>= 8;
         }
-        return RubyString.newString(obj.getRuntime(), new ByteList(dumpValue, getRuntime().getDefaultInternalEncoding(), false));
+        return RubyString.newString(obj.getRuntime(), new ByteList(dumpValue));
     }
 
     @JRubyMethod(visibility = PRIVATE)
@@ -975,37 +1041,43 @@ public class RubyTime extends RubyObject {
         DateTime dt;
         // set up with min values and then add to allow rolling over
         try {
-            dt = new DateTime(year, 1, 1, 0, 0 , 0, 0, DateTimeZone.UTC);
+            dt = new DateTime(year, 1, 1, 0, 0, 0, 0, DateTimeZone.UTC);
 
             dt = dt.plusMonths(month - 1)
                     .plusDays(int_args[0] - 1)
                     .plusHours(int_args[1])
                     .plusMinutes(int_args[2])
                     .plusSeconds(int_args[3]);
+            if (runtime.is1_9() && !args[5].isNil()) {
+                double millis = RubyFloat.num2dbl(args[5]);
+                int int_millis = (int) (millis * 1000) % 1000;
+                dt = dt.plusMillis(int_millis);
+            }
 
-	    dt = dt.withZoneRetainFields(dtz);
+            dt = dt.withZoneRetainFields(dtz);
 
-	    // we might need to perform a DST correction
-	    if(isDst != null) {
+            // we might need to perform a DST correction
+            if (isDst != null) {
                 // the instant at which we will ask dtz what the difference between DST and
                 // standard time is
                 long offsetCalculationInstant = dt.getMillis();
 
                 // if we might be moving this time from !DST -> DST, the offset is assumed
                 // to be the same as it was just before we last moved from DST -> !DST
-                if(dtz.isStandardOffset(dt.getMillis()))
+                if (dtz.isStandardOffset(dt.getMillis())) {
                     offsetCalculationInstant = dtz.previousTransition(offsetCalculationInstant);
+                }
 
-                int offset = dtz.getStandardOffset(offsetCalculationInstant) -
-                             dtz.getOffset(offsetCalculationInstant);
+                int offset = dtz.getStandardOffset(offsetCalculationInstant)
+                        - dtz.getOffset(offsetCalculationInstant);
 
                 if (!isDst && !dtz.isStandardOffset(dt.getMillis())) {
                     dt = dt.minusMillis(offset);
                 }
-                if (isDst &&  dtz.isStandardOffset(dt.getMillis())) {
+                if (isDst && dtz.isStandardOffset(dt.getMillis())) {
                     dt = dt.plusMillis(offset);
                 }
-	    }
+            }
         } catch (org.joda.time.IllegalFieldValueException e) {
             throw runtime.newArgumentError("time out of range");
         }

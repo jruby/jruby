@@ -1,19 +1,19 @@
+# $Id$
 #
-# YAML::Syck module
-# .. glues syck and yaml.rb together ..
+# = yaml/syck.rb:
 #
-require 'syck'
-require 'yaml/basenode'
 
-module YAML
-    module Syck
+require 'stringio'
+require 'yecht'
+require 'syck/error'
+require 'syck/syck'
+require 'syck/tag'
+require 'syck/stream'
+require 'syck/constants'
+require 'syck/rubytypes'
+require 'syck/types'
 
-        #
-        # Mixin BaseNode functionality
-        #
-        class Node
-            include YAML::BaseNode
-        end
-
-    end
+# Many of Syck's features are under YAML::Yecht
+module Syck
+  include YAML::Yecht
 end

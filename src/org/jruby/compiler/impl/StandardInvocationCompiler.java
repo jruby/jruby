@@ -534,7 +534,7 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeNative(String name, DynamicMethod.NativeCall nativeCall,
-            int moduleGeneration, CompilerCallback receiver, ArgumentsCallback args,
+            int moduleGeneration, CompilerCallback receiver, final ArgumentsCallback args,
             CompilerCallback closure, CallType callType, boolean iterator) {
         Class[] nativeSignature = nativeCall.getNativeSignature();
 
@@ -542,6 +542,25 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         receiver.call(methodCompiler);
         final int tmp = methodCompiler.getVariableCompiler().grabTempLocal();
         method.astore(tmp);
+
+        int[] _argTmp = null;
+        if (args != null) {
+            args.call(methodCompiler);
+            switch (args.getArity()) {
+                case 3:
+                    _argTmp = new int[3];
+                    method.astore(_argTmp[2] = methodCompiler.getVariableCompiler().grabTempLocal());
+                case 2:
+                    if (_argTmp == null) _argTmp = new int[2];
+                    method.astore(_argTmp[1] = methodCompiler.getVariableCompiler().grabTempLocal());
+                case 1:
+                default:
+                    if (_argTmp == null) _argTmp = new int[1];
+                    method.astore(_argTmp[0] = methodCompiler.getVariableCompiler().grabTempLocal());
+            }
+            leadingArgs += args.getArity();
+        }
+        final int[] argTmp = _argTmp;
 
         // validate generation
         Label slow = new Label();
@@ -570,9 +589,20 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             }
         }
 
-        if (args != null) {
-            args.call(methodCompiler);
-            leadingArgs += args.getArity();
+        switch (args.getArity()) {
+            case 1:
+            default:
+                method.aload(argTmp[0]);
+                break;
+            case 2:
+                method.aload(argTmp[0]);
+                method.aload(argTmp[1]);
+                break;
+            case 3:
+                method.aload(argTmp[0]);
+                method.aload(argTmp[1]);
+                method.aload(argTmp[2]);
+                break;
         }
 
         if (closure != null) {
@@ -604,16 +634,45 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             method.go_to(after);
             method.label(slow);
 
+            ArgumentsCallback newArgs = null;
+            if (args != null) {
+                newArgs = new ArgumentsCallback() {
+                    public int getArity() {
+                        return args.getArity();
+                    }
+
+                    public void call(BodyCompiler context) {
+                        switch (args.getArity()) {
+                            case 1:
+                            default:
+                                method.aload(argTmp[0]);
+                                break;
+                            case 2:
+                                method.aload(argTmp[0]);
+                                method.aload(argTmp[1]);
+                                break;
+                            case 3:
+                                method.aload(argTmp[0]);
+                                method.aload(argTmp[1]);
+                                method.aload(argTmp[2]);
+                                break;
+                        }
+                    }
+                };
+            }
             invokeDynamic(name, new CompilerCallback() {
                 public void call(BodyCompiler context) {
                     method.aload(tmp);
                 }
-            }, args, callType, closure, iterator);
+            }, newArgs, callType, closure, iterator);
 
             method.label(after);
         }
 
         methodCompiler.getVariableCompiler().releaseTempLocal();
+        if (argTmp != null) {
+            for (int i : argTmp) methodCompiler.getVariableCompiler().releaseTempLocal();
+        }
     }
 
     public void invokeTrivial(String name, int moduleGeneration, CompilerCallback body) {

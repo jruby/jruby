@@ -15,8 +15,6 @@ class MSpecScript
   # Language features specs
   set :language, [
     SPEC_DIR + '/language',
-
-    '^' + SPEC_DIR + '/language/symbol_spec.rb'
   ]
 
   # Core library specs
@@ -24,7 +22,7 @@ class MSpecScript
     SPEC_DIR + '/core',
 
     '^' + SPEC_DIR + '/core/continuation',
-    '^' + SPEC_DIR + '/core/module/name_spec.rb'
+    '^' + SPEC_DIR + '/core/encoding/converter'
   ]
 
   # Filter out ObjectSpace specs if ObjectSpace is disabled
@@ -73,6 +71,7 @@ class MSpecScript
   MSpec.enable_feature :fiber
   MSpec.enable_feature :fiber_library
   MSpec.enable_feature :encoding
+  MSpec.enable_feature :encoding_transition
   MSpec.enable_feature :readline
 
   if WINDOWS
@@ -106,4 +105,9 @@ class MSpecScript
                         [%r(^.*/library/),      TAGS_DIR + '/1.9/ruby/library/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
+  # If running specs with jit threshold = 1 or force (AOT) compile, additional tags
+  if JRuby.runtime.instance_config.compile_mode.to_s == "FORCE" ||
+      JRuby.runtime.instance_config.jit_threshold == 1
+    set(:ci_xtags, (get(:ci_xtags) || []) + ['compiler'])
+  end
 end

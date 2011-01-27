@@ -78,9 +78,6 @@ public abstract class StaticScope implements Serializable {
     
     // index of variable that represents a "rest" arg
     private int restArg = -1;
-    
-    // Whether this scope is used as the "argument scope" for e.g. zsuper
-    private boolean isArgumentScope = false;
 
     private boolean isBackrefLastlineScope = false;
     
@@ -373,14 +370,13 @@ public abstract class StaticScope implements Serializable {
     public void setRestArg(int restArg) {
         this.restArg = restArg;
     }
-    
-    public boolean isArgumentScope() {
-        return isArgumentScope;
-    }
-    
-    public void setArgumentScope(boolean isArgumentScope) {
-        this.isArgumentScope = isArgumentScope;
-    }
+
+    /**
+     * Argument scopes represent scopes which contain arguments for zsuper.  All LocalStaticScopes
+     * are argument scopes and BlockStaticScopes can be when they are used by define_method.
+     */
+    public abstract boolean isArgumentScope();
+    public abstract void makeArgumentScope();
 
     public boolean isBackrefLastlineScope() {
         return isBackrefLastlineScope;

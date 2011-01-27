@@ -6,7 +6,7 @@ require 'pstore'
 
 class YAML::Store < PStore
   def initialize( *o )
-    @opt = YAML::DEFAULTS.dup
+    @opt = {}
     if String === o.first
       super(o.shift)
     end
@@ -20,7 +20,7 @@ class YAML::Store < PStore
   end
 
   def load(content)
-    table = YAML::load(content)
+    table = YAML.load(content)
     if table == false
       {}
     else

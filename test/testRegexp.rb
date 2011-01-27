@@ -249,3 +249,12 @@ str =~ /(one)_(two)/
 
 test_exception(NoMethodError) { $1.holler }
 test_exception(NoMethodError) { $2.holler }
+
+# JRUBY-5340
+regex = Regexp.new(/(([a-c])a*?\2){2}/)
+md = regex.match("aaabab")
+test_equal "aaabab", md[0]
+test_equal "bab", md[1]
+test_equal "b", md[2]
+md = regex.match("aaa")
+test_equal nil, md

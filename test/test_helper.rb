@@ -63,4 +63,14 @@ module TestHelper
     STDOUT.reopen io.first
     STDERR.reopen io.last
   end
+
+  def run_in_sub_runtime(script)
+    container = org.jruby.embed.ScriptingContainer.new(org.jruby.embed.LocalContextScope::SINGLETHREAD)
+    container.runScriptlet("require 'java'")
+    container.runScriptlet(script)
+  end
+
+  def assert_in_sub_runtime(script)
+    assert run_in_sub_runtime(script)
+  end
 end

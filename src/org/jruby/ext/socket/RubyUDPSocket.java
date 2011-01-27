@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -44,7 +43,6 @@ import java.nio.channels.SelectionKey;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;

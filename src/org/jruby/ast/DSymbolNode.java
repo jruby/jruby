@@ -30,7 +30,6 @@
  package org.jruby.ast;
 
 import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -40,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Node representing symbol in a form like ':"3jane"'.
  */
-public class DSymbolNode extends ListNode {
+public class DSymbolNode extends DNode {
     /**
      * For mutating from a DStr to a DSym (we just create a new one with same contents).
      * 
@@ -70,8 +69,6 @@ public class DSymbolNode extends ListNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyString string = DStrNode.buildDynamicString(runtime, context, self, aBlock, this);
-   
-        return runtime.newSymbol(string.toString());
+        return runtime.newSymbol(super.interpret(runtime, context, self, aBlock).toString());
     }
 }

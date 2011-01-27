@@ -29,14 +29,12 @@
  */
 package org.jruby.embed.jsr223;
 
-import java.util.List;
 import java.util.Set;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import org.jruby.embed.AttributeName;
 import org.jruby.embed.ScriptingContainer;
-import org.jruby.embed.variable.BiVariable;
 
 /**
  * A collection of JSR223 specific utility methods.
@@ -88,7 +86,7 @@ public class Utils {
         Set<String> keys = bindings.keySet();
         for (String key : keys) {
             Object value = bindings.get(key);
-            Object oldValue = put(container, receiver, key, value);
+            put(container, receiver, key, value);
         }
 
         // if key of globalMap exists in engineMap, this key-value pair should be skipped.
@@ -98,7 +96,7 @@ public class Utils {
         for (String key : keys) {
             if (container.getVarMap().containsKey(key)) continue;
             Object value = bindings.get(key);
-            Object oldValue = put(container, receiver, key, value);
+            put(container, receiver, key, value);
         }
     }
 

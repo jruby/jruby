@@ -159,7 +159,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         for (int i = 0; i < len; i++) {
             argTypes[i] = args[i].getClass();
         }
-        throw proxy.getRuntime().newNameError("no " + name + " with arguments matching " + Arrays.toString(argTypes) + " on object " + proxy.getMetaClass(), null);
+        throw proxy.getRuntime().newArgumentError("no " + name + " with arguments matching " + Arrays.toString(argTypes) + " on object " + proxy.getMetaClass());
     }
 
     protected JavaCallable findCallable(IRubyObject self, String name, IRubyObject[] args, int arity) {
@@ -218,7 +218,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         if ((callable = javaCallable) == null) {
             // TODO: varargs?
             JavaCallable[] callablesForArity = null;
-            if (javaCallables.length < 1 || (callablesForArity = javaCallables[1]) == null) {
+            if (javaCallables.length <= 1 || (callablesForArity = javaCallables[1]) == null) {
                 throw self.getRuntime().newArgumentError(1, javaCallables.length - 1);
             }
             callable = CallableSelector.matchingCallableArityOne(cache, callablesForArity, arg0);

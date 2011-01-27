@@ -53,9 +53,14 @@ public class StrNode extends Node implements ILiteralNode {
     private final int codeRange;
 
     public StrNode(ISourcePosition position, ByteList value) {
+        this(position, value, StringSupport.codeRangeScan(value.getEncoding(), value));
+    }
+
+    public StrNode(ISourcePosition position, ByteList value, int codeRange) {
         super(position);
+
         this.value = value;
-        codeRange = StringSupport.codeRangeScan(value.getEncoding(), value);
+        this.codeRange = codeRange;
     }
 
     public StrNode(ISourcePosition position, StrNode head, StrNode tail) {
