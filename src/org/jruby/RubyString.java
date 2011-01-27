@@ -642,7 +642,26 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @Override
     public String toString() {
-        return value.toString();
+        return decodeString();
+    }
+
+    /**
+     * Convert this Ruby string to a Java String. This version is encoding-aware.
+     *
+     * @return A decoded Java String, based on this Ruby string's encoding.
+     */
+    public String decodeString() {
+        try {
+            // 1.9 support for encodings
+            // TODO: Fix charset use for JRUBY-4553
+            if (getRuntime().is1_9()) {
+                return new String(value.getUnsafeBytes(), value.begin(), value.length(), getEncoding().toString());
+            }
+
+            return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
+        } catch (UnsupportedEncodingException uee) {
+            return toString();
+        }
     }
 
     /** rb_str_dup
@@ -7286,17 +7305,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @Override
     public Object toJava(Class target) {
         if (target.isAssignableFrom(String.class)) {
-            try {
-                // 1.9 support for encodings
-                // TODO: Fix charset use for JRUBY-4553
-                if (getRuntime().is1_9()) {
-                    return new String(value.getUnsafeBytes(), value.begin(), value.length(), getEncoding().toString());
-                }
-
-                return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
-            } catch (UnsupportedEncodingException uee) {
-                return toString();
-            }
+            return decodeString();
         } else if (target.isAssignableFrom(ByteList.class)) {
             return value;
         } else {

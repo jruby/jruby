@@ -1078,7 +1078,7 @@ public class RubyKernel {
 
         boolean wrap = args.length == 2 ? args[1].isTrue() : false;
 
-        runtime.getLoadService().load(file.getByteList().toString(), wrap);
+        runtime.getLoadService().load(file.toString(), wrap);
 
         return runtime.getTrue();
     }
