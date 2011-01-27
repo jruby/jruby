@@ -1248,9 +1248,11 @@ public class RubyInstanceConfig {
                     String extendedOption = grabOptionalValue();
 
                     if (extendedOption == null) {
-                        throw new MainExitException(0, "jruby: missing argument\n" + getExtendedHelp());
-                    } else if (extendedOption.equals("nopreamble")) {
-                        throw new MainExitException(0, getExtendedHelp());
+                        if (SafePropertyAccessor.getBoolean("jruby.launcher.nopreamble", false)) {
+                            throw new MainExitException(0, getExtendedHelp());
+                        } else {
+                            throw new MainExitException(0, "jruby: missing argument\n" + getExtendedHelp());
+                        }
                     } else if (extendedOption.equals("-O")) {
                         objectSpaceEnabled = false;
                     } else if (extendedOption.equals("+O")) {
