@@ -84,13 +84,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private ByteList str = ByteList.EMPTY_BYTELIST;
     private RegexpOptions options;
 
-    private static final int REGEXP_LITERAL_F       =   USER1_F;
-    private static final int REGEXP_KCODE_DEFAULT   =   USER2_F;
-    private static final int REGEXP_ENCODING_NONE   =   USER3_F;
-
-    private static final int ARG_OPTION_MASK        =   RE_OPTION_IGNORECASE | RE_OPTION_EXTENDED | RE_OPTION_MULTILINE; 
     public static final int ARG_ENCODING_FIXED     =   16;
-    private static final int ARG_ENCODING_NONE      =   32;
 
     public void setLiteral() {
         options.setLiteral(true);
@@ -280,6 +274,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             initializeCommon19(str, str.getEncoding(), options);
         } else {
             this.str = str;
+            this.options = options;
             this.pattern = getRegexpFromCache(runtime, str, getEncoding(runtime, str), options);
         }
     }
@@ -1083,7 +1078,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private RubyRegexp initializeCommon(ByteList bytes, RegexpOptions options) {
-        Ruby runtime = getRuntime();        
+        Ruby runtime = getRuntime();
+        // FIXME: Consolidate with code in RegexpNode.loadPattern
+        if (options.getKCode() == null) {
+            options.setKcodeDefault(true);
+            options.setKcode(runtime.getKCode());
+            options.setEncoding(runtime.getKCode().getEncoding());
+        }        
         if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
@@ -1560,9 +1561,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
             if (!newOptions.isEmbeddable()) {
                 result.append((byte)'-');
-                if (newOptions.isMultiline()) result.append((byte)'m');
-                if (newOptions.isIgnorecase()) result.append((byte)'i');
-                if (newOptions.isExtended()) result.append((byte)'x');
+                if (!newOptions.isMultiline()) result.append((byte)'m');
+                if (!newOptions.isIgnorecase()) result.append((byte)'i');
+                if (!newOptions.isExtended()) result.append((byte)'x');
             }
             result.append((byte)':');
             appendRegexpString(getRuntime(), result, bytes, p, len, getEncoding(runtime, str));
