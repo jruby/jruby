@@ -325,7 +325,7 @@ public class RubyKernel {
         Ruby runtime = context.getRuntime();
 
         if(args.length == 1) {
-            runtime.getGlobalVariables().get("$stderr").callMethod(context,"puts",args[0]);
+            runtime.getGlobalVariables().get("$stderr").callMethod(context,"puts",args[0].convertToString());
         }
         
         exit(runtime, new IRubyObject[] { runtime.getFalse() }, false);
