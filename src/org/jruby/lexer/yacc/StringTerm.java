@@ -31,7 +31,6 @@ import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.ast.RegexpNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
-import org.jruby.parser.ReOptions;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
@@ -151,7 +150,7 @@ public class StringTerm extends StrTerm {
                 options.setIgnorecase(true);
                 break;
             case 'x':
-                options.setIgnorecase(true);
+                options.setExtended(true);
                 break;
             case 'm':
                 options.setMultiline(true);
