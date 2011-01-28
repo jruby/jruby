@@ -146,6 +146,7 @@ public class RegexpOptions implements Cloneable {
         return hash;
     }
 
+    @Override
     public Object clone() {
         try {
             return super.clone();
@@ -169,6 +170,11 @@ public class RegexpOptions implements Cloneable {
                 o.literal == literal &&
                 o.multiline == multiline &&
                 o.once == once;
+    }
+    
+    @Override
+    public String toString() {
+        return "RegexpOptions(encoding = " + encoding + ", kcode: " + kcode + ")";
     }
     
     private Encoding encoding;
