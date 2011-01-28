@@ -34,6 +34,8 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
+import org.jruby.util.KCode;
+import org.jruby.util.RegexpOptions;
 
 public class StringTerm extends StrTerm {
     private static final int ASCII = 16;
@@ -74,10 +76,10 @@ public class StringTerm extends StrTerm {
             }
 
             if ((flags & RubyYaccLexer.STR_FUNC_REGEXP) != 0) {
-                int regexpFlags = parseRegexpFlags(src);
+                RegexpOptions options = parseRegexpFlags(src);
                 ByteList regexpBytelist = ByteList.create("");
 
-                lexer.setValue(new RegexpNode(src.getPosition(), regexpBytelist, regexpFlags));
+                lexer.setValue(new RegexpNode(src.getPosition(), regexpBytelist, options));
                 return Tokens.tREGEXP_END;
             }
 
@@ -137,9 +139,8 @@ public class StringTerm extends StrTerm {
         return Tokens.tSTRING_CONTENT;
     }
 
-    private int parseRegexpFlags(final LexerSource src) throws IOException {
-        char kcode = 0;
-        int options = 0;
+    private RegexpOptions parseRegexpFlags(final LexerSource src) throws IOException {
+        RegexpOptions options = new RegexpOptions();
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);
 
@@ -147,31 +148,35 @@ public class StringTerm extends StrTerm {
                 && Character.isLetter(c); c = src.read()) {
             switch (c) {
             case 'i':
-                options |= ReOptions.RE_OPTION_IGNORECASE;
+                options.setIgnorecase(true);
                 break;
             case 'x':
-                options |= ReOptions.RE_OPTION_EXTENDED;
+                options.setIgnorecase(true);
                 break;
             case 'm':
-                options |= ReOptions.RE_OPTION_MULTILINE;
+                options.setMultiline(true);
                 break;
             case 'o':
-                options |= ReOptions.RE_OPTION_ONCE;
+                options.setOnce(true);
                 break;
             case 'n':
-                kcode = ASCII;
+                options.setKcode(KCode.NONE);
+                options.setEncoding(KCode.NONE.getEncoding());
                 break;
             case 'e':
-                kcode = EUC;
+                options.setKcode(KCode.EUC);
+                options.setEncoding(KCode.EUC.getEncoding());
                 break;
             case 's':
-                kcode = SJIS;
+                options.setKcode(KCode.SJIS);
+                options.setEncoding(KCode.SJIS.getEncoding());
                 break;
             case 'u':
-                kcode = UTF8;
+                options.setKcode(KCode.UTF8);
+                options.setEncoding(KCode.UTF8.getEncoding());
                 break;
             case 'j':
-                options |= 256; // Regexp engine 'java'
+                options.setJava(true);
                 break;
             default:
                 unknownFlags.append((char) c);
@@ -184,7 +189,7 @@ public class StringTerm extends StrTerm {
                     + (unknownFlags.length() > 1 ? "s" : "") + " - "
                     + unknownFlags.toString(), unknownFlags.toString());
         }
-        return options | kcode;
+        return options;
     }
 
     private void mixedEscape(RubyYaccLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {

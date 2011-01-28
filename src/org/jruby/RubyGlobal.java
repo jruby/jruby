@@ -54,6 +54,7 @@ import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KCode;
+import org.jruby.util.RegexpOptions;
 
 /** This class initializes global variables and constants.
  * 
@@ -256,7 +257,7 @@ public class RubyGlobal {
         if(runtime.getInstanceConfig().getInputFieldSeparator() == null) {
             runtime.defineVariable(new GlobalVariable(runtime, "$;", runtime.getNil()));
         } else {
-            runtime.defineVariable(new GlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), 0)));
+            runtime.defineVariable(new GlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())));
         }
         
         Boolean verbose = runtime.getInstanceConfig().getVerbose();

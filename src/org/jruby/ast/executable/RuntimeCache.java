@@ -26,6 +26,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 
 public class RuntimeCache {
 
@@ -132,7 +133,7 @@ public class RuntimeCache {
     public final RubyRegexp getRegexp(Ruby runtime, int index, ByteList pattern, int options) {
         RubyRegexp regexp = regexps[index];
         if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
-            regexp = RubyRegexp.newRegexp(runtime, pattern, options);
+            regexp = RubyRegexp.newRegexp(runtime, pattern, RegexpOptions.fromJoniOptions(options));
             regexp.setLiteral();
             regexps[index] = regexp;
         }
@@ -147,7 +148,7 @@ public class RuntimeCache {
         RubyRegexp regexp = regexps[index];
         Ruby runtime = pattern.getRuntime();
         if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
-            regexp = RubyRegexp.newRegexp(runtime, pattern.getByteList(), options);
+            regexp = RubyRegexp.newRegexp(runtime, pattern.getByteList(), RegexpOptions.fromJoniOptions(options));
             regexps[index] = regexp;
         }
         return regexp;

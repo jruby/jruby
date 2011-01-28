@@ -32,12 +32,12 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public final class KCode {
-    public static final KCode NIL = new KCode(null, "ASCII", 0);
-    public static final KCode NONE = new KCode("NONE", "ASCII", 0);
-    public static final KCode UTF8 = new KCode("UTF8", "NonStrictUTF8", 64);
-    public static final KCode SJIS = new KCode("SJIS", "NonStrictSJIS", 48);
-    public static final KCode EUC = new KCode("EUC", "NonStrictEUCJP", 32);
+public enum KCode {
+    NIL(null, "ASCII", 0),
+    NONE("NONE", "ASCII", 0),
+    UTF8("UTF8", "NonStrictUTF8", 64),
+    SJIS("SJIS", "NonStrictSJIS", 48),
+    EUC("EUC", "NonStrictEUCJP", 32);
 
     private final String kcode;
     private final String encodingName;
@@ -86,8 +86,11 @@ public final class KCode {
         return code;
     }
 
-    public String name() {
-        return kcode != null ? kcode.toLowerCase() : null;
+    public static KCode fromBits(int bits) {
+        if ((bits & 64) != 0) return UTF8;
+        if ((bits & 48) == 48) return SJIS;
+        if ((bits & 128) != 0) return EUC;
+        return NONE;
     }
 
     public Encoding getEncoding() {

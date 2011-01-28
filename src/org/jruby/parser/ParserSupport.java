@@ -37,6 +37,7 @@ package org.jruby.parser;
 
 import java.math.BigInteger;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
@@ -176,6 +177,7 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
 /** 
@@ -631,7 +633,7 @@ public class ParserSupport {
         return node != null && (node instanceof FixnumNode || node instanceof BignumNode || 
                 node instanceof FloatNode || node instanceof SymbolNode || 
                 (node instanceof RegexpNode && 
-                        (((RegexpNode) node).getOptions() & ~ReOptions.RE_OPTION_ONCE) == 0));
+                        ((RegexpNode) node).getOptions().isOnce()));
     }
 
     private void handleUselessWarn(Node node, String useless) {
@@ -1559,23 +1561,6 @@ public class ParserSupport {
         return new ArgsPushNode(position(node1, node2), node1, node2);
     }
 
-    private static ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'});
-
-    private Encoding extractEncodingFromOptions(int options) {
-        switch(options & ~0xf) {
-        case 16: 
-            return null;
-        case 32:
-            return org.jcodings.specific.EUCJPEncoding.INSTANCE;
-        case 48:
-            return getConfiguration().getRuntime().getEncodingService().loadEncoding(WINDOWS31J);
-        case 64:
-            return RubyYaccLexer.UTF8_ENCODING;
-        }
-
-        return null; // no explicit encoding specified
-    }
-
     // TODO: Put somewhere more consolidated (similiar
     private char optionsEncodingChar(Encoding optionEncoding) {
         if (optionEncoding == RubyYaccLexer.USASCII_ENCODING) return 'n';
@@ -1597,7 +1582,7 @@ public class ParserSupport {
     }
 
     public void setRegexpEncoding(RegexpNode end, ByteList value) {
-        Encoding optionsEncoding = extractEncodingFromOptions(end.getOptions());
+        Encoding optionsEncoding = end.getOptions().getEncoding();
 
 //        System.out.println("OPTIONS = " + end.getOptions());
 //        System.out.println("OPTS ENC: " + optionsEncoding + ", vENC: " + value.getEncoding());
@@ -1607,7 +1592,7 @@ public class ParserSupport {
                 compileError(optionsEncoding, value.getEncoding());
             }
             value.setEncoding(optionsEncoding);
-        } else if (((end.getOptions() & ~0xf) & 16) != 0) {
+        } else if (end.getOptions().getEncoding() == ASCIIEncoding.INSTANCE) {
             if (value.getEncoding() == RubyYaccLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }
@@ -1629,16 +1614,16 @@ public class ParserSupport {
     // Only 1.9
     // end is a weird variable. We return a RegexpNode to hold options at end of an regexp.
     public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
-        int options = end.getOptions();
+        RegexpOptions options = end.getOptions();
 
         if (contents == null) {
             ByteList newValue = ByteList.create("");
             regexpFragmentCheck(end, newValue);
-            return new RegexpNode(position, newValue, options & ~ReOptions.RE_OPTION_ONCE);
+            return new RegexpNode(position, newValue, options.withoutOnce());
         } else if (contents instanceof StrNode) {
             ByteList meat = (ByteList) ((StrNode) contents).getValue().clone();
             regexpFragmentCheck(end, meat);
-            return new RegexpNode(contents.getPosition(), meat, options & ~ReOptions.RE_OPTION_ONCE);
+            return new RegexpNode(contents.getPosition(), meat, options.withoutOnce());
         } else if (contents instanceof DStrNode) {
             DStrNode dStrNode = (DStrNode) contents;
             
@@ -1647,12 +1632,11 @@ public class ParserSupport {
                     regexpFragmentCheck(end, ((StrNode) fragment).getValue());
                 }
             }
-            return new DRegexpNode(position, options, 
-                    (options & ReOptions.RE_OPTION_ONCE) != 0, true).addAll((DStrNode) contents);
+            return new DRegexpNode(position, options, true).addAll((DStrNode) contents);
         }
 
         // No encoding or fragment check stuff for this...but what case is this anyways?
         return new DRegexpNode(position, 
-                options, (options & ReOptions.RE_OPTION_ONCE) != 0, true).add(contents);
+                options, true).add(contents);
     }
 }

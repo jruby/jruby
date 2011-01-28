@@ -43,6 +43,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 
 /** 
  * Represents a simple regular expression literal.
@@ -50,9 +51,9 @@ import org.jruby.util.ByteList;
 public class RegexpNode extends Node implements ILiteralNode {
     private RubyRegexp pattern;
     private final ByteList value;
-    private final int options;
+    private final RegexpOptions options;
 
-    public RegexpNode(ISourcePosition position, ByteList value, int options) {
+    public RegexpNode(ISourcePosition position, ByteList value, RegexpOptions options) {
         super(position);
 
         this.value = value;
@@ -75,7 +76,7 @@ public class RegexpNode extends Node implements ILiteralNode {
      * Gets the options.
      * @return Returns a int
      */
-    public int getOptions() {
+    public RegexpOptions getOptions() {
         return options;
     }
 

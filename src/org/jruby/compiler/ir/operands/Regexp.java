@@ -7,6 +7,7 @@ import java.util.Map;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.util.RegexpOptions;
 
 // Represents a regexp from ruby
 //
@@ -14,10 +15,10 @@ import org.jruby.interpreter.InterpreterContext;
 // Further down the line, this regexp operand could get converted to calls
 // that actually build the Regexp object
 public class Regexp extends Operand {
-    final public int options;
+    final public RegexpOptions options;
     Operand regexp;
 
-    public Regexp(Operand regexp, int options) {
+    public Regexp(Operand regexp, RegexpOptions options) {
         this.regexp = regexp;
         this.options = options;
     }

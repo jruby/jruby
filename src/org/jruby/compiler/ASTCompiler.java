@@ -2259,7 +2259,7 @@ public class ASTCompiler {
         boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
 
         if (doit) {
-            context.createNewRegexp(createStringCallback, dregexpNode.getOptions());
+            context.createNewRegexp(createStringCallback, dregexpNode.getOptions().toJoniOptions());
             if (popit) context.consumeCurrentValue();
         } else {
             // not an expression, only compile the elements
@@ -3592,9 +3592,9 @@ public class ASTCompiler {
         RegexpNode reNode = (RegexpNode) node;
 
         if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) context.createNewRegexp(reNode.getValue(), reNode.getOptions());
+            if (expr) context.createNewRegexp(reNode.getValue(), reNode.getOptions().toJoniOptions());
         } else {
-            context.createNewRegexp(reNode.getValue(), reNode.getOptions());
+            context.createNewRegexp(reNode.getValue(), reNode.getOptions().toJoniOptions());
             if (!expr) context.consumeCurrentValue();
         }
     }

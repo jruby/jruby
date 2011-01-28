@@ -95,6 +95,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.Pack;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
@@ -4383,7 +4384,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 int len = spatValue.getRealSize();
                 Encoding spatEnc = spatValue.getEncoding();
                 if (len == 0) {
-                    Regex pattern = RubyRegexp.getRegexpFromCache(context.getRuntime(), spatValue, spatEnc, 0);
+                    Regex pattern = RubyRegexp.getRegexpFromCache(context.getRuntime(), spatValue, spatEnc, new RegexpOptions());
                     result = regexSplit19(context, pattern, pattern, limit, lim, i);
                 } else {
                     final int c;
@@ -4564,24 +4565,24 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private Regex getQuotedPattern(IRubyObject obj) {
         if (obj instanceof RubyRegexp) return ((RubyRegexp)obj).getPattern();
         Ruby runtime = getRuntime();
-        return RubyRegexp.getQuotedRegexpFromCache(runtime, getStringForPattern(obj).value, runtime.getKCode().getEncoding(), 0);
+        return RubyRegexp.getQuotedRegexpFromCache(runtime, getStringForPattern(obj).value, runtime.getKCode().getEncoding(), new RegexpOptions());
     }
 
     private Regex getStringPattern(Ruby runtime, Encoding enc, IRubyObject obj) {
-        return RubyRegexp.getQuotedRegexpFromCache(runtime, getStringForPattern(obj).value, enc, 0);
+        return RubyRegexp.getQuotedRegexpFromCache(runtime, getStringForPattern(obj).value, enc, new RegexpOptions());
     }
 
     private Regex getStringPattern19(Ruby runtime, IRubyObject obj) {
         RubyString str = getStringForPattern(obj);
         if (str.scanForCodeRange() == CR_BROKEN) {
             throw runtime.newRegexpError("invalid multybyte character: " +
-                    RubyRegexp.regexpDescription19(runtime, str.value, 0, str.value.getEncoding()).toString());
+                    RubyRegexp.regexpDescription19(runtime, str.value, new RegexpOptions(), str.value.getEncoding()).toString());
         }
         if (str.value.getEncoding().isDummy()) {
             throw runtime.newArgumentError("can't make regexp with dummy encoding");
         }
         
-        return RubyRegexp.getQuotedRegexpFromCache19(runtime, str.value, 0, str.isAsciiOnly());
+        return RubyRegexp.getQuotedRegexpFromCache19(runtime, str.value, new RegexpOptions(), str.isAsciiOnly());
     }
 
     /** rb_str_scan

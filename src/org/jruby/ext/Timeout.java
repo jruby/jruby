@@ -26,6 +26,7 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.RegexpOptions;
 
 public class Timeout implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
@@ -40,7 +41,7 @@ public class Timeout implements Library {
         anonEx.setBaseName(null); // clear basename so it's anonymous when raising
 
         // These are not really used by timeout, but exposed for compatibility
-        timeout.defineConstant("THIS_FILE", RubyRegexp.newRegexp(runtime, "timeout\\.rb", 0));
+        timeout.defineConstant("THIS_FILE", RubyRegexp.newRegexp(runtime, "timeout\\.rb", new RegexpOptions()));
         timeout.defineConstant("CALLER_OFFSET", RubyFixnum.newFixnum(runtime, 0));
 
         // Timeout module methods

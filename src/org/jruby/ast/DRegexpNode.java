@@ -42,26 +42,25 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 
 /**
  * A regexp which contains some expressions which will need to be evaluated everytime the regexp 
  * is used for a match.
  */
 public class DRegexpNode extends DNode implements ILiteralNode {
-    private final int options;
-    private final boolean once;
+    private final RegexpOptions options;
     private RubyRegexp onceRegexp;
     private boolean is19;
 
     // 1.8 constructor
-    public DRegexpNode(ISourcePosition position, int options, boolean once) {
-        this(position, options, once, false);
+    public DRegexpNode(ISourcePosition position, RegexpOptions options) {
+        this(position, options, false);
     }
 
     // 1.9 constructor
-    public DRegexpNode(ISourcePosition position, int options, boolean once, boolean is19) {
+    public DRegexpNode(ISourcePosition position, RegexpOptions options, boolean is19) {
         super(position, null);
-        this.once = once;
         this.options = options;
         this.is19 = is19;
     }
@@ -95,14 +94,14 @@ public class DRegexpNode extends DNode implements ILiteralNode {
      * @return Returns a boolean
      */
     public boolean getOnce() {
-        return once;
+        return options.isOnce();
     }
 
     /**
      * Gets the options.
      * @return Returns a int
      */
-    public int getOptions() {
+    public RegexpOptions getOptions() {
         return options;
     }
 
@@ -120,17 +119,17 @@ public class DRegexpNode extends DNode implements ILiteralNode {
      * @param regexp
      */
     public void setOnceRegexp(RubyRegexp regexp) {
-        if (once && onceRegexp == null) this.onceRegexp = regexp;
+        if (getOnce() && onceRegexp == null) this.onceRegexp = regexp;
     }
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (once && onceRegexp != null) return onceRegexp;
+        if (getOnce() && onceRegexp != null) return onceRegexp;
 
         RubyString string = (RubyString) super.interpret(runtime, context, self, aBlock);
         RubyRegexp regexp = RubyRegexp.newDRegexp(runtime, string, options);
         
-        if (once) setOnceRegexp(regexp);
+        if (getOnce()) setOnceRegexp(regexp);
 
         return regexp;
     }

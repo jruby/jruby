@@ -131,6 +131,7 @@ import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 
 public class DefaultRubyParser implements RubyParser {
     protected ParserSupport support;
@@ -3409,17 +3410,17 @@ states[392] = new ParserState() {
 };
 states[393] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-		  int options = ((RegexpNode)yyVals[0+yyTop]).getOptions();
+		  RegexpOptions options = ((RegexpNode)yyVals[0+yyTop]).getOptions();
 		  Node node = ((Node)yyVals[-1+yyTop]);
 
 		  if (node == null) {
-          yyVal = new RegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
+          yyVal = new RegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ByteList.create(""), options.withoutOnce());
 		  } else if (node instanceof StrNode) {
-          yyVal = new RegexpNode(((Node)yyVals[-1+yyTop]).getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
+          yyVal = new RegexpNode(((Node)yyVals[-1+yyTop]).getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options.withoutOnce());
 		  } else if (node instanceof DStrNode) {
-          yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) node);
+          yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), options).addAll((DStrNode) node);
       } else {
-		      yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
+		      yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), options).add(node);
       }
     return yyVal;
   }
