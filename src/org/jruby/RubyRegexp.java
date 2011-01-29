@@ -272,7 +272,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (options.getKCode() == null) {
             options.setKcodeDefault(true);
             options.setKCode(runtime.getKCode());
-        }
+            options.setEncoding(runtime.getKCode().getEncoding());
+        } 
         if (runtime.is1_9()) {
             initializeCommon19(str, str.getEncoding(), options);
         } else {

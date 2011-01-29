@@ -21,7 +21,7 @@ public class RegexpOptions implements Cloneable {
     }
     
     public Encoding getEncoding() {
-        return encoding == null ? kcode.getEncoding() : encoding;
+        return encoding;
     }
 
     public void setEncoding(Encoding encoding) {
