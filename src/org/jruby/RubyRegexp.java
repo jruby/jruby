@@ -300,6 +300,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newDRegexp(Ruby runtime, RubyString pattern, RegexpOptions options) {
         try {
+            // Options needs a little more set up.
+            if (options.getKCode() == null) options.defaultValues(runtime.getKCode());            
             return new RubyRegexp(runtime, pattern.getByteList(), options);
         } catch (RaiseException re) {
             throw runtime.newRegexpError(re.getMessage());
@@ -1079,12 +1081,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private RubyRegexp initializeCommon(ByteList bytes, RegexpOptions options) {
         Ruby runtime = getRuntime();
-        // FIXME: Consolidate with code in RegexpNode.loadPattern
-        if (options.getKCode() == null) {
-            options.setKcodeDefault(true);
-            options.setKcode(runtime.getKCode());
-            options.setEncoding(runtime.getKCode().getEncoding());
-        }        
+        // Options needs a little more set up.
+        if (options.getKCode() == null) options.defaultValues(runtime.getKCode());
         if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");

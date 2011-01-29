@@ -14,6 +14,13 @@ public class RegexpOptions implements Cloneable {
     public Encoding getEncoding() {
         return encoding;
     }
+    
+    // FIXME: Sucky name
+    public void defaultValues(KCode defaultKCode) {
+        setKcodeDefault(true);
+        setKcode(defaultKCode);
+        setEncoding(defaultKCode.getEncoding());        
+    }
 
     public void setEncoding(Encoding encoding) {
         this.encoding = encoding;
