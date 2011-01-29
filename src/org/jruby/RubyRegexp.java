@@ -269,6 +269,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private RubyRegexp(Ruby runtime, ByteList str, RegexpOptions options) {
         this(runtime);
+        if (options.getKCode() == null) {
+            options.setKcodeDefault(true);
+            options.setKCode(runtime.getKCode());
+        }
         if (runtime.is1_9()) {
             initializeCommon19(str, str.getEncoding(), options);
         } else {
@@ -305,6 +309,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
+    // used only by the compiler/interpreter (will set the literal flag)
+    public static RubyRegexp newDRegexp(Ruby runtime, RubyString pattern, int joniOptions) {
+        try {
+            RegexpOptions options = RegexpOptions.fromJoniOptions(joniOptions);
+            return new RubyRegexp(runtime, pattern.getByteList(), options);
+        } catch (RaiseException re) {
+            throw runtime.newRegexpError(re.getMessage());
+        }
+    }
+    
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern) {
         return new RubyRegexp(runtime, pattern);
     }
