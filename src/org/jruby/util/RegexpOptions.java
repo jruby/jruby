@@ -9,17 +9,19 @@ import org.jcodings.Encoding;
 import org.jruby.RubyRegexp;
 
 public class RegexpOptions implements Cloneable {
-    public static final RegexpOptions NULL_OPTIONS = new RegexpOptions();
+    public static final RegexpOptions NULL_OPTIONS = new RegexpOptions(null, KCode.NONE.getEncoding());
     
-    public Encoding getEncoding() {
-        return encoding;
+    public RegexpOptions() {
+        this(null, KCode.NONE.getEncoding());
     }
     
-    // FIXME: Sucky name
-    public void defaultValues(KCode defaultKCode) {
-        setKcodeDefault(true);
-        setKcode(defaultKCode);
-        setEncoding(defaultKCode.getEncoding());        
+    public RegexpOptions(KCode kcode, Encoding encoding) {
+        this.kcode = kcode;
+        this.encoding = encoding;
+    }
+    
+    public Encoding getEncoding() {
+        return encoding == null ? kcode.getEncoding() : encoding;
     }
 
     public void setEncoding(Encoding encoding) {
@@ -54,7 +56,7 @@ public class RegexpOptions implements Cloneable {
         return kcode;
     }
 
-    public void setKcode(KCode kcode) {
+    public void setKCode(KCode kcode) {
         this.kcode = kcode;
     }
 
@@ -116,7 +118,7 @@ public class RegexpOptions implements Cloneable {
         if (ignorecase) options |= RubyRegexp.RE_OPTION_IGNORECASE;
         if (extended) options |= RubyRegexp.RE_OPTION_EXTENDED;
         if (once) options |= RubyRegexp.RE_OPTION_ONCE;
-        options |= kcode.bits();
+        if (kcode != null) options |= kcode.bits();
         return options;
     }
 
@@ -126,7 +128,7 @@ public class RegexpOptions implements Cloneable {
         options.setIgnorecase((joniOptions & RubyRegexp.RE_OPTION_IGNORECASE) != 0);
         options.setExtended((joniOptions & RubyRegexp.RE_OPTION_EXTENDED) != 0);
         options.setOnce((joniOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
-        options.setKcode(KCode.fromBits(joniOptions));
+        options.setKCode(KCode.fromBits(joniOptions));
         return options;
     }
 

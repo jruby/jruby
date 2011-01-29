@@ -90,8 +90,6 @@ public class RegexpNode extends Node implements ILiteralNode {
 
     public RubyRegexp loadPattern(Ruby runtime) {
         if (pattern == null || runtime.getKCode() != pattern.getKCode()) {
-            // Options needs a little more set up.
-            if (options.getKCode() == null) options.defaultValues(runtime.getKCode()); 
             setPattern(RubyRegexp.newRegexp(runtime, value, options));
         }
 

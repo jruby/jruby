@@ -262,8 +262,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private RubyRegexp(Ruby runtime, ByteList str) {
         this(runtime);
-        setKCodeDefault();
-        this.options.setKcode(runtime.getKCode());
+        options.setKcodeDefault(true);
         this.str = str;
         this.pattern = getRegexpFromCache(runtime, str, getEncoding(runtime, str), RegexpOptions.NULL_OPTIONS);
     }
@@ -300,8 +299,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newDRegexp(Ruby runtime, RubyString pattern, RegexpOptions options) {
         try {
-            // Options needs a little more set up.
-            if (options.getKCode() == null) options.defaultValues(runtime.getKCode());            
             return new RubyRegexp(runtime, pattern.getByteList(), options);
         } catch (RaiseException re) {
             throw runtime.newRegexpError(re.getMessage());
@@ -325,7 +322,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyRegexp regexp = new RubyRegexp(runtime);
         regexp.pattern = regex;
         regexp.str = ByteList.EMPTY_BYTELIST;
-        regexp.options.setKcode(KCode.NONE);
+        regexp.options.setKCode(KCode.NONE);
         regexp.options.setFixed(true);
         return regexp;
     }
@@ -656,8 +653,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = {"new", "compile"}, rest = true, meta = true)
     public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyClass klass = (RubyClass)recv;
-
         RubyRegexp re = (RubyRegexp) klass.allocate();
+
         re.callInit(args, Block.NULL_BLOCK);
         return re;
     }
@@ -1055,16 +1052,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             optionsInt &= ~0x70;
             switch (first) {
             case 'n': case 'N':
-                options.setKcode(KCode.NONE);
+                options.setKCode(KCode.NONE);
                 break;
             case 'e': case 'E':
-                options.setKcode(KCode.EUC);
+                options.setKCode(KCode.EUC);
                 break;
             case 's': case 'S':
-                options.setKcode(KCode.SJIS);
+                options.setKCode(KCode.SJIS);
                 break;
             case 'u': case 'U':
-                options.setKcode(KCode.UTF8);
+                options.setKCode(KCode.UTF8);
                 break;
             default:
                 break;
@@ -1082,7 +1079,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RubyRegexp initializeCommon(ByteList bytes, RegexpOptions options) {
         Ruby runtime = getRuntime();
         // Options needs a little more set up.
-        if (options.getKCode() == null) options.defaultValues(runtime.getKCode());
         if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");

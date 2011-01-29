@@ -159,19 +159,19 @@ public class StringTerm extends StrTerm {
                 options.setOnce(true);
                 break;
             case 'n':
-                options.setKcode(KCode.NONE);
+                options.setKCode(KCode.NONE);
                 options.setEncoding(KCode.NONE.getEncoding());
                 break;
             case 'e':
-                options.setKcode(KCode.EUC);
+                options.setKCode(KCode.EUC);
                 options.setEncoding(KCode.EUC.getEncoding());
                 break;
             case 's':
-                options.setKcode(KCode.SJIS);
+                options.setKCode(KCode.SJIS);
                 options.setEncoding(KCode.SJIS.getEncoding());
                 break;
             case 'u':
-                options.setKcode(KCode.UTF8);
+                options.setKCode(KCode.UTF8);
                 options.setEncoding(KCode.UTF8.getEncoding());
                 break;
             case 'j':
