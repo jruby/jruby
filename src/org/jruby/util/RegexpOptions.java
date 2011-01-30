@@ -58,6 +58,7 @@ public class RegexpOptions implements Cloneable {
 
     public void setKCode(KCode kcode) {
         this.kcode = kcode;
+        this.encoding = kcode.getEncoding();
     }
 
     public boolean isMultiline() {

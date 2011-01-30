@@ -1098,12 +1098,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return initializeCommon(regexp.str, regexp.options);
     }
 
-    private RubyRegexp initializeCommon(ByteList bytes, RegexpOptions options) {
+    private RubyRegexp initializeCommon(ByteList bytes, RegexpOptions newOptions) {
         Ruby runtime = getRuntime();
         // Options needs a little more set up.
         if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
+        options = newOptions;
         pattern = getRegexpFromCache(runtime, bytes, options.getEncoding(), options);
         str = bytes;
         return this;
