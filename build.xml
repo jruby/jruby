@@ -1458,6 +1458,7 @@
       <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
           <include name="test/testapp/testapp"/>
           <include name="test/testapp/testapp.exe"/>
+          <include name="test/org/jruby/util/shell_launcher_test*"/>
       </tarfileset>
     </tar>
     <zip destfile="${dist.dir}/jruby-src-${version.jruby}.zip">
@@ -1482,6 +1483,7 @@
       <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
         <include name="test/testapp/testapp"/>
         <include name="test/testapp/testapp.exe"/>
+        <include name="test/org/jruby/util/shell_launcher_test*"/>
       </zipfileset>
     </zip>
 
