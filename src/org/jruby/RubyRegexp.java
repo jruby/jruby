@@ -1033,13 +1033,20 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             initializeCommon19(regexp.str, regexp.str.getEncoding(), regexp.getOptions()) :
             initializeCommon(regexp.str, regexp.getOptions());
     }
+    
+    private int objectAsJoniOptions(IRubyObject arg) {
+        if (arg instanceof RubyFixnum) return RubyNumeric.fix2int(arg);
+        if (arg.isTrue()) return RE_OPTION_IGNORECASE;
+        
+        return 0;
+    }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize_m(IRubyObject arg) {
         if (arg instanceof RubyRegexp) return initializeByRegexp((RubyRegexp)arg);
         return initializeCommon(arg.convertToString().getByteList(), new RegexpOptions());
     }
-
+    
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyRegexp) {
@@ -1047,19 +1054,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return initializeByRegexp((RubyRegexp)arg0);
         }
         
-        int options = arg1 instanceof RubyFixnum ? RubyNumeric.fix2int(arg1) : arg1.isTrue() ? RE_OPTION_IGNORECASE : 0;
-        return initializeCommon(arg0.convertToString().getByteList(), RegexpOptions.fromJoniOptions(options));
+        options = RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1));
+        return initializeCommon(arg0.convertToString().getByteList(), options);
     }
-
+    
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
             getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags and encoding ignored");            
             return initializeByRegexp((RubyRegexp)arg0);
         }
-        int optionsInt = arg1 instanceof RubyFixnum ? RubyNumeric.fix2int(arg1) : arg1.isTrue() ? RE_OPTION_IGNORECASE : 0;
-
-        RegexpOptions options = RegexpOptions.fromJoniOptions(optionsInt);
+        
+        int optionsInt = objectAsJoniOptions(arg1);
+        options = RegexpOptions.fromJoniOptions(optionsInt);
         
         if (!arg2.isNil()) {
             ByteList kcodeBytes = arg2.convertToString().getByteList();
@@ -1111,12 +1118,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public IRubyObject initialize_m19(IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyRegexp) {
-            getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");            
+            getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");
             return initializeByRegexp19((RubyRegexp)arg0);
         }
         
-        int optionsInt = arg1 instanceof RubyFixnum ? RubyNumeric.fix2int(arg1) : arg1.isTrue() ? RE_OPTION_IGNORECASE : 0;
-        RegexpOptions options = RegexpOptions.fromJoniOptions(optionsInt);
+        options = RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1));        
         return initializeCommon19(arg0.convertToString(), options);
     }
 
@@ -1126,8 +1132,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             getRuntime().getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");            
             return initializeByRegexp19((RubyRegexp)arg0);
         }
-        int optionsInt = arg1 instanceof RubyFixnum ? RubyNumeric.fix2int(arg1) : arg1.isTrue() ? RE_OPTION_IGNORECASE : 0;
-        RegexpOptions options = RegexpOptions.fromJoniOptions(optionsInt);
+        int optionsInt = objectAsJoniOptions(arg1);
+        options = RegexpOptions.fromJoniOptions(optionsInt);
 
         if (!arg2.isNil()) {
             ByteList kcodeBytes = arg2.convertToString().getByteList();
