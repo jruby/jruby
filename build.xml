@@ -1434,7 +1434,7 @@
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
-    <rake task="install_dist_gems"/>
+    <rake task="install_dist_gems['${dist.stage.src.dir}']"/>
     <fixEOLs dist-stage-dir="${dist.stage.src.dir}"/>
     <tar destfile="${dist.dir}/jruby-src-${version.jruby}.tar.gz" compression="gzip">
       <tarfileset dir="${dist.stage.src.dir}" mode="755" prefix="jruby-${version.jruby}">
