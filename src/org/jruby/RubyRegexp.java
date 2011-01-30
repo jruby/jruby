@@ -1208,7 +1208,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "kcode")
     public IRubyObject kcode(ThreadContext context) {
         return (!isKCodeDefault() && options.getKCode() != null) ?
-            context.getRuntime().newString(options.getKCode().name()) : context.getRuntime().getNil();
+            context.getRuntime().newString(options.getKCode().name().toLowerCase()) : context.getRuntime().getNil();
     }
 
     @JRubyMethod(name = "hash")
