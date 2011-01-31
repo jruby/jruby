@@ -632,8 +632,7 @@ public class ParserSupport {
     public boolean isLiteral(Node node) {
         return node != null && (node instanceof FixnumNode || node instanceof BignumNode || 
                 node instanceof FloatNode || node instanceof SymbolNode || 
-                (node instanceof RegexpNode && 
-                        ((RegexpNode) node).getOptions().isOnce()));
+                (node instanceof RegexpNode && ((RegexpNode) node).getOptions().toJoniOptions() == 0));
     }
 
     private void handleUselessWarn(Node node, String useless) {
