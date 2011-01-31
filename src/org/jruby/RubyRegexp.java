@@ -270,7 +270,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private Encoding getEncoding(Ruby runtime, ByteList str) {
-        return runtime.is1_9() ? str.getEncoding() : options.getEncoding();
+        if (runtime.is1_9()) return str.getEncoding();
+
+        // Whatever $KCODE is we should use
+        if (options.isKcodeDefault()) return runtime.getKCode().getEncoding();
+        
+        return options.getEncoding();
     }
 
     // used only by the compiler/interpreter (will set the literal flag)

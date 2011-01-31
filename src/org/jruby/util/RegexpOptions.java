@@ -6,6 +6,7 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 
 public class RegexpOptions implements Cloneable {
@@ -139,7 +140,7 @@ public class RegexpOptions implements Cloneable {
         if (ignorecase) options |= RubyRegexp.RE_OPTION_IGNORECASE;
         if (extended) options |= RubyRegexp.RE_OPTION_EXTENDED;
         if (once) options |= RubyRegexp.RE_OPTION_ONCE;
-        options |= kcode.bits();
+        if (!isKcodeDefault()) options |= kcode.bits();
         return options;
     }
 
