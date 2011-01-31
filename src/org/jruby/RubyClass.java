@@ -1267,7 +1267,8 @@ public class RubyClass extends RubyModule {
 
         // gather a list of instance methods, so we don't accidentally make static ones that conflict
         Set<String> instanceMethods = new HashSet<String>();
-        
+
+        // define instance methods
         for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
             String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
@@ -1336,7 +1337,8 @@ public class RubyClass extends RubyModule {
 
             m.end();
         }
-        
+
+        // define class/static methods
         for (Map.Entry<String,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
             String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
@@ -1377,7 +1379,7 @@ public class RubyClass extends RubyModule {
                 // indices for temp values
                 Class[] params = new Class[methodSignature.length - 1];
                 System.arraycopy(methodSignature, 1, params, 0, params.length);
-                int baseIndex = 1;
+                int baseIndex = 0;
                 for (Class paramType : params) {
                     if (paramType == double.class || paramType == long.class) {
                         baseIndex += 2;
