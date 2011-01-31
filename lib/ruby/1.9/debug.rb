@@ -2,8 +2,6 @@
 # Copyright (C) 2000  Information-technology Promotion Agency, Japan
 # Copyright (C) 2000-2003  NAKAMURA, Hiroshi  <nahi@ruby-lang.org>
 
-require 'continuation'
-
 if $SAFE > 0
   STDERR.print "-r debug.rb is not available in safe mode\n"
   exit 1
@@ -21,6 +19,45 @@ end
 SCRIPT_LINES__ = {} unless defined? SCRIPT_LINES__
 
 class DEBUGGER__
+class Mutex
+  def initialize
+    @locker = nil
+    @waiting = []
+    @locked = false;
+  end
+
+  def locked?
+    @locked
+  end
+
+  def lock
+#    return if Thread.critical
+    return if @locker == Thread.current
+#    while (Thread.critical = true; @locked)
+#      @waiting.push Thread.current
+#      Thread.stop
+#    end
+    @locked = true
+    @locker = Thread.current
+#    Thread.critical = false
+    self
+  end
+
+  def unlock
+#    return if Thread.critical
+    return unless @locked
+    unless @locker == Thread.current
+      raise RuntimeError, "unlocked by other"
+    end
+#    Thread.critical = true
+    t = @waiting.shift
+    @locked = false
+    @locker = nil
+#    Thread.critical = false
+    t.run if t
+    self
+  end
+end
 MUTEX = Mutex.new
 
 class Context
@@ -81,14 +118,13 @@ class Context
   end
 
   def check_suspend
-    while MUTEX.synchronize {
-	if @suspend_next
-	  DEBUGGER__.waiting.push Thread.current
-	  @suspend_next = false
-	  true
-	end
-      }
-    end
+#    return if Thread.critical
+#    while (Thread.critical = true; @suspend_next)
+#      DEBUGGER__.waiting.push Thread.current
+#      @suspend_next = false
+#      Thread.stop
+#    end
+#    Thread.critical = false
   end
 
   def trace?
@@ -219,9 +255,10 @@ class Context
 
   def debug_command(file, line, id, binding)
     MUTEX.lock
-    unless defined?($debugger_restart) and $debugger_restart
-      callcc{|c| $debugger_restart = c}
-    end
+# This is removed, since JRuby doesn't support continuations
+#    unless defined?($debugger_restart) and $debugger_restart
+#      callcc{|c| $debugger_restart = c} 
+#    end
     set_last_thread(Thread.current)
     frame_pos = 0
     binding_file = file
@@ -297,9 +334,9 @@ class Context
 	  if break_points.find{|b| b[1] == 0}
 	    n = 1
 	    stdout.print "Breakpoints:\n"
-	    break_points.each do |b|
+	    for b in break_points
 	      if b[0] and b[1] == 0
-		stdout.printf "  %d %s:%s\n", n, b[2], b[3]
+		stdout.printf "  %d %s:%s\n", n, b[2], b[3] 
 	      end
 	      n += 1
 	    end
@@ -492,7 +529,8 @@ class Context
 	  stdout.printf "%s\n", debug_eval($', binding).inspect
 
 	when /^\s*r(?:estart)?$/
-          $debugger_restart.call
+    stdout.print "JRuby doesn't support the command restart, since it depends on continuations"
+#          $debugger_restart.call
 
 	when /^\s*h(?:elp)?$/
 	  debug_print_help()
@@ -593,6 +631,7 @@ EOHELP
   def display_list(b, e, file, line)
     stdout.printf "[%d, %d] in %s\n", b, e, file
     if lines = SCRIPT_LINES__[file] and lines != true
+      n = 0
       b.upto(e) do |n|
 	if n > 0 && lines[n-1]
 	  if n == line
@@ -711,7 +750,10 @@ EOHELP
       end
       @frames.shift
 
-    when 'raise'
+    when 'end'
+      @frames.shift
+
+    when 'raise' 
       excn_handle(file, line, id, binding)
 
     end
@@ -750,12 +792,13 @@ class << DEBUGGER__
   end
 
   def set_trace( arg )
-    MUTEX.synchronize do
-      make_thread_list
-      for th, in @thread_list
-	context(th).set_trace arg
-      end
+#    saved_crit = Thread.critical
+#    Thread.critical = true
+    make_thread_list
+    for th, in @thread_list
+      context(th).set_trace arg
     end
+#    Thread.critical = saved_crit
     arg
   end
 
@@ -764,29 +807,31 @@ class << DEBUGGER__
   end
 
   def suspend
-    MUTEX.synchronize do
-      make_thread_list
-      for th, in @thread_list
-	next if th == Thread.current
-	context(th).set_suspend
-      end
+#    saved_crit = Thread.critical
+#    Thread.critical = true
+    make_thread_list
+    for th, in @thread_list
+      next if th == Thread.current
+      context(th).set_suspend
     end
+#    Thread.critical = saved_crit
     # Schedule other threads to suspend as soon as possible.
-    Thread.pass
+#    Thread.pass unless Thread.critical
   end
 
   def resume
-    MUTEX.synchronize do
-      make_thread_list
-      @thread_list.each do |th,|
-	next if th == Thread.current
-	context(th).clear_suspend
-      end
-      waiting.each do |th|
-	th.run
-      end
-      waiting.clear
+#    saved_crit = Thread.critical
+#    Thread.critical = true
+    make_thread_list
+    for th, in @thread_list
+      next if th == Thread.current
+      context(th).clear_suspend
     end
+    waiting.each do |th|
+      th.run
+    end
+    waiting.clear
+#    Thread.critical = saved_crit
     # Schedule other threads to restart as soon as possible.
     Thread.pass
   end
@@ -804,7 +849,7 @@ class << DEBUGGER__
   end
 
   def get_thread(num)
-    th = @thread_list.key(num)
+    th = @thread_list.index(num)
     unless th
       @stdout.print "No thread ##{num}\n"
       throw :debug_error
@@ -878,7 +923,7 @@ class << DEBUGGER__
 	@stdout.print "Already stopped.\n"
       else
 	thread_list(@thread_list[th])
-	context(th).suspend
+	context(th).suspend 
       end
 
     when /^resume\s+(\d+)/
@@ -898,9 +943,6 @@ end
 
 stdout.printf "Debug.rb\n"
 stdout.printf "Emacs support available.\n\n"
-RubyVM::InstructionSequence.compile_option = {
-  trace_instruction: true
-}
 set_trace_func proc { |event, file, line, id, binding, klass, *rest|
   DEBUGGER__.context.trace_func event, file, line, id, binding, klass
 }
