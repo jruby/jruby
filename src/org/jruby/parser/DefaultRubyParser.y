@@ -128,6 +128,7 @@ import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 
 public class DefaultRubyParser implements RubyParser {
     protected ParserSupport support;
@@ -1498,19 +1499,19 @@ xstring	      : tXSTRING_BEG xstring_contents tSTRING_END {
 
 // Node:regexp - /foo/ [!null]
 regexp	      : tREGEXP_BEG xstring_contents tREGEXP_END {
-		  int options = $3.getOptions();
+		  RegexpOptions options = $3.getOptions();
 		  Node node = $2;
 
-		  if (node == null) {
-          $$ = new RegexpNode($1.getPosition(), ByteList.create(""), options & ~ReOptions.RE_OPTION_ONCE);
-		  } else if (node instanceof StrNode) {
-          $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options & ~ReOptions.RE_OPTION_ONCE);
+                  if (node == null) {
+		    $$ = new RegexpNode($1.getPosition(), ByteList.create(""), options.withoutOnce());
+                  } else if (node instanceof StrNode) {
+                    $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options.withoutOnce());
 		  } else if (node instanceof DStrNode) {
-          $$ = new DRegexpNode($1.getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).addAll((DStrNode) node);
-      } else {
-		      $$ = new DRegexpNode($1.getPosition(), options, (options & ReOptions.RE_OPTION_ONCE) != 0).add(node);
-      }
-}
+                    $$ = new DRegexpNode($1.getPosition(), options).addAll((DStrNode) node);
+                  } else {
+		    $$ = new DRegexpNode($1.getPosition(), options).add(node);
+                  }
+               }
 
 // Node:words - collection of words (e.g. %w{a b c}) with delimeters [!null]
 words	       : tWORDS_BEG ' ' tSTRING_END {
