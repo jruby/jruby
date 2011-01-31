@@ -1887,6 +1887,9 @@ public class RubyArray extends RubyObject implements List {
                     recursiveJoin(context, obj, sep, result, val);
                 } else {
                     IRubyObject tmp = val.checkStringType19();
+                    if(tmp.isNil()){
+                        tmp = TypeConverter.convertToTypeWithCheck(val, getRuntime().getString(), "to_s");
+                    }
                     if(!tmp.isNil()) {
                         val = tmp;
                         result.append(((RubyString)val).getByteList());
