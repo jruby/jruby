@@ -494,9 +494,9 @@ public class RubyJRuby {
             }
 
             if (args.length > 0) {
-                clazz.reify(args[0].convertToString().asJavaString());
+                clazz.reifyWithAncestors(args[0].convertToString().asJavaString());
             } else {
-                clazz.reify();
+                clazz.reifyWithAncestors();
             }
 
             return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), clazz.getReifiedClass());
