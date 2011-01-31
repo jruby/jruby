@@ -6,7 +6,6 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 
 public class RegexpOptions implements Cloneable {
@@ -229,5 +228,4 @@ public class RegexpOptions implements Cloneable {
     private boolean encodingNone;
     private boolean kcodeDefault;
     private boolean literal;
-    private boolean embedded;
 }
