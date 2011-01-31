@@ -129,7 +129,12 @@ public class RegexpOptions implements Cloneable {
         options.setIgnorecase((joniOptions & RubyRegexp.RE_OPTION_IGNORECASE) != 0);
         options.setExtended((joniOptions & RubyRegexp.RE_OPTION_EXTENDED) != 0);
         options.setOnce((joniOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
-        options.setKCode(KCode.fromBits(joniOptions));
+        KCode kcode = KCode.fromBits(joniOptions);
+        if (kcode != KCode.NONE) {
+            // ENEBO: This is not so clear...if we use fromJoniOptions for 
+            // replication from another regexp we lose info like kcodefault
+            options.setKCode(kcode);
+        }
         return options;
     }
 
@@ -168,6 +173,8 @@ public class RegexpOptions implements Cloneable {
         if (!(other instanceof RegexpOptions)) return false;
 
         RegexpOptions o = (RegexpOptions)other;
+//        System.out.println("THIS: " + this);
+//        System.out.println("OTHR: " + other);
         return
                 o.encoding == encoding &&
                 o.encodingNone == encodingNone &&
@@ -184,7 +191,17 @@ public class RegexpOptions implements Cloneable {
     
     @Override
     public String toString() {
-        return "RegexpOptions(encoding = " + encoding + ", kcode: " + kcode + ")";
+        return "RegexpOptions(encoding: " + encoding + ", kcode: " + kcode + 
+                (encodingNone == true ? ", encodingNone" : "") +
+                (extended == true ? ", extended" : "") +
+                (fixed == true ? ", fixed" : "") +
+                (ignorecase == true ? ", ignorecase" : "") +
+                (java == true ? ", java" : "") +
+                (kcodeDefault == true ? ", kcodeDefault" : "") +
+                (literal == true ? ", literal" : "") +
+                (multiline == true ? ", multiline" : "") +
+                (once == true ? ", once" : "") +                
+                ")";
     }
     
     private Encoding encoding;

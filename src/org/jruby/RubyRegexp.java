@@ -911,26 +911,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "union", rest = true, meta = true)
     public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
-        IRubyObject[] realArgs = args;
-        if (args.length == 0) {
-            return newRegexp(runtime, ByteList.create("(?!)"));
-        } else if (args.length == 1) {
+        if (args.length == 0) return newRegexp(runtime, ByteList.create("(?!)"));
+
+        IRubyObject[] realArgs = args;        
+        if (args.length == 1) {
+            // The power of the union of one!
             IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], runtime.getRegexp(), "to_regexp");
-            if (!v.isNil()) {
-                return v;
-            } else {
-                IRubyObject a = TypeConverter.convertToTypeWithCheck(args[0], runtime.getArray(), "to_ary");
-                if (!a.isNil()) {
-                    RubyArray aa = (RubyArray)a;
-                    int len = aa.getLength();
-                    realArgs = new IRubyObject[len];
-                    for(int i = 0; i<len; i++) {
-                        realArgs[i] = aa.entry(i);
-                    }
-                } else {
-                    // newInstance here
-                    return newRegexp(runtime, quote(context, recv, args).getByteList());
-                }
+            if (!v.isNil()) return v;
+            
+            IRubyObject a = TypeConverter.convertToTypeWithCheck(args[0], runtime.getArray(), "to_ary");
+            if (a.isNil()) return newRegexp(runtime, quote(context, recv, args).getByteList());
+
+            RubyArray aa = (RubyArray)a;
+            int len = aa.getLength();
+            realArgs = new IRubyObject[len];
+            for(int i = 0; i<len; i++) {
+                realArgs[i] = aa.entry(i);
             }
         }
 
