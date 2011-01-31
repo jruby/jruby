@@ -104,23 +104,6 @@ public class DRegexpNode extends DNode implements ILiteralNode {
     public RegexpOptions getOptions() {
         return options;
     }
-
-    /**
-     * For regular expressions with /o flag
-     * @return
-     */
-    public RubyRegexp getOnceRegexp() {
-        return onceRegexp;
-    }
-    
-    /**
-     * For regular expressions with /o flag, the value in here can be used for subsequent evaluations.
-     * Setting will only succeed if it is a regular expression with /o flag, and the value hasn't been already set.
-     * @param regexp
-     */
-    public void setOnceRegexp(RubyRegexp regexp) {
-        if (getOnce() && onceRegexp == null) this.onceRegexp = regexp;
-    }
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
@@ -129,7 +112,7 @@ public class DRegexpNode extends DNode implements ILiteralNode {
         RubyString string = (RubyString) super.interpret(runtime, context, self, aBlock);
         RubyRegexp regexp = RubyRegexp.newDRegexp(runtime, string, options);
         
-        if (getOnce()) setOnceRegexp(regexp);
+        if (getOnce() && onceRegexp == null) onceRegexp = regexp;
 
         return regexp;
     }

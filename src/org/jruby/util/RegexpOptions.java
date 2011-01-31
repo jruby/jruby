@@ -136,10 +136,10 @@ public class RegexpOptions implements Cloneable {
 
     public int toJoniOptions() {
         int options = 0;
+        // Note: once is not an option that is pertinent to Joni so we exclude it.
         if (multiline) options |= RubyRegexp.RE_OPTION_MULTILINE;
         if (ignorecase) options |= RubyRegexp.RE_OPTION_IGNORECASE;
         if (extended) options |= RubyRegexp.RE_OPTION_EXTENDED;
-        if (once) options |= RubyRegexp.RE_OPTION_ONCE;
         if (!isKcodeDefault()) options |= kcode.bits();
         return options;
     }
