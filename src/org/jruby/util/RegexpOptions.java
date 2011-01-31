@@ -9,15 +9,19 @@ import org.jcodings.Encoding;
 import org.jruby.RubyRegexp;
 
 public class RegexpOptions implements Cloneable {
-    public static final RegexpOptions NULL_OPTIONS = new RegexpOptions(null, KCode.NONE.getEncoding());
+    public static final RegexpOptions NULL_OPTIONS = new RegexpOptions(KCode.NONE, KCode.NONE.getEncoding(), true);
     
     public RegexpOptions() {
-        this(null, KCode.NONE.getEncoding());
+        this(KCode.NONE, KCode.NONE.getEncoding(), true);
     }
     
-    public RegexpOptions(KCode kcode, Encoding encoding) {
+    public RegexpOptions(KCode kcode, Encoding encoding, boolean isKCodeDefault) {
         this.kcode = kcode;
         this.encoding = encoding;
+        this.kcodeDefault = isKCodeDefault;
+        
+        assert kcode != null : "kcode must always be set to something";
+        assert encoding != null : "encoding must always be set to something";
     }
     
     public Encoding getEncoding() {
@@ -55,10 +59,34 @@ public class RegexpOptions implements Cloneable {
     public KCode getKCode() {
         return kcode;
     }
+    
+    public String getKCodeName() {
+        return isKcodeDefault() ? null : getKCode().name().toLowerCase();
+    }    
 
+    /**
+     * This regexp has an explicit encoding flag or 'nesu' letter associated
+     * with it.
+     * 
+     * @param kcode to be set
+     */
+    public void setExplicitKCode(KCode kcode) {
+        setKCode(kcode);
+        kcodeDefault = false;
+    }
+    
     public void setKCode(KCode kcode) {
         this.kcode = kcode;
         this.encoding = kcode.getEncoding();
+    }
+
+    /**
+     * Whether the kcode associated with this regexp is implicit (aka
+     * default) or is specified explicitly (via 'nesu' syntax postscript or
+     * flags to Regexp.new.
+     */
+    public boolean isKcodeDefault() {
+        return kcodeDefault;
     }
 
     public boolean isMultiline() {
@@ -93,14 +121,6 @@ public class RegexpOptions implements Cloneable {
         this.encodingNone = encodingNone;
     }
 
-    public boolean isKcodeDefault() {
-        return kcodeDefault;
-    }
-
-    public void setKcodeDefault(boolean kcodeDefault) {
-        this.kcodeDefault = kcodeDefault;
-    }
-
     public boolean isLiteral() {
         return literal;
     }
@@ -119,7 +139,7 @@ public class RegexpOptions implements Cloneable {
         if (ignorecase) options |= RubyRegexp.RE_OPTION_IGNORECASE;
         if (extended) options |= RubyRegexp.RE_OPTION_EXTENDED;
         if (once) options |= RubyRegexp.RE_OPTION_ONCE;
-        if (kcode != null) options |= kcode.bits();
+        options |= kcode.bits();
         return options;
     }
 
@@ -129,12 +149,8 @@ public class RegexpOptions implements Cloneable {
         options.setIgnorecase((joniOptions & RubyRegexp.RE_OPTION_IGNORECASE) != 0);
         options.setExtended((joniOptions & RubyRegexp.RE_OPTION_EXTENDED) != 0);
         options.setOnce((joniOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
-        KCode kcode = KCode.fromBits(joniOptions);
-        if (kcode != KCode.NONE) {
-            // ENEBO: This is not so clear...if we use fromJoniOptions for 
-            // replication from another regexp we lose info like kcodefault
-            options.setKCode(kcode);
-        }
+        options.setKCode(KCode.fromBits(joniOptions));
+
         return options;
     }
 
@@ -172,21 +188,18 @@ public class RegexpOptions implements Cloneable {
     public boolean equals(Object other) {
         if (!(other instanceof RegexpOptions)) return false;
 
+        // Note: literal and once can be different in this object but for the
+        // sake of equality we ignore those two fields since those flags do
+        // not affect Ruby equality.
         RegexpOptions o = (RegexpOptions)other;
-//        System.out.println("THIS: " + this);
-//        System.out.println("OTHR: " + other);
-        return
-                o.encoding == encoding &&
-                o.encodingNone == encodingNone &&
+        return o.encoding == encoding && o.encodingNone == encodingNone &&
                 o.extended == extended &&
                 o.fixed == fixed &&
                 o.ignorecase == ignorecase &&
                 o.java == java &&
                 o.kcode == kcode &&
                 o.kcodeDefault == kcodeDefault &&
-                o.literal == literal &&
-                o.multiline == multiline &&
-                o.once == once;
+                o.multiline == multiline; 
     }
     
     @Override

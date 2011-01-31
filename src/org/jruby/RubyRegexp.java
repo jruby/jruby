@@ -98,14 +98,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return options.isLiteral();
     }
 
-    public final void setKCodeDefault() {
-        options.setKcodeDefault(true);
-    }
-
-    public void clearKCodeDefault() {
-        options.setKcodeDefault(false);
-    }
-
     public boolean isKCodeDefault() {
         return options.isKcodeDefault();
     }
@@ -262,18 +254,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private RubyRegexp(Ruby runtime, ByteList str) {
         this(runtime);
-        options.setKcodeDefault(true);
         this.str = str;
         this.pattern = getRegexpFromCache(runtime, str, getEncoding(runtime, str), RegexpOptions.NULL_OPTIONS);
     }
 
     private RubyRegexp(Ruby runtime, ByteList str, RegexpOptions options) {
         this(runtime);
-        if (options.getKCode() == null) {
-            options.setKcodeDefault(true);
-            options.setKCode(runtime.getKCode());
-            options.setEncoding(runtime.getKCode().getEncoding());
-        } 
         if (runtime.is1_9()) {
             initializeCommon19(str, str.getEncoding(), options);
         } else {
@@ -337,7 +323,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyRegexp regexp = new RubyRegexp(runtime);
         regexp.pattern = regex;
         regexp.str = ByteList.EMPTY_BYTELIST;
-        regexp.options.setKCode(KCode.NONE);
         regexp.options.setFixed(true);
         return regexp;
     }
@@ -940,10 +925,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             IRubyObject v = TypeConverter.convertToTypeWithCheck(realArgs[i], runtime.getRegexp(), "to_regexp");
             if (!v.isNil()) {
                 if (!((RubyRegexp)v).isKCodeDefault()) {
-                    if (kcode == null) {
+                    if (kcode == null) { // First regexp of union sets kcode.
                         kcode_re = v;
                         kcode = ((RubyRegexp)v).options.getKCode();
-                    } else if (((RubyRegexp)v).options.getKCode() != kcode) {
+                    } else if (((RubyRegexp)v).options.getKCode() != kcode) { // n kcode doesn't match first one
                         IRubyObject str1 = kcode_re.inspect();
                         IRubyObject str2 = v.inspect();
                         throw runtime.newArgumentError("mixed kcode " + str1 + " and " + str2);
@@ -958,7 +943,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         _args[0] = source;
         _args[1] = runtime.getNil();
-        if (kcode == null) {
+        if (kcode == null) { // No elements in the array.
             _args[2] = runtime.getNil();
         } else if (kcode == KCode.NONE) {
             _args[2] = runtime.newString("n");
@@ -1067,19 +1052,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (!arg2.isNil()) {
             ByteList kcodeBytes = arg2.convertToString().getByteList();
             char first = kcodeBytes.length() > 0 ? kcodeBytes.charAt(0) : 0;
-            optionsInt &= ~0x70;
             switch (first) {
             case 'n': case 'N':
-                options.setKCode(KCode.NONE);
+                options.setExplicitKCode(KCode.NONE);
                 break;
             case 'e': case 'E':
-                options.setKCode(KCode.EUC);
+                options.setExplicitKCode(KCode.EUC);
                 break;
             case 's': case 'S':
-                options.setKCode(KCode.SJIS);
+                options.setExplicitKCode(KCode.SJIS);
                 break;
             case 'u': case 'U':
-                options.setKCode(KCode.UTF8);
+                options.setExplicitKCode(KCode.UTF8);
                 break;
             default:
                 break;
@@ -1204,8 +1188,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "kcode")
     public IRubyObject kcode(ThreadContext context) {
-        return (!isKCodeDefault() && options.getKCode() != null) ?
-            context.getRuntime().newString(options.getKCode().name().toLowerCase()) : context.getRuntime().getNil();
+        Ruby runtime = context.getRuntime();        
+        String kcodeName = options.getKCodeName();
+        
+        return kcodeName == null ? runtime.getNil() : runtime.newString(kcodeName);
     }
 
     @JRubyMethod(name = "hash")
@@ -1486,7 +1472,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public IRubyObject inspect() {
         check();
         ByteList result = regexpDescription(getRuntime(), str, options.getEncoding(), options);
-        if (options.getKCode() != null && !isKCodeDefault()) result.append((byte)options.getKCode().name().charAt(0));
+        if (!isKCodeDefault()) result.append((byte)options.getKCodeName().charAt(0));
         return RubyString.newString(getRuntime(), result);
     }
 
