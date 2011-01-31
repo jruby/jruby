@@ -1237,7 +1237,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         otherRegex.check();
         
         return context.getRuntime().newBoolean(str.equal(otherRegex.str) && 
-                otherRegex.getOptions().equals(otherRegex.options));
+                getOptions().equals(otherRegex.options));
     }
 
     @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF)
@@ -1464,7 +1464,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "casefold?")
     public IRubyObject casefold_p(ThreadContext context) {
         check();
-        return context.getRuntime().newBoolean((pattern.getOptions() & RE_OPTION_IGNORECASE) != 0);
+        return context.getRuntime().newBoolean(getOptions().isIgnorecase());
     }
 
     /** rb_reg_source
