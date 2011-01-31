@@ -2085,7 +2085,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
-    private final EntryView VALUE_VIEW = new EntryView() {
+    private static final EntryView VALUE_VIEW = new EntryView() {
         public Object convertEntry(Ruby runtime, RubyHashEntry entry) {
             return entry.value.toJava(Object.class);
         }
@@ -2100,14 +2100,14 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
-    private final EntryView DIRECT_ENTRY_VIEW = new EntryView() {
+    private static final EntryView DIRECT_ENTRY_VIEW = new EntryView() {
         public Object convertEntry(Ruby runtime, RubyHashEntry entry) {
             return entry;
         }
         public boolean contains(RubyHash hash, Object o) {
             if (!(o instanceof RubyHashEntry)) return false;
             RubyHashEntry entry = (RubyHashEntry)o;
-            RubyHashEntry candidate = internalGetEntry(entry.key);
+            RubyHashEntry candidate = hash.internalGetEntry(entry.key);
             return candidate != NO_ENTRY && entry.equals(candidate);
         }
         public boolean remove(RubyHash hash, Object o) {
@@ -2116,7 +2116,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
-    private final EntryView ENTRY_VIEW = new EntryView() {
+    private static final EntryView ENTRY_VIEW = new EntryView() {
         public Object convertEntry(Ruby runtime, RubyHashEntry entry) {
             return new ConvertingEntry(runtime, entry);
         }
