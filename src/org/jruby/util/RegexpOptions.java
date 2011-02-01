@@ -5,31 +5,20 @@
 
 package org.jruby.util;
 
-import org.jcodings.Encoding;
 import org.jruby.RubyRegexp;
 
 public class RegexpOptions implements Cloneable {
-    public static final RegexpOptions NULL_OPTIONS = new RegexpOptions(KCode.NONE, KCode.NONE.getEncoding(), true);
+    public static final RegexpOptions NULL_OPTIONS = new RegexpOptions(KCode.NONE, true);
     
     public RegexpOptions() {
-        this(KCode.NONE, KCode.NONE.getEncoding(), true);
+        this(KCode.NONE, true);
     }
     
-    public RegexpOptions(KCode kcode, Encoding encoding, boolean isKCodeDefault) {
+    public RegexpOptions(KCode kcode, boolean isKCodeDefault) {
         this.kcode = kcode;
-        this.encoding = encoding;
         this.kcodeDefault = isKCodeDefault;
         
         assert kcode != null : "kcode must always be set to something";
-        assert encoding != null : "encoding must always be set to something";
-    }
-    
-    public Encoding getEncoding() {
-        return encoding;
-    }
-
-    public void setEncoding(Encoding encoding) {
-        this.encoding = encoding;
     }
 
     public boolean isExtended() {
@@ -75,9 +64,14 @@ public class RegexpOptions implements Cloneable {
         kcodeDefault = false;
     }
     
+    public KCode getExplicitKCode() {
+        if (kcodeDefault == true) return null;
+        
+        return kcode;
+    }
+    
     public void setKCode(KCode kcode) {
         this.kcode = kcode;
-        this.encoding = kcode.getEncoding();
     }
 
     /**
@@ -163,7 +157,6 @@ public class RegexpOptions implements Cloneable {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 11 * hash + (this.encoding != null ? this.encoding.hashCode() : 0);
         hash = 11 * hash + (this.kcode != null ? this.kcode.hashCode() : 0);
         hash = 11 * hash + (this.fixed ? 1 : 0);
         hash = 11 * hash + (this.once ? 1 : 0);
@@ -191,8 +184,6 @@ public class RegexpOptions implements Cloneable {
         // Note: literal and once can be different in this object but for the
         // sake of equality we ignore those two fields since those flags do
         // not affect Ruby equality.
-        // Note: encoding also is not used in 1.8 and for 1.9 the encoding
-        // on the pattern itself is used. See encoding field for more info.
         RegexpOptions o = (RegexpOptions)other;
         return o.encodingNone == encodingNone &&
                o.extended == extended &&
@@ -206,7 +197,7 @@ public class RegexpOptions implements Cloneable {
     
     @Override
     public String toString() {
-        return "RegexpOptions(encoding: " + encoding + ", kcode: " + kcode + 
+        return "RegexpOptions(kcode: " + kcode + 
                 (encodingNone == true ? ", encodingNone" : "") +
                 (extended == true ? ", extended" : "") +
                 (fixed == true ? ", fixed" : "") +
@@ -219,12 +210,6 @@ public class RegexpOptions implements Cloneable {
                 ")";
     }
     
-    /*
-     * This encoding represents the encoding that is carried over from the 
-     * parsing or from bit flags.  The runtime encoding all live regexps should
-     * use is on the pattern string itself.
-     */
-    private Encoding encoding;
     private KCode kcode;
     private boolean fixed;
     private boolean once;

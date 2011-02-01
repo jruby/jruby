@@ -89,6 +89,7 @@ public class RegexpNode extends Node implements ILiteralNode {
     }
 
     public RubyRegexp loadPattern(Ruby runtime) {
+        // FIXME: 1.9 should care about internal or external encoding and not kcode.
         if (pattern == null || runtime.getKCode() != pattern.getKCode()) {
             setPattern(RubyRegexp.newRegexp(runtime, value, options));
         }

@@ -38,6 +38,9 @@ package org.jruby.parser;
 import java.math.BigInteger;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.EUCJPEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
@@ -177,6 +180,7 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
+import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
@@ -1579,19 +1583,47 @@ public class ParserSupport {
     private boolean is7BitASCII(ByteList value) {
         return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
     }
+    
+    private static ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'});
+
+    /**
+     * Calculate the encoding based on kcode option set via 'nesu'.  Also as
+     * a side-effect set whether this marks the soon to be made regexp as 
+     * 'fixed'. 
+     * @return null if no explicit encoding is specified.
+     */
+    private Encoding define19EncodingFromExplicitKCode(RegexpOptions options) {
+        KCode kcode = options.getExplicitKCode();
+        
+        // None will not set fixed
+        if (kcode == KCode.NONE) return USASCIIEncoding.INSTANCE;
+        
+        if (kcode == KCode.EUC) {
+            options.setFixed(true);
+            return EUCJPEncoding.INSTANCE;
+        } else if (kcode == KCode.SJIS) {
+            options.setFixed(true);
+            return getConfiguration().getRuntime().getEncodingService().loadEncoding(WINDOWS31J);
+        } else if (kcode == KCode.UTF8) {
+            options.setFixed(true);
+            return UTF8Encoding.INSTANCE;
+        }
+        
+        return null;
+    }
 
     public void setRegexpEncoding(RegexpNode end, ByteList value) {
-        Encoding optionsEncoding = end.getOptions().getEncoding();
-
-//        System.out.println("OPTIONS = " + end.getOptions());
-//        System.out.println("OPTS ENC: " + optionsEncoding + ", vENC: " + value.getEncoding());
+        RegexpOptions options = end.getOptions();
+        Encoding optionsEncoding = define19EncodingFromExplicitKCode(options);
+        
         // Change encoding to one specified by regexp options as long as the string is compatible.
         if (optionsEncoding != null) {
             if (optionsEncoding != value.getEncoding() && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
-            }
+            }           
+
             value.setEncoding(optionsEncoding);
-        } else if (end.getOptions().getEncoding() == ASCIIEncoding.INSTANCE) {
+        } else if (options.isEncodingNone()) {
             if (value.getEncoding() == RubyYaccLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }

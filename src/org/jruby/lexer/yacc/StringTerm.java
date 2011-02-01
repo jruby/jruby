@@ -29,6 +29,10 @@ package org.jruby.lexer.yacc;
 
 import java.io.IOException;
 import org.jcodings.Encoding;
+import org.jcodings.specific.EUCJPEncoding;
+import org.jcodings.specific.SJISEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ast.RegexpNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.Tokens;
@@ -37,11 +41,6 @@ import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
 public class StringTerm extends StrTerm {
-    private static final int ASCII = 16;
-    private static final int EUC = 32;
-    private static final int SJIS = 48;
-    private static final int UTF8 = 64;
-
     // Expand variables, Indentation of final marker
     private int flags;
 
@@ -138,7 +137,7 @@ public class StringTerm extends StrTerm {
         return Tokens.tSTRING_CONTENT;
     }
 
-    private RegexpOptions parseRegexpFlags(final LexerSource src) throws IOException {
+    private RegexpOptions parseRegexpFlags(LexerSource src) throws IOException {
         RegexpOptions options = new RegexpOptions();
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);

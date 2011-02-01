@@ -1263,6 +1263,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         Ruby runtime = getRuntime();
         this.options = options;
         
+//        System.out.println("OPTIONS: " + options + ", STR.enc = " + enc);
+        
         if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
@@ -1284,7 +1286,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             enc = USASCIIEncoding.INSTANCE;
         }
 
-        options.setEncoding(enc);
         if (options.isFixed() || fixedEnc[0] != null) { /* TODO: What is KCODE_FIXED? */ }
         if (options.isEncodingNone()) setEncodingNone();
 
