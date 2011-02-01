@@ -68,6 +68,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -105,10 +106,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public void setEncodingNone() {
         options.setEncodingNone(true);
     }
-
-    private void setIsFixed(boolean isFixed) {
-        this.options.setFixed(isFixed);
-    }
     
     public void clearEncodingNone() {
         options.setEncodingNone(false);
@@ -127,7 +124,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public void setEncoding(Encoding encoding) {
-        options.setEncoding(encoding);
+        // FIXME: Which encoding should be changed here?  
         // FIXME: transcode?
     }
 
@@ -260,11 +257,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private RubyRegexp(Ruby runtime, ByteList str, RegexpOptions options) {
         this(runtime);
+
         if (runtime.is1_9()) {
             initializeCommon19(str, str.getEncoding(), options);
         } else {
+            this.options = options;            
             this.str = str;
-            this.options = options;
             this.pattern = getRegexpFromCache(runtime, str, getEncoding(runtime, str), options);
         }
     }
@@ -275,7 +273,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         // Whatever $KCODE is we should use
         if (options.isKcodeDefault()) return runtime.getKCode().getEncoding();
         
-        return options.getEncoding();
+        return options.getKCode().getEncoding();
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
@@ -898,7 +896,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_s_union
     *
     */
-    @JRubyMethod(name = "union", rest = true, meta = true)
+    @JRubyMethod(name = "union", rest = true, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         if (args.length == 0) return newRegexp(runtime, ByteList.create("(?!)"));
@@ -923,7 +921,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         KCode kcode = null;
         IRubyObject kcode_re = runtime.getNil();
         RubyString source = runtime.newString();
-        IRubyObject[] _args = new IRubyObject[3];
 
         for (int i = 0; i < realArgs.length; i++) {
             if (0 < i) source.cat((byte)'|');
@@ -946,6 +943,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             source.append(v);
         }
 
+        IRubyObject[] _args = new IRubyObject[3];        
         _args[0] = source;
         _args[1] = runtime.getNil();
         if (kcode == null) { // No elements in the array.
@@ -961,7 +959,108 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
         return recv.callMethod(context, "new", _args);
     }
+    
+   @JRubyMethod(name = "union", rest = true, meta = true, compat = CompatVersion.RUBY1_9)
+   public static IRubyObject union19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        if (args.length == 0) return newRegexp(runtime, ByteList.create("(?!)"));
 
+        IRubyObject[] realArgs = args;        
+        if (args.length == 1) {
+            // The power of the union of one!
+            IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], runtime.getRegexp(), "to_regexp");
+            if (!v.isNil()) return v;
+            
+            IRubyObject a = TypeConverter.convertToTypeWithCheck(args[0], runtime.getArray(), "to_ary");
+            if (a.isNil()) return newRegexp(runtime, ((RubyString) quote19(context, recv, args[0])).getByteList());
+
+            RubyArray aa = (RubyArray)a;
+            int len = aa.getLength();
+            realArgs = new IRubyObject[len];
+            for(int i = 0; i<len; i++) {
+                realArgs[i] = aa.entry(i);
+            }
+        }
+
+        boolean hasAsciiOnly = false;
+        RubyString source = runtime.newString();
+        Encoding hasAsciiCompatFixed = null;
+        Encoding hasAsciiIncompat = null;        
+
+        for (int i = 0; i < realArgs.length; i++) {
+            if (0 < i) source.cat((byte)'|');
+            
+            Encoding enc;
+            IRubyObject v = TypeConverter.convertToTypeWithCheck(realArgs[i], runtime.getRegexp(), "to_regexp");
+            if (!v.isNil()) {
+                RubyRegexp regex = (RubyRegexp) v;
+                enc = regex.getEncoding();
+
+                if (!enc.isAsciiCompatible()) {
+                    if (hasAsciiIncompat == null) { // First regexp of union sets kcode.
+                        hasAsciiIncompat = enc;
+                    } else if (hasAsciiIncompat != enc) { // n kcode doesn't match first one
+                        throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + enc);
+                    }
+                } else if (regex.getOptions().isFixed()) {
+                    if (hasAsciiCompatFixed == null) { // First regexp of union sets kcode.
+                        hasAsciiCompatFixed = enc;
+                    } else if (hasAsciiCompatFixed != enc) { // n kcode doesn't match first one
+                        throw runtime.newArgumentError("incompatible encodings: " + hasAsciiCompatFixed + " and " + enc);
+                    }
+                } else {
+                    hasAsciiOnly = true;
+                }
+                v = regex.to_s();
+            } else {
+                RubyString str = realArgs[i].convertToString();
+                enc = str.getEncoding();
+                
+                if (!enc.isAsciiCompatible()) {
+                    if (hasAsciiIncompat == null) { // First regexp of union sets kcode.
+                        hasAsciiIncompat = enc;
+                    } else if (hasAsciiIncompat != enc) { // n kcode doesn't match first one
+                        throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + enc);
+                    }
+                } else if (str.isAsciiOnly()) {
+                    hasAsciiOnly = true;
+                } else {
+                    if (hasAsciiCompatFixed == null) { // First regexp of union sets kcode.
+                        hasAsciiCompatFixed = enc;
+                    } else if (hasAsciiCompatFixed != enc) { // n kcode doesn't match first one
+                        throw runtime.newArgumentError("incompatible encodings: " + hasAsciiCompatFixed + " and " + enc);
+                    }
+                }                
+                
+                v = quote(context, recv, new IRubyObject[]{realArgs[i]});
+            }
+            
+            if (hasAsciiIncompat != null) {
+                if (hasAsciiOnly) {
+                    throw runtime.newArgumentError("ASCII incompatible encoding: " + hasAsciiIncompat);
+                }
+                if (hasAsciiCompatFixed != null) {
+                    throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + hasAsciiCompatFixed);
+                }
+            }
+            
+            // Enebo: not sure why this is needed.
+            if (i == 0) source.setEncoding(enc);
+
+            source.append(v);
+        }
+        
+        if (hasAsciiIncompat != null) {
+            source.setEncoding(hasAsciiIncompat);
+        } else if (hasAsciiCompatFixed != null) {
+            source.setEncoding(hasAsciiCompatFixed);
+        } else {
+            source.setEncoding(ASCIIEncoding.INSTANCE);
+        }
+
+        return recv.callMethod(context, "new", new IRubyObject[] { source });
+    }
+    
     // rb_reg_raise
     private static void raiseRegexpError(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
         throw runtime.newRegexpError(err + ": " + regexpDescription(runtime, bytes, enc, options));
@@ -1090,7 +1189,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
         options = newOptions;
-        pattern = getRegexpFromCache(runtime, bytes, options.getEncoding(), options);
+        pattern = getRegexpFromCache(runtime, bytes, options.getKCode().getEncoding(), options);
         str = bytes;
         return this;
     }
@@ -1119,25 +1218,29 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return initializeByRegexp19((RubyRegexp)arg0);
         }
         int optionsInt = objectAsJoniOptions(arg1);
-        options = RegexpOptions.fromJoniOptions(optionsInt);
+        RegexpOptions newOptions = RegexpOptions.fromJoniOptions(optionsInt);
 
         if (!arg2.isNil()) {
             ByteList kcodeBytes = arg2.convertToString().getByteList();
             if ((kcodeBytes.getRealSize() > 0 && kcodeBytes.getUnsafeBytes()[kcodeBytes.getBegin()] == 'n') ||
                 (kcodeBytes.getRealSize() > 1 && kcodeBytes.getUnsafeBytes()[kcodeBytes.getBegin() + 1] == 'N')) {
-                return initializeCommon19(arg0.convertToString().getByteList(), ASCIIEncoding.INSTANCE, options);
+                return initializeCommon19(arg0.convertToString().getByteList(), ASCIIEncoding.INSTANCE, newOptions);
             } else {
                 getRuntime().getWarnings().warn("encoding option is ignored - " + kcodeBytes);
             }
         }
-        return initializeCommon19(arg0.convertToString(), options);
+        return initializeCommon19(arg0.convertToString(), newOptions);
     }
 
     private IRubyObject initializeByRegexp19(RubyRegexp regexp) {
         regexp.check();
 //        System.out.println("str: " + regexp.str + ", ENC: " + regexp.getEncoding() + ", OPT: " + regexp.getOptions());
 //        System.out.println("KCODE: " + regexp.kcode);
-        return initializeCommon19(regexp.str, regexp.getEncoding(), regexp.getOptions());
+        // Clone and toggle flags since this is no longer a literal regular expression
+        // but it did come from one.
+        RegexpOptions newOptions = (RegexpOptions) regexp.getOptions().clone();
+        newOptions.setLiteral(false);
+        return initializeCommon19(regexp.str, regexp.getEncoding(), newOptions);
     }
 
     // rb_reg_initialize_str
@@ -1159,8 +1262,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RubyRegexp initializeCommon19(ByteList bytes, Encoding enc, RegexpOptions options) {
         Ruby runtime = getRuntime();
         this.options = options;
-        if (enc == ASCIIEncoding.INSTANCE) options.setFixed(true);
-
+        
         if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
@@ -1175,15 +1277,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                    raiseRegexpError19(runtime, bytes, enc, options, "incompatible character encoding");
             }
             if (fixedEnc[0] != ASCIIEncoding.INSTANCE) {
-                setIsFixed(true);
-//                options |= ARG_ENCODING_FIXED;
+                options.setFixed(true);
                 enc = fixedEnc[0];
             }
         } else if (!options.isFixed()) {
             enc = USASCIIEncoding.INSTANCE;
         }
 
-//        if (isFixed && fixedEnc[0] == null) setKCodeDefault();
+        options.setEncoding(enc);
+        if (options.isFixed() || fixedEnc[0] != null) { /* TODO: What is KCODE_FIXED? */ }
         if (options.isEncodingNone()) setEncodingNone();
 
         pattern = getRegexpFromCache(runtime, unescaped, enc, options);
@@ -1476,7 +1578,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @Override
     public IRubyObject inspect() {
         check();
-        ByteList result = regexpDescription(getRuntime(), str, options.getEncoding(), options);
+        ByteList result = regexpDescription(getRuntime(), str, options.getKCode().getEncoding(), options);
         if (!isKCodeDefault()) result.append((byte)options.getKCodeName().charAt(0));
         return RubyString.newString(getRuntime(), result);
     }

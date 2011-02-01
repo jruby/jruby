@@ -191,15 +191,17 @@ public class RegexpOptions implements Cloneable {
         // Note: literal and once can be different in this object but for the
         // sake of equality we ignore those two fields since those flags do
         // not affect Ruby equality.
+        // Note: encoding also is not used in 1.8 and for 1.9 the encoding
+        // on the pattern itself is used. See encoding field for more info.
         RegexpOptions o = (RegexpOptions)other;
-        return o.encoding == encoding && o.encodingNone == encodingNone &&
-                o.extended == extended &&
-                o.fixed == fixed &&
-                o.ignorecase == ignorecase &&
-                o.java == java &&
-                o.kcode == kcode &&
-                o.kcodeDefault == kcodeDefault &&
-                o.multiline == multiline; 
+        return o.encodingNone == encodingNone &&
+               o.extended == extended &&
+               o.fixed == fixed &&
+               o.ignorecase == ignorecase &&
+               o.java == java &&
+               o.kcode == kcode &&
+               o.kcodeDefault == kcodeDefault &&
+               o.multiline == multiline; 
     }
     
     @Override
@@ -217,6 +219,11 @@ public class RegexpOptions implements Cloneable {
                 ")";
     }
     
+    /*
+     * This encoding represents the encoding that is carried over from the 
+     * parsing or from bit flags.  The runtime encoding all live regexps should
+     * use is on the pattern string itself.
+     */
     private Encoding encoding;
     private KCode kcode;
     private boolean fixed;
