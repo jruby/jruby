@@ -1,5 +1,4 @@
 require 'webrick'
-require 'yaml'
 require 'zlib'
 require 'erb'
 
@@ -21,7 +20,6 @@ require 'rubygems/doc_manager'
 # * legacy indexes:
 #   * "/Marshal.#{Gem.marshal_version}" - Full SourceIndex dump of metadata
 #     for installed gems
-#   * "/yaml" - YAML dump of metadata for installed gems - deprecated
 #
 # == Usage
 #
@@ -554,19 +552,6 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
     add_date res
 
     case req.request_uri.path
-    when '/quick/index' then
-      res.body << @source_index.map { |name,| name }.sort.join("\n")
-    when '/quick/index.rz' then
-      index = @source_index.map { |name,| name }.sort.join("\n")
-      res['content-type'] = 'application/x-deflate'
-      res.body << Gem.deflate(index)
-    when '/quick/latest_index' then
-      index = @source_index.latest_specs.map { |spec| spec.full_name }
-      res.body << index.sort.join("\n")
-    when '/quick/latest_index.rz' then
-      index = @source_index.latest_specs.map { |spec| spec.full_name }
-      res['content-type'] = 'application/x-deflate'
-      res.body << Gem.deflate(index.sort.join("\n"))
     when %r|^/quick/(Marshal.#{Regexp.escape Gem.marshal_version}/)?(.*?)-([0-9.]+)(-.*?)?\.gemspec\.rz$| then
       dep = Gem::Dependency.new $2, $3
       specs = @source_index.search dep
@@ -591,9 +576,6 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
       elsif marshal_format then
         res['content-type'] = 'application/x-deflate'
         res.body << Gem.deflate(Marshal.dump(specs.first))
-      else # deprecated YAML format
-        res['content-type'] = 'application/x-deflate'
-        res.body << Gem.deflate(specs.first.to_yaml)
       end
     else
       raise WEBrick::HTTPStatus::NotFound, "`#{req.path}' not found."
@@ -673,9 +655,11 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
     template = ERB.new(DOC_TEMPLATE)
     res['content-type'] = 'text/html'
 
-    # this is used by binding, 1.9.3dev warns anyways
     values = { "gem_count" => specs.size.to_s, "specs" => specs,
                "total_file_count" => total_file_count.to_s }
+
+    # suppress 1.9.3dev warning about unused variable
+    values = values
 
     result = template.result binding
     res.body = result
@@ -770,9 +754,6 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
 
     WEBrick::Daemon.start if @daemon
 
-    @server.mount_proc "/yaml", method(:yaml)
-    @server.mount_proc "/yaml.Z", method(:yaml)
-
     @server.mount_proc "/Marshal.#{Gem.marshal_version}", method(:Marshal)
     @server.mount_proc "/Marshal.#{Gem.marshal_version}.Z", method(:Marshal)
 
@@ -837,28 +818,6 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
     end
   end
 
-  def yaml(req, res)
-    @source_index.refresh!
-
-    add_date res
-
-    index = @source_index.to_yaml
-
-    if req.path =~ /Z$/ then
-      res['content-type'] = 'application/x-deflate'
-      index = Gem.deflate index
-    else
-      res['content-type'] = 'text/plain'
-    end
-
-    if req.request_method == 'HEAD' then
-      res['content-length'] = index.length
-      return
-    end
-
-    res.body << index
-  end
-  
   def launch
     listeners = @server.listeners.map{|l| l.addr[2] }
 
