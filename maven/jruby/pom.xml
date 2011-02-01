@@ -71,7 +71,7 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jnr-netdb</artifactId>
-      <version>1.0</version>
+      <version>1.0.3</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.ext.posix</groupId>
