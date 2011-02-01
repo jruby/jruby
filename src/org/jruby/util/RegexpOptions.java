@@ -60,7 +60,7 @@ public class RegexpOptions implements Cloneable {
      * @param kcode to be set
      */
     public void setExplicitKCode(KCode kcode) {
-        setKCode(kcode);
+        this.kcode = kcode;
         kcodeDefault = false;
     }
     
@@ -68,10 +68,6 @@ public class RegexpOptions implements Cloneable {
         if (kcodeDefault == true) return null;
         
         return kcode;
-    }
-    
-    public void setKCode(KCode kcode) {
-        this.kcode = kcode;
     }
 
     /**
@@ -138,12 +134,12 @@ public class RegexpOptions implements Cloneable {
     }
 
     public static RegexpOptions fromJoniOptions(int joniOptions) {
-        RegexpOptions options = new RegexpOptions();
+        // FIXME: Do we need to try and duplicate none,kcodedefault based on these?
+        RegexpOptions options = new RegexpOptions(KCode.fromBits(joniOptions), false);
         options.setMultiline((joniOptions & RubyRegexp.RE_OPTION_MULTILINE) != 0);
         options.setIgnorecase((joniOptions & RubyRegexp.RE_OPTION_IGNORECASE) != 0);
         options.setExtended((joniOptions & RubyRegexp.RE_OPTION_EXTENDED) != 0);
         options.setOnce((joniOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
-        options.setKCode(KCode.fromBits(joniOptions));
 
         return options;
     }
