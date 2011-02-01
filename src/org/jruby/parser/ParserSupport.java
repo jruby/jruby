@@ -39,7 +39,6 @@ import java.math.BigInteger;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.EUCJPEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
@@ -1588,15 +1587,19 @@ public class ParserSupport {
 
     /**
      * Calculate the encoding based on kcode option set via 'nesu'.  Also as
-     * a side-effect set whether this marks the soon to be made regexp as 
-     * 'fixed'. 
+     * side-effects:
+     * 1.set whether this marks the soon to be made regexp as  'fixed'. 
+     * 2.kcode.none will set 'none' option
      * @return null if no explicit encoding is specified.
      */
     private Encoding define19EncodingFromExplicitKCode(RegexpOptions options) {
         KCode kcode = options.getExplicitKCode();
         
         // None will not set fixed
-        if (kcode == KCode.NONE) return USASCIIEncoding.INSTANCE;
+        if (kcode == KCode.NONE) {
+            options.setEncodingNone(true);
+            return ASCIIEncoding.INSTANCE;
+        }
         
         if (kcode == KCode.EUC) {
             options.setFixed(true);
