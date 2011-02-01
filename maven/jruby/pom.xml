@@ -91,12 +91,12 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.0.4</version>
+      <version>1.0.6</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jaffl</artifactId>
-      <version>0.5.6</version>
+      <version>0.5.9</version>
     </dependency>
   </dependencies>
 
