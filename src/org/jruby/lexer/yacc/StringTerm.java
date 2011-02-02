@@ -29,10 +29,6 @@ package org.jruby.lexer.yacc;
 
 import java.io.IOException;
 import org.jcodings.Encoding;
-import org.jcodings.specific.EUCJPEncoding;
-import org.jcodings.specific.SJISEncoding;
-import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ast.RegexpNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.Tokens;
