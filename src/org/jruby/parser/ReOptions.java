@@ -39,5 +39,7 @@ public interface ReOptions {
     int RE_OPTION_LONGEST      = 16;
     int RE_MAY_IGNORECASE      = 32;
     int RE_UNICODE             = 64;
+    int RE_LITERAL             = 64; // reusing regexp_options since we used 
+                                     // and we won't escape regexp_options.
     int RE_OPTION_ONCE         = 0x80; // odd...but it is odd in ruby too.
 }

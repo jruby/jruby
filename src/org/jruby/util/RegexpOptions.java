@@ -159,6 +159,15 @@ public class RegexpOptions implements Cloneable {
         
         return null;
     }
+    
+    public int toEmbeddedOptions() {
+        int options = toJoniOptions();
+
+        if (once) options |= RubyRegexp.RE_OPTION_ONCE;
+        if (literal) options |= RubyRegexp.RE_LITERAL;
+
+        return options;
+    }
 
     public int toJoniOptions() {
         int options = 0;
@@ -167,6 +176,15 @@ public class RegexpOptions implements Cloneable {
         if (ignorecase) options |= RubyRegexp.RE_OPTION_IGNORECASE;
         if (extended) options |= RubyRegexp.RE_OPTION_EXTENDED;
         if (!isKcodeDefault()) options |= kcode.bits();
+        return options;
+    }
+    
+    public static RegexpOptions fromEmbeddedOptions(int embeddedOptions) {
+        RegexpOptions options = fromJoniOptions(embeddedOptions);
+        
+        options.setOnce((embeddedOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
+        options.setLiteral((embeddedOptions & RubyRegexp.RE_LITERAL) != 0);
+        
         return options;
     }
 

@@ -68,7 +68,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -1267,7 +1266,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         
         if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
-        if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
+        // FIXME: Something unsets this bit, but we aren't...be more permissive until we figure this out
+        //if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
         if (pattern != null) throw runtime.newTypeError("already initialized regexp");
         if (enc.isDummy()) raiseRegexpError19(runtime, bytes, enc, options, "can't make regexp with dummy encoding");
         

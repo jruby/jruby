@@ -133,7 +133,7 @@ public class RuntimeCache {
     public final RubyRegexp getRegexp(Ruby runtime, int index, ByteList pattern, int options) {
         RubyRegexp regexp = regexps[index];
         if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
-            regexp = RubyRegexp.newRegexp(runtime, pattern, RegexpOptions.fromJoniOptions(options));
+            regexp = RubyRegexp.newRegexp(runtime, pattern, RegexpOptions.fromEmbeddedOptions(options));
             regexp.setLiteral();
             regexps[index] = regexp;
         }
@@ -148,7 +148,7 @@ public class RuntimeCache {
         RubyRegexp regexp = regexps[index];
         Ruby runtime = pattern.getRuntime();
         if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
-            regexp = RubyRegexp.newRegexp(runtime, pattern.getByteList(), RegexpOptions.fromJoniOptions(options));
+            regexp = RubyRegexp.newRegexp(runtime, pattern.getByteList(), RegexpOptions.fromEmbeddedOptions(options));
             regexps[index] = regexp;
         }
         return regexp;
