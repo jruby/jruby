@@ -170,9 +170,11 @@ public class RegexpOptions implements Cloneable {
         return options;
     }
 
+    // FIXME: this is doing double duty between joni and things which need to appropriately
+    // fully encode regexp options like the JIT.  We need to decouple since joni does
+    // not record all options we care about.
     public static RegexpOptions fromJoniOptions(int joniOptions) {
-        // FIXME: Do we need to try and duplicate none,kcodedefault based on these?
-        RegexpOptions options = new RegexpOptions(KCode.fromBits(joniOptions), false);
+        RegexpOptions options = new RegexpOptions(KCode.fromBits(joniOptions), joniOptions == 0);
         options.setMultiline((joniOptions & RubyRegexp.RE_OPTION_MULTILINE) != 0);
         options.setIgnorecase((joniOptions & RubyRegexp.RE_OPTION_IGNORECASE) != 0);
         options.setExtended((joniOptions & RubyRegexp.RE_OPTION_EXTENDED) != 0);
