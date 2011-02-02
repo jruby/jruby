@@ -259,8 +259,6 @@ public class RubyInstanceConfig {
     public static boolean INLINE_DYNCALL_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.inlineDyncalls");
-    public static final boolean FORK_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.fork.enabled");
     public static final boolean POOLING_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.thread.pool.enabled");
     public static final int POOL_MAX
@@ -457,10 +455,6 @@ public class RubyInstanceConfig {
         // default ClassCache using jitMax as a soft upper bound
         classCache = new ClassCache<Script>(loader, jitMax);
         threadDumpSignal = SafePropertyAccessor.getProperty("jruby.thread.dump.signal", "USR2");
-
-        if (FORK_ENABLED) {
-            error.print("WARNING: fork is highly unlikely to be safe or stable on the JVM. Have fun!\n");
-        }
     }
 
     public LoadServiceCreator getLoadServiceCreator() {
