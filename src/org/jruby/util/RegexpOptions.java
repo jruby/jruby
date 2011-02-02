@@ -5,9 +5,15 @@
 
 package org.jruby.util;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.EUCJPEncoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 
 public class RegexpOptions implements Cloneable {
+    private static ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'});    
     public static final RegexpOptions NULL_OPTIONS = new RegexpOptions(KCode.NONE, true);
     
     public RegexpOptions() {
@@ -64,7 +70,7 @@ public class RegexpOptions implements Cloneable {
         kcodeDefault = false;
     }
     
-    public KCode getExplicitKCode() {
+    private KCode getExplicitKCode() {
         if (kcodeDefault == true) return null;
         
         return kcode;
@@ -121,6 +127,37 @@ public class RegexpOptions implements Cloneable {
 
     public boolean isEmbeddable() {
         return multiline && ignorecase && extended;
+    }
+    
+    
+    /**
+     * Calculate the encoding based on kcode option set via 'nesu'.  Also as
+     * side-effects:
+     * 1.set whether this marks the soon to be made regexp as  'fixed'. 
+     * 2.kcode.none will set 'none' option
+     * @return null if no explicit encoding is specified.
+     */
+    public Encoding setup19(Ruby runtime) {
+        KCode explicitKCode = getExplicitKCode();
+        
+        // None will not set fixed
+        if (explicitKCode == KCode.NONE) {
+            setEncodingNone(true);
+            return ASCIIEncoding.INSTANCE;
+        }
+        
+        if (explicitKCode == KCode.EUC) {
+            setFixed(true);
+            return EUCJPEncoding.INSTANCE;
+        } else if (explicitKCode == KCode.SJIS) {
+            setFixed(true);
+            return runtime.getEncodingService().loadEncoding(WINDOWS31J);
+        } else if (explicitKCode == KCode.UTF8) {
+            setFixed(true);
+            return UTF8Encoding.INSTANCE;
+        }
+        
+        return null;
     }
 
     public int toJoniOptions() {
