@@ -27,7 +27,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
+import java.util.regex.Pattern;
+import org.jruby.RubyBigDecimal;
+
 public class ConvertDouble {
+    private final static Pattern NUMBER_PATTERN
+            = Pattern.compile("^([+-]?\\d*\\.?\\d*([eE][+-]?)?\\d*).*");
+    
     /**
      * Converts supplied ByteList into a double.  strict-mode will not like
      * extra text non-numeric text or multiple sequention underscores.
@@ -43,6 +52,35 @@ public class ConvertDouble {
      */
     public static final double byteListToDouble19(ByteList bytes, boolean strict) {
         return new DoubleConverter().parse(bytes, strict, true);
+    }
+
+    public static double parseDouble(String value) {
+        String normalString = normalizeDoubleString(value);
+        int offset = normalString.indexOf('E');
+        BigDecimal base;
+        int exponent;
+        if (offset == -1) {
+            base = new BigDecimal(value);
+            exponent = 0;
+        } else {
+            base = new BigDecimal(normalString.substring(0, offset));
+            exponent = Integer.parseInt(normalString.charAt(offset + 1) == '+' ?
+                normalString.substring(offset + 2) :
+                normalString.substring(offset + 1));
+        }
+        return base.scaleByPowerOfTen(exponent).doubleValue();
+    }
+
+    public static String normalizeDoubleString(String strValue) {
+        // Clean-up string representation so that it could be understood
+        // by Java's BigDecimal. Not terribly efficient for now.
+        // 1. MRI allows d and D as exponent separators
+        strValue = strValue.replaceFirst("[edD]", "E");
+        // 2. MRI allows underscores anywhere
+        strValue = strValue.replaceAll("_", "");
+        // 3. MRI ignores the trailing junk
+        strValue = NUMBER_PATTERN.matcher(strValue).replaceFirst("$1");
+        return strValue;
     }
 
     public static class DoubleConverter {
@@ -127,7 +165,7 @@ public class ConvertDouble {
                 strictError(); // We know it is not whitespace at this point
             }
 
-            return Double.parseDouble(new String(chars));
+            return parseDouble(new String(chars));
         }
         
         private void strictError() {
