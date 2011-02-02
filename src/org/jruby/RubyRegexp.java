@@ -1286,7 +1286,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             enc = USASCIIEncoding.INSTANCE;
         }
 
-        if (options.isFixed() || fixedEnc[0] != null) { /* TODO: What is KCODE_FIXED? */ }
+        if (fixedEnc[0] != null) options.setFixed(true);
         if (options.isEncodingNone()) setEncodingNone();
 
         pattern = getRegexpFromCache(runtime, unescaped, enc, options);
