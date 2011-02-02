@@ -89,7 +89,7 @@ public enum KCode {
     public static KCode fromBits(int bits) {
         if ((bits & 64) != 0) return UTF8;
         if ((bits & 48) == 48) return SJIS;
-        if ((bits & 128) != 0) return EUC;
+        if ((bits & 32) != 0) return EUC;
 
         return NONE;
     }
