@@ -174,7 +174,8 @@ public class RegexpOptions implements Cloneable {
     // fully encode regexp options like the JIT.  We need to decouple since joni does
     // not record all options we care about.
     public static RegexpOptions fromJoniOptions(int joniOptions) {
-        RegexpOptions options = new RegexpOptions(KCode.fromBits(joniOptions), joniOptions == 0);
+        KCode kcode = KCode.fromBits(joniOptions);
+        RegexpOptions options = new RegexpOptions(kcode, kcode == KCode.NONE);
         options.setMultiline((joniOptions & RubyRegexp.RE_OPTION_MULTILINE) != 0);
         options.setIgnorecase((joniOptions & RubyRegexp.RE_OPTION_IGNORECASE) != 0);
         options.setExtended((joniOptions & RubyRegexp.RE_OPTION_EXTENDED) != 0);
