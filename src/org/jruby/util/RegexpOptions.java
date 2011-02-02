@@ -165,6 +165,7 @@ public class RegexpOptions implements Cloneable {
 
         if (once) options |= RubyRegexp.RE_OPTION_ONCE;
         if (literal) options |= RubyRegexp.RE_LITERAL;
+        if (kcodeDefault) options |= RubyRegexp.RE_DEFAULT;
 
         return options;
     }
@@ -181,16 +182,14 @@ public class RegexpOptions implements Cloneable {
     
     public static RegexpOptions fromEmbeddedOptions(int embeddedOptions) {
         RegexpOptions options = fromJoniOptions(embeddedOptions);
-        
+
+        options.kcodeDefault = (embeddedOptions & RubyRegexp.RE_DEFAULT) != 0;        
         options.setOnce((embeddedOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
         options.setLiteral((embeddedOptions & RubyRegexp.RE_LITERAL) != 0);
         
         return options;
     }
 
-    // FIXME: this is doing double duty between joni and things which need to appropriately
-    // fully encode regexp options like the JIT.  We need to decouple since joni does
-    // not record all options we care about.
     public static RegexpOptions fromJoniOptions(int joniOptions) {
         KCode kcode = KCode.fromBits(joniOptions);
         RegexpOptions options = new RegexpOptions(kcode, kcode == KCode.NONE);
