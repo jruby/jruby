@@ -158,7 +158,7 @@ public class Java implements Library {
         runtime.getIO().defineAnnotatedMethods(IOJavaAddons.class);
 
         if (runtime.getObject().isConstantDefined("StringIO")) {
-            ((RubyClass)runtime.getObject()).defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
+            ((RubyClass)runtime.getObject().getConstant("StringIO")).defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
         }
         
         // add all name-to-class mappings
