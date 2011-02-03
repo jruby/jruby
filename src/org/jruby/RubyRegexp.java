@@ -1031,7 +1031,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     }
                 }                
                 
-                v = quote(context, recv, new IRubyObject[]{realArgs[i]});
+                v = quote(context, recv, new IRubyObject[]{str});
             }
             
             if (hasAsciiIncompat != null) {
