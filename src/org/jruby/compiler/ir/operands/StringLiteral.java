@@ -4,9 +4,11 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.util.ByteList;
 import org.jruby.compiler.ir.IRClass;
 
-// SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 public class StringLiteral extends Constant
 {
+// SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
+// SSS: Get rid of _bl_value since it is not needed anymore
+
     final public ByteList _bl_value;
     final public String   _str_value;
 
@@ -26,8 +28,7 @@ public class StringLiteral extends Constant
     @Override
     public Object retrieve(InterpreterContext interp) {
         // ENEBO: This is not only used for full RubyStrings, but also for bytelist retrieval....extra wrapping
-		  if (cachedValue == null)
-            cachedValue = interp.getRuntime().newString(_bl_value);
-		  return cachedValue;
+        // return interp.getRuntime().newString(_bl_value); // SSS: Looks like newString just points to _bl_value rather than cloning it?
+		  return interp.getRuntime().newString(_str_value);
     }
 }
