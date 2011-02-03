@@ -160,6 +160,10 @@ public class RegexpOptions implements Cloneable {
         return null;
     }
     
+    /**
+     * This int value can be used by compiler or any place where we want
+     * an integer representation of the state of this object.
+     */
     public int toEmbeddedOptions() {
         int options = toJoniOptions();
 
@@ -170,6 +174,11 @@ public class RegexpOptions implements Cloneable {
         return options;
     }
 
+    /**
+     * This int value is meant to only be used when dealing directly with
+     * the joni regular expression library.  It differs from embeddedOptions
+     * in that it only contains bit values which Joni cares about.
+     */
     public int toJoniOptions() {
         int options = 0;
         // Note: once is not an option that is pertinent to Joni so we exclude it.
