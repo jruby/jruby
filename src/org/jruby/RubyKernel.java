@@ -325,7 +325,7 @@ public class RubyKernel {
         Ruby runtime = context.getRuntime();
 
         if(args.length == 1) {
-            runtime.getGlobalVariables().get("$stderr").callMethod(context,"puts",args[0]);
+            runtime.getGlobalVariables().get("$stderr").callMethod(context,"puts",args[0].convertToString());
         }
         
         exit(runtime, new IRubyObject[] { runtime.getFalse() }, false);
@@ -845,7 +845,7 @@ public class RubyKernel {
     private static void exit(Ruby runtime, IRubyObject[] args, boolean hard) {
         runtime.secure(4);
 
-        int status = 0;
+        int status = hard ? 1 : 0;
 
         if (args.length > 0) {
             RubyObject argument = (RubyObject) args[0];
@@ -1742,38 +1742,7 @@ public class RubyKernel {
     @JRubyMethod(name = "fork", module = true, visibility = PRIVATE)
     public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = context.getRuntime();
-        
-        if (!RubyInstanceConfig.FORK_ENABLED) {
-            throw runtime.newNotImplementedError("fork is unsafe and disabled by default on JRuby");
-        }
-        
-        if (block.isGiven()) {
-            int pid = runtime.getPosix().fork();
-            
-            if (pid == 0) {
-                try {
-                    block.yield(context, runtime.getNil());
-                } catch (RaiseException re) {
-                    if (re.getException() instanceof RubySystemExit) {
-                        throw re;
-                    }
-                    return exit_bang(recv, new IRubyObject[] {RubyFixnum.minus_one(runtime)});
-                } catch (Throwable t) {
-                    return exit_bang(recv, new IRubyObject[] {RubyFixnum.minus_one(runtime)});
-                }
-                return exit_bang(recv, new IRubyObject[] {RubyFixnum.zero(runtime)});
-            } else {
-                return runtime.newFixnum(pid);
-            }
-        } else {
-            int result = runtime.getPosix().fork();
-        
-            if (result == -1) {
-                return runtime.getNil();
-            }
-
-            return runtime.newFixnum(result);
-        }
+        throw runtime.newNotImplementedError("fork is not available on this platform");
     }
 
     @JRubyMethod(module = true)

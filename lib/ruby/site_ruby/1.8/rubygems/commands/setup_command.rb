@@ -112,8 +112,6 @@ By default, this RubyGems will install gem as:
 
     remove_old_bin_files bin_dir
 
-    remove_source_caches install_destdir
-
     say "RubyGems #{Gem::VERSION} installed"
 
     uninstall_old_gemcutter
@@ -329,21 +327,6 @@ abort "#{deprecation_message}"
     end
   end
 
-  def remove_source_caches(install_destdir)
-    if install_destdir.empty?
-      require 'rubygems/source_info_cache'
-
-      user_cache_file = File.join(install_destdir,
-                                  Gem::SourceInfoCache.user_cache_file)
-      system_cache_file = File.join(install_destdir,
-                                    Gem::SourceInfoCache.system_cache_file)
-
-      say "Removing old source_cache files" if Gem.configuration.really_verbose
-      rm_f user_cache_file if File.writable? File.dirname(user_cache_file)
-      rm_f system_cache_file if File.writable? File.dirname(system_cache_file)
-    end
-  end
-
   def run_rdoc(*args)
     begin
       gem 'rdoc'
@@ -353,8 +336,10 @@ abort "#{deprecation_message}"
     require 'rdoc/rdoc'
 
     args << '--quiet'
-    args << '--main' << 'README'
-    args << '.' << 'README' << 'LICENSE.txt' << 'GPL.txt'
+    args << '--main' << 'README.rdoc'
+    args << '.'
+    args << 'README.rdoc' << 'UPGRADING.rdoc'
+    args << 'LICENSE.txt' << 'GPL.txt' << 'History.txt'
 
     r = RDoc::RDoc.new
     r.document args

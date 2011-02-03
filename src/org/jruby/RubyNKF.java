@@ -37,11 +37,13 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JRubyModule;
 
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jcodings.specific.ASCIIEncoding;
 
+import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -204,9 +206,9 @@ public class RubyNKF {
         RubyString result = converter.convert(bstr);
 
         if (options.get("mime-encode") == BASE64) {
-            result = Converter.encodeMimeString(runtime, result, "m"); // BASE64
+            result = Converter.encodeMimeString(runtime, result, PACK_BASE64);
         } else if (options.get("mime-encode") == QENCODE) {
-            result = Converter.encodeMimeString(runtime, result, "M"); // quoted-printable
+            result = Converter.encodeMimeString(runtime, result, PACK_QENCODE);
         }
 
         return result;
@@ -381,9 +383,9 @@ public class RubyNKF {
             return true;
         }
 
-        private static RubyString encodeMimeString(Ruby runtime, RubyString str, String format) {
+        private static RubyString encodeMimeString(Ruby runtime, RubyString str, ByteList format) {
             RubyArray array = RubyArray.newArray(runtime, str);
-            return Pack.pack(runtime, array, new ByteList(ByteList.plain(format))).chomp(runtime.getCurrentContext());
+            return Pack.pack(runtime, array, format).chomp(runtime.getCurrentContext());
         }
 
         abstract RubyString convert(ByteList str);
@@ -409,8 +411,11 @@ public class RubyNKF {
                 throw context.getRuntime().newArgumentError("invalid encoding");
             }
             byte[] arr = buf.array();
+            ByteList r = new ByteList(arr, 0, buf.limit());
+            Encoding charset = EncodingDB.getEncodings().get(decodeCharset.getBytes()).getEncoding();
+            r.setEncoding(charset);
 
-            return new ByteList(arr, 0, buf.limit());
+            return r;
         }
     }
 

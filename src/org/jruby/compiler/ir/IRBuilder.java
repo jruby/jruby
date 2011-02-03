@@ -753,15 +753,15 @@ public class IRBuilder {
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode, IRScope s) {
         List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
-        s.addInstr(new AttrAssignInstr(obj, new StringLiteral(attrAssignNode.getName()), args.get(0)));
-        return args.get(0);
+        s.addInstr(new AttrAssignInstr(obj, new StringLiteral(attrAssignNode.getName()), args));
+        return args.get(args.size()-1);
     }
 
     public Operand buildAttrAssignAssignment(Node node, IRScope s, Operand value) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
-        s.addInstr(new AttrAssignInstr(obj, new StringLiteral(attrAssignNode.getName()), value));
+        s.addInstr(new AttrAssignInstr(obj, new StringLiteral(attrAssignNode.getName()), args, value));
         return value;
     }
 

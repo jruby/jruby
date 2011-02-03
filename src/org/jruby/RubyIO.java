@@ -908,11 +908,21 @@ public class RubyIO extends RubyObject {
     private void parseEncodingFromString(ThreadContext context, IRubyObject arg, int initialPosition) {
         RubyString modes19 = arg.convertToString();
         if (modes19.toString().contains(":")) {
-            IRubyObject[] fullEncoding = modes19.split(context, RubyString.newString(context.getRuntime(), ":")).toJavaArray();
+            Ruby runtime = context.getRuntime();
+
+            IRubyObject[] fullEncoding = modes19.split(context, RubyString.newString(runtime, ":")).toJavaArray();
 
             IRubyObject externalEncodingOption = fullEncoding[initialPosition];
+            RubyString dash = runtime.newString("-");
+            if (dash.eql(externalEncodingOption)) {
+                externalEncodingOption = runtime.getEncodingService().getDefaultExternal();
+            }
+
             if (fullEncoding.length > (initialPosition + 1)) {
                 IRubyObject internalEncodingOption = fullEncoding[initialPosition + 1];
+                if (dash.eql(internalEncodingOption)) {
+                    internalEncodingOption = runtime.getEncodingService().getDefaultInternal();
+                }
                 set_encoding(context, externalEncodingOption, internalEncodingOption);
             } else {
                 set_encoding(context, externalEncodingOption);
@@ -3946,14 +3956,14 @@ public class RubyIO extends RubyObject {
         RubyString dash = runtime.newString("-");
         if (externalEncodingOption != null && !externalEncodingOption.isNil()) {
             if (dash.eql(externalEncodingOption)) {
-                externalEncodingOption = context.getRuntime().getEncodingService().getDefaultExternal();
+                externalEncodingOption = runtime.getEncodingService().getDefaultExternal();
             }
             setExternalEncoding(context, externalEncodingOption);
         }
 
         if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
             if (dash.eql(internalEncodingOption)) {
-                internalEncodingOption = context.getRuntime().getEncodingService().getDefaultInternal();
+                internalEncodingOption = runtime.getEncodingService().getDefaultInternal();
             }
             setInternalEncoding(context, internalEncodingOption);
         }
@@ -3961,9 +3971,9 @@ public class RubyIO extends RubyObject {
         IRubyObject encoding = rubyOptions.fastARef(runtime.newSymbol("encoding"));
         if (encoding != null && !encoding.isNil()) {
             if (externalEncodingOption != null && !externalEncodingOption.isNil()) {
-                context.getRuntime().getWarnings().warn("Ignoring encoding parameter '"+ encoding +"': external_encoding is used");
+                runtime.getWarnings().warn("Ignoring encoding parameter '"+ encoding +"': external_encoding is used");
             } else if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
-                context.getRuntime().getWarnings().warn("Ignoring encoding parameter '"+ encoding +"': internal_encoding is used");
+                runtime.getWarnings().warn("Ignoring encoding parameter '"+ encoding +"': internal_encoding is used");
             } else {
                 parseEncodingFromString(context, encoding, 0);
             }

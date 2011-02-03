@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2007 Koichiro Ohba <koichiro@meadowy.org>
+ * Copyright (C) 2007-2010 Koichiro Ohba <koichiro@meadowy.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -39,6 +39,8 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -60,6 +62,7 @@ public class RubyIconv extends RubyObject {
     private CharsetDecoder fromEncoding;
     private CharsetEncoder toEncoding;
     private int count;
+    private String endian = "";
 
     public RubyIconv(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -338,23 +341,44 @@ public class RubyIconv extends RubyObject {
         byte[] arr = buf.array();
 
         start = 0;
-        if (count > 0 && arr.length >= 2) { // minimum Byte Order Mark (BOM) length
-            if (toEncoding.charset().displayName().toLowerCase().startsWith("utf-16")) {
-                if ((arr[0] == (byte)0xfe && arr[1] == (byte)0xff) ||
-                        (arr[0] == (byte)0xff && arr[1] == (byte)0xfe)) {
-                    start = 2;
+        String displayName = toEncoding.charset().displayName();
+
+        if (arr.length >= 2) { // minimum Byte Order Mark (BOM) length
+            if (displayName.toLowerCase().startsWith("utf-16")) {
+                if ((arr[0] == (byte)0xfe && arr[1] == (byte)0xff)) {
+                    if (count > 0) start = 2;
+                    endian = "BE";
+                } else if (arr[0] == (byte)0xff && arr[1] == (byte)0xfe) {
+                    if (count > 0) start = 2;
+                    endian = "LE";
                 }
-            } else if (toEncoding.charset().displayName().toLowerCase().startsWith("utf-32") &&
+            } else if (displayName.toLowerCase().startsWith("utf-32") &&
                     arr.length >= 4) {
-                if ((arr[0] == (byte)0x00 && arr[1] == (byte)0x00 && arr[2] == (byte)0xfe && arr[3] == (byte)0xff) ||
-                        (arr[0] == (byte)0xff && arr[1] == (byte)0xfe && arr[2] == (byte)0x00 && arr[3] == (byte)0x00)) {
-                    start = 4;
+                if (arr[0] == (byte)0x00 && arr[1] == (byte)0x00 && arr[2] == (byte)0xfe && arr[3] == (byte)0xff) {
+                    if (count > 0) start = 4;
+                    endian = "BE";
+                } else if (arr[0] == (byte)0xff && arr[1] == (byte)0xfe && arr[2] == (byte)0x00 && arr[3] == (byte)0x00) {
+                    if (count > 0) start = 4;
+                    endian = "LE";
                 }
             }
         }
-        
+
         count++;
-        return getRuntime().newString(new ByteList(arr, start, buf.limit() - start));
+
+        if (displayName.equalsIgnoreCase("utf-16") || displayName.equalsIgnoreCase("utf-32")) {
+            displayName += endian;
+        }
+
+        ByteList r = new ByteList(arr, start, buf.limit() - start);
+
+        EncodingDB.Entry entry = EncodingDB.getEncodings().get(displayName.getBytes());
+        if (entry != null) {
+            Encoding charset = entry.getEncoding();
+            r.setEncoding(charset);
+        }
+
+        return getRuntime().newString(r);
     }
 
     @JRubyMethod(name = "iconv", required = 2, rest = true, meta = true, backtrace = true)

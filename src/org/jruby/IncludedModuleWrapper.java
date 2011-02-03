@@ -137,7 +137,8 @@ public final class IncludedModuleWrapper extends RubyClass {
     
     @Override
     public RubyClass getRealClass() {
-        return getSuperClass().getRealClass();
+        if (superClass == null) return null;
+        return superClass.getRealClass();
     }
 
     @Override

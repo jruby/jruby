@@ -1884,24 +1884,12 @@ public class RubyArray extends RubyObject implements List {
                     result.append(((RubyString)val).getByteList());
                 } else if(val instanceof RubyArray) {
                     obj = val;
-                    if(val == this) {
-                        throw getRuntime().newArgumentError("recursive array join");
-                    } else {
-                        final RubyArray ary = (RubyArray)val;
-                        final IRubyObject outobj = obj;
-                        getRuntime().execRecursive(new Ruby.RecursiveFunction() {
-                                public IRubyObject call(IRubyObject obj, boolean recur) {
-                                    if(recur) {
-                                        throw getRuntime().newArgumentError("recursive array join");
-                                    } else {
-                                        ((RubyArray)ary).join1(context, outobj, sep, 0, result);
-                                    }
-                                    return getRuntime().getNil();
-                                }
-                            }, obj);
-                    }
+                    recursiveJoin(context, obj, sep, result, val);
                 } else {
                     IRubyObject tmp = val.checkStringType19();
+                    if(tmp.isNil()){
+                        tmp = TypeConverter.convertToTypeWithCheck(val, getRuntime().getString(), "to_s");
+                    }
                     if(!tmp.isNil()) {
                         val = tmp;
                         result.append(((RubyString)val).getByteList());
@@ -1910,22 +1898,7 @@ public class RubyArray extends RubyObject implements List {
                         if(!tmp.isNil()) {
                             obj = val;
                             val = tmp;
-                            if(val == this) {
-                                throw getRuntime().newArgumentError("recursive array join");
-                            } else {
-                                final RubyArray ary = (RubyArray)val;
-                                final IRubyObject outobj = obj;
-                                getRuntime().execRecursive(new Ruby.RecursiveFunction() {
-                                        public IRubyObject call(IRubyObject obj, boolean recur) {
-                                            if(recur) {
-                                                throw getRuntime().newArgumentError("recursive array join");
-                                            } else {
-                                                ((RubyArray)ary).join1(context, outobj, sep, 0, result);
-                                            }
-                                            return getRuntime().getNil();
-                                        }
-                                    }, obj);
-                            }
+                            recursiveJoin(context, obj, sep, result, val);
                         } else {
                             val = RubyString.objAsString(context, val);
                             result.append(((RubyString)val).getByteList());
@@ -1936,6 +1909,26 @@ public class RubyArray extends RubyObject implements List {
         } catch (ArrayIndexOutOfBoundsException e) {
             concurrentModification();
             return;
+        }
+    }
+
+    private void recursiveJoin(final ThreadContext context, IRubyObject obj, final ByteList sep,
+            final ByteList result, IRubyObject val) {
+        if(val == this) {
+            throw getRuntime().newArgumentError("recursive array join");
+        } else {
+            final RubyArray ary = (RubyArray)val;
+            final IRubyObject outobj = obj;
+            getRuntime().execRecursive(new Ruby.RecursiveFunction() {
+                    public IRubyObject call(IRubyObject obj, boolean recur) {
+                        if(recur) {
+                            throw getRuntime().newArgumentError("recursive array join");
+                        } else {
+                            ((RubyArray)ary).join1(context, outobj, sep, 0, result);
+                        }
+                        return getRuntime().getNil();
+                    }
+                }, obj);
         }
     }
 

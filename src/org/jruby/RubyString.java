@@ -3195,8 +3195,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
                             value.getBegin() + value.getRealSize(),
                             pos);
             if (regSub.length() > 0) {
-                pos = regSub.adjustStartPos(this, pos, true);
-                pos = regSub.search(context, this, pos, true);
+                pos = regSub.adjustStartPos19(this, pos, true);
+                pos = regSub.search19(context, this, pos, true);
                 pos = subLength(pos);
             }
         } else if (sub instanceof RubyString) {

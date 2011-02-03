@@ -369,9 +369,9 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jgrapht-jdk1.5.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
+        <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -407,6 +407,7 @@
         <zipfileset src="${build.lib.dir}/jaffl.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
+        <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -469,8 +470,9 @@
       <antcall target="generate-ri-cache"/>
   </target>
 
-  <target name="jar-jruby-dist" depends="compile" unless="jar-up-to-date">
+  <target name="jar-jruby-dist" depends="compile">
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
+      <echo message="jarjaring for dist"/>
       <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${asm.jar}"/>
@@ -504,9 +506,9 @@
         <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
         <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-        <zipfileset src="${build.lib.dir}/jgrapht-jdk1.5.jar"/>
         <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
         <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
+        <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
         <metainf dir="${base.dir}/spi">
@@ -610,12 +612,11 @@
       <zipfileset src="${build.lib.dir}/jffi-i386-Windows.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
-      <zipfileset src="${build.lib.dir}/jgrapht-jdk1.5.jar"/>
       <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
       <zipfileset src="${build.lib.dir}/snakeyaml-1.7.jar"/>
+      <zipfileset src="${build.lib.dir}/yecht.jar"/>
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
-      <zipfileset src="${shared.lib.dir}/yecht.jar"/>
       <metainf dir="${base.dir}/spi">
         <include name="services/**"/>
       </metainf>
@@ -1367,7 +1368,7 @@
     <include name="**/jruby-cext.dll"/>
   </patternset>
 
-  <target name="dist-bin" depends="build-jruby-cext-native,jar-dist">
+  <target name="dist-bin" depends="build-jruby-cext-native">
     <mkdir dir="${dist.stage.bin.dir}"/>
     <copy todir="${dist.stage.bin.dir}">
       <fileset dir="${basedir}">
@@ -1382,6 +1383,11 @@
     <unzip-native-libs destination.dir="${dist.stage.bin.dir}/lib/native"/>
     <fixEOLs dist-stage-dir="${dist.stage.bin.dir}"/>
     <rake task="install_dist_gems"/>
+    
+    <!-- run jar-dist here to ensure it's the last thing before tarring
+    see JRUBY-5429. -->
+    <antcall target="jar-dist"/>
+    
     <tar destfile="${dist.dir}/jruby-bin-${version.jruby}.tar.gz" compression="gzip">
       <tarfileset dir="${dist.stage.bin.dir}" mode="755" prefix="jruby-${version.jruby}">
         <include name="bin/**"/>
@@ -1423,7 +1429,7 @@
     <checksum file="${dist.dir}/jruby-bin-${version.jruby}.tar.gz" algorithm="sha1"/>
   </target>
 
-  <target name="dist-src" depends="jar">
+  <target name="dist-src" depends="jar-dist">
     <mkdir dir="${dist.stage.src.dir}"/>
     <copy todir="${dist.stage.src.dir}">
       <fileset dir="${basedir}">
@@ -1431,7 +1437,7 @@
         <patternset refid="dist.lib.files"/>
       </fileset>
     </copy>
-    <rake task="install_dist_gems"/>
+    <rake task="install_dist_gems['${dist.stage.src.dir}']"/>
     <fixEOLs dist-stage-dir="${dist.stage.src.dir}"/>
     <tar destfile="${dist.dir}/jruby-src-${version.jruby}.tar.gz" compression="gzip">
       <tarfileset dir="${dist.stage.src.dir}" mode="755" prefix="jruby-${version.jruby}">
@@ -1455,6 +1461,7 @@
       <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
           <include name="test/testapp/testapp"/>
           <include name="test/testapp/testapp.exe"/>
+          <include name="test/org/jruby/util/shell_launcher_test*"/>
       </tarfileset>
     </tar>
     <zip destfile="${dist.dir}/jruby-src-${version.jruby}.zip">
@@ -1479,6 +1486,7 @@
       <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
         <include name="test/testapp/testapp"/>
         <include name="test/testapp/testapp.exe"/>
+        <include name="test/org/jruby/util/shell_launcher_test*"/>
       </zipfileset>
     </zip>
 
@@ -1488,7 +1496,7 @@
     <checksum file="${dist.dir}/jruby-src-${version.jruby}.tar.gz" algorithm="sha1"/>
   </target>
 
-  <target name="dist-snapshot" depends="jar">
+  <target name="dist-snapshot" depends="jar-dist">
     <jar destfile="${lib.dir}/jruby.jar" update="true">
       <fileset dir="${jruby.classes.dir}">
         <include name="org/jruby/jruby.properties"/>

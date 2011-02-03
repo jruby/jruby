@@ -51,4 +51,56 @@ describe "JRuby class reification" do
     method.return_type.should == org.jruby.runtime.builtin.IRubyObject.java_class
     method.parameter_types.length.should == 0
   end
+
+  it "supports fully reifying a deep class hierarchy" do
+    class BottomOfTheStack ; end
+    class MiddleOfTheStack < BottomOfTheStack ; end
+    class TopOfTheStack < MiddleOfTheStack ; end
+ 
+    java_class = TopOfTheStack.become_java!
+  end
+
+  it "supports reification of annotations and signatures on static methods without parameters" do
+
+    cls = Class.new do
+      class << self
+        def blah_no_args()
+        end
+
+        add_method_signature( "blah_no_args", [java.lang.Integer] )
+        add_method_annotation( "blah_no_args", java.lang.Deprecated => {} )
+      end
+    end
+
+    java_class = cls.become_java!()
+    method = java_class.declared_methods.select {|m| m.name == "blah_no_args"}[0]
+    method.should_not be_nil
+    method.return_type.should == java.lang.Integer.java_class
+
+    anno = method.get_annotation( java.lang.Deprecated.java_class )
+    anno.should_not be_nil
+  end
+
+  it "supports reification of annotations and signatures on static methods with parameters" do
+
+    cls = Class.new do
+      class << self
+        def blah_with_args(arg_one,arg_two)
+        end
+
+        add_method_signature( "blah_with_args", [java.lang.Integer, java.lang.String, java.lang.Float] )
+        add_method_annotation( "blah_with_args", java.lang.Deprecated => {} )
+
+      end
+    end
+
+    java_class = cls.become_java!()
+    method = java_class.declared_methods.select {|m| m.name == "blah_with_args"}[0]
+    method.should_not be_nil
+    method.return_type.should == java.lang.Integer.java_class
+
+    anno = method.get_annotation( java.lang.Deprecated.java_class )
+    anno.should_not be_nil
+  end
+
 end

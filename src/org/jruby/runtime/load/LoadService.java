@@ -401,9 +401,14 @@ public class LoadService {
                 classLoader = runtime.getInstanceConfig().getLoader();
             }
 
-            Library library = (Library) classLoader.loadClass(className).newInstance();
-
-            library.load(runtime, false);
+            Object libObject = classLoader.loadClass(className).newInstance();
+            if (libObject instanceof Library) {
+                Library library = (Library)libObject;
+                library.load(runtime, false);
+            } else if (libObject instanceof BasicLibraryService) {
+                BasicLibraryService service = (BasicLibraryService)libObject;
+                service.basicLoad(runtime);
+            }
         } catch (RaiseException re) {
             throw re;
         } catch (Throwable e) {

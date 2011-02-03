@@ -567,20 +567,26 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @return a current directory.
      */
     public String getCurrentDirectory() {
+        if (provider.isRuntimeInitialized()) {
+            return provider.getRuntime().getCurrentDirectory();
+        }
         return provider.getRubyInstanceConfig().getCurrentDirectory();
     }
 
     /**
      * Changes a current directory to a given directory.
-     * Call this method before you use put/get, runScriptlet, and parse methods so that
-     * the given directory will be set.
+     * The current directory can be changed anytime.
      *
      * @since JRuby 1.5.0.
      *
      * @param directory a new directory to be set.
      */
     public void setCurrentDirectory(String directory) {
-        provider.getRubyInstanceConfig().setCurrentDirectory(directory);
+        if (provider.isRuntimeInitialized()) {
+            provider.getRuntime().setCurrentDirectory(directory);
+        } else {
+            provider.getRubyInstanceConfig().setCurrentDirectory(directory);
+        }
     }
 
     /**

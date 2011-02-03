@@ -50,6 +50,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 
 /**
  * DynamicMethod represents a method handle in JRuby, to provide both entry
@@ -477,6 +478,11 @@ public abstract class DynamicMethod {
 
         public boolean isStatic() {
             return statik;
+        }
+
+        @Override
+        public String toString() {
+            return "" + (statik?"static ":"") + nativeReturn.getName() + " " + nativeTarget.getName() + "." + nativeName + CodegenUtils.prettyParams(nativeSignature);
         }
     }
 

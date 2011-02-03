@@ -6,15 +6,14 @@ and/or modify it under the terms of the:
   GNU General Public License version 2
   GNU Lesser General Public License version 2.1
 
-lib/ruby/1.9/drb/*, build_lib/bytelist.jar
-(http://github.com/jruby/bytelist), build_lib/jruby-embed.jar
-(http://kenai.com/projects/jruby-embed) and build_lib/yydebug.jar
-(http://svn.codehaus.org/jruby/trunk/jay/yydebug) are released under
-the same copyright/license.
+build_lib/bytelist.jar (http://github.com/jruby/bytelist),
+build_lib/yydebug.jar (http://svn.codehaus.org/jruby/trunk/jay/yydebug)
+are released under the same copyright/license.
 
 Some additional libraries distributed with JRuby are not covered by
 JRuby's licence. Most of these libraries and their licenses are listed 
-below. Also see LICENSE.RUBY for most files found in src/lib/ruby/1.8.
+below. Also see LICENSE.RUBY for most files found in lib/ruby/1.8,
+lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
 
  bench/rails/public/javascripts/* are distributed under the MIT
  license, and have the following copyrights:
@@ -32,6 +31,11 @@ below. Also see LICENSE.RUBY for most files found in src/lib/ruby/1.8.
 
    prototype.js is Copyright (c) 2005-2007 Sam Stephenson.
 
+ The "rake" library (http://rake.rubyforge.org/) is distributed under
+ the MIT license, and has the following copyright:
+   
+   Copyright (c) 2003, 2004 Jim Weirich
+
  build_lib/*asm*jar (http://asm.objectweb.org) are distributed under the BSD license.
 
  build_lib/apt-mirror-api.jar, build_lib/bnd-0.0.249.jar,
@@ -46,6 +50,9 @@ below. Also see LICENSE.RUBY for most files found in src/lib/ruby/1.8.
 
  build_lib/jarjar-1.0rc8.jar (http://code.google.com/p/jarjar),
  build_lib/joda-time-1.6.2.jar (http://joda-time.sourceforge.net),
+ build_lib/jffi*jar (https://github.com/wmeissner/jffi),
+ build_lib/jaffl.jar (https://github.com/wmeissner/jaffl),
+ build_lib/jnr-netdb.jar (http://github.com/wmeissner/jnr-netdb),
  build_lib/dynalang-0.3.jar (http://dynalang.sourceforge.net),
  build_lib/nailgun-0.7.1.jar and tool/nailgun/ng.exe
  (http://martiansoftware.com/nailgun) are distributed under the
@@ -55,10 +62,9 @@ below. Also see LICENSE.RUBY for most files found in src/lib/ruby/1.8.
  build_lib/junit.jar (http://www.junit.org) are distributed under the
  Common Public License v1.0.
 
- build_lib/jffi*jar (https://github.com/wmeissner/jffi),
- build_lib/jaffl.jar (https://github.com/wmeissner/jaffl) and
- build_lib/jgrapht-jdk1.5.jar (http://jgrapht.sourceforge.net) are
- distributed under the GPL v3.
+ build_lib/jgrapht-jdk1.5.jar (http://jgrapht.sourceforge.net) is
+ distributed under the GPL v3. It is not distributed with JRuby and
+ will be removed in a future release.
 
  build_lib/jline-0.9.93 (http://jline.sourceforge.net) is distributed
  under the following license:
@@ -93,18 +99,12 @@ below. Also see LICENSE.RUBY for most files found in src/lib/ruby/1.8.
    IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
    OF THE POSSIBILITY OF SUCH DAMAGE.
 
- build_lib/jna*jar (http://jna.dev.java.net) are distributed
- under the LGPL-2.1+ license.
-
- build_lib/invokedynamic.jar and build_lib/jsr292-mock.jar
- (http://code.google.com/p/jvm-language-runtime) are distributed
- under the LGPL license.
+ build_lib/jsr292-mock.jar (http://code.google.com/p/jvm-language-runtime)
+ distributed under the LGPL license. It is only used as a compile-time mock
+ for Java 7-only features.
 
  Bouncycastle is released under the MIT license, and is Copyright (c)
  2000 - 2006 The Legion Of The Bouncy Castle.
-
- Jyvaml and rbyaml are released under the MIT license, and are
- Copyright (c) 2006 Ola Bini.
 
 The complete text of the Common Public License is as follows:
 

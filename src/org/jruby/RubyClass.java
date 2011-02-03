@@ -1131,6 +1131,48 @@ public class RubyClass extends RubyModule {
         }
     };
 
+    /**
+     * Whether this class can be reified into a Java class. Currently only objects
+     * that descend from Object (or Ruby-based classes that descend from Object)
+     * can be reified.
+     *
+     * @return true if the class can be reified, false otherwise
+     */
+    public boolean isReifiable() {
+        // this needs to be a better check, to avoid attempting to reify subclasses of Hash, etc.
+        return superClass.getRealClass() != null &&
+                (superClass.getRealClass().getReifiedClass() == null || superClass.getRealClass() == runtime.getObject());
+    }
+
+    /**
+     * Reify this class, first reifying all its ancestors. This causes the
+     * reified class and all ancestors' reified classes to come into existence,
+     * so any future changes will not be reflected.
+     */
+    public void reifyWithAncestors() {
+        if (isReifiable()) {
+            getSuperClass().getRealClass().reifyWithAncestors();
+            reify();
+        }
+    }
+
+    /**
+     * Reify this class, first reifying all its ancestors. This causes the
+     * reified class and all ancestors' reified classes to come into existence,
+     * so any future changes will not be reflected.
+     *
+     * This form also accepts a string argument indicating a path in which to dump
+     * the intermediate reified class bytes.
+     *
+     * @param classDumpDir the path in which to dump reified class bytes
+     */
+    public void reifyWithAncestors(String classDumpDir) {
+        if (isReifiable()) {
+            getSuperClass().getRealClass().reifyWithAncestors(classDumpDir);
+            reify(classDumpDir);
+        }
+    }
+
     public synchronized void reify() {
         reify(null);
     }
@@ -1155,7 +1197,12 @@ public class RubyClass extends RubyModule {
         String javaName = "rubyobj." + name.replaceAll("::", ".");
         String javaPath = "rubyobj/" + name.replaceAll("::", "/");
         OneShotClassLoader parentCL;
-        if (superClass.getRealClass().getReifiedClass().getClassLoader() instanceof OneShotClassLoader) {
+        Class parentReified = superClass.getRealClass().getReifiedClass();
+        if (parentReified == null) {
+            throw getClassRuntime().newTypeError("class " + getName() + " parent class is not yet reified");
+        }
+        
+        if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
             parentCL = (OneShotClassLoader)superClass.getRealClass().getReifiedClass().getClassLoader();
         } else {
             parentCL = new OneShotClassLoader(runtime.getJRubyClassLoader());
@@ -1220,7 +1267,8 @@ public class RubyClass extends RubyModule {
 
         // gather a list of instance methods, so we don't accidentally make static ones that conflict
         Set<String> instanceMethods = new HashSet<String>();
-        
+
+        // define instance methods
         for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
             String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
@@ -1289,7 +1337,8 @@ public class RubyClass extends RubyModule {
 
             m.end();
         }
-        
+
+        // define class/static methods
         for (Map.Entry<String,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
             String javaMethodName = JavaNameMangler.mangleStringForCleanJavaIdentifier(methodName);
@@ -1330,7 +1379,7 @@ public class RubyClass extends RubyModule {
                 // indices for temp values
                 Class[] params = new Class[methodSignature.length - 1];
                 System.arraycopy(methodSignature, 1, params, 0, params.length);
-                int baseIndex = 1;
+                int baseIndex = 0;
                 for (Class paramType : params) {
                     if (paramType == double.class || paramType == long.class) {
                         baseIndex += 2;

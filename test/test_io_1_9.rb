@@ -74,4 +74,14 @@ class TestIO19 < Test::Unit::TestCase
     io = File.new(__FILE__)
     assert_equal 'UTF-8', io.external_encoding.to_s
   end
+
+  # JRUBY-5436
+  def test_open_with_dash_encoding
+    filename = 'test.txt'
+    io = File.new(filename, 'r+:US-ASCII:-')
+    assert_nil io.internal_encoding
+  ensure
+    io.close
+    File.unlink(filename)
+  end
 end
