@@ -191,19 +191,24 @@ public class RubyBignum extends RubyInteger {
      * This is faster, and mostly correct (?)
      */
     static double convertToDouble(BigInteger bigint) {
-        boolean negative = bigint.signum() == -1;
-        if (negative) bigint = bigint.abs();
-        byte[] arr = bigint.toByteArray();
-        double res = 0;
-        double acc = 1d;
-        for (int i = arr.length - 1; i > 0 ; i--) {
-            res += (double) (arr[i] & 0xff) * acc;
-            acc *= 256;
+        long signum = (bigint.signum() == -1) ? 1l << 63 : 0;
+        bigint = bigint.abs();
+        int len = bigint.bitLength();
+        if (len == 0) return 0d;
+        long exp = len + 1022; // 1023 (bias) - 1 (sign)
+        long frac = 0;
+        if (exp > 0x7ff) exp = 0x7ff; // inf, frac = 0;
+        else {
+            // Deep breath...
+            // Shift bigint to get 52 significant bits, adjusting for sign bit
+            // (-52 -1), but * 2, add 1, then / 2 to round correctly
+            frac = ((bigint.shiftRight(len - 54).longValue() + 1l) >> 1);
+            if (frac == 0x20000000000000l) { // corner case: rounding overflowed
+                exp += 1l;
+                if (exp > 0x7ff) exp = 0x7ff;
+            }
         }
-        if (arr[0] != 0) {
-            res += (double) (arr[0] & 0xff) * acc;
-        }
-        return (negative) ? -res : res ;
+        return Double.longBitsToDouble(signum | (exp << 52) | frac & 0xfffffffffffffl);
     }
 
     
