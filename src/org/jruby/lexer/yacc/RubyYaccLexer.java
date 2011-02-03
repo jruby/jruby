@@ -702,7 +702,7 @@ public class RubyYaccLexer {
         while (i < len) {
             switch (str.charAt(i)) {
                 case '-':
-                    if (str.charAt(i - 1) == '*' && str.charAt(i - 2) == '-') return i + 1;
+                    if (i >= 2 && str.charAt(i - 1) == '*' && str.charAt(i - 2) == '-') return i + 1;
                     i += 2;
                     break;
                 case '*':
