@@ -46,7 +46,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ConvertDouble;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -340,6 +339,8 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private final static Pattern INFINITY_PATTERN = Pattern.compile("^([+-])?Infinity$");
+    private final static Pattern NUMBER_PATTERN
+            = Pattern.compile("^([+-]?\\d*\\.?\\d*([eE][+-]?)?\\d*).*");
     
     @JRubyMethod(name = "new", required = 1, optional = 1, meta = true)
     public static RubyBigDecimal newInstance(IRubyObject recv, IRubyObject[] args) {
@@ -363,7 +364,15 @@ public class RubyBigDecimal extends RubyNumeric {
                 }
                 return newInfinity(runtime, sign);
             }
-            strValue = ConvertDouble.normalizeDoubleString(strValue);
+
+            // Clean-up string representation so that it could be understood
+            // by Java's BigDecimal. Not terribly efficient for now.
+            // 1. MRI allows d and D as exponent separators
+            strValue = strValue.replaceFirst("[dD]", "E");
+            // 2. MRI allows underscores anywhere
+            strValue = strValue.replaceAll("_", "");
+            // 3. MRI ignores the trailing junk
+            strValue = NUMBER_PATTERN.matcher(strValue).replaceFirst("$1");
 
             try {
                 decimal = new BigDecimal(strValue);

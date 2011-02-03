@@ -59,7 +59,6 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
-import org.jruby.util.ConvertDouble;
 import org.jruby.util.StringSupport;
 
 
@@ -130,7 +129,7 @@ public class RubyYaccLexer {
     private int getFloatToken(String number) {
         double d;
         try {
-            d = ConvertDouble.parseDouble(number);
+            d = Double.parseDouble(number);
         } catch (NumberFormatException e) {
             warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.", number);
 
