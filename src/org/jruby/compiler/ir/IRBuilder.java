@@ -1073,7 +1073,7 @@ public class IRBuilder {
             // these are all "simple" cases that don't require the heavier defined logic
             return buildGetDefinition(node, m);
         default:
-            throw new NotCompilableException(node + " is not yet IR-compilable ..");
+            throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinitionBase");
 /**
  * SSS FIXME: To be completed
  *
@@ -1162,7 +1162,7 @@ public class IRBuilder {
             case SELFNODE:
                 return new StringLiteral("self");
             default:
-                throw new NotCompilableException(node + " is not yet IR-compilable ..");
+                throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinition.");
 /**
  *  SSS FIXME: To be completed
  *
@@ -2448,28 +2448,18 @@ public class IRBuilder {
     public Operand buildOpElementAsgnWithOr(Node node, IRScope s) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
-        List<Operand> args = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
         Label    l     = s.getNewLabel();
         Variable elt   = s.getNewTemporaryVariable();
-        Variable f     = s.getNewTemporaryVariable();
-        Operand[] allArgs = new Operand[args.size()];
-        int i = 0;
-        for (Operand x: args) {
-            allArgs[i] = x;
-            i++;
-        }
-        s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, allArgs, null));
-        s.addInstr(new IsTrueInstr(f, elt));
-        s.addInstr(new BEQInstr(f, BooleanLiteral.TRUE, l));
+        Variable flag  = s.getNewTemporaryVariable();
+        List<Operand> args = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        // SSS FIXME: Verify with Tom that I am not missing something here
+        assert args.size() == 1;
+        Operand  index = args.get(0);
+        s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, new Operand[] { index }, null));
+        s.addInstr(new IsTrueInstr(flag, elt));
+        s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
-        allArgs = new Operand[args.size()+1];
-        i = 0;
-        for (Operand x: args) {
-            allArgs[i] = x;
-            i++;
-        }
-        allArgs[i] = value;
-        s.addInstr(new CallInstr(elt, new MethAddr("[]="), array, allArgs, null));
+        s.addInstr(new CallInstr(elt, new MethAddr("[]="), array, new Operand[] { index, value }, null));
         s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
@@ -2479,37 +2469,48 @@ public class IRBuilder {
     public Operand buildOpElementAsgnWithAnd(Node node, IRScope s) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
-        List<Operand> args = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
         Label    l     = s.getNewLabel();
         Variable elt   = s.getNewTemporaryVariable();
-        Variable f     = s.getNewTemporaryVariable();
-        Operand[] allArgs = new Operand[args.size()];
-        int i = 0;
-        for (Operand x: args) {
-            allArgs[i] = x;
-            i++;
-        }
-        s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, allArgs, null));
-        s.addInstr(new IsTrueInstr(f, elt));
-        s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
+        Variable flag  = s.getNewTemporaryVariable();
+        List<Operand> args = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        // SSS FIXME: Verify with Tom that I am not missing something here
+        assert args.size() == 1;
+        Operand  index = args.get(0);
+        s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, new Operand[] { index }, null));
+        s.addInstr(new IsTrueInstr(flag, elt));
+        s.addInstr(new BEQInstr(flag, BooleanLiteral.FALSE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
-        allArgs = new Operand[args.size()+1];
-        i = 0;
-        for (Operand x: args) {
-            allArgs[i] = x;
-            i++;
-        }
-        allArgs[i] = value;
-        s.addInstr(new CallInstr(elt, new MethAddr("[]="), array, allArgs, null));
+        s.addInstr(new CallInstr(elt, new MethAddr("[]="), array, new Operand[] { index, value }, null));
         s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
     }
 
     // a[i] *= n, etc.  anything that is not "a[i] &&= .. or a[i] ||= .."
+    //    arr = build(a) <-- receiver
+    //    arg = build(x) <-- args
+    //    elt = buildCall([], arr, arg)
+    //    val = build(n) <-- val
+    //    val = buildCall(METH, elt, val)
+    //    val = buildCall([]=, arr, arg, val)
     public Operand buildOpElementAsgnWithMethod(Node node, IRScope s) {
-    // SSS FIXME: Incorrect -- this is just a copy of the OR case
-        return buildOpElementAsgnWithOr(node, s);
+        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
+
+        Operand array = build(opElementAsgnNode.getReceiverNode(), s);
+        List<Operand> args = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        // SSS FIXME: Verify with Tom that I am not missing something here
+        assert args.size() == 1;
+        Operand  index = args.get(0);
+        Variable elt   = s.getNewTemporaryVariable();
+        s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, new Operand[] { index }, null));         // elt = a[index]
+        Operand value = build(opElementAsgnNode.getValueNode(), s);                                       // Load 'value'
+        String  operation = opElementAsgnNode.getOperatorName();
+        s.addInstr(new CallInstr(elt, new MethAddr(operation), elt, new Operand[] { value }, null));      // elt = elt.OPERATION(value)
+        // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
+        // We already know what the result is going be .. we are just storing it back into the array
+        Variable tmp = s.getNewTemporaryVariable();
+        s.addInstr(new CallInstr(tmp, new MethAddr("[]="), array, new Operand[] { index, elt }, null));   // a[index] = elt
+        return elt;
     }
 
     // Translate ret = (a || b) to ret = (a ? true : b) as follows
