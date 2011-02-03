@@ -1,1 +1,0 @@
-fails:Regexp.new given a Regexp enables multibyte support if given in the literal

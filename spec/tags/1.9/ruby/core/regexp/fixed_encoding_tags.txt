@@ -1,1 +1,0 @@
-fails:Regexp#fixed_encoding? returns false if the 'n' modifier was supplied to the Regexp
