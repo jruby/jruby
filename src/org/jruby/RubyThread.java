@@ -296,6 +296,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             Thread.yield();
         
             return this;
+        } catch (OutOfMemoryError oome) {
+            if (oome.getMessage().equals("unable to create new native thread")) {
+                throw runtime.newThreadError(oome.getMessage());
+            }
+            throw oome;
         } catch (SecurityException ex) {
           throw runtime.newThreadError(ex.getMessage());
         }
