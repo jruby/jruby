@@ -53,7 +53,8 @@ public final class ClassIndex {
     public static final int DIR = 35;
     public static final int UNBOUNDMETHOD = 36;
     public static final int CONTINUATION = 37;
-    public static final int MAX_CLASSES = 38;
+    public static final int BASICOBJECT = 38;
+    public static final int MAX_CLASSES = 39;
 
     /** Creates a new instance of ClassIndex */
     private ClassIndex() {

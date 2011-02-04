@@ -161,7 +161,7 @@ public class MarshalStream extends FilterOutputStream {
         if (value instanceof CoreObjectType) {
             int nativeTypeIndex = ((CoreObjectType)value).getNativeTypeIndex();
             
-            if (nativeTypeIndex != ClassIndex.OBJECT) {
+            if (nativeTypeIndex != ClassIndex.OBJECT && nativeTypeIndex != ClassIndex.BASICOBJECT) {
                 if (shouldMarshalEncoding(value) || (
                         !value.isImmediate()
                         && value.hasVariables()
@@ -295,6 +295,7 @@ public class MarshalStream extends FilterOutputStream {
                 write('0');
                 return;
             case ClassIndex.OBJECT:
+            case ClassIndex.BASICOBJECT:
                 dumpDefaultObjectHeader(value.getMetaClass());
                 value.getMetaClass().getRealClass().marshal(value, this);
                 return;

@@ -1612,7 +1612,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     public int getNativeTypeIndex() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return ClassIndex.BASICOBJECT;
     }
 
     /**
