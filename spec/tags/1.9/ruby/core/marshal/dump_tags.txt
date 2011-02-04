@@ -1,8 +1,1 @@
-fails(JRUBY-5233):Marshal.dump dumps an extended_user_regexp having ivar
-fails(JRUBY-5233):Marshal.dump dumps an array containing the same objects
-fails(JRUBY-5233):Marshal.dump dumps a String extended
-fails(JRUBY-5233):Marshal.dump dumps a Regexp
-fails(JRUBY-5233):Marshal.dump dumps a Regexp subclass /i
-fails(JRUBY-5233):Marshal.dump returns an untrusted string if object is untrusted
-fails(JRUBY-5233):Marshal.dump returns an untrusted string if object is untrusted deep in nested structure
 fails(JRUBY-5233):Marshal.dump dumps a Random

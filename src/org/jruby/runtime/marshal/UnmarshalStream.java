@@ -338,7 +338,7 @@ public class UnmarshalStream extends InputStream {
                 if (runtime.is1_9() && object instanceof RubyString && count >= 1) { // 1.9 string encoding
                     RubyString strObj = (RubyString)object;
 
-                    if (key.asJavaString().equals("E")) {
+                    if (key.asJavaString().equals(MarshalStream.SYMBOL_ENCODING_SPECIAL)) {
                         // special case for USASCII and UTF8
                         if (unmarshalObject().isTrue()) {
                             strObj.setEncoding(UTF8Encoding.INSTANCE);
