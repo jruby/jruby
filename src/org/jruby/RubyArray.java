@@ -4167,15 +4167,14 @@ public class RubyArray extends RubyObject implements List {
 
     public static RubyArray unmarshalFrom(UnmarshalStream input) throws IOException {
         int size = input.unmarshalInt();
-        IRubyObject[] values = new IRubyObject[size];
         
         // we create this now with an empty, nulled array so it's available for links in the marshal data
-        RubyArray result = input.getRuntime().newArrayNoCopy(values);
+        RubyArray result = input.getRuntime().newArray(size);
 
         input.registerLinkTarget(result);
         try {
             for (int i = 0; i < size; i++) {
-                values[i] = input.unmarshalObject();
+                result.append(input.unmarshalObject());
             }
         } catch (ArrayIndexOutOfBoundsException aioob) {
             concurrentModification(input.getRuntime());

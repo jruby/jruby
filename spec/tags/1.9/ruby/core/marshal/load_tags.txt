@@ -1,7 +1,1 @@
-fails(JRUBY-5233):Marshal::load returns the value of the proc when called with a proc
-fails(JRUBY-5233):Marshal::load calls the proc for recursively visited data
-fails(JRUBY-5233):Marshal::load loads a array containing objects having _dump method, and with proc
-fails(JRUBY-5233):Marshal::load loads an array containing objects having marshal_dump method, and with proc
-fails(JRUBY-5233):Marshal::load loads an Array with proc
-fails(JRUBY-5233):Marshal::load returns an untrusted object if source is untrusted
 fails(JRUBY-5233):Marshal::load loads a Random

@@ -129,20 +129,23 @@ public class RubyMarshal {
         try {
             InputStream rawInput;
             boolean tainted;
+            boolean untrusted;
             IRubyObject v = in.checkStringType();
             
             if (!v.isNil()) {
                 tainted = in.isTaint();
+                untrusted = in.isUntrusted();
                 ByteList bytes = ((RubyString) v).getByteList();
                 rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             } else if (in.respondsTo("getc") && in.respondsTo("read")) {
                 tainted = true;
+                untrusted = true;
                 rawInput = inputStream(context, in);
             } else {
                 throw runtime.newTypeError("instance of IO needed");
             }
 
-            return new UnmarshalStream(runtime, rawInput, proc, tainted).unmarshalObject();
+            return new UnmarshalStream(runtime, rawInput, proc, tainted, untrusted).unmarshalObject();
         } catch (EOFException e) {
             if (in.respondsTo("to_str")) throw runtime.newArgumentError("marshal data too short");
 

@@ -657,7 +657,7 @@ public class RubyStruct extends RubyObject {
     public static RubyStruct unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         Ruby runtime = input.getRuntime();
 
-        RubySymbol className = (RubySymbol) input.unmarshalObject();
+        RubySymbol className = (RubySymbol) input.unmarshalObject(false);
         RubyClass rbClass = pathToClass(runtime, className.asJavaString());
         if (rbClass == null) {
             throw runtime.newNameError("uninitialized constant " + className, className.asJavaString());
@@ -678,7 +678,7 @@ public class RubyStruct extends RubyObject {
         RubyStruct result = newStruct(rbClass, values, Block.NULL_BLOCK);
         input.registerLinkTarget(result);
         for(int i = 0; i < len; i++) {
-            IRubyObject slot = input.unmarshalObject();
+            IRubyObject slot = input.unmarshalObject(false);
             if(!mem.eltInternal(i).toString().equals(slot.toString())) {
                 throw runtime.newTypeError("struct " + rbClass.getName() + " not compatible (:" + slot + " for :" + mem.eltInternal(i) + ")");
             }
