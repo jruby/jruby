@@ -528,45 +528,16 @@ public class BiVariableMapTest {
         assertEquals(expResult, container.get("trees"));
     }
 
-
-    /**
-     * Test of getLocalVarNames method, of class BiVariableMap.
-     */
-   //@Test
-    public void testGetLocalVarNames() {
-        logger1.info("getLocalVarNames");
-        BiVariableMap instance = null;
-        String[] expResult = null;
-        String[] result = instance.getLocalVarNames();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of getLocalVarValues method, of class BiVariableMap.
-     */
-    //@Test
-    public void testGetLocalVarValues() {
-        logger1.info("getLocalVarValues");
-        BiVariableMap instance = null;
-        IRubyObject[] expResult = null;
-        IRubyObject[] result = instance.getLocalVarValues();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
     /**
      * Test of terminate method, of class BiVariableMap.
      */
     //@Test
     public void testTerminate() {
         logger1.info("terminate");
+        /* add this test  later
         BiVariableMap instance = null;
         instance.terminate();
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        */
     }
 
     /**
@@ -575,13 +546,13 @@ public class BiVariableMapTest {
     //@Test
     public void testRemove_Object() {
         logger1.info("remove");
+        /* add this test later
         Object key = null;
         BiVariableMap instance = null;
         Object expResult = null;
         Object result = instance.remove(key);
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        */
     }
 
     /**
@@ -590,14 +561,14 @@ public class BiVariableMapTest {
     //@Test
     public void testRemove_Object_Object() {
         logger1.info("remove");
+        /* add this test later
         Object receiver = null;
         Object key = null;
         BiVariableMap instance = null;
         Object expResult = null;
         Object result = instance.remove(receiver, key);
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        */
     }
 
 
@@ -607,10 +578,10 @@ public class BiVariableMapTest {
     //@Test
     public void testClear() {
         logger1.info("clear");
+        /* add more clear test later
         BiVariableMap instance = null;
         instance.clear();
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        */
     }
 
     /**

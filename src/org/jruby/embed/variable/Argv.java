@@ -204,8 +204,12 @@ public class Argv extends AbstractVariable {
             }
             return javaObject;
         } else if (javaObject instanceof List) {
-            ((List)javaObject).clear();
-            ((List)javaObject).addAll(ary);
+            try {
+                ((List)javaObject).clear();
+                ((List)javaObject).addAll(ary);
+            } catch (UnsupportedOperationException e) {
+                // no op. no way to update.
+            }
             return javaObject;
         }
         return null;
