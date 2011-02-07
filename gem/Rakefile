@@ -13,21 +13,16 @@ file 'pkg/jruby-complete-#{JRUBY_SRC_VERSION}.jar' => "pkg" do
   cp "../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar", pkg_dir
 end
 
-def core_files_and_dirs
-  FileList[*%w(builtin jruby org com jline jay jni YechtService.class)].select{|f| File.exist?(f) }
-end
-
 desc "Run to update jars and versions"
 task :update => 'pkg/jruby-complete-#{JRUBY_SRC_VERSION}.jar' do
   rm_f 'lib/*.jar'
-  %w(pkg/jruby-complete pkg/jruby-core).each {|d| rm_rf d; mkdir_p d }
-  Dir.chdir("pkg/jruby-complete") do
+  %w(pkg/jruby-core pkg/jruby-stdlib/META-INF).each {|d| rm_rf d; mkdir_p d }
+  Dir.chdir("pkg/jruby-core") do
     sh "jar xf ../jruby-complete-#{JRUBY_SRC_VERSION}.jar"
-    mv core_files_and_dirs, "../jruby-core"
+    mv "META-INF/jruby.home", "../jruby-stdlib/META-INF"
   end
-  sh "jar cfm pkg/jruby-core-#{JRUBY_SRC_VERSION}.jar pkg/jruby-complete/META-INF/MANIFEST.MF -C pkg/jruby-core ."
-  rm "pkg/jruby-complete/META-INF/MANIFEST.MF"
-  sh "jar cf pkg/jruby-stdlib-#{JRUBY_SRC_VERSION}.jar -C pkg/jruby-complete ."
+  sh "jar cfm pkg/jruby-core-#{JRUBY_SRC_VERSION}.jar pkg/jruby-core/META-INF/MANIFEST.MF -C pkg/jruby-core ."
+  sh "jar cf pkg/jruby-stdlib-#{JRUBY_SRC_VERSION}.jar -C pkg/jruby-stdlib ."
   cp "pkg/jruby-core-#{JRUBY_SRC_VERSION}.jar", 'lib'
   cp "pkg/jruby-stdlib-#{JRUBY_SRC_VERSION}.jar", 'lib'
 
