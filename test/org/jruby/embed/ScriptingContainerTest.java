@@ -2495,7 +2495,7 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        int expResult = 10000;
+        int expResult = 30000;
         int result = instance.getJitMaxSize();
         assertEquals(expResult, result);
 

@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -264,7 +264,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
         for (int i=0; i<varNames.size(); i++) {
             if (key.equals(varNames.get(i))) {
                 BiVariable var = variables.get(i);
-                if (var.getReceiver() == receiver) {
+                if (var.isReceiverIdentical(receiver)) {
                     return var;
                 }
             }
@@ -426,7 +426,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
                 if (var.getReceiver() == robj) {
                     varNames.remove(i);
                     BiVariable v = variables.remove(i);
-                    v.remove(robj.getRuntime());
+                    v.remove();
                     return (V)v.getJavaObject();
                 }
             }
@@ -470,7 +470,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
         varNames.clear();
         for (BiVariable v : variables) {
             if (v != null) {
-                v.remove(runtime);
+                v.remove();
             }
         }
         variables.clear();

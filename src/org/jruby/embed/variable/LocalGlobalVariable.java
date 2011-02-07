@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -120,10 +120,11 @@ public class LocalGlobalVariable extends GlobalVariable {
         GlobalVariables gvars = runtime.getGlobalVariables();
         // if the specified key doesn't exist, this method is called before the
         // evaluation. Don't update value in this case.
-        if (!gvars.getNames().contains(key)) return;
+        String rubyKey = ("$" + key).intern();
+        if (!gvars.getNames().contains(rubyKey)) return;
 
         // the specified key is found, so let's update
-        IRubyObject value = gvars.get("$" + key);
+        IRubyObject value = gvars.get(rubyKey);
         updateLocalGlobal((RubyObject)runtime.getTopSelf(), vars, key, value);
     }
 
@@ -163,8 +164,7 @@ public class LocalGlobalVariable extends GlobalVariable {
      * @param runtime environment where a variable is removed.
      */
     @Override
-    public void remove(Ruby runtime) {
-        setJavaObject(runtime, null);
-        runtime.getGlobalVariables().set(("$"+name).intern(), irubyObject);
+    public void remove() {
+        receiver.getRuntime().getGlobalVariables().clear(("$"+name).intern());
     }
 }

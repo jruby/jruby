@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,7 +29,6 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.parser.EvalStaticScope;
 import org.jruby.embed.internal.BiVariableMap;
@@ -63,8 +62,9 @@ public class PersistentLocalVariable extends AbstractVariable {
         return null;
     }
 
-    private PersistentLocalVariable(RubyObject receiver, String name, Object... javaObject) {
-        super(receiver, name, false, javaObject);
+    private PersistentLocalVariable(RubyObject receiver, String name, Object... javaObjects) {
+        super(receiver, name, false);
+        updateByJavaObject(receiver.getRuntime(), javaObjects);
     }
 
     /**
@@ -138,12 +138,11 @@ public class PersistentLocalVariable extends AbstractVariable {
     }
 
     /**
-     * Removes this object from {@link BiVariableMap}.
-     *
-     * @param runtime environment where a variable is removed.
+     * Attempts to remove this variable from top self or receiver.
+     * 
      */
-    public void remove(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
+    public void remove() {
+        ThreadContext context = receiver.getRuntime().getCurrentContext();
         try {
             DynamicScope currentScope = context.getCurrentScope();
             ManyVarsDynamicScope scope = (ManyVarsDynamicScope) context.getCurrentScope();

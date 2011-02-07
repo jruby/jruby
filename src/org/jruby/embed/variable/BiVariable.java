@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,6 +30,7 @@
 package org.jruby.embed.variable;
 
 import org.jruby.Ruby;
+import org.jruby.RubyObject;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -48,7 +49,7 @@ public interface BiVariable {
      * Defines a type correspond to Ruby's variables and constant types.
      */
     public enum Type {
-        Constant, GlobalVariable, LocalGlobalVariable, ClassVariable, InstanceVariable, LocalVariable
+        Argv, Constant, GlobalVariable, LocalGlobalVariable, ClassVariable, InstanceVariable, LocalVariable
     }
 
     /**
@@ -64,6 +65,13 @@ public interface BiVariable {
      * @return an original receiver.
      */
     public IRubyObject getReceiver();
+
+   /**
+     * Returns true if a given receiver is identical to the receiver this object has.
+     *
+     * @return true if identical otherwise false.
+     */
+    public boolean isReceiverIdentical(RubyObject receiver);
 
     /**
      * Returns a name of the variable this object holds. The name follows Ruby's
@@ -113,9 +121,8 @@ public interface BiVariable {
     public void setRubyObject(IRubyObject rubyObject);
 
     /**
-     * Removes this object from {@link BiVariableMap}.
+     * Attempts to remove this variable/constant from top self or receiver.
      *
-     * @param runtime environment where a variable is removed.
      */
-    public void remove(Ruby runtime);
+    public void remove();
 }

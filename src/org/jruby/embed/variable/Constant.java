@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,10 +33,9 @@ import org.jruby.embed.internal.BiVariableMap;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.RubyNil;
 import org.jruby.RubyObject;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -64,8 +63,9 @@ public class Constant extends AbstractVariable {
         return null;
     }
     
-    private Constant(RubyObject receiver, String name, Object... javaObject) {
-        super(receiver, name, false, javaObject);
+    private Constant(RubyObject receiver, String name, Object... javaObjects) {
+        super(receiver, name, false);
+        updateByJavaObject(receiver.getRuntime(), javaObjects);
     }
 
     /**
@@ -93,7 +93,6 @@ public class Constant extends AbstractVariable {
      */
     public static void retrieve(RubyObject receiver, BiVariableMap vars) {
         if (vars.isLazy()) return;
-        updateARGV(receiver, vars);
         // user defined constants of top level go to a super class
         updateConstantsOfSuperClass(receiver, vars);
         // Constants might have the same names but different receivers.
@@ -102,6 +101,7 @@ public class Constant extends AbstractVariable {
         updateConstants(topSelf, vars);
     }
 
+    /*
     private static void updateARGV(IRubyObject receiver, BiVariableMap vars) {
         String name = "ARGV".intern();
         IRubyObject argv = receiver.getRuntime().getTopSelf().getMetaClass().fastGetConstant(name);
@@ -116,7 +116,7 @@ public class Constant extends AbstractVariable {
             ((Constant) var).markInitialized();
             vars.update(name, var);
         }
-    }
+    }*/
 
     private static void updateConstantsOfSuperClass(RubyObject receiver, BiVariableMap vars) {
         // Super class has many many constants, so this method updates only
@@ -169,11 +169,6 @@ public class Constant extends AbstractVariable {
      * @param key instace varible name
      */
     public static void retrieveByKey(RubyObject receiver, BiVariableMap vars, String key) {
-        if ("ARGV".equals(key)) {
-            updateARGV(receiver, vars);
-            return;
-        }
-
         // if the specified key doesn't exist, this method is called before the
         // evaluation. Don't update value in this case.
         IRubyObject value = null;
@@ -191,7 +186,7 @@ public class Constant extends AbstractVariable {
         if (var != null) {
             var.setRubyObject(value);
         } else {
-            var = new InstanceVariable(receiver, key, value);
+            var = new Constant(receiver, key, value);
             vars.update(key, var);
         }
     }
@@ -221,35 +216,31 @@ public class Constant extends AbstractVariable {
      * invoked during EvalUnit#run() is executed.
      */
     public void inject() {
-        if (fromRuby) {
-            return;
-        }
-        RubyModule rubyModule = getRubyClass(receiver.getRuntime());
-        if (rubyModule == null) rubyModule = receiver.getRuntime().getCurrentContext().getRubyClass();
-        if (rubyModule == null) return;
+        if (receiver == receiver.getRuntime().getTopSelf()) {
+            RubyModule rubyModule = getRubyClass(receiver.getRuntime());
+            if (rubyModule == null) rubyModule = receiver.getRuntime().getCurrentContext().getRubyClass();
+            if (rubyModule == null) return;
 
-        rubyModule.storeConstant(name, irubyObject);
-        receiver.getRuntime().incrementConstantGeneration();
+            rubyModule.storeConstant(name, irubyObject);
+            receiver.getRuntime().incrementConstantGeneration();
+        } else {
+            receiver.getMetaClass().storeConstant(name, irubyObject);
+        }
         initialized = true;
     }
 
     /**
-     * Removes this object from {@link BiVariableMap}.
+     * Attempts to remove this constant from top self or receiver.
      *
-     * @param runtime environment where a variable is removed.
      */
-    public void remove(Ruby runtime) {
-        /* Like this? - from RubyModule
-         IRubyObject oldValue = fetchConstant(name);
-         if (oldValue != null) {
-            Ruby runtime = getRuntime();
-            if (oldValue == UNDEF) {
-                runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
-            } else {
-                runtime.getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name, name);
-            }
+    public void remove() {
+        IRubyObject rubyName = JavaUtil.convertJavaToRuby(receiver.getRuntime(), name);
+        if (receiver.getMetaClass().getConstantNames().contains(name)) {
+            receiver.getMetaClass().remove_const(receiver.getRuntime().getCurrentContext(), rubyName);
+        } else if (receiver.getRuntime().getTopSelf().getMetaClass().getConstantNames().contains(name)) {
+            receiver.getRuntime().getTopSelf().getMetaClass().remove_const(receiver.getRuntime().getCurrentContext(), rubyName);
+        } else if (receiver.getRuntime().getTopSelf().getMetaClass().getSuperClass().getConstantNames().contains(name)) {
+            receiver.getRuntime().getTopSelf().getMetaClass().getSuperClass().remove_const(receiver.getRuntime().getCurrentContext(), rubyName);
         }
-         */
     }
-
 }

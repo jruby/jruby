@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -68,11 +68,11 @@ public class VariableInterceptor {
         if (value == null || value.length < 1) {
             return null;
         }
+        if ("ARGV".equals(name)) {
+            return Argv.getInstance(receiver, name, value);
+        }
         switch (behavior) {
             case GLOBAL:
-                if ("ARGV".equals(name)) {
-                    return Constant.getInstance(receiver, name, value);
-                }
                 return LocalGlobalVariable.getInstance(receiver, name, value);
             case BSF:
                 BiVariable[] bEntries = {
@@ -144,6 +144,7 @@ public class VariableInterceptor {
      * @param receiver a receiver when the script has been evaluated once
      */
     public void retrieve(BiVariableMap map, RubyObject receiver) {
+        Argv.retrieve(receiver, map);
         switch (behavior) {
             case GLOBAL:
                 LocalGlobalVariable.retrieve(receiver, map);
@@ -172,6 +173,10 @@ public class VariableInterceptor {
      * @
      */
     public void tryLazyRetrieval(BiVariableMap map, IRubyObject receiver, Object key) {
+        if (Argv.isValidName(key)) {
+            Argv.retrieveByKey((RubyObject)receiver, map, (String)key);
+            return;
+        }
         switch (behavior) {
             case GLOBAL:
                 if (LocalGlobalVariable.isValidName(key)) {
@@ -237,11 +242,9 @@ public class VariableInterceptor {
      * @return true when the name is a legal Ruby variable/constant name, otherwise false.
      */
     public boolean isKindOfRubyVariable(String name) {
+        if ("ARGV".equals(name)) return true;
         switch (behavior) {
             case GLOBAL:
-                if ("ARGV".equals(name)) {
-                    return true;
-                }
                 return LocalGlobalVariable.isValidName(name);
             case BSF:
                 if (PersistentLocalVariable.isValidName(name)) {

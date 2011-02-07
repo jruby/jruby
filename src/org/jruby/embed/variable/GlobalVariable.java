@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -62,8 +62,9 @@ public class GlobalVariable extends AbstractVariable {
         return null;
     }
 
-    protected GlobalVariable(RubyObject receiver, String name, Object... javaObject) {
-        super(receiver, name, false, javaObject);
+    protected GlobalVariable(RubyObject receiver, String name, Object... javaObjects) {
+        super(receiver, name, false);
+        updateByJavaObject(receiver.getRuntime(), javaObjects);
     }
 
     /**
@@ -170,7 +171,7 @@ public class GlobalVariable extends AbstractVariable {
      * @param javaObject is a variable value to be set.
      */
     public void setJavaObject(Ruby runtime, Object javaObject) {
-        updateJavaObject(runtime, javaObject);
+        updateByJavaObject(runtime, javaObject);
         tryEagerInjection(runtime, null);
     }
 
@@ -197,12 +198,20 @@ public class GlobalVariable extends AbstractVariable {
     }
 
     /**
-     * Removes this object from {@link BiVariableMap}.
-     *
-     * @param runtime environment where a variable is removed.
+     * Attempts to remove this variable from top self or receiver.
+     * 
      */
-    public void remove(Ruby runtime) {
-        setJavaObject(runtime, null);
-        runtime.getGlobalVariables().set(name, irubyObject);
+    public void remove() {
+        receiver.getRuntime().getGlobalVariables().clear(name);
+    }
+    
+    /**
+     * Returns true if a given receiver is identical to the receiver this object has.
+     *
+     * @return true always
+     */
+    @Override
+    public boolean isReceiverIdentical(RubyObject recv) {
+        return true;
     }
 }
