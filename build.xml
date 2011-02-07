@@ -574,6 +574,7 @@
       <arg line="-S gem install ${complete.jar.gems}"/>
       <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
     </java>
+    <delete dir="${jar-complete-home}/lib/ruby/gems/1.8/cache"/>
 
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
     <jarjar destfile="${dest.lib.dir}/${filename}">
