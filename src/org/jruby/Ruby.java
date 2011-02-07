@@ -2752,6 +2752,7 @@ public final class Ruby {
         getJRubyClassLoader().tearDown(isDebug());
 
         if (config.isProfilingEntireRun()) {
+            System.err.println("\nmain thread profile results:");
             IProfileData profileData = (IProfileData) threadService.getMainThread().getContext().getProfileData();
             config.makeDefaultProfilePrinter(profileData).printProfile(System.err);
         }
