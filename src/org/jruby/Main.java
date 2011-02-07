@@ -386,10 +386,6 @@ public class Main {
             System.err.println("Warning: security manager and JRuby running from boot classpath.\n" +
                     "Run from jruby.jar or set env VERIFY_JRUBY=true to enable security.");
         }
-        
-        if (config.isShowVersion()) {
-            config.getOutput().println(config.getVersionString());
-        }
     }
 
     private static int handleRaiseException(RaiseException rj) {
