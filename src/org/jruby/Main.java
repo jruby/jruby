@@ -271,6 +271,9 @@ public class Main {
             if (config.isSamplingEnabled()) {
                 SimpleSampler.startSampleThread();
             }
+
+            doCheckSecurityManager();
+
             try {
                 runtime.runFromMain(in, filename);
             } finally {
@@ -375,6 +378,17 @@ public class Main {
         if (Platform.IS_GCJ) {
             System.err.println("Fatal: GCJ (GNU Compiler for Java) is not supported by JRuby.");
             System.exit(1);
+        }
+    }
+
+    private void doCheckSecurityManager() {
+        if (Main.class.getClassLoader() == null && System.getSecurityManager() != null) {
+            System.err.println("Warning: security manager and JRuby running from boot classpath.\n" +
+                    "Run from jruby.jar or set env VERIFY_JRUBY=true to enable security.");
+        }
+        
+        if (config.isShowVersion()) {
+            config.getOutput().println(config.getVersionString());
         }
     }
 

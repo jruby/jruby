@@ -2749,7 +2749,9 @@ public final class Ruby {
         getBeanManager().unregisterClassCache();
         getBeanManager().unregisterMethodCache();
 
-        getJRubyClassLoader().tearDown(isDebug());
+        if (getJRubyClassLoader() != null) {
+            getJRubyClassLoader().tearDown(isDebug());
+        }
 
         if (config.isProfilingEntireRun()) {
             System.err.println("\nmain thread profile results:");

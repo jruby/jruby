@@ -214,19 +214,19 @@ public class LoadService {
                     addPath(rubyDir + "site_ruby" + sep + "shared");
                     addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
                 }
+
+                String lowerCaseJRubyHome = jrubyHome.toLowerCase();
+                String upperCaseJRubyHome = lowerCaseJRubyHome.toUpperCase();
+
+                try {
+                    String canonNormal = new File(jrubyHome).getCanonicalPath();
+                    String canonLower = new File(lowerCaseJRubyHome).getCanonicalPath();
+                    String canonUpper = new File(upperCaseJRubyHome).getCanonicalPath();
+                    if (canonNormal.equals(canonLower) && canonLower.equals(canonUpper)) {
+                        caseInsensitiveFS = true;
+                    }
+                } catch (Exception e) {}
             }
-
-            String lowerCaseJRubyHome = jrubyHome.toLowerCase();
-            String upperCaseJRubyHome = lowerCaseJRubyHome.toUpperCase();
-
-            try {
-                String canonNormal = new File(jrubyHome).getCanonicalPath();
-                String canonLower = new File(lowerCaseJRubyHome).getCanonicalPath();
-                String canonUpper = new File(upperCaseJRubyHome).getCanonicalPath();
-                if (canonNormal.equals(canonLower) && canonLower.equals(canonUpper)) {
-                    caseInsensitiveFS = true;
-                }
-            } catch (Exception e) {}
 
         } catch(SecurityException ignore) {}
         
