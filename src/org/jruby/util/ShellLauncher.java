@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007-2010 JRuby Team <team@jruby.org>
+ * Copyright (C) 2007-2011 JRuby Team <team@jruby.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,6 +28,7 @@
 
 package org.jruby.util;
 
+import com.kenai.jaffl.FFIProvider;
 import static java.lang.System.out;
 
 import java.io.BufferedInputStream;
@@ -480,7 +481,9 @@ public class ShellLauncher {
                             if (UNIXProcess.isInstance(process)) {
                                 return (Integer)UNIXProcess_pid.get(process);
                             } else if (ProcessImpl.isInstance(process)) {
-                                return (Long)ProcessImpl_handle.get(process);
+                                Long hproc = (Long) ProcessImpl_handle.get(process);
+                                return WindowsFFI.getKernel32(FFIProvider.getProvider())
+                                    .GetProcessId(new com.kenai.jaffl.NativeLong(hproc));
                             }
                         } catch (Exception e) {
                             // ignore and use hashcode
@@ -509,8 +512,11 @@ public class ShellLauncher {
                 public long getPid(Process process) {
                     try {
                         if (ProcessImpl.isInstance(process)) {
-                            return (Long)ProcessImpl_handle.get(process);
+                            Long hproc = (Long) ProcessImpl_handle.get(process);
+                            return WindowsFFI.getKernel32(FFIProvider.getProvider())
+                                .GetProcessId(new com.kenai.jaffl.NativeLong(hproc));
                         }
+
                     } catch (Exception e) {
                         // ignore and use hashcode
                     }
