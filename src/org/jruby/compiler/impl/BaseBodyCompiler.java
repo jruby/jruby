@@ -2870,4 +2870,19 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void loadEncoding(Encoding encoding) {
         script.getCacheCompiler().cacheEncoding(this, encoding);
     }
+
+    public void definedCall(String name) {
+        loadThreadContext();
+        loadSelf();
+        method.dup2_x1();
+        method.pop2();
+        method.ldc(name);
+        invokeUtilityMethod("getDefinedCall", sig(String.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+    }
+
+    public void definedNot() {
+        loadRuntime();
+        method.swap();
+        invokeUtilityMethod("getDefinedNot", sig(String.class, Ruby.class, String.class));
+    }
 }

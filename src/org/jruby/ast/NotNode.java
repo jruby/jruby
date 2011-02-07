@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -86,10 +87,6 @@ public class NotNode extends Node {
     @Override
     public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         String definition = super.definition(runtime, context, self, aBlock);
-        if (definition != null && context.getRuntime().is1_9()) {
-            definition = "method";
-        }
-
-        return definition;
+        return RuntimeHelpers.getDefinedNot(runtime, definition);
     }
 }

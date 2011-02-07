@@ -1564,6 +1564,7 @@ public class ASTCompiler {
             case GLOBALASGNNODE:
             case LOCALASGNNODE:
             case MULTIPLEASGNNODE:
+            case MULTIPLEASGN19NODE:
             case OPASGNNODE:
             case OPASGNANDNODE:
             case OPASGNORNODE:
@@ -1571,11 +1572,13 @@ public class ASTCompiler {
             case INSTASGNNODE: // simple assignment cases
                 context.pushString("assignment");
                 break;
-            case NOTNODE: // all these just evaluate and then do expression if there's no error
-            case ANDNODE:
+            case ANDNODE: // all these just evaluate and then do expression if there's no error
             case ORNODE:
             case DSTRNODE:
             case DREGEXPNODE:
+                compileDefinedAndOrDStrDRegexp(node, context);
+                break;
+            case NOTNODE: // evaluates, and under 1.9 flips to "method" if result is nonnull
                 {
                     context.rescue(new BranchCallback() {
 
@@ -1590,26 +1593,14 @@ public class ASTCompiler {
                                     context.pushNull();
                                 }
                             }, String.class);
+                    context.definedNot();
                     break;
                 }
             case BACKREFNODE:
-                context.backref();
-                context.isInstanceOf(RubyMatchData.class,
-                        new BranchCallback() {
-
-                            public void branch(BodyCompiler context) {
-                                context.pushString("$" + ((BackRefNode) node).getType());
-                            }
-                        },
-                        new BranchCallback() {
-
-                            public void branch(BodyCompiler context) {
-                                context.pushNull();
-                            }
-                        });
+                compileDefinedBackref(node, context);
                 break;
             case DVARNODE:
-                context.pushString("local-variable(in-block)");
+                compileDefinedDVar(node, context);
                 break;
             case FALSENODE:
                 context.pushString("false");
@@ -1628,19 +1619,7 @@ public class ASTCompiler {
                 context.pushString("nil");
                 break;
             case NTHREFNODE:
-                context.isCaptured(((NthRefNode) node).getMatchNumber(),
-                        new BranchCallback() {
-
-                            public void branch(BodyCompiler context) {
-                                context.pushString("$" + ((NthRefNode) node).getMatchNumber());
-                            }
-                        },
-                        new BranchCallback() {
-
-                            public void branch(BodyCompiler context) {
-                                context.pushNull();
-                            }
-                        });
+                compileDefinedNthref(node, context);
                 break;
             case SELFNODE:
                 context.pushString("self");
@@ -1758,65 +1737,8 @@ public class ASTCompiler {
                     break;
                 }
             case CALLNODE:
-                {
-                    final CallNode iVisited = (CallNode) node;
-                    Object isnull = context.getNewEnding();
-                    Object ending = context.getNewEnding();
-                    compileGetDefinition(iVisited.getReceiverNode(), context);
-                    context.ifNull(isnull);
-
-                    context.rescue(new BranchCallback() {
-
-                                public void branch(BodyCompiler context) {
-                                    compile(iVisited.getReceiverNode(), context,true); //[IRubyObject]
-                                    context.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
-                                    context.metaclass(); //[IRubyObject, RubyClass]
-                                    context.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
-                                    context.getVisibilityFor(iVisited.getName()); //[IRubyObject, RubyClass, Visibility]
-                                    context.duplicateCurrentValue(); //[IRubyObject, RubyClass, Visibility, Visibility]
-                                    final Object isfalse = context.getNewEnding();
-                                    Object isreal = context.getNewEnding();
-                                    Object ending = context.getNewEnding();
-                                    context.isPrivate(isfalse, 3); //[IRubyObject, RubyClass, Visibility]
-                                    context.isNotProtected(isreal, 1); //[IRubyObject, RubyClass]
-                                    context.selfIsKindOf(isreal); //[IRubyObject]
-                                    context.consumeCurrentValue();
-                                    context.go(isfalse);
-                                    context.setEnding(isreal); //[]
-
-                                    context.isMethodBound(iVisited.getName(), new BranchCallback() {
-
-                                                public void branch(BodyCompiler context) {
-                                                    compileGetArgumentDefinition(iVisited.getArgsNode(), context, "method");
-                                                }
-                                            },
-                                            new BranchCallback() {
-
-                                                public void branch(BodyCompiler context) {
-                                                    context.go(isfalse);
-                                                }
-                                            });
-                                    context.go(ending);
-                                    context.setEnding(isfalse);
-                                    context.pushNull();
-                                    context.setEnding(ending);
-                                }
-                            }, JumpException.class,
-                            new BranchCallback() {
-
-                                public void branch(BodyCompiler context) {
-                                    context.pushNull();
-                                }
-                            }, String.class);
-
-                    //          context.swapValues();
-            //context.consumeCurrentValue();
-                    context.go(ending);
-                    context.setEnding(isnull);
-                    context.pushNull();
-                    context.setEnding(ending);
-                    break;
-                }
+                compileDefinedCall(node, context);
+                break;
             case CLASSVARNODE:
                 {
                     ClassVarNode iVisited = (ClassVarNode) node;
@@ -2010,6 +1932,88 @@ public class ASTCompiler {
                 context.consumeCurrentValue();
                 context.pushString("expression");
         }
+    }
+
+    protected void compileDefinedAndOrDStrDRegexp(final Node node, BodyCompiler context) {
+        context.rescue(new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        compile(node, context, false);
+                        context.pushString("expression");
+                    }
+                }, JumpException.class,
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushNull();
+                    }
+                }, String.class);
+    }
+
+    protected void compileDefinedCall(final Node node, BodyCompiler context) {
+            final CallNode iVisited = (CallNode) node;
+            Object isnull = context.getNewEnding();
+            Object ending = context.getNewEnding();
+            compileGetDefinition(iVisited.getReceiverNode(), context);
+            context.ifNull(isnull);
+
+            context.rescue(new BranchCallback() {
+
+                        public void branch(BodyCompiler context) {
+                            compile(iVisited.getReceiverNode(), context, true); //[IRubyObject]
+                            context.definedCall(iVisited.getName());
+                        }
+                    }, JumpException.class,
+                    new BranchCallback() {
+
+                        public void branch(BodyCompiler context) {
+                            context.pushNull();
+                        }
+                    }, String.class);
+
+            //          context.swapValues();
+    //context.consumeCurrentValue();
+            context.go(ending);
+            context.setEnding(isnull);
+            context.pushNull();
+            context.setEnding(ending);
+    }
+
+    protected void compileDefinedDVar(final Node node, BodyCompiler context) {
+        context.pushString("local-variable(in-block)");
+    }
+
+    protected void compileDefinedBackref(final Node node, BodyCompiler context) {
+        context.backref();
+        context.isInstanceOf(RubyMatchData.class,
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushString("$" + ((BackRefNode) node).getType());
+                    }
+                },
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushNull();
+                    }
+                });
+    }
+
+    protected void compileDefinedNthref(final Node node, BodyCompiler context) {
+        context.isCaptured(((NthRefNode) node).getMatchNumber(),
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushString("$" + ((NthRefNode) node).getMatchNumber());
+                    }
+                },
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushNull();
+                    }
+                });
     }
 
     public void compileDAsgn(Node node, BodyCompiler context, boolean expr) {

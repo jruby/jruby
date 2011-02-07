@@ -540,6 +540,7 @@ public interface BodyCompiler {
     public void pushNull();
     public void pushString(String strVal);
     public void isMethodBound(String name, BranchCallback trueBranch, BranchCallback falseBranch);
+    public void isMethodBoundOrRespondToMissing(String name, BranchCallback trueBranch, BranchCallback falseBranch);
     public void hasBlock(BranchCallback trueBranch, BranchCallback falseBranch);
     public void isGlobalDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
     public void isConstantDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
@@ -645,4 +646,18 @@ public interface BodyCompiler {
      * Load the specified encoding.
      */
     public void loadEncoding(Encoding encoding);
+
+    /**
+     * Check defined?() for a Call
+     * @stack: target receiver object
+     */
+    public void definedCall(String name);
+
+    /**
+     * Check defined?() for a Not. Under 1.9, returns "method" if the contained
+     * logic evaluates ok.
+     * 
+     * @stack: String defined for contained expression
+     */
+    public void definedNot();
 }

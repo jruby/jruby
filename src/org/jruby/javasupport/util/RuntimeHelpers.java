@@ -2362,4 +2362,29 @@ public class RuntimeHelpers {
 
         return parms;
     }
+
+    public static String getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
+        RubyClass metaClass = receiver.getMetaClass();
+        DynamicMethod method = metaClass.searchMethod(name);
+        Visibility visibility = method.getVisibility();
+
+        if (visibility != Visibility.PRIVATE &&
+                (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self)) && !method.isUndefined()) {
+            return "method";
+        }
+
+        if (context.getRuntime().is1_9() && receiver.callMethod(context, "respond_to_missing?",
+            new IRubyObject[]{context.getRuntime().newSymbol(name), context.getRuntime().getFalse()}).isTrue()) {
+            return "method";
+        }
+        return null;
+    }
+
+    public static String getDefinedNot(Ruby runtime, String definition) {
+        if (definition != null && runtime.is1_9()) {
+            definition = "method";
+        }
+
+        return definition;
+    }
 }

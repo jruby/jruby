@@ -29,12 +29,15 @@
 
 package org.jruby.compiler;
 
+import org.joni.ast.BackRefNode;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.EncodingNode;
+import org.jruby.ast.FCallNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.Hash19Node;
@@ -45,6 +48,7 @@ import org.jruby.ast.Match2CaptureNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NodeType;
+import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.SValue19Node;
 import org.jruby.ast.StarNode;
@@ -90,6 +94,7 @@ public class ASTCompiler19 extends ASTCompiler {
         compileMethodArgs(node, context, expr);
     }
 
+    @Override
     public void compileAssignment(Node node, BodyCompiler context, boolean expr) {
         switch (node.getNodeType()) {
             case MULTIPLEASGN19NODE:
@@ -101,8 +106,48 @@ public class ASTCompiler19 extends ASTCompiler {
     }
 
     @Override
-    public void compileDefined(Node node, BodyCompiler context, boolean expr) {
-        throw new NotCompilableException("1.9 mode does not compile defined? properly yet: " + node.getPosition());
+    protected void compileDefinedAndOrDStrDRegexp(final Node node, BodyCompiler context) {
+        context.pushString("expression");
+    }
+
+    @Override
+    protected void compileDefinedBackref(final Node node, BodyCompiler context) {
+        context.backref();
+        context.isInstanceOf(RubyMatchData.class,
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushString("global-variable");
+                    }
+                },
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushNull();
+                    }
+                });
+    }
+
+    @Override
+    protected void compileDefinedDVar(final Node node, BodyCompiler context) {
+        context.pushString("local-variable");
+    }
+
+    @Override
+    protected void compileDefinedNthref(final Node node, BodyCompiler context) {
+        context.isCaptured(((NthRefNode) node).getMatchNumber(),
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushString("global-variable");
+                    }
+                },
+                new BranchCallback() {
+
+                    public void branch(BodyCompiler context) {
+                        context.pushNull();
+                    }
+                });
     }
 
     public void compileMethodArgs(Node node, BodyCompiler context, boolean expr) {
