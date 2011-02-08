@@ -100,5 +100,7 @@ EXT_FILES = {
   'ext/ripper/lib/ripper' => 'ripper',
   'ext/syck/lib/syck.rb' => 'syck.rb',
   'ext/syck/lib/syck' => 'syck',
-  'ext/syck/lib/yaml' => 'yaml'
+  'ext/syck/lib/yaml' => 'yaml',
+  'ext/fiddle/lib/fiddle.rb' => 'fiddle.rb',
+  'ext/fiddle/lib/fiddle' => 'fiddle'
 }
