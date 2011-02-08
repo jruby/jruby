@@ -40,7 +40,7 @@ class TestString19 < Test::Unit::TestCase
     prev_kcode = $KCODE
     $KCODE = 'UTF8'
     begin
-      assert_equal("&#12354;", "&#12354;".inspect)
+      assert_equal("\"&#12354;\"", "&#12354;".inspect)
     ensure
       $KCODE = prev_kcode
     end

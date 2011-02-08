@@ -24,8 +24,8 @@ externals/ruby1.9/psych/test_deprecated
 externals/ruby1.9/psych/test_document
 externals/ruby1.9/psych/test_emitter
 externals/ruby1.9/psych/test_encoding
-externals/ruby1.9/psych/test_engine_manager
-externals/ruby1.9/psych/test_exception
+#externals/ruby1.9/psych/test_engine_manager
+#externals/ruby1.9/psych/test_exception
 externals/ruby1.9/psych/test_hash
 #externals/ruby1.9/psych/test_json_tree
 externals/ruby1.9/psych/test_null
