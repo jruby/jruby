@@ -22,6 +22,8 @@ module Gem
     end
   end
 
+  class Maven3NotFound < StandardError; end
+
   class RemoteFetcher
     include MavenUtils
 
@@ -40,6 +42,8 @@ module Gem
       if maven_name? dependency.name
         begin
           result = maven_find_matching_with_errors(dependency)
+        rescue Gem::Maven3NotFound => e
+          raise e
         rescue => e
           warn "maven find dependency failed for #{dependency}: #{e.to_s}" if Gem::Maven::Gemify.verbose?
         end
@@ -195,7 +199,7 @@ module Gem
         else
           bin = nil
         end
-        raise "can not find maven3 installation. install ruby-maven with\n\n\tjruby -S gem install ruby-maven --pre\n\n" if bin.nil?
+        raise Gem::Maven3NotFound.new("can not find maven3 installation. install ruby-maven with\n\n\tjruby -S gem install ruby-maven --pre\n\n") if bin.nil?
 
         warn "Using Maven install at #{bin}" if verbose?
 
