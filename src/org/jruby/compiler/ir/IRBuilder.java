@@ -487,7 +487,7 @@ public class IRBuilder {
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
             case RESCUENODE: return buildRescue(node, m); // done
-//            case RETRYNODE: return buildRetry(node, m); // DEFERRED
+            case RETRYNODE: return buildRetry(node, m); // FIXME: done?
             case RETURNNODE: return buildReturn((ReturnNode) node, m); // done
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
@@ -1100,38 +1100,49 @@ public class IRBuilder {
         return buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
     }
 
-/*
     public Operand buildGetArgumentDefinition(final Node node, IRScope m, String type) {
         if (node == null) {
             return new StringLiteral(type);
-        } else if (node instanceof ArrayNode) {
-            Object endToken = m.getNewEnding();
-            for (int i = 0; i < ((ArrayNode) node).size(); i++) {
-                Node iterNode = ((ArrayNode) node).get(i);
-                buildGetDefinition(iterNode, m);
-                m.ifNull(endToken);
+        } else { 
+            Label failLabel = m.getNewLabel();
+            Label doneLabel = m.getNewLabel();
+            Variable rv = m.getNewTemporaryVariable();
+            if (node instanceof ArrayNode) {
+                for (int i = 0; i < ((ArrayNode) node).size(); i++) {
+                    Node iterNode = ((ArrayNode) node).get(i);
+                    Operand def = buildGetDefinition(iterNode, m);
+                    m.addInstr(new BEQInstr(def, Nil.NIL, failLabel));
+                }
+            } else {
+                Operand def = buildGetDefinition(node, m);
+                m.addInstr(new BEQInstr(def, Nil.NIL, failLabel));
             }
-            Operand sl = new StringLiteral(type);
-            Object realToken = m.getNewEnding();
-            m.go(realToken);
-            m.setEnding(endToken);
-            m.pushNull();
-            m.setEnding(realToken);
-        } else {
-            buildGetDefinition(node, m);
-            Object endToken = m.getNewEnding();
-            m.ifNull(endToken);
-            Operand sl = new StringLiteral(type);
-            Object realToken = m.getNewEnding();
-            m.go(realToken);
-            m.setEnding(endToken);
-            m.pushNull();
-            m.setEnding(realToken);
+            m.addInstr(new CopyInstr(rv, new StringLiteral(type)));
+            m.addInstr(new JumpInstr(doneLabel));
+            m.addInstr(new LABEL_Instr(failLabel));
+            m.addInstr(new CopyInstr(rv, Nil.NIL));
+            m.addInstr(new LABEL_Instr(doneLabel));
+            return rv;
         }
     }
-*/
 
-    public Operand buildGetDefinition(final Node node, IRScope m) {
+    private Operand buildDefinitionCheck(IRScope s, Operand receiver, String nameToCheck, String definitionCheckerMethod, String definedReturnValue) {
+        Label undefLabel = s.getNewLabel();
+        Label defLabel   = s.getNewLabel();
+        Variable tmpVar  = s.getNewTemporaryVariable();
+        StringLiteral mName = new StringLiteral(nameToCheck);
+        Instr callInstr  = new JRubyImplCallInstr(tmpVar, new MethAddr(definitionCheckerMethod), receiver, new Operand[]{mName, BooleanLiteral.FALSE});
+        s.addInstr(callInstr);
+        s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+        s.addInstr(new CopyInstr(tmpVar, new StringLiteral(definedReturnValue)));
+        s.addInstr(new JumpInstr(defLabel));
+        s.addInstr(new LABEL_Instr(undefLabel));
+        s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
+        s.addInstr(new LABEL_Instr(defLabel));
+        return tmpVar;
+    }
+
+    public Operand buildGetDefinition(final Node node, IRScope s) {
         switch (node.getNodeType()) {
             case CLASSVARASGNNODE:
             case CLASSVARDECLNODE:
@@ -1161,6 +1172,49 @@ public class IRBuilder {
                 return new StringLiteral("nil");
             case SELFNODE:
                 return new StringLiteral("self");
+            case VCALLNODE:
+            {
+                Variable tmp = s.getNewTemporaryVariable();
+                s.addInstr(new JRubyImplCallInstr(tmp, new MethAddr("getMetaClass"), getSelf(s), new Operand[]{}));
+                return buildDefinitionCheck(s, tmp, ((VCallNode) node).getName(), "isMethodBound", "method"); // m.isMethodBound
+            }
+            case CONSTNODE:
+            {
+                Operand receiver = null;
+                // FIXME: receiver == thread context
+                return buildDefinitionCheck(s, receiver, ((ConstNode) node).getName(), "getConstantDefined", "constant"); // m.isConstantDefined
+            }
+            case GLOBALVARNODE:
+            {
+                Operand receiver = null;
+                // FIXME: receiver == runtime
+                Variable tmp = s.getNewTemporaryVariable();
+                s.addInstr(new CallInstr(tmp, new MethAddr("getGlobalVariables"), receiver, new Operand[]{}, null));
+                return buildDefinitionCheck(s, tmp, ((GlobalVarNode) node).getName(), "isDefined", "global-variable"); // FIXME: m.isGlobalDefined
+            }
+            case INSTVARNODE:
+            {
+                Variable tmp = s.getNewTemporaryVariable();
+                s.addInstr(new CallInstr(tmp, new MethAddr("getInstanceVariables"), getSelf(s), new Operand[]{}, null));
+                return buildDefinitionCheck(s, tmp, ((InstVarNode) node).getName(), "fastHasinstanceVariable", "instance-variable"); // FIXME: m.isInstanceVariableDefined -- uses invokeinterface
+            }
+            case FCALLNODE:
+            {
+                Variable tmpVar = s.getNewTemporaryVariable();
+                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("getMetaClass"), getSelf(s), new Operand[]{}));
+                Label undefLabel = s.getNewLabel();
+                Label defLabel   = s.getNewLabel();
+                StringLiteral mName = new StringLiteral(((FCallNode)node).getName());
+                Instr callInstr  = new JRubyImplCallInstr(tmpVar, new MethAddr("isMethodBound"), tmpVar, new Operand[]{mName, BooleanLiteral.FALSE});
+                s.addInstr(callInstr);
+                s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                s.addInstr(new CopyInstr(tmpVar, buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method")));
+                s.addInstr(new JumpInstr(defLabel));
+                s.addInstr(new LABEL_Instr(undefLabel));
+                s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
+                s.addInstr(new LABEL_Instr(defLabel));
+                return tmpVar;
+            }
             default:
                 throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinition.");
 /**
@@ -1183,77 +1237,10 @@ public class IRBuilder {
                             }
                         });
                 break;
-            case VCALLNODE:
-                m.loadSelf();
-                m.isMethodBound(((VCallNode) node).getName(),
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return new StringLiteral("method");
-                            }
-                        },
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return Nil.NIL;
-                            }
-                        });
-                break;
             case YIELDNODE:
                 m.hasBlock(new BranchCallback() {
                             public void branch(IRScope m) {
                                 return new StringLiteral("yield");
-                            }
-                        },
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return Nil.NIL;
-                            }
-                        });
-                break;
-            case GLOBALVARNODE:
-                m.isGlobalDefined(((GlobalVarNode) node).getName(),
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return new StringLiteral("global-variable");
-                            }
-                        },
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return Nil.NIL;
-                            }
-                        });
-                break;
-            case INSTVARNODE:
-                m.isInstanceVariableDefined(((InstVarNode) node).getName(),
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return new StringLiteral("instance-variable");
-                            }
-                        },
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return Nil.NIL;
-                            }
-                        });
-                break;
-            case CONSTNODE:
-                m.isConstantDefined(((ConstNode) node).getName(),
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return new StringLiteral("constant");
-                            }
-                        },
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return Nil.NIL;
-                            }
-                        });
-                break;
-            case FCALLNODE:
-                m.loadSelf();
-                m.isMethodBound(((FCallNode) node).getName(),
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), m, "method");
                             }
                         },
                         new BranchCallback() {
@@ -1793,8 +1780,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr      callInstr    = new CallInstr(callResult, new MethAddr(fcallNode.getName()), 
-                getSelf(s), args.toArray(new Operand[args.size()]), block);
+        Instr         callInstr    = new CallInstr(callResult, new MethAddr(fcallNode.getName()), getSelf(s), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
