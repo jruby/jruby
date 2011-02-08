@@ -127,8 +127,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyInstanceConfig.CompileMode;
+import org.jruby.RubyRandom.RandomType;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.evaluator.ASTInterpreter;
@@ -1174,7 +1174,6 @@ public final class Ruby {
 
         if (is1_9()) {
             initEncodings();
-            RubyRandom.createRandomClass(this);
         }
 
         RubySymbol.createSymbolClass(this);
@@ -1225,6 +1224,12 @@ public final class Ruby {
         }
         if (profile.allowClass("Bignum")) {
             RubyBignum.createBignumClass(this);
+            // RubyRandom depends on Bignum existence.
+            if (is1_9()) {
+                RubyRandom.createRandomClass(this);
+            } else {
+                setDefaultRand(new RandomType(this));
+            }
         }
         ioClass = RubyIO.createIOClass(this);
 
@@ -2175,12 +2180,13 @@ public final class Ruby {
         return invalidByteSequenceError;
     }
 
-    public RubyClass getRandomClass() {
-        return randomClass;
+    private RandomType defaultRand;
+    public RandomType getDefaultRand() {
+        return defaultRand;
     }
-
-    public void setRandomClass(RubyClass randomClass) {
-        this.randomClass = randomClass;
+    
+    public void setDefaultRand(RandomType defaultRand) {
+        this.defaultRand = defaultRand;
     }
 
     private RubyHash charsetMap;
@@ -3793,7 +3799,7 @@ public final class Ruby {
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
-            invalidByteSequenceError, fiberError, randomClass;
+            invalidByteSequenceError, fiberError;
 
     /**
      * All the core modules we keep direct references to, for quick access and
