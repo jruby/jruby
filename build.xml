@@ -101,6 +101,10 @@
   <condition property="java.opts" value="${env.JAVA_OPTS}"><isset property="env.JAVA_OPTS"/></condition>
   <condition property="java.opts" value="-ea"><not><isset property="java.opts"/></not></condition>
   
+  <!-- sets up a "make" command from ENV, if available -->
+  <condition property="make.cmd" value="${env.MAKE}"><isset property="env.MAKE"/></condition>
+  <condition property="make.cmd" value="make"><not><isset property="make.cmd"/></not></condition>
+  
   <property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
   <property name="rdoc.archive" value="docs/rdocs.tar.gz"/>
 
@@ -133,6 +137,7 @@
                classname="sun.misc.Signal"/>
 
     <property name="init.hasrun" value="true"/>
+    
   </target>
 
   <!-- Prepares a bin/jruby executable from bin/jruby.bash -->
@@ -1580,7 +1585,7 @@
       <echo message="Configuring ng client in ${nailgun.home}"/>
       <exec executable="./configure" osfamily="unix" dir="${nailgun.home}" failonerror="true" output="${dev.null}"/>
       <echo message="Building ng client in ${nailgun.home}"/>
-    <exec executable="make" osfamily="unix" dir="${nailgun.home}" output="${dev.null}"/>
+      <exec executable="${make.cmd}" osfamily="unix" dir="${nailgun.home}" output="${dev.null}"/>
   </target>
 
   <target name="need-clean-ng">
@@ -1594,7 +1599,7 @@
   </target>
 
   <target name="clean-ng" depends="need-clean-ng" if="should-clean-ng">
-    <exec executable="make" dir="${nailgun.home}" osfamily="unix" failifexecutionfails="false" output="${dev.null}">
+    <exec executable="${make.cmd}" dir="${nailgun.home}" osfamily="unix" failifexecutionfails="false" output="${dev.null}">
         <arg value="clean"/>
     </exec>
   </target>
@@ -1608,19 +1613,19 @@
 
   <target name="build-jruby-cext-native" depends="jar"
     description="Build JRuby cext support">
-    <exec osfamily="unix" executable="make" dir="${jruby-cext-native.home}" failonerror="true"/>
+    <exec osfamily="unix" executable="${make.cmd}" dir="${jruby-cext-native.home}" failonerror="true"/>
     <exec osfamily="windows" executable="cmd" dir="${jruby-cext-native.home}" failonerror="true">
-      <arg line='/c sh -c "make CC=gcc"'/>
+      <arg line='/c sh -c "${make.cmd} CC=gcc"'/>
     </exec>
   </target>
 
   <target name="clean-jruby-cext-native" depends="compile"
     description="Build JRuby cext support">
-    <exec osfamily="unix" executable="make" dir="${jruby-cext-native.home}" failonerror="true">
+    <exec osfamily="unix" executable="${make.cmd}" dir="${jruby-cext-native.home}" failonerror="true">
       <arg value="dist-clean"/>
     </exec>
     <exec osfamily="windows" executable="cmd" dir="${jruby-cext-native.home}" failonerror="true">
-      <arg line='/c sh -c "make dist-clean"'/>
+      <arg line='/c sh -c "${make.cmd} dist-clean"'/>
     </exec>
   </target>
 
