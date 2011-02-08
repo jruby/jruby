@@ -1591,7 +1591,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "rand", module = true, optional = 1, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject rand19(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
-        return RubyRandom.randCommon(context, recv, arg);
+        return RubyRandom.randCommon19(context, recv, arg);
     }
 
     @JRubyMethod(name = "spawn", required = 1, rest = true, module = true, visibility = PRIVATE, compat = RUBY1_9)
