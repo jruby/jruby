@@ -2654,11 +2654,11 @@ public class ScriptingContainerTest {
 
 
     /**
-     * Test of setContextClassLoader method, of class ScriptingContainer.
+     * Test of Thread.currentThread().setContextClassLoader method
      */
     @Test
     public void testNullToContextClassLoader() {
-        logger1.info("clear");
+        logger1.info("Thread.currentThread().setContextClassLoader(null)");
         ScriptingContainer instance = null;
         try {
             ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
@@ -2670,5 +2670,24 @@ public class ScriptingContainerTest {
         } finally {
             instance = null;
         }
+    }
+    
+    /**
+     * Test of setClassLoader method, of SystemPropertyCatcher.
+     * This method is only used in JSR223 but tested here. Since, JSR223
+     * is not easy to test internal state.
+     */
+    @Test
+    public void testSystemPropertyCatcherSetClassloader() {
+        logger1.info("SystemPropertyCatcher.setClassloader");
+        System.setProperty(PropertyName.CLASSLOADER.toString(), "container");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        org.jruby.embed.util.SystemPropertyCatcher.setClassLoader(instance);
+        assertEquals(instance.getClass().getClassLoader(), instance.getClassLoader());
+        
+        System.setProperty(PropertyName.CLASSLOADER.toString(), "context");
+        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        org.jruby.embed.util.SystemPropertyCatcher.setClassLoader(instance);
+        assertEquals(Thread.currentThread().getContextClassLoader(), instance.getClassLoader());
     }
 }

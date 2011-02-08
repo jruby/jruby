@@ -118,21 +118,29 @@ public class SystemPropertyCatcher {
         }
         return Boolean.parseBoolean(s);
     }
-
+    
     /**
-     * Gets a value for classloader policy from System property.
-     *
-     * @param defaultPolicy default policy to use current classloader.
-     * @return true if current classloader is used, false otherwise.
+     * Sets classloader based on System property. This is only used from
+     * JRubyEgnineFactory.
+     * 
+     * @param container ScriptingContainer to be set classloader
      */
-    public static boolean useCurrentClassLoader(boolean defaultPolicy) {
+    
+    public static void setClassLoader(ScriptingContainer container) {
         String s = System.getProperty(PropertyName.CLASSLOADER.toString());
-        if (s == null) return defaultPolicy;
-        if ("current".equals(s)) {
-            return true;
-        } else {
-            return false;
+        
+        // current should be removed later
+        if (s == null || "container".equals(s) || "current".equals(s)) { // default
+            container.setClassLoader(container.getClass().getClassLoader());
+            return;
+        } else if ("context".equals(s)) {
+            container.setClassLoader(Thread.currentThread().getContextClassLoader());
+            return;
+        } else if ("none".equals(s)) {
+            return;
         }
+        // if incorrect value is set, no classloader will set by ScriptingContainer.
+        // allows RubyInstanceConfig to set whatever preferable
     }
 
     /**
