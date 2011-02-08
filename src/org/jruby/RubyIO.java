@@ -2392,10 +2392,19 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "ungetc", required = 1, compat = CompatVersion.RUBY1_9)
     public IRubyObject ungetc19(IRubyObject number) {
+        Ruby runtime = getRuntime();
         OpenFile myOpenFile = getOpenFileChecked();
 
         if (!myOpenFile.isReadBuffered()) {
-            return getRuntime().getNil();
+            return runtime.getNil();
+        }
+
+        if (number instanceof RubyString) {
+            RubyString str = (RubyString) number;
+            if (str.isEmpty()) return runtime.getNil();
+
+            int c =  str.getEncoding().mbcToCode(str.getBytes(), 0, 1);
+            number = runtime.newFixnum(c);
         }
 
         return ungetcCommon(number, myOpenFile);
