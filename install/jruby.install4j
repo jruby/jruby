@@ -13,6 +13,9 @@
     </searchSequence>
     <variables>
       <variable name="jruby.version" value="error" />
+      <variable name="ruby.version" value="error" />
+      <variable name="ruby.patchlevel" value="error" />
+      <variable name="ruby.buildplatform" value="error" />
     </variables>
   </application>
   <files>
@@ -118,7 +121,53 @@
     </entries>
     <components />
   </files>
-  <launchers />
+  <launchers>
+    <launcher name="irb (1.8.7)" id="259" external="false" excludeFromMenu="false" menuName="" icnsFile="" pngIcon16File="./icon16.png" pngIcon32File="./icon32.png" macServiceDependencies="" swtApp="false" fileset="">
+      <executable name="irb (1.8.7)" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="true" stderrFile="error.log" stderrMode="overwrite" redirectStdout="false" stdoutFile="output.log" stdoutMode="overwrite" failOnStderrOutput="true" executableMode="1" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false">
+        <versionInfo include="false" fileVersion="" fileDescription="" legalCopyright="" internalName="" productName="" />
+      </executable>
+      <splashScreen show="false" autoOff="true" alwaysOnTop="true" width="0" height="0" bitmapFile="./jruby-logo.png" java6SplashScreen="false">
+        <text>
+          <statusLine x="20" y="20" text="Loading irb..." font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
+          <versionLine x="20" y="40" text="version ${compiler:sys.version}" font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
+        </text>
+      </splashScreen>
+      <java mainClass="org.jruby.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="&quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
+        <classPath>
+          <archive location="lib/jruby.jar" failOnError="false" />
+        </classPath>
+        <nativeLibraryDirectories />
+      </java>
+      <includedFiles />
+      <unextractableFiles />
+      <customScript mode="1" file="">
+        <scriptLines />
+      </customScript>
+    </launcher>
+    <launcher name="irb (1.9.2)" id="260" external="false" excludeFromMenu="false" menuName="" icnsFile="" pngIcon16File="./icon16.png" pngIcon32File="./icon32.png" macServiceDependencies="" swtApp="false" fileset="">
+      <executable name="irb (1.9.2)" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="true" stderrFile="error.log" stderrMode="overwrite" redirectStdout="false" stdoutFile="output.log" stdoutMode="overwrite" failOnStderrOutput="true" executableMode="1" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false">
+        <versionInfo include="false" fileVersion="" fileDescription="" legalCopyright="" internalName="" productName="" />
+      </executable>
+      <splashScreen show="false" autoOff="true" alwaysOnTop="true" width="0" height="0" bitmapFile="./jruby-logo.png" java6SplashScreen="false">
+        <text>
+          <statusLine x="20" y="20" text="Loading irb..." font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
+          <versionLine x="20" y="40" text="version ${compiler:sys.version}" font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
+        </text>
+      </splashScreen>
+      <java mainClass="org.jruby.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="--1.9 &quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
+        <classPath>
+          <archive location="lib/jruby.jar" failOnError="false" />
+        </classPath>
+        <nativeLibraryDirectories />
+      </java>
+      <includedFiles />
+      <unextractableFiles />
+      <customScript mode="1" file="">
+        <scriptLines />
+      </customScript>
+    </launcher>
+    <launcher name="cmd.exe" id="320" external="true" excludeFromMenu="false" menuName="Command Prompt" externalFile="/Windows/System32/cmd.exe" />
+  </launchers>
   <installerGui installerType="1" suggestPreviousProgramGroup="false" addOnAppId="" suggestPreviousLocations="false">
     <customCode useInstalledFiles="false" />
     <applications>
@@ -380,6 +429,105 @@
                 </serializedBean>
                 <condition />
               </action>
+              <action name="" id="312" beanClass="com.install4j.runtime.beans.actions.registry.SetRegistryValueAction" enabled="true" commentSet="false" comment="" rollbackBarrier="false" multiExec="false" failureStrategy="1" errorMessage="">
+                <serializedBean>
+                  <java class="java.beans.XMLDecoder">
+                    <object class="com.install4j.runtime.beans.actions.registry.SetRegistryValueAction">
+                      <void property="keyName">
+                        <string>Software\RubyInstaller</string>
+                      </void>
+                      <void property="registryRoot">
+                        <object class="com.install4j.api.windows.RegistryRoot" field="HKEY_CURRENT_USER" />
+                      </void>
+                    </object>
+                  </java>
+                </serializedBean>
+                <condition />
+              </action>
+              <action name="" id="314" beanClass="com.install4j.runtime.beans.actions.registry.SetRegistryValueAction" enabled="true" commentSet="false" comment="" rollbackBarrier="false" multiExec="false" failureStrategy="1" errorMessage="">
+                <serializedBean>
+                  <java class="java.beans.XMLDecoder">
+                    <object class="com.install4j.runtime.beans.actions.registry.SetRegistryValueAction">
+                      <void property="keyName">
+                        <string>Software\RubyInstaller\JRuby\${compiler:ruby.version}</string>
+                      </void>
+                      <void property="registryRoot">
+                        <object class="com.install4j.api.windows.RegistryRoot" field="HKEY_CURRENT_USER" />
+                      </void>
+                      <void property="value">
+                        <string>${installer:sys.installationDir}</string>
+                      </void>
+                      <void property="valueName">
+                        <string>InstallLocation</string>
+                      </void>
+                    </object>
+                  </java>
+                </serializedBean>
+                <condition />
+              </action>
+              <action name="" id="315" beanClass="com.install4j.runtime.beans.actions.registry.SetRegistryValueAction" enabled="true" commentSet="false" comment="" rollbackBarrier="false" multiExec="false" failureStrategy="1" errorMessage="">
+                <serializedBean>
+                  <java class="java.beans.XMLDecoder">
+                    <object class="com.install4j.runtime.beans.actions.registry.SetRegistryValueAction">
+                      <void property="keyName">
+                        <string>Software\RubyInstaller\JRuby\${compiler:ruby.version}</string>
+                      </void>
+                      <void property="registryRoot">
+                        <object class="com.install4j.api.windows.RegistryRoot" field="HKEY_CURRENT_USER" />
+                      </void>
+                      <void property="value">
+                        <string>${compiler:sys.date}</string>
+                      </void>
+                      <void property="valueName">
+                        <string>InstallDate</string>
+                      </void>
+                    </object>
+                  </java>
+                </serializedBean>
+                <condition />
+              </action>
+              <action name="" id="316" beanClass="com.install4j.runtime.beans.actions.registry.SetRegistryValueAction" enabled="true" commentSet="false" comment="" rollbackBarrier="false" multiExec="false" failureStrategy="1" errorMessage="">
+                <serializedBean>
+                  <java class="java.beans.XMLDecoder">
+                    <object class="com.install4j.runtime.beans.actions.registry.SetRegistryValueAction">
+                      <void property="keyName">
+                        <string>Software\RubyInstaller\JRuby\${compiler:ruby.version}</string>
+                      </void>
+                      <void property="registryRoot">
+                        <object class="com.install4j.api.windows.RegistryRoot" field="HKEY_CURRENT_USER" />
+                      </void>
+                      <void property="value">
+                        <string>${compiler:ruby.patchlevel}</string>
+                      </void>
+                      <void property="valueName">
+                        <string>PatchLevel</string>
+                      </void>
+                    </object>
+                  </java>
+                </serializedBean>
+                <condition />
+              </action>
+              <action name="" id="317" beanClass="com.install4j.runtime.beans.actions.registry.SetRegistryValueAction" enabled="true" commentSet="false" comment="" rollbackBarrier="false" multiExec="false" failureStrategy="1" errorMessage="">
+                <serializedBean>
+                  <java class="java.beans.XMLDecoder">
+                    <object class="com.install4j.runtime.beans.actions.registry.SetRegistryValueAction">
+                      <void property="keyName">
+                        <string>Software\RubyInstaller\JRuby\${compiler:ruby.version}</string>
+                      </void>
+                      <void property="registryRoot">
+                        <object class="com.install4j.api.windows.RegistryRoot" field="HKEY_CURRENT_USER" />
+                      </void>
+                      <void property="value">
+                        <string>${compiler:ruby.buildplatform}</string>
+                      </void>
+                      <void property="valueName">
+                        <string>BuildPlatform</string>
+                      </void>
+                    </object>
+                  </java>
+                </serializedBean>
+                <condition />
+              </action>
             </actions>
             <formComponents />
           </screen>
@@ -453,6 +601,39 @@
             <preActivation />
             <postActivation />
             <actions>
+              <action name="" id="319" beanClass="com.install4j.runtime.beans.actions.registry.DeleteRegistryItemAction" enabled="true" commentSet="false" comment="" rollbackBarrier="false" multiExec="false" failureStrategy="1" errorMessage="">
+                <serializedBean>
+                  <java class="java.beans.XMLDecoder">
+                    <object class="com.install4j.runtime.beans.actions.registry.DeleteRegistryItemAction">
+                      <void property="keyName">
+                        <string>Software\RubyInstaller\JRuby</string>
+                      </void>
+                      <void property="onlyIfEmpty">
+                        <boolean>false</boolean>
+                      </void>
+                      <void property="registryRoot">
+                        <object class="com.install4j.api.windows.RegistryRoot" field="HKEY_CURRENT_USER" />
+                      </void>
+                    </object>
+                  </java>
+                </serializedBean>
+                <condition />
+              </action>
+              <action name="" id="318" beanClass="com.install4j.runtime.beans.actions.registry.DeleteRegistryItemAction" enabled="true" commentSet="false" comment="" rollbackBarrier="true" multiExec="false" failureStrategy="1" errorMessage="">
+                <serializedBean>
+                  <java class="java.beans.XMLDecoder">
+                    <object class="com.install4j.runtime.beans.actions.registry.DeleteRegistryItemAction">
+                      <void property="keyName">
+                        <string>Software\RubyInstaller</string>
+                      </void>
+                      <void property="registryRoot">
+                        <object class="com.install4j.api.windows.RegistryRoot" field="HKEY_CURRENT_USER" />
+                      </void>
+                    </object>
+                  </java>
+                </serializedBean>
+                <condition />
+              </action>
               <action name="" id="15" beanClass="com.install4j.runtime.beans.actions.UninstallFilesAction" enabled="true" commentSet="false" comment="" rollbackBarrier="false" multiExec="false" failureStrategy="1" errorMessage="">
                 <serializedBean>
                   <java class="java.beans.XMLDecoder">
@@ -544,7 +725,9 @@
       <variables />
     </win32>
     <macosFolder name="Mac OS X Folder" id="22" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="all" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="">
-      <excludedLaunchers />
+      <excludedLaunchers>
+        <launcher id="320" />
+      </excludedLaunchers>
       <excludedComponents />
       <excludedBeans>
         <bean refId="25" />
