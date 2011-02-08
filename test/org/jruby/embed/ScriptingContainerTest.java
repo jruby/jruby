@@ -1960,7 +1960,10 @@ public class ScriptingContainerTest {
         instance.setCurrentDirectory(directory);
         assertEquals(directory, instance.getCurrentDirectory());
 
-        instance = null;
+        directory = System.getProperty( "user.home" );
+        instance = new ScriptingContainer();
+        instance.setCurrentDirectory(directory);
+        assertEquals(directory, instance.getCurrentDirectory());
     }
 
     /**
@@ -2651,7 +2654,7 @@ public class ScriptingContainerTest {
 
 
     /**
-     * Test of clear method, of class ScriptingContainer.
+     * Test of setContextClassLoader method, of class ScriptingContainer.
      */
     @Test
     public void testNullToContextClassLoader() {
