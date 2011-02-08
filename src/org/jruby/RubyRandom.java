@@ -78,7 +78,7 @@ public class RubyRandom extends RubyObject {
             for (int i = 0; i < ints.length; ++i) {
                 int r = 0;
                 for (int j = 0; j < 4; ++j) {
-                    r |= (bytes[idx++] & 0xff) << (j * 4);
+                    r |= (bytes[idx++] & 0xff) << (j * 8);
                 }
                 ints[i] = r;
             }
@@ -116,6 +116,10 @@ public class RubyRandom extends RubyObject {
             return mt.genrandReal();
         }
 
+        double genrandReal2() {
+            return mt.genrandReal2();
+        }
+
         IRubyObject getSeed() {
             return seed;
         }
@@ -127,7 +131,7 @@ public class RubyRandom extends RubyObject {
             for (int r : ints) {
                 for (int i = 0; i < 4; ++i) {
                     bytes[idx++] = (byte) (r & 0xff);
-                    r >>>= 4;
+                    r >>>= 8;
                 }
             }
             return RubyBignum.newBignum(seed.getRuntime(), new BigInteger(bytes));
@@ -146,7 +150,7 @@ public class RubyRandom extends RubyObject {
             return initKey;
         }
     }
-    
+
     static int getIntBigIntegerBuffer(byte[] src, int loc) {
         int v = 0;
         int idx = src.length - loc * 4 - 1;
@@ -185,7 +189,7 @@ public class RubyRandom extends RubyObject {
     private static SecureRandom randomSeed = new SecureRandom();
 
     private static final int DEFAULT_SEED_CNT = 4;
-    
+
     // c: random_seed
     public static RubyBignum randomSeed(Ruby runtime) {
         byte[] seed = new byte[DEFAULT_SEED_CNT * 4];
@@ -245,7 +249,8 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: rb_f_rand
-    public static IRubyObject randCommon19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject randCommon19(ThreadContext context, IRubyObject recv,
+            IRubyObject[] args) {
         RandomType random = getDefaultRand(context);
         if (args.length == 0) {
             return randFloat(context, random);
@@ -260,7 +265,8 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: rb_f_rand for 1.8
-    public static IRubyObject randCommon18(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject randCommon18(ThreadContext context, IRubyObject recv,
+            IRubyObject[] args) {
         RandomType random = getDefaultRand(context);
         if (args.length == 0) {
             return randFloat(context, random);
@@ -284,15 +290,14 @@ public class RubyRandom extends RubyObject {
         }
         return r;
     }
-    
-    @JRubyMethod(name = "rand", compat = RUBY1_9)
-    public IRubyObject randObj(ThreadContext context) {
-        return randFloat(context, random);
-    }
 
-    @JRubyMethod(name = "rand", compat = RUBY1_9)
-    public IRubyObject randObj(ThreadContext context, IRubyObject arg0) {
-        return randomRand(context, arg0, random);
+    @JRubyMethod(name = "rand", optional = 1, compat = RUBY1_9)
+    public IRubyObject randObj(ThreadContext context, IRubyObject[] args) {
+        if (args.length == 0) {
+            return randFloat(context, random);
+        } else {
+            return randomRand(context, args[0], random);
+        }
     }
 
     // c: rand_int
@@ -331,7 +336,8 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: limited_rand
-    // limited_rand gets/returns unsigned long but we do this in signed long only.
+    // limited_rand gets/returns unsigned long but we do this in signed long
+    // only.
     private static IRubyObject randLimitedFixnum(ThreadContext context, RandomType random,
             long limit) {
         long val;
@@ -405,11 +411,11 @@ public class RubyRandom extends RubyObject {
 
     // c: random_rand
     private static IRubyObject randomRand(ThreadContext context, IRubyObject vmax, RandomType random) {
-        IRubyObject v;
+        IRubyObject v = context.nil;
+        RangeLike range = null;
         if (vmax.isNil()) {
             v = context.nil;
-        } else if (!(vmax instanceof RubyFloat)
-                && (!(v = TypeConverter.checkIntegerType(context.runtime, vmax, "to_int")).isNil())) {
+        } else if ((v = checkMaxInt(context, vmax)) != null) {
             v = randInt(context, random, (RubyInteger) v, true);
         } else if (!(v = TypeConverter.checkFloatType(context.runtime, vmax)).isNil()) {
             double max = ((RubyFloat) v).getValue();
@@ -418,54 +424,125 @@ public class RubyRandom extends RubyObject {
             } else {
                 v = context.nil;
             }
-        } else if (vmax instanceof RubyRange) { // RANGE ARGUMENT
-            // TODO: implement
-
-            RubyRange range = (RubyRange) vmax;
-            IRubyObject first = range.first();
-            IRubyObject last = range.last();
-
-            boolean returnFloat = first instanceof RubyFloat || last instanceof RubyFloat;
-            if (returnFloat) {
-                first = first.convertToFloat();
-                last = last.convertToFloat();
+        } else if ((range = rangeValues(context, vmax)) != null) {
+            if ((v = checkMaxInt(context, range.range)) != null) {
+                if (v instanceof RubyFixnum) {
+                    long max = ((RubyFixnum) v).getLongValue();
+                    if (range.excl) {
+                        max -= 1;
+                    }
+                    if (max >= 0) {
+                        v = randLimitedFixnum(context, random, max);
+                    }
+                } else if (v instanceof RubyBignum) {
+                    BigInteger big = ((RubyBignum) v).getBigIntegerValue();
+                    if (!big.equals(BigInteger.ZERO) && (big.signum() > 0)) {
+                        if (range.excl) {
+                            big = big.subtract(BigInteger.ONE);
+                        }
+                        v = randLimitedBignum(context, random, RubyBignum.newBignum(
+                                context.runtime, big));
+                    }
+                } else {
+                    v = context.nil;
+                }
+            } else if (!(v = TypeConverter.checkFloatType(context.runtime, range.range)).isNil()) {
+                int scale = 1;
+                double max = ((RubyFloat) v).getDoubleValue();
+                double mid = 0.5;
+                double r = 0.0;
+                if (Double.isInfinite(max)) {
+                    double min = floatValue(range.begin) / 2.0;
+                    max = floatValue(range.end) / 2.0;
+                    scale = 2;
+                    mid = max + min;
+                    max -= min;
+                } else {
+                    floatValue(v);
+                }
+                v = context.nil;
+                if (max > 0.0) {
+                    if (range.excl) {
+                        r = random.genrandReal();
+                    } else {
+                        r = random.genrandReal2();
+                    }
+                    if (scale > 1) {
+                        return context.runtime.newFloat(+(+(+(r - 0.5) * max) * scale) + mid);
+                    }
+                    v = context.runtime.newFloat(r * max);
+                } else if (max == 0.0 && !range.excl) {
+                    v = context.runtime.newFloat(0.0);
+                }
             }
-
-            if (range.include_p19(context, last).isTrue() && (!returnFloat)) {
-                last = last.callMethod(context, "+", context.runtime.newFixnum(1));
-            }
-
-            if (!first.respondsTo("-") || !first.respondsTo("+") || !last.respondsTo("-")
-                    || !last.respondsTo("+")) {
-                throw context.runtime.newArgumentError("invalid argument - " + vmax.toString());
-            }
-/*
- * IRubyObject difference = last.callMethod(context, "-", first); if
- * (returnFloat) { double max = (double) RubyNumeric.num2dbl(difference); double
- * rand = random.nextDouble() * ((RubyFloat) difference).getDoubleValue();
- * return RubyFloat.newFloat(runtime, ((RubyFloat) first).getDoubleValue() +
- * rand); } else { int max = (int) RubyNumeric.num2long(difference); int rand =
- * random.nextInt(max); return RubyNumeric.num2fix(first.callMethod(context,
- * "+", runtime.newFixnum(rand))); }
- */
-        } else {
-            v = context.nil;
         }
         if (v.isNil()) {
             throw context.runtime.newArgumentError("invalid argument - " + vmax.toString());
         }
-        return v;
-        // if (beg == Qundef) return v;
+        if (range == null) {
+            return v;
+        }
+        if ((range.begin instanceof RubyFixnum) && (v instanceof RubyFixnum)) {
+            long x = ((RubyFixnum) range.begin).getLongValue() + ((RubyFixnum) v).getLongValue();
+            return context.runtime.newFixnum(x);
+        }
+        if (v instanceof RubyBignum) {
+            return ((RubyBignum) v).op_plus(context, range.begin);
+        } else if (v instanceof RubyFloat) {
+            IRubyObject f = TypeConverter.checkFloatType(context.runtime, range.begin);
+            if (!f.isNil()) {
+                return ((RubyFloat) v).op_plus(context, f);
+            }
+        }
+        return RuntimeHelpers.invoke(context, range.begin, "+", v);
+    }
 
-        /*
-         * if (FIXNUM_P(beg) && FIXNUM_P(v)) { long x = FIX2LONG(beg) +
-         * FIX2LONG(v); return LONG2NUM(x); } switch (TYPE(v)) { case T_BIGNUM:
-         * return rb_big_plus(v, beg); case T_FLOAT: { VALUE f =
-         * rb_check_to_float(beg); if (!NIL_P(f)) { RFLOAT_VALUE(v) +=
-         * RFLOAT_VALUE(f); return v; } } default: return rb_funcall2(beg,
-         * id_plus, 1, &v); }
-         */
+    // c: float_value
+    private static double floatValue(IRubyObject v) {
+        if (v instanceof RubyFloat) {
+            return ((RubyFloat) v).getDoubleValue();
+        }
+        if (v instanceof RubyNumeric) {
+            return ((RubyNumeric) v).convertToFloat().getDoubleValue();
+        }
+        throw v.getRuntime().newTypeError(v, v.getRuntime().getFloat());
+    }
 
+    private static IRubyObject checkMaxInt(ThreadContext context, IRubyObject vmax) {
+        if (!(vmax instanceof RubyFloat)) {
+            IRubyObject v = TypeConverter.checkIntegerType(context.runtime, vmax, "to_int");
+            if (!v.isNil()) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    static class RangeLike {
+        public IRubyObject begin = null;
+        public IRubyObject end = null;
+        boolean excl = false;
+        public IRubyObject range = null;
+    }
+
+    private static RangeLike rangeValues(ThreadContext context, IRubyObject range) {
+        RangeLike like = new RangeLike();
+        if (range instanceof RubyRange) {
+            RubyRange vrange = (RubyRange) range;
+            like.begin = vrange.first();
+            like.end = vrange.last();
+            like.excl = vrange.exclude_end_p().isTrue();
+        } else {
+            if (!range.respondsTo("begin") || !range.respondsTo("end")
+                    || !range.respondsTo("exclude_end?")) {
+                return null;
+            }
+            like.begin = RuntimeHelpers.invoke(context, range, "begin");
+            like.end = RuntimeHelpers.invoke(context, range, "end");
+            like.excl = RuntimeHelpers.invoke(context, range, "exlucde_end?").isTrue();
+        }
+        like.range = RuntimeHelpers.invoke(context, like.end, "-", like.begin);
+        return like;
     }
 
     @JRubyMethod(meta = true, compat = RUBY1_9)
@@ -566,7 +643,7 @@ public class RubyRandom extends RubyObject {
     public static IRubyObject newSeed(ThreadContext context, IRubyObject recv) {
         return randomSeed(context.runtime);
     }
-    
+
     private void setRandomType(RandomType random) {
         this.random = random;
     }
