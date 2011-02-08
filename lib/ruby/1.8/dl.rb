@@ -1,4 +1,4 @@
-warn "DL: This is only a partial implementation, and it's likely broken"
+warn "DL: This is only a partial implementation, and it's likely broken" if $VERBOSE
 
 require 'ffi'
 

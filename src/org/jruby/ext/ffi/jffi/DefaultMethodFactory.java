@@ -44,7 +44,7 @@ public final class DefaultMethodFactory {
         return SingletonHolder.INSTANCE;
     }
     
-    DynamicMethod createMethod(RubyModule module, Function function, 
+    public DynamicMethod createMethod(RubyModule module, Function function,
             Type returnType, Type[] parameterTypes, CallingConvention convention, IRubyObject enums) {
 
         FunctionInvoker functionInvoker = getFunctionInvoker(returnType);

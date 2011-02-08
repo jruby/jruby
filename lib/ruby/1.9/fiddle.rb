@@ -4,7 +4,7 @@ require 'fiddle/closure'
 require 'dl' unless Object.const_defined?(:DL)
 
 module Fiddle
-  Pointer = DL::CPtr
+  #Pointer = DL::CPtr
 
   if WINDOWS
     def self.win32_last_error

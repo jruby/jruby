@@ -1470,6 +1470,7 @@ public final class Ruby {
             addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
             addLazyBuiltin("fiber.rb", "fiber", "org.jruby.libraries.FiberExtLibrary");
             addLazyBuiltin("psych.jar", "psych", "org.jruby.ext.psych.PsychLibrary");
+            addLazyBuiltin("fiddle.jar", "fiddle", "org.jruby.ext.fiddle.FiddleLibrary");
         }
 
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
