@@ -1293,7 +1293,7 @@
     <include name="bin/*gem*"/>
     <include name="bin/*ri*"/>
     <include name="bin/*rdoc*"/>
-    <include name="bin/*jirb*"/>
+    <include name="bin/*irb*"/>
     <include name="bin/generate_yaml_index.rb"/>
     <include name="bin/testrb"/>
     <include name="bin/ast*"/>
