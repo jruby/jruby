@@ -1,4 +1,16 @@
-task :installer => :install_installer_gems do
+task :installer => [:macos_installer, :windows_installer]
+
+task :macos_installer do
+  if File.executable?(INSTALL4J_EXECUTABLE)
+    sh "\"#{INSTALL4J_EXECUTABLE}\" -m macosFolder -D jruby.version=#{VERSION_JRUBY} install/jruby.install4j" do |ok, result|
+      $stderr.puts "** Something went wrong: #{result}" unless ok
+    end
+  else
+    puts "Skipping windows installers since install4j is not available"
+  end
+end
+
+task :windows_installer => :install_installer_gems do
   if File.executable?(INSTALL4J_EXECUTABLE)
     sh "\"#{INSTALL4J_EXECUTABLE}\" -m win32 -D jruby.version=#{VERSION_JRUBY} install/jruby.install4j" do |ok, result|
       $stderr.puts "** Something went wrong: #{result}" unless ok
