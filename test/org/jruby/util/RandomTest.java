@@ -5,15 +5,17 @@ import junit.framework.TestCase;
 public class RandomTest extends TestCase {
 
     /*
-     * 0.upto(20).each do |idx|
-     *   mt = Random.new(idx)
-     *   puts '{' + 10.times.map {
-     *     v = mt.rand(0xffffffff)
-     *     v[31] == 1 ? -(~v & 0x7fffffff) - 1 : v
-     *   }.join(", ") + '},'
-     * end
+<pre>
+0.upto(20).each do |idx|
+  mt = Random.new(idx)
+  puts '{' + 10.times.map {
+    v = mt.rand(0xffffffff)
+    v[31] == 1 ? -(~v & 0x7fffffff) - 1 : v
+  }.join(", ") + '},'
+end
+</pre>
      */
-    int[][] MT_SEQUENCE = new int[][] {
+    private static int[][] MT_INIT_GENRAND_SEQUENCE = new int[][] {
         {-1937831252, -1748719057, -1223252363, -668873536, -1706118333, -610118917, -1954711869, -656048793, 1819583497, -1616781613},
         {1791095845, -12091157, -1201197172, -289663928, 491263, 550290313, 1298508491, -4120955, 630311759, 1013994432},
         {1872583848, 794921487, 111352301, -294029752, -1934184938, -224495317, 1869695442, 2081981515, 1805465960, 1376693511},
@@ -37,11 +39,47 @@ public class RandomTest extends TestCase {
         {-1768964765, -483563046, -439316209, -195797793, -465871972, -204964646, -790972023, -1625692780, 154144587, -1544661226},
     };
     
-    public void testSequence() {
-        for (int i = 0; i < MT_SEQUENCE.length; ++i) {
+    /*
+<pre>
+key_seed = Random.new(1)
+5.times do |idx|
+  key = 4.times.inject(0) { |r, e|
+    v = key_seed.rand(0xffffffff)
+    r | (v << (32 * e))
+  }
+  mt = Random.new(key)
+  puts '{' + 10.times.map {
+    v = mt.rand(0xffffffff)
+    v[31] == 1 ? -(~v & 0x7fffffff) - 1 : v
+  }.join(", ") + '},'
+end
+</pre>
+     */
+    private static int[][] MT_INIT_BY_ARRAY_SEQUENCE = new int[][] {
+        {-1538876704, 355898914, 661017376, 1609024907, -2047262376, -1399882129, -882753516, 1923439461, 1952262863, -1145147919},
+        {1462575913, 797621440, -1519492528, 1087199999, -285253792, 1765561545, 181511204, 1865691656, -2105895167, -5596564},
+        {2124692257, -663806446, -1370638660, -61343517, -1560775062, 1854786966, 1497812057, -2000653529, -1231697611, -1103787644},
+        {190536499, -1989469488, -1633083826, -1846089994, 2025602731, 481191917, 509736031, 43936623, -1924339301, 33204997},
+        {93403600, -1714107270, 1388102448, 1298310290, -1028250363, 2036571639, -1278359914, 1450712028, -1791879558, 1153980938},
+    };
+
+    public void testInitGenrandSequence() {
+        for (int i = 0; i < MT_INIT_GENRAND_SEQUENCE.length; ++i) {
             Random mt = new Random(i);
-            for (int j = 0; j < MT_SEQUENCE[i].length; ++j) {
-                assertEquals(MT_SEQUENCE[i][j], mt.genrandInt32());
+            for (int j = 0; j < MT_INIT_GENRAND_SEQUENCE[i].length; ++j) {
+                assertEquals(MT_INIT_GENRAND_SEQUENCE[i][j], mt.genrandInt32());
+            }
+        }
+    }
+
+    public void testInitByArraySequence() {
+        Random keySeed = new Random(1);
+        for (int i = 0; i < MT_INIT_BY_ARRAY_SEQUENCE.length; ++i) {
+            int[] key = new int[] { keySeed.genrandInt32(), keySeed.genrandInt32(),
+                    keySeed.genrandInt32(), keySeed.genrandInt32() };
+            Random mt = new Random(key);
+            for (int j = 0; j < MT_INIT_BY_ARRAY_SEQUENCE[i].length; ++j) {
+                assertEquals(MT_INIT_BY_ARRAY_SEQUENCE[i][j], mt.genrandInt32());
             }
         }
     }
