@@ -277,6 +277,7 @@ public class IRBuilder {
            }
            if (isDebug) {
                System.out.println("################## After cfg linearization pass ##################");
+               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
            }
            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LinearizeCFG());
 

@@ -8,6 +8,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.operands.Label;
 
 
 /**
@@ -66,4 +67,8 @@ public interface InterpreterContext {
     public Frame getFrame();
 
     public IRubyObject[] getParametersFrom(int argIndex);
+
+    public void setMethodExitLabel(Label l);
+
+    public Label getMethodExitLabel();
 }

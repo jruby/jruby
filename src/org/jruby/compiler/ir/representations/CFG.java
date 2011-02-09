@@ -223,6 +223,8 @@ public class CFG {
         for (Label l: labelsToFixup) {
             l.setTargetPC(labelIPCMap.get(l));
         }
+		  // Exit BB ipc
+		  getExitBB().getLabel().setTargetPC(ipc+1);
 
         _instrs = instrs.toArray(new Instr[instrs.size()]);
         return _instrs;

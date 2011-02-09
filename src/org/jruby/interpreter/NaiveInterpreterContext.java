@@ -15,6 +15,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.operands.Label;
 
 /**
  *
@@ -34,9 +35,11 @@ public class NaiveInterpreterContext implements InterpreterContext {
     protected DynamicScope currDynScope = null;
     protected boolean allocatedDynScope = false;
 
+    private Label methodExitLabel = null;
+
     public NaiveInterpreterContext(ThreadContext context, IRubyObject self, int localVariablesSize, int temporaryVariablesSize, int renamedVariablesSize, IRubyObject[] parameters, Block block) {
         context.preMethodFrameOnly(self.getMetaClass(), null, self, block);
-		  this.frame = context.getCurrentFrame();
+        this.frame = context.getCurrentFrame();
 
         this.context = context;
         this.runtime = context.getRuntime();
@@ -100,7 +103,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
         return oldValue;
     }
 
-	 // Post-inlining
+    // Post-inlining
     public void updateRenamedVariablesCount(int n) {
         // SSS FIXME: use System.arraycopy
         Object[] oldRenamedVars = this.renamedVariables;
@@ -108,13 +111,13 @@ public class NaiveInterpreterContext implements InterpreterContext {
         for (int i = 0; i < oldRenamedVars.length; i++) this.renamedVariables[i] = oldRenamedVars[i];
     }
 
-	 // Post-inlining
+    // Post-inlining
     public void updateLocalVariablesCount(int n) {
         // SSS FIXME: use System.arraycopy
         Object[] oldLocalVars = this.localVariables;
         this.localVariables = new Object[n];
         for (int i = 0; i < oldLocalVars.length; i++) this.localVariables[i] = oldLocalVars[i];
-	 }
+    }
 
     public Object getRenamedVariable(int offset) {
         return renamedVariables[offset];
@@ -186,5 +189,13 @@ public class NaiveInterpreterContext implements InterpreterContext {
         System.arraycopy(parameters, argIndex, args, 0, length);
 
         return args;
+    }
+
+    public void setMethodExitLabel(Label l) {
+        methodExitLabel = l;
+    }
+
+    public Label getMethodExitLabel() {
+        return methodExitLabel;
     }
 }

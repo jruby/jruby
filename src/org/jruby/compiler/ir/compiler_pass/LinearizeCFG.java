@@ -18,11 +18,13 @@ public class LinearizeCFG implements CompilerPass
         if (s instanceof IRExecutionScope) {
             System.out.println("Linearizing cfg for " + s);
             List<BasicBlock> bbs = ((IRExecutionScope)s).getCFG().linearize();
+/*
             StringBuffer buf = new StringBuffer();
             for (BasicBlock b : bbs) {
                 buf.append(b.toStringInstrs());
             }
             System.out.print(buf);
+*/
         }
     }
 }

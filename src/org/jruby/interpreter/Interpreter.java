@@ -10,12 +10,14 @@ import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
+import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
@@ -133,147 +135,35 @@ public class Interpreter {
         return rv;
     }
 
-/*
-    public void interpretTop(IR_Scope scope) {
-        IRubyObject self = runtime.getTopSelf();
-
-        if (scope instanceof IR_Script) {
-            interpretMethod(self, ((IR_Script) scope).getRootClass().getRootMethod());
-        } else {
-            System.out.println("BONED");
-        }
-    }
-
-    public void interpretMethod(IRubyObject self, IRMethod method) {
-        if (method == null) {
-            System.out.println("Interpreting null method?");
-            return;
-        }
-        System.out.print(method + "(");
-
-        Operand operands[] = method.getCallArgs();
-        for (int i = 0; i < operands.length; i++) {
-            System.out.print(operands[i] + ", ");
-        }
-        System.out.println("EOP)");
-
-        // Dummy start and end are canonical entry and exit points for a method/closures
-        // we always getFallThroughBB(previous) to walk through unless we encounter explicit jump
-
-        // IR_Scope 
-        //   getLexicalScope <--- previous StaticScope equivalent
-        
-        // ThreadContext, self, receiver{, arg{, arg{, arg{, arg}}}}
-
-        // Construct primitive array as simple store for temporary variables in method and pass along
-
-        CFG cfg = method.getCFG();
-
-        for (BasicBlock basicBlock : cfg.getNodes()) {
-            System.out.println("NEW BB");
-            for (Instr i : basicBlock.getInstrs()) {
-                // .. interpret i ..
-                if (i instanceof BranchInstr) {
-                    System.out.println("In branch");
-                    BranchInstr branch = (BranchInstr) i;
-                    boolean taken = false; // .. the interpreter will tell you whether the branch was taken or not ...
-                    if (taken) {
-                        basicBlock = cfg.getTargetBB(branch.getJumpTarget());
-                    } else {
-                        basicBlock = cfg.getFallThroughBB(basicBlock);
-                    }
-                } else if (i instanceof JumpInstr) {
-                    System.out.println("In jump");
-                    JumpInstr jump = (JumpInstr) i;
-                    basicBlock = cfg.getTargetBB(jump.getJumpTarget());
-                } else if (i instanceof CallInstr) {
-                    CallInstr callInstruction = (CallInstr) i;
-
-                    System.out.println("Call: " + callInstruction);
-
-                    // Does not need to be recursive...except for scope handling
-                    interpretMethod(self, callInstruction.getTargetMethod());
-                } else if (i instanceof DefineClassMethodInstr) {
-                    if (((DefineClassMethodInstr) i).method.getCFG() != cfg) {
-                        System.out.println("def class method");
-//                        createClassMethod(self, (DefineClassMethodInstr) i);
-                    }
-                } else if (i instanceof DefineInstanceMethodInstr) {
-                    System.out.println("def instance method");
-//                    createInstanceMethod(self, (DefineInstanceMethodInstr) i);
-                } else {
-                    System.out.println("NOT HANDLING: " + i + ", (" + i.getClass() + ")");
-                }
-                //... handle returns ..
-            }
-
-            if (basicBlock == null) {
-                //.. you are done with this cfg /method ..
-                //.. pop call stack, etc ..
-            }
-        }
-    }
-*/
-
     public static IRubyObject interpret(ThreadContext context, CFG cfg, InterpreterContext interp) {
+        boolean inClosure = (cfg.getScope() instanceof IRClosure);
         try {
+            interp.setMethodExitLabel(cfg.getExitBB().getLabel()); // used by return instructions!
+
             IRubyObject self = (IRubyObject) interp.getSelf();
             Instr[] instrs = cfg.prepareForInterpretation();
             int n   = instrs.length;
             int ipc = 0;
+            Instr lastInstr = null;
             while (ipc < n) {
                 interpInstrsCount++;
-                Label jumpTarget = instrs[ipc].interpret(interp, self);
+                lastInstr = instrs[ipc];
+//                System.out.println("EXEC'ing: " + lastInstr);
+                Label jumpTarget = lastInstr.interpret(interp, self);
                 ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
             }
-/**
-            while (ipc < n) {
-                Label jumpTarget = null;
-                Object v1, v2;
-                switch (i.operation) {
-                    case COPY : 
-                        i.getResult().store(interp, ((CopyInstr)i).getArg().retrieve(interp));
-                        break;
 
-                    case JUMP : 
-                        jumpTarget = ((JumpInstr)i).getJumpTarget();
-                        break;
+            // If I am in a closure, and lastInstr was a return, have to return from the nearest method!
+            IRubyObject rv = (IRubyObject) interp.getReturnValue();
+            if (inClosure && (lastInstr instanceof ReturnInstr))
+                throw context.returnJump(rv);
 
-                    case BEQ : 
-                        BEQInstr b = (BEQInstr)i;
-                        v1 = b.getOperand1().retrieve(interp);
-                        v2 = b.getOperand2().retrieve(interp);
-                        // FIXME: equals? rather than == 
-                        jumpTarget = (v1 == v2) ? b.getJumpTarget() : null;
-                        break;
-
-                    case LINE_NUM : 
-                        interp.getContext().setLine(((LineNumberInstr)i).lineNumber);
-                        break;
-
-                    default: 
-                        jumpTarget = i.interpret(interp, self);
-                }
-                ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
-            }
-**/
-/**
-            BasicBlock basicBlock = cfg.getEntryBB();
-            while (basicBlock != null) {
-                Label jumpTarget = null;
-
-                for (Instr instruction : basicBlock.getInstrsArray()) {
-//                  System.out.println("EXEC'ing: " + instruction);
-                    interpInstrsCount++;
-                    jumpTarget = instruction.interpret(interp, self);
-                }
-
-                // Explicit jump or implicit fall-through to next bb
-                basicBlock = (jumpTarget == null) ? cfg.getFallThroughBB(basicBlock) : cfg.getTargetBB(jumpTarget);
-            }
-**/
-
-            return (IRubyObject) interp.getReturnValue();
+            return rv;
+        } catch (org.jruby.exceptions.JumpException.ReturnJump rj) {
+            if (inClosure) // pass it along!
+                throw rj;
+            else
+                return (IRubyObject)rj.getValue();
         } finally {
             if (interp.getFrame() != null) {
                 context.popFrame();
