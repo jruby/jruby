@@ -7,12 +7,12 @@ import org.jruby.Ruby;
 /**
  * Holds information for creating JFFI functions
  */
-public class NativeFunctionInfo {
-    public final org.jruby.ext.ffi.Type returnType;
-    public final org.jruby.ext.ffi.Type[] parameterTypes;
-    public final com.kenai.jffi.Type jffiReturnType;
-    public final com.kenai.jffi.Type[] jffiParameterTypes;
-    public final com.kenai.jffi.CallingConvention convention;
+class NativeFunctionInfo {
+    final org.jruby.ext.ffi.Type returnType;
+    final org.jruby.ext.ffi.Type[] parameterTypes;
+    final com.kenai.jffi.Type jffiReturnType;
+    final com.kenai.jffi.Type[] jffiParameterTypes;
+    final com.kenai.jffi.CallingConvention convention;
 
     public NativeFunctionInfo(Ruby runtime, org.jruby.ext.ffi.Type returnType,
             org.jruby.ext.ffi.Type[] parameterTypes, CallingConvention convention) {

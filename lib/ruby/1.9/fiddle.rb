@@ -1,4 +1,4 @@
-require 'fiddle.so'
+require 'fiddle_jruby'
 require 'fiddle/function'
 require 'fiddle/closure'
 require 'dl' unless Object.const_defined?(:DL)

@@ -115,7 +115,7 @@ public abstract class Type extends RubyObject {
     /**
      * Initializes a new <tt>Type</tt> instance.
      */
-    public Type(Ruby runtime, RubyClass klass, NativeType type) {
+    protected Type(Ruby runtime, RubyClass klass, NativeType type) {
         super(runtime, klass);
         this.nativeType = type;
         this.size = getNativeSize(type);
@@ -178,7 +178,7 @@ public abstract class Type extends RubyObject {
         /**
          * Initializes a new <tt>BuiltinType</tt> instance.
          */
-        public Builtin(Ruby runtime, RubyClass klass, NativeType nativeType, String symName) {
+        private Builtin(Ruby runtime, RubyClass klass, NativeType nativeType, String symName) {
             super(runtime, klass, nativeType, Type.getNativeSize(nativeType), Type.getNativeAlignment(nativeType));
             this.sym = runtime.newSymbol(symName);
         }
