@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <install4j version="4.2.8" transformSequenceNumber="2">
-  <directoryPresets config="../dist/${compiler:jruby.version}/lib" />
+  <directoryPresets config="." />
   <application name="JRuby" distributionSourceDir="" applicationId="4535-5096-5383-5182" mediaDir="../build/installers" mediaFilePattern="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" compression="9" lzmaCompression="false" pack200Compression="true" excludeSignedFromPacking="true" keepModificationTimes="false" missingFilesStrategy="warn" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="${compiler:jruby.version}" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="true" macSignature="????" installerName="" javaMinVersion="1.5" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
     <languages skipLanguageSelection="false" languageSelectionInPrincipalLanguage="false">
       <principalLanguage id="en" customLocalizationFile="" />
@@ -166,7 +166,6 @@
         <scriptLines />
       </customScript>
     </launcher>
-    <launcher name="cmd.exe" id="320" external="true" excludeFromMenu="false" menuName="Command Prompt" externalFile="/Windows/System32/cmd.exe" />
   </launchers>
   <installerGui installerType="1" suggestPreviousProgramGroup="false" addOnAppId="" suggestPreviousLocations="false">
     <customCode useInstalledFiles="false" />
@@ -374,6 +373,28 @@
                     <object class="com.install4j.runtime.beans.actions.desktop.CreateProgramGroupAction">
                       <void property="allUsers">
                         <boolean>false</boolean>
+                      </void>
+                      <void property="programGroupEntryConfigs">
+                        <void method="add">
+                          <object class="com.install4j.runtime.beans.screens.components.ProgramGroupEntryConfig">
+                            <void property="arguments">
+                              <string>/k "cd ${installer:sys.userHome}"</string>
+                            </void>
+                            <void property="iconFile">
+                              <object class="com.install4j.api.beans.ExternalFile">
+                                <string>./command.ico</string>
+                              </object>
+                            </void>
+                            <void property="name">
+                              <string>Command Prompt</string>
+                            </void>
+                            <void property="target">
+                              <object class="java.io.File">
+                                <string>${installer:sys.system32Dir}/cmd.exe</string>
+                              </object>
+                            </void>
+                          </object>
+                        </void>
                       </void>
                       <void property="programGroupName">
                         <string>${compiler:sys.fullName} ${compiler:sys.version}</string>
