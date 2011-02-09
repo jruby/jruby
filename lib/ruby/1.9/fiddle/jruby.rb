@@ -26,13 +26,11 @@ module Fiddle
         FFI::Pointer.new(@ptr.to_i),
         :convention => @abi
       )
+      @function.attach(self, "call")
     end
 
-    def call(*args)
-      result = @function.call(*args)
-
-      result
-    end
+    # stubbed; should be overwritten by initialize's #attach call above
+    def call(*args); end
   end
 
   class Closure
