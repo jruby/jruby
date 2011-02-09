@@ -57,19 +57,15 @@ public class RubyRandom extends RubyObject {
         // c: rand_init
         RandomType(IRubyObject vseed) {
             this.seed = vseed.convertToInteger();
-            int[] ints = null;
-            int len = 0;
             if (seed instanceof RubyFixnum) {
-                long v = RubyNumeric.num2long(seed);
-                if (v < 0) {
-                    v = -v;
-                }
-                ints = new int[2];
-                ints[0] = (int) v;
-                len = 1;
-                if (v != (v & 0xffffffffL)) {
+                long v = Math.abs(RubyNumeric.num2long(seed));
+                if (v == (v & 0xffffffffL)) {
+                    this.mt = new Random((int) v);
+                } else {
+                    int[] ints = new int[2];
+                    ints[0] = (int) v;
                     ints[1] = (int) (v >> 32);
-                    len = 2;
+                    this.mt = new Random(ints);
                 }
             } else if (seed instanceof RubyBignum) {
                 BigInteger big = ((RubyBignum) seed).getBigIntegerValue();
@@ -81,20 +77,17 @@ public class RubyRandom extends RubyObject {
                 if (buf[0] == 0) {
                     buflen -= 1;
                 }
-                len = (buflen + 3) / 4;
-                if (len > Random.N) {
-                    len = Random.N;
+                int len = Math.min((buflen + 3) / 4, Random.N);
+                int[] ints = bigEndianToInts(buf, len);
+                if (len <= 1) {
+                    this.mt = new Random(ints[0]);
+                } else {
+                    this.mt = new Random(ints);
                 }
-                ints = bigEndianToInts(buf, len);
             } else {
                 throw vseed.getRuntime().newTypeError(
                         String.format("failed to convert %s into Integer", vseed.getMetaClass()
                                 .getName()));
-            }
-            if (len <= 1) {
-                this.mt = new Random(ints[0]);
-            } else {
-                this.mt = new Random(ints);
             }
         }
 
@@ -102,13 +95,8 @@ public class RubyRandom extends RubyObject {
             this.seed = vseed.convertToInteger();
             byte[] bytes = state.getBigIntegerValue().toByteArray();
             int[] ints = new int[bytes.length / 4];
-            int idx = bytes.length - 1;
             for (int i = 0; i < ints.length; ++i) {
-                int r = 0;
-                for (int j = 0; j < 4; ++j) {
-                    r |= (bytes[idx--] & 0xff) << (j * 8);
-                }
-                ints[i] = r;
+                ints[i] = getIntBigIntegerBuffer(bytes, i);
             }
             this.mt = new Random(ints, left);
         }
@@ -155,12 +143,8 @@ public class RubyRandom extends RubyObject {
         RubyBignum getState() {
             int[] ints = mt.getState();
             byte[] bytes = new byte[ints.length * 4];
-            int idx = bytes.length - 1;
-            for (int r : ints) {
-                for (int i = 0; i < 4; ++i) {
-                    bytes[idx--] = (byte) (r & 0xff);
-                    r >>>= 8;
-                }
+            for (int idx = 0; idx < ints.length; ++idx) {
+                setIntBigIntegerBuffer(bytes, idx, ints[idx]);
             }
             return RubyBignum.newBignum(seed.getRuntime(), new BigInteger(bytes));
         }
@@ -276,7 +260,7 @@ public class RubyRandom extends RubyObject {
         return randCommon19(context, recv, args);
     }
 
-    // c: rb_f_rand
+    // c: rb_f_rand for 1.9
     public static IRubyObject randCommon19(ThreadContext context, IRubyObject recv,
             IRubyObject[] args) {
         RandomType random = getDefaultRand(context);
@@ -364,8 +348,7 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: limited_rand
-    // limited_rand gets/returns unsigned long but we do this in signed long
-    // only.
+    // limited_rand gets/returns ulong but we do this in signed long only.
     private static IRubyObject randLimitedFixnum(ThreadContext context, RandomType random,
             long limit) {
         long val;
@@ -373,6 +356,7 @@ public class RubyRandom extends RubyObject {
             val = 0;
         } else {
             long mask = makeMask(limit);
+            // take care before code cleanup; it might break random sequence compatibility
             retry: while (true) {
                 val = 0;
                 for (int i = 1; 0 <= i; --i) {
@@ -396,6 +380,7 @@ public class RubyRandom extends RubyObject {
         byte[] buf = limit.getBigIntegerValue().toByteArray();
         byte[] bytes = new byte[buf.length];
         int len = (buf.length + 3) / 4;
+        // take care before code cleanup; it might break random sequence compatibility
         retry: while (true) {
             long mask = 0;
             boolean boundary = true;
@@ -509,7 +494,7 @@ public class RubyRandom extends RubyObject {
             }
         } else {
             v = context.nil;
-            RubyNumeric.num2long(vmax); // check to raise TypeError
+            RubyNumeric.num2long(vmax); // need check here to raise TypeError
         }
         if (v.isNil()) {
             throw context.runtime.newArgumentError("invalid argument - " + vmax.toString());
