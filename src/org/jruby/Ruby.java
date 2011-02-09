@@ -52,7 +52,6 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
@@ -128,7 +127,6 @@ import java.io.File;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.RubyInstanceConfig.CompileMode;
-import org.jruby.RubyRandom.RandomType;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.evaluator.ASTInterpreter;
@@ -1228,7 +1226,7 @@ public final class Ruby {
             if (is1_9()) {
                 RubyRandom.createRandomClass(this);
             } else {
-                setDefaultRand(new RandomType(this));
+                setDefaultRand(new RubyRandom.RandomType(this));
             }
         }
         ioClass = RubyIO.createIOClass(this);
@@ -1942,7 +1940,14 @@ public final class Ruby {
     }
     void setStructClass(RubyClass structClass) {
         this.structClass = structClass;
-    }    
+    }
+    
+    public RubyClass getRandomClass() {
+        return randomClass;
+    }
+    void setRandomClass(RubyClass randomClass) {
+        this.randomClass = randomClass;
+    }
 
     public IRubyObject getTmsStruct() {
         return tmsStruct;
@@ -2180,12 +2185,12 @@ public final class Ruby {
         return invalidByteSequenceError;
     }
 
-    private RandomType defaultRand;
-    public RandomType getDefaultRand() {
+    private RubyRandom.RandomType defaultRand;
+    public RubyRandom.RandomType getDefaultRand() {
         return defaultRand;
     }
     
-    public void setDefaultRand(RandomType defaultRand) {
+    public void setDefaultRand(RubyRandom.RandomType defaultRand) {
         this.defaultRand = defaultRand;
     }
 
@@ -3273,18 +3278,6 @@ public final class Ruby {
         return symbolTable;
     }
 
-    public void setRandomSeed(long randomSeed) {
-        this.randomSeed = randomSeed;
-    }
-
-    public long getRandomSeed() {
-        return randomSeed;
-    }
-
-    public Random getRandom() {
-        return random;
-    }
-
     public ObjectSpace getObjectSpace() {
         return objectSpace;
     }
@@ -3336,10 +3329,6 @@ public final class Ruby {
     @Deprecated
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
         return ChannelDescriptor.getDescriptorByFileno(aFileno);
-    }
-
-    public long incrementRandomSeedSequence() {
-        return randomSeedSequence++;
     }
 
     public InputStream getIn() {
@@ -3748,10 +3737,6 @@ public final class Ruby {
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
-    private long randomSeed = 0;
-    private long randomSeedSequence = 0;
-    private Random random = new Random();
-
     private final List<EventHook> eventHooks = new Vector<EventHook>();
     private boolean hasEventHooks;  
     private boolean globalAbortOnExceptionEnabled = false;
@@ -3799,7 +3784,7 @@ public final class Ruby {
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
-            invalidByteSequenceError, fiberError;
+            invalidByteSequenceError, fiberError, randomClass;
 
     /**
      * All the core modules we keep direct references to, for quick access and

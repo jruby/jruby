@@ -217,6 +217,7 @@ public class RubyRandom extends RubyObject {
         defaultRand.random = new RandomType(randomSeed(runtime));
         randomClass.setConstant("DEFAULT", defaultRand);
         runtime.setDefaultRand(defaultRand.random);
+        runtime.setRandomClass(randomClass);
         return randomClass;
     }
 
@@ -593,7 +594,7 @@ public class RubyRandom extends RubyObject {
         defaultRand = new RandomType(newSeed);
         context.runtime.setDefaultRand(defaultRand);
         if (context.runtime.is1_9()) {
-            ((RubyRandom) ((RubyModule) RuntimeHelpers.getConstant(context, "Random"))
+            ((RubyRandom) (context.runtime.getRandomClass())
                     .getConstant("DEFAULT")).setRandomType(defaultRand);
         }
         return previousSeed;
@@ -686,6 +687,25 @@ public class RubyRandom extends RubyObject {
             }
         }
         return context.getRuntime().newString(new ByteList(bytes));
+    }
+    
+    // c: rb_random_real
+    public static double randomReal(ThreadContext context, IRubyObject obj) {
+        RandomType random = null;
+        if (obj.equals(context.runtime.getRandomClass())) {
+            random = getDefaultRand(context);
+        }
+        if (obj instanceof RubyRandom) {
+            random = ((RubyRandom) obj).random;
+        }
+        if (random != null) {
+            return random.genrandReal();
+        }
+        double d = RubyNumeric.num2dbl(RuntimeHelpers.invoke(context, obj, "rand"));
+        if (d < 0.0 || d >= 1.0) {
+            throw context.runtime.newRangeError("random number too big: " + d);
+        }
+        return d;
     }
 
     @JRubyMethod(name = "new_seed", meta = true, compat = RUBY1_9)
