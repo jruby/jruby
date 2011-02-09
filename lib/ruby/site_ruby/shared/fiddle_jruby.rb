@@ -55,7 +55,13 @@ module Fiddle
     end
 
     def call(*args)
-      @function.call(*args)
+      result = @function.call(*args)
+
+      if result.is_a? FFI::Pointer
+        result = DL::CPtr.new(result)
+      end
+
+      result
     end
   end
 

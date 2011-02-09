@@ -8,20 +8,22 @@ module Fiddle
 
   if WINDOWS
     def self.win32_last_error
-      Thread.current[:__FIDDLE_WIN32_LAST_ERROR__]
+      errno = FFI.errno
+      errno = nil if errno == 0
     end
 
     def self.win32_last_error= error
-      Thread.current[:__FIDDLE_WIN32_LAST_ERROR__] = error
+      FFI.errno = error || 0
     end
   end
 
   def self.last_error
-    Thread.current[:__FIDDLE_LAST_ERROR__]
+    errno = FFI.errno
+    errno = nil if errno == 0
+    errno
   end
 
   def self.last_error= error
-    Thread.current[:__DL2_LAST_ERROR__] = error
-    Thread.current[:__FIDDLE_LAST_ERROR__] = error
+    FFI.errno = error || 0
   end
 end

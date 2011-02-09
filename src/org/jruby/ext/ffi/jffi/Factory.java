@@ -114,5 +114,12 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         public static final  IRubyObject error(ThreadContext context, IRubyObject recv) {
             return context.getRuntime().newFixnum(com.kenai.jffi.LastError.getInstance().get());
         }
+
+        @JRubyMethod(name = {  "error=" }, module = true)
+        public static final  IRubyObject error_set(ThreadContext context, IRubyObject recv, IRubyObject value) {
+            com.kenai.jffi.LastError.getInstance().set((int)value.convertToInteger().getLongValue());
+
+            return value;
+        }
     }
 }
