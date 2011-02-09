@@ -1,11 +1,11 @@
-require 'fiddle_jruby'
+require 'fiddle/jruby'
 require 'fiddle/function'
 require 'fiddle/closure'
 require 'dl' unless Object.const_defined?(:DL)
 
 module Fiddle
   #Pointer = DL::CPtr
-
+  
   if WINDOWS
     def self.win32_last_error
       errno = FFI.errno
