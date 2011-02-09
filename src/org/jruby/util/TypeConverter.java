@@ -255,6 +255,11 @@ public class TypeConverter {
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getFloat(), "to_f");
     }
 
+    // 1.9 rb_check_hash_type
+    public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj) {
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
+    }
+
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
         if (raise) {
             String type;
