@@ -1334,6 +1334,7 @@
     <patternset refid="dist.files"/>
     <exclude name="share/**"/>
     <include name="bench/**"/>
+    <include name="cext/**"/>
     <include name="src/**"/>
     <include name="test/**"/>
     <exclude name="test/testapp/testapp"/>
