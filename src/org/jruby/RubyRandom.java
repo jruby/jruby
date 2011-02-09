@@ -102,11 +102,11 @@ public class RubyRandom extends RubyObject {
             this.seed = vseed.convertToInteger();
             byte[] bytes = state.getBigIntegerValue().toByteArray();
             int[] ints = new int[bytes.length / 4];
-            int idx = 0;
+            int idx = bytes.length - 1;
             for (int i = 0; i < ints.length; ++i) {
                 int r = 0;
                 for (int j = 0; j < 4; ++j) {
-                    r |= (bytes[idx++] & 0xff) << (j * 8);
+                    r |= (bytes[idx--] & 0xff) << (j * 8);
                 }
                 ints[i] = r;
             }
@@ -155,10 +155,10 @@ public class RubyRandom extends RubyObject {
         RubyBignum getState() {
             int[] ints = mt.getState();
             byte[] bytes = new byte[ints.length * 4];
-            int idx = 0;
+            int idx = bytes.length - 1;
             for (int r : ints) {
                 for (int i = 0; i < 4; ++i) {
-                    bytes[idx++] = (byte) (r & 0xff);
+                    bytes[idx--] = (byte) (r & 0xff);
                     r >>>= 8;
                 }
             }
