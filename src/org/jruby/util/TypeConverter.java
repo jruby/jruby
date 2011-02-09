@@ -26,6 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.exceptions.RaiseException;
@@ -228,6 +229,11 @@ public class TypeConverter {
         if (val.isNil()) return val;
         if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
         return val;
+    }
+
+    // 1.9 rb_check_hash_type
+    public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj) {
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
     }
 
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
