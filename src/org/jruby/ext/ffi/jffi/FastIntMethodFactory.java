@@ -421,5 +421,11 @@ public class FastIntMethodFactory extends MethodFactory {
         public final int intValue(ThreadContext context, IRubyObject obj) {
             return nativeConverter.intValue(context, mappedType.toNative(context, obj));
         }
+
+        @Override
+        public boolean isConvertible(ThreadContext context, IRubyObject value) {
+            return nativeConverter.isConvertible(context, mappedType.toNative(context, value));
+        }
+
     }
 }

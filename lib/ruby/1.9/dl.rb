@@ -2,25 +2,143 @@ warn "DL: This is only a partial implementation, and it's likely broken" if $VER
 
 require 'ffi'
 
+class String
+  def dl_ptr
+    if !defined?(@dl_ptr) || @dl_ptr.ffi_ptr.read_string != self
+      @dl_ptr = DL::CPtr.new(FFI::MemoryPointer.from_string(self))
+    end
+  end
+end
+
 module DL
+  class CPtr
+    attr_reader :ffi_ptr
+    extend FFI::DataConverter
+    native_type FFI::Type::Builtin::POINTER
+
+    NULL = CPtr.new(FFI::Pointer::NULL, 0, 0)
+
+    def self.to_native(value, ctx)
+      if value.is_a?(CPtr)
+        value.ffi_ptr
+
+      elsif value.is_a?(Integer)
+        FFI::Pointer.new(value)
+
+      elsif value.is_a?(::String)
+        value
+      end
+    end
+
+    def self.from_native(value, ctx)
+      self.new(value)
+    end
+
+    def initialize(addr, size = nil, free = nil)
+      
+
+      if addr.is_a?(FFI::Pointer)
+        @ffi_ptr = addr
+
+      elsif addr.is_a?(Integer)
+        @ffi_ptr = FFI::Pointer.new(addr)
+      end
+      @size = size ? size : @ffi_ptr.size
+      @free = free
+    end
+
+    def self.malloc(size, free = nil)
+      self.new(FFI::MemoryPointer.new(size))
+    end
+
+    def null?
+      @ffi_ptr.null?
+    end
+
+    def to_ptr
+      @ffi_ptr
+    end
+
+    def size
+      defined?(@layout) ? @layout.size : @size
+    end
+
+    def size=(size)
+      @size = size
+    end
+
+    def [](index, length = nil)
+      if length
+        ffi_ptr.get_string(index, length)
+      else
+        ffi_ptr.get_int(index)
+      end
+    end
+
+    def to_i
+      ffi_ptr.to_i
+    end
+
+    def to_str(len = nil)
+      if len
+        ffi_ptr.get_string(0, len)
+      else
+        ffi_ptr.get_string(0)
+      end
+    end
+    alias to_s to_str
+
+    def inspect
+      "#<#{self.class.name} ptr=:#{ffi_ptr.address.to_s(16)} size=#{@size} free=#{free_func.address}>"
+    end
+
+    def +(delta)
+      self.class.new(ffi_ptr + delta, @size - delta)
+    end
+
+    def -(delta)
+      self.class.new(ffi_ptr - delta, @size + delta)
+    end
+
+    def ptr
+      CPtr.new(ffi_ptr.get_pointer(0))
+    end
+
+    def ref
+      ref = CPtr.new(FFI::MemoryPointer.new(FFI::Type::POINTER, 1))
+      ref.put_pointer(0, ffi_ptr)
+      ref
+    end
+  end
+
+  TYPE_VOID         = FFI::Type::Builtin::VOID
+  TYPE_VOIDP        = FFI::Type::Mapped.new(CPtr)
+  TYPE_CHAR         = FFI::Type::Builtin::CHAR
+  TYPE_SHORT        = FFI::Type::Builtin::SHORT
+  TYPE_INT          = FFI::Type::Builtin::INT
+  TYPE_LONG         = FFI::Type::Builtin::LONG
+  TYPE_LONG_LONG    = FFI::Type::Builtin::LONG_LONG
+  TYPE_FLOAT        = FFI::Type::Builtin::FLOAT
+  TYPE_DOUBLE       = FFI::Type::Builtin::DOUBLE
+
   TypeMap = {
-    '0' => :void,
-    'C' => :char,
-    'H' => :short,
-    'I' => :int,
-    'L' => :long,
-    'F' => :float,
-    'D' => :double,
-    'S' => :string,
-    's' => :pointer,
-    'p' => :pointer,
-    'P' => :pointer,
-    'c' => :pointer,
-    'h' => :pointer,
-    'i' => :pointer,
-    'l' => :pointer,
-    'f' => :pointer,
-    'd' => :pointer,
+    '0' => TYPE_VOID,
+    'C' => TYPE_CHAR,
+    'H' => TYPE_SHORT,
+    'I' => TYPE_INT,
+    'L' => TYPE_LONG,
+    'F' => TYPE_FLOAT,
+    'D' => TYPE_DOUBLE,
+    'S' => FFI::Type::Builtin::STRING,
+    's' => TYPE_VOIDP,
+    'p' => TYPE_VOIDP,
+    'P' => TYPE_VOIDP,
+    'c' => TYPE_VOIDP,
+    'h' => TYPE_VOIDP,
+    'i' => TYPE_VOIDP,
+    'l' => TYPE_VOIDP,
+    'f' => TYPE_VOIDP,
+    'd' => TYPE_VOIDP,
   }
   
   Char2TypeName = {
@@ -52,7 +170,7 @@ module DL
     'l' => FFI::Type::LONG,
     'f' => FFI::Type::FLOAT32,
     'd' => FFI::Type::FLOAT64,
-    'p' => FFI::Type::POINTER,
+    'p' => FFI::Type::Mapped.new(CPtr),
     's' => FFI::Type::STRING,
   }
 
@@ -71,7 +189,7 @@ module DL
   def self.find_type(type)
     ffi_type = TypeMap[type]
     raise DLTypeError.new("Unknown type '#{type}'") unless ffi_type
-    FFI.find_type(ffi_type)
+    ffi_type
   end
 
   def self.align(offset, align)
@@ -204,60 +322,20 @@ module DL
 
   end
 
-  class PtrData
-    def initialize(addr, size = nil, sym = nil)
-      @ptr = addr
-    end
-
-    def self.malloc(size, free = nil)
-      self.new(FFI::MemoryPointer.new(size))
-    end
-
-    def null?
-      @ptr.null?
-    end
-
-    def to_ptr
-      @ptr
-    end
-
-    def struct!(type, *members)
-      builder = FFI::StructLayoutBuilder.new
-      i = 0
-      members.each do |name|
-        t = type[i].chr
-        i += 1
-        if i < type.length && type[i] =~ /[0123456789]/
-          raise DLTypeError.new("array fields not supported in struct")
-        end
-        if t =~ /[CHILFDPS]/
-          builder.add_field(name, DL.find_type(t))
-        else
-          raise DLTypeError.new("Unsupported type '#{t}")
-        end
-      end
-      @layout = builder.build
-      self
-    end
-
-    def [](name)
-      @layout.get(@ptr, name)
-    end
-    
-    def []=(name, value)
-      @layout.put(@ptr, name, value)
-    end
-
-    def size
-      @layout ? @layout.size : @ptr.total
-    end
-  end
 
   def self.dlopen(libname)
     Handle.new(libname)
   end
 
+  module LibC
+    extend FFI::Library
+    ffi_lib FFI::Library::LIBC
+    attach_function :malloc, [ :size_t ], :pointer
+    attach_function :free, [ :pointer ], :void
+  end
+
   def self.malloc(size, free = nil)
-    PtrData.malloc(size, free)
+    ptr = LibC.malloc(size)
+    CPtr.new(ptr, size, free)
   end
 end

@@ -1,15 +1,16 @@
 require 'ffi'
+require 'dl'
 
 module Fiddle
-  TYPE_VOID         = FFI::Type::Builtin::VOID
-  TYPE_VOIDP        = FFI::Type::Builtin::POINTER
-  TYPE_CHAR         = FFI::Type::Builtin::CHAR
-  TYPE_SHORT        = FFI::Type::Builtin::SHORT
-  TYPE_INT          = FFI::Type::Builtin::INT
-  TYPE_LONG         = FFI::Type::Builtin::LONG
-  TYPE_LONG_LONG    = FFI::Type::Builtin::LONG_LONG
-  TYPE_FLOAT        = FFI::Type::Builtin::FLOAT
-  TYPE_DOUBLE       = FFI::Type::Builtin::DOUBLE
+  TYPE_VOID         = DL::TYPE_VOID
+  TYPE_VOIDP        = DL::TYPE_VOIDP
+  TYPE_CHAR         = DL::TYPE_CHAR
+  TYPE_SHORT        = DL::TYPE_SHORT
+  TYPE_INT          = DL::TYPE_INT
+  TYPE_LONG         = DL::TYPE_LONG
+  TYPE_LONG_LONG    = DL::TYPE_LONG_LONG
+  TYPE_FLOAT        = DL::TYPE_FLOAT
+  TYPE_DOUBLE       = DL::TYPE_DOUBLE
 
   WINDOWS = FFI::Platform.windows?
 
