@@ -805,11 +805,15 @@ public class IRBuilder {
     public Operand buildCall(CallNode callNode, IRScope s) {
         Node          callArgsNode = callNode.getArgsNode();
         Node          receiverNode = callNode.getReceiverNode();
+		  // Though you might be tempted to move this build into the CallInstr as:
+		  //    new Callinstr( ... , build(receiverNode, s), ...)
+		  // that is incorrect IR because the receiver has to be built *before* call arguments are built
+		  // to preserve expected code execution order
+		  Operand       receiver     = build(receiverNode, s);
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr      callInstr    = new CallInstr(callResult, new MethAddr(callNode.getName()),
-                build(receiverNode, s), args.toArray(new Operand[args.size()]), block);
+        Instr      callInstr    = new CallInstr(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
