@@ -1964,6 +1964,22 @@ public class ScriptingContainerTest {
         instance = new ScriptingContainer();
         instance.setCurrentDirectory(directory);
         assertEquals(directory, instance.getCurrentDirectory());
+        
+        instance = new ScriptingContainer(LocalContextScope.CONCURRENT);
+        instance.setError(pstream);
+        instance.setOutput(pstream);
+        instance.setWriter(writer);
+        instance.setErrorWriter(writer);
+        instance.setCurrentDirectory(directory);
+        assertEquals(directory, instance.getCurrentDirectory());
+        
+        instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance.setError(pstream);
+        instance.setOutput(pstream);
+        instance.setWriter(writer);
+        instance.setErrorWriter(writer);
+        instance.setCurrentDirectory(directory);
+        assertEquals(directory, instance.getCurrentDirectory());
     }
 
     /**

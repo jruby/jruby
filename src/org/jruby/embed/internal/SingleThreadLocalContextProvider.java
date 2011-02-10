@@ -68,6 +68,9 @@ public class SingleThreadLocalContextProvider extends AbstractLocalContextProvid
     }
 
     public boolean isRuntimeInitialized() {
+        if (localContext == null) {
+            localContext = getInstance();
+        }
         return localContext.initialized;
     }
 }
