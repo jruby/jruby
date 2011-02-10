@@ -2505,7 +2505,7 @@ public class IRBuilder {
     //    v1 = -- build(a) --
     //       OPT: ret can be set to v1, but effectively v1 is true if we take the branch to L.
     //            while this info can be inferred by using attributes, why bother if we can do this?
-    //    ret = true
+    //    ret = v1
     //    beq(v1, true, L)
     //    v2 = -- build(b) --
     //    ret = v2
@@ -2514,8 +2514,7 @@ public class IRBuilder {
     public Operand buildOr(final OrNode orNode, IRScope m) {
         if (orNode.getFirstNode().getNodeType().alwaysTrue()) {
             // build first node only and return true
-            build(orNode.getFirstNode(), m);
-            return BooleanLiteral.TRUE;
+            return build(orNode.getFirstNode(), m);
         } else if (orNode.getFirstNode().getNodeType().alwaysFalse()) {
             // build first node as non-expr and build second node
             build(orNode.getFirstNode(), m);
@@ -2524,7 +2523,7 @@ public class IRBuilder {
             Variable ret = m.getNewTemporaryVariable();
             Label    l   = m.getNewLabel();
             Operand  v1  = build(orNode.getFirstNode(), m);
-            m.addInstr(new CopyInstr(ret, BooleanLiteral.TRUE));
+            m.addInstr(new CopyInstr(ret, v1));
             m.addInstr(new BEQInstr(v1, BooleanLiteral.TRUE, l));
             Operand  v2  = build(orNode.getSecondNode(), m);
             m.addInstr(new CopyInstr(ret, v2));
