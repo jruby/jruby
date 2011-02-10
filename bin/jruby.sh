@@ -193,7 +193,7 @@ do
      if expr "$val" : '.*[.]' > /dev/null; then
        java_args="${java_args} -Djruby.${val}"
      else
-       ruby_args="${ruby_args} -X"
+       ruby_args="${ruby_args} -X${val}"
      fi
      ;;
      # Match switches that take an argument
