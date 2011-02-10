@@ -769,7 +769,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             RubyString pathStr = get_path(runtime.getCurrentContext(), pathOrFile);
             String path = pathStr.getUnicodeValue();
             String[] pathParts = splitURI(path);
-            if (pathParts != null && pathParts[0].startsWith("file:")) {
+            if (pathParts != null && pathParts[0].equals("file:")) {
                 path = pathParts[1];
             }
             return JRubyFile.create(runtime.getCurrentDirectory(), path);
@@ -1224,10 +1224,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newString(padSlashes + canonicalize(path.getAbsolutePath()));
     }
 
-    private static Pattern URI_PREFIX = Pattern.compile("^[a-z]{2,}:");
+    private static Pattern URI_PREFIX = Pattern.compile("^[a-z]{2,}:(.*)");
     public static String[] splitURI(String path) {
         Matcher m = URI_PREFIX.matcher(path);
         if (m.find()) {
+            if (m.group(1).isEmpty()) {
+                return new String[] {path, ""};
+            }
             try {
                 URI u = new URI(path);
                 String pathPart = u.getPath();
