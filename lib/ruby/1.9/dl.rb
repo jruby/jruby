@@ -11,6 +11,7 @@ class String
 end
 
 module DL
+  puts "Loading DL module"
   class CPtr
     attr_reader :ffi_ptr
     extend FFI::DataConverter
@@ -32,6 +33,23 @@ module DL
 
     def self.from_native(value, ctx)
       self.new(value)
+    end
+
+    def self.to_ptr(value)
+      if value.is_a?(String)
+        CPtr.new(FFI::MemoryPointer.from_string(value))
+
+      elsif value.respond_to?(:to_ptr)
+        ptr = value.to_ptr
+        ptr.is_a?(CPtr) ? ptr : CPtr.new(ptr)
+
+      else
+        CPtr.new(value)
+      end
+    end
+
+    class << self
+      alias [] to_ptr
     end
 
     def initialize(addr, size = nil, free = nil)
@@ -78,6 +96,7 @@ module DL
     def to_i
       ffi_ptr.to_i
     end
+    alias to_int to_i
 
     def to_str(len = nil)
       if len
@@ -105,11 +124,13 @@ module DL
     end
 
     def ref
-      ref = CPtr.new(FFI::MemoryPointer.new(FFI::Type::POINTER, 1))
-      ref.put_pointer(0, ffi_ptr)
-      ref
+      mp = FFI::MemoryPointer.new(FFI::Type::POINTER, 1)
+      mp.put_pointer(0, ffi_ptr)
+      CPtr.new(mp)
     end
   end
+
+  NULL = CPtr.new(FFI::Pointer::NULL, 0, 0)
 
   TYPE_VOID         = FFI::Type::Builtin::VOID
   TYPE_VOIDP        = FFI::Type::Mapped.new(CPtr)
@@ -120,6 +141,24 @@ module DL
   TYPE_LONG_LONG    = FFI::Type::Builtin::LONG_LONG
   TYPE_FLOAT        = FFI::Type::Builtin::FLOAT
   TYPE_DOUBLE       = FFI::Type::Builtin::DOUBLE
+
+  ALIGN_VOIDP       = FFI::Type::Builtin::POINTER.alignment
+  ALIGN_CHAR        = FFI::Type::Builtin::CHAR.alignment
+  ALIGN_SHORT       = FFI::Type::Builtin::SHORT.alignment
+  ALIGN_INT         = FFI::Type::Builtin::INT.alignment
+  ALIGN_LONG        = FFI::Type::Builtin::LONG.alignment
+  ALIGN_LONG_LONG   = FFI::Type::Builtin::LONG_LONG.alignment
+  ALIGN_FLOAT       = FFI::Type::Builtin::FLOAT.alignment
+  ALIGN_DOUBLE      = FFI::Type::Builtin::DOUBLE.alignment
+
+  SIZEOF_VOIDP       = FFI::Type::Builtin::POINTER.size
+  SIZEOF_CHAR        = FFI::Type::Builtin::CHAR.size
+  SIZEOF_SHORT       = FFI::Type::Builtin::SHORT.size
+  SIZEOF_INT         = FFI::Type::Builtin::INT.size
+  SIZEOF_LONG        = FFI::Type::Builtin::LONG.size
+  SIZEOF_LONG_LONG   = FFI::Type::Builtin::LONG_LONG.size
+  SIZEOF_FLOAT       = FFI::Type::Builtin::FLOAT.size
+  SIZEOF_DOUBLE      = FFI::Type::Builtin::DOUBLE.size
 
   TypeMap = {
     '0' => TYPE_VOID,
@@ -325,6 +364,10 @@ module DL
 
   def self.dlopen(libname)
     Handle.new(libname)
+  end
+
+  def dlopen(libname)
+    DL.dlopen libname
   end
 
   module LibC
