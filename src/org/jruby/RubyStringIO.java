@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.jcodings.Encoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -160,6 +161,7 @@ public class RubyStringIO extends RubyObject {
     }
 
     @JRubyMethod(visibility = PRIVATE)
+    @Override
     public IRubyObject initialize_copy(IRubyObject other) {
 
         RubyStringIO otherIO = (RubyStringIO) TypeConverter.convertToType(
@@ -356,6 +358,15 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().newFixnum(data.internal.getByteList().get((int)data.pos++) & 0xFF);
     }
 
+    @JRubyMethod(name = "getc", compat = CompatVersion.RUBY1_9)
+    public IRubyObject getc19(ThreadContext context) {
+        checkReadable();
+        if (data.pos >= data.internal.getByteList().length()) {
+            return context.getRuntime().getNil();
+        }
+        return context.getRuntime().newString("" + (char)(data.internal.getByteList().get((int)data.pos++) & 0xFF));
+    }
+
     private IRubyObject internalGets(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
 
@@ -461,6 +472,11 @@ public class RubyStringIO extends RubyObject {
         return getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "path", compat = CompatVersion.RUBY1_9)
+    public IRubyObject path19(ThreadContext context) {
+        throw context.getRuntime().newNoMethodError("", "path", null);
+    }
+
     @JRubyMethod(name = "pid")
     public IRubyObject pid() {
         return getRuntime().getNil();
@@ -495,10 +511,26 @@ public class RubyStringIO extends RubyObject {
             append(context, arg.isNil() ? runtime.newString("nil") : arg);
         }
         IRubyObject sep = runtime.getGlobalVariables().get("$\\");
-        if (!sep.isNil()) {
-            append(context, sep);
+        if (!sep.isNil()) append(context, sep);
+
+        return runtime.getNil();
+    }
+
+    @JRubyMethod(name = "print", rest = true, compat = CompatVersion.RUBY1_9)
+    public IRubyObject print19(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        if (args.length != 0) {
+            for (int i=0,j=args.length;i<j;i++) {
+                append(context, args[i]);
+            }
+        } else {
+            IRubyObject arg = runtime.getGlobalVariables().get("$_");
+            append(context, arg.isNil() ? RubyString.newEmptyString(getRuntime()) : arg);
         }
-        return getRuntime().getNil();
+        IRubyObject sep = runtime.getGlobalVariables().get("$\\");
+        if (!sep.isNil()) append(context, sep);
+
+        return runtime.getNil();
     }
 
     @JRubyMethod(name = "printf", required = 1, rest = true)
@@ -687,6 +719,22 @@ public class RubyStringIO extends RubyObject {
         return originalString != null ? originalString : getRuntime().newString(buf);
     }
 
+    /**
+     * readpartial(length, [buffer])
+     *  
+     * @param context
+     * @param args
+     * @return
+     */
+    @JRubyMethod(name ="readpartial", compat = CompatVersion.RUBY1_9, required = 1, optional = 1)
+    public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
+        IRubyObject result = this.read(args);
+
+        if (data.eof && result.isNil()) throw context.getRuntime().newEOFError();
+
+        return result;
+    }
+
     @JRubyMethod(name = {"readchar", "readbyte"})
     public IRubyObject readchar() {
         IRubyObject c = getc();
@@ -845,6 +893,22 @@ public class RubyStringIO extends RubyObject {
         }
 
         bytes.set((int) data.pos, c);
+        return getRuntime().getNil();
+    }
+
+    @JRubyMethod(name = "ungetc", compat = CompatVersion.RUBY1_9)
+    public IRubyObject ungetc19(ThreadContext context, IRubyObject arg) {
+        checkReadable();
+
+        if (!arg.isNil()) {
+            if (arg instanceof RubyFixnum) {
+                int codepoint = RubyNumeric.fix2int(arg);
+                Encoding encoding = data.internal.getEncoding();
+            } else {
+                RubyString s = arg.convertToString();
+            }
+        }
+
         return getRuntime().getNil();
     }
 
