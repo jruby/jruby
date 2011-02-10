@@ -2,7 +2,10 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // A break instruction is not just any old instruction.
 // Like a return instruction, it exits a scope and returns a value
@@ -28,5 +31,11 @@ public class BREAK_Instr extends OneOperandInstr
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new BREAK_Instr(argument.cloneForInlining(ii));
+    }
+
+    @Override
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
+        interp.setReturnValue(getArg().retrieve(interp));
+        return interp.getMethodExitLabel();
     }
 }

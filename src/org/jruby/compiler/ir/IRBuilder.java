@@ -790,7 +790,9 @@ public class IRBuilder {
 
     public Operand buildBreak(BreakNode breakNode, IRExecutionScope s) {
         Operand rv = build(breakNode.getValueNode(), s);
-        if (s instanceof IRClosure) {
+		  // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
+		  // Since we know this right now, should we build an exception instruction here?
+        if ((s instanceof IRClosure) || s.getCurrentLoop() == null) {
             s.addInstr(new BREAK_Instr(rv));
             return rv;
         }

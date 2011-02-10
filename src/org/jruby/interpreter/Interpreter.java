@@ -18,6 +18,7 @@ import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
+import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
@@ -157,6 +158,8 @@ public class Interpreter {
             IRubyObject rv = (IRubyObject) interp.getReturnValue();
             if (inClosure && (lastInstr instanceof ReturnInstr))
                 throw context.returnJump(rv);
+            else if (!inClosure && (lastInstr instanceof BREAK_Instr))
+                throw context.getRuntime().newLocalJumpError(org.jruby.RubyLocalJumpError.Reason.BREAK, rv, "unexpected break");
 
             return rv;
         } catch (org.jruby.exceptions.JumpException.ReturnJump rj) {
