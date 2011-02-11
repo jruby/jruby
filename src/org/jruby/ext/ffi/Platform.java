@@ -39,8 +39,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class Platform {
-    public static final CPU CPU = determineCPU();
-    public static final OS OS = determineOS();
+    public static final CPU_TYPE CPU = determineCPU();
+    public static final OS_TYPE OS = determineOS();
 
     public static final String NAME = CPU + "-" + OS;
     public static final String LIBPREFIX = OS == OS.WINDOWS ? "" : "lib";
@@ -57,7 +57,7 @@ public class Platform {
     protected final Pattern libPattern;
     private final int javaVersionMajor;
 
-    public enum OS {
+    public enum OS_TYPE {
         DARWIN,
         FREEBSD,
         NETBSD,
@@ -72,7 +72,7 @@ public class Platform {
         public String toString() { return name().toLowerCase(); }
     }
 
-    public enum CPU {
+    public enum CPU_TYPE {
         I386,
         X86_64,
         POWERPC,
@@ -89,14 +89,14 @@ public class Platform {
         private static final Platform PLATFORM = determinePlatform(determineOS());
     }
 
-    private static final OS determineOS() {
+    private static final OS_TYPE determineOS() {
         String osName = System.getProperty("os.name").split(" ")[0].toLowerCase();
         if (osName.startsWith("mac") || osName.startsWith("darwin")) {
             return OS.DARWIN;
         } else if (osName.startsWith("sunos") || osName.startsWith("solaris")) {
             return OS.SOLARIS;
         }
-        for (OS os : OS.values()) {
+        for (OS_TYPE os : OS.values()) {
             if (osName.startsWith(os.toString().toLowerCase())) {
                 return os;
             }
@@ -104,7 +104,7 @@ public class Platform {
         return OS.UNKNOWN;
     }
 
-    private static final Platform determinePlatform(OS os) {
+    private static final Platform determinePlatform(OS_TYPE os) {
         switch (os) {
             case DARWIN:
                 return new Darwin();
@@ -121,7 +121,7 @@ public class Platform {
         }
     }
 
-    private static final CPU determineCPU() {
+    private static final CPU_TYPE determineCPU() {
         String archString = System.getProperty("os.arch").toLowerCase();
         if ("x86".equals(archString) || "i386".equals(archString) || "i86pc".equals(archString)) {
             return CPU.I386;
@@ -172,7 +172,7 @@ public class Platform {
         }
     }
 
-    protected Platform(OS os) {
+    protected Platform(OS_TYPE os) {
         int dataModel = Integer.getInteger("sun.arch.data.model");
         if (dataModel != 32 && dataModel != 64) {
             switch (CPU) {
@@ -237,7 +237,7 @@ public class Platform {
      *
      * @return A <tt>OS</tt> value representing the current Operating System.
      */
-    public final OS getOS() {
+    public final OS_TYPE getOS() {
         return OS;
     }
 
@@ -246,7 +246,7 @@ public class Platform {
      *
      * @return A <tt>CPU</tt> value representing the current processor architecture.
      */
-    public final CPU getCPU() {
+    public final CPU_TYPE getCPU() {
         return CPU;
     }
 
@@ -273,7 +273,7 @@ public class Platform {
     public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
         RubyModule module = ffi.defineModuleUnder("Platform");
         Platform platform = Platform.getPlatform();
-        OS os = platform.getOS();
+        OS_TYPE os = platform.getOS();
         module.defineConstant("ADDRESS_SIZE", runtime.newFixnum(platform.addressSize));
         module.defineConstant("LONG_SIZE", runtime.newFixnum(platform.longSize));
         module.defineConstant("OS", runtime.newString(OS.toString()));
@@ -380,18 +380,18 @@ public class Platform {
         return System.mapLibraryName(libName);
     }
     private static class Supported extends Platform {
-        public Supported(OS os) {
+        public Supported(OS_TYPE os) {
             super(os);
         }
     }
     private static class Unsupported extends Platform {
-        public Unsupported(OS os) {
+        public Unsupported(OS_TYPE os) {
             super(os);
         }
     }
     private static final class Default extends Platform {
 
-        public Default(OS os) {
+        public Default(OS_TYPE os) {
             super(os);
         }
 
