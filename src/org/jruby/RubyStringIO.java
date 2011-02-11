@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.jcodings.Encoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -744,6 +743,15 @@ public class RubyStringIO extends RubyObject {
         return c;
     }
 
+    @JRubyMethod(name = "readchar", compat = CompatVersion.RUBY1_9)
+    public IRubyObject readchar19(ThreadContext context) {
+        IRubyObject c = getc19(context);
+
+        if (c.isNil()) throw getRuntime().newEOFError();
+
+        return c;
+    }
+
     @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         IRubyObject line = gets(context, args);
@@ -883,6 +891,30 @@ public class RubyStringIO extends RubyObject {
 
         int c = RubyNumeric.num2int(arg);
         if (data.pos == 0) return getRuntime().getNil();
+        ungetcCommon(c);
+        return getRuntime().getNil();
+    }
+
+    @JRubyMethod(name = "ungetc", compat = CompatVersion.RUBY1_9)
+    public IRubyObject ungetc19(ThreadContext context, IRubyObject arg) {
+        checkReadable();
+
+        if (!arg.isNil()) {
+            int c;
+            if (arg instanceof RubyFixnum) {
+                c = RubyNumeric.fix2int(arg);
+            } else {
+                RubyString str = arg.convertToString();
+                c = str.getEncoding().mbcToCode(str.getBytes(), 0, 1);
+            }
+
+            ungetcCommon(c);
+        }
+
+        return getRuntime().getNil();
+    }
+
+    private void ungetcCommon(int c) {
         data.internal.modify();
         data.pos--;
 
@@ -893,23 +925,6 @@ public class RubyStringIO extends RubyObject {
         }
 
         bytes.set((int) data.pos, c);
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod(name = "ungetc", compat = CompatVersion.RUBY1_9)
-    public IRubyObject ungetc19(ThreadContext context, IRubyObject arg) {
-        checkReadable();
-
-        if (!arg.isNil()) {
-            if (arg instanceof RubyFixnum) {
-                int codepoint = RubyNumeric.fix2int(arg);
-                Encoding encoding = data.internal.getEncoding();
-            } else {
-                RubyString s = arg.convertToString();
-            }
-        }
-
-        return getRuntime().getNil();
     }
 
     @JRubyMethod(name = {"write", "syswrite"}, required = 1)
