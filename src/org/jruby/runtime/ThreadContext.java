@@ -1051,7 +1051,7 @@ public final class ThreadContext {
                 }
 
                 // last attempt at AOT compiled backtrace element, looking for __file__
-                if (methodName.equals("__file__")) {
+                if (methodName.equals("__file__") && !element.getFileName().endsWith("AbstractScript.java")) {
                     methodName = "(root)";
                     trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
                     continue;
