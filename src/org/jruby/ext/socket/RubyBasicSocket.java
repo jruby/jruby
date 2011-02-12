@@ -633,7 +633,7 @@ public class RubyBasicSocket extends RubyIO {
         if(null == sock) {
             return RubySocket.pack_sockaddr_in(context, null, 0, "0.0.0.0");
         } else {
-            return RubySocket.pack_sockaddr_in(context, null, sock.getPort(), sock.getAddress().getHostAddress());
+            return RubySocket.pack_sockaddr_in(context, sock);
         }
     }
 

@@ -68,6 +68,14 @@ public class RubyIPSocket extends RubyBasicSocket {
         return new RaiseException(runtime, runtime.fastGetClass("SocketError"), msg, true);
     }
 
+    public IRubyObject packSockaddrFromAddress(InetSocketAddress sock, ThreadContext context) {
+        if (sock == null) {
+            return RubySocket.pack_sockaddr_in(context, this, 0, "");
+        } else {
+            return RubySocket.pack_sockaddr_in(context, sock);
+        }
+    }
+
     private IRubyObject addrFor(ThreadContext context, InetSocketAddress addr) {
         Ruby r = context.getRuntime();
         IRubyObject[] ret = new IRubyObject[4];
@@ -109,26 +117,12 @@ public class RubyIPSocket extends RubyBasicSocket {
     @Override
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
         InetSocketAddress sock = getLocalSocket(caller);
-        if (sock == null) {
-            return RubySocket.pack_sockaddr_in(context, this, 0, "");
-        } else {
-            String addr = sock.getAddress().getHostAddress();
-            return RubySocket.pack_sockaddr_in(context, this,
-                               sock.getPort(),
-                               addr);
-        }
+        return packSockaddrFromAddress(sock, context);
     }
     @Override
     public IRubyObject getpeername(ThreadContext context) {
         InetSocketAddress sock = getRemoteSocket();
-        if (sock == null) {
-            return RubySocket.pack_sockaddr_in(context, this, 0, "");
-	} else {
-	    String addr = sock.getAddress().getHostAddress();
-	    return RubySocket.pack_sockaddr_in(context, this,
-					       sock.getPort(),
-					       addr);
-	}
+        return packSockaddrFromAddress(sock, context);
     }
     @Deprecated
     public static IRubyObject getaddress(IRubyObject recv, IRubyObject hostname) {
