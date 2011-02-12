@@ -432,8 +432,24 @@ module DL
       @calltype = calltype
     end
 
-    def call(*args)
-      raise DLError.new "call not implemented"
+    def call(args)
+      raise NotImplementedError.new("#{self.class}#call is dangerous and should not be used")
+
+      # This is a half-hearted attempt to get a fubar API to work
+      dl_arg_types = args.map { |arg|
+        if arg.is_a?(Integer)
+          TYPE_LONG
+          
+        elsif arg.is_a?(DL::CPtr) || arg.is_a?(String)
+          TYPE_VOIDP
+
+        else
+          raise TypeError.new "unsupported type: #{arg.class}"
+        end
+      }
+      FFI::Function.new(@ffi_rtype,
+        dl_arg_types.map { |t| DL.__ffi_type__(t) },
+        @ptr.ffi_ptr, @calltype == :stdcall ? :stdcall : :default).call(*args)
     end
     alias [] call
 
