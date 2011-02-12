@@ -2,16 +2,11 @@ warn "DL: This is only a partial implementation, and it's likely broken" if $VER
 
 require 'ffi'
 
-class String
-  def dl_ptr
-    if !defined?(@dl_ptr) || @dl_ptr.ffi_ptr.read_string != self
-      @dl_ptr = DL::CPtr.new(FFI::MemoryPointer.from_string(self))
-    end
-  end
-end
-
 module DL
-  puts "Loading DL module"
+  def self.fiddle?
+    true
+  end
+
   class CPtr
     attr_reader :ffi_ptr
     extend FFI::DataConverter
@@ -108,7 +103,7 @@ module DL
     alias to_s to_str
 
     def inspect
-      "#<#{self.class.name} ptr=:#{ffi_ptr.address.to_s(16)} size=#{@size} free=#{free_func.address}>"
+      "#<#{self.class.name} ptr=:#{ffi_ptr.address.to_s(16)} size=#{@size} free=#{@free.to_i.to_s(16)}>"
     end
 
     def +(delta)
@@ -132,33 +127,61 @@ module DL
 
   NULL = CPtr.new(FFI::Pointer::NULL, 0, 0)
 
-  TYPE_VOID         = FFI::Type::Builtin::VOID
-  TYPE_VOIDP        = FFI::Type::Mapped.new(CPtr)
-  TYPE_CHAR         = FFI::Type::Builtin::CHAR
-  TYPE_SHORT        = FFI::Type::Builtin::SHORT
-  TYPE_INT          = FFI::Type::Builtin::INT
-  TYPE_LONG         = FFI::Type::Builtin::LONG
-  TYPE_LONG_LONG    = FFI::Type::Builtin::LONG_LONG
-  TYPE_FLOAT        = FFI::Type::Builtin::FLOAT
-  TYPE_DOUBLE       = FFI::Type::Builtin::DOUBLE
+  TYPE_VOID         = 0
+  TYPE_VOIDP        = 1
+  TYPE_CHAR         = 2
+  TYPE_SHORT        = 3
+  TYPE_INT          = 4
+  TYPE_LONG         = 5
+  TYPE_LONG_LONG    = 6
+  TYPE_FLOAT        = 7
+  TYPE_DOUBLE       = 8
 
-  ALIGN_VOIDP       = FFI::Type::Builtin::POINTER.alignment
-  ALIGN_CHAR        = FFI::Type::Builtin::CHAR.alignment
-  ALIGN_SHORT       = FFI::Type::Builtin::SHORT.alignment
-  ALIGN_INT         = FFI::Type::Builtin::INT.alignment
-  ALIGN_LONG        = FFI::Type::Builtin::LONG.alignment
-  ALIGN_LONG_LONG   = FFI::Type::Builtin::LONG_LONG.alignment
-  ALIGN_FLOAT       = FFI::Type::Builtin::FLOAT.alignment
-  ALIGN_DOUBLE      = FFI::Type::Builtin::DOUBLE.alignment
+  FFITypes = {
+    'c' => FFI::Type::INT8,
+    'h' => FFI::Type::INT16,
+    'i' => FFI::Type::INT32,
+    'l' => FFI::Type::LONG,
+    'f' => FFI::Type::FLOAT32,
+    'd' => FFI::Type::FLOAT64,
+    'p' => FFI::Type::Mapped.new(CPtr),
+    's' => FFI::Type::STRING,
 
-  SIZEOF_VOIDP       = FFI::Type::Builtin::POINTER.size
-  SIZEOF_CHAR        = FFI::Type::Builtin::CHAR.size
-  SIZEOF_SHORT       = FFI::Type::Builtin::SHORT.size
-  SIZEOF_INT         = FFI::Type::Builtin::INT.size
-  SIZEOF_LONG        = FFI::Type::Builtin::LONG.size
-  SIZEOF_LONG_LONG   = FFI::Type::Builtin::LONG_LONG.size
-  SIZEOF_FLOAT       = FFI::Type::Builtin::FLOAT.size
-  SIZEOF_DOUBLE      = FFI::Type::Builtin::DOUBLE.size
+    TYPE_VOID => FFI::Type::Builtin::VOID,
+    TYPE_VOIDP => FFI::Type::Mapped.new(CPtr),
+    TYPE_CHAR => FFI::Type::Builtin::CHAR,
+    TYPE_SHORT => FFI::Type::Builtin::SHORT,
+    TYPE_INT => FFI::Type::Builtin::INT,
+    TYPE_LONG => FFI::Type::Builtin::LONG,
+    TYPE_LONG_LONG => FFI::Type::Builtin::LONG_LONG,
+    TYPE_FLOAT => FFI::Type::Builtin::FLOAT,
+    TYPE_DOUBLE => FFI::Type::Builtin::DOUBLE,
+  }
+
+  def self.__ffi_type__(dl_type)
+    ffi_type = FFITypes[dl_type]
+    ffi_type = FFITypes[-dl_type] if ffi_type.nil? && dl_type.is_a?(Integer) && dl_type < 0
+    raise TypeError.new("cannot convert #{dl_type} to ffi") unless ffi_type
+    ffi_type
+  end
+
+  ALIGN_VOIDP       = FFITypes[TYPE_VOIDP].alignment
+  ALIGN_CHAR        = FFITypes[TYPE_CHAR].alignment
+  ALIGN_SHORT       = FFITypes[TYPE_SHORT].alignment
+  ALIGN_INT         = FFITypes[TYPE_INT].alignment
+  ALIGN_LONG        = FFITypes[TYPE_LONG].alignment
+  ALIGN_LONG_LONG   = FFITypes[TYPE_LONG_LONG].alignment
+  ALIGN_FLOAT       = FFITypes[TYPE_FLOAT].alignment
+  ALIGN_DOUBLE      = FFITypes[TYPE_DOUBLE].alignment
+
+  SIZEOF_VOIDP       = FFITypes[TYPE_VOIDP].size
+  SIZEOF_CHAR        = FFITypes[TYPE_CHAR].size
+  SIZEOF_SHORT       = FFITypes[TYPE_SHORT].size
+  SIZEOF_INT         = FFITypes[TYPE_INT].size
+  SIZEOF_LONG        = FFITypes[TYPE_LONG].size
+  SIZEOF_LONG_LONG   = FFITypes[TYPE_LONG_LONG].size
+  SIZEOF_FLOAT       = FFITypes[TYPE_FLOAT].size
+  SIZEOF_DOUBLE      = FFITypes[TYPE_DOUBLE].size
 
   TypeMap = {
     '0' => TYPE_VOID,
@@ -168,7 +191,7 @@ module DL
     'L' => TYPE_LONG,
     'F' => TYPE_FLOAT,
     'D' => TYPE_DOUBLE,
-    'S' => FFI::Type::Builtin::STRING,
+    'S' => TYPE_VOIDP,
     's' => TYPE_VOIDP,
     'p' => TYPE_VOIDP,
     'P' => TYPE_VOIDP,
@@ -202,16 +225,7 @@ module DL
     'a' => '[]',
   }
 
-  FFITypes = {
-    'c' => FFI::Type::INT8,
-    'h' => FFI::Type::INT16,
-    'i' => FFI::Type::INT32,
-    'l' => FFI::Type::LONG,
-    'f' => FFI::Type::FLOAT32,
-    'd' => FFI::Type::FLOAT64,
-    'p' => FFI::Type::Mapped.new(CPtr),
-    's' => FFI::Type::STRING,
-  }
+  
 
   RTLD_LAZY = FFI::DynamicLibrary::RTLD_LAZY
   RTLD_GLOBAL = FFI::DynamicLibrary::RTLD_GLOBAL
@@ -226,7 +240,7 @@ module DL
   end
 
   def self.find_type(type)
-    ffi_type = TypeMap[type]
+    ffi_type = __ffi_type__(TypeMap[type])
     raise DLTypeError.new("Unknown type '#{type}'") unless ffi_type
     ffi_type
   end
@@ -262,8 +276,7 @@ module DL
   end
 
   class Handle
-
-    def initialize(libname, flags = RTLD_LAZY | RTLD_GLOBAL)
+    def initialize(libname = nil, flags = RTLD_LAZY | RTLD_GLOBAL)
       @lib = FFI::DynamicLibrary.open(libname, flags)
       raise RuntimeError, "Could not open #{libname}" unless @lib
 
@@ -277,27 +290,48 @@ module DL
     end
 
     def close
-      raise "Closing #{self} not allowed" unless @enable_close
+      raise DLError.new("closed handle") unless @open
       @open = false
+      0
     end
 
-    def sym(func, prototype = "0")
-      raise "Closed handle" unless @open
+    def self.sym(func)
+      DEFAULT.sym(func)
+    end
+
+    def sym(func)
+      raise TypeError.new("invalid function name") unless func.is_a?(String)
+      raise DLError.new("closed handle") unless @open
       address = @lib.find_function(func)
-      Symbol.new(address, prototype, func) if address && !address.null?
+      raise DLError.new("unknown symbol #{func}") if address.nil? || address.null?
+      address.to_i
     end
 
-    def [](func, ty = nil)
-      sym(func, ty || "0")
+    def self.[](func)
+      self.sym(func)
+    end
+
+    def [](func)
+      sym(func)
     end
 
     def enable_close
       @enable_close = true
     end
 
+    def close_enabled?
+      @enable_close
+    end
+
     def disable_close
       @enable_close = false
     end
+
+    def to_i
+      0
+    end
+
+    DEFAULT = Handle.new
   end
 
   def self.find_return_type(type)
@@ -373,12 +407,81 @@ module DL
   module LibC
     extend FFI::Library
     ffi_lib FFI::Library::LIBC
-    attach_function :malloc, [ :size_t ], :pointer
-    attach_function :free, [ :pointer ], :void
+    attach_function :malloc, [ :size_t ], :uintptr_t
+    attach_function :realloc, [ :uintptr_t, :size_t ], :uintptr_t
+    attach_function :free, [ :uintptr_t ], :void
   end
 
-  def self.malloc(size, free = nil)
-    ptr = LibC.malloc(size)
-    CPtr.new(ptr, size, free)
+  def self.malloc(size)
+    LibC.malloc(size)
+  end
+
+  def self.realloc(ptr, size)
+    LibC.realloc(ptr, size)
+  end
+
+  class CFunc
+    attr_reader :ctype, :name
+    attr_accessor :calltype
+
+    def initialize(addr, type = TYPE_VOID, name = nil, calltype = :cdecl)
+      @ptr = CFunc.__cptr__(addr)
+      @name = name ? name.dup.taint : nil
+      @ffi_rtype = DL.__ffi_type__(type)
+      @ctype = type
+      @calltype = calltype
+    end
+
+    def call(*args)
+      raise DLError.new "call not implemented"
+    end
+    alias [] call
+
+    def self.__cptr__(ptr)
+      if ptr.is_a?(CPtr)
+        ptr
+      elsif ptr.is_a?(Integer)
+        CPtr.new(ptr)
+      else
+        raise TypeError.new "invalid ptr #{@ptr}"
+      end
+    end
+
+    def self.last_error
+      error = FFI.errno
+      error == 0 ? nil : error
+    end
+
+    def self.last_error=(error)
+      FFI.errno = error
+    end
+
+    def ctype=(type)
+      @ffi_rtype = DL.__ffi_type__(type)
+      @ctype = type
+    end
+
+    def calltype=(calltype)
+      @calltype = calltype
+    end
+
+    def ptr
+      @ptr.to_i
+    end
+
+    def ptr=(ptr)
+      @ptr = CFunc.__cptr__(ptr)
+    end
+
+    def to_i
+      @ptr.to_i
+    end
+
+    def inspect
+      "#<DL::CFunc:0 ptr=0x#{@ptr.to_i.to_s(16)} type=#{@ctype} name='#{@name}'>"
+    end
+    alias to_s inspect
   end
 end
+
+require 'fiddle/jruby'

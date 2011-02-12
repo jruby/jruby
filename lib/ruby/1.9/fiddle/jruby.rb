@@ -20,11 +20,13 @@ module Fiddle
 
     def initialize(ptr, args, return_type, abi = DEFAULT)
       @ptr, @args, @return_type, @abi = ptr, args, return_type, abi
-
+      raise TypeError.new "invalid return type" unless return_type.is_a?(Integer)
+      raise TypeError.new "invalid return type" unless args.is_a?(Array)
+      
       @function = FFI::Function.new(
-        @return_type,
-        @args,
-        FFI::Pointer.new(@ptr.to_i),
+        DL.__ffi_type__(@return_type),
+        @args.map { |t| DL.__ffi_type__(t) },
+        ptr.is_a?(DL::CPtr) ? ptr.ffi_ptr : FFI::Pointer.new(ptr.to_i),
         :convention => @abi
       )
       @function.attach(self, "call")
@@ -37,10 +39,12 @@ module Fiddle
   class Closure
     def initialize(ret, args, abi = Function::DEFAULT)
       @ctype, @args = ret, args
+      raise TypeError.new "invalid return type" unless ret.is_a?(Integer)
+      raise TypeError.new "invalid return type" unless args.is_a?(Array)
 
       @function = FFI::Function.new(
-        @ctype,
-        @args,
+        DL.__ffi_type__(@ctype),
+        @args.map { |t| DL.__ffi_type__(t) },
         self,
         :convention => abi
       )
