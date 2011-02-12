@@ -215,6 +215,10 @@ public class SystemPropertyCatcher {
         if (resource.getProtocol().equals("jar")) {
             try { // http://weblogs.java.net/blog/2007/04/25/how-convert-javaneturl-javaiofile
                 location = resource.toURI().getSchemeSpecificPart();
+                if (!location.startsWith("file:")) {
+                    // for remote-sourced classpath resources, just use classpath:
+                    location = "classpath:/META-INF/jruby.home";
+                }
             } catch (URISyntaxException urise) {
                 location = resource.getPath();
             }
