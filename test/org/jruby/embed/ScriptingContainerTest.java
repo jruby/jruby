@@ -2706,4 +2706,18 @@ public class ScriptingContainerTest {
         org.jruby.embed.util.SystemPropertyCatcher.setClassLoader(instance);
         assertEquals(Thread.currentThread().getContextClassLoader(), instance.getClassLoader());
     }
+    
+    /**
+     * Test of setClassLoader method, of SystemPropertyCatcher.
+     * This method is only used in JSR223 but tested here. Since, JSR223
+     * is not easy to test internal state.
+     */
+    @Test
+    public void testScopeInCallMethod() {
+        logger1.info("Scope in callMethod should not be null");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        Object someInstance = instance.runScriptlet("Object.new");
+        Object result = instance.callMethod(someInstance, "instance_eval", "self", "<eval>", 1);
+        assertNotNull(result);
+    }
 }

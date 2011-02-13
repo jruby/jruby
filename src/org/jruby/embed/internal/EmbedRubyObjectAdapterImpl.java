@@ -53,6 +53,7 @@ import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -385,7 +386,9 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         }
         try {
             if (sharing_variables) {
-                ManyVarsDynamicScope scope = unit != null ? unit.getScope() : null;
+                ManyVarsDynamicScope scope;
+                if (unit != null && unit.getScope() != null) scope = unit.getScope();
+                else scope = EmbedRubyRuntimeAdapterImpl.getManyVarsDynamicScope(container, 0);
                 container.getVarMap().inject(scope, 0, rubyReceiver);
                 runtime.getCurrentContext().pushScope(scope);
             }
