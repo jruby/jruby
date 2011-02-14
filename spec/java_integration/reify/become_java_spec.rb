@@ -55,9 +55,14 @@ describe "JRuby class reification" do
   it "supports fully reifying a deep class hierarchy" do
     class BottomOfTheStack ; end
     class MiddleOfTheStack < BottomOfTheStack ; end
-    class TopOfTheStack < MiddleOfTheStack ; end
+    class TopLeftOfTheStack < MiddleOfTheStack ; end
+    class TopRightOfTheStack < MiddleOfTheStack ; end
  
-    java_class = TopOfTheStack.become_java!
+    java_class = TopLeftOfTheStack.become_java!
+    java_class.should_not be_nil
+    
+    java_class = TopRightOfTheStack.become_java!
+    java_class.should_not be_nil
   end
 
   it "supports reification of annotations and signatures on static methods without parameters" do

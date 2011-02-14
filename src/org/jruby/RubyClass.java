@@ -60,6 +60,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.codegen.RealClassGenerator;
+import org.jruby.java.codegen.Reified;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -1133,15 +1134,33 @@ public class RubyClass extends RubyModule {
 
     /**
      * Whether this class can be reified into a Java class. Currently only objects
-     * that descend from Object (or Ruby-based classes that descend from Object)
-     * can be reified.
+     * that descend from Object (or descend from Ruby-based classes that descend
+     * from Object) can be reified.
      *
      * @return true if the class can be reified, false otherwise
      */
     public boolean isReifiable() {
-        // this needs to be a better check, to avoid attempting to reify subclasses of Hash, etc.
-        return superClass.getRealClass() != null &&
-                (superClass.getRealClass().getReifiedClass() == null || superClass.getRealClass() == runtime.getObject());
+        RubyClass realSuper = null;
+
+        // already reified is not reifiable
+        if (reifiedClass != null) return false;
+
+        // root classes are not reifiable
+        if (superClass == null || (realSuper = superClass.getRealClass()) == null) return false;
+
+        Class reifiedSuper = realSuper.reifiedClass;
+        
+        // if super has been reified or is a native class
+        if (reifiedSuper != null) {
+            
+            // super must be Object, BasicObject, or a reified user class
+            return reifiedSuper == RubyObject.class ||
+                    reifiedSuper == RubyBasicObject.class ||
+                    Reified.class.isAssignableFrom(reifiedSuper);
+        } else {
+            // non-native, non-reified super; recurse
+            return realSuper.isReifiable();
+        }
     }
 
     /**
@@ -1151,7 +1170,9 @@ public class RubyClass extends RubyModule {
      */
     public void reifyWithAncestors() {
         if (isReifiable()) {
-            getSuperClass().getRealClass().reifyWithAncestors();
+            RubyClass realSuper = getSuperClass().getRealClass();
+
+            if (realSuper.reifiedClass == null) realSuper.reifyWithAncestors();
             reify();
         }
     }
@@ -1168,7 +1189,9 @@ public class RubyClass extends RubyModule {
      */
     public void reifyWithAncestors(String classDumpDir) {
         if (isReifiable()) {
-            getSuperClass().getRealClass().reifyWithAncestors(classDumpDir);
+            RubyClass realSuper = getSuperClass().getRealClass();
+
+            if (realSuper.reifiedClass == null) realSuper.reifyWithAncestors(classDumpDir);
             reify(classDumpDir);
         }
     }
@@ -1213,9 +1236,14 @@ public class RubyClass extends RubyModule {
         }
 
         Class[] interfaces = Java.getInterfacesFromRubyClass(this);
-        String[] interfaceNames = new String[interfaces.length];
+        String[] interfaceNames = new String[interfaces.length + 1];
+        
+        // mark this as a Reified class
+        interfaceNames[0] = p(Reified.class);
+
+        // add the other user-specified interfaces
         for (int i = 0; i < interfaces.length; i++) {
-            interfaceNames[i] = p(interfaces[i]);
+            interfaceNames[i + 1] = p(interfaces[i]);
         }
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
