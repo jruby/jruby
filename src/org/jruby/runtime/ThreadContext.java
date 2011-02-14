@@ -1059,13 +1059,14 @@ public final class ThreadContext {
             }
 
             String dotClassMethod = element.getClassName() + "." + element.getMethodName();
-            if (fullTrace || runtime.getBoundMethods().containsKey(dotClassMethod)) {
+            String rubyName = null;
+            if (fullTrace || (rubyName = runtime.getBoundMethods().get(dotClassMethod)) != null) {
                 String filename = element.getFileName();
                 int lastDot = element.getClassName().lastIndexOf('.');
                 if (lastDot != -1) {
                     filename = element.getClassName().substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
                 }
-                trace.add(new RubyStackTraceElement(element.getClassName(), element.getMethodName(), filename, element.getLineNumber(), false));
+                trace.add(new RubyStackTraceElement(element.getClassName(), rubyName, filename, element.getLineNumber(), false));
 
                 if (!fullTrace) {
                     // we want to fall through below to add Ruby trace info as well
