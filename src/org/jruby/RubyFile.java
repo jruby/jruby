@@ -1228,7 +1228,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static String[] splitURI(String path) {
         Matcher m = URI_PREFIX.matcher(path);
         if (m.find()) {
-            if (m.group(1).isEmpty()) {
+            if (m.group(1).length() == 0) {
                 return new String[] {path, ""};
             }
             try {
