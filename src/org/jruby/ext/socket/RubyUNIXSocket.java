@@ -435,7 +435,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
     public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
-        ByteBuffer str = ByteBuffer.allocateDirect(1024);
+        
         LibCSocket.sockaddr_un buf = LibCSocket.sockaddr_un.newInstance();
         IntByReference alen = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
 
@@ -458,6 +458,9 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
 
         int buflen = RubyNumeric.fix2int(len);
+        byte[] tmpbuf = new byte[buflen];
+        ByteBuffer str = ByteBuffer.wrap(tmpbuf);
+
         int slen = INSTANCE.recvfrom(fd, str, buflen, flags, buf, alen);
         if(slen < 0) {
             rb_sys_fail(context.getRuntime(), "recvfrom(2)");
@@ -466,9 +469,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         if(slen < buflen) {
             buflen = slen;
         }
-        byte[] outp = new byte[buflen];
-        str.get(outp);
-        RubyString _str = context.getRuntime().newString(new ByteList(outp, 0, buflen, false));
+
+        RubyString _str = context.getRuntime().newString(new ByteList(tmpbuf, 0, buflen, true));
 
         return context.getRuntime().newArrayNoCopy(new IRubyObject[]{_str, unixaddr(context.getRuntime(), buf, alen)});
     }
