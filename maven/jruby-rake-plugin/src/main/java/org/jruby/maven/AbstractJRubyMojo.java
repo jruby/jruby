@@ -23,7 +23,7 @@ import org.codehaus.plexus.util.StringUtils;
 /**
  * Base for all JRuby mojos.
  *
- * @requiresDependencyResolution compile
+ * @requiresDependencyResolution test
  */
 public abstract class AbstractJRubyMojo extends AbstractMojo {
 
@@ -56,15 +56,6 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
      * @parameter expression="${jruby.launch.jvmArgs}"
      */
     protected String jvmArgs = null;
-
-    /**
-     * The project compile classpath.
-     *
-     * @parameter default-value="${project.compileClasspathElements}"
-     * @required
-     * @readonly
-     */
-    private List compileClasspathElements;
 
     /**
      * The plugin dependencies.
@@ -162,7 +153,9 @@ public abstract class AbstractJRubyMojo extends AbstractMojo {
         Project project = new Project();
         project.setBaseDir(mavenProject.getBasedir());
         project.addBuildListener(new LogAdapter());
-        addReference(project, "maven.compile.classpath", compileClasspathElements);
+        addReference(project, "maven.compile.classpath", mavenProject.getCompileClasspathElements());
+        addReference(project, "maven.test.classpath", mavenProject.getTestClasspathElements());
+        addReference(project, "maven.runtime.classpath", mavenProject.getRuntimeClasspathElements());
         addReference(project, "maven.plugin.classpath", pluginArtifacts);
         return project;
     }
