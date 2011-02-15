@@ -284,10 +284,9 @@ class TestBacktraces < Test::Unit::TestCase
       t.join
     }
 
-    assert_match(
-      /test_backtraces.rb:#{@offset + 2}.*DUMMY_MSG.*RuntimeError/,
-      $stderr.string
-    )
+    assert_match /RuntimeError/, $stderr.string
+    assert_match /DUMMY_MSG/, $stderr.string
+    assert_match /test_backtraces.rb:#{@offset + 2}/m, $stderr.string
 
     assert_equal(SystemExit, ex.class)
 

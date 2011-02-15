@@ -399,7 +399,7 @@ public class Main {
                 return 0;
             }
         } else {
-            System.err.print(RubyInstanceConfig.TRACE_TYPE.printBacktrace(raisedException));
+            System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException));
             return 1;
         }
     }

@@ -322,7 +322,7 @@ public class RubyInstanceConfig {
 
     public static final boolean CAN_SET_ACCESSIBLE = SafePropertyAccessor.getBoolean("jruby.ji.setAccessible", true);
 
-    public static TraceType TRACE_TYPE =
+    private TraceType traceType =
             TraceType.traceTypeFor(SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed"));
 
     public static interface LoadServiceCreator {
@@ -1772,5 +1772,13 @@ public class RubyInstanceConfig {
 
     public void setDisableGems(boolean dg) {
         this.disableGems = dg;
+    }
+
+    public TraceType getTraceType() {
+        return traceType;
+    }
+
+    public void setTraceType(TraceType traceType) {
+        this.traceType = traceType;
     }
 }
