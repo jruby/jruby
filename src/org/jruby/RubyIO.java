@@ -2776,8 +2776,7 @@ public class RubyIO extends RubyObject {
             // READ_CHECK from MRI io.c
             readCheck(myOpenFile.getMainStream());
 
-            context.getThread().beforeBlockingCall();
-            ByteList newBuffer = fread(length);
+            ByteList newBuffer = fread(context.getThread(), length);
 
             return newBuffer;
         } catch (EOFException ex) {
@@ -2790,8 +2789,6 @@ public class RubyIO extends RubyObject {
             throw runtime.newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
             throw runtime.newErrnoEBADFError();
-        } finally {
-            context.getThread().afterBlockingCall();
         }
     }
 
@@ -2857,11 +2854,10 @@ public class RubyIO extends RubyObject {
                 try {
                     while (true) {
                         // TODO: ruby locks the string here
-                        readCheck(openFile.getMainStream());
+                        Stream stream = openFile.getMainStream();
+                        readCheck(stream);
                         openFile.checkReadable(runtime);
-                        thread.beforeBlockingCall();
-                        ByteList read = fread(ChannelStream.BUFSIZE);
-                        thread.afterBlockingCall();
+                        ByteList read = fread(thread, ChannelStream.BUFSIZE);
                             
                         // TODO: Ruby unlocks the string here
                         if (read.length() == 0) {
@@ -2877,8 +2873,6 @@ public class RubyIO extends RubyObject {
                     throw runtime.newErrnoEPIPEError();
                 } catch (InvalidValueException ex) {
                     throw runtime.newErrnoEINVALError();
-                } finally {
-                    thread.afterBlockingCall();
                 }
             }
         } catch (NonReadableChannelException ex) {
@@ -2889,10 +2883,11 @@ public class RubyIO extends RubyObject {
     }
 
     // implements io_fread in io.c
-    private ByteList fread(int length) throws IOException, BadDescriptorException {
+    private ByteList fread(RubyThread thread, int length) throws IOException, BadDescriptorException {
         Stream stream = openFile.getMainStream();
         int rest = length;
-        ByteList buf = stream.fread(length);
+        waitReadable(stream);
+        ByteList buf = blockingFRead(stream, thread, length);
         if (buf != null) {
             rest -= buf.length();
         }
@@ -2900,7 +2895,7 @@ public class RubyIO extends RubyObject {
             waitReadable(stream);
             openFile.checkClosed(getRuntime());
             stream.clearerr();
-            ByteList newBuffer = stream.fread(rest);
+            ByteList newBuffer = blockingFRead(stream, thread, rest);
             if (newBuffer == null) {
                 // means EOF
                 break;
@@ -2922,6 +2917,15 @@ public class RubyIO extends RubyObject {
             return ByteList.EMPTY_BYTELIST.dup();
         } else {
             return buf;
+        }
+    }
+
+    private ByteList blockingFRead(Stream stream, RubyThread thread, int length) throws IOException, BadDescriptorException {
+        try {
+            thread.beforeBlockingCall();
+            return stream.fread(length);
+        } finally {
+            thread.afterBlockingCall();
         }
     }
     
