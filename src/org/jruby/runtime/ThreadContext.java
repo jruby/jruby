@@ -1096,6 +1096,18 @@ public final class ThreadContext {
         pushRubyClass(runtime.getObject());
         getCurrentFrame().setSelf(runtime.getTopSelf());
     }
+
+    public void preExtensionLoad(IRubyObject self) {
+        pushFrame();
+        pushRubyClass(runtime.getObject());
+        getCurrentFrame().setSelf(self);
+        getCurrentFrame().setVisibility(Visibility.PUBLIC);
+    }
+
+    public void postExtensionLoad() {
+        popFrame();
+        popRubyClass();
+    }
     
     public void preCompiledClass(RubyModule type, StaticScope staticScope) {
         pushRubyClass(type);

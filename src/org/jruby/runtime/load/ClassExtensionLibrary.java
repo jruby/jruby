@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import java.io.IOException;
 import org.jruby.Ruby;
 
 /**
@@ -40,14 +39,20 @@ import org.jruby.Ruby;
  */
 public class ClassExtensionLibrary implements Library {
     private final Class theClass;
-    public ClassExtensionLibrary(Class extension) {
+    private final String name;
+    public ClassExtensionLibrary(String name, Class extension) {
         theClass = extension;
+        this.name = name;
     }
 
-    public void load(Ruby runtime, boolean wrap) throws IOException {
+    public String getName() {
+        return name;
+    }
+
+    public void load(Ruby runtime, boolean wrap) {
         if(BasicLibraryService.class.isAssignableFrom(theClass)) {
             try {
-                ((BasicLibraryService)theClass.newInstance()).basicLoad(runtime);
+                runtime.loadExtension(name, (BasicLibraryService)theClass.newInstance(), wrap);
             } catch(final Exception ee) {
                 throw new RuntimeException(ee.getMessage(),ee);
             }

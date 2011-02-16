@@ -612,7 +612,7 @@ public class LoadService {
 
                 // quietly try to load the class
                 Class theClass = runtime.getJavaSupport().loadJavaClassQuiet(className);
-                state.library = new ClassExtensionLibrary(theClass);
+                state.library = new ClassExtensionLibrary(className + ".java", theClass);
             } catch (Exception ee) {
                 state.library = null;
                 runtime.getGlobalVariables().clear("$!");
