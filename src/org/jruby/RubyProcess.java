@@ -488,7 +488,9 @@ public class RubyProcess {
         }
         
         int[] status = new int[1];
-        pid = checkErrno(runtime, runtime.getPosix().waitpid(pid, status, flags), ECHILD);
+        runtime.getPosix().errno(0);
+        pid = runtime.getPosix().waitpid(pid, status, flags);
+        raiseErrnoIfSet(runtime, ECHILD);
         
         runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
         return runtime.newFixnum(pid);
@@ -519,7 +521,9 @@ public class RubyProcess {
         }
         
         int[] status = new int[1];
-        int pid = checkErrno(runtime, runtime.getPosix().wait(status), ECHILD);
+        runtime.getPosix().errno(0);
+        int pid = runtime.getPosix().wait(status);
+        raiseErrnoIfSet(runtime, ECHILD);
         
         runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
         return runtime.newFixnum(pid);
@@ -966,11 +970,17 @@ public class RubyProcess {
     private static int checkErrno(Ruby runtime, int result, NonNativeErrno nonNative) {
         if (result == -1) {
             if (runtime.getPosix().isNative()) {
-                throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+                raiseErrnoIfSet(runtime, nonNative);
             } else {
                 nonNative.handle(runtime, result);
             }
         }
         return result;
+    }
+
+    private static void raiseErrnoIfSet(Ruby runtime, NonNativeErrno nonNative) {
+        if (runtime.getPosix().errno() != 0) {
+            throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+        }
     }
 }
