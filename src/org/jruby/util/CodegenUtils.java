@@ -185,11 +185,10 @@ public class CodegenUtils {
     
     public static String getAnnotatedBindingClassName(String javaMethodName, String typeName, boolean isStatic, int required, int optional, boolean multi, boolean framed) {
         String commonClassSuffix;
-        String marker = framed ? "$RUBYFRAMEDINVOKER$" : "$RUBYINVOKER$";
         if (multi) {
-            commonClassSuffix = (isStatic ? "$s" : "$i" ) + "_method_multi" + marker + javaMethodName;
+            commonClassSuffix = (isStatic ? "$s$" : "$i$" ) + javaMethodName;
         } else {
-            commonClassSuffix = (isStatic ? "$s" : "$i" ) + "_method_" + required + "_" + optional + marker + javaMethodName;
+            commonClassSuffix = (isStatic ? "$s$" : "$i$" ) + required + "$" + optional + "$" + javaMethodName;
         }
         return typeName + commonClassSuffix;
     }

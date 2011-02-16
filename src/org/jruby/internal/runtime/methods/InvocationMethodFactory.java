@@ -1084,8 +1084,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     private ClassWriter createJavaMethodCtor(String namePath, String shortPath, String sup) throws Exception {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        String sourceFile = namePath.substring(namePath.lastIndexOf('/') + 1) + ".gen";
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, sup, null);
-        cw.visitSource(namePath.replace('.', '/') + ".gen", null);
+        cw.visitSource(sourceFile, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", JAVA_SUPER_SIG, null, null);
         mv.start();
         mv.line(-1);

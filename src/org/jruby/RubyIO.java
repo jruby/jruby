@@ -3213,7 +3213,11 @@ public class RubyIO extends RubyObject {
 
                     // save blocking state
                     if (ioObj.getChannel() instanceof SelectableChannel) blocking.put(ioObj, ((SelectableChannel)ioObj.getChannel()).isBlocking());
-                    
+
+                    // already buffered data? don't bother selecting
+                    if (ioObj.getHandler().readDataBuffered()) {
+                        unselectable_reads.add(obj);
+                    }
                     if (registerSelect(context, selector, obj, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
                         if (ioObj.writeDataBuffered()) {
                             pending.add(obj);
