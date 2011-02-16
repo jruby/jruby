@@ -196,7 +196,11 @@ ifeq ($(OS), aix)
 endif
 
 ifneq ($(findstring bsd, $(OS)),)
-  PLATFORM = $(CPU)-FreeBSD
+  ifneq ($(findstring openbsd, $(OS)),)
+    PLATFORM = $(CPU)-OpenBSD
+  else
+    PLATFORM = $(CPU)-FreeBSD
+  endif
   SOFLAGS = -shared -static-libgcc
   CFLAGS += -pthread
   LDFLAGS += -pthread
