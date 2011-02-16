@@ -46,6 +46,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -110,6 +111,7 @@ public class TestRuby extends TestRubyBase {
         final ByteArrayOutputStream err = new ByteArrayOutputStream();
         RubyInstanceConfig config = new RubyInstanceConfig() {{
             setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
+            setTraceType(TraceType.traceTypeFor("mri"));
         }};
         Ruby ruby = Ruby.newInstance(config);
         RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(ruby.getCurrentContext(), new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
@@ -125,8 +127,10 @@ public class TestRuby extends TestRubyBase {
     
     public void testPrintErrorShouldOnlyPrintErrorMessageWhenBacktraceIsNil() {
         final ByteArrayOutputStream err = new ByteArrayOutputStream();
+        // use MRI formatting, since JRuby formatting is a bit different
         RubyInstanceConfig config = new RubyInstanceConfig() {{
             setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
+            setTraceType(TraceType.traceTypeFor("mri"));
         }};
         Ruby ruby = Ruby.newInstance(config);
         RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(ruby.getCurrentContext(), new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);

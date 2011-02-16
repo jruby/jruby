@@ -415,8 +415,10 @@ public class ShellLauncher {
     }
 
     public static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
+        OutputStream error = runtime.getErrorStream();
         try {
-            POpenProcess aProcess = new POpenProcess(popenShared(runtime, rawArgs));
+            Process aProcess = run(runtime, rawArgs, true);
+            handleStreamsNonblocking(runtime, aProcess, output, error);
             return getPidFromProcess(aProcess);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
@@ -1313,6 +1315,17 @@ public class ShellLauncher {
         // Note: On some platforms, even interrupt might not
         // have an effect if the thread is IO blocked.
         try { t3.interrupt(); } catch (SecurityException se) {}
+    }
+
+    private static void handleStreamsNonblocking(Ruby runtime, Process p, OutputStream out, OutputStream err) throws IOException {
+        InputStream pOut = p.getInputStream();
+        InputStream pErr = p.getErrorStream();
+
+        StreamPumper t1 = new StreamPumper(runtime, pOut, out, false, Pumper.Slave.IN, p);
+        StreamPumper t2 = new StreamPumper(runtime, pErr, err, false, Pumper.Slave.IN, p);
+
+        t1.start();
+        t2.start();
     }
 
     // TODO: move inside the LaunchConfig

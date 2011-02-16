@@ -140,6 +140,7 @@ import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.io.SelectorPool;
 
@@ -2419,7 +2420,7 @@ public final class Ruby {
         }
 
         PrintStream errorStream = getErrorStream();
-        errorStream.print(RubyInstanceConfig.TRACE_TYPE.printBacktrace(excp));
+        errorStream.print(config.getTraceType().printBacktrace(excp));
     }
     
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
@@ -2523,6 +2524,36 @@ public final class Ruby {
             script.load(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         } catch (JumpException.ReturnJump rj) {
             return;
+        }
+    }
+
+    /**
+     * Load the given BasicLibraryService instance, wrapping it in Ruby framing
+     * to ensure it is isolated from any parent scope.
+     * 
+     * @param extName The name of the extension, to go on the frame wrapping it
+     * @param extension The extension object to load
+     * @param wrap Whether to use a new "self" for toplevel
+     */
+    public void loadExtension(String extName, BasicLibraryService extension, boolean wrap) {
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this) : getTopSelf();
+        ThreadContext context = getCurrentContext();
+        String file = context.getFile();
+
+        try {
+            secure(4); /* should alter global state */
+
+            context.setFile(extName);
+            context.preExtensionLoad(self);
+
+            extension.basicLoad(this);
+        } catch (IOException ioe) {
+            throw newIOErrorFromException(ioe);
+        } catch (JumpException.ReturnJump rj) {
+            return;
+        } finally {
+            context.postNodeEval();
+            context.setFile(file);
         }
     }
 
@@ -3079,6 +3110,15 @@ public final class Ruby {
         } else {
             return newSystemCallError("Unknown Error (" + errno + ") - " + message);
         }
+    }
+
+    public RaiseException newErrnoFromInt(int errno) {
+        Errno errnoObj = Errno.valueOf(errno);
+        if (errnoObj == null) {
+            return newSystemCallError("Unknown Error (" + errno + ")");
+        }
+        String message = errnoObj.description();
+        return newErrnoFromInt(errno, message);
     }
 
     public RaiseException newTypeError(String message) {

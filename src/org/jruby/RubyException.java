@@ -148,7 +148,7 @@ public class RubyException extends RubyObject {
     public void prepareBacktrace(ThreadContext context, boolean nativeException) {
         // if it's null, build a backtrace
         if (backtraceElements == null) {
-            backtraceElements = RubyInstanceConfig.TRACE_TYPE.getBacktrace(context, nativeException);
+            backtraceElements = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context, nativeException);
         }
     }
     

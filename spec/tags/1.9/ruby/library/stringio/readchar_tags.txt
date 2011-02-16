@@ -1,1 +1,0 @@
-fails:StringIO#readchar reads the next 8-bit byte from self's current position

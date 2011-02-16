@@ -243,10 +243,10 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             try {
                 w.write(e.getMessage());
             } catch (IOException ex) {
-                return new NoSuchMethodException(ex.getMessage());
+                return (NoSuchMethodException)new NoSuchMethodException(ex.getMessage()).initCause(ex);
             }
         }
-        return new NoSuchMethodException(e.getCause().getMessage());
+        return (NoSuchMethodException)new NoSuchMethodException(e.getCause().getMessage()).initCause(e);
     }
 
     public Object invokeFunction(String method, Object... args)

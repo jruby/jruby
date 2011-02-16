@@ -439,10 +439,6 @@ public final class ThreadContext {
         }
     }
     
-    private void pushBacktraceFrame(String name) {
-        pushFrame(name);        
-    }
-    
     private void pushFrame(String name) {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
@@ -1032,7 +1028,7 @@ public final class ThreadContext {
                     if (methodName.startsWith("$RUBY$SYNTHETIC")) {
                         methodName = methodName.substring("$RUBY$SYNTHETIC".length());
                         methodName = JavaNameMangler.demangleMethodName(methodName);
-                        if (methodName == "__file__") methodName = "(root)";
+                        if (methodName.equals("__file__")) methodName = "(root)";
                         trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
 
                         // gobble up at least one parent, and keep going if there's more synthetic frames
@@ -1099,6 +1095,18 @@ public final class ThreadContext {
         pushFrame();
         pushRubyClass(runtime.getObject());
         getCurrentFrame().setSelf(runtime.getTopSelf());
+    }
+
+    public void preExtensionLoad(IRubyObject self) {
+        pushFrame();
+        pushRubyClass(runtime.getObject());
+        getCurrentFrame().setSelf(self);
+        getCurrentFrame().setVisibility(Visibility.PUBLIC);
+    }
+
+    public void postExtensionLoad() {
+        popFrame();
+        popRubyClass();
     }
     
     public void preCompiledClass(RubyModule type, StaticScope staticScope) {

@@ -60,6 +60,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -255,8 +256,20 @@ public class Readline {
                 holder.readline.getHistory().addToHistory(v);
             }
 
-            /* Explicitly use UTF-8 here. c.f. history.addToHistory using line.asUTF8() */
-            line = RubyString.newUnicodeString(recv.getRuntime(), v);
+            // Enebo: This is a little weird and a little broken.  We just ask
+            // for the bytes and hope they match default_external.  This will 
+            // work for common cases, but not ones in which the user explicitly
+            // sets the default_external to something else.  The second problem
+            // is that no al M17n encodings are valid encodings in java.lang.String.
+            // We clearly need a byte[]-version of JLine since we cannot totally
+            // behave properly using Java Strings.
+            if (runtime.is1_9()) {
+                ByteList list = new ByteList(v.getBytes(), runtime.getDefaultExternalEncoding());
+                line = RubyString.newString(runtime, list);
+            } else {
+                /* Explicitly use UTF-8 here. c.f. history.addToHistory using line.asUTF8() */
+                line = RubyString.newUnicodeString(recv.getRuntime(), v);
+            }
         }
         return line;
     }
