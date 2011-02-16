@@ -39,16 +39,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.util.func.Function1;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -64,26 +62,20 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.jcodings.Encoding;
 import org.joda.time.DateTimeZone;
-import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.Node;
-import org.jruby.ast.RootNode;
-import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.executable.Script;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
+import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.JITCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.JRubyPOSIXHandler;
 import org.jruby.ext.LateLoadingLibrary;
 import org.jruby.ext.posix.POSIX;
@@ -91,29 +83,21 @@ import org.jruby.ext.posix.POSIXFactory;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.interpreter.Interpreter;
 import org.jruby.javasupport.JavaSupport;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.management.BeanManager;
-import org.jruby.management.BeanManagerFactory;
 import org.jruby.management.ClassCache;
 import org.jruby.management.Config;
 import org.jruby.management.ParserStats;
 import org.jruby.parser.EvalStaticScope;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
-import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.RubyEvent;
@@ -125,7 +109,6 @@ import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.profile.IProfileData;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.BuiltinScript;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
@@ -135,13 +118,30 @@ import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.collections.WeakHashSet;
-import org.jruby.util.func.Function1;
 import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.SelectorPool;
 
 import com.kenai.constantine.Constant;
 import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.util.EnumSet;
+import java.util.concurrent.atomic.AtomicLong;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.RubyInstanceConfig.CompileMode;
+import org.jruby.ast.RootNode;
+import org.jruby.ast.executable.RuntimeCache;
+import org.jruby.evaluator.ASTInterpreter;
+import org.jruby.exceptions.Unrescuable;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.interpreter.Interpreter;
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.management.BeanManager;
+import org.jruby.management.BeanManagerFactory;
+import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
+import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.io.SelectorPool;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -3188,9 +3188,8 @@ public final class Ruby {
 
     public RaiseException newIOErrorFromException(IOException ioe) {
         // TODO: this is kinda gross
-               
         if(ioe.getMessage() != null) {
-            if (ioe.getMessage().equals("Broken pipe") || (Platform.IS_WINDOWS && ioe.getMessage().contains("connection was aborted"))) {
+            if (ioe.getMessage().equals("Broken pipe")) {
                 throw newErrnoEPIPEError();
             } else if (ioe.getMessage().equals("Connection reset by peer")) {
                 throw newErrnoECONNRESETError();
