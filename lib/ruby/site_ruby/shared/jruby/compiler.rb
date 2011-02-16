@@ -8,7 +8,7 @@ module JRuby::Compiler
   BAIS = java.io.ByteArrayInputStream
   Mangler = org.jruby.util.JavaNameMangler
   BytecodeCompiler = org.jruby.compiler.impl.StandardASMCompiler
-  ASTCompiler = org.jruby.compiler.ASTCompiler
+  ASTCompiler = RUBY_VERSION =~ /1\.9/ ? org.jruby.compiler.ASTCompiler19 : org.jruby.compiler.ASTCompiler
   JavaFile = java.io.File
   MethodSignatureNode = org.jruby.ast.java_signature.MethodSignatureNode
   DEFAULT_PREFIX = ""
