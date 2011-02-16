@@ -3112,6 +3112,15 @@ public final class Ruby {
         }
     }
 
+    public RaiseException newErrnoFromInt(int errno) {
+        Errno errnoObj = Errno.valueOf(errno);
+        if (errnoObj == null) {
+            return newSystemCallError("Unknown Error (" + errno + ")");
+        }
+        String message = errnoObj.description();
+        return newErrnoFromInt(errno, message);
+    }
+
     public RaiseException newTypeError(String message) {
         return newRaiseException(getTypeError(), message);
     }

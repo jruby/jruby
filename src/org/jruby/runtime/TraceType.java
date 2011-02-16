@@ -245,6 +245,51 @@ public class TraceType {
         RubyStackTraceElement[] frames = exception.getBacktraceElements();
         if (frames == null) frames = new RubyStackTraceElement[0];
 
+        // find longest method name
+        int longestMethod = 0;
+        for (RubyStackTraceElement frame : frames) {
+            longestMethod = Math.max(longestMethod, frame.getMethodName().length());
+        }
+
+        StringBuilder buffer = new StringBuilder();
+
+        // exception line
+        String message = exception.message(runtime.getCurrentContext()).toString();
+        if (exception.getMetaClass() == runtime.getRuntimeError() && message.length() == 0) {
+            message = "No current exception";
+        }
+        buffer
+                .append(exception.getMetaClass().getName())
+                .append(": ")
+                .append(message)
+                .append('\n');
+
+        // backtrace lines
+        for (RubyStackTraceElement frame : frames) {
+            buffer.append("  ");
+
+            // method name
+            String methodName = frame.getMethodName();
+            for (int j = 0; j < longestMethod - methodName.length(); j++) {
+                buffer.append(' ');
+            }
+            buffer
+                    .append(methodName)
+                    .append(" at ")
+                    .append(frame.getFileName())
+                    .append(':')
+                    .append(frame.getLineNumber())
+                    .append('\n');
+        }
+
+        return buffer.toString();
+    }
+
+    protected static String printBacktraceJRuby2(RubyException exception) {
+        Ruby runtime = exception.getRuntime();
+        RubyStackTraceElement[] frames = exception.getBacktraceElements();
+        if (frames == null) frames = new RubyStackTraceElement[0];
+
         List<String> lineNumbers = new ArrayList(frames.length);
 
         // find longest filename and line number
