@@ -71,7 +71,7 @@ public class IOModule {
             openFile.checkClosed(runtime);
             openFile.checkReadable(runtime);
 
-            ChannelStream stream = (ChannelStream) openFile.getMainStream();
+            ChannelStream stream = (ChannelStream) openFile.getMainStreamSafe();
 
             ByteBuffer buffer = ((AbstractMemory) dst).getMemoryIO().asByteBuffer();
             int count = RubyNumeric.num2int(rbLength);
@@ -86,9 +86,7 @@ public class IOModule {
             }
             
             return runtime.newFixnum(stream.read(buffer));
-            
-        } catch (PipeException ex) {
-            throw runtime.newErrnoEPIPEError();
+
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
         } catch (EOFException e) {

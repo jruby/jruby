@@ -68,6 +68,7 @@ import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.InvalidValueException;
 
 /**
@@ -359,9 +360,11 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         try {
             ModeFlags modes = new ModeFlags(ModeFlags.RDWR);
             openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(new UnixDomainSocketChannel(runtime, fd), modes)));
-            openFile.setPipeStream(openFile.getMainStream());
+            openFile.setPipeStream(openFile.getMainStreamSafe());
             openFile.setMode(modes.getOpenFileFlags());
-            openFile.getMainStream().setSync(true);
+            openFile.getMainStreamSafe().setSync(true);
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
         } catch (InvalidValueException ive) {
             throw runtime.newErrnoEINVALError();
         }

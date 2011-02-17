@@ -34,6 +34,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.OpenFile;
 
@@ -55,15 +56,17 @@ public class IOWaitLibrary implements Library {
         RubyIO io = (RubyIO)obj;
         try {
             OpenFile openFile = io.getOpenFile();
-            ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
-            if (!descriptor.isOpen() || !openFile.getMainStream().getModes().isReadable() || openFile.getMainStream().feof()) {
+            ChannelDescriptor descriptor = openFile.getMainStreamSafe().getDescriptor();
+            if (!descriptor.isOpen() || !openFile.getMainStreamSafe().getModes().isReadable() || openFile.getMainStreamSafe().feof()) {
                 return context.getRuntime().getFalse();
             }
 
-            int avail = openFile.getMainStream().ready();
+            int avail = openFile.getMainStreamSafe().ready();
             if (avail > 0) {
                 return context.getRuntime().newFixnum(avail);
             }
+        } catch (BadDescriptorException e) {
+            throw context.runtime.newErrnoEBADFError();
         } catch (Exception anyEx) {
             return context.getRuntime().getFalse();
         }
@@ -78,10 +81,12 @@ public class IOWaitLibrary implements Library {
         RubyIO io = (RubyIO)obj;
         try {
             OpenFile openFile = io.getOpenFile();
-            if (openFile.getMainStream().feof()) {
+            if (openFile.getMainStreamSafe().feof()) {
                 return context.getRuntime().getNil();
             }
-            openFile.getMainStream().waitUntilReady();
+            openFile.getMainStreamSafe().waitUntilReady();
+        } catch (BadDescriptorException e) {
+            throw context.runtime.newErrnoEBADFError();
         } catch (Exception anyEx) {
             return context.getRuntime().getNil();
         }

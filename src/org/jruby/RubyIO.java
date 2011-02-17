@@ -225,6 +225,7 @@ public class RubyIO extends RubyObject {
         
         openFile = new OpenFile();
         ChannelDescriptor descriptor;
+        Stream mainStream;
 
         try {
             switch (stdio) {
@@ -232,27 +233,21 @@ public class RubyIO extends RubyObject {
                 // special constructor that accepts stream, not channel
                 descriptor = new ChannelDescriptor(runtime.getIn(), new ModeFlags(ModeFlags.RDONLY), FileDescriptor.in);
                 runtime.putFilenoMap(0, descriptor.getFileno());
-                openFile.setMainStream(
-                        ChannelStream.open(
-                            runtime, 
-                            descriptor));
+                mainStream = ChannelStream.open(runtime, descriptor);
+                openFile.setMainStream(mainStream);
                 break;
             case OUT:
                 descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getOut()), new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out);
                 runtime.putFilenoMap(1, descriptor.getFileno());
-                openFile.setMainStream(
-                        ChannelStream.open(
-                            runtime, 
-                            descriptor));
+                mainStream = ChannelStream.open(runtime, descriptor);
+                openFile.setMainStream(mainStream);
                 openFile.getMainStream().setSync(true);
                 break;
             case ERR:
                 descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getErr()), new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.err);
                 runtime.putFilenoMap(2, descriptor.getFileno());
-                openFile.setMainStream(
-                        ChannelStream.open(
-                            runtime, 
-                            descriptor));
+                mainStream = ChannelStream.open(runtime, descriptor);
+                openFile.setMainStream(mainStream);
                 openFile.getMainStream().setSync(true);
                 break;
             }
@@ -328,19 +323,32 @@ public class RubyIO extends RubyObject {
     }
 
     public OutputStream getOutStream() {
-        return getHandler().newOutputStream();
+        try {
+            return getOpenFileChecked().getMainStreamSafe().newOutputStream();
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        }
     }
 
     public InputStream getInStream() {
-        return getHandler().newInputStream();
+        try {
+            return getOpenFileChecked().getMainStreamSafe().newInputStream();
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        }
     }
 
     public Channel getChannel() {
-        return getHandler().getChannel();
+        try {
+            return getOpenFileChecked().getMainStreamSafe().getChannel();
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        }
     }
-    
-    public Stream getHandler() {
-        return getOpenFileChecked().getMainStream();
+
+    @Deprecated
+    public Stream getHandler() throws BadDescriptorException {
+        return getOpenFileChecked().getMainStreamSafe();
     }
 
     protected void reopenPath(Ruby runtime, IRubyObject[] args) {
@@ -382,7 +390,7 @@ public class RubyIO extends RubyObject {
                 }
             } else {
                 // TODO: This is an freopen in MRI, this is close, but not quite the same
-                openFile.getMainStream().freopen(runtime, path, getIOModes(runtime, openFile.getModeAsString(runtime)));
+                openFile.getMainStreamSafe().freopen(runtime, path, getIOModes(runtime, openFile.getModeAsString(runtime)));
                 
                 if (openFile.getPipeStream() != null) {
                     // TODO: pipe handler to be reopened with path and "w" mode
@@ -408,17 +416,17 @@ public class RubyIO extends RubyObject {
 
             long pos = 0;
             if (originalFile.isReadable()) {
-                pos = originalFile.getMainStream().fgetpos();
+                pos = originalFile.getMainStreamSafe().fgetpos();
             }
 
             if (originalFile.getPipeStream() != null) {
                 originalFile.getPipeStream().fflush();
             } else if (originalFile.isWritable()) {
-                originalFile.getMainStream().fflush();
+                originalFile.getMainStreamSafe().fflush();
             }
 
             if (selfFile.isWritable()) {
-                selfFile.getWriteStream().fflush();
+                selfFile.getWriteStreamSafe().fflush();
             }
 
             selfFile.setMode(originalFile.getMode());
@@ -427,21 +435,21 @@ public class RubyIO extends RubyObject {
             selfFile.setPath(originalFile.getPath());
             selfFile.setFinalizer(originalFile.getFinalizer());
 
-            ChannelDescriptor selfDescriptor = selfFile.getMainStream().getDescriptor();
-            ChannelDescriptor originalDescriptor = originalFile.getMainStream().getDescriptor();
+            ChannelDescriptor selfDescriptor = selfFile.getMainStreamSafe().getDescriptor();
+            ChannelDescriptor originalDescriptor = originalFile.getMainStreamSafe().getDescriptor();
 
             // confirm we're not reopening self's channel
             if (selfDescriptor.getChannel() != originalDescriptor.getChannel()) {
                 // check if we're a stdio IO, and ensure we're not badly mutilated
                 if (runtime.getFileno(selfDescriptor) >= 0 && runtime.getFileno(selfDescriptor) <= 2) {
-                    selfFile.getMainStream().clearerr();
+                    selfFile.getMainStreamSafe().clearerr();
 
                     // dup2 new fd into self to preserve fileno and references to it
                     originalDescriptor.dup2Into(selfDescriptor);
                 } else {
                     Stream pipeFile = selfFile.getPipeStream();
                     int mode = selfFile.getMode();
-                    selfFile.getMainStream().fclose();
+                    selfFile.getMainStreamSafe().fclose();
                     selfFile.setPipeStream(null);
 
                     // TODO: turn off readable? am I reading this right?
@@ -461,7 +469,7 @@ public class RubyIO extends RubyObject {
 
                         // since we're not actually duping the incoming channel into our handler, we need to
                         // copy the original sync behavior from the other handler
-                        selfFile.getMainStream().setSync(selfFile.getMainStream().isSync());
+                        selfFile.getMainStreamSafe().setSync(selfFile.getMainStreamSafe().isSync());
                     }
                     selfFile.setMode(mode);
                 }
@@ -497,7 +505,7 @@ public class RubyIO extends RubyObject {
             // TODO: set our metaclass to target's class (i.e. scary!)
 
         } catch (IOException ex) { // TODO: better error handling
-            throw runtime.newIOError("could not reopen: " + ex.getMessage());
+            throw runtime.newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
             throw runtime.newIOError("could not reopen: " + ex.getMessage());
         } catch (PipeException ex) {
@@ -637,7 +645,7 @@ public class RubyIO extends RubyObject {
             } else if (separator.length() == 1 && limit < 0) {
                 return getlineFast(runtime, separator.get(0) & 0xFF, cache);
             } else {
-                Stream readStream = myOpenFile.getMainStream();
+                Stream readStream = myOpenFile.getMainStreamSafe();
                 int c = -1;
                 int n = -1;
                 int newline = separator.get(separator.length() - 1) & 0xFF;
@@ -707,8 +715,6 @@ public class RubyIO extends RubyObject {
                     if (cache != null) cache.release(buf);
                 }
             }
-        } catch (PipeException ex) {
-            throw runtime.newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
         } catch (EOFException e) {
@@ -716,7 +722,7 @@ public class RubyIO extends RubyObject {
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
-            throw runtime.newIOError(e.getMessage());
+            throw runtime.newIOErrorFromException(e);
         }
     }
 
@@ -744,7 +750,7 @@ public class RubyIO extends RubyObject {
     }
 
     protected boolean swallow(int term) throws IOException, BadDescriptorException {
-        Stream readStream = openFile.getMainStream();
+        Stream readStream = openFile.getMainStreamSafe();
         int c;
         
         do {
@@ -774,7 +780,7 @@ public class RubyIO extends RubyObject {
     }
     
     private IRubyObject getlineFast(Ruby runtime, int delim, ByteListCache cache) throws IOException, BadDescriptorException {
-        Stream readStream = openFile.getMainStream();
+        Stream readStream = openFile.getMainStreamSafe();
         int c = -1;
 
         ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
@@ -1222,8 +1228,6 @@ public class RubyIO extends RubyObject {
             return runtime.newFixnum(read);
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
-        } catch (PipeException ex) {
-            throw runtime.newErrnoEPIPEError();
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
@@ -1257,8 +1261,6 @@ public class RubyIO extends RubyObject {
             throw context.getRuntime().newErrnoEBADFError();
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
-        }  catch (PipeException ex) {
-            throw context.getRuntime().newErrnoEPIPEError();
         }
     }
     
@@ -1303,8 +1305,6 @@ public class RubyIO extends RubyObject {
             throw runtime.newErrnoEBADFError();
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
-        } catch (PipeException ex) {
-            throw runtime.newErrnoEPIPEError();
         } finally {
             context.getThread().afterBlockingCall();
         }
@@ -1442,7 +1442,11 @@ public class RubyIO extends RubyObject {
     public RubyFixnum fileno(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         // map to external fileno
-        return runtime.newFixnum(runtime.getFileno(getOpenFileChecked().getMainStream().getDescriptor()));
+        try {
+            return runtime.newFixnum(runtime.getFileno(getOpenFileChecked().getMainStreamSafe().getDescriptor()));
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
+        }
     }
     
     /** Returns the current line number.
@@ -1471,7 +1475,11 @@ public class RubyIO extends RubyObject {
      */
     @JRubyMethod(name = "sync")
     public RubyBoolean sync(ThreadContext context) {
-        return context.getRuntime().newBoolean(getOpenFileChecked().getMainStream().isSync());
+        try {
+            return context.getRuntime().newBoolean(getOpenFileChecked().getMainStreamSafe().isSync());
+        } catch (BadDescriptorException e) {
+            throw context.runtime.newErrnoEBADFError();
+        }
     }
     
     /**
@@ -1499,7 +1507,7 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = {"pos", "tell"})
     public RubyFixnum pos(ThreadContext context) {
         try {
-            return context.getRuntime().newFixnum(getOpenFileChecked().getMainStream().fgetpos());
+            return context.getRuntime().newFixnum(getOpenFileChecked().getMainStreamSafe().fgetpos());
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
         } catch (BadDescriptorException bde) {
@@ -1507,7 +1515,7 @@ public class RubyIO extends RubyObject {
         } catch (PipeException e) {
             throw context.getRuntime().newErrnoESPIPEError();
         } catch (IOException e) {
-            throw context.getRuntime().newIOError(e.getMessage());
+            throw context.getRuntime().newIOErrorFromException(e);
         }
     }
     
@@ -1522,7 +1530,9 @@ public class RubyIO extends RubyObject {
         OpenFile myOpenFile = getOpenFileChecked();
         
         try {
-            myOpenFile.getMainStream().lseek(offset, Stream.SEEK_SET);
+            myOpenFile.getMainStreamSafe().lseek(offset, Stream.SEEK_SET);
+        
+            myOpenFile.getMainStreamSafe().clearerr();
         } catch (BadDescriptorException e) {
             throw context.getRuntime().newErrnoEBADFError();
         } catch (InvalidValueException e) {
@@ -1530,10 +1540,8 @@ public class RubyIO extends RubyObject {
         } catch (PipeException e) {
             throw context.getRuntime().newErrnoESPIPEError();
         } catch (IOException e) {
-            throw context.getRuntime().newIOError(e.getMessage());
+            throw context.getRuntime().newIOErrorFromException(e);
         }
-        
-        myOpenFile.getMainStream().clearerr();
         
         return context.getRuntime().newFixnum(offset);
     }
@@ -1603,8 +1611,6 @@ public class RubyIO extends RubyObject {
                 throw context.getRuntime().newErrnoEBADFError();
             } catch (InvalidValueException ex) {
                 throw context.getRuntime().newErrnoEINVALError();
-            } catch (PipeException ex) {
-                throw context.getRuntime().newErrnoEPIPEError();
             }
         } else {
             maybeIO.callMethod(context, "write",
@@ -1646,6 +1652,8 @@ public class RubyIO extends RubyObject {
         
         try {
             myOpenFile.seek(offset, whence);
+        
+            myOpenFile.getMainStreamSafe().clearerr();
         } catch (BadDescriptorException ex) {
             throw context.getRuntime().newErrnoEBADFError();
         } catch (InvalidValueException e) {
@@ -1653,10 +1661,8 @@ public class RubyIO extends RubyObject {
         } catch (PipeException e) {
             throw context.getRuntime().newErrnoESPIPEError();
         } catch (IOException e) {
-            throw context.getRuntime().newIOError(e.getMessage());
+            throw context.getRuntime().newIOErrorFromException(e);
         }
-        
-        myOpenFile.getMainStream().clearerr();
         
         return RubyFixnum.zero(context.getRuntime());
     }
@@ -1684,7 +1690,9 @@ public class RubyIO extends RubyObject {
                 context.getRuntime().getWarnings().warn(ID.SYSSEEK_BUFFERED_IO, "sysseek for buffered IO");
             }
             
-            pos = myOpenFile.getMainStream().getDescriptor().lseek(offset, whence);
+            pos = myOpenFile.getMainStreamSafe().getDescriptor().lseek(offset, whence);
+        
+            myOpenFile.getMainStreamSafe().clearerr();
         } catch (BadDescriptorException ex) {
             throw context.getRuntime().newErrnoEBADFError();
         } catch (InvalidValueException e) {
@@ -1692,10 +1700,8 @@ public class RubyIO extends RubyObject {
         } catch (PipeException e) {
             throw context.getRuntime().newErrnoESPIPEError();
         } catch (IOException e) {
-            throw context.getRuntime().newIOError(e.getMessage());
+            throw context.getRuntime().newIOErrorFromException(e);
         }
-        
-        myOpenFile.getMainStream().clearerr();
         
         return context.getRuntime().newFixnum(pos);
     }
@@ -1705,8 +1711,8 @@ public class RubyIO extends RubyObject {
         OpenFile myOpenfile = getOpenFileChecked();
         
         try {
-            myOpenfile.getMainStream().lseek(0L, Stream.SEEK_SET);
-            myOpenfile.getMainStream().clearerr();
+            myOpenfile.getMainStreamSafe().lseek(0L, Stream.SEEK_SET);
+            myOpenfile.getMainStreamSafe().clearerr();
             
             // TODO: This is some goofy global file value from MRI..what to do?
 //            if (io == current_file) {
@@ -1719,7 +1725,7 @@ public class RubyIO extends RubyObject {
         } catch (PipeException e) {
             throw context.getRuntime().newErrnoESPIPEError();
         } catch (IOException e) {
-            throw context.getRuntime().newIOError(e.getMessage());
+            throw context.getRuntime().newIOErrorFromException(e);
         }
 
         // Must be back on first line on rewind.
@@ -1744,10 +1750,8 @@ public class RubyIO extends RubyObject {
 
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
-        } catch (PipeException ex) {
-            throw runtime.newErrnoEPIPEError();
         } catch (IOException e) {
-            throw runtime.newIOError(e.getMessage());
+            throw runtime.newIOErrorFromException(e);
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
         }
@@ -1761,8 +1765,12 @@ public class RubyIO extends RubyObject {
      */
     @JRubyMethod(name = "sync=", required = 1)
     public IRubyObject sync_set(IRubyObject newSync) {
-        getOpenFileChecked().setSync(newSync.isTrue());
-        getOpenFileChecked().getMainStream().setSync(newSync.isTrue());
+        try {
+            getOpenFileChecked().setSync(newSync.isTrue());
+            getOpenFileChecked().getMainStreamSafe().setSync(newSync.isTrue());
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        }
 
         return this;
     }
@@ -1777,47 +1785,49 @@ public class RubyIO extends RubyObject {
             myOpenFile.checkReadable(runtime);
             myOpenFile.setReadBuffered();
 
-            if (myOpenFile.getMainStream().feof()) {
+            if (myOpenFile.getMainStreamSafe().feof()) {
                 return runtime.getTrue();
             }
             
-            if (myOpenFile.getMainStream().readDataBuffered()) {
+            if (myOpenFile.getMainStreamSafe().readDataBuffered()) {
                 return runtime.getFalse();
             }
             
-            readCheck(myOpenFile.getMainStream());
-            waitReadable(myOpenFile.getMainStream());
+            readCheck(myOpenFile.getMainStreamSafe());
+            waitReadable(myOpenFile.getMainStreamSafe());
             
-            myOpenFile.getMainStream().clearerr();
+            myOpenFile.getMainStreamSafe().clearerr();
             
-            int c = myOpenFile.getMainStream().fgetc();
+            int c = myOpenFile.getMainStreamSafe().fgetc();
             
             if (c != -1) {
-                myOpenFile.getMainStream().ungetc(c);
+                myOpenFile.getMainStreamSafe().ungetc(c);
                 return runtime.getFalse();
             }
             
             myOpenFile.checkClosed(runtime);
             
-            myOpenFile.getMainStream().clearerr();
+            myOpenFile.getMainStreamSafe().clearerr();
             
             return runtime.getTrue();
-        } catch (PipeException ex) {
-            throw runtime.newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
-            throw runtime.newIOError(e.getMessage());
+            throw runtime.newIOErrorFromException(e);
         }
     }
 
     @JRubyMethod(name = {"tty?", "isatty"})
     public RubyBoolean tty_p(ThreadContext context) {
-        return context.getRuntime().newBoolean(
-                context.getRuntime().getPosix().isatty(
-                getOpenFileChecked().getMainStream().getDescriptor().getFileDescriptor()));
+        try {
+            return context.getRuntime().newBoolean(
+                    context.getRuntime().getPosix().isatty(
+                    getOpenFileChecked().getMainStreamSafe().getDescriptor().getFileDescriptor()));
+        } catch (BadDescriptorException e) {
+            throw context.runtime.newErrnoEBADFError();
+        }
     }
     
     @JRubyMethod(name = "initialize_copy", required = 1)
@@ -1835,11 +1845,11 @@ public class RubyIO extends RubyObject {
         try {
             if (originalFile.getPipeStream() != null) {
                 originalFile.getPipeStream().fflush();
-                originalFile.getMainStream().lseek(0, Stream.SEEK_CUR);
+                originalFile.getMainStreamSafe().lseek(0, Stream.SEEK_CUR);
             } else if (originalFile.isWritable()) {
-                originalFile.getMainStream().fflush();
+                originalFile.getMainStreamSafe().fflush();
             } else {
-                originalFile.getMainStream().lseek(0, Stream.SEEK_CUR);
+                originalFile.getMainStreamSafe().lseek(0, Stream.SEEK_CUR);
             }
 
             newFile.setMode(originalFile.getMode());
@@ -1863,15 +1873,15 @@ public class RubyIO extends RubyObject {
                 if (newFile.isWritable()) {
                     modes = new ModeFlags(ModeFlags.WRONLY);
                 } else {
-                    modes = originalFile.getMainStream().getModes();
+                    modes = originalFile.getMainStreamSafe().getModes();
                 }
             }
             
-            ChannelDescriptor descriptor = originalFile.getMainStream().getDescriptor().dup();
+            ChannelDescriptor descriptor = originalFile.getMainStreamSafe().getDescriptor().dup();
 
             newFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, modes));
 
-            newFile.getMainStream().setSync(originalFile.getMainStream().isSync());
+            newFile.getMainStream().setSync(originalFile.getMainStreamSafe().isSync());
             
             // TODO: the rest of this...seeking to same position is unnecessary since we share a channel
             // but some of this may be needed?
@@ -1888,7 +1898,7 @@ public class RubyIO extends RubyObject {
 //	rb_io_binmode(dest);
 //    }
         } catch (IOException ex) {
-            throw runtime.newIOError("could not init copy: " + ex);
+            throw runtime.newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
             throw runtime.newIOError("could not init copy: " + ex);
         } catch (PipeException ex) {
@@ -2013,7 +2023,7 @@ public class RubyIO extends RubyObject {
             if (myOpenFile.getPipeStream() == null) {
                 close();
             } else{
-                myOpenFile.getMainStream().fclose();
+                myOpenFile.getMainStreamSafe().fclose();
                 myOpenFile.setMode(myOpenFile.getMode() & ~OpenFile.READABLE);
                 myOpenFile.setMainStream(myOpenFile.getPipeStream());
                 myOpenFile.setPipeStream(null);
@@ -2041,7 +2051,7 @@ public class RubyIO extends RubyObject {
         } catch (BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (IOException e) {
-            throw getRuntime().newIOError(e.getMessage());
+            throw getRuntime().newIOErrorFromException(e);
         }
 
         return this;
@@ -2108,7 +2118,11 @@ public class RubyIO extends RubyObject {
     }
 
     public boolean getBlocking() {
-        return ((ChannelStream) openFile.getMainStream()).isBlocking();
+        try {
+            return ((ChannelStream) openFile.getMainStreamSafe()).isBlocking();
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        }
     }
 
     @JRubyMethod(name = "fcntl")
@@ -2164,25 +2178,27 @@ public class RubyIO extends RubyObject {
         //   is here to at least document that we might need to do more work here.  Mostly SETFL is
         //   for mode changes which should persist across fork() boundaries.  Since JVM has no fork
         //   this is not a problem for us.
-        if (realCmd == FcntlLibrary.FD_CLOEXEC) {
-            // Do nothing.  FD_CLOEXEC has no meaning in JVM since we cannot really exec.
-            // And why the hell does webrick pass this in as a first argument!!!!!
-        } else if (realCmd == Fcntl.F_SETFL.value() || realCmd == Fcntl.F_SETFD.value()) {
-            if ((nArg & FcntlLibrary.FD_CLOEXEC) == FcntlLibrary.FD_CLOEXEC) {
+        try {
+            if (realCmd == FcntlLibrary.FD_CLOEXEC) {
                 // Do nothing.  FD_CLOEXEC has no meaning in JVM since we cannot really exec.
-            } else {
-                try {
+                // And why the hell does webrick pass this in as a first argument!!!!!
+            } else if (realCmd == Fcntl.F_SETFL.value() || realCmd == Fcntl.F_SETFD.value()) {
+                if ((nArg & FcntlLibrary.FD_CLOEXEC) == FcntlLibrary.FD_CLOEXEC) {
+                    // Do nothing.  FD_CLOEXEC has no meaning in JVM since we cannot really exec.
+                } else {
                     boolean block = (nArg & ModeFlags.NONBLOCK) != ModeFlags.NONBLOCK;
 
-                    myOpenFile.getMainStream().setBlocking(block);
-                } catch (IOException e) {
-                    throw runtime.newIOError(e.getMessage());
+                    myOpenFile.getMainStreamSafe().setBlocking(block);
                 }
+            } else if (realCmd == Fcntl.F_GETFL.value()) {
+                return myOpenFile.getMainStreamSafe().isBlocking() ? RubyFixnum.zero(runtime) : RubyFixnum.newFixnum(runtime, ModeFlags.NONBLOCK);
+            } else {
+                throw runtime.newNotImplementedError("JRuby only supports F_SETFL and F_GETFL with NONBLOCK for fcntl/ioctl");
             }
-        } else if (realCmd == Fcntl.F_GETFL.value()) {
-            return myOpenFile.getMainStream().isBlocking() ? RubyFixnum.zero(runtime) : RubyFixnum.newFixnum(runtime, ModeFlags.NONBLOCK);
-        } else {
-            throw runtime.newNotImplementedError("JRuby only supports F_SETFL and F_GETFL with NONBLOCK for fcntl/ioctl");
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
+        } catch (IOException e) {
+            throw runtime.newIOErrorFromException(e);
         }
         
         return runtime.newFixnum(0);
@@ -2350,15 +2366,13 @@ public class RubyIO extends RubyObject {
             myOpenFile.checkReadable(getRuntime());
             myOpenFile.setReadBuffered();
 
-            Stream stream = myOpenFile.getMainStream();
+            Stream stream = myOpenFile.getMainStreamSafe();
             
             readCheck(stream);
             waitReadable(stream);
             stream.clearerr();
             
-            return myOpenFile.getMainStream().fgetc();
-        } catch (PipeException ex) {
-            throw getRuntime().newErrnoEPIPEError();
+            return myOpenFile.getMainStreamSafe().fgetc();
         } catch (InvalidValueException ex) {
             throw getRuntime().newErrnoEINVALError();
         } catch (BadDescriptorException e) {
@@ -2366,7 +2380,7 @@ public class RubyIO extends RubyObject {
         } catch (EOFException e) {
             throw getRuntime().newEOFError();
         } catch (IOException e) {
-            throw getRuntime().newIOError(e.getMessage());
+            throw getRuntime().newIOErrorFromException(e);
         }
     }
     
@@ -2419,11 +2433,9 @@ public class RubyIO extends RubyObject {
             myOpenFile.checkReadable(getRuntime());
             myOpenFile.setReadBuffered();
 
-            if (myOpenFile.getMainStream().ungetc(ch) == -1 && ch != -1) {
+            if (myOpenFile.getMainStreamSafe().ungetc(ch) == -1 && ch != -1) {
                 throw getRuntime().newIOError("ungetc failed");
             }
-        } catch (PipeException ex) {
-            throw getRuntime().newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
             throw getRuntime().newErrnoEINVALError();
         } catch (BadDescriptorException e) {
@@ -2431,7 +2443,7 @@ public class RubyIO extends RubyObject {
         } catch (EOFException e) {
             throw getRuntime().newEOFError();
         } catch (IOException e) {
-            throw getRuntime().newIOError(e.getMessage());
+            throw getRuntime().newIOErrorFromException(e);
         }
 
         return getRuntime().getNil();
@@ -2492,10 +2504,10 @@ public class RubyIO extends RubyObject {
                 return string;
             }
 
-            if (!(myOpenFile.getMainStream() instanceof ChannelStream)) { // cryptic for the uninitiated...
+            if (!(myOpenFile.getMainStreamSafe() instanceof ChannelStream)) { // cryptic for the uninitiated...
                 throw runtime.newNotImplementedError("readpartial only works with Nio based handlers");
             }
-            ChannelStream stream = (ChannelStream) myOpenFile.getMainStream();
+            ChannelStream stream = (ChannelStream) myOpenFile.getMainStreamSafe();
 
             // We don't check RubyString modification since JRuby doesn't have
             // GIL. Other threads are free to change anytime.
@@ -2524,12 +2536,10 @@ public class RubyIO extends RubyObject {
             throw runtime.newErrnoEBADFError();
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
-        } catch (PipeException e) {
-            throw getRuntime().newErrnoEPIPEError();
         } catch (EOFException e) {
             throw runtime.newEOFError(e.getMessage());
         } catch (IOException e) {
-            throw runtime.newIOError(e.getMessage());
+            throw runtime.newIOErrorFromException(e);
         }
     }
 
@@ -2564,19 +2574,19 @@ public class RubyIO extends RubyObject {
             
             myOpenFile.checkReadable(getRuntime());
             
-            if (myOpenFile.getMainStream().readDataBuffered()) {
+            if (myOpenFile.getMainStreamSafe().readDataBuffered()) {
                 throw getRuntime().newIOError("sysread for buffered IO");
             }
             
             // TODO: Ruby locks the string here
             
-            waitReadable(myOpenFile.getMainStream());
+            waitReadable(myOpenFile.getMainStreamSafe());
             myOpenFile.checkClosed(getRuntime());
 
             // We don't check RubyString modification since JRuby doesn't have
             // GIL. Other threads are free to change anytime.
 
-            int bytesRead = myOpenFile.getMainStream().getDescriptor().read(len, str.getByteList());
+            int bytesRead = myOpenFile.getMainStreamSafe().getDescriptor().read(len, str.getByteList());
             
             // TODO: Ruby unlocks the string here
 
@@ -2591,8 +2601,6 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newErrnoEBADFError();
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
-        } catch (PipeException e) {
-            throw getRuntime().newErrnoEPIPEError();
         } catch (EOFException e) {
             throw getRuntime().newEOFError();
     	} catch (IOException e) {
@@ -2641,8 +2649,6 @@ public class RubyIO extends RubyObject {
             myOpenFile.checkReadable(runtime);
             myOpenFile.setReadBuffered();
             return readAll();
-        } catch (PipeException ex) {
-            throw getRuntime().newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
             throw getRuntime().newErrnoEINVALError();
         } catch (EOFException ex) {
@@ -2686,8 +2692,6 @@ public class RubyIO extends RubyObject {
                 } else {
                     return readAll(arg1.convertToString());
                 }
-            } catch (PipeException ex) {
-                throw getRuntime().newErrnoEPIPEError();
             } catch (InvalidValueException ex) {
                 throw getRuntime().newErrnoEINVALError();
             } catch (EOFException ex) {
@@ -2769,20 +2773,18 @@ public class RubyIO extends RubyObject {
             myOpenFile.checkReadable(runtime);
             myOpenFile.setReadBuffered();
 
-            if (myOpenFile.getMainStream().feof()) {
+            if (myOpenFile.getMainStreamSafe().feof()) {
                 return null;
             }
 
             // READ_CHECK from MRI io.c
-            readCheck(myOpenFile.getMainStream());
+            readCheck(myOpenFile.getMainStreamSafe());
 
             ByteList newBuffer = fread(context.getThread(), length);
 
             return newBuffer;
         } catch (EOFException ex) {
             throw runtime.newEOFError();
-        } catch (PipeException ex) {
-            throw runtime.newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
         } catch (IOException ex) {
@@ -2796,11 +2798,11 @@ public class RubyIO extends RubyObject {
         if (buffer == null) {
             return true;
         } else if (buffer.length() == 0) {
-            if (myOpenFile.getMainStream() == null) {
+            if (myOpenFile.getMainStreamSafe() == null) {
                 return true;
             }
 
-            if (myOpenFile.getMainStream().feof()) {
+            if (myOpenFile.getMainStreamSafe().feof()) {
                 return true;
             }
         }
@@ -2842,11 +2844,11 @@ public class RubyIO extends RubyObject {
 
     protected ByteList readAllCommon(Ruby runtime) throws BadDescriptorException, EOFException, IOException {
         ByteList buf = null;
-        ChannelDescriptor descriptor = openFile.getMainStream().getDescriptor();
+        ChannelDescriptor descriptor = openFile.getMainStreamSafe().getDescriptor();
         try {
             // ChannelStream#readall knows what size should be allocated at first. Just use it.
             if (descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel) {
-                buf = openFile.getMainStream().readall();
+                buf = openFile.getMainStreamSafe().readall();
             } else if (descriptor == null) {
                 buf = null;
             } else {
@@ -2854,7 +2856,7 @@ public class RubyIO extends RubyObject {
                 try {
                     while (true) {
                         // TODO: ruby locks the string here
-                        Stream stream = openFile.getMainStream();
+                        Stream stream = openFile.getMainStreamSafe();
                         readCheck(stream);
                         openFile.checkReadable(runtime);
                         ByteList read = fread(thread, ChannelStream.BUFSIZE);
@@ -2869,8 +2871,6 @@ public class RubyIO extends RubyObject {
                             buf.append(read);
                         }
                     }
-                } catch (PipeException ex) {
-                    throw runtime.newErrnoEPIPEError();
                 } catch (InvalidValueException ex) {
                     throw runtime.newErrnoEINVALError();
                 }
@@ -2884,7 +2884,7 @@ public class RubyIO extends RubyObject {
 
     // implements io_fread in io.c
     private ByteList fread(RubyThread thread, int length) throws IOException, BadDescriptorException {
-        Stream stream = openFile.getMainStream();
+        Stream stream = openFile.getMainStreamSafe();
         int rest = length;
         waitReadable(stream);
         ByteList buf = blockingFRead(stream, thread, length);
@@ -2944,7 +2944,11 @@ public class RubyIO extends RubyObject {
     @JRubyMethod
     public IRubyObject stat(ThreadContext context) {
         openFile.checkClosed(context.getRuntime());
-        return context.getRuntime().newFileStat(getOpenFileChecked().getMainStream().getDescriptor().getFileDescriptor());
+        try {
+            return context.getRuntime().newFileStat(getOpenFileChecked().getMainStreamSafe().getDescriptor().getFileDescriptor());
+        } catch (BadDescriptorException e) {
+            throw context.runtime.newErrnoEBADFError();
+        }
     }
 
     /** 
@@ -2961,7 +2965,7 @@ public class RubyIO extends RubyObject {
                 myOpenFile.setReadBuffered();
                 waitReadable(myOpenFile.getMainStream());
                 
-                int c = myOpenFile.getMainStream().fgetc();
+                int c = myOpenFile.getMainStreamSafe().fgetc();
                 
                 // CRuby checks ferror(f) and retry getc for
                 // non-blocking IO.
@@ -2974,8 +2978,6 @@ public class RubyIO extends RubyObject {
             }
 
             return this;
-        } catch (PipeException ex) {
-            throw runtime.newErrnoEPIPEError();
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
         } catch (BadDescriptorException e) {
@@ -2983,7 +2985,7 @@ public class RubyIO extends RubyObject {
         } catch (EOFException e) {
             return runtime.getNil();
     	} catch (IOException e) {
-    	    throw runtime.newIOError(e.getMessage());
+    	    throw runtime.newIOErrorFromException(e);
         }
     }
 
@@ -3115,7 +3117,11 @@ public class RubyIO extends RubyObject {
 
     @Override
     public String toString() {
-        return "RubyIO(" + openFile.getMode() + ", " + getRuntime().getFileno(openFile.getMainStream().getDescriptor()) + ")";
+        try {
+            return "RubyIO(" + openFile.getMode() + ", " + getRuntime().getFileno(openFile.getMainStreamSafe().getDescriptor()) + ")";
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        }
     }
     
     /* class methods for IO */
@@ -3215,7 +3221,7 @@ public class RubyIO extends RubyObject {
                     if (ioObj.getChannel() instanceof SelectableChannel) blocking.put(ioObj, ((SelectableChannel)ioObj.getChannel()).isBlocking());
 
                     // already buffered data? don't bother selecting
-                    if (ioObj.getHandler().readDataBuffered()) {
+                    if (ioObj.getOpenFile().getMainStreamSafe().readDataBuffered()) {
                         unselectable_reads.add(obj);
                     }
                     if (registerSelect(context, selector, obj, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
@@ -3328,8 +3334,10 @@ public class RubyIO extends RubyObject {
             ret.add(RubyArray.newArray(runtime, e));
 
             return RubyArray.newArray(runtime, ret);
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
-            throw runtime.newIOError(e.getMessage());
+            throw runtime.newIOErrorFromException(e);
         } finally {
             if (selector != null) {
                 try {
@@ -3778,14 +3786,16 @@ public class RubyIO extends RubyObject {
                 new RubyIO(runtime, process.getError()) :
                 new RubyIO(runtime, process.getErrorStream());
 
-            input.getOpenFile().getMainStream().getDescriptor().
+            input.getOpenFile().getMainStreamSafe().getDescriptor().
               setCanBeSeekable(false);
-            output.getOpenFile().getMainStream().getDescriptor().
+            output.getOpenFile().getMainStreamSafe().getDescriptor().
               setCanBeSeekable(false);
-            error.getOpenFile().getMainStream().getDescriptor().
+            error.getOpenFile().getMainStreamSafe().getDescriptor().
               setCanBeSeekable(false);
 
             return new POpenTuple(input, output, error, process);
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }
@@ -3795,19 +3805,21 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "pipe", meta = true)
     public static IRubyObject pipe(ThreadContext context, IRubyObject recv) {
         // TODO: This isn't an exact port of MRI's pipe behavior, so revisit
-       Ruby runtime = context.getRuntime();
-       try {
-           Pipe pipe = Pipe.open();
+        Ruby runtime = context.getRuntime();
+        try {
+            Pipe pipe = Pipe.open();
 
-           RubyIO source = new RubyIO(runtime, pipe.source());
-           RubyIO sink = new RubyIO(runtime, pipe.sink());
+            RubyIO source = new RubyIO(runtime, pipe.source());
+            RubyIO sink = new RubyIO(runtime, pipe.sink());
 
-           sink.openFile.getMainStream().setSync(true);
-           return runtime.newArrayNoCopy(new IRubyObject[] { source, sink });
-       } catch (IOException ioe) {
-           throw runtime.newIOErrorFromException(ioe);
-       }
-   }
+            sink.openFile.getMainStreamSafe().setSync(true);
+            return runtime.newArrayNoCopy(new IRubyObject[]{source, sink});
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
+    }
     
     @JRubyMethod(name = "copy_stream", meta = true, compat = RUBY1_9)
     public static IRubyObject copy_stream(ThreadContext context, IRubyObject recv, 
@@ -3834,11 +3846,11 @@ public class RubyIO extends RubyObject {
                 throw runtime.newTypeError("Should be String or IO");
             }
 
-            ChannelDescriptor d1 = io1.openFile.getMainStream().getDescriptor();
+            ChannelDescriptor d1 = io1.openFile.getMainStreamSafe().getDescriptor();
             if (!d1.isSeekable()) {
                 throw context.getRuntime().newTypeError("only supports file-to-file copy");
             }
-            ChannelDescriptor d2 = io2.openFile.getMainStream().getDescriptor();
+            ChannelDescriptor d2 = io2.openFile.getMainStreamSafe().getDescriptor();
             if (!d2.isSeekable()) {
                 throw context.getRuntime().newTypeError("only supports file-to-file copy");
             }
@@ -3855,6 +3867,8 @@ public class RubyIO extends RubyObject {
             } catch (IOException ioe) {
                 throw runtime.newIOErrorFromException(ioe);
             }
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
         } finally {
             try {
                 if (io1 != null) {

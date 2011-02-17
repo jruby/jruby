@@ -55,6 +55,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.io.BadDescriptorException;
 
 /** This class initializes global variables and constants.
  * 
@@ -669,7 +670,11 @@ public class RubyGlobal {
                 
                 // HACK: in order to have stdout/err act like ttys and flush always,
                 // we set anything assigned to stdout/stderr to sync
-                io.getHandler().setSync(true);
+                try {
+                    io.getOpenFile().getWriteStreamSafe().setSync(true);
+                } catch (BadDescriptorException e) {
+                    throw runtime.newErrnoEBADFError();
+                }
             }
 
             if (!value.respondsTo("write")) {

@@ -27,8 +27,6 @@ public class IOJavaAddons {
 
         try {
             io.getOpenFile().checkReadable(context.getRuntime());
-        } catch (PipeException pe) {
-            throw runtime.newErrnoEPIPEError();
         } catch (IOException ex) {
             throw runtime.newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
@@ -47,8 +45,6 @@ public class IOJavaAddons {
 
         try {
             io.getOpenFile().checkWritable(context.getRuntime());
-        } catch (PipeException pe) {
-            throw runtime.newErrnoEPIPEError();
         } catch (IOException ex) {
             throw runtime.newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {

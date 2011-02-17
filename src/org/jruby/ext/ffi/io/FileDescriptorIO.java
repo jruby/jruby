@@ -38,6 +38,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.InvalidValueException;
@@ -63,15 +64,17 @@ public class FileDescriptorIO extends RubyIO {
         ModeFlags modes;
         try {
             modes = new ModeFlags(ModeFlags.RDWR);
+            openFile.setMainStream(ChannelStream.open(getRuntime(),
+                    new ChannelDescriptor(new FileDescriptorByteChannel(getRuntime(), RubyNumeric.fix2int(fd)),
+                    modes)));
+            openFile.setPipeStream(openFile.getMainStreamSafe());
+            openFile.setMode(modes.getOpenFileFlags());
+            openFile.getMainStreamSafe().setSync(true);
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
         } catch (InvalidValueException ex) {
             throw new RuntimeException(ex);
         }
-        openFile.setMainStream(ChannelStream.open(getRuntime(),
-                new ChannelDescriptor(new FileDescriptorByteChannel(getRuntime(), RubyNumeric.fix2int(fd)),
-                modes)));
-        openFile.setPipeStream(openFile.getMainStream());
-        openFile.setMode(modes.getOpenFileFlags());
-        openFile.getMainStream().setSync(true);
     }
     public static RubyClass createFileDescriptorIOClass(Ruby runtime, RubyModule module) {
         RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.fastGetClass("IO"),

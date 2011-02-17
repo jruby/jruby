@@ -125,6 +125,7 @@ import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.nio.channels.ClosedChannelException;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jcodings.specific.USASCIIEncoding;
@@ -3228,6 +3229,10 @@ public final class Ruby {
     }
 
     public RaiseException newIOErrorFromException(IOException ioe) {
+        if (ioe instanceof ClosedChannelException) {
+            throw newIOError("closed stream");
+        }
+
         // TODO: this is kinda gross
         if(ioe.getMessage() != null) {
             if (ioe.getMessage().equals("Broken pipe")) {
