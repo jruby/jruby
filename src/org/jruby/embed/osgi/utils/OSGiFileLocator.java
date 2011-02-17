@@ -35,6 +35,7 @@ import java.net.URLConnection;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkUtil;
 
 /**
@@ -85,10 +86,20 @@ public class OSGiFileLocator {
 	public static Bundle getBundle(String symbolicName) {
 	    BundleContext bc = FrameworkUtil.getBundle(OSGiFileLocator.class).getBundleContext();
 	    if (bc == null) {
-	        //this should not happen as this bundle is marked as Activation-Policy: lazy
-	        throw new IllegalStateException("The bundle "
+	        //if the bundle was not activatged then let's activate it.
+            try {
+                FrameworkUtil.getBundle(OSGiFileLocator.class).start();
+            } catch (BundleException e) {
+                throw new IllegalStateException("Could not start the bundle "
+                    + FrameworkUtil.getBundle(OSGiFileLocator.class).getSymbolicName());
+            }
+            bc = FrameworkUtil.getBundle(OSGiFileLocator.class).getBundleContext();
+            if (bc == null) {
+                //this should never happen
+                throw new IllegalStateException("The bundle "
 	                + FrameworkUtil.getBundle(OSGiFileLocator.class).getSymbolicName()
 	                + " is not activated.");
+            }
 	    }
 		for (Bundle b : FrameworkUtil.getBundle(OSGiFileLocator.class).getBundleContext().getBundles()) {
 			if (b.getSymbolicName().equals(symbolicName)) {

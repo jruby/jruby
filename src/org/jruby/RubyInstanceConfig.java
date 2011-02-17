@@ -164,6 +164,8 @@ public class RubyInstanceConfig {
     private CompileMode compileMode = CompileMode.JIT;
     private boolean runRubyInProcess   = true;
     private String currentDirectory;
+
+    /** Environment variables; defaults to System.getenv() in constructor */
     private Map environment;
     private String[] argv = {};
 
@@ -383,6 +385,12 @@ public class RubyInstanceConfig {
         threadDumpSignal = parentConfig.threadDumpSignal;
         
         classCache = new ClassCache<Script>(loader, jitMax);
+
+        try {
+            environment = System.getenv();
+        } catch (SecurityException se) {
+            environment = new HashMap();
+        }
     }
 
     public RubyInstanceConfig() {
@@ -455,6 +463,12 @@ public class RubyInstanceConfig {
         // default ClassCache using jitMax as a soft upper bound
         classCache = new ClassCache<Script>(loader, jitMax);
         threadDumpSignal = SafePropertyAccessor.getProperty("jruby.thread.dump.signal", "USR2");
+
+        try {
+            environment = System.getenv();
+        } catch (SecurityException se) {
+            environment = new HashMap();
+        }
     }
 
     public LoadServiceCreator getLoadServiceCreator() {
@@ -681,12 +695,9 @@ public class RubyInstanceConfig {
 
     public void tryProcessArgumentsWithRubyopts() {
         try {
-            String rubyopt = null;
-            if (environment != null && environment.containsKey("RUBYOPT")) {
-                rubyopt = environment.get("RUBYOPT").toString();
-            } else {
-                rubyopt = System.getenv("RUBYOPT");
-            }
+            // environment defaults to System.getenv normally
+            Object rubyoptObj = environment.get("RUBYOPT");
+            String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
             
             if (rubyopt == null || "".equals(rubyopt)) return;
 
@@ -896,6 +907,7 @@ public class RubyInstanceConfig {
     }
 
     public void setEnvironment(Map newEnvironment) {
+        if (newEnvironment == null) newEnvironment = new HashMap();
         environment = newEnvironment;
     }
 

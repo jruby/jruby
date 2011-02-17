@@ -35,7 +35,7 @@ endif
 
 LIBCEXT = $(JRUBY_NATIVE_DIR)/$(PLATFORM)/$(PREFIX)$(LIBNAME).$(JNIEXT)
 
-CPU ?= $(shell uname -m | sed -e 's/i[345678]86/i386/')
+CPU ?= $(shell uname -m | sed -e 's/i[345678]86/i386/' | sed -e 's/amd64/x86_64/')
 MODEL = 32 # Default to 32bit compiles
 
 # Try to determine JAVA_HOME if not set
@@ -196,7 +196,11 @@ ifeq ($(OS), aix)
 endif
 
 ifneq ($(findstring bsd, $(OS)),)
-  PLATFORM = $(CPU)-FreeBSD
+  ifneq ($(findstring openbsd, $(OS)),)
+    PLATFORM = $(CPU)-OpenBSD
+  else
+    PLATFORM = $(CPU)-FreeBSD
+  endif
   SOFLAGS = -shared -static-libgcc
   CFLAGS += -pthread
   LDFLAGS += -pthread

@@ -135,7 +135,7 @@ public class UnmarshalStream extends InputStream {
         IRubyObject result = null;
         if (cache.isLinkType(type)) {
             result = cache.readLink(this, type);
-            if (callProc) return doCallProcForLink(result, type);
+            if (callProc && runtime.is1_9()) return doCallProcForLink(result, type);
         } else {
             result = unmarshalObjectDirectly(type, state, callProc);
         }
@@ -178,10 +178,6 @@ public class UnmarshalStream extends InputStream {
             return RuntimeHelpers.invoke(getRuntime().getCurrentContext(), proc, "call", result);
         }
         return result;
-    }
-
-    private IRubyObject unmarshalObjectDirectly(int type, MarshalState state) throws IOException {
-        return unmarshalObjectDirectly(type, state, true);
     }
 
     private IRubyObject unmarshalObjectDirectly(int type, MarshalState state, boolean callProc) throws IOException {
@@ -273,11 +269,16 @@ public class UnmarshalStream extends InputStream {
                 throw getRuntime().newArgumentError("dump format error(" + (char)type + ")");
         }
 
-        if (callProc) {
-            return doCallProcForObj(rubyObj);
-        } else {
-            return rubyObj;
+        if (runtime.is1_9()) {
+            if (callProc) {
+                return doCallProcForObj(rubyObj);
+            }
+        } else if (type != ':') {
+            // call the proc, but not for symbols
+            doCallProcForObj(rubyObj);
         }
+        
+        return rubyObj;
     }
 
 

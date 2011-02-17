@@ -1892,7 +1892,7 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Map expResult = null;
+        Map expResult = System.getenv();
         Map result = instance.getEnvironment();
         assertEquals(expResult, result);
 
@@ -1912,7 +1912,7 @@ public class ScriptingContainerTest {
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
         instance.setEnvironment(environment);
-        assertEquals(environment, instance.getEnvironment());
+        assertEquals(new HashMap(), instance.getEnvironment());
 
         environment = new HashMap();
         environment.put("abc", "def");

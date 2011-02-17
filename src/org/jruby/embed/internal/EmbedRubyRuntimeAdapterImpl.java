@@ -244,6 +244,10 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             scope =
                 new ManyVarsDynamicScope(new EvalStaticScope(currentScope.getStaticScope(), names4Injection), currentScope);
         }
+
+        // JRUBY-5501: ensure we've set up a cref for the scope too
+        scope.getStaticScope().determineModule();
+        
         return scope;
     }
 

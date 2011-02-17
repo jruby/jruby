@@ -652,17 +652,22 @@ public class RubyString extends RubyObject implements EncodingCapable {
      * @return A decoded Java String, based on this Ruby string's encoding.
      */
     public String decodeString() {
-        try {
-            // 1.9 support for encodings
-            // TODO: Fix charset use for JRUBY-4553
-            if (getRuntime().is1_9()) {
-                return new String(value.getUnsafeBytes(), value.begin(), value.length(), getEncoding().toString());
-            }
+        Ruby runtime = getRuntime();
+        // Note: we always choose UTF-8 for outbound strings in 1.8 mode.  This is clearly undesirable
+        // but we do not mark any incoming Strings from JI with their real encoding so we just pick utf-8.
+        Encoding encoding = runtime.is1_9() ? getEncoding() : UTF8;
+        Charset charset = encoding.getCharset();
 
-            return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
-        } catch (UnsupportedEncodingException uee) {
-            return value.toString();
+        // charset is not defined for this encoding in jcodings db.  Try letting Java resolve this.
+        if (charset == null) {
+            try {
+                return new String(value.getUnsafeBytes(), value.begin(), value.length(), encoding.toString());
+            } catch (UnsupportedEncodingException uee) {
+                return value.toString();
+            }
         }
+
+        return RubyEncoding.decode(value.getUnsafeBytes(), value.begin(), value.length(), charset);
     }
 
     /** rb_str_dup
