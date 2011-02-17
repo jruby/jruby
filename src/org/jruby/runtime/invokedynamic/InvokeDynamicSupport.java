@@ -140,10 +140,15 @@ public class InvokeDynamicSupport {
                 length--;
                 hasContext = true;
             }
+
             if (args.length > 1 && args[args.length - 1] == Block.class) {
                 length--;
             }
-            if (length == 2) {
+
+            // all static bound methods receive self arg
+            length--;
+            
+            if (length == 1) {
                 if (hasContext && args[2] == IRubyObject[].class) {
                     length = -1;
                 } else if (args[1] == IRubyObject[].class) {
@@ -155,9 +160,11 @@ public class InvokeDynamicSupport {
                 length--;
                 hasContext = true;
             }
+
             if (args.length > 0 && args[args.length - 1] == Block.class) {
                 length--;
             }
+
             if (length == 1) {
                 if (hasContext && args[1] == IRubyObject[].class) {
                     length = -1;
