@@ -28,6 +28,7 @@ package org.jruby;
 import java.util.Random;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -263,6 +264,24 @@ public class RubyRandom extends RubyObject {
         return context.getRuntime().newString(new ByteList(bytes));
     }
 
+    public static double randomReal(ThreadContext context, IRubyObject obj) {
+        Random random = null;
+        if (obj.equals(context.runtime.getRandomClass())) {
+            random = globalRandom;
+        }
+        if (obj instanceof RubyRandom) {
+            random = ((RubyRandom) obj).random;
+        }
+        if (random != null) {
+            return random.nextDouble();
+        }
+        double d = RubyNumeric.num2dbl(RuntimeHelpers.invoke(context, obj, "rand"));
+        if (d < 0.0 || d >= 1.0) {
+            throw context.runtime.newRangeError("random number too big: " + d);
+        }
+        return d;
+    }
+    
     @JRubyMethod(name = "new_seed", meta = true, compat = RUBY1_9)
     public static IRubyObject newSeed(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
