@@ -51,6 +51,12 @@ public class OpenFile {
         return pipeStream == null ? mainStream : pipeStream;
     }
 
+    public Stream getWriteStreamOrError() throws BadDescriptorException {
+        Stream stream = pipeStream == null ? mainStream : pipeStream;
+        if (stream == null) throw new BadDescriptorException();
+        return stream;
+    }
+
     public int getMode() {
         return mode;
     }
@@ -106,14 +112,20 @@ public class OpenFile {
     }
 
     public void seek(long offset, int whence) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
-        flushBeforeSeek();
+        Stream stream = getWriteStreamOrError();
 
-        getWriteStream().lseek(offset, whence);
+        seekInternal(stream, offset, whence);
     }
 
-    private void flushBeforeSeek() throws BadDescriptorException, IOException {
+    private void seekInternal(Stream stream, long offset, int whence) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
+        flushBeforeSeek(stream);
+
+        stream.lseek(offset, whence);
+    }
+
+    private void flushBeforeSeek(Stream stream) throws BadDescriptorException, IOException {
         if ((mode & WBUF) != 0) {
-            fflush(getWriteStream());
+            fflush(stream);
         }
     }
 
