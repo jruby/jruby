@@ -52,6 +52,10 @@ public @interface JRubyMethod {
      */
     boolean module() default false;
     /**
+     * Whether this method should be defined on the singleton class, as in def self.blah.
+     */
+    boolean singleton() default false;
+    /**
      * Whether this method expects to have a call frame allocated for it.
      */
     boolean frame() default false;
