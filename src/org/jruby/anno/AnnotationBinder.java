@@ -117,7 +117,6 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
 
                     // scan for meta, compat, etc to reduce findbugs complaints about "dead assignments"
                     boolean hasMeta = false;
-                    boolean hasSingleton = false;
                     boolean hasModule = false;
                     boolean hasCompat = false;
                     for (MethodDeclaration md : cd.getMethods()) {
@@ -126,15 +125,13 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             continue;
                         }
                         hasMeta |= anno.meta();
-                        hasSingleton |= anno.singleton();
                         hasModule |= anno.module();
                         hasCompat |= anno.compat() != CompatVersion.BOTH;
                     }
 
                     out.println("        JavaMethod javaMethod;");
                     out.println("        DynamicMethod moduleMethod;");
-                    if (hasMeta) out.println("        RubyClass metaClass = cls.getMetaClass();");
-                    if (hasSingleton || hasModule) out.println("        RubyClass singletonClass = cls.getSingletonClass();");
+                    if (hasMeta || hasModule) out.println("        RubyClass singletonClass = cls.getSingletonClass();");
                     if (hasCompat) out.println("        CompatVersion compatVersion = cls.getRuntime().getInstanceConfig().getCompatVersion();");
                     out.println("        Ruby runtime = cls.getRuntime();");
 
@@ -376,8 +373,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             anno.optional(),
                             false,
                             anno.frame());
-                    String implClass = anno.meta() ? "metaClass" : "cls";
-                    implClass = anno.singleton() ? "singletonClass" : implClass;
+                    String implClass = anno.meta() ? "singletonClass" : "cls";
 
                     out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
                     out.println("        populateMethod(javaMethod, " +
@@ -419,8 +415,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             anno.optional(),
                             true,
                             anno.frame());
-                    String implClass = anno.meta() ? "metaClass" : "cls";
-                    implClass = anno.singleton() ? "singletonClass" : implClass;
+                    String implClass = anno.meta() ? "singletonClass" : "cls";
 
                     out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
                     out.println("        populateMethod(javaMethod, " +
@@ -511,8 +506,6 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
 
             public void generateMethodAddCalls(MethodDeclaration md, JRubyMethod jrubyMethod) {
                 if (jrubyMethod.meta()) {
-                    defineMethodOnClass("javaMethod", "metaClass", jrubyMethod, md);
-                } else if (jrubyMethod.singleton()) {
                     defineMethodOnClass("javaMethod", "singletonClass", jrubyMethod, md);
                 } else {
                     defineMethodOnClass("javaMethod", "cls", jrubyMethod, md);
