@@ -296,4 +296,8 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
     public String[] getParameterList() {
         return parameterList;
     }
+
+    public Object getScriptObject() {
+        return $scriptObject;
+    }
 }// SimpleInvocationMethod

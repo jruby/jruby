@@ -96,6 +96,23 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         }
     }
 
+    public static Class[] getStaticMethodParams(Class target, int args) {
+        switch (args) {
+        case 0:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, Block.class};
+        case 1:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class};
+        case 2:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class};
+        case 3:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class};
+        case 4:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class};
+        default:
+            throw new RuntimeException("unsupported arity: " + args);
+        }
+    }
+
     public static String getMethodSignature(int args) {
         switch (args) {
         case 0:

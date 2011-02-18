@@ -255,6 +255,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
                 compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
+                
+                if (arity.isFixed() && arity.required() <= 3) {
+                    Class[] params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
+                    compiledMethod.setNativeCall(scriptClass, method, IRubyObject.class, params, true);
+                }
                 return compiledMethod;
             } catch(Exception e) {
                 e.printStackTrace();

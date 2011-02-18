@@ -10,15 +10,19 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
+import org.jruby.ast.executable.AbstractScript;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.CompiledMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.Framing;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.util.CodegenUtils;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.MethodVisitor;
 
@@ -74,9 +78,15 @@ public class InvokeDynamicSupport {
         if (entry.method.getNativeCall() != null) {
             DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
             Class[] nativeSig = nativeCall.getNativeSignature();
-            if (getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
-                if (nativeSig.length > 0 && nativeSig[0] == ThreadContext.class && nativeSig[nativeSig.length - 1] != Block.class) {
-                    return createNativeGWT(nativeCall, test, fallback, entry, site);
+            if (nativeSig.length > 0 && AbstractScript.class.isAssignableFrom(nativeSig[0]) && entry.method instanceof CompiledMethod) {
+                if (entry.method.getCallConfig().framing() == Framing.None) {
+                    return createRubyGWT(nativeCall, test, fallback, entry, site);
+                }
+            } else {
+                if (getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
+                    if (nativeSig.length > 0 && nativeSig[0] == ThreadContext.class && nativeSig[nativeSig.length - 1] != Block.class) {
+                        return createNativeGWT(nativeCall, test, fallback, entry, site);
+                    }
                 }
             }
         }
@@ -132,6 +142,44 @@ public class InvokeDynamicSupport {
         }
     }
 
+    private static MethodHandle createRubyGWT(DynamicMethod.NativeCall nativeCall, MethodHandle test, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
+        try {
+            MethodHandle nativeTarget;
+            nativeTarget = MethodHandles.lookup().findStatic(
+                    nativeCall.getNativeTarget(),
+                    nativeCall.getNativeName(),
+                    MethodType.methodType(nativeCall.getNativeReturn(),
+                    nativeCall.getNativeSignature()));
+            CompiledMethod cm = (CompiledMethod)entry.method;
+            nativeTarget = MethodHandles.insertArguments(nativeTarget, 0, cm.getScriptObject());
+            nativeTarget = MethodHandles.insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
+            int argCount = getRubyArgCount(nativeCall.getNativeSignature());
+            switch (argCount) {
+                case 0:
+                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2});
+                    break;
+                case -1:
+                case 1:
+                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4});
+                    break;
+                case 2:
+                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4, 5});
+                    break;
+                case 3:
+                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4, 5, 6});
+                    break;
+                default:
+                    throw new RuntimeException("unknown arg count: " + argCount);
+            }
+            MethodHandle myFallback = MethodHandles.insertArguments(fallback, 0, site);
+            MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
+            MethodHandle gwt = MethodHandles.guardWithTest(myTest, nativeTarget, myFallback);
+            return MethodHandles.convertArguments(gwt, site.type());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static int getArgCount(Class[] args, boolean isStatic) {
         int length = args.length;
         boolean hasContext = false;
@@ -174,6 +222,10 @@ public class InvokeDynamicSupport {
             }
         }
         return length;
+    }
+
+    private static int getRubyArgCount(Class[] args) {
+        return args.length - 4;
     }
 
     public static boolean test(int token, IRubyObject self) {
