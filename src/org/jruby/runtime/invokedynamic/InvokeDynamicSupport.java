@@ -23,6 +23,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.SafePropertyAccessor;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.MethodVisitor;
 
@@ -78,12 +79,16 @@ public class InvokeDynamicSupport {
         if (entry.method.getNativeCall() != null) {
             DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
             Class[] nativeSig = nativeCall.getNativeSignature();
-            if (nativeSig.length > 0 && AbstractScript.class.isAssignableFrom(nativeSig[0]) && entry.method instanceof CompiledMethod) {
+            if (SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic.rubyDirect", true) &&
+                    nativeSig.length > 0 &&
+                    AbstractScript.class.isAssignableFrom(nativeSig[0]) &&
+                    entry.method instanceof CompiledMethod) {
                 if (entry.method.getCallConfig().framing() == Framing.None) {
                     return createRubyGWT(nativeCall, test, fallback, entry, site);
                 }
             } else {
-                if (getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
+                if (SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic.nativeDirect", true) &&
+                        getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
                     if (nativeSig.length > 0 && nativeSig[0] == ThreadContext.class && nativeSig[nativeSig.length - 1] != Block.class) {
                         return createNativeGWT(nativeCall, test, fallback, entry, site);
                     }
