@@ -60,7 +60,7 @@ public interface IRubyObject {
 
     public IRubyObject callMethod(ThreadContext context, String name);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg);
-    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args);
+    public IRubyObject callMethod(ThreadContext context, String name, IRubyObject... args);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block);
     @Deprecated
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name);
