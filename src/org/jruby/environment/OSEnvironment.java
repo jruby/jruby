@@ -79,7 +79,7 @@ public class OSEnvironment {
     
 	private static Map getAsMapOfRubyStrings(Ruby runtime, Set<Map.Entry<Object, Object>> entrySet) {
 		Map envs = new HashMap();
-        Encoding encoding = EncodingDB.getEncodings().get(Charset.defaultCharset().name().getBytes()).getEncoding();
+        Encoding encoding = runtime.getEncodingService().getLocaleEncoding();
         
         // On Windows, entrySet doesn't have corresponding keys for these
         if (Platform.IS_WINDOWS) {
