@@ -1362,6 +1362,10 @@ public class ShellLauncher {
                 useShell = true;
             }
         }
+        if (Platform.IS_WINDOWS && command.charAt(0) == '@') {
+            // JRUBY-5522
+            useShell = true;
+        }
         return useShell;
     }
 
