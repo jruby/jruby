@@ -1143,29 +1143,6 @@ public final class Ruby {
         trueObject = new RubyBoolean(this, true);
     }
 
-    private void initEncodings() {
-        RubyEncoding.createEncodingClass(this);
-        RubyConverter.createConverterClass(this);
-        encodingService = new EncodingService(this);
-
-        // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
-        String encoding = config.getExternalEncoding();
-        if (encoding != null && !encoding.equals("")) {
-            Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
-            if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
-            setDefaultExternalEncoding(loadedEncoding);
-        } else {
-            setDefaultExternalEncoding(encodingService.getLocaleEncoding());
-        }
-        
-        encoding = config.getInternalEncoding();
-        if (encoding != null && !encoding.equals("")) {
-            Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
-            if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
-            setDefaultInternalEncoding(loadedEncoding);
-        }
-    }
-
     private void initCore() {
         if (profile.allowClass("Data")) {
             defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -1175,8 +1152,9 @@ public final class Ruby {
         RubyEnumerable.createEnumerableModule(this);
         RubyString.createStringClass(this);
 
+        encodingService = new EncodingService(this);
+
         if (is1_9()) {
-            initEncodings();
             RubyRandom.createRandomClass(this);
         }
 

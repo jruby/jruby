@@ -28,75 +28,11 @@
 
 package org.jruby.environment;
 
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import org.jcodings.Encoding;
-import org.jcodings.EncodingDB;
+/**
+ * TODO: Remove for 1.7 release
+ * @deprecated see org.jruby.util.OSEnvironment
+ */
+@Deprecated
+public class OSEnvironment extends org.jruby.util.OSEnvironment {
 
-import org.jruby.Ruby;
-import org.jruby.ext.posix.util.Platform;
-import org.jruby.util.ByteList;
-
-public class OSEnvironment {
-    /**
-     * Returns the environment as a hash of Ruby strings.
-     *
-     * @param runtime
-     */
-    public Map getEnvironmentVariableMap(Ruby runtime) {
-        Map envs = null;
-
-        if (runtime.getInstanceConfig().getEnvironment() != null) {
-            return getAsMapOfRubyStrings(runtime, runtime.getInstanceConfig().getEnvironment().entrySet());
-        }
-
-        // fall back on empty env when security disallows environment var access (like in an applet)
-        if (Ruby.isSecurityRestricted()) {
-            envs = new HashMap();
-        } else {
-            Map variables = System.getenv();
-            envs = getAsMapOfRubyStrings(runtime,  variables.entrySet());
-        }
-
-        return envs;
-
-    }
-
-    /**
-    * Returns java system properties as a Map<RubyString,RubyString>.
-     * @param runtime
-     * @return the java system properties as a Map<RubyString,RubyString>.
-     */
-    public Map getSystemPropertiesMap(Ruby runtime) {
-        if (Ruby.isSecurityRestricted()) {
-            return new HashMap();
-        } else {
-            return getAsMapOfRubyStrings(runtime, System.getProperties().entrySet());
-        }
-    }
-    
-	private static Map getAsMapOfRubyStrings(Ruby runtime, Set<Map.Entry<Object, Object>> entrySet) {
-		Map envs = new HashMap();
-        Encoding encoding = runtime.getEncodingService().getLocaleEncoding();
-        
-        // On Windows, entrySet doesn't have corresponding keys for these
-        if (Platform.IS_WINDOWS) {
-            envs.put(runtime.newString("HOME"), runtime.newString(System.getProperty("user.home")));
-            envs.put(runtime.newString("USER"), runtime.newString(System.getProperty("user.name")));
-        }
-
-        for (Map.Entry<Object, Object> entry : entrySet) {
-            String value = (String)entry.getValue();
-            String key = (String)entry.getKey();
-
-            ByteList keyBytes = new ByteList(key.getBytes(), encoding);
-            ByteList valueBytes = new ByteList(value.getBytes(), encoding);
-
-            envs.put(runtime.newString(keyBytes), runtime.newString(valueBytes));
-		}
-        
-		return envs;
-	}
 }

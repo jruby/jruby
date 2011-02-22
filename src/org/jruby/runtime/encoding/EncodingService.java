@@ -9,7 +9,9 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.Ruby;
+import org.jruby.RubyConverter;
 import org.jruby.RubyEncoding;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -30,8 +32,30 @@ public final class EncodingService {
         aliases = EncodingDB.getAliases();
 
         encodingList = new IRubyObject[encodings.size()];
-        defineEncodings();
-        defineAliases();
+
+        if (runtime.is1_9()) {
+            RubyEncoding.createEncodingClass(runtime);
+            RubyConverter.createConverterClass(runtime);
+            defineEncodings();
+            defineAliases();
+
+            // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
+            String encoding = runtime.getInstanceConfig().getExternalEncoding();
+            if (encoding != null && !encoding.equals("")) {
+                Encoding loadedEncoding = loadEncoding(ByteList.create(encoding));
+                if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
+                runtime.setDefaultExternalEncoding(loadedEncoding);
+            } else {
+                runtime.setDefaultExternalEncoding(getLocaleEncoding());
+            }
+
+            encoding = runtime.getInstanceConfig().getInternalEncoding();
+            if (encoding != null && !encoding.equals("")) {
+                Encoding loadedEncoding = loadEncoding(ByteList.create(encoding));
+                if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
+                runtime.setDefaultInternalEncoding(loadedEncoding);
+            }
+        }
     }
 
     public CaseInsensitiveBytesHash<Entry> getEncodings() {
@@ -107,7 +131,7 @@ public final class EncodingService {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
             Entry ee = e.value; 
-            RubyEncoding encoding = (RubyEncoding)encodingList[ee.getIndex()];  
+            RubyEncoding encoding = (RubyEncoding)encodingList[ee.getIndex()];
             defineEncodingConstants(runtime, encoding, e.bytes, e.p, e.end);
         }
     }
