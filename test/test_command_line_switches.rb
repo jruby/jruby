@@ -325,15 +325,15 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   ensure
     ENV['RUBYOPT'] = rubyopt_org
   end
-  
+
   # JRUBY-5517
   def test_rubyopts_rubygems_cleared_in_child
     rubyopt_org = ENV['RUBYOPT']
     ENV['RUBYOPT'] = '-r rubygems'
-    
+
     # first subprocess will be "real", second should launch in-process
     # this will test whether in-process child is getting proper env for RUBYOPT
-    args = "-e 'p defined?(Gem) != nil; ENV[%{RUBYOPT}] = nil; system %{jruby -e \"p defined?(Gem) != nil\"}'"
+    args = %{-e "p defined?(Gem) != nil; ENV[%{RUBYOPT}] = nil; system %{jruby -e 'p defined?(Gem) != nil'}"}
 
     assert_equal "true\nfalse\n", jruby(args)
   ensure
