@@ -28,6 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import org.jcodings.Encoding;
+import org.jruby.RubyRegexp;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ConstDeclNode;
@@ -45,9 +47,13 @@ import org.jruby.ast.SValueNode;
 import org.jruby.ast.Splat19Node;
 import org.jruby.ast.SplatNode;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;
+import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
+import org.jruby.util.StringSupport;
 
 public class ParserSupport19 extends ParserSupport {
     @Override
@@ -136,6 +142,58 @@ public class ParserSupport19 extends ParserSupport {
         }
 
         return locals;
+    }
+
+    private boolean is7BitASCII(ByteList value) {
+        return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+    }
+
+    public void setRegexpEncoding(RegexpNode end, ByteList value) {
+        RegexpOptions options = end.getOptions();
+        Encoding optionsEncoding = options.setup19(configuration.getRuntime()) ;
+
+        // Change encoding to one specified by regexp options as long as the string is compatible.
+        if (optionsEncoding != null) {
+            if (optionsEncoding != value.getEncoding() && !is7BitASCII(value)) {
+                compileError(optionsEncoding, value.getEncoding());
+            }
+
+            value.setEncoding(optionsEncoding);
+        } else if (options.isEncodingNone()) {
+            if (value.getEncoding() == RubyYaccLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
+                compileError(optionsEncoding, value.getEncoding());
+            }
+            value.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
+        } else if (lexer.getEncoding() == RubyYaccLexer.USASCII_ENCODING) {
+            if (!is7BitASCII(value)) {
+                value.setEncoding(RubyYaccLexer.USASCII_ENCODING); // This will raise later
+            } else {
+                value.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
+            }
+        }
+    }
+
+
+    // TODO: Put somewhere more consolidated (similiar
+    private char optionsEncodingChar(Encoding optionEncoding) {
+        if (optionEncoding == RubyYaccLexer.USASCII_ENCODING) return 'n';
+        if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
+        if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
+        if (optionEncoding == RubyYaccLexer.UTF8_ENCODING) return 'u';
+
+        return ' ';
+    }
+
+    protected void compileError(Encoding optionEncoding, Encoding encoding) {
+        throw new SyntaxException(PID.REGEXP_ENCODING_MISMATCH, lexer.getPosition(), lexer.getCurrentLine(),
+                "regexp encoding option '" + optionsEncodingChar(optionEncoding) +
+                "' differs from source encoding '" + encoding + "'");
+    }
+
+    @Override
+    public void regexpFragmentCheck(RegexpNode end, ByteList value) {
+        setRegexpEncoding(end, value);
+        RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
     }
 
     @Override

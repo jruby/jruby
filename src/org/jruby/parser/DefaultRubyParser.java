@@ -3420,18 +3420,7 @@ states[460] = new ParserState() {
 };
 states[393] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-		  RegexpOptions options = ((RegexpNode)yyVals[0+yyTop]).getOptions();
-		  Node node = ((Node)yyVals[-1+yyTop]);
-
-                  if (node == null) {
-		    yyVal = new RegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ByteList.create(""), options.withoutOnce());
-                  } else if (node instanceof StrNode) {
-                    yyVal = new RegexpNode(((Node)yyVals[-1+yyTop]).getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options.withoutOnce());
-		  } else if (node instanceof DStrNode) {
-                    yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), options).addAll((DStrNode) node);
-                  } else {
-		    yyVal = new DRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), options).add(node);
-                  }
+                  yyVal = support.newRegexpNode(((Token)yyVals[-2+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]), (RegexpNode) ((RegexpNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -3965,7 +3954,7 @@ states[66] = new ParserState() {
   }
 };
 }
-					// line 1903 "DefaultRubyParser.y"
+					// line 1892 "DefaultRubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -3999,4 +3988,4 @@ states[66] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 7854 "-"
+					// line 7843 "-"

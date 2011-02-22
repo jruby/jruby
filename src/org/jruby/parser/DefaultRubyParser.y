@@ -1499,18 +1499,7 @@ xstring	      : tXSTRING_BEG xstring_contents tSTRING_END {
 
 // Node:regexp - /foo/ [!null]
 regexp	      : tREGEXP_BEG xstring_contents tREGEXP_END {
-		  RegexpOptions options = $3.getOptions();
-		  Node node = $2;
-
-                  if (node == null) {
-		    $$ = new RegexpNode($1.getPosition(), ByteList.create(""), options.withoutOnce());
-                  } else if (node instanceof StrNode) {
-                    $$ = new RegexpNode($2.getPosition(), (ByteList) ((StrNode) node).getValue().clone(), options.withoutOnce());
-		  } else if (node instanceof DStrNode) {
-                    $$ = new DRegexpNode($1.getPosition(), options).addAll((DStrNode) node);
-                  } else {
-		    $$ = new DRegexpNode($1.getPosition(), options).add(node);
-                  }
+                  $$ = support.newRegexpNode($1.getPosition(), $2, (RegexpNode) $3);
                }
 
 // Node:words - collection of words (e.g. %w{a b c}) with delimeters [!null]
