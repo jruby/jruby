@@ -1,3 +1,4 @@
+fails(JRUBY-5265):Process.kill accepts symbols as signal names
 fails:Process.kill tests for the existence of a process without sending a signal
 fails:Process.kill sends the given signal to the specified process
 fails:Process.kill kills process groups if signal is negative
