@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import static org.jruby.util.URLUtil.getPath;
+
 // From Stas Garifulin's CompoundJarURLStreamHandler. http://jira.codehaus.org/browse/JRUBY-3299
 public class CompoundJarURLStreamHandler extends URLStreamHandler {
 
@@ -27,7 +29,7 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
         StringBuilder pathBuilder = new StringBuilder();
 
         if (base.getProtocol().equals("jar")) {
-            pathBuilder.append(base.getFile());
+            pathBuilder.append(getPath(base));
         } else {
             pathBuilder.append(base.toExternalForm());
         }
@@ -53,9 +55,7 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
 
         CompoundJarURLConnection(URL url) throws MalformedURLException {
             super(url);
-
-            String spec = url.getPath();
-
+            String spec = getPath(url);
             path = spec.split("\\!\\/");
             baseJarUrl = new URL(path[0]);
         }

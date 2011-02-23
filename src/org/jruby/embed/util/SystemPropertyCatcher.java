@@ -47,6 +47,8 @@ import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
 
+import static org.jruby.util.URLUtil.getPath;
+
 /**
  * Utility methods to retrieve System properties or environment variables to
  * get configuration parameters.
@@ -213,14 +215,10 @@ public class SystemPropertyCatcher {
 
         String location = null;
         if (resource.getProtocol().equals("jar")) {
-            try { // http://weblogs.java.net/blog/2007/04/25/how-convert-javaneturl-javaiofile
-                location = resource.toURI().getSchemeSpecificPart();
-                if (!location.startsWith("file:")) {
-                    // for remote-sourced classpath resources, just use classpath:
-                    location = "classpath:/META-INF/jruby.home";
-                }
-            } catch (URISyntaxException urise) {
-                location = resource.getPath();
+            location = getPath(resource);
+            if (!location.startsWith("file:")) {
+                // for remote-sourced classpath resources, just use classpath:
+                location = "classpath:/META-INF/jruby.home";
             }
         } else {
             location = "classpath:/META-INF/jruby.home";

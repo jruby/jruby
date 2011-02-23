@@ -65,6 +65,8 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 
+import static org.jruby.util.URLUtil.getPath;
+
 /**
  * <b>How require works in JRuby</b>
  * When requiring a name from Ruby, JRuby will first remove any file extension it knows about,
@@ -1277,7 +1279,7 @@ public class LoadService {
     /* Directories and unavailable resources are not able to open a stream. */
     protected boolean isRequireable(URL loc) {
         if (loc != null) {
-                if (loc.getProtocol().equals("file") && new java.io.File(loc.getFile()).isDirectory()) {
+                if (loc.getProtocol().equals("file") && new java.io.File(getPath(loc)).isDirectory()) {
                         return false;
                 }
                 
@@ -1311,7 +1313,7 @@ public class LoadService {
             if (!isClasspathScheme &&
                     (loc.getProtocol().equals("jar") || loc.getProtocol().equals("file"))
                     && isRequireable(loc)) {
-                path = loc.getPath();
+                path = getPath(loc);
             }
             LoadServiceResource foundResource = new LoadServiceResource(loc, path);
             debugLogFound(foundResource);

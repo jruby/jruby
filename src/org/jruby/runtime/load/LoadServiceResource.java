@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
+import org.jruby.util.URLUtil;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -104,7 +106,7 @@ public class LoadServiceResource {
 
     public String getAbsolutePath() {
         try {
-            return new File(getURL().getFile()).getCanonicalPath();
+            return new File(URLUtil.getPath(getURL())).getCanonicalPath();
         } catch (IOException e) {
             return resource.toString();
         }

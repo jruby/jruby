@@ -98,4 +98,17 @@ class JarCompleteTest < Test::Unit::TestCase
     assert File.exists?(file)
     assert_equal complete_jar, file
   end
+
+  # JRUBY-5337
+  def test_script_with__FILE__constant_in_jar_with_spaces
+    tmp = File.join(TMP_DIR, "hi there")
+    mkdir_p tmp
+    complete_jar = File.expand_path(File.join(tmp, 'jruby-complete.jar'))
+    cp COMPLETE_JAR, complete_jar
+    script = File.join(TMP_DIR, "_file_constant_.rb")
+    File.open(script, "wb") {|f| f.puts "puts __FILE__" }
+    Dir.chdir(File.dirname(script)) { system %{jar uf "#{complete_jar}" #{File.basename(script)}} }
+    output = jruby_complete(complete_jar, %{-e "require '_file_constant_'"}).chomp
+    assert output =~ /#{tmp}/, "'#{output}' does not match '#{tmp}'"
+  end
 end
