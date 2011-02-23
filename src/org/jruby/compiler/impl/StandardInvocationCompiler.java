@@ -589,20 +589,22 @@ public class StandardInvocationCompiler implements InvocationCompiler {
             }
         }
 
-        switch (args.getArity()) {
-            case 1:
-            default:
-                method.aload(argTmp[0]);
-                break;
-            case 2:
-                method.aload(argTmp[0]);
-                method.aload(argTmp[1]);
-                break;
-            case 3:
-                method.aload(argTmp[0]);
-                method.aload(argTmp[1]);
-                method.aload(argTmp[2]);
-                break;
+        if (args != null) {
+            switch (args.getArity()) {
+                case 1:
+                default:
+                    method.aload(argTmp[0]);
+                    break;
+                case 2:
+                    method.aload(argTmp[0]);
+                    method.aload(argTmp[1]);
+                    break;
+                case 3:
+                    method.aload(argTmp[0]);
+                    method.aload(argTmp[1]);
+                    method.aload(argTmp[2]);
+                    break;
+            }
         }
 
         if (closure != null) {
