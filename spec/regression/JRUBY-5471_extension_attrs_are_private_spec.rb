@@ -1,4 +1,6 @@
 require 'rspec'
+require 'java'
+$CLASSPATH << File.expand_path('../../../build/classes/test', __FILE__)
 require 'dummy/dummy'
 
 describe 'A Java-based BasicLibraryService extension' do
