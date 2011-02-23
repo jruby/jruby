@@ -247,14 +247,9 @@ public class ASTCompiler19 extends ASTCompiler {
     public void compileEncoding(Node node, BodyCompiler context, boolean expr) {
         final EncodingNode encodingNode = (EncodingNode)node;
 
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
+        if (expr) {
             context.loadEncoding(encodingNode.getEncoding());
         }
-
-        if (popit) context.consumeCurrentValue();
     }
 
     @Override
@@ -319,18 +314,13 @@ public class ASTCompiler19 extends ASTCompiler {
     public void compileLambda(Node node, BodyCompiler context, boolean expr) {
         final LambdaNode lambdaNode = (LambdaNode)node;
 
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
+        if (expr) {
             context.createNewLambda(new CompilerCallback() {
                 public void call(BodyCompiler context) {
                     compileIter(lambdaNode, context);
                 }
             });
         }
-
-        if (popit) context.consumeCurrentValue();
     }
 
     public void compileMultipleAsgn19(Node node, BodyCompiler context, boolean expr) {

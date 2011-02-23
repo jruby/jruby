@@ -242,18 +242,10 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
     public static boolean FASTOPS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
-            || SafePropertyAccessor.getBoolean("jruby.compile.fastops");
-    public static boolean FRAMELESS_COMPILE_ENABLED
-            = FASTEST_COMPILE_ENABLED
-            || SafePropertyAccessor.getBoolean("jruby.compile.frameless");
-    public static boolean POSITIONLESS_COMPILE_ENABLED
-            = FASTEST_COMPILE_ENABLED
-            || SafePropertyAccessor.getBoolean("jruby.compile.positionless", true);
+            || SafePropertyAccessor.getBoolean("jruby.compile.fastops", true);
     public static boolean THREADLESS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.threadless");
-    public static boolean FASTCASE_COMPILE_ENABLED =
-            SafePropertyAccessor.getBoolean("jruby.compile.fastcase");
     public static boolean FASTSEND_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.fastsend");
@@ -562,18 +554,12 @@ public class RubyInstanceConfig {
                 .append("\nCOMPILER SETTINGS:\n")
                 .append("    jruby.compile.mode=JIT|FORCE|OFF\n")
                 .append("       Set compilation mode. JIT is default; FORCE compiles all, OFF disables\n")
-                .append("    jruby.compile.fastest=true|false\n")
-                .append("       (EXPERIMENTAL) Turn on all experimental compiler optimizations\n")
-                .append("    jruby.compile.frameless=true|false\n")
-                .append("       (EXPERIMENTAL) Turn on frameless compilation where possible\n")
-                .append("    jruby.compile.positionless=true|false\n")
-                .append("       (EXPERIMENTAL) Turn on compilation that avoids updating Ruby position info. Default is false\n")
                 .append("    jruby.compile.threadless=true|false\n")
                 .append("       (EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events. Default is false\n")
+                .append("    jruby.compile.dynopt=true|false\n")
+                .append("       (EXPERIMENTAL) Use interpreter to help compiler make direct calls. Default is false\n")
                 .append("    jruby.compile.fastops=true|false\n")
-                .append("       (EXPERIMENTAL) Turn on fast operators for Fixnum. Default is false\n")
-                .append("    jruby.compile.fastcase=true|false\n")
-                .append("       (EXPERIMENTAL) Turn on fast case/when for all-Fixnum whens. Default is false\n")
+                .append("       Turn on fast operators for Fixnum and Float. Default is true\n")
                 .append("    jruby.compile.chainsize=<line count>\n")
                 .append("       Set the number of lines at which compiled bodies are \"chained\". Default is ").append(CHAINED_COMPILE_LINE_COUNT_DEFAULT).append("\n")
                 .append("    jruby.compile.lazyHandles=true|false\n")
@@ -1318,11 +1304,7 @@ public class RubyInstanceConfig {
                         break FOR;
                     } else if (argument.equals("--fast")) {
                         compileMode = CompileMode.FORCE;
-                        FASTEST_COMPILE_ENABLED = true;
                         FASTOPS_COMPILE_ENABLED = true;
-                        FRAMELESS_COMPILE_ENABLED = true;
-                        POSITIONLESS_COMPILE_ENABLED = true;
-                        FASTCASE_COMPILE_ENABLED = true;
                         FASTSEND_COMPILE_ENABLED = true;
                         INLINE_DYNCALL_ENABLED = true;
                         break FOR;

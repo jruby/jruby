@@ -629,11 +629,8 @@ public class ASTCompiler {
 
     public void compileArray(Node node, BodyCompiler context, boolean expr) {
         ArrayNode arrayNode = (ArrayNode) node;
-
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
         
-        if (doit) {
+        if (expr) {
             ArrayCallback callback = new ArrayCallback() {
                 public void nextValue(BodyCompiler context, Object sourceArray, int index) {
                     Node node = (Node) ((Object[]) sourceArray)[index];
@@ -648,8 +645,6 @@ public class ASTCompiler {
             } else {
                 context.createNewArray(childNodes.toArray(), callback, arrayNode.isLightweight());
             }
-
-            if (popit) context.consumeCurrentValue();
         } else {
             for (Iterator<Node> iter = arrayNode.childNodes().iterator(); iter.hasNext();) {
                 Node nextNode = iter.next();
@@ -755,12 +750,7 @@ public class ASTCompiler {
     }
 
     public void compileBignum(Node node, BodyCompiler context, boolean expr) {
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) context.createNewBignum(((BignumNode) node).getValue());
-        } else {
-            context.createNewBignum(((BignumNode) node).getValue());
-            if (!expr) context.consumeCurrentValue();
-        }
+        if (expr) context.createNewBignum(((BignumNode) node).getValue());
     }
 
     public void compileBlock(Node node, BodyCompiler context, boolean expr) {
@@ -865,6 +855,12 @@ public class ASTCompiler {
                             return;
                         }
                     }
+                }
+            } else if (name.length() == 3 && name.equals("<=>")) {
+                if (argument instanceof FixnumNode) {
+                    context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
+                    if (!expr) context.consumeCurrentValue();
+                    return;
                 }
             }
         }
@@ -1139,12 +1135,11 @@ public class ASTCompiler {
         FastSwitchType switchType = getHomogeneousSwitchType(whenNodes);
         if (switchType != null && !RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // NOTE: Currently this optimization is limited to the following situations:
-            // * All expressions must be int-ranged literal fixnums
-            // It also still emits the code for the "safe" when logic, which is rather
-            // wasteful (since it essentially doubles each code body). As such it is
-            // normally disabled, but it serves as an example of how this optimization
-            // could be done. Ideally, it should be combined with the when processing
-            // to improve code reuse before it's generally available.
+            // * All expressions are int-ranged literal fixnums
+            // * All expressions are literal symbols
+            // * All expressions are literal strings
+            // If the case value is not of the same type as the when values, the
+            // default === logic applies.
             switchCases = new HashMap<CompilerCallback, int[]>();
         }
         for (Node node : whenNodes) {
@@ -1514,15 +1509,9 @@ public class ASTCompiler {
     }
 
     public void compileDefined(final Node node, BodyCompiler context, boolean expr) {
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) {
-                compileGetDefinitionBase(((DefinedNode) node).getExpressionNode(), context);
-                context.stringOrNil();
-            }
-        } else {
+        if (expr) {
             compileGetDefinitionBase(((DefinedNode) node).getExpressionNode(), context);
             context.stringOrNil();
-            if (!expr) context.consumeCurrentValue();
         }
     }
 
@@ -2226,10 +2215,7 @@ public class ASTCompiler {
     public void compileDot(Node node, BodyCompiler context, boolean expr) {
         final DotNode dotNode = (DotNode) node;
 
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
+        if (expr) {
             CompilerCallback beginEndCallback = new CompilerCallback() {
                 public void call(BodyCompiler context) {
                     compile(dotNode.getBeginNode(), context, true);
@@ -2239,7 +2225,6 @@ public class ASTCompiler {
 
             context.createNewRange(beginEndCallback, dotNode.isExclusive());
         }
-        if (popit) context.consumeCurrentValue();
     }
 
     public void compileDRegexp(Node node, BodyCompiler context, boolean expr) {
@@ -2259,12 +2244,8 @@ public class ASTCompiler {
                     }
                 };
 
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
+        if (expr) {
             context.createNewRegexp(createStringCallback, dregexpNode.getOptions().toEmbeddedOptions());
-            if (popit) context.consumeCurrentValue();
         } else {
             // not an expression, only compile the elements
             for (Node nextNode : dregexpNode.childNodes()) {
@@ -2284,12 +2265,8 @@ public class ASTCompiler {
                     }
                 };
 
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
+        if (expr) {
             context.createNewString(dstrCallback, dstrNode.size());
-            if (popit) context.consumeCurrentValue();
         } else {
             // not an expression, only compile the elements
             for (Node nextNode : dstrNode.childNodes()) {
@@ -2309,12 +2286,8 @@ public class ASTCompiler {
                     }
                 };
 
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
+        if (expr) {
             context.createNewSymbol(dstrCallback, dsymbolNode.size());
-            if (popit) context.consumeCurrentValue();
         } else {
             // not an expression, only compile the elements
             for (Node nextNode : dsymbolNode.childNodes()) {
@@ -2326,12 +2299,7 @@ public class ASTCompiler {
     public void compileDVar(Node node, BodyCompiler context, boolean expr) {
         DVarNode dvarNode = (DVarNode) node;
 
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) context.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
-        } else {
-            context.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
-            if (!expr) context.consumeCurrentValue();
-        }
+        if (expr) context.getVariableCompiler().retrieveLocalVariable(dvarNode.getIndex(), dvarNode.getDepth());
     }
 
     public void compileDXStr(Node node, BodyCompiler context, boolean expr) {
@@ -2401,15 +2369,9 @@ public class ASTCompiler {
     }
 
     public void compileFalse(Node node, BodyCompiler context, boolean expr) {
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) {
-                context.loadFalse();
-                context.pollThreadEvents();
-            }
-        } else {
+        if (expr) {
             context.loadFalse();
             context.pollThreadEvents();
-            if (!expr) context.consumeCurrentValue();
         }
     }
 
@@ -2479,12 +2441,7 @@ public class ASTCompiler {
     public void compileFixnum(Node node, BodyCompiler context, boolean expr) {
         FixnumNode fixnumNode = (FixnumNode) node;
 
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) context.createNewFixnum(fixnumNode.getValue());
-        } else {
-            context.createNewFixnum(fixnumNode.getValue());
-            if (!expr) context.consumeCurrentValue();
-        }
+        if (expr) context.createNewFixnum(fixnumNode.getValue());
     }
 
     public void compileFlip(Node node, BodyCompiler context, boolean expr) {
@@ -2592,12 +2549,7 @@ public class ASTCompiler {
     public void compileFloat(Node node, BodyCompiler context, boolean expr) {
         FloatNode floatNode = (FloatNode) node;
 
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) context.createNewFloat(floatNode.getValue());
-        } else {
-            context.createNewFloat(floatNode.getValue());
-            if (!expr) context.consumeCurrentValue();
-        }
+        if (expr) context.createNewFloat(floatNode.getValue());
     }
 
     public void compileFor(Node node, BodyCompiler context, boolean expr) {
@@ -2723,11 +2675,8 @@ public class ASTCompiler {
 
     public void compileGlobalVar(Node node, BodyCompiler context, boolean expr) {
         GlobalVarNode globalVarNode = (GlobalVarNode) node;
-
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
         
-        if (doit) {
+        if (expr) {
             if (globalVarNode.getName().length() == 2) {
                 switch (globalVarNode.getName().charAt(1)) {
                 case '_':
@@ -2743,8 +2692,6 @@ public class ASTCompiler {
                 context.retrieveGlobalVariable(globalVarNode.getName());
             }
         }
-        
-        if (popit) context.consumeCurrentValue();
     }
 
     public void compileHash(Node node, BodyCompiler context, boolean expr) {
@@ -2752,10 +2699,7 @@ public class ASTCompiler {
     }
     
     protected void compileHashCommon(HashNode hashNode, BodyCompiler context, boolean expr) {
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
+        if (expr) {
             if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
                 context.createEmptyHash();
                 return;
@@ -2776,8 +2720,6 @@ public class ASTCompiler {
             } else {
                 context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
             }
-
-            if (popit) context.consumeCurrentValue();
         } else {
             for (Node nextNode : hashNode.getListNode().childNodes()) {
                 compile(nextNode, context, false);
@@ -2856,12 +2798,7 @@ public class ASTCompiler {
     public void compileInstVar(Node node, BodyCompiler context, boolean expr) {
         InstVarNode instVarNode = (InstVarNode) node;
 
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) context.retrieveInstanceVariable(instVarNode.getName());
-        } else {
-            context.retrieveInstanceVariable(instVarNode.getName());
-            if (!expr) context.consumeCurrentValue();
-        }
+        if (expr) context.retrieveInstanceVariable(instVarNode.getName());
     }
 
     public void compileIter(Node node, BodyCompiler context) {
@@ -2942,12 +2879,7 @@ public class ASTCompiler {
     public void compileLocalVar(Node node, BodyCompiler context, boolean expr) {
         LocalVarNode localVarNode = (LocalVarNode) node;
 
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) context.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
-        } else {
-            context.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
-            if (!expr) context.consumeCurrentValue();
-        }
+        if (expr) context.getVariableCompiler().retrieveLocalVariable(localVarNode.getIndex(), localVarNode.getDepth());
     }
 
     public void compileMatch(Node node, BodyCompiler context, boolean expr) {
@@ -3196,22 +3128,12 @@ public class ASTCompiler {
     public void compileNthRef(Node node, BodyCompiler context, boolean expr) {
         NthRefNode nthRefNode = (NthRefNode) node;
 
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) context.nthRef(nthRefNode.getMatchNumber());
-        } else {
-            context.nthRef(nthRefNode.getMatchNumber());
-            if (!expr) context.consumeCurrentValue();
-        }
+        if (expr) context.nthRef(nthRefNode.getMatchNumber());
     }
 
     public void compileNil(Node node, BodyCompiler context, boolean expr) {
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) {
-                context.loadNil();
-            }
-        } else {
+        if (expr) {
             context.loadNil();
-            if (!expr) context.consumeCurrentValue();
         }
     }
 
@@ -3595,12 +3517,7 @@ public class ASTCompiler {
     public void compileRegexp(Node node, BodyCompiler context, boolean expr) {
         RegexpNode reNode = (RegexpNode) node;
 
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) context.createNewRegexp(reNode.getValue(), reNode.getOptions().toEmbeddedOptions());
-        } else {
-            context.createNewRegexp(reNode.getValue(), reNode.getOptions().toEmbeddedOptions());
-            if (!expr) context.consumeCurrentValue();
-        }
+        if (expr) context.createNewRegexp(reNode.getValue(), reNode.getOptions().toEmbeddedOptions());
     }
 
     public void compileRescue(Node node, BodyCompiler context, boolean expr) {
@@ -3774,12 +3691,7 @@ public class ASTCompiler {
     }
 
     public void compileSelf(Node node, BodyCompiler context, boolean expr) {
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) context.retrieveSelf();
-        } else {
-            context.retrieveSelf();
-            if (!expr) context.consumeCurrentValue();
-        }
+        if (expr) context.retrieveSelf();
     }
 
     public void compileSplat(Node node, BodyCompiler context, boolean expr) {
@@ -3799,17 +3711,13 @@ public class ASTCompiler {
     public void compileStr(Node node, BodyCompiler context, boolean expr) {
         StrNode strNode = (StrNode) node;
 
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
+        if (expr) {
             if (strNode instanceof FileNode) {
                 context.loadFilename();
             } else {
                 context.createNewString(strNode.getValue(), strNode.getCodeRange());
             }
         }
-        if (popit) context.consumeCurrentValue();
     }
 
     public void compileSuper(Node node, BodyCompiler context, boolean expr) {
@@ -3851,15 +3759,9 @@ public class ASTCompiler {
     }
 
     public void compileTrue(Node node, BodyCompiler context, boolean expr) {
-        if (RubyInstanceConfig.PEEPHOLE_OPTZ) {
-            if (expr) {
-                context.loadTrue();
-                context.pollThreadEvents();
-            }
-        } else {
+        if (expr) {
             context.loadTrue();
             context.pollThreadEvents();
-            if (!expr) context.consumeCurrentValue();
         }
     }
 
@@ -4024,14 +3926,9 @@ public class ASTCompiler {
     }
 
     public void compileZArray(Node node, BodyCompiler context, boolean expr) {
-        boolean doit = expr || !RubyInstanceConfig.PEEPHOLE_OPTZ;
-        boolean popit = !RubyInstanceConfig.PEEPHOLE_OPTZ && !expr;
-
-        if (doit) {
+        if (expr) {
             context.createEmptyArray();
         }
-
-        if (popit) context.consumeCurrentValue();
     }
 
     public void compileZSuper(Node node, BodyCompiler context, boolean expr) {

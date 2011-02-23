@@ -2538,7 +2538,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void setFilePosition(ISourcePosition position) {
-        if (!RubyInstanceConfig.POSITIONLESS_COMPILE_ENABLED) {
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             loadThreadContext();
             method.ldc(position.getFile());
             invokeThreadContext("setFile", sig(void.class, params(String.class)));
@@ -2546,7 +2546,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void setLinePosition(ISourcePosition position) {
-        if (!RubyInstanceConfig.POSITIONLESS_COMPILE_ENABLED) {
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             if (lastPositionLine == position.getStartLine()) {
                 // updating position for same line; skip
                 return;

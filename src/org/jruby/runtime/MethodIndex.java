@@ -38,8 +38,8 @@ import org.jruby.runtime.callsite.GtCallSite;
 import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.GeCallSite;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.runtime.callsite.ArefCallSite;
-import org.jruby.runtime.callsite.AsetCallSite;
+import org.jruby.runtime.callsite.CmpCallSite;
+import org.jruby.runtime.callsite.EqCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.ModCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
@@ -60,8 +60,10 @@ public class MethodIndex {
     public static CallSite getCallSite(String name) {
         // fast and safe respond_to? call site logic
         if (name.equals("respond_to?")) return new RespondToCallSite();
-        
-        if (RubyInstanceConfig.FASTOPS_COMPILE_ENABLED) return getFastOpsCallSite(name);
+
+        // only use fast ops if we're not tracing
+        if (RubyInstanceConfig.FASTOPS_COMPILE_ENABLED &&
+                !(RubyInstanceConfig.FULL_TRACE_ENABLED)) return getFastOpsCallSite(name);
 
         return new NormalCachingCallSite(name);
     }
@@ -81,12 +83,18 @@ public class MethodIndex {
             return new GtCallSite();
         } else if (name.equals(">=")) {
             return new GeCallSite();
-        } else if (name.equals("[]")) {
-            return new ArefCallSite();
-        } else if (name.equals("[]=")) {
-            return new AsetCallSite();
-        } else if (name.equals("%")) {
-            return new ModCallSite();
+        } else if (name.equals("==")) {
+            return new EqCallSite();
+        } else if (name.equals("<=>")) {
+            return new CmpCallSite();
+        // disabled because Array subclasses often override
+//        } else if (name.equals("[]")) {
+//            return new ArefCallSite();
+//        } else if (name.equals("[]=")) {
+//            return new AsetCallSite();
+        // disabled because of differing 1.8/1.9 behavior
+//        } else if (name.equals("%")) {
+//            return new ModCallSite();
         }
 
         return new NormalCachingCallSite(name);
