@@ -225,6 +225,12 @@ public class SystemPropertyCatcher {
         } else {
             location = "classpath:/META-INF/jruby.home";
         }
+
+        // Trim trailing slash. It confuses OSGi containers...
+        if (location.endsWith("/")) {
+            location = location.substring(0, location.length() - 1);
+        }
+
         return location;
     }
 
