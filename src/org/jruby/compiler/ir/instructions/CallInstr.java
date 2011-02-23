@@ -34,6 +34,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * args field: [self, receiver, *args]
  */
 public class CallInstr extends MultiOperandInstr {
+    // SSS FIXME: these 4 variables are cached versions of those in MultiOperandInstr
+    // So, whenever the superclass args are modified, have to update these cached values
+    // Maybe get rid of these cached values?
     private Operand receiver;
     private Operand[] arguments;
     Operand _methAddr;
@@ -95,7 +98,9 @@ public class CallInstr extends MultiOperandInstr {
         Operand[] clonedArgs = new Operand[length];
 
         for (int i = 0; i < length; i++) {
+            // SSS: Make sure to update both the superclass as well as the cached values in this class
             clonedArgs[i] = arguments[i].cloneForInlining(ii);
+            _args[i+2] = clonedArgs[i];
         }
 
         return clonedArgs;
@@ -104,8 +109,15 @@ public class CallInstr extends MultiOperandInstr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         super.simplifyOperands(valueMap);
+
+        // Update cached variables in this instruction
         _methAddr = _args[0];
         _closure = (_closure == null) ? null : _args[_args.length - 1];
+        int n = arguments.length;
+        arguments = new Operand[n];
+        for (int i = 0; i < n; i++)
+            arguments[i] = _args[i+2];
+
         _flagsComputed = false; // Forces recomputation of flags
     }
 
