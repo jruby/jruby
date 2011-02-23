@@ -158,7 +158,7 @@ class Ant
     end
 
     def location_from_caller
-      file, line = caller.detect{|el| el !~ /^#{File.dirname(__FILE__)}/}.split(/:(\d+):?/)
+      file, line = caller.detect{|el| el !~ /^#{File.dirname(__FILE__)}/ && el !~ /\.java:/}.split(/:(\d+):?/)
       Location.new(file, line.to_i, 1)
     end
 

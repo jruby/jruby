@@ -106,8 +106,6 @@ public class RubyClass extends RubyModule {
         classClass.undefineMethod("extend_object");
         
         classClass.defineAnnotatedMethods(RubyClass.class);
-        
-        classClass.addMethod("new", new SpecificArityNew(classClass, PUBLIC));
     }
     
     public static final ObjectAllocator CLASS_ALLOCATOR = new ObjectAllocator() {
@@ -786,71 +784,39 @@ public class RubyClass extends RubyModule {
     /** rb_class_new_instance
     *
     */
-    public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "new")
+    public IRubyObject newInstance(ThreadContext context, Block block) {
         IRubyObject obj = allocate();
-        baseCallSites[CS_IDX_INITIALIZE].call(context, this, obj, args, block);
+        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, block);
         return obj;
     }
-    
-    public static class SpecificArityNew extends JavaMethod {
-        public SpecificArityNew(RubyModule implClass, Visibility visibility) {
-            super(implClass, visibility);
-        }
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            preBacktraceOnly(context, name);
-            try {
-                RubyClass cls = (RubyClass)self;
-                IRubyObject obj = cls.allocate();
-                cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, args, block);
-                return obj;
-            } finally {
-                postBacktraceOnly(context);
-            }
-        }
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-            preBacktraceOnly(context, name);
-            try {
-                RubyClass cls = (RubyClass)self;
-                IRubyObject obj = cls.allocate();
-                cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, block);
-                return obj;
-            } finally {
-                postBacktraceOnly(context);
-            }
-        }
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-            preBacktraceOnly(context, name);
-            try {
-                RubyClass cls = (RubyClass)self;
-                IRubyObject obj = cls.allocate();
-                cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, block);
-                return obj;
-            } finally {
-                postBacktraceOnly(context);
-            }
-        }
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-            preBacktraceOnly(context, name);
-            try {
-                RubyClass cls = (RubyClass)self;
-                IRubyObject obj = cls.allocate();
-                cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, arg1, block);
-                return obj;
-            } finally {
-                postBacktraceOnly(context);
-            }
-        }
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-            preBacktraceOnly(context, name);
-            try {
-                RubyClass cls = (RubyClass)self;
-                IRubyObject obj = cls.allocate();
-                cls.baseCallSites[CS_IDX_INITIALIZE].call(context, self, obj, arg0, arg1, arg2, block);
-                return obj;
-            } finally {
-                postBacktraceOnly(context);
-            }
-        }
+
+    @JRubyMethod(name = "new")
+    public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, Block block) {
+        IRubyObject obj = allocate();
+        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, block);
+        return obj;
+    }
+
+    @JRubyMethod(name = "new")
+    public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        IRubyObject obj = allocate();
+        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, block);
+        return obj;
+    }
+
+    @JRubyMethod(name = "new")
+    public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        IRubyObject obj = allocate();
+        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, arg2, block);
+        return obj;
+    }
+
+    @JRubyMethod(name = "new", rest = true)
+    public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
+        IRubyObject obj = allocate();
+        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, args, block);
+        return obj;
     }
 
     /** rb_class_initialize
