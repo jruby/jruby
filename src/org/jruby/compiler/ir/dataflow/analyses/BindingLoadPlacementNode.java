@@ -33,16 +33,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         _outReqdLoads = new HashSet<Variable>();
     }
 
-    // Only ruby local variables are candidates for binding loads.  Ignore the rest!
     public void buildDataFlowVars(Instr i) {
-        BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) _prob;
-        for (Variable v : i.getUsedVariables()) {
-            if (v instanceof LocalVariable)
-                blp.recordUsedVar(v);
-        }
-
-        Variable v = i.getResult();
-        if ((v != null) && (v instanceof LocalVariable)) blp.recordDefVar(v);
+        // Nothing to do!
     }
 
     public void initSolnForNode() {
@@ -184,10 +176,19 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
         // Load first use of variables in closures
         if ((s instanceof IRClosure) && (_bb == _prob.getCFG().getEntryBB())) {
+/**
+            System.out.println("\n[In Entry BB] For CFG " + _prob.getCFG() + ":");
+            System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
+**/
             for (Variable v : reqdLoads) {
                 if (blp.scopeUsesVariable(v)) {
                     it.add(new LoadFromBindingInstr(v, s, v.getName()));
                 }
+/**
+					 else {
+						  System.out.println("--> var " + v + " is not used in this scope!");
+					 }
+**/
             }
         }
     }

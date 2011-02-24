@@ -1,8 +1,8 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
 import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
-import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
@@ -23,45 +23,19 @@ public class BindingStorePlacementProblem extends DataFlowProblem
     public BindingStorePlacementProblem()       
     { 
         super(DataFlowProblem.DF_Direction.FORWARD); 
-        _usedVars = new java.util.HashSet<Variable>(); 
-        _defVars = new java.util.HashSet<Variable>();
     }
 
     public String        getName() { return "Binding Stores Placement Analysis"; }
     public FlowGraphNode buildFlowGraphNode(BasicBlock bb) { return new BindingStorePlacementNode(this, bb);  }
     @Override
     public String        getDataFlowVarsForOutput() { return ""; }
-    public void          recordUsedVar(Variable v) { _usedVars.add(v); }
-    public void          recordDefVar(Variable v) { _defVars.add(v); }
 
     public boolean scopeDefinesVariable(Variable v) { 
-        if (_defVars.contains(v)) {
-            return true;
-        }
-        else {
-            for (IRClosure cl: getCFG().getScope().getClosures()) {
-                BindingStorePlacementProblem nestedProblem = (BindingStorePlacementProblem)cl.getCFG().getDataFlowSolution(DataFlowConstants.BSP_NAME);
-                if (nestedProblem.scopeDefinesVariable(v)) 
-                    return true;
-            }
-
-            return false;
-        }
+        return getCFG().definesLocalVariable(v);
     }
 
     public boolean scopeUsesVariable(Variable v) { 
-        if (_usedVars.contains(v)) {
-            return true;
-        }
-        else {
-            for (IRClosure cl: getCFG().getScope().getClosures()) {
-                BindingStorePlacementProblem nestedProblem = (BindingStorePlacementProblem)cl.getCFG().getDataFlowSolution(DataFlowConstants.BSP_NAME);
-                if (nestedProblem.scopeUsesVariable(v)) 
-                    return true;
-            }
-
-            return false;
-        }
+        return getCFG().usesLocalVariable(v);
     }
 
     public void addStoreAndBindingAllocInstructions()
@@ -71,8 +45,4 @@ public class BindingStorePlacementProblem extends DataFlowProblem
             bspn.addStoreAndBindingAllocInstructions();
         }
     }
-
-/* ----------- Private Interface ------------ */
-    private Set<Variable> _usedVars;    // Variables used in this scope
-    private Set<Variable> _defVars;     // Variables defined in this scope
 }

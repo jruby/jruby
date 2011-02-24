@@ -43,21 +43,12 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         }
     }
 
-    // Only ruby local variables are candidates for binding stores.  Ignore the rest!
-    // SSS FIXME: What about self?
     public void buildDataFlowVars(Instr i) {
-        BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) _prob;
-        for (Variable v : i.getUsedVariables()) {
-            if (v instanceof LocalVariable)
-                bsp.recordUsedVar(v);
-        }
-
-        Variable v = i.getResult();
-
-        if ((v != null) && (v instanceof LocalVariable)) bsp.recordDefVar(v);
+       // Nothing to do
     }
 
     public void initSolnForNode() {
+       // Nothing to do
     }
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred) {
@@ -121,12 +112,6 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             if (i.operation.isReturn()) dirtyVars.clear();
         }
 
-        // At the end of the scope, there are no more dirty vars!
-        // Dirty vars at the end of the closure are handled specially by 'addStoreAndBindingAllocInstructions'
-        CFG cfg = _prob.getCFG();
-
-        if (_bb == cfg.getExitBB()) dirtyVars.clear();
-
         if (_outDirtyVars.equals(dirtyVars) && (_outBindingAllocated == bindingAllocated)) return false;
 
         _outDirtyVars = dirtyVars;
@@ -141,10 +126,38 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
     public void addStoreAndBindingAllocInstructions() {
         BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) _prob;
-        IRExecutionScope s = bsp.getCFG().getScope();
+        CFG cfg = bsp.getCFG();
+        IRExecutionScope s = cfg.getScope();
         ListIterator<Instr> instrs = _bb.getInstrs().listIterator();
         Set<Variable> dirtyVars = new HashSet<Variable>(_inDirtyVars);
         boolean bindingAllocated = _inBindingAllocated;
+
+        // If this is the exit BB, we need a binding story on exit only for vars that are both:
+        //
+        //   (a) dirty,
+        //   (b) live on exit from the closure
+        //       condition reqd. because the variable could be dirty but not used outside.
+        //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
+        //       i,j are dirty inside the block, but not used outside
+
+        boolean amExitBB = (_bb == cfg.getExitBB());
+        if (amExitBB) {
+/**
+            LiveVariablesProblem lvp = (LiveVariablesProblem)cfg.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+            java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnEntry();
+            System.out.println("\n[In Exit BB] For CFG " + cfg + ":");
+            System.out.println("\t--> Dirty vars here   : " + java.util.Arrays.toString(dirtyVars.toArray()));
+            System.out.println("\t--> Vars live on entry: " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
+            liveVars = lvp.getVarsLiveOnExit();
+            System.out.println("\t--> Vars live on exit : " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
+**/
+            LiveVariablesProblem lvp = (LiveVariablesProblem)cfg.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+            java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnExit();
+            if (liveVars != null)
+                dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
+            else
+                dirtyVars.clear();
+        }
 
         while (instrs.hasNext()) {
             Instr i = instrs.next();
@@ -200,7 +213,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     dirtyVars.clear();
                 }
             } else if (i instanceof ClosureReturnInstr) {
-                // At closure return instructions (which are closure exits), for all variables which are:
+                // At closure return instructions (which are closure exits), we need a binding story on exit only for vars that are both:
                 //
                 //   (a) dirty,
                 //   (b) live on exit from the closure
@@ -208,21 +221,44 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
                 //       i,j are dirty inside the block, but not used outside
                 //
-                // add a binding store
-
-                LiveVariablesProblem lvp = (LiveVariablesProblem) bsp.getCFG().getDataFlowSolution(DataFlowConstants.LVP_NAME);
-                dirtyVars.retainAll(lvp.getVarsLiveOnExit()); // Intersection with variables live on exit from the scope
+                // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
+                if (!amExitBB) {
+/**
+                    LiveVariablesProblem lvp = (LiveVariablesProblem)cfg.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+                    java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnEntry();
+                    System.out.println("\n[@Closure Instr<" + i + ">] For CFG " + cfg + ":");
+                    System.out.println("\t--> Dirty vars here   : " + java.util.Arrays.toString(dirtyVars.toArray()));
+                    System.out.println("\t--> Vars live on entry: " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
+                    liveVars = lvp.getVarsLiveOnExit();
+                    System.out.println("\t--> Vars live on exit : " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
+**/
+                    LiveVariablesProblem lvp = (LiveVariablesProblem)cfg.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+                    java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnExit();
+                    if (liveVars != null)
+                        dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
+                    else
+                        dirtyVars.clear();
+                }
 
                 instrs.previous();
                 for (Variable v : dirtyVars) {
                     instrs.add(new StoreToBindingInstr(s, v.getName(), v));
                 }
                 instrs.next();
+
+                // Nothing is dirty anymore -- everything that needs spilling has been spilt
+                dirtyVars.clear();
             }
 
             Variable v = i.getResult();
-            
             if ((v != null) && (v instanceof LocalVariable)) dirtyVars.add(v);
+        }
+
+        // If this is the exit BB, add binding stores for all vars that are still dirty
+        if (amExitBB) {
+            for (Variable v : dirtyVars) {
+                instrs.add(new StoreToBindingInstr(s, v.getName(), v));
+            }
         }
     }
 

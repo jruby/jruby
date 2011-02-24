@@ -36,6 +36,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.LocalVariable;
 
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 
@@ -75,6 +76,10 @@ public class CFG {
     Map<BasicBlock, BasicBlock>         _bbRescuerMap;  // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
     List<RescuedRegion>                 _outermostRRs;  // Outermost rescued regions
 
+    private Instr[]       _instrs;
+    private Set<Variable> _definedLocalVars;  // Local variables defined in this scope
+    private Set<Variable> _usedLocalVars;     // Local variables used in this scope
+
     public CFG(IRExecutionScope s) {
         _nextBBId = 0; // Init before building basic blocks below!
         _scope = s;
@@ -83,6 +88,7 @@ public class CFG {
         _bbMap = new HashMap<Label, BasicBlock>();
         _outermostRRs = new ArrayList<RescuedRegion>();
         _bbRescuerMap = new HashMap<BasicBlock, BasicBlock>();
+        _instrs = null;
     }
 
     public DirectedGraph getGraph() {
@@ -184,7 +190,6 @@ public class CFG {
                     });
     }
 
-    private Instr[] _instrs = null;
     public Instr[] prepareForInterpretation() {
         if (_instrs != null) // Done
             return _instrs;
@@ -223,8 +228,8 @@ public class CFG {
         for (Label l: labelsToFixup) {
             l.setTargetPC(labelIPCMap.get(l));
         }
-		  // Exit BB ipc
-		  getExitBB().getLabel().setTargetPC(ipc+1);
+        // Exit BB ipc
+        getExitBB().getLabel().setTargetPC(ipc+1);
 
         _instrs = instrs.toArray(new Instr[instrs.size()]);
         return _instrs;
@@ -1049,5 +1054,78 @@ public class CFG {
         }
 
         return _linearizedBBList;
+    }
+
+    public String toString() {
+        return "CFG[" + _scope.getScopeName() + ":" + _scope.getName() + "]";
+    }
+
+    public void setUpUseDefLocalVarMaps() {
+        _definedLocalVars = new java.util.HashSet<Variable>();
+        _usedLocalVars = new java.util.HashSet<Variable>();
+        for (BasicBlock bb: getNodes()) {
+            for (Instr i: bb.getInstrs()) {
+                for (Variable v : i.getUsedVariables()) {
+                    if (v instanceof LocalVariable)
+                        _usedLocalVars.add(v);
+                }
+                Variable v = i.getResult();
+                if ((v != null) && (v instanceof LocalVariable)) _definedLocalVars.add(v);
+            }
+        }
+
+        for (IRClosure cl: getScope().getClosures()) {
+            cl.getCFG().setUpUseDefLocalVarMaps();
+        }
+    }
+
+    public Set<Variable> usedLocalVarsFromClosures() {
+        HashSet vs = new HashSet();
+        for (IRClosure cl: getScope().getClosures()) {
+            CFG c = cl.getCFG();
+            vs.addAll(c._usedLocalVars);
+            vs.addAll(c.usedLocalVarsFromClosures());
+        }
+
+        return vs;
+    }
+
+    public Set<Variable> definedLocalVarsFromClosures() {
+        HashSet vs = new HashSet();
+        for (IRClosure cl: getScope().getClosures()) {
+            CFG c = cl.getCFG();
+            vs.addAll(c._definedLocalVars);
+            vs.addAll(c.definedLocalVarsFromClosures());
+        }
+
+        return vs;
+    }
+
+    public boolean usesLocalVariable(Variable v) {
+        if (_usedLocalVars.contains(v)) {
+            return true;
+        }
+        else {
+            for (IRClosure cl: getScope().getClosures()) {
+                if (cl.getCFG().usesLocalVariable(v))
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
+    public boolean definesLocalVariable(Variable v) {
+        if (_definedLocalVars.contains(v)) {
+            return true;
+        }
+        else {
+            for (IRClosure cl: getScope().getClosures()) {
+                if (cl.getCFG().definesLocalVariable(v))
+                    return true;
+            }
+
+            return false;
+        }
     }
 }

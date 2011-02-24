@@ -108,7 +108,7 @@ public class LiveVariableNode extends FlowGraphNode
             if (i instanceof CallInstr) {
                 CallInstr c = (CallInstr) i;
                 // SSS FIXME: This relies on the local opt. pass having run already
-                // so that the built closure from the previous istnr. is propagated to the call site here.
+                // so that the built closure from the previous instr. is propagated to the call site here.
                 // Formalize this dependency somewhere?
                 Operand o = c.getClosureArg();
 //                   System.out.println("Processing closure: " + o + "-------");
@@ -118,7 +118,7 @@ public class LiveVariableNode extends FlowGraphNode
                         processClosure(cl, lvp.getAllVars());
 
                         // Mark all variables live if 'c' is a dataflow barrier!
-    //                    System.out.println(".. call is a data flow barrier ..");
+//                        System.out.println(".. call is a data flow barrier ..");
                         for (int j = 0; j < _setSize; j++)
                             _tmp.set(j);
                     }
