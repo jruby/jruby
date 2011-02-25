@@ -173,6 +173,11 @@ public class RubyFileTest {
         Ruby runtime = recv.getRuntime();
         JRubyFile file = file(filename);
 
+        // JRUBY-4446, grpowned? always returns false on Windows
+        if (Platform.IS_WINDOWS) {
+            return runtime.getFalse();
+        }
+        
         return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isGroupOwned());
     }
 
