@@ -275,11 +275,11 @@ public class IRBuilder {
            if (isDebug) {
                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
            }
+           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LinearizeCFG());
            if (isDebug) {
                System.out.println("################## After cfg linearization pass ##################");
                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
            }
-           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LinearizeCFG());
 
            System.out.println("Time to build AST         : " + (t2 - t1));
            System.out.println("Time to build IR          : " + (t3 - t2));
