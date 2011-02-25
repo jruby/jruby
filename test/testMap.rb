@@ -10,7 +10,6 @@ test_equal(4, h[3])
 test_equal(nil, h[10])
 
 h[7]=8
-test_equal("{1=>2, 3=>4, 5=>6, 7=>8}", h.inspect)
 test_ok({3=>4, 1=>2, 7=>8, 5=>6} == h)
 test_equal(0, h.clear.size)
 test_equal(Java::JavaUtil::HashMap, h.class)
