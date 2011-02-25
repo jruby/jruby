@@ -50,18 +50,19 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         IRubyObject self = context.getFrameSelf(); // Should not need this and this should probably come from elsewhere
-        if (scope.getNumberOfVariables() > 1 && args.length == 1 && args[0] instanceof RubyArray) {
-            System.out.println("ARRAY to multi");
+
+        // SSS FIXME: Is this correct?
+        int numBlockArgs = arity().required();
+        if (numBlockArgs > 1 && args.length == 1 && args[0] instanceof RubyArray) {
             RubyArray array = (RubyArray) args[0];
             int size = array.getLength();
-            System.out.println("Creating n variables: " + scope.getNumberOfVariables());
-            args = new IRubyObject[scope.getNumberOfVariables()];
+            args = new IRubyObject[numBlockArgs];
             
             int i = 0;
-            for (;i < scope.getNumberOfVariables() && i < size; i++) {
+            for (; i < numBlockArgs && i < size; i++) {
                 args[i] = array.eltInternal(i);
             }
-            
+
             for (; i < size; i++) {
                 args[i] = context.getRuntime().getNil();
             }
@@ -76,21 +77,22 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
         // FIXME: null self?!?!?!
         // FIXME: null klass!?!?!?!
-        // FIXME: args processing
         if (self == null) self = value;
         IRubyObject[] args = new IRubyObject[] { value };
-        if (scope.getNumberOfVariables() > 1 && value instanceof RubyArray) {
+        // SSS FIXME: Is this correct?
+        int numBlockArgs = arity().required();
+        if (numBlockArgs > 1 && value instanceof RubyArray) {
             // System.out.println("yield: ARRAY to multi");
             RubyArray array = (RubyArray) value;
             int size = array.getLength();
             // System.out.println("yield: Creating n variables: " + scope.getNumberOfVariables());
-            args = new IRubyObject[scope.getNumberOfVariables()];
+            args = new IRubyObject[numBlockArgs];
             
             int i = 0;
-            for (;i < scope.getNumberOfVariables() && i < size; i++) {
+            for (; i < numBlockArgs && i < size; i++) {
                 args[i] = array.eltInternal(i);
             }
-            
+
             for (; i < size; i++) {
                 args[i] = context.getRuntime().getNil();
             }
