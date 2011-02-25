@@ -79,6 +79,22 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         // FIXME: args processing
         if (self == null) self = value;
         IRubyObject[] args = new IRubyObject[] { value };
+        if (scope.getNumberOfVariables() > 1 && value instanceof RubyArray) {
+            // System.out.println("yield: ARRAY to multi");
+            RubyArray array = (RubyArray) value;
+            int size = array.getLength();
+            // System.out.println("yield: Creating n variables: " + scope.getNumberOfVariables());
+            args = new IRubyObject[scope.getNumberOfVariables()];
+            
+            int i = 0;
+            for (;i < scope.getNumberOfVariables() && i < size; i++) {
+                args[i] = array.eltInternal(i);
+            }
+            
+            for (; i < size; i++) {
+                args[i] = context.getRuntime().getNil();
+            }
+        }
         InterpreterContext interp = new NaiveInterpreterContext(context, self, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
         interp.setDynamicScope(binding.getDynamicScope());
 
