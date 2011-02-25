@@ -36,7 +36,7 @@ public class JRubyImplCallInstr extends CallInstr {
     public Label interpret(InterpreterContext interp, IRubyObject self) {
         Object receiver = getReceiver().retrieve(interp);
 
-        if (getMethodAddr() == MethAddr.MATCH3) {
+        if (getMethodAddr() == MethAddr.MATCH2) {
             getResult().store(interp, ((RubyRegexp) receiver).op_match(interp.getContext(),
                     (IRubyObject) getCallArgs()[0].retrieve(interp)));
         } else {
