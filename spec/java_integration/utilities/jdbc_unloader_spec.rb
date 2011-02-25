@@ -9,23 +9,13 @@ describe "JDBCDriverUnloader" do
   end
 
   def drivers
-    iterator = container.runScriptlet('JRuby.runtime.getJRubyClassLoader.getJDBCDriverUnloader.iterator')
-    drivers = []
-    while iterator.has_next
-      drivers << iterator.next
-    end
-    drivers
-  end
-
-  before :each do
-    @driver_count = drivers.size
-    # loading the driver causes it to be registered
-    container.runScriptlet('Java::com.sqlmagic.tinysql.textFileDriver')
+    container.runScriptlet('JRuby.runtime.getJRubyClassLoader.getJDBCDriverUnloader.iterator').to_a
   end
 
   it "unregisters the drivers" do
-    drivers.size.should == @driver_count + 1
-    drivers.detect {|d| d.java_class.name == 'com.sqlmagic.tinysql.textFileDriver' }.should be_true
+    # loading the driver causes it to be registered
+    container.runScriptlet('Java::com.sqlmagic.tinysql.textFileDriver')
+    drivers.map {|d| d.java_class.name }.should include('com.sqlmagic.tinysql.textFileDriver')
     container.runScriptlet('JRuby.runtime.getJRubyClassLoader.getJDBCDriverUnloader.run')
     drivers.should be_empty
   end
