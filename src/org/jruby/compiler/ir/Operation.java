@@ -13,14 +13,16 @@ public enum Operation {
 
 // ruby NOT
     NOT(OpType.dont_care),
-	 
+    
 // primitive alu operations -- unboxed primitive ops (not native ruby)
-	 ADD(OpType.alu_op), SUB(OpType.alu_op), MUL(OpType.alu_op), DIV(OpType.alu_op),
+    ADD(OpType.alu_op), SUB(OpType.alu_op), MUL(OpType.alu_op), DIV(OpType.alu_op),
 
 // method handle, arg receive, return value, and  call instructions
-    RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op),
+//   BREAK is a ret_op not a branch_op because it can only be used within closures
+//   and the net result is to return from the closure
+    RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op), BREAK(OpType.ret_op),
     RECV_ARG(OpType.recv_arg_op), RECV_SELF(OpType.recv_arg_op), RECV_CLOSURE(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
-	 RECV_EXCEPTION(OpType.recv_arg_op),
+    RECV_EXCEPTION(OpType.recv_arg_op),
     CALL(OpType.call_op), JRUBY_IMPL(OpType.call_op), RUBY_INTERNALS(OpType.call_op),
     DECLARE_TYPE(OpType.declare_type_op),
     METHOD_LOOKUP(OpType.dont_care),
@@ -43,11 +45,11 @@ public enum Operation {
     BINDING_STORE(OpType.store_op),
 
 // jump and branch operations
-    BREAK(OpType.branch_op), JUMP(OpType.branch_op), JUMP_INDIRECT(OpType.branch_op), BEQ(OpType.branch_op),
+    JUMP(OpType.branch_op), JUMP_INDIRECT(OpType.branch_op), BEQ(OpType.branch_op),
 
 // others
     ATTR_ASSIGN(OpType.dont_care),
-	 ALLOC_BINDING(OpType.dont_care), LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
+    ALLOC_BINDING(OpType.dont_care), LABEL(OpType.dont_care), THREAD_POLL(OpType.dont_care),
 
 // comparisons & checks
     IS_TRUE(OpType.dont_care), // checks if the operand is non-null and non-false
@@ -60,7 +62,7 @@ public enum Operation {
     MODULE_VERSION_GUARD(OpType.guard_op), METHOD_VERSION_GUARD(OpType.guard_op),
 
 // primitive value boxing/unboxing
-	 BOX_VALUE(OpType.box_op), UNBOX_VALUE(OpType.box_op);
+    BOX_VALUE(OpType.box_op), UNBOX_VALUE(OpType.box_op);
 
     private OpType type;
 
@@ -72,7 +74,9 @@ public enum Operation {
         return type == OpType.alu_op;
     }
 
-    public boolean xfersControl() { return isBranch() || isReturn() || isException(); }
+    public boolean xfersControl() { 
+        return isBranch() || isReturn() || isException();
+    }
 
     public boolean isBranch() {
         return type == OpType.branch_op;
@@ -111,7 +115,7 @@ public enum Operation {
     }
 
     public boolean endsBasicBlock() {
-        return isBranch() || isReturn() || isException();
+        return xfersControl();
     }
 
     // By default, call instructions cannot be deleted even if their results aren't used by anyone

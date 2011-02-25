@@ -36,6 +36,7 @@ import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.javasupport.util.RuntimeHelpers;
 
 
 public class Interpreter {
@@ -139,7 +140,7 @@ public class Interpreter {
     public static IRubyObject interpret(ThreadContext context, CFG cfg, InterpreterContext interp) {
         boolean inClosure = (cfg.getScope() instanceof IRClosure);
         try {
-            interp.setMethodExitLabel(cfg.getExitBB().getLabel()); // used by return instructions!
+            interp.setMethodExitLabel(cfg.getExitBB().getLabel()); // used by return and break instructions!
 
             IRubyObject self = (IRubyObject) interp.getSelf();
             Instr[] instrs = cfg.prepareForInterpretation();
@@ -156,10 +157,17 @@ public class Interpreter {
 
             // If I am in a closure, and lastInstr was a return, have to return from the nearest method!
             IRubyObject rv = (IRubyObject) interp.getReturnValue();
-            if (inClosure && (lastInstr instanceof ReturnInstr))
-                throw context.returnJump(rv);
-            else if (!inClosure && (lastInstr instanceof BREAK_Instr))
-                throw context.getRuntime().newLocalJumpError(org.jruby.RubyLocalJumpError.Reason.BREAK, rv, "unexpected break");
+            if (lastInstr instanceof ReturnInstr) {
+                if (inClosure)
+                    throw RuntimeHelpers.returnJump(rv, context);
+            }
+            // If I am in a closure, and lastInstr was a break, have to return from the nearest closure!
+            else if (lastInstr instanceof BREAK_Instr) {
+                if (inClosure)
+                    RuntimeHelpers.breakJump(context, rv);
+                else
+                    throw context.getRuntime().newLocalJumpError(org.jruby.RubyLocalJumpError.Reason.BREAK, rv, "unexpected break");
+            }
 
             return rv;
         } catch (org.jruby.exceptions.JumpException.ReturnJump rj) {

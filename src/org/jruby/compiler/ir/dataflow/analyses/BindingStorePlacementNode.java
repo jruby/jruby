@@ -11,6 +11,7 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.AllocateBindingInstr;
 import org.jruby.compiler.ir.instructions.StoreToBindingInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
+import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
@@ -212,8 +213,9 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     instrs.next();
                     dirtyVars.clear();
                 }
-            } else if (i instanceof ClosureReturnInstr) {
-                // At closure return instructions (which are closure exits), we need a binding story on exit only for vars that are both:
+            } else if ((i instanceof ClosureReturnInstr) || (i instanceof BREAK_Instr)) {
+                // At closure return and break instructions (both of which are exits from the closure),
+					 // we need a binding store on exit only for vars that are both:
                 //
                 //   (a) dirty,
                 //   (b) live on exit from the closure

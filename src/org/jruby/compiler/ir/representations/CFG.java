@@ -206,20 +206,9 @@ public class CFG {
         int ipc = 0;
         for (BasicBlock b: bbs) {
             labelIPCMap.put(b.getLabel(), ipc);
+            labelsToFixup.add(b.getLabel());
             for (Instr i: b.getInstrs()) {
                 instrs.add(i);
-                Operation op = i.operation;
-                if (op == Operation.BEQ)
-                    labelsToFixup.add(((BranchInstr)i).getJumpTarget());
-                else if (op == Operation.JUMP) 
-                    labelsToFixup.add(((JumpInstr)i).getJumpTarget());
-                else if (op == Operation.RECV_OPT_ARG || op == Operation.SET_RETADDR) {
-                    for (Operand o: i.getOperands()) {
-                        if (o instanceof Label) {
-                            labelsToFixup.add((Label)o);
-                        }
-                    }
-                }
                 ipc++;
             }
         }
@@ -228,6 +217,7 @@ public class CFG {
         for (Label l: labelsToFixup) {
             l.setTargetPC(labelIPCMap.get(l));
         }
+
         // Exit BB ipc
         getExitBB().getLabel().setTargetPC(ipc+1);
 
@@ -337,6 +327,7 @@ public class CFG {
                 } // SSS FIXME: To be done
                 else if (i instanceof BREAK_Instr) {
                     tgt = null;
+                    retBBs.add(currBB); // the break instruction transfers control to the end of this closure cfg
                     bbEndedWithControlXfer = true;
                 } else if (i instanceof ReturnInstr) {
                     tgt = null;

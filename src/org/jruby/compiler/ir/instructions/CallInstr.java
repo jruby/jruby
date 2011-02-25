@@ -333,19 +333,31 @@ public class CallInstr extends MultiOperandInstr {
             if (m.isUndefined()) {
                 resultValue = RuntimeHelpers.callMethodMissing(interp.getContext(), ro, m.getVisibility(), mn, CallType.FUNCTIONAL, args, block == null ? Block.NULL_BLOCK : block);
             } else {
-               ThreadContext tc = interp.getContext();
-               RubyClass     rc = ro.getMetaClass();
-               resultValue = (block == null) ? m.call(tc, ro, rc, mn, args) : m.call(tc, ro, rc, mn, args, block);
+                ThreadContext tc = interp.getContext();
+                RubyClass     rc = ro.getMetaClass();
+                if (block == null) {
+                    resultValue = m.call(tc, ro, rc, mn, args);
+                } else {
+                    try {
+                        resultValue = m.call(tc, ro, rc, mn, args, block);
+                    } catch (org.jruby.exceptions.JumpException.BreakJump bj) {
+                        resultValue = (IRubyObject)bj.getValue();
+                    }
+                }
             }
         } else {
-           IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
-           String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
-
-           if (block == null) {
-               resultValue = object.callMethod(interp.getContext(), name, args);
-           } else {
-               resultValue = object.callMethod(interp.getContext(), name, args, block);
-           }
+            IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
+            String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
+           
+            if (block == null) {
+                resultValue = object.callMethod(interp.getContext(), name, args);
+            } else {
+                try {
+                    resultValue = object.callMethod(interp.getContext(), name, args, block);
+                } catch (org.jruby.exceptions.JumpException.BreakJump bj) {
+                    resultValue = (IRubyObject)bj.getValue();
+                }
+            }
         }
 
         getResult().store(interp, resultValue);
