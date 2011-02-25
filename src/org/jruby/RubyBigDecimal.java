@@ -1232,9 +1232,6 @@ public class RubyBigDecimal extends RubyNumeric {
                 // eh?!
             }
         }
-        if (-value.scale() < RubyFloat.MIN_10_EXP) {
-            return RubyFloat.newFloat(getRuntime(), 0);
-        }
         return RubyFloat.newFloat(getRuntime(), value.doubleValue());
     }
 

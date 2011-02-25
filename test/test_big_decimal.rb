@@ -239,4 +239,11 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal "10.00", format.format(value)
   end
 
+  #JRUBY-5190
+  def test_large_precisions 
+    a = BigDecimal("1").div(BigDecimal("3"), 307)
+    b = BigDecimal("1").div(BigDecimal("3") , 308)
+    assert_equal a.to_f, b.to_f
+  end
+  
 end
