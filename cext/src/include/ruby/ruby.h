@@ -1000,7 +1000,7 @@ RUBY_DLLSPEC VALUE rb_thread_local_aset(VALUE thread, ID id, VALUE value);
 RUBY_DLLSPEC VALUE rb_thread_local_aref(VALUE thread, ID id);
 RUBY_DLLSPEC VALUE rb_thread_create(VALUE (*fn)(ANYARGS), void* arg);
 
-RUBY_DLLSPEC VALUE rb_time_new(long sec, long usec);
+RUBY_DLLSPEC VALUE rb_time_new(time_t sec, long usec);
 
 // Fake out
 static inline void rb_thread_stop_timer_thread(void) {}
