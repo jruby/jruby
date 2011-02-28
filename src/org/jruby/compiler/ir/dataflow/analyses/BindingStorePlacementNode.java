@@ -45,7 +45,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
     }
 
     public void buildDataFlowVars(Instr i) {
-       // Nothing to do
+       // Nothing to do -- because we are going to use LocalVariables as our data flow variables
     }
 
     public void initSolnForNode() {
@@ -215,7 +215,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 }
             } else if ((i instanceof ClosureReturnInstr) || (i instanceof BREAK_Instr)) {
                 // At closure return and break instructions (both of which are exits from the closure),
-					 // we need a binding store on exit only for vars that are both:
+                // we need a binding store on exit only for vars that are both:
                 //
                 //   (a) dirty,
                 //   (b) live on exit from the closure

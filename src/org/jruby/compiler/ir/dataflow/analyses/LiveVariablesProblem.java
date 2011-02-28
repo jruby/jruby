@@ -81,7 +81,7 @@ public class LiveVariablesProblem extends DataFlowProblem
 		  //       puts x
 		  //     end
 		  //
-		  // In this method 'v' that is defined in the first closure is live on exit form the first closure because
+		  // In this method 'v' that is defined in the first closure is live on exit from the first closure because
 		  // it is used in the second closure.  Nowhere within foo itself (except in closures) is v referenced and
 		  // hence won't be added as a dataflow var.
 		  //

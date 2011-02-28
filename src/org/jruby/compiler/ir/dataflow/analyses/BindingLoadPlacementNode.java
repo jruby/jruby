@@ -34,7 +34,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
     }
 
     public void buildDataFlowVars(Instr i) {
-        // Nothing to do!
+        // Nothing to do -- because we are going to use LocalVariables as our data flow variables
     }
 
     public void initSolnForNode() {
@@ -184,11 +184,6 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                 if (blp.scopeUsesVariable(v)) {
                     it.add(new LoadFromBindingInstr(v, s, v.getName()));
                 }
-/**
-					 else {
-						  System.out.println("--> var " + v + " is not used in this scope!");
-					 }
-**/
             }
         }
     }
