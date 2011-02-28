@@ -65,7 +65,6 @@ import java.util.Arrays;
 import java.util.Locale;
 
 import org.jcodings.Encoding;
-import org.jcodings.EncodingDB.Entry;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
 import org.jcodings.specific.ASCIIEncoding;
@@ -751,11 +750,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    private final void modifyCheck(byte[] b, int len) {
+    private void modifyCheck(byte[] b, int len) {
         if (value.getUnsafeBytes() != b || value.getRealSize() != len) throw getRuntime().newRuntimeError("string modified");
     }
 
-    private final void modifyCheck(byte[] b, int len, Encoding enc) {
+    private void modifyCheck(byte[] b, int len, Encoding enc) {
         if (value.getUnsafeBytes() != b || value.getRealSize() != len || value.getEncoding() != enc) throw getRuntime().newRuntimeError("string modified");
     }
 
@@ -838,7 +837,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         shareLevel = SHARE_LEVEL_NONE;
     }
 
-    private final void view(byte[]bytes) {
+    private void view(byte[]bytes) {
         modifyCheck();        
 
         value.replace(bytes);
@@ -847,7 +846,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         value.invalidate();        
     }
 
-    private final void view(int index, int len) {
+    private void view(int index, int len) {
         modifyCheck();
 
         if (shareLevel != SHARE_LEVEL_NONE) {
@@ -926,6 +925,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     /* rb_str_cmp_m */
     @JRubyMethod(name = "<=>", compat = RUBY1_8)
+    @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
             return context.getRuntime().newFixnum(op_cmp((RubyString)other));
@@ -1468,11 +1468,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
+    @Override
     public IRubyObject initialize19() {
         return this;
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
+    @Override
     public IRubyObject initialize19(IRubyObject arg0) {
         replace19(arg0);
         return this;
@@ -1552,6 +1554,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     @JRubyMethod(name = "=~", compat = RUBY1_9, writes = BACKREF)
+    @Override
     public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match19(context, this);
         if (other instanceof RubyString) throw context.getRuntime().newTypeError("type mismatch: String given");
@@ -2707,7 +2710,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return gsub(context, arg0, arg1, block, true);
     }
 
-    private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block, final boolean bang) {
+    private IRubyObject gsub(ThreadContext context, IRubyObject arg0, Block block, final boolean bang) {
         if (block.isGiven()) {
             return gsubCommon(context, bang, arg0, block, null, 0);
         } else {
@@ -2719,7 +2722,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    private final IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
+    private IRubyObject gsub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
         RubyString repl = arg1.convertToString();
         return gsubCommon(context, bang, arg0, block, repl, repl.flags);
     }
@@ -3283,7 +3286,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
     }
 
-    private final IRubyObject multibyteSubstr19(Ruby runtime, Encoding enc, int len, int beg, int length) {
+    private IRubyObject multibyteSubstr19(Ruby runtime, Encoding enc, int len, int beg, int length) {
         int p;
         int s = value.getBegin();
         int end = s + length;
@@ -3608,11 +3611,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return arg2;
     }
 
-    private final boolean isHeadSlice(int beg, int len) {
+    private boolean isHeadSlice(int beg, int len) {
         return beg == 0 && len > 0 && len <= value.getRealSize();
     }
 
-    private final boolean isTailSlice(int beg, int len) {
+    private boolean isTailSlice(int beg, int len) {
         return beg >= 0 && len > 0 && (beg + len) == value.getRealSize();
     }
 
@@ -3622,7 +3625,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      * @param len The number of bytes to remove.
      */
-    private final void exciseHead(int len) {
+    private void exciseHead(int len) {
         // just adjust the view start
         view(len, value.getRealSize() - len);
     }
@@ -3632,7 +3635,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      * @param len The number of bytes to remove.
      */
-    private final void exciseTail(int len) {
+    private void exciseTail(int len) {
         // just adjust the view length
         view(0, value.getRealSize() - len);
     }
@@ -7073,119 +7076,142 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
     public IRubyObject encode_bang(ThreadContext context) {
         modify19();
-        IRubyObject defaultInternal = context.getRuntime().getEncodingService().getDefaultInternal();
-        if (!defaultInternal.isNil()) {
-            encode_bang(context, defaultInternal);
-        }
+        Ruby runtime = context.getRuntime();
+        Encoding defaultInternal = runtime.getDefaultInternalEncoding();
+
+        if (defaultInternal == null) return dup();
+
+        value = transcode(context, value, null, defaultInternal, runtime.getNil());
+
         return this;
     }
 
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
     public IRubyObject encode_bang(ThreadContext context, IRubyObject enc) {
+        Ruby runtime = context.getRuntime();
         modify19();
 
-        Ruby runtime = context.getRuntime();
-        this.value = encodeCommon(context, runtime, this.value, enc, runtime.getNil(),
-            runtime.getNil());
+        value = transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil());
 
         return this;
     }
 
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject enc, IRubyObject arg) {
-        modify19();
-
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject toEncoding, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
-        IRubyObject fromEnc = arg;
-        IRubyObject opts = runtime.getNil();
+        modify19();
+        Encoding forceEncoding;
+        IRubyObject options;
+        
         if (arg instanceof RubyHash) {
-            fromEnc = runtime.getNil();
-            opts = arg;
+            forceEncoding = null;
+            options = arg;
+        } else {
+            forceEncoding = getEncoding(runtime, arg);
+            options = runtime.getNil();
         }
-        this.value = encodeCommon(context, runtime, this.value, enc, fromEnc, opts);
+
+        value = transcode(context, value, forceEncoding, getEncoding(runtime, toEncoding), options);
 
         return this;
     }
 
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject enc, IRubyObject fromEnc, IRubyObject opts) {
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject toEncoding, IRubyObject forceEncoding, IRubyObject opts) {
+        Ruby runtime = context.getRuntime();
         modify19();
-        this.value = encodeCommon(context, context.getRuntime(), this.value, enc, fromEnc, opts);
+
+        value = transcode(context, value, getEncoding(runtime, forceEncoding),
+                getEncoding(runtime, toEncoding), opts);
+
         return this;
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        IRubyObject defaultInternal = runtime.getEncodingService().getDefaultInternal();
+        Encoding defaultInternal = runtime.getDefaultInternalEncoding();
 
-        if (!defaultInternal.isNil()) {
-            ByteList encoded = encodeCommon(context, runtime, value, defaultInternal,
-                                            runtime.getNil(), runtime.getNil());
-            return runtime.newString(encoded);
-        } else {
-            return dup();
-        }
+        if (defaultInternal == null) return dup();
+
+        return runtime.newString(transcode(context, value, null, defaultInternal, runtime.getNil()));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject enc) {
         Ruby runtime = context.getRuntime();
 
-        ByteList encoded = encodeCommon(context, runtime, value, enc, runtime.getNil(),
-            runtime.getNil());
-        return runtime.newString(encoded);
+        return runtime.newString(transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil()));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
-    public IRubyObject encode(ThreadContext context, IRubyObject enc, IRubyObject arg) {
+    public IRubyObject encode(ThreadContext context, IRubyObject toEncoding, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
+        Encoding forceEncoding;
+        IRubyObject options;
 
-        IRubyObject fromEnc = arg;
-        IRubyObject opts = runtime.getNil();
         if (arg instanceof RubyHash) {
-            fromEnc = runtime.getNil();
-            opts = arg;
+            forceEncoding = null;
+            options = arg;
+        } else {
+            forceEncoding = getEncoding(runtime, arg);
+            options = runtime.getNil();
         }
-        ByteList encoded = encodeCommon(context, runtime, value, enc, fromEnc, opts);
-        return runtime.newString(encoded);
+
+        return runtime.newString(transcode(context, value, forceEncoding,
+                getEncoding(runtime, toEncoding), options));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
-    public IRubyObject encode(ThreadContext context, IRubyObject enc, IRubyObject fromEnc, IRubyObject opts) {
+    public IRubyObject encode(ThreadContext context, IRubyObject toEncoding,
+            IRubyObject forcedEncoding, IRubyObject opts) {
         Ruby runtime = context.getRuntime();
 
-        ByteList encoded = encodeCommon(context, runtime, value, enc, fromEnc, opts);
-        return runtime.newString(encoded);
+        return runtime.newString(transcode(context, value, getEncoding(runtime, forcedEncoding),
+                getEncoding(runtime, toEncoding), opts));
     }
 
-    private static ByteList encodeCommon(ThreadContext context, Ruby runtime, ByteList value,
-            IRubyObject toEnc, IRubyObject fromEnc, IRubyObject opts) {
-        Charset from = fromEnc.isNil() ? getCharset(runtime, value.getEncoding()) : getCharset(runtime, fromEnc);
+    private static Charset lookupCharsetFor(Ruby runtime, Encoding encoding, String fromName, String toName) {
+        Charset from = encoding.getCharset();
 
-        Encoding encoding = getEncoding(runtime, toEnc);
-        Charset to = getCharset(runtime, encoding);
+        if (from == null) {
+            try { // We try looking up based on Java's supported charsets...likely missing charset entry in jcodings
+                from = Charset.forName(encoding.toString());
+            } catch (Exception e) {}
+        }
+        if (from == null) throw runtime.newConverterNotFoundError("code converter not found (" +
+                fromName + " to " + toName + ")");
 
-        CharsetEncoder encoder = getEncoder(context, runtime, to, opts);
+        return from;
+    }
 
-        // decode from "from" and encode to "to"
+    /*
+     * This will try and transcode the supplied ByteList to the supplied toEncoding.  It will use
+     * forceEncoding as its encoding if it is supplied; otherwise it will use the encoding it has
+     * tucked away in the bytelist.  This will return a new copy of a ByteList in the request
+     * encoding or die trying (ConverterNotFound).
+     */
+    public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
+            Encoding toEncoding, IRubyObject opts) {
+        Ruby runtime = context.getRuntime();
+        Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
+        Charset from = lookupCharsetFor(runtime, fromEncoding, fromEncoding.toString(), toEncoding.toString());
+        Charset to = lookupCharsetFor(runtime, toEncoding, fromEncoding.toString(), toEncoding.toString());
+        CharsetEncoder encoder = getCharsetEncoder(context, runtime, to, opts);
         ByteBuffer fromBytes = ByteBuffer.wrap(value.getUnsafeBytes(), value.begin(), value.length());
-        ByteBuffer toBytes;
+        
         try {
-            toBytes = encoder.encode(from.decode(fromBytes));
+            ByteBuffer toBytes = encoder.encode(from.decode(fromBytes));
+
+            // CharsetEncoder#encode guarantees a newly-allocated buffer, so no need to copy.
+            return new ByteList(toBytes.array(), toBytes.arrayOffset(),
+                    toBytes.limit() - toBytes.arrayOffset(), toEncoding, false);
         } catch (CharacterCodingException e) {
             throw runtime.newInvalidByteSequenceError("");
         }
-
-        // CharsetEncoder#encode guarantees a newly-allocated buffer, so
-        // it's safe for us to take ownership of it without copying
-        ByteList result = new ByteList(toBytes.array(), toBytes.arrayOffset(),
-                toBytes.limit() - toBytes.arrayOffset(), false);
-        result.setEncoding(encoding);
-        return result;
     }
 
-    private static CharsetEncoder getEncoder(ThreadContext context, Ruby runtime, Charset charset, IRubyObject opts) {
+    private static CharsetEncoder getCharsetEncoder(ThreadContext context, Ruby runtime, Charset charset, IRubyObject opts) {
         CharsetEncoder encoder = charset.newEncoder();
 
         if (!opts.isNil()) {
@@ -7231,27 +7257,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return runtime.getEncodingService().getEncodingFromObject(toEnc);
         } catch (Exception e) {
             throw runtime.newConverterNotFoundError("code converter not found (" + toEnc.toString() + ")");
-        }
-    }
-
-    private static Charset getCharset(Ruby runtime, IRubyObject toEnc) {
-        try {
-            Encoding encoding = runtime.getEncodingService().getEncodingFromObject(toEnc);
-
-            return getCharset(runtime, encoding);
-        } catch (Exception e) {
-            throw runtime.newConverterNotFoundError("code converter not found (" + toEnc.toString() + ")");
-        }
-    }
-
-    private static Charset getCharset(Ruby runtime, Encoding encoding) {
-        try {
-            // special-casing ASCII* to ASCII
-            return encoding.toString().startsWith("ASCII") ?
-                Charset.forName("ASCII") :
-                Charset.forName(encoding.toString());
-        } catch (Exception e) {
-            throw runtime.newConverterNotFoundError("code converter not found (" + encoding.toString() + ")");
         }
     }
 
