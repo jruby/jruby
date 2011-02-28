@@ -748,33 +748,6 @@ public final class ThreadContext {
      */
     public IRubyObject createCallerBacktrace(Ruby runtime, int level) {
         RubyStackTraceElement[] trace = gatherCallerBacktrace(level);
-
-        // scrub out .java core class names and replace with Ruby equivalents
-        OUTER: for (int i = 0; i < trace.length; i++) {
-            RubyStackTraceElement element = trace[i];
-            String classDotMethod = element.getClassName() + "." + element.getMethodName();
-            if (runtime.getBoundMethods().containsKey(classDotMethod)) {
-                String rubyName = runtime.getBoundMethods().get(classDotMethod);
-                // find first Ruby file+line
-                RubyStackTraceElement rubyElement = null;
-                for (int j = i; j < trace.length; j++) {
-                    rubyElement = trace[j];
-                    if (!rubyElement.getFileName().endsWith(".java")) {
-                        trace[i] = new RubyStackTraceElement(
-                                element.getClassName(),
-                                rubyName,
-                                rubyElement.getFileName(),
-                                rubyElement.getLineNumber(),
-                                rubyElement.isBinding(),
-                                rubyElement.getFrameType());
-                        continue OUTER;
-                    }
-                }
-                // no match, leave it as is
-
-            }
-        }
-        
         RubyArray backtrace = runtime.newArray(trace.length - level);
 
         for (int i = level; i < trace.length; i++) {
@@ -797,7 +770,8 @@ public final class ThreadContext {
                 runtime,
                 copy,
                 nativeThread.getStackTrace(),
-                false);
+                false,
+                true);
 
         return trace;
     }
@@ -972,8 +946,12 @@ public final class ThreadContext {
         INTERPRETED_FRAMES.put(ASTInterpreter.class.getName() + ".INTERPRET_ROOT", FrameType.ROOT);
     }
 
-    public static RubyStackTraceElement[] gatherHybridBacktrace(Ruby runtime, Backtrace[] backtraceFrames, StackTraceElement[] stackTrace, boolean fullTrace) {
-        List trace = new ArrayList(stackTrace.length);
+    public static RubyStackTraceElement[] gatherHybridBacktrace(Ruby runtime, Backtrace[] backtraceFrames, StackTraceElement[] stackTrace, boolean fullTrace, boolean maskNative) {
+        List<RubyStackTraceElement> trace = new ArrayList(stackTrace.length);
+
+        // used for duplicating the previous Ruby frame when masking native calls
+        boolean dupFrame = false;
+        String dupFrameName = null;
 
         // a running index into the Ruby backtrace stack, incremented for each
         // interpreter frame we encounter in the Java backtrace.
@@ -1004,15 +982,20 @@ public final class ThreadContext {
                     // pull out and demangle the method name
                     methodName = className.substring(JITCompiler.RUBY_JIT_PREFIX.length() + 1, className.lastIndexOf("_"));
                     methodName = JavaNameMangler.demangleMethodName(methodName);
-                    
-                    trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
+
+                    RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false);
+                    // dup if masking native and previous frame was native
+                    if (maskNative && dupFrame) {
+                        dupFrame = false;
+                        trace.add(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding()));
+                    }
+                    trace.add(rubyElement);
 
                     // if it's a synthetic call, use it but gobble up parent calls
                     // TODO: need to formalize this better
                     if (element.getMethodName().contains("$RUBY$SYNTHETIC")) {
                         // gobble up at least one parent, and keep going if there's more synthetic frames
-                        while (element.getMethodName().indexOf("$RUBY$SYNTHETIC") != -1) {
-                            i++;
+                        while (element.getMethodName().indexOf("$RUBY$SYNTHETIC") != -1 && ++i < stackTrace.length) {
                             element = stackTrace[i];
                         }
                     }
@@ -1029,11 +1012,16 @@ public final class ThreadContext {
                         methodName = methodName.substring("$RUBY$SYNTHETIC".length());
                         methodName = JavaNameMangler.demangleMethodName(methodName);
                         if (methodName.equals("__file__")) methodName = "(root)";
-                        trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
+                        RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false);
+                        // dup if masking native and previous frame was native
+                        if (maskNative && dupFrame) {
+                            dupFrame = false;
+                            trace.add(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding()));
+                        }
+                        trace.add(rubyElement);
 
                         // gobble up at least one parent, and keep going if there's more synthetic frames
-                        while (element.getMethodName().indexOf("$RUBY$SYNTHETIC") != -1) {
-                            i++;
+                        while (element.getMethodName().indexOf("$RUBY$SYNTHETIC") != -1 && ++i < stackTrace.length) {
                             element = stackTrace[i];
                         }
                         continue;
@@ -1042,14 +1030,26 @@ public final class ThreadContext {
                     // not a synthetic body
                     methodName = methodName.substring("$RUBY$".length());
                     methodName = JavaNameMangler.demangleMethodName(methodName);
-                    trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
+                    RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false);
+                    // dup if masking native and previous frame was native
+                    if (maskNative && dupFrame) {
+                        dupFrame = false;
+                        trace.add(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding()));
+                    }
+                    trace.add(rubyElement);
                     continue;
                 }
 
                 // last attempt at AOT compiled backtrace element, looking for __file__
                 if (methodName.equals("__file__") && !element.getFileName().endsWith("AbstractScript.java")) {
                     methodName = "(root)";
-                    trace.add(new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false));
+                    RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false);
+                    // dup if masking native and previous frame was native
+                    if (maskNative && dupFrame) {
+                        dupFrame = false;
+                        trace.add(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding()));
+                    }
+                    trace.add(rubyElement);
                     continue;
                 }
             }
@@ -1062,10 +1062,18 @@ public final class ThreadContext {
                 if (lastDot != -1) {
                     filename = element.getClassName().substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
                 }
-                trace.add(new RubyStackTraceElement(element.getClassName(), rubyName, filename, element.getLineNumber(), false));
 
+                if (maskNative) {
+                    // for Kernel#caller, don't show .java frames in the trace
+                    dupFrame = true;
+                    dupFrameName = rubyName;
+                    continue;
+                } else {
+                    trace.add(new RubyStackTraceElement(element.getClassName(), rubyName, filename, element.getLineNumber(), false));
+                }
+
+                // if not full trace, we're done; don't check interpreted marker
                 if (!fullTrace) {
-                    // we want to fall through below to add Ruby trace info as well
                     continue;
                 }
             }
@@ -1075,14 +1083,15 @@ public final class ThreadContext {
             FrameType frameType = INTERPRETED_FRAMES.get(classMethod);
             if (frameType != null && rubyFrameIndex >= 0) {
                 // Frame matches one of our markers for "interpreted" calls
-                Backtrace rubyElement = backtraceFrames[rubyFrameIndex];
-                trace.add(new RubyStackTraceElement(rubyElement.klass, rubyElement.method, rubyElement.filename, rubyElement.line + 1, false));
+                Backtrace rubyFrame = backtraceFrames[rubyFrameIndex];
+                RubyStackTraceElement rubyElement = new RubyStackTraceElement(rubyFrame.klass, rubyFrame.method, rubyFrame.filename, rubyFrame.line + 1, false);
+                // dup if masking native and previous frame was native
+                if (maskNative && dupFrame) {
+                    dupFrame = false;
+                    trace.add(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding()));
+                }
+                trace.add(rubyElement);
                 rubyFrameIndex--;
-                continue;
-            } else {
-                // frames not being included...
-//                RubyString str = RubyString.newString(runtime, createRubyBacktraceString(element));
-//                traceArray.append(str);
                 continue;
             }
         }

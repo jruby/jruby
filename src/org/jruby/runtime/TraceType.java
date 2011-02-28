@@ -372,7 +372,8 @@ public class TraceType {
                         context.getRuntime(),
                         context.createBacktrace2(0, nativeException),
                         Thread.currentThread().getStackTrace(),
-                        full);
+                        full,
+                        false);
     }
 
     private static void printErrorPos(ThreadContext context, PrintStream errorStream) {
