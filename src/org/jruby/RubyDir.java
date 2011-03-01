@@ -62,6 +62,7 @@ import static org.jruby.CompatVersion.*;
 public class RubyDir extends RubyObject {
     private RubyString path;       // What we passed to the constructor for method 'path'
     protected JRubyFile dir;
+    private long lastModified = Long.MIN_VALUE;
     private String[] snapshot;     // snapshot of contents of directory
     private int pos;               // current position in directory
     private boolean isOpen = true;
@@ -93,10 +94,23 @@ public class RubyDir extends RubyObject {
         if (!isTaint() && getRuntime().getSafeLevel() >= 4)throw getRuntime().newSecurityError("Insecure: operation on untainted Dir");
 
         testFrozen("Dir");
-
+        update();
+        
         if (!isOpen) throw getRuntime().newIOError("closed directory");
     }
 
+    private void update() {
+        if (snapshot == null || dir.lastModified() > lastModified) {
+            // lastModified = dir.lastModified();
+            lastModified = getRuntime().getPosix().stat(dir.getPath()).mtime();
+            List<String> snapshotList = new ArrayList<String>();
+            snapshotList.add(".");
+            snapshotList.add("..");
+            snapshotList.addAll(getContents(dir));
+            snapshot = (String[]) snapshotList.toArray(new String[snapshotList.size()]);
+        }
+    }
+    
     /**
      * Creates a new <code>Dir</code>.  This method takes a snapshot of the
      * contents of the directory at creation time, so changes to the contents
@@ -115,6 +129,7 @@ public class RubyDir extends RubyObject {
         String adjustedPath = RubyFile.adjustRootPathOnWindows(getRuntime(), newPath.toString(), null);
         checkDirIsTwoSlashesOnWindows(getRuntime(), adjustedPath);
 
+        dir = JRubyFile.create(null, adjustedPath);
         List<String> snapshotList = RubyDir.getEntries(getRuntime(), adjustedPath);
         snapshot = (String[]) snapshotList.toArray(new String[snapshotList.size()]);
 
