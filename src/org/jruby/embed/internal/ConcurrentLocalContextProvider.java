@@ -44,8 +44,15 @@ import org.jruby.embed.LocalVariableBehavior;
 public class ConcurrentLocalContextProvider extends AbstractLocalContextProvider {
     private ThreadLocal<LocalContext> contextHolder =
             new ThreadLocal<LocalContext>() {
+                @Override
                 public LocalContext initialValue() {
                     return getInstance();
+                }
+                
+                @Override
+                public void remove() {
+                    LocalContext localContext = get();
+                    localContext.remove();
                 }
             };
 
@@ -80,5 +87,10 @@ public class ConcurrentLocalContextProvider extends AbstractLocalContextProvider
 
     public boolean isRuntimeInitialized() {
         return Ruby.isGlobalRuntimeReady();
+    }
+    
+    public void terminate() {
+        contextHolder.remove();
+        contextHolder.set(null);
     }
 }

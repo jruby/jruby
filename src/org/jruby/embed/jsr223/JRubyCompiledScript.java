@@ -92,11 +92,11 @@ public class JRubyCompiledScript extends CompiledScript {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
+            Utils.postEval(container, tmpContext);
+            if (tmpContext != context) JRubyContext.update(tmpContext, context);
             if(Utils.isTerminationOn(tmpContext)) {
                 container.terminate();
             }
-            Utils.postEval(container, tmpContext);
-            if (tmpContext != context) JRubyContext.update(tmpContext, context);
         }
     }
 

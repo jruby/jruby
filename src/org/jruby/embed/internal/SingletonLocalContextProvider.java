@@ -85,4 +85,9 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
         }
         return localContext.initialized;
     }
+    
+    public void terminate() {
+        localContext.remove();
+        localContext = null;
+    }
 }

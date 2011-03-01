@@ -94,4 +94,9 @@ public interface LocalContextProvider {
      * @return an attribute map
      */
     Map getAttributeMap();
+    
+    /**
+     * Clears up a variable map.
+     */
+    void terminate();
 }

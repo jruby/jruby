@@ -95,4 +95,9 @@ public class LocalContext {
     public HashMap getAttributeMap() {
         return attribute;
     }
+    
+    public void remove() {
+        attribute.clear();
+        varMap.clear();
+    }
 }

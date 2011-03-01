@@ -73,4 +73,9 @@ public class SingleThreadLocalContextProvider extends AbstractLocalContextProvid
         }
         return localContext.initialized;
     }
+    
+    public void terminate() {
+        localContext.remove();
+        localContext = null;
+    }
 }

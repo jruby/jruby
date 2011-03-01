@@ -227,6 +227,7 @@ public class JRubyCompiledScriptTest {
         StringWriter writer = new StringWriter();
         engine.getContext().setWriter(writer);
         String script = "at_exit { puts \"#{$x} in an at_exit block\" }";
+        engine.getContext().setAttribute(AttributeName.TERMINATION.toString(), false, ScriptContext.ENGINE_SCOPE);
         JRubyCompiledScript instance = (JRubyCompiledScript) engine.compile(script);
 
         instance.eval();
@@ -239,5 +240,6 @@ public class JRubyCompiledScriptTest {
         expResult = "GVar in an at_exit block";
         engine.compile("").eval();
         assertEquals(expResult, writer.toString().trim());
+        engine.getContext().setAttribute(AttributeName.TERMINATION.toString(), false, ScriptContext.ENGINE_SCOPE);
     }
 }

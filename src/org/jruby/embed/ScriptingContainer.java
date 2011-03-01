@@ -1717,6 +1717,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      */
     public void terminate() {
         getProvider().getRuntime().tearDown(false);
+        getProvider().terminate();
     }
 
     /**
