@@ -277,7 +277,7 @@ module Gem
         result = execute("#{BASE_GOAL}:versions", name, nil)
 
         if result =~ /#{name} \[/
-          result = result.gsub(/\n/, '').sub(/.*\[/, "").sub(/\]/, '').gsub(/ /, '').split(',')
+          result = result.gsub(/\r?\n/, '').sub(/.*\[/, "").sub(/\]/, '').gsub(/ /, '').split(',')
           puts "versions: #{result.inspect}" if verbose?
           result
         else
@@ -287,7 +287,7 @@ module Gem
 
       def generate_spec(gemname, version)
         result = execute("#{BASE_GOAL}:gemify", maven_name(gemname), version, "gemify.onlySpecs" => true)
-        path = result.gsub(/\n/, '')
+        path = result.gsub(/\r?\n/, '')
         if path =~ /gemspec: /
           path = path.sub(/.*gemspec: /, '')
           if path.size > 0
@@ -300,7 +300,7 @@ module Gem
 
       def generate_gem(gemname, version)
         result = execute("#{BASE_GOAL}:gemify", maven_name(gemname), version)
-        path = result.gsub(/\n/, '')
+        path = result.gsub(/\r?\n/, '')
         if path =~ /gem: /
 
           path = path.sub(/.*gem: /, '')
