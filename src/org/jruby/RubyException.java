@@ -36,6 +36,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.runtime.backtrace.BacktraceData;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
@@ -49,7 +50,8 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.TraceType;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.backtrace.TraceType;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
@@ -63,7 +65,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
-    private ThreadContext.RubyStackTraceElement[] backtraceElements;
+    private BacktraceData backtraceData;
     private IRubyObject backtrace;
     public IRubyObject message;
     public static final int TRACE_HEAD = 8;
@@ -136,20 +138,32 @@ public class RubyException extends RubyObject {
     public static RubyException newException(Ruby runtime, RubyClass excptnClass, String msg) {
         return new RubyException(runtime, excptnClass, msg);
     }
-    
-    public void setBacktraceElements(ThreadContext.RubyStackTraceElement[] backtraceElements) {
-        this.backtraceElements = backtraceElements;
+
+    public void setBacktraceData(BacktraceData backtraceData) {
+        this.backtraceData = backtraceData;
     }
-    
-    public ThreadContext.RubyStackTraceElement[] getBacktraceElements() {
-        return backtraceElements;
+
+    public BacktraceData getBacktraceData() {
+        return backtraceData;
+    }
+
+    public RubyStackTraceElement[] getBacktraceElements() {
+        if (backtraceData == null) {
+            return RubyStackTraceElement.EMPTY_ARRAY;
+        }
+        return backtraceData.getBacktrace(getRuntime());
     }
 
     public void prepareBacktrace(ThreadContext context, boolean nativeException) {
         // if it's null, build a backtrace
-        if (backtraceElements == null) {
-            backtraceElements = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context, nativeException);
+        if (backtraceData == null) {
+            backtraceData = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context, nativeException);
         }
+    }
+
+    public void forceBacktrace(IRubyObject backtrace) {
+        backtraceData = BacktraceData.EMPTY;
+        set_backtrace(backtrace);
     }
     
     public IRubyObject getBacktrace() {
@@ -160,7 +174,12 @@ public class RubyException extends RubyObject {
     }
     
     public void initBacktrace() {
-        backtrace = TraceType.generateMRIBacktrace(getRuntime(), backtraceElements);
+        Ruby runtime = getRuntime();
+        if (backtraceData == null) {
+            backtrace = runtime.getNil();
+        } else {
+            backtrace = TraceType.generateMRIBacktrace(runtime, backtraceData.getBacktrace(runtime));
+        }
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
@@ -268,7 +287,7 @@ public class RubyException extends RubyObject {
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
-        exception.backtraceElements = backtraceElements;
+        exception.backtraceData = backtraceData;
         exception.backtrace = backtrace;
         exception.message = message;
     }

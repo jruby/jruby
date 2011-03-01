@@ -66,6 +66,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -981,15 +982,13 @@ public class RubyKernel {
                     raise = new RaiseException(convertToException(runtime, args[0], null));
                 }
                 break;
-            default:
+            case 2:
                 raise = new RaiseException(convertToException(runtime, args[0], args[1]));
-                if (args.length > 2) {
-                    raise.getException().set_backtrace(args[2]);
-                }
+                break;
+            default:
+                raise = new RaiseException(convertToException(runtime, args[0], args[1]), args[2]);
                 break;
         }
-        
-        raise.preRaise(context);
 
         if (runtime.getDebug().isTrue()) {
             printExceptionSummary(context, runtime, raise.getException());
@@ -1016,8 +1015,8 @@ public class RubyKernel {
     }
 
     private static void printExceptionSummary(ThreadContext context, Ruby runtime, RubyException rEx) {
-        ThreadContext.RubyStackTraceElement[] elements = rEx.getBacktraceElements();
-        ThreadContext.RubyStackTraceElement firstElement = elements[0];
+        RubyStackTraceElement[] elements = rEx.getBacktraceElements();
+        RubyStackTraceElement firstElement = elements[0];
         String msg = String.format("Exception `%s' at %s:%s - %s\n",
                 rEx.getMetaClass(),
                 firstElement.getFileName(), firstElement.getLineNumber(),

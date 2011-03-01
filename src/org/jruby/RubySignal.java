@@ -34,6 +34,8 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.BacktraceData;
+import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.SignalFacade;
@@ -105,7 +107,7 @@ public class RubySignal {
                         RubyException exc = new RubyException(runtime, runtime.getRuntimeError(), "");
                         ThreadContext tc = threadService.getThreadContextForThread(th);
                         if (tc != null) {
-                            exc.setBacktraceElements(ThreadContext.gatherHybridBacktrace(runtime, tc.createBacktrace2(0, false), th.javaBacktrace(), false, false));
+                            exc.setBacktraceData(new BacktraceData(th.javaBacktrace(), tc.createBacktrace2(0, false), false, false, Gather.NORMAL));
                             exc.printBacktrace(System.err);
                         } else {
                             System.err.println("    [no longer alive]");

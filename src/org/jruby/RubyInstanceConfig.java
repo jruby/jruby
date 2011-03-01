@@ -59,7 +59,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.TraceType;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.profile.IProfileData;
 import org.jruby.runtime.profile.AbstractProfilePrinter;
 import org.jruby.runtime.profile.FlatProfilePrinter;

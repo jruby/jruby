@@ -48,6 +48,8 @@ import org.jruby.RubyString;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class RaiseException extends JumpException {
     public static final boolean DEBUG = false;
@@ -57,8 +59,36 @@ public class RaiseException extends JumpException {
     private String providedMessage;
     private boolean nativeException;
 
+    /**
+     * Construct a new RaiseException to wrap the given Ruby exception for Java-land
+     * throwing purposes.
+     *
+     * This constructor will generate a backtrace using the Java
+     * stack trace and the interpreted Ruby frames for the current thread.
+     *
+     * @param actException The Ruby exception to wrap
+     */
     public RaiseException(RubyException actException) {
         this(actException, false);
+    }
+
+    /**
+     * Construct a new RaiseException to wrap the given Ruby exception for Java-land
+     * throwing purposes.
+     * 
+     * This constructor will not generate a backtrace and will instead use the
+     * one specified by the
+     * 
+     * @param exception The Ruby exception to wrap
+     * @param backtrace
+     */
+    public RaiseException(RubyException exception, IRubyObject backtrace) {
+        super();
+        if (DEBUG) {
+            Thread.dumpStack();
+        }
+        setException(exception, false);
+        preRaise(exception.getRuntime().getCurrentContext(), backtrace);
     }
 
     public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, boolean nativeException) {
@@ -141,22 +171,30 @@ public class RaiseException extends JumpException {
     }
 
     public void preRaise(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        preRaise(context, null);
+    }
+
+    public void preRaise(ThreadContext context, IRubyObject backtrace) {
+        doSetLastError(context);
+        doCallEventHook(context);
+
+        if (backtrace == null) {
+            exception.prepareBacktrace(context, nativeException);
+        } else {
+            exception.forceBacktrace(backtrace);
+        }
+    }
+
+    private void doCallEventHook(ThreadContext context) {
+        if (context.runtime.hasEventHooks()) {
+            context.runtime.callEventHooks(context, RubyEvent.RAISE, context.getFile(), context.getLine(), context.getFrameName(), context.getFrameKlazz());
+        }
+    }
+
+    private void doSetLastError(ThreadContext context) {
         if (!context.isWithinDefined()) {
-            runtime.getGlobalVariables().set("$!", exception);
+            context.runtime.getGlobalVariables().set("$!", exception);
         }
-
-        if (runtime.hasEventHooks()) {
-            runtime.callEventHooks(
-                    context,
-                    RubyEvent.RAISE,
-                    context.getFile(),
-                    context.getLine(),
-                    context.getFrameName(),
-                    context.getFrameKlazz());
-        }
-
-        exception.prepareBacktrace(context, nativeException);
     }
     
     private StackTraceElement[] cachedTrace;
@@ -182,7 +220,7 @@ public class RaiseException extends JumpException {
         this.exception = newException;
     }
 
-    private StackTraceElement[] javaTraceFromRubyTrace(ThreadContext.RubyStackTraceElement[] trace) {
+    private StackTraceElement[] javaTraceFromRubyTrace(RubyStackTraceElement[] trace) {
         StackTraceElement[] newTrace = new StackTraceElement[trace.length];
         for (int i = 0; i < newTrace.length; i++) {
             newTrace[i] = trace[i].getElement();

@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
@@ -59,7 +60,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
                 frame,
                 module,
                 dynamicScope,
-                new ThreadContext.Backtrace(module.getName(), method.getMethodName(), body.getFile(), body.getLine()));
+                new BacktraceElement(module.getName(), method.getMethodName(), body.getFile(), body.getLine()));
 
         return new Block(body, binding);
     }

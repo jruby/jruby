@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -45,7 +46,7 @@ public class Binding {
      * frame of method which defined this block
      */
     private final Frame frame;
-    private final ThreadContext.Backtrace backtrace;
+    private final BacktraceElement backtrace;
     private final RubyModule klass;
 
     private Visibility visibility;
@@ -60,7 +61,7 @@ public class Binding {
     private final DynamicScope dynamicScope;
     
     public Binding(IRubyObject self, Frame frame,
-            Visibility visibility, RubyModule klass, DynamicScope dynamicScope, ThreadContext.Backtrace backtrace) {
+            Visibility visibility, RubyModule klass, DynamicScope dynamicScope, BacktraceElement backtrace) {
         this.self = self;
         this.frame = frame.duplicate();
         this.visibility = visibility;
@@ -69,7 +70,7 @@ public class Binding {
         this.backtrace = backtrace;
     }
     
-    public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope, ThreadContext.Backtrace backtrace) {
+    public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope, BacktraceElement backtrace) {
         this.self = frame.getSelf();
         this.frame = frame.duplicate();
         this.visibility = frame.getVisibility();
