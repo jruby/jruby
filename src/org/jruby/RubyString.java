@@ -7173,12 +7173,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private static Charset lookupCharsetFor(Ruby runtime, Encoding encoding, String fromName, String toName) {
         Charset from = encoding.getCharset();
+        if (from != null) return from;
 
-        if (from == null) {
-            try { // We try looking up based on Java's supported charsets...likely missing charset entry in jcodings
-                from = Charset.forName(encoding.toString());
-            } catch (Exception e) {}
-        }
+        try { // We try looking up based on Java's supported charsets...likely missing charset entry in jcodings
+            from = Charset.forName(encoding.toString());
+        } catch (Exception e) {}
+        
         if (from == null) throw runtime.newConverterNotFoundError("code converter not found (" +
                 fromName + " to " + toName + ")");
 
