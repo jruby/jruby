@@ -616,12 +616,28 @@ public class RubyIO extends RubyObject {
     public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
         return getline(runtime, separator, limit, null);
     }
-    
+
+    private IRubyObject getline(Ruby runtime, ByteList separator, long limit, ByteListCache cache) {
+        IRubyObject result = getlineInner(runtime, separator, limit, cache);
+
+        if (runtime.is1_9() && !result.isNil()) {
+            Encoding internal = getInternalEncoding(runtime);
+
+            if (internal != null) {
+                result = RubyString.newStringNoCopy(runtime,
+                        RubyString.transcode(runtime.getCurrentContext(),
+                        ((RubyString) result).getByteList(), getExternalEncoding(runtime), internal,
+                        runtime.getNil()));
+            }
+        }
+
+        return result;
+    }
     /**
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      *
      */
-    private IRubyObject getline(Ruby runtime, ByteList separator, long limit, ByteListCache cache) {
+    private IRubyObject getlineInner(Ruby runtime, ByteList separator, long limit, ByteListCache cache) {
         try {
             OpenFile myOpenFile = getOpenFileChecked();
 
@@ -641,7 +657,11 @@ public class RubyIO extends RubyObject {
                 incrementLineno(runtime, myOpenFile);
                 return str;
             } else if (limit == 0) {
-                return RubyString.newEmptyString(runtime, externalEncoding);
+                if (runtime.is1_9()) {
+                    return RubyString.newEmptyString(runtime, getExternalEncoding(runtime));
+                } else {
+                    return RubyString.newEmptyString(runtime);
+                }
             } else if (separator.length() == 1 && limit < 0) {
                 return getlineFast(runtime, separator.get(0) & 0xFF, cache);
             } else {
@@ -730,11 +750,15 @@ public class RubyIO extends RubyObject {
         return externalEncoding != null ? externalEncoding : runtime.getDefaultExternalEncoding();
     }
 
+
+    private Encoding getInternalEncoding(Ruby runtime) {
+        return internalEncoding != null ? internalEncoding : runtime.getDefaultInternalEncoding();
+    }
+
     private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
         ByteList newBuf = isCached ? new ByteList(buffer) : buffer;
-        Encoding encoding = getExternalEncoding(runtime);
 
-        if (encoding != null) newBuf.setEncoding(encoding);
+        if (runtime.is1_9()) newBuf.setEncoding(getExternalEncoding(runtime));
 
         RubyString str = RubyString.newString(runtime, newBuf);
         str.setTaint(true);
@@ -2354,9 +2378,16 @@ public class RubyIO extends RubyObject {
             return runtime.getNil();
         }
 
-        Encoding enc = getExternalEncoding(runtime);
+        Encoding external = getExternalEncoding(runtime);
+        ByteList bytes = fromEncodedBytes(runtime, external, (int) c);
+        Encoding internal = getInternalEncoding(runtime);
+        
+        if (internal != null) {
+            bytes = RubyString.transcode(context, bytes, external, internal, runtime.getNil());
+        }
+
         // TODO: This should be optimized like RubyInteger.chr is for ascii values
-        return RubyString.newStringNoCopy(runtime, fromEncodedBytes(runtime, enc, (int) c), enc, 0);
+        return RubyString.newStringNoCopy(runtime, bytes, external, 0);
     }
 
     public int getcCommon() {
@@ -2522,10 +2553,18 @@ public class RubyIO extends RubyObject {
                 }
             }
             boolean empty = buf == null || buf.length() == 0;
-
             ByteList newBuf = empty ? ByteList.EMPTY_BYTELIST.dup() : buf;
-            if (externalEncoding != null) { // TODO: Encapsulate into something more central (when adding trancoding)
-                newBuf.setEncoding(externalEncoding);
+            
+            if (runtime.is1_9()) {
+                Encoding internal = getInternalEncoding(runtime);
+                Encoding external = getExternalEncoding(runtime);
+
+                if (internal != null) {
+                    // Enebo: If this is not whole characters what happens to the rest?
+                    newBuf = RubyString.transcode(context, newBuf, external, internal, runtime.getNil());
+                } else {
+                    newBuf.setEncoding(external);
+                }
             }
             string.view(newBuf);
 
@@ -3018,7 +3057,7 @@ public class RubyIO extends RubyObject {
             byte c = (byte)RubyNumeric.fix2int(ch);
             int n = runtime.getKCode().getEncoding().length(c);
             RubyString str = runtime.newString();
-            if (externalEncoding != null) str.setEncoding(externalEncoding);
+            if (runtime.is1_9()) str.setEncoding(getExternalEncoding(runtime));
             str.setTaint(true);
             str.cat(c);
 
