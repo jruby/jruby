@@ -144,6 +144,7 @@ public class BacktraceData {
                     dupFrameName = rubyName;
                     continue;
                 } else {
+                    if (rubyName == null) rubyName = "";
                     trace.add(new RubyStackTraceElement(element.getClassName(), rubyName, filename, element.getLineNumber(), false));
                 }
                 // if not full trace, we're done; don't check interpreted marker
