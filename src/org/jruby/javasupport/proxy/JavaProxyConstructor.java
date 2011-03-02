@@ -30,6 +30,7 @@ package org.jruby.javasupport.proxy;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -182,10 +183,12 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
                 }
                 
                 if (v < 0 || v == (newArgs.length)) {
-                    return RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs).toJava(m.getReturnType());
-                } else {
+                    return method.call(runtime.getCurrentContext(), self, self.getMetaClass(), name, newArgs).toJava(m.getReturnType());
+                } else if (m.hasSuperImplementation()) {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
                     return RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK).toJava(m.getReturnType());
+                } else {
+                    throw runtime.newArgumentError(newArgs.length, v);
                 }
             }
         };
@@ -219,10 +222,12 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
                 IRubyObject result = null;
                 if (v < 0 || v == (newArgs.length)) {
-                    result = RuntimeHelpers.invoke(runtime.getCurrentContext(), self, name, newArgs);
-                } else {
+                    result = method.call(runtime.getCurrentContext(), self, self.getMetaClass(), name, newArgs);
+                } else if (m.hasSuperImplementation()) {
                     RubyClass superClass = self.getMetaClass().getSuperClass();
                     result = RuntimeHelpers.invokeAs(runtime.getCurrentContext(), superClass, self, name, newArgs, Block.NULL_BLOCK);
+                } else {
+                    throw runtime.newArgumentError(newArgs.length, v);
                 }
                 if (m.getReturnType() == void.class) {
                     return null;
