@@ -212,6 +212,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 new InvocationMethodFactory(classLoader));
     }
 
+    private static String getCompiledCallbackName(String typePath, String method) {
+        return (typePath + "#" + method).replaceAll("/", "\\$");
+    }
+
     /**
      * Use code generation to provide a method handle for a compiled Ruby method.
      * 
@@ -230,27 +234,27 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         Class scriptClass = scriptObject.getClass();
         String typePath = p(scriptClass);
-        String invokerName = typePath.replaceAll("/", "_") + "Invoker" + method + arity;
+        String invokerPath = getCompiledCallbackName(typePath, method);
         synchronized (classLoader) {
-            Class generatedClass = tryClass(invokerName, scriptClass);
+            Class generatedClass = tryClass(invokerPath, scriptClass);
 
             try {
                 if (generatedClass == null) {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("no generated handle in classloader for: " + invokerName);
+                        System.err.println("no generated handle in classloader for: " + invokerPath);
                     }
                     byte[] invokerBytes = getCompiledMethodOffline(
                             method,
                             typePath,
-                            invokerName,
+                            invokerPath,
                             arity,
                             scope,
                             callConfig,
                             position.getFile(),
                             position.getStartLine());
-                    generatedClass = endCallWithBytes(invokerBytes, invokerName);
+                    generatedClass = endCallWithBytes(invokerBytes, invokerPath);
                 } else if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    System.err.println("found generated handle in classloader: " + invokerName);
+                    System.err.println("found generated handle in classloader: " + invokerPath);
                 }
 
                 CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
@@ -279,8 +283,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             StaticScope scope, CallConfiguration callConfig, String filename, int line) {
         String sup = COMPILED_SUPER_CLASS;
         ClassWriter cw;
-        int dotIndex = invokerPath.lastIndexOf('/');
-        cw = createCompiledCtor(invokerPath, invokerPath.substring(dotIndex + 1) + "#" + method.substring(method.lastIndexOf('$') + 1), sup);
+        cw = createCompiledCtor(invokerPath, invokerPath, sup);
         SkinnyMethodAdapter mv = null;
         String signature = null;
         boolean specificArity = false;
@@ -810,10 +813,14 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
+    private static String getBlockCallbackName(String typePathString, String method) {
+        return (typePathString + "#" + method).replaceAll("/", "\\$");
+    }
+
     public CompiledBlockCallback getBlockCallback(String method, String file, int line, Object scriptObject) {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);
-        String mname = typeClass.getName() + "BlockCallback$" + method + "xx1";
+        String mname = getBlockCallbackName(typePathString, method);
         synchronized (classLoader) {
             Class c = tryClass(mname);
             try {
@@ -842,12 +849,12 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     @Override
     public byte[] getBlockCallbackOffline(String method, String file, int line, String classname) {
-        String mnamePath = classname + "BlockCallback$" + method + "xx1";
-        ClassWriter cw = createBlockCtor(mnamePath, classname);
+        String mname = getBlockCallbackName(classname, method);
+        ClassWriter cw = createBlockCtor(mname, classname);
         SkinnyMethodAdapter mv = startBlockCall(cw);
         mv.line(-1);
         mv.aload(0);
-        mv.getfield(mnamePath, "$scriptObject", "L" + classname + ";");
+        mv.getfield(mname, "$scriptObject", "L" + classname + ";");
         mv.aloadMany(1, 2, 3, 4);
         mv.invokestatic(classname, method, sig(
                 IRubyObject.class, "L" + classname + ";", ThreadContext.class,
@@ -873,7 +880,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public CompiledBlockCallback19 getBlockCallback19(String method, String file, int line, Object scriptObject) {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);
-        String mname = typeClass.getName() + "BlockCallback$" + method + "xx1";
+        String mname = getBlockCallbackName(typePathString, method);
         synchronized (classLoader) {
             Class c = tryClass(mname);
             try {
@@ -902,7 +909,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     @Override
     public byte[] getBlockCallback19Offline(String method, String file, int line, String classname) {
-        String mnamePath = classname + "BlockCallback$" + method + "xx1";
+        String mnamePath = getBlockCallbackName(classname, method);
         ClassWriter cw = createBlockCtor19(mnamePath, classname);
         SkinnyMethodAdapter mv = startBlockCall19(cw);
         mv.line(-1);
@@ -952,6 +959,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String ciClassname = "L" + classname + ";";
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(CompiledBlockCallback.class), null);
+        cw.visitSource(namePath, null);
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ciClassname, null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null);
         mv.start();
@@ -971,6 +979,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String ciClassname = "L" + classname + ";";
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         cw.visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, namePath, null, p(Object.class), new String[] {p(CompiledBlockCallback19.class)});
+        cw.visitSource(namePath, null);
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "$scriptObject", ciClassname, null, null);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(Void.TYPE, params(Object.class)), null, null);
         mv.start();

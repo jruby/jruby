@@ -55,7 +55,13 @@ public class BacktraceData {
         }
         for (int i = 0; i < javaTrace.length; i++) {
             StackTraceElement element = javaTrace[i];
-            if (element.getFileName() != null && (element.getFileName().endsWith(".rb") || element.getFileName().equals("-e") || element.getClassName().startsWith(JITCompiler.RUBY_JIT_PREFIX) || element.getMethodName().contains("$RUBY$") || element.getMethodName().contains("__file__"))) {
+            if (
+                    element.getFileName() != null &&
+                    (element.getFileName().endsWith(".rb")
+                        || element.getFileName().equals("-e")
+                        || element.getClassName().startsWith(JITCompiler.RUBY_JIT_PREFIX + ".")
+                        || element.getMethodName().contains("$RUBY$")
+                        || element.getMethodName().contains("__file__"))) {
                 if (element.getLineNumber() == -1) {
                     continue;
                 }
@@ -144,7 +150,7 @@ public class BacktraceData {
                     dupFrameName = rubyName;
                     continue;
                 } else {
-                    if (rubyName == null) rubyName = "";
+                    if (rubyName == null) rubyName = element.getMethodName();
                     trace.add(new RubyStackTraceElement(element.getClassName(), rubyName, filename, element.getLineNumber(), false));
                 }
                 // if not full trace, we're done; don't check interpreted marker

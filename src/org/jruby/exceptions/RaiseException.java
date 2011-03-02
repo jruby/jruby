@@ -170,11 +170,11 @@ public class RaiseException extends JumpException {
         return exception;
     }
 
-    public void preRaise(ThreadContext context) {
+    private void preRaise(ThreadContext context) {
         preRaise(context, null);
     }
 
-    public void preRaise(ThreadContext context, IRubyObject backtrace) {
+    private void preRaise(ThreadContext context, IRubyObject backtrace) {
         doSetLastError(context);
         doCallEventHook(context);
 
