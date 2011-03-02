@@ -180,6 +180,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public final void setCodeRange(int codeRange) {
+        clearCodeRange();
         flags |= codeRange & CR_MASK;
     }
 
@@ -1169,11 +1170,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     // // rb_str_buf_append
     public final RubyString cat19(RubyString str) {
-        ByteList strValue = str.value;
-        int strCr = str.getCodeRange();
-        strCr = cat(strValue.getUnsafeBytes(), strValue.getBegin(), strValue.getRealSize(), strValue.getEncoding(), strCr, strCr);
+        ByteList other = str.value;
+        int otherCr = cat(other.getUnsafeBytes(), other.getBegin(), other.getRealSize(),
+                other.getEncoding(), str.getCodeRange());
         infectBy(str);
-        str.setCodeRange(strCr);
+        str.setCodeRange(otherCr);
         return this;
     }
 
@@ -1203,10 +1204,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    public final int cat(byte[]bytes, int p, int len, Encoding enc, int cr, int cr2) {
+    public final int cat(byte[]bytes, int p, int len, Encoding enc, int cr) {
         modify(value.getRealSize() + len);
         int toCr = getCodeRange();
         Encoding toEnc = value.getEncoding();
+        int cr2 = cr;
 
         if (toEnc == enc) {
             if (toCr == CR_UNKNOWN || (toEnc == ASCIIEncoding.INSTANCE && toCr != CR_7BIT)) { 
@@ -1216,12 +1218,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         } else {
             if (!toEnc.isAsciiCompatible() || !enc.isAsciiCompatible()) {
-                if (len == 0) return cr2;
+                if (len == 0) return toCr;
                 if (value.getRealSize() == 0) {
                     System.arraycopy(bytes, p, value.getUnsafeBytes(), value.getBegin() + value.getRealSize(), len);
                     value.setRealSize(value.getRealSize() + len);
                     setEncodingAndCodeRange(enc, cr);
-                    return cr2;
+                    return cr;
                 }
                 throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + toEnc + " and " + enc);
             }
@@ -1251,12 +1253,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         } else if (toCr == CR_VALID) {
             resEnc = toEnc;
-            resCr = toCr;
+            if (cr == CR_7BIT || cr == CR_VALID) {
+                resCr = toCr;
+            } else {
+                resCr = cr;
+            }
         } else {
             resEnc = toEnc;
             resCr = len > 0 ? CR_UNKNOWN : toCr;
         }
-        
+
         if (len < 0) throw getRuntime().newArgumentError("negative string size (or size too big)");            
 
         System.arraycopy(bytes, p, value.getUnsafeBytes(), value.getBegin() + value.getRealSize(), len);
@@ -1267,13 +1273,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public final int cat(byte[]bytes, int p, int len, Encoding enc) {
-        return cat(bytes, p, len, enc, CR_UNKNOWN, 0);
+        return cat(bytes, p, len, enc, CR_UNKNOWN);
     }
 
     public final RubyString catAscii(byte[]bytes, int p, int len) {
         Encoding enc = value.getEncoding();
         if (enc.isAsciiCompatible()) {
-            cat(bytes, p, len, enc, CR_7BIT, 0);
+            cat(bytes, p, len, enc, CR_7BIT);
         } else {
             byte buf[] = new byte[enc.maxLength()];
             int end = p + len;
@@ -1281,7 +1287,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 int c = bytes[p];
                 int cl = codeLength(getRuntime(), enc, c);
                 enc.codeToMbc(c, buf, 0);
-                cat(buf, 0, cl, enc, CR_VALID, 0);
+                cat(buf, 0, cl, enc, CR_VALID);
                 p++;
             }
         }
@@ -2862,11 +2868,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
             str = null;
             tuFlags = hash.flags & TAINTED_F;
         }
-
+        
         return gsubCommon19(context, block, str, hash, arg0, bang, tuFlags);
     }
 
-    private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl, RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags) {
+    private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl,
+            RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags) {
         Ruby runtime = context.getRuntime();
 
         final Regex pattern, prepared;
