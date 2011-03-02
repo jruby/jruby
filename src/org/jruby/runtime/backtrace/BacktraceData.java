@@ -140,9 +140,15 @@ public class BacktraceData {
             String rubyName = null;
             if (fullTrace || (rubyName = boundMethods.get(dotClassMethod)) != null) {
                 String filename = element.getFileName();
-                int lastDot = element.getClassName().lastIndexOf('.');
-                if (lastDot != -1) {
-                    filename = element.getClassName().substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
+
+                // stick package on the beginning
+                if (filename == null) {
+                    filename = element.getClassName().replaceAll("\\.", "/");
+                } else {
+                    int lastDot = element.getClassName().lastIndexOf('.');
+                    if (lastDot != -1) {
+                        filename = element.getClassName().substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
+                    }
                 }
                 if (maskNative) {
                     // for Kernel#caller, don't show .java frames in the trace
