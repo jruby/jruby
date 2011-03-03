@@ -45,20 +45,9 @@ tar.hook_into_runtime_with_streams(JRuby.runtime)
 
 # We need to show the frame on EDT,
 # to avoid deadlocks.
-
-# Once JRUBY-2449 is fixed,
-# the code will me simplifed.
-class FrameBringer
-  include java.lang.Runnable
-  def initialize(frame)
-    @frame = frame
-  end
-  def run
-    @frame.visible = true
-  end
-end
-
-EventQueue.invoke_later(FrameBringer.new(frame))
+EventQueue.invoke_later {
+  frame.visible = true
+}
 
 # From vanilla IRB
 if __FILE__ == $0
