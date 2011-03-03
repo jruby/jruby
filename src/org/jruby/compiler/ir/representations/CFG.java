@@ -867,33 +867,35 @@ public class CFG {
     }
 
     public void splitCalls() {
-        for (BasicBlock b: getNodes()) {
-            List<Instr> bInstrs = b.getInstrs();
-            for (ListIterator<Instr> it = ((ArrayList<Instr>)b.getInstrs()).listIterator(); it.hasNext(); ) {
-                Instr i = it.next();
-                // Only user calls, not Ruby & JRuby internal calls
-                if (i.operation == Operation.CALL) {
-                    CallInstr call = (CallInstr)i;
-                    Operand   r    = call.getReceiver();
-                    Operand   m    = call.getMethodAddr();
-                    Variable  mh   = _scope.getNewTemporaryVariable();
-                    MethodLookupInstr mli = new MethodLookupInstr(mh, m, r);
-                    // insert method lookup at the right place
-                    it.previous();
-                    it.add(mli);
-                    it.next();
-                    // update call address
-                    call.setMethodAddr(mh);
-                }
-            }
-        }
-
-        List<IRClosure> closures = _scope.getClosures();
-        if (!closures.isEmpty()) {
-            for (IRClosure c : closures) {
-                c.getCFG().splitCalls();
-            }
-        }
+        // FIXME: (Enebo) We are going to make a SplitCallInstr so this logic can be separate
+        // from unsplit calls.  Comment out until new SplitCall is created.
+//        for (BasicBlock b: getNodes()) {
+//            List<Instr> bInstrs = b.getInstrs();
+//            for (ListIterator<Instr> it = ((ArrayList<Instr>)b.getInstrs()).listIterator(); it.hasNext(); ) {
+//                Instr i = it.next();
+//                // Only user calls, not Ruby & JRuby internal calls
+//                if (i.operation == Operation.CALL) {
+//                    CallInstr call = (CallInstr)i;
+//                    Operand   r    = call.getReceiver();
+//                    Operand   m    = call.getMethodAddr();
+//                    Variable  mh   = _scope.getNewTemporaryVariable();
+//                    MethodLookupInstr mli = new MethodLookupInstr(mh, m, r);
+//                    // insert method lookup at the right place
+//                    it.previous();
+//                    it.add(mli);
+//                    it.next();
+//                    // update call address
+//                    call.setMethodAddr(mh);
+//                }
+//            }
+//        }
+//
+//        List<IRClosure> closures = _scope.getClosures();
+//        if (!closures.isEmpty()) {
+//            for (IRClosure c : closures) {
+//                c.getCFG().splitCalls();
+//            }
+//        }
     }
 
     public List<BasicBlock> linearize() {

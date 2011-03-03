@@ -39,7 +39,7 @@ public class CallInstr extends MultiOperandInstr {
     // Maybe get rid of these cached values?
     private Operand receiver;
     private Operand[] arguments;
-    Operand _methAddr;
+    MethAddr _methAddr;
     Operand _closure;
     
     private boolean _flagsComputed;
@@ -47,7 +47,7 @@ public class CallInstr extends MultiOperandInstr {
     private boolean _requiresBinding;    // Does this call make use of the caller's binding?
     public HashMap<DynamicMethod, Integer> _profile;
 
-    public CallInstr(Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
+    public CallInstr(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(Operation.CALL, result, buildAllArgs(methAddr, receiver, args, closure));
 
         this.receiver = receiver;
@@ -60,7 +60,7 @@ public class CallInstr extends MultiOperandInstr {
         _requiresBinding = true;
     }
 
-    public CallInstr(Operation op, Variable result, Operand methAddr, Operand receiver, Operand[] args, Operand closure) {
+    public CallInstr(Operation op, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op, result, buildAllArgs(methAddr, receiver, args, closure));
 
         this.receiver = receiver;
@@ -73,11 +73,11 @@ public class CallInstr extends MultiOperandInstr {
         _requiresBinding = true;
     }
 
-    public void setMethodAddr(Operand mh) {
+    public void setMethodAddr(MethAddr mh) {
         _methAddr = mh;
     }
 
-    public Operand getMethodAddr() {
+    public MethAddr getMethodAddr() {
         return _methAddr;
     }
 
@@ -111,7 +111,7 @@ public class CallInstr extends MultiOperandInstr {
         super.simplifyOperands(valueMap);
 
         // Update cached variables in this instruction
-        _methAddr = _args[0];
+        _methAddr = (MethAddr) _args[0];
         _closure = (_closure == null) ? null : _args[_args.length - 1];
         int n = arguments.length;
         arguments = new Operand[n];
@@ -167,32 +167,26 @@ public class CallInstr extends MultiOperandInstr {
 
     // SSS FIXME: Are all bases covered?
     private boolean getEvalFlag() {
-        Operand ma = getMethodAddr();
-
         // ENEBO: This could be made into a recursive two-method thing so then: send(:send, :send, :send, :send, :eval, "Hosed") works
         // ENEBO: This is not checking for __send__
-        if (ma instanceof MethAddr) {
-            String mname = ((MethAddr) ma).getName();
-            // checking for "call" is conservative.  It can be eval only if the receiver is a Method
-            if (mname.equals("call") || mname.equals("eval")) return true;
+        String mname = getMethodAddr().getName();
+        // checking for "call" is conservative.  It can be eval only if the receiver is a Method
+        if (mname.equals("call") || mname.equals("eval")) return true;
 
-            // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
-            if (mname.equals("send")) {
-                Operand[] args = getCallArgs();
-                if (args.length >= 2) {
-                    Operand meth = args[0];
-                    if (!(meth instanceof StringLiteral)) return true; // We don't know
+        // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
+        if (mname.equals("send")) {
+            Operand[] args = getCallArgs();
+            if (args.length >= 2) {
+                Operand meth = args[0];
+                if (!(meth instanceof StringLiteral)) return true; // We don't know
 
-                    // But why?  Why are you killing yourself (and us) doing this?
-                    String name = ((StringLiteral) meth)._str_value;
-                    if (name.equals("call") || name.equals("eval") || name.equals("send")) return true;
-                }
+                // But why?  Why are you killing yourself (and us) doing this?
+                String name = ((StringLiteral) meth)._str_value;
+                if (name.equals("call") || name.equals("eval") || name.equals("send")) return true;
             }
+        }
             
-            return false; // All checks passed
-        } 
-        
-        return true; // Unknown method -- could be eval!
+        return false; // All checks passed
     }
 
     private boolean getRequiresBindingFlag() {
@@ -210,11 +204,8 @@ public class CallInstr extends MultiOperandInstr {
         }
 
         // Check if we are calling Proc.new or lambda
-        Operand ma = getMethodAddr();
-        // Unknown target -- could be lambda or Proc.new
-        if (!(ma instanceof MethAddr)) return true;
-
-        String mname = ((MethAddr) ma).getName();
+        String mname = getMethodAddr().getName();
+        
         if (mname.equals("lambda")) {
            return true;
         } else if (mname.equals("new")) {
@@ -291,7 +282,7 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CallInstr(ii.getRenamedVariable(result), _methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
+        return new CallInstr(ii.getRenamedVariable(result), (MethAddr) _methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
    }
 
 // --------------- Private methods ---------------

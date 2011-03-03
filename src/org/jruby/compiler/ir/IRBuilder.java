@@ -1194,13 +1194,14 @@ public class IRBuilder {
             }
             case CONSTNODE:
             {
-                Operand receiver = null;
+                // FIXME: If lexically defined then just return "constant"
+                Operand receiver = getSelf(s);
                 // FIXME: receiver == thread context
                 return buildDefinitionCheck(s, receiver, ((ConstNode) node).getName(), "getConstantDefined", "constant"); // m.isConstantDefined
             }
             case GLOBALVARNODE:
             {
-                Operand receiver = null;
+                Operand receiver = getSelf(s);
                 // FIXME: receiver == runtime
                 Variable tmp = s.getNewTemporaryVariable();
                 s.addInstr(new CallInstr(tmp, new MethAddr("getGlobalVariables"), receiver, new Operand[]{}, null));

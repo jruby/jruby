@@ -14,12 +14,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 // Rather than building a zillion instructions that capture calls to ruby implementation internals,
 // we are building one that will serve as a placeholder for internals-specific call optimizations.
 public class RubyInternalCallInstr extends CallInstr {
-    public RubyInternalCallInstr(Variable result, Operand methAddr, Operand receiver,
+    public RubyInternalCallInstr(Variable result, MethAddr methAddr, Operand receiver,
             Operand[] args) {
         super(Operation.RUBY_INTERNALS, result, methAddr, receiver, args, null);
     }
 
-    public RubyInternalCallInstr(Variable result, Operand methAddr, Operand receiver,
+    public RubyInternalCallInstr(Variable result, MethAddr methAddr, Operand receiver,
             Operand[] args, Operand closure) {
         super(result, methAddr, receiver, args, closure);
     }
@@ -43,7 +43,7 @@ public class RubyInternalCallInstr extends CallInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new RubyInternalCallInstr(ii.getRenamedVariable(result),
-                _methAddr.cloneForInlining(ii), getReceiver().cloneForInlining(ii),
+                (MethAddr) _methAddr.cloneForInlining(ii), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
     }
 

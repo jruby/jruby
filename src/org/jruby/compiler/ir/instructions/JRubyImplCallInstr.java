@@ -11,11 +11,11 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JRubyImplCallInstr extends CallInstr {
-    public JRubyImplCallInstr(Variable result, Operand methAddr, Operand receiver, Operand[] args) {
+    public JRubyImplCallInstr(Variable result, MethAddr methAddr, Operand receiver, Operand[] args) {
         super(Operation.JRUBY_IMPL, result, methAddr, receiver, args, null);
     }
 
-    public JRubyImplCallInstr(Variable result, Operand methAddr, Operand receiver, Operand[] args,
+    public JRubyImplCallInstr(Variable result, MethAddr methAddr, Operand receiver, Operand[] args,
             Operand closure) {
         super(result, methAddr, receiver, args, closure);
     }
@@ -27,7 +27,7 @@ public class JRubyImplCallInstr extends CallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new JRubyImplCallInstr(ii.getRenamedVariable(result), _methAddr.cloneForInlining(ii), 
+        return new JRubyImplCallInstr(ii.getRenamedVariable(result), (MethAddr) _methAddr.cloneForInlining(ii),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 _closure == null ? null : _closure.cloneForInlining(ii));
     }
