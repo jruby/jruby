@@ -178,12 +178,11 @@ public class NaiveInterpreterContext implements InterpreterContext {
     private IRubyObject[] NO_PARAMS = new IRubyObject[0];
 
     public IRubyObject[] getParametersFrom(int argIndex) {
-        argIndex -= 1;
-
         int length = parameters.length - argIndex;
-        if (length < 0) {
-            return NO_PARAMS;
-        }
+        
+        if (length <= 0) return NO_PARAMS;
+
+        System.out.println("AI: " + argIndex + ", parameters.legnth: " + parameters.length + ", LENGTH: " + length);
 
         IRubyObject[] args = new IRubyObject[length];
         System.arraycopy(parameters, argIndex, args, 0, length);

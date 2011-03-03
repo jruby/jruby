@@ -51,26 +51,25 @@ public abstract class MultiOperandInstr extends Instr {
     private IRubyObject[] preparedArgs = null;
 
 	 protected IRubyObject[] prepareArguments(Operand[] args, InterpreterContext interp) {
-		  if (preparedArgs == null) {
-			  preparedArgs = new IRubyObject[args.length];
-			  constArgs = true;
-			  for (int i = 0; i < args.length; i++) {
-				  if (args[i].isConstant()) {
-						preparedArgs[i] = (IRubyObject) args[i].retrieve(interp);
-				  }
-				  else {
-					  constArgs = false;
-					  break;
-				  }
-			  }
-		  }
+         if (preparedArgs == null) {
+             preparedArgs = new IRubyObject[args.length];
+             constArgs = true;
+             for (int i = 0; i < args.length; i++) {
+                 if (args[i].isConstant()) {
+                     preparedArgs[i] = (IRubyObject) args[i].retrieve(interp);
+                 } else {
+                     constArgs = false;
+                     break;
+                 }
+             }
+         }
 
-		  if (!constArgs) {
-			  for (int i = 0; i < args.length; i++) {
-					preparedArgs[i] = (IRubyObject) args[i].retrieve(interp);
-			  }
-		  }
+         if (!constArgs) {
+             for (int i = 0; i < args.length; i++) {
+                 preparedArgs[i] = (IRubyObject) args[i].retrieve(interp);
+             }
+         }
 
-        return preparedArgs;
+         return preparedArgs;
 	 }
 }
