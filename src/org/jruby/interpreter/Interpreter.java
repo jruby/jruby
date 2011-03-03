@@ -1,9 +1,5 @@
 package org.jruby.interpreter;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Date;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
@@ -17,7 +13,6 @@ import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
-import org.jruby.compiler.ir.compiler_pass.IR_Printer;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
@@ -29,11 +24,12 @@ import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.javasupport.util.RuntimeHelpers;
 
 
 public class Interpreter {
+    private static boolean debug = Boolean.parseBoolean(System.getProperty("jruby.ir.debug", "false"));
+    
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
         IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
 
@@ -44,67 +40,7 @@ public class Interpreter {
         scope.runCompilerPass(new AddBindingInstructions());
 //        scope.runCompilerPass(new CallSplitter());
 
-        return Interpreter.interpretTop(runtime, scope, self);
-    }
-
-    public static void main(String[] args) {
-        Ruby runtime = Ruby.getGlobalRuntime();
-        boolean isDebug = args.length > 0 && args[0].equals("-debug");
-        int i = isDebug ? 1 : 0;
-        boolean isCommandLineScript = args.length > i && args[i].equals("-e");
-        i += (isCommandLineScript ? 1 : 0);
-        while (i < args.length) {
-            long t1 = new Date().getTime();
-            Node ast = buildAST(runtime, isCommandLineScript, args[i]);
-            long t2 = new Date().getTime();
-            IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
-            long t3 = new Date().getTime();
-            if (isDebug) {
-                System.out.println("## Before local optimization pass");
-                scope.runCompilerPass(new IR_Printer());
-            }
-            scope.runCompilerPass(new LocalOptimizationPass());
-            long t4 = new Date().getTime();
-            if (isDebug) {
-                System.out.println("## After local optimization");
-                scope.runCompilerPass(new IR_Printer());
-            }
-            scope.runCompilerPass(new CFG_Builder());
-            long t5 = new Date().getTime();
-            if (isDebug) System.out.println("## After dead code elimination");
-            scope.runCompilerPass(new LiveVariableAnalysis());
-            long t7 = new Date().getTime();
-            scope.runCompilerPass(new DeadCodeElimination());
-            long t8 = new Date().getTime();
-            scope.runCompilerPass(new AddBindingInstructions());
-            long t9 = new Date().getTime();
-            if (isDebug) scope.runCompilerPass(new IR_Printer());
-            Interpreter.interpretTop(runtime, scope, runtime.getTopSelf());
-            long t10 = new Date().getTime();
-
-            System.out.println("Time to build AST         : " + (t2 - t1));
-            System.out.println("Time to build IR          : " + (t3 - t2));
-            System.out.println("Time to run local opts    : " + (t4 - t3));
-            System.out.println("Time to run build cfg     : " + (t5 - t4));
-            System.out.println("Time to run lva           : " + (t7 - t5));
-            System.out.println("Time to run dead code elim: " + (t8 - t7));
-            System.out.println("Time to add frame instrs  : " + (t9 - t8));
-            System.out.println("Time to interpret         : " + (t10 - t9));
-            i++;
-        }
-    }
-        
-    public static Node buildAST(Ruby runtime, boolean isCommandLineScript, String arg) {
-        // inline script
-        if (isCommandLineScript) return runtime.parse(ByteList.create(arg), "-e", null, 0, false);
-
-        // from file
-        try {
-            System.out.println("-- processing " + arg + " --");
-            return runtime.parseFile(new FileInputStream(new File(arg)), arg, null, 0);
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
+        return interpretTop(runtime, scope, self);
     }
 
     private static int interpInstrsCount = 0;
@@ -144,7 +80,9 @@ public class Interpreter {
             while (ipc < n) {
                 interpInstrsCount++;
                 lastInstr = instrs[ipc];
-//                System.out.println("EXEC'ing: " + lastInstr);
+                
+                if (debug) System.out.println("EXEC'ing: " + lastInstr);
+                
                 Label jumpTarget = lastInstr.interpret(interp, self);
                 ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
             }
@@ -193,7 +131,8 @@ public class Interpreter {
 
                     skipTillInstr = null;
 
-//                    System.out.println("EXEC'ing: " + instruction);
+                    if (debug) System.out.println("EXEC'ing: " + instruction);
+
                     interpInstrsCount++;
                     try {
                         jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
@@ -204,12 +143,13 @@ public class Interpreter {
                             cfg.inlineMethod(ih.inlineableMethod, basicBlock, (CallInstr)instruction);
                             interp.updateRenamedVariablesCount(cfg.getScope().getRenamedVariableSize());
                             skipTillInstr = prev;
-/*
-                            System.out.println("--------------------");
-                            System.out.println("\nGraph:\n" + cfg.getGraph().toString());
-                            System.out.println("\nInstructions:\n" + cfg.toStringInstrs());
-                            System.out.println("--------------------");
-*/
+
+                            if (debug) {
+                                System.out.println("--------------------");
+                                System.out.println("\nGraph:\n" + cfg.getGraph().toString());
+                                System.out.println("\nInstructions:\n" + cfg.toStringInstrs());
+                                System.out.println("--------------------");
+                            }
                             break;
                         } else {
                             jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
