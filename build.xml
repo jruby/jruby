@@ -762,7 +762,7 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
-      <arg line="-S gem uninstall ${dev.gem.names}"/>
+      <arg line="-S gem uninstall --all ${dev.gem.names}"/>
     </java>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
@@ -792,7 +792,7 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
-      <arg line="-S gem uninstall jruby-launcher"/>
+      <arg line="-S gem uninstall --all jruby-launcher"/>
     </java>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="build.classpath"/>
