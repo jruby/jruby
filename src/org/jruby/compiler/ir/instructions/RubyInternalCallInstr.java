@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
@@ -51,8 +52,8 @@ public class RubyInternalCallInstr extends CallInstr {
         if (getMethodAddr() == MethAddr.DEFINE_ALIAS) {
             Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
 
-            self.getMetaClass().defineAlias((String) args[0].retrieve(interp).toString(),
-                    (String) args[1].retrieve(interp).toString());
+            RubyModule clazz = self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
+            clazz.defineAlias((String) args[0].retrieve(interp).toString(), (String) args[1].retrieve(interp).toString());
         } else {
             super.interpret(interp, self);
         }
