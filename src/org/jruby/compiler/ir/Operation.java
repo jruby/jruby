@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-enum OpType { dont_care, debug_op, obj_op, alu_op, call_op, recv_arg_op, ret_op, eval_op, branch_op, exc_op, load_op, store_op, declare_type_op, guard_op, box_op };
+enum OpType { dont_care, debug_op, obj_op, alu_op, call_op, yield_op, recv_arg_op, ret_op, eval_op, branch_op, exc_op, load_op, store_op, declare_type_op, guard_op, box_op };
 
 public enum Operation {
 // ------ Define the operations below ----
@@ -28,7 +28,7 @@ public enum Operation {
     METHOD_LOOKUP(OpType.dont_care),
 
 // closure instructions
-    YIELD(OpType.dont_care),
+    YIELD(OpType.yield_op),
 
 // def instructions
     DEF_INST_METH(OpType.dont_care), DEF_CLASS_METH(OpType.dont_care),
@@ -122,7 +122,7 @@ public enum Operation {
     // unless we know more about what the call is, what it does, etc.
     // Similarly for evals, stores, returns.
     public boolean hasSideEffects() {
-        return isCall() || isEval() || isStore() || isReturn();
+        return isCall() || isEval() || isStore() || isReturn() || type == OpType.yield_op;
     }
 
     @Override
