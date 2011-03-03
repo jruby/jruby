@@ -13,20 +13,14 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
-import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.instructions.BEQInstr;
-import org.jruby.compiler.ir.instructions.CopyInstr;
-import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
-import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
 import org.jruby.compiler.ir.compiler_pass.IR_Printer;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
-import org.jruby.compiler.ir.compiler_pass.CallSplitter;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
@@ -205,7 +199,7 @@ public class Interpreter {
                         jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
                     }
                     catch (InlineMethodHint ih) {
-                        if (ih.inlineableMethod.getName() == "array_each") {
+                        if ("array_each".equals(ih.inlineableMethod.getName())) {
                             System.out.println("Got inline method hint for: " + ih.inlineableMethod.getFullyQualifiedName() + ". inlining!");
                             cfg.inlineMethod(ih.inlineableMethod, basicBlock, (CallInstr)instruction);
                             interp.updateRenamedVariablesCount(cfg.getScope().getRenamedVariableSize());
