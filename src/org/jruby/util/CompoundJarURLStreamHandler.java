@@ -1,5 +1,7 @@
 package org.jruby.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,6 +11,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
@@ -53,6 +57,10 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
 
         private final String[] path;
 
+        private static final Map<String, Map<String, byte[]>> cache = new ConcurrentHashMap<String, Map<String, byte[]>>(16, 0.75f, 4);
+
+        private static boolean CACHE_JAR_CONTENTS = SafePropertyAccessor.getBoolean("jruby.cache.jars");
+
         CompoundJarURLConnection(URL url) throws MalformedURLException {
             super(url);
             String spec = getPath(url);
@@ -65,20 +73,63 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
             connected = true;
         }
 
-        private InputStream openEntry(String[] path, JarInputStream currentJar, int currentDepth) throws IOException {
+        private InputStream openEntry(String[] path, InputStream currentStream, int currentDepth) throws IOException {
 
             final String localPath = path[currentDepth];
 
+            JarInputStream currentJar = new JarInputStream(currentStream);
             for (JarEntry entry = currentJar.getNextJarEntry(); entry != null; entry = currentJar.getNextJarEntry()) {
 
                 if (entry.getName().equals(localPath)) {
                     if (currentDepth + 1 < path.length) {
-                        JarInputStream embeddedJar = new JarInputStream(currentJar);
-
-                        return openEntry(path, embeddedJar, currentDepth + 1);
+                        return openEntry(path, currentJar, currentDepth + 1);
                     } else {
                         return currentJar;
                     }
+                }
+            }
+
+            return null;
+        }
+
+        private InputStream openEntryWithCache(String[] path, InputStream currentStream, int currentDepth) throws IOException {
+            final String localPath = path[currentDepth];
+
+            // build path for cache lookup
+            StringBuilder pathToHereBuffer = new StringBuilder();
+            for (int i = 0; i < currentDepth; i++) {
+                if (i > 0) pathToHereBuffer.append("!/");
+                pathToHereBuffer.append(path[i]);
+            }
+            String pathToHere = pathToHereBuffer.toString();
+
+            // check for already-read cached jar contents
+            Map<String, byte[]> contents = cache.get(pathToHere);
+            if (contents == null) {
+                // not found, cache jar contents
+                cache.put(pathToHere, contents = new ConcurrentHashMap<String, byte[]>(16, 0.75f, 2));
+                JarInputStream currentJar = new JarInputStream(currentStream);
+                for (JarEntry entry = currentJar.getNextJarEntry(); entry != null; entry = currentJar.getNextJarEntry()) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    byte[] bytes = new byte[1024];
+                    int size;
+                    while ((size = currentJar.read(bytes, 0, 1024)) != -1) {
+                        baos.write(bytes, 0, size);
+                    }
+                    bytes = baos.toByteArray();
+                    contents.put(entry.getName(), bytes);
+                }
+            }
+
+            // now go to cache to find bytes for this elements
+            byte[] bytes = contents.get(localPath);
+            if (bytes != null) {
+                if (currentDepth + 1 < path.length) {
+                    // we're not all the way down, open this jar and go deeper
+                    return openEntryWithCache(path, new ByteArrayInputStream(bytes), currentDepth + 1);
+                } else {
+                    // we've got it; return an array reading the bytes
+                    return new ByteArrayInputStream(bytes);
                 }
             }
 
@@ -103,9 +154,11 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
 
             if (path.length > 1) {
                 try {
-                    JarInputStream baseJar = new JarInputStream(baseInputStream);
-
-                    result = openEntry(path, baseJar, 1);
+                    if (CACHE_JAR_CONTENTS) {
+                        result = openEntryWithCache(path, baseInputStream, 1);
+                    } else {
+                        result = openEntry(path, baseInputStream, 1);
+                    }
                 } catch (IOException ex) {
                     close(baseInputStream);
 
