@@ -125,7 +125,9 @@ public class VariableInterceptor {
      * @param receiver a receiver when the script has been evaluated once
      */
     public void inject(BiVariableMap map, Ruby runtime, ManyVarsDynamicScope scope, int depth, IRubyObject receiver) {
-        if (scope != null) {
+        // lvar might not be given while parsing but be given when evaluating.
+        // to avoid ArrayIndexOutOfBoundsException, checks the length of scope.getValues()
+        if (scope != null && scope.getValues().length > 0) {
             IRubyObject[] values4Injection = map.getLocalVarValues();
             if (values4Injection != null && values4Injection.length > 0) {
                 for (int i = 0; i < values4Injection.length; i++) {
