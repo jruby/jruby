@@ -34,7 +34,9 @@ import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import org.jruby.embed.AttributeName;
+import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
+import org.jruby.embed.variable.TransientLocalVariable;
 
 /**
  * A collection of JSR223 specific utility methods.
@@ -110,6 +112,13 @@ public class Utils {
         Object receiver = getReceiverObject(jrubyContext);
         
         Bindings engineMap = jrubyContext.getEngineScopeBindings();
+        int size = engineMap.keySet().size();
+        String[] names = engineMap.keySet().toArray(new String[size]);
+        for (int i=0; i<names.length; i++) {
+            if (shouldLVarBeDeleted(container, names[i])) {
+                engineMap.remove(names[i]);
+            }
+        }
         Set<String> keys = container.getVarMap().keySet();
         if (keys != null && keys.size() > 0) {
             for (String key : keys) {
@@ -160,5 +169,12 @@ public class Utils {
         } else {
             return key;
         }
+    }
+    
+    private static boolean shouldLVarBeDeleted(ScriptingContainer container, String key) {
+        LocalVariableBehavior behavior = 
+                container.getProvider().getVarMap().getVariableInterceptor().getLocalVariableBehavior();
+        if (behavior != LocalVariableBehavior.TRANSIENT) return false;
+        return TransientLocalVariable.isValidName(key);
     }
 }

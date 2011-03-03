@@ -54,6 +54,10 @@ public class VariableInterceptor {
     public VariableInterceptor(LocalVariableBehavior behavior) {
         this.behavior = behavior;
     }
+    
+    public LocalVariableBehavior getLocalVariableBehavior() {
+        return behavior;
+    }
 
     /**
      * Returns an appropriate type of a variable instance to the specified local
