@@ -598,6 +598,13 @@ public class IRBuilder {
             case CONSTDECLNODE:
                 buildConstDeclAssignment((ConstDeclNode) node, s, v);
                 break;
+            case DASGNNODE: {
+                DAsgnNode variable = (DAsgnNode) node;
+                int depth = variable.getDepth();
+
+                s.addInstr(new CopyInstr(getScopeNDown(s, depth).getLocalVariable(variable.getName()), v));
+                break;
+            }
             case GLOBALASGNNODE:
                 s.addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(), v));
                 break;
