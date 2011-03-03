@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 
 import static org.jruby.util.URLUtil.getPath;
@@ -59,8 +60,6 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
 
         private static final Map<String, Map<String, byte[]>> cache = new ConcurrentHashMap<String, Map<String, byte[]>>(16, 0.75f, 4);
 
-        private static boolean CACHE_JAR_CONTENTS = SafePropertyAccessor.getBoolean("jruby.cache.jars");
-
         CompoundJarURLConnection(URL url) throws MalformedURLException {
             super(url);
             String spec = getPath(url);
@@ -73,27 +72,19 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
             connected = true;
         }
 
-        private InputStream openEntry(String[] path, InputStream currentStream, int currentDepth) throws IOException {
-
-            final String localPath = path[currentDepth];
-
-            JarInputStream currentJar = new JarInputStream(currentStream);
-            for (JarEntry entry = currentJar.getNextJarEntry(); entry != null; entry = currentJar.getNextJarEntry()) {
-
-                if (entry.getName().equals(localPath)) {
-                    if (currentDepth + 1 < path.length) {
-                        return openEntry(path, currentJar, currentDepth + 1);
-                    } else {
-                        return currentJar;
-                    }
-                }
-            }
-
-            return null;
-        }
-
         private InputStream openEntryWithCache(String[] path, InputStream currentStream, int currentDepth) throws IOException {
             final String localPath = path[currentDepth];
+
+            // short-circuit files directly on the filesystem, which JarFile can handle
+            if (currentDepth == 1 && path[0].indexOf('!') == -1 && path[0].startsWith("file:")) {
+                // it's a top-level jar, just open with JarFile
+                JarFile jarFile = new JarFile(path[0].substring(5));
+                JarEntry entry = jarFile.getJarEntry(localPath);
+                if (entry != null) {
+                    return returnOrRecurse(path, jarFile.getInputStream(entry), currentDepth);
+                }
+                return null;
+            }
 
             // build path for cache lookup
             StringBuilder pathToHereBuffer = new StringBuilder();
@@ -108,32 +99,40 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
             if (contents == null) {
                 // not found, cache jar contents
                 cache.put(pathToHere, contents = new ConcurrentHashMap<String, byte[]>(16, 0.75f, 2));
-                JarInputStream currentJar = new JarInputStream(currentStream);
-                for (JarEntry entry = currentJar.getNextJarEntry(); entry != null; entry = currentJar.getNextJarEntry()) {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    byte[] bytes = new byte[1024];
-                    int size;
-                    while ((size = currentJar.read(bytes, 0, 1024)) != -1) {
-                        baos.write(bytes, 0, size);
-                    }
-                    bytes = baos.toByteArray();
-                    contents.put(entry.getName(), bytes);
-                }
+                cacheJarFrom(currentStream, contents);
             }
 
             // now go to cache to find bytes for this elements
             byte[] bytes = contents.get(localPath);
             if (bytes != null) {
-                if (currentDepth + 1 < path.length) {
-                    // we're not all the way down, open this jar and go deeper
-                    return openEntryWithCache(path, new ByteArrayInputStream(bytes), currentDepth + 1);
-                } else {
-                    // we've got it; return an array reading the bytes
-                    return new ByteArrayInputStream(bytes);
-                }
+                return returnOrRecurse(path, new ByteArrayInputStream(bytes), currentDepth);
             }
 
             return null;
+        }
+
+        private void cacheJarFrom(InputStream currentStream, Map<String, byte[]> contents) throws IOException {
+            JarInputStream currentJar = new JarInputStream(currentStream);
+            for (JarEntry entry = currentJar.getNextJarEntry(); entry != null; entry = currentJar.getNextJarEntry()) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] bytes = new byte[1024];
+                int size;
+                while ((size = currentJar.read(bytes, 0, 1024)) != -1) {
+                    baos.write(bytes, 0, size);
+                }
+                bytes = baos.toByteArray();
+                contents.put(entry.getName(), bytes);
+            }
+        }
+
+        private InputStream returnOrRecurse(String[] path, InputStream nextStream, int currentDepth) throws IOException {
+            if (currentDepth + 1 < path.length) {
+                // we're not all the way down, open the inner jar and go deeper
+                return openEntryWithCache(path, nextStream, currentDepth + 1);
+            } else {
+                // we've got it; return an array reading the bytes
+                return nextStream;
+            }
         }
 
         private static void close(Closeable resource) {
@@ -154,11 +153,7 @@ public class CompoundJarURLStreamHandler extends URLStreamHandler {
 
             if (path.length > 1) {
                 try {
-                    if (CACHE_JAR_CONTENTS) {
-                        result = openEntryWithCache(path, baseInputStream, 1);
-                    } else {
-                        result = openEntry(path, baseInputStream, 1);
-                    }
+                    result = openEntryWithCache(path, baseInputStream, 1);
                 } catch (IOException ex) {
                     close(baseInputStream);
 
