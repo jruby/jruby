@@ -34,6 +34,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -42,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
-public class ProcMethod extends DynamicMethod {
+public class ProcMethod extends DynamicMethod implements PositionAware {
     private RubyProc proc;
 
     /**
@@ -76,5 +77,13 @@ public class ProcMethod extends DynamicMethod {
     @Override
     public Arity getArity() {
         return proc.getBlock().arity();
+    }
+
+    public String getFile() {
+        return proc.getBlock().getBody().getFile();
+    }
+
+    public int getLine() {
+        return proc.getBlock().getBody().getLine();
     }
 }
