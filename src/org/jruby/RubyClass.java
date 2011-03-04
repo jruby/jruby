@@ -633,6 +633,8 @@ public class RubyClass extends RubyModule {
                     if(self.respondsTo(name)) {
                         throw e;
                     } else {
+                        // we swallow, so we also must clear $!
+                        context.setErrorInfo(context.nil);
                         return null;
                     }
                 } else {
