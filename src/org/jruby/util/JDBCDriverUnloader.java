@@ -29,7 +29,11 @@ public class JDBCDriverUnloader implements Runnable, Iterable<Driver> {
         Enumeration<Driver> drivers = DriverManager.getDrivers();
         ArrayList<Driver> driverList = new ArrayList();
         while (drivers.hasMoreElements()) {
-            driverList.add(drivers.nextElement());
+            Driver d = drivers.nextElement();
+            // JRUBY-5528: Don't unload drivers loaded by parent classloaders.
+            if (d.getClass().getClassLoader() == JDBCDriverUnloader.class.getClassLoader()) {
+                driverList.add(drivers.nextElement());
+            }
         }
         return driverList.iterator();
     }
