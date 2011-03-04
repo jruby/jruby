@@ -133,9 +133,7 @@ public class CallInstr extends MultiOperandInstr {
     // In a JIT context, we might be compiling this call in the context of a surrounding PIC (or a monomorphic IC).
     // If so, the receiver type and hence the target method will be known.
     public IRMethod getTargetMethodWithReceiver(Operand receiver) {
-        if (!(_methAddr instanceof MethAddr)) return null;
-
-        String mname = ((MethAddr) _methAddr).getName();
+        String mname = _methAddr.getName();
 
         if (receiver instanceof MetaObject) {
             IRModule m = (IRModule) (((MetaObject) receiver).scope);
@@ -253,6 +251,7 @@ public class CallInstr extends MultiOperandInstr {
         return !n.equals("each") && !n.equals("inject") && !n.equals("+") && !n.equals("*") && !n.equals("+=") && !n.equals("*=");
         }
          **/
+
         Operand r = getReceiver();
         IRMethod rm = getTargetMethodWithReceiver(r);
 
