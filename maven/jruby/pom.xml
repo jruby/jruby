@@ -61,6 +61,11 @@
       <artifactId>joda-time</artifactId>
       <version>1.6</version>
     </dependency>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>1.8</version>
+    </dependency>
 
     <!-- jruby dependencies -->
     <dependency>
