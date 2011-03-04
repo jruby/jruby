@@ -94,6 +94,11 @@
       <version>0.6</version>
     </dependency>
     <dependency>
+      <groupId>org.jruby.jcodings</groupId>
+      <artifactId>jcodings</artifactId>
+      <version>1.0.5</version>
+    </dependency>
+    <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jffi</artifactId>
       <version>1.0.6</version>
