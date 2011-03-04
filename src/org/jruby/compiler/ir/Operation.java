@@ -45,7 +45,7 @@ public enum Operation {
     BINDING_STORE(OpType.store_op),
 
 // jump and branch operations
-    JUMP(OpType.branch_op), JUMP_INDIRECT(OpType.branch_op), BEQ(OpType.branch_op),
+    JUMP(OpType.branch_op), JUMP_INDIRECT(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op),
 
 // others
     ATTR_ASSIGN(OpType.dont_care),

@@ -106,6 +106,7 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.instructions.AttrAssignInstr;
 import org.jruby.compiler.ir.instructions.BEQInstr;
+import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CaseInstr;
@@ -797,8 +798,8 @@ public class IRBuilder {
 
     public Operand buildBreak(BreakNode breakNode, IRExecutionScope s) {
         Operand rv = build(breakNode.getValueNode(), s);
-		  // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
-		  // Since we know this right now, should we build an exception instruction here?
+        // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
+        // Since we know this right now, should we build an exception instruction here?
         if ((s instanceof IRClosure) || s.getCurrentLoop() == null) {
             s.addInstr(new BREAK_Instr(rv));
             return rv;
@@ -814,11 +815,11 @@ public class IRBuilder {
     public Operand buildCall(CallNode callNode, IRScope s) {
         Node          callArgsNode = callNode.getArgsNode();
         Node          receiverNode = callNode.getReceiverNode();
-		  // Though you might be tempted to move this build into the CallInstr as:
-		  //    new Callinstr( ... , build(receiverNode, s), ...)
-		  // that is incorrect IR because the receiver has to be built *before* call arguments are built
-		  // to preserve expected code execution order
-		  Operand       receiver     = build(receiverNode, s);
+        // Though you might be tempted to move this build into the CallInstr as:
+        //    new Callinstr( ... , build(receiverNode, s), ...)
+        // that is incorrect IR because the receiver has to be built *before* call arguments are built
+        // to preserve expected code execution order
+        Operand       receiver     = build(receiverNode, s);
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
@@ -1634,7 +1635,7 @@ public class IRBuilder {
         final int opt = argsNode.getOptionalArgsCount();
         final int rest = argsNode.getRestArg();
 
-          // TODO: Add IR instructions for checking method arity!
+        // FIXME: Add IR instructions for checking method arity!
         // s.getVariableCompiler().checkMethodArity(required, opt, rest);
 
             // self = args[0]
@@ -1647,6 +1648,7 @@ public class IRBuilder {
         ListNode preArgs  = argsNode.getPre();
         for (int i = 0; i < required; i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
+            // FIXME: Charlie added this to test something?
             if (a instanceof TypedArgumentNode) {
                 TypedArgumentNode t = (TypedArgumentNode)a;
                 s.addInstr(new DECLARE_LOCAL_TYPE_Instr(argIndex, buildType(t.getTypeNode())));
@@ -1661,21 +1663,22 @@ public class IRBuilder {
             s.addInstr(new ReceiveClosureInstr(s.getLocalVariable(argsNode.getBlock().getName())));
 
             // Now for the rest
-        if (opt > 0 || rest > -1) {
+        if (opt > 0) {
             ListNode optArgs = argsNode.getOptArgs();
             for (int j = 0; j < opt; j++, argIndex++) {
                     // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = s.getNewLabel();
                 LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
-                s.addInstr(new ReceiveOptionalArgumentInstr(s.getLocalVariable(n.getName()), argIndex, l));
+                Variable av = s.getLocalVariable(n.getName());
+                s.addInstr(new ReceiveOptionalArgumentInstr(av, argIndex));
+                s.addInstr(new BNEInstr(av, Nil.NIL, l)); // if 'av' is not null, go to default
                 build(n, s);
                 s.addInstr(new LABEL_Instr(l));
             }
+        }
 
-            if (rest > -1) {
-                s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(argsNode.getRestArgNode().getName()), argIndex, true));
-                argIndex++;
-            }
+        if (rest > -1) {
+            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(argsNode.getRestArgNode().getName()), argIndex, true));
         }
 
         // FIXME: Ruby 1.9 post args code needs to come here
