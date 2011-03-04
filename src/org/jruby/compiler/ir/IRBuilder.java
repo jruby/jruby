@@ -602,7 +602,7 @@ public class IRBuilder {
             case DASGNNODE: {
                 DAsgnNode variable = (DAsgnNode) node;
                 int depth = variable.getDepth();
-
+                // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
                 s.addInstr(new CopyInstr(getScopeNDown(s, depth).getLocalVariable(variable.getName()), v));
                 break;
             }
@@ -616,7 +616,7 @@ public class IRBuilder {
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-
+                // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
                 s.addInstr(new CopyInstr(getScopeNDown(s, depth).getLocalVariable(localVariable.getName()), v));
                 break;
             }
@@ -648,6 +648,7 @@ public class IRBuilder {
 // to be figured out during live var analysis.
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
+                // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
                 v = getScopeNDown(s, dynamicAsgn.getDepth()).getLocalVariable(dynamicAsgn.getName());
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 break;
@@ -682,7 +683,7 @@ public class IRBuilder {
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-
+                // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
                 v = getScopeNDown(s, depth).getLocalVariable(localVariable.getName());
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 break;
@@ -1565,8 +1566,8 @@ public class IRBuilder {
         // assignments to block variables within a block.  As far as the IR is concerned,
         // this is just a simple copy
         int depth = dasgnNode.getDepth();
+        // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
         Variable arg = getScopeNDown(s, depth).getLocalVariable(dasgnNode.getName());
-        
         s.addInstr(new CopyInstr(arg, build(dasgnNode.getValueNode(), s)));
         return arg;
     }
