@@ -44,9 +44,9 @@ public class DefineClassMethodInstr extends OneOperandInstr {
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
         RubyModule clazz = self.getMetaClass();
-
-        method.setContainerModule((RubyModule) method.getContainer().retrieve(interp));
-
+		  // SSS FIXME: Used to be this
+        // method.setContainerModule((RubyModule) method.getContainer().retrieve(interp));
+        method.setContainerModule(clazz);
         clazz.addMethod(method.getName(), new InterpretedIRMethod(method, clazz));
         return null;
     }

@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.parser.StaticScope;
+import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 
 public class IRScript extends IRScopeImpl {
     private final IRClass dummyClass;  // Dummy class for the script
@@ -11,7 +12,6 @@ public class IRScript extends IRScopeImpl {
     public IRScript(String className, String sourceName, StaticScope staticScope) {
         super((IRScope) null, null, sourceName, staticScope);
         dummyClass = new IRClass(this, null, null, "__SCRIPT_ROOT__", staticScope);
-        addClass(dummyClass);
     }
 
     public Operand getFileName() {
@@ -38,5 +38,9 @@ public class IRScript extends IRScopeImpl {
 
     public LocalVariable getLocalVariable(String name) {
         throw new UnsupportedOperationException("This should be happening on Root Method instead");
+    }
+
+    public void runCompilerPass(CompilerPass p) {
+        dummyClass.runCompilerPass(p);
     }
 }

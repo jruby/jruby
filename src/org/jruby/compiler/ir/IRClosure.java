@@ -55,10 +55,12 @@ public class IRClosure extends IRExecutionScope {
         return "Closure";
     }
 
+/**
     @Override
     public void setConstantValue(String constRef, Operand val) {
         throw new org.jruby.compiler.NotCompilableException("Unexpected: Encountered set constant value in a closure!");
     }
+**/
 
     public String toStringBody() {
         StringBuilder buf = new StringBuilder();

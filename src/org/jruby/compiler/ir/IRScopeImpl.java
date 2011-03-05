@@ -1,13 +1,11 @@
 package org.jruby.compiler.ir;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
@@ -60,17 +58,10 @@ public abstract class IRScopeImpl implements IRScope {
     private String name;
 
     // ENEBO: These collections are initliazed on construction, but the rest
-    //   are init()'d.  This can't be right can it?  They are also final...
-    
-    // Modules, classes, and methods defined in this LEXICAL scope. In many
-    // cases, the lexical scoping and class/method hierarchies are the same.
-    final public List<IRModule> modules = new ArrayList<IRModule>();
-    final public List<IRClass> classes = new ArrayList<IRClass>();
+    //   are init()'d.  This can't be right can it?
+
     // oldName -> newName for methods
     private Map<String, String> aliases = new HashMap<String, String>();
-
-    // ENEBO: This is also only for lexical scope too right?
-    private Map<String, Operand> constants = new HashMap<String, Operand>();
 
     // Index values to guarantee we don't assign same internal index twice
     private int nextClosureIndex = 0;
@@ -98,10 +89,12 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     public RubyModule getContainerModule() {
+//        System.out.println("GET: container module of " + getName() + " with hc " + hashCode() + " to " + containerModule.getName());
         return containerModule;
     }
 
     public void setContainerModule(RubyModule containerModule) {
+//        System.out.println("PUT: container module of " + getName() + " with hc " + hashCode() + " to " + containerModule.getName());
         this.containerModule = containerModule;
     }
 
@@ -189,16 +182,6 @@ public abstract class IRScopeImpl implements IRScope {
         return staticScope;
     }
 
-    public void addModule(IRModule m) {
-        setConstantValue(m.getName(), new ModuleMetaObject(m));
-        modules.add(m);
-    }
-
-    public void addClass(IRClass c) {
-        setConstantValue(c.getName(), new ClassMetaObject(c));
-        classes.add(c);
-    }
-
     public void addInstr(Instr i) {
         throw new RuntimeException("Encountered instruction add in a non-execution scope!");
     }
@@ -225,69 +208,12 @@ public abstract class IRScopeImpl implements IRScope {
         return null;
     }
 
-    // Sometimes the value can be retrieved at "compile time".  If we succeed, nothing like it!
-    // We might not .. for the following reasons:
-    // 1. The constant is missing,
-    // 2. The reference is a forward-reference,
-    // 3. The constant's value is only known at run-time on first-access (but, this is runtime, isn't it??)
-    // 4. Our compiler isn't able to right away infer that this is a constant.
-    //
-    // SSS FIXME:
-    // 1. The operand can be a literal array, range, or hash -- hence Operand
-    //    because Array, Range, and Hash derive from Operand and not Constant ...
-    //    Is there a way to fix this impedance mismatch?
-    // 2. It should be possible to handle the forward-reference case by creating a new
-    //    ForwardReference operand and then inform the scope of the forward reference
-    //    which the scope can fix up when the reference gets defined.  At code-gen time,
-    //    if the reference is unresolved, when a value is retrieved for the forward-ref
-    //    and we get a null, we can throw a ConstMissing exception!  Not sure!
-    //
-    public Operand getConstantValue(String constRef) {
-//        System.out.println("Looking in " + this + " for constant: " + constRef);
-        Operand cv = constants.get(constRef);
-        Operand p = container;
-        // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the container is a static scope
-        if ((cv == null) && (p != null) && (p instanceof MetaObject)) {
-            // Can be null for IR_Script meta objects
-            if (((MetaObject) p).scope == null) {
-//                System.out.println("Looking for core class: " + constRef);
-                IRClass coreClass = IRModule.getCoreClass(constRef);
-
-                return coreClass != null ? new ClassMetaObject(coreClass) : null;
-            }
-            cv = ((MetaObject) p).scope.getConstantValue(constRef);
-        }
-
-        return cv;
-    }
-
-    public void setConstantValue(String constRef, Operand val) {
-        if (val.isConstant()) constants.put(constRef, val);
-
-        if (this instanceof IRModule) {
-            ((IRModule) this).getRootMethod().addInstr(new PutConstInstr(this, constRef, val));
-        }
-    }
-
-    public Map getConstants() {
-        return Collections.unmodifiableMap(constants);
-    }
-
     @Override
     public String toString() {
-        return getScopeName() + " " + getName() +
-                (constants.isEmpty() ? "" : "\n  constants: " + constants);
+        return getScopeName() + " " + getName();
     }
 
-    protected void runCompilerPassOnNestedScopes(CompilerPass p) {
-        for (IRScope m : modules) {
-            m.runCompilerPass(p);
-        }
-
-        for (IRScope c : classes) {
-            c.runCompilerPass(p);
-        }
-    }
+    public void runCompilerPassOnNestedScopes(CompilerPass p) { }
 
     public void runCompilerPass(CompilerPass p) {
         boolean isPreOrder = p.isPreOrder();

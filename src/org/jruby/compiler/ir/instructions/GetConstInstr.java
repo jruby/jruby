@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
@@ -35,8 +36,9 @@ public class GetConstInstr extends GetInstr {
         simplifyOperands(valueMap);
         if (!(getSource() instanceof MetaObject)) return null;
 
+		  // SSS FIXME: Isn't this always going to be an IR Module?
         IRScope s = ((MetaObject) getSource()).scope;
-        return s.getConstantValue(getName());
+		  return (s instanceof IRModule) ? ((IRModule)s).getConstantValue(getName()) : null;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
@@ -57,6 +59,10 @@ public class GetConstInstr extends GetInstr {
             module = ((Block) source).getBinding().getKlass();
         } else {
             module = (RubyModule) source;
+/*
+            if (getSource() instanceof MetaObject)
+                System.out.println("looking in " + module.getName() + " whose source is " + getSource() + " with hc " + ((MetaObject)getSource()).scope.hashCode());
+*/
         }
 
         getResult().store(interp, module.getConstant(getName()));

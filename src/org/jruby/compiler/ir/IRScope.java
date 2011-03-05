@@ -31,16 +31,6 @@ public interface IRScope {
     public IRModule getNearestModule();
 
     /**
-     *  scripts
-     */
-    public void addClass(IRClass c);
-
-    /**
-     *  scripts and modules
-     */
-    public void addModule(IRModule m);
-
-    /**
      *  methods and closures
      */
     public void addInstr(Instr i);
@@ -97,20 +87,6 @@ public interface IRScope {
      *  Get a new label using a generic prefix
      */
     public Label getNewLabel();
-
-    /**
-     *  Tries to load at compile-time the constant referred to by 'constRef'.
-     * This might be possible if the constant is defined and is not a forward
-     * reference to a value that will be defined later in the class.
-     */
-    public Operand getConstantValue(String constRef);
-
-    /**
-     * Tries to load at compile-time the constant referred to by 'constRef'.
-     * This might be possible if the constant is defined and is not a forward
-     * reference to a value that will be defined later in the class.
-     */
-    public void setConstantValue(String constRef, Operand value);
 
     /**
      *  Run the passed in compiler pass on this scope!

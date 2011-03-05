@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir;
 
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -8,12 +9,14 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
 import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.operands.LocalVariable;
-
-import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
+import org.jruby.compiler.ir.operands.ClassMetaObject;
+import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.ModuleMetaObject;
+import org.jruby.compiler.ir.IRModule;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 
@@ -24,7 +27,19 @@ public class IRModule extends IRScopeImpl {
 
     private IRMethod rootMethod; // Dummy top-level method for the class
     private CodeVersion version;    // Current code version for this module
-    final public List<IRMethod> methods = new ArrayList<IRMethod>();
+
+    // Modules, classes, and methods that belong to this scope 
+    //
+    // LEXICAL scoping, but when a class, method, module definition is
+    // encountered in a closure or a method in Ruby code, that definition
+    // is pushed up to the nearest containing module!
+    //
+    // In most cases, this lexical scoping also matches actual class/module hierarchies
+    // SSS FIXME: An example where they might be different?
+    private List<IRModule> modules = new ArrayList<IRModule>();
+    private List<IRClass> classes = new ArrayList<IRClass>();
+    private List<IRMethod> methods = new ArrayList<IRMethod>();
+    private Map<String, Operand> constants = new HashMap<String, Operand>();
     
     static {
         bootStrap();
@@ -81,7 +96,86 @@ public class IRModule extends IRScopeImpl {
         //
         String n = ROOT_METHOD_PREFIX + getName();
         rootMethod = new IRMethod(this, MetaObject.create(this), n, false, new LocalStaticScope(null));
-        rootMethod.addInstr(new ReceiveSelfInstruction(rootMethod.getSelf()));	// Set up self!
+        rootMethod.addInstr(new ReceiveSelfInstruction(rootMethod.getSelf()));   // Set up self!
+    }
+
+    public List<IRModule> getModules() {
+        return modules;
+    }
+
+    public List<IRClass> getClasses() {
+        return classes;
+    }
+
+    public List<IRMethod> getMethods() {
+        return methods;
+    }
+
+    public Map getConstants() {
+        return Collections.unmodifiableMap(constants);
+    }
+
+    // Attempted compile-time resolution of a Ruby constant.
+    //
+    // We might not be able to resolve for the following reasons:
+    // 1. The constant is missing
+    // 2. The reference is a lexical forward-reference
+    // 3. The constant's value is only known when the program first runs.
+    // 4. Our compiler isn't able to right away infer that this is a constant.
+    //
+    // SSS FIXME:
+    // 1. The operand can be a literal array, range, or hash -- hence Operand
+    //    because Array, Range, and Hash derive from Operand and not Constant ...
+    //    Is there a way to fix this impedance mismatch?
+    // 2. It should be possible to handle the forward-reference case by creating a new
+    //    ForwardReference operand and then inform the scope of the forward reference
+    //    which the scope can fix up when the reference gets defined.  At code-gen time,
+    //    if the reference is unresolved, when a value is retrieved for the forward-ref
+    //    and we get a null, we can throw a ConstMissing exception!  Not sure!
+    public Operand getConstantValue(String constRef) {
+        return null;
+/**
+SSS: We are no longer going to use this because of the Module.remove_const method
+
+Even if we can resolve the name to a constant we know at compilation time, there is no
+guarantee that the value will exist at runtime!  So, we need to actually return the module
+from which the value was found so that the caller can then protect the resolved value against
+the module version to protect against remove_consts!  Even though this feature is very rarely
+used, we are now forced to be conservative.
+
+        Operand cv = constants.get(constRef);
+        Operand p = container;
+        // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the container is a static scope
+        if ((cv == null) && (p != null) && (p instanceof MetaObject)) {
+            // Can be null for IR_Script meta objects
+            if (((MetaObject) p).scope == null) {
+                IRClass coreClass = IRModule.getCoreClass(constRef);
+
+                return coreClass != null ? new ClassMetaObject(coreClass) : null;
+            }
+            // Boxed scope has to be an IR module or class
+            cv = ((IRModule) (((MetaObject) p).scope)).getConstantValue(constRef);
+
+				// If cv is null, it can either mean the constant is missing 
+				// or it can mean that we couldn't resolve this at compilation time.
+        }
+        return cv;
+**/
+    }
+
+    public void setConstantValue(String constRef, Operand val) {
+        if (val.isConstant()) constants.put(constRef, val);
+        ((IRModule) this).getRootMethod().addInstr(new PutConstInstr(this, constRef, val));
+    }
+
+    public void addModule(IRModule m) {
+        setConstantValue(m.getName(), new ModuleMetaObject(m));
+        modules.add(m);
+    }
+
+    public void addClass(IRClass c) {
+        setConstantValue(c.getName(), new ClassMetaObject(c));
+        classes.add(c);
     }
 
     public void addMethod(IRMethod method) {
@@ -97,8 +191,14 @@ public class IRModule extends IRScopeImpl {
     }
 
     @Override
-    protected void runCompilerPassOnNestedScopes(CompilerPass p) {
-        super.runCompilerPassOnNestedScopes(p);
+    public void runCompilerPassOnNestedScopes(CompilerPass p) {
+        for (IRScope m : modules) {
+            m.runCompilerPass(p);
+        }
+
+        for (IRScope c : classes) {
+            c.runCompilerPass(p);
+        }
 
         getRootMethod().runCompilerPass(p);
         for (IRScope meth : methods) {

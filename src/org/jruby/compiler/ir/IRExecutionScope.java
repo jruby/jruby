@@ -10,6 +10,7 @@ import java.util.Stack;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
@@ -172,21 +173,10 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return cfg;
     }
 
-/**
-    public void runCompilerPass(CompilerPass p) {
-        boolean isPreOrder =  p.isPreOrder();
-        if (isPreOrder)
-            p.run(this);
-
-        runCompilerPassOnNestedScopes(p);
-        if (!_closures.isEmpty())
-            for (IR_Closure c: _closures)
-                c.runCompilerPass(p);
-
-        if (!isPreOrder)
-            p.run(this);
-    }
-**/
+    // Nothing to do -- every compiler pass decides whether to
+    // run it on nested closures or not.
+    @Override
+    public void runCompilerPassOnNestedScopes(CompilerPass p) { }
 
     public void computeExecutionScopeFlags() {
         // init

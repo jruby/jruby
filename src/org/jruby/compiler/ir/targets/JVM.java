@@ -167,12 +167,12 @@ public class JVM implements CompilerTarget {
         popmethod();
 
         // root-level methods
-        for (IRMethod method : cls.methods) {
+        for (IRMethod method : cls.getMethods()) {
             emit(method);
         }
 
         // root-level classes
-        for (IRClass cls2 : cls.classes) {
+        for (IRClass cls2 : cls.getClasses()) {
             emit(cls2);
         }
 

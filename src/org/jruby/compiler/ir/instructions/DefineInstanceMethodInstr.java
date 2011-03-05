@@ -46,9 +46,9 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
 		  // SSS FIXME: Looks like this need to become some kind of method -- this code is copied in other places (RubyInternalCallInstr for one)
         // If this is a class/module body the the clazz is self otherwise we get the meta class.
         RubyModule clazz = self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
-
-        method.setContainerModule((RubyModule) method.getContainer().retrieve(interp));
-
+		  // SSS FIXME: Used to be this
+        // method.setContainerModule((RubyModule) method.getContainer().retrieve(interp));
+        method.setContainerModule(clazz);
         clazz.addMethod(method.getName(), new InterpretedIRMethod(method, clazz));
         return null;
     }

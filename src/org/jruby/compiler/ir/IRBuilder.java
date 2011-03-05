@@ -915,9 +915,7 @@ public class IRBuilder {
         final Node       superNode = classNode.getSuperNode();
         final Colon3Node cpathNode = classNode.getCPath();
 
-        Operand superClass = null;
-        if (superNode != null)
-            superClass = build(superNode, s);
+        Operand superClass = (superNode == null) ? new ClassMetaObject(IRClass.getCoreClass("Object")) : build(superNode, s);
 
             // By default, the container for this class is 's'
         Operand container = null;
@@ -934,7 +932,7 @@ public class IRBuilder {
             // Build a new class and add it to the current scope (could be a script / module / class)
         String   className = cpathNode.getName();
         IRClass c = new IRClass(s, container, superClass, className, classNode.getScope());
-        s.addClass(c);
+        s.getNearestModule().addClass(c);
         if (container != null)
             s.addInstr(new PutConstInstr(container, className, new ClassMetaObject(c)));
 
@@ -960,7 +958,7 @@ public class IRBuilder {
         IRClass mc = new IRMetaClass(s, receiver, sclassNode.getScope());
 
         // Record the new class as being lexically defined in scope s
-        s.addClass(mc);
+        s.getNearestModule().addClass(mc);
 
         if (sclassNode.getBodyNode() != null)
             build(sclassNode.getBodyNode(), mc.getRootMethod());
@@ -996,7 +994,7 @@ public class IRBuilder {
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            s.setConstantValue(constDeclNode.getName(), val);
+            s.getNearestModule().setConstantValue(constDeclNode.getName(), val);
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
@@ -1009,13 +1007,32 @@ public class IRBuilder {
 
     private Operand loadConst(IRScope s, IRScope currScope, String name)
     {
-        Operand cv = s.getConstantValue(name);
+/**
+ * SSS FIXME: Because of Module.remove_const, all this compile-time resolution of constants won't fly!
+ *
+ * To be able to use compile-time results safely, we have to guard the looked up value with the
+ * version number of the module where the constant came from -- a future optimization!
+
+        if (s instanceof IRMethod) {
+            Operand c = s.getContainer();
+            if (c instanceof MetaObject) {
+                s = ((MetaObject)c).getScope();
+            }
+        }
+
+        // If we could resolve the container scope to an actual 'compile-time' module, we can look up the constant right away
+        // If not, we have to look it up at 'runtime'
+        Operand cv = (s instanceof IRModule) ? ((IRModule)s).getConstantValue(name) : null;
         if (cv == null) {
             Variable v = currScope.getNewTemporaryVariable();
             currScope.addInstr(new GetConstInstr(v, s, name));
             cv = v;
         }
         return cv;
+ */
+        Variable v = currScope.getNewTemporaryVariable();
+        currScope.addInstr(new GetConstInstr(v, s, name));
+        return v;
     }
 
     public Operand buildConst(ConstNode node, IRScope s) {
@@ -2148,9 +2165,9 @@ public class IRBuilder {
         }
 
         // Build the new module
-        String    moduleName = moduleNode.getCPath().getName();
+        String moduleName = moduleNode.getCPath().getName();
         IRModule m = new IRModule(s, container, moduleName, moduleNode.getScope());
-        s.addModule(m);
+        s.getNearestModule().addModule(m);
         if (container != null)
             s.addInstr(new PutConstInstr(container, moduleName, new ModuleMetaObject(m)));
 

@@ -77,12 +77,14 @@ public class IRMethod extends IRExecutionScope {
         return callArgs.toArray(new Operand[callArgs.size()]);
     }
 
+/**
     @Override
     public void setConstantValue(String constRef, Operand val) {
         if (!isAClassRootMethod()) throw new NotCompilableException("Unexpected: Encountered set constant value in a method!");
         
         ((MetaObject) container).scope.setConstantValue(constRef, val);
     }
+**/
 
     public boolean isAClassRootMethod() { 
         return IRModule.isAClassRootMethod(this);
