@@ -78,7 +78,7 @@ public class NativeMethod extends DynamicMethod {
      * execution in the current Thread.
      */
     static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        context.preMethodFrameOnly(self.getType(), name, self, Block.NULL_BLOCK);
+        context.preMethodFrameOnly(klazz, name, self, Block.NULL_BLOCK);
         DynamicScope currentScope = context.getCurrentScope();
         context.pushScope(new ManyVarsDynamicScope(currentScope.getStaticScope(), currentScope));
         GIL.acquire();
@@ -86,7 +86,7 @@ public class NativeMethod extends DynamicMethod {
 
     /** see {@link #pre(ThreadContext, IRubyObject, RubyModule, String)}  */
     static void pre(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
-        context.preMethodFrameOnly(self.getType(), name, self, block);
+        context.preMethodFrameOnly(klazz, name, self, block);
         DynamicScope currentScope = context.getCurrentScope();
         context.pushScope(new ManyVarsDynamicScope(currentScope.getStaticScope(), currentScope));
         GIL.acquire();
@@ -108,7 +108,7 @@ public class NativeMethod extends DynamicMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
             String name, IRubyObject[] args) {
-        pre(context, recv, clazz, name);
+        pre(context, recv, getImplementationClass(), name);
         try {
             return getNativeInstance().callMethod(context, function, recv, arity.getValue(), args);
         } finally {
@@ -120,7 +120,7 @@ public class NativeMethod extends DynamicMethod {
     public IRubyObject call(ThreadContext context, IRubyObject recv, RubyModule clazz,
             String name, IRubyObject[] args, Block block) {
 
-        pre(context, recv, clazz, name, block);
+        pre(context, recv, getImplementationClass(), name, block);
         try {
             return getNativeInstance().callMethod(context, function, recv, arity.getValue(), args);
         } finally {

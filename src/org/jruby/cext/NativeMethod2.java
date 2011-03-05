@@ -43,7 +43,7 @@ public final class NativeMethod2 extends NativeMethod {
 
     @Override
     public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        pre(context, self, klazz, name);
+        pre(context, self, getImplementationClass(), name);
         try {
             return getNativeInstance().callMethod2(function,
                     Handle.nativeHandle(self),
@@ -56,7 +56,7 @@ public final class NativeMethod2 extends NativeMethod {
 
     @Override
     public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        pre(context, self, klazz, name, block);
+        pre(context, self, getImplementationClass(), name, block);
         try {
             return getNativeInstance().callMethod2(function,
                     Handle.nativeHandle(self),
