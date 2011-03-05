@@ -9,10 +9,10 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
-  <artifactId>jruby-base</artifactId>
+  <artifactId>jruby-core</artifactId>
   <packaging>jar</packaging>
   <version>1.6.0.RC2</version>
-  <name>JRuby Base</name>
+  <name>JRuby Core</name>
 
   <properties>
     <asm.version>3.3.1</asm.version>
@@ -136,7 +136,7 @@
         <configuration>
           <executable>ant</executable>
           <workingDirectory>${project.basedir}/../..</workingDirectory>
-          <arguments><argument>jar-base</argument></arguments>
+          <arguments><argument>jar-core</argument></arguments>
         </configuration>
       </plugin>
       <plugin>
@@ -149,8 +149,8 @@
             <goals><goal>run</goal></goals>
             <configuration>
               <tasks>
-                <echo>copy ${project.basedir}/../../lib/jruby-base.jar to ${project.build.directory}/${project.build.finalName}.jar</echo>
-                <copy overwrite="true" file="${project.basedir}/../../lib/jruby-base.jar" tofile="${project.build.directory}/${project.build.finalName}.jar"/>
+                <echo>copy ${project.basedir}/../../lib/jruby-core.jar to ${project.build.directory}/${project.build.finalName}.jar</echo>
+                <copy overwrite="true" file="${project.basedir}/../../lib/jruby-core.jar" tofile="${project.build.directory}/${project.build.finalName}.jar"/>
               </tasks>
             </configuration>
           </execution>

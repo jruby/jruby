@@ -413,9 +413,9 @@
 
   <!-- Jar up a "base" jar that does not include any maven-sourced dependencies
        other than ASM, which is rewritten to avoid conflicts. -->
-  <target name="jar-jruby-base" depends="compile" unless="jar-jruby-base.hasrun">
+  <target name="jar-jruby-core" depends="compile" unless="jar-jruby-core.hasrun">
       <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
-      <jarjar destfile="${lib.dir}/jruby-base.jar" compress="true" index="true">
+      <jarjar destfile="${lib.dir}/jruby-core.jar" compress="true" index="true">
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${asm.jar}"/>
         <zipfileset src="${asm-util.jar}"/>
@@ -434,7 +434,7 @@
         <param name="bar.wrap" value="${lib.dir}/jruby.bar" />
       </antcall>
 
-      <property name="jar-jruby-base.hasrun" value="true"/>
+      <property name="jar-jruby-core.hasrun" value="true"/>
   </target>
 
   <target name="jar-jruby-dist" depends="compile">
@@ -629,8 +629,8 @@
     <antcall target="jar-jruby" inheritall="true"/>
   </target>
   
-  <target name="jar-base" depends="init" description="Create the jruby-base.jar file for distribution. This version uses JarJar to rewrite some packages.">
-    <antcall target="jar-jruby-base" inheritall="true"/>
+  <target name="jar-core" depends="init" description="Create the jruby-core.jar file for distribution. This version uses JarJar to rewrite some packages.">
+    <antcall target="jar-jruby-core" inheritall="true"/>
   </target>
   <target name="jar-dist" depends="init" description="Create the jruby.jar file for distribution. This version uses JarJar to rewrite some packages.">
     <antcall target="jar-jruby-dist" inheritall="true"/>
