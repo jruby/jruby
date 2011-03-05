@@ -32,7 +32,7 @@ public class JDBCDriverUnloader implements Runnable, Iterable<Driver> {
             Driver d = drivers.nextElement();
             // JRUBY-5528: Don't unload drivers loaded by parent classloaders.
             if (d.getClass().getClassLoader() == JDBCDriverUnloader.class.getClassLoader()) {
-                driverList.add(drivers.nextElement());
+                driverList.add(d);
             }
         }
         return driverList.iterator();
