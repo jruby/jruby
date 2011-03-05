@@ -55,25 +55,7 @@
       <url>dav:https://dav.codehaus.org/jruby/info</url>
     </site>
   </distributionManagement>
-  <repositories>
-    <repository>
-      <id>codehaus</id>
-      <name>Codehaus Repository</name>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <url>http://repository.codehaus.org</url>
-    </repository>
-    <repository>
-      <id>maven2-repository.dev.java.net</id>
-      <name>Java.net Repository for Maven</name>
-      <url>http://download.java.net/maven/2/</url>
-      <layout>default</layout>
-    </repository>
-  </repositories>
+
   <developers>
     <developer>
       <id>headius</id>
@@ -118,21 +100,69 @@
     </dependency>
   </dependencies>
 
+  <properties>
+    <asm.version>3.3.1</asm.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
   <modules>
-    <module>maven/jruby</module>
-    <module>maven/jruby-core</module>
-    <module>maven/jruby-complete</module>
+    <module>maven</module>
     <module>maven/jruby-rake-plugin</module>
     <module>docs</module>
   </modules>
 
   <build>
+    <!-- keep it relative to the module direcotires -->
+    <sourceDirectory>../../src</sourceDirectory>
+    <outputDirectory>../../build/classes/jruby</outputDirectory>
     <defaultGoal>install</defaultGoal>
     <extensions>
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
         <artifactId>wagon-webdav</artifactId>
       </extension>
-    </extensions>
+    </extensions> 
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+<!--      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin> -->
+      <plugin>
+	<artifactId>maven-compiler-plugin</artifactId>
+	<version>2.2</version>
+	<configuration>
+          <source>1.5</source>
+          <target>1.5</target>
+	  <excludes><exclude>**/*</exclude></excludes>
+	</configuration>
+      </plugin>
+      <plugin>
+	<artifactId>maven-jar-plugin</artifactId>
+	<version>2.3</version>
+	<configuration>
+	  <excludes><exclude>**/*</exclude></excludes>
+	</configuration>
+      </plugin>
+    </plugins>
   </build>
 </project>

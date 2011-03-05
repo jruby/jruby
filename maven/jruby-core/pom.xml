@@ -1,123 +1,78 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>shared</artifactId>
+    <artifactId>jruby-common</artifactId>
     <version>1.6.0.RC2</version>
-    <relativePath>../../pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.jruby</groupId>
   <artifactId>jruby-core</artifactId>
   <packaging>jar</packaging>
-  <version>1.6.0.RC2</version>
   <name>JRuby Core</name>
 
   <properties>
-    <asm.version>3.3.1</asm.version>
+    <jar.scope>compile</jar.scope>
+    <ant.target>jar-core</ant.target>
   </properties>
 
   <dependencies>
-    <!-- ASM comes with our source, and is included in the jar, but is rewritten to
-         a jruby-specific package to avoid conflicts. -->
-    <dependency>
-      <groupId>asm</groupId>
-      <artifactId>asm</artifactId>
-      <version>${asm.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>asm</groupId>
-      <artifactId>asm-commons</artifactId>
-      <version>${asm.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>asm</groupId>
-      <artifactId>asm-util</artifactId>
-      <version>${asm.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>asm</groupId>
-      <artifactId>asm-analysis</artifactId>
-      <version>${asm.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>asm</groupId>
-      <artifactId>asm-tree</artifactId>
-      <version>${asm.version}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- JRuby dependencies not included in the jar. -->
+    <!-- JRuby dependencies included in the jar and *not* rewritten. -->
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>1.1.6</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jnr-netdb</artifactId>
-      <version>1.0.3</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.ext.posix</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>1.1.6</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>bytelist</artifactId>
-      <version>1.0.8</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>constantine</artifactId>
-      <version>0.6</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.5</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.0.6</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jaffl</artifactId>
-      <version>0.5.9</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <version>1.8</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
-      <version>0.9.93</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
-      <version>1.6</version>
-      <scope>runtime</scope>
+      <scope>${jar.scope}</scope>
     </dependency>
   </dependencies>
 
@@ -126,35 +81,10 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>1.1</version>
-        <executions>
-          <execution>
-            <phase>process-classes</phase>
-            <goals><goal>exec</goal></goals>
-          </execution>
-        </executions>
-        <configuration>
-          <executable>ant</executable>
-          <workingDirectory>${project.basedir}/../..</workingDirectory>
-          <arguments><argument>jar-core</argument></arguments>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-jar</id>
-            <phase>package</phase>
-            <goals><goal>run</goal></goals>
-            <configuration>
-              <tasks>
-                <echo>copy ${project.basedir}/../../lib/jruby-core.jar to ${project.build.directory}/${project.build.finalName}.jar</echo>
-                <copy overwrite="true" file="${project.basedir}/../../lib/jruby-core.jar" tofile="${project.build.directory}/${project.build.finalName}.jar"/>
-              </tasks>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

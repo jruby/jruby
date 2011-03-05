@@ -36,6 +36,8 @@
   </dependencies>
 
   <build>
+    <sourceDirectory>src/main/java</sourceDirectory>
+    <outputDirectory>target/classes</outputDirectory>
     <plugins>
       <plugin>
         <artifactId>maven-plugin-plugin</artifactId>
@@ -44,6 +46,19 @@
           <!-- fully qualified name on the command line -->
           <goalPrefix>jruby-rake</goalPrefix>
         </configuration>
+      </plugin>
+      <!-- overwrite the configuration from the reactor pom -->
+      <plugin>
+	<artifactId>maven-compiler-plugin</artifactId>
+	<configuration>
+	  <excludes><exclude>none</exclude></excludes>
+	</configuration>
+      </plugin>
+      <plugin>
+	<artifactId>maven-jar-plugin</artifactId>
+	<configuration>
+	  <excludes><exclude>none</exclude></excludes>
+	</configuration>
       </plugin>
     </plugins>
   </build>
