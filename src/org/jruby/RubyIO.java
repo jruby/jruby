@@ -579,21 +579,32 @@ public class RubyIO extends RubyObject {
     /*
      * Ensure that separator is valid otherwise give it the default paragraph separator.
      */
-    private static ByteList separator(Ruby runtime) {
-        return separator(runtime.getRecordSeparatorVar().get());
+    private ByteList separator(Ruby runtime) {
+        return separator(runtime, runtime.getRecordSeparatorVar().get());
     }
 
-    private static ByteList separator(IRubyObject separatorValue) {
+    private ByteList separator(Ruby runtime, IRubyObject separatorValue) {
         ByteList separator = separatorValue.isNil() ? null :
             separatorValue.convertToString().getByteList();
 
-        if (separator != null && separator.getRealSize() == 0) separator = Stream.PARAGRAPH_DELIMETER;
+        if (separator != null) {
+            if (separator.getRealSize() == 0) separator = Stream.PARAGRAPH_DELIMETER;
+
+            if (runtime.is1_9()) {
+                Encoding internal = getInternalEncoding(runtime);
+
+                if (internal != null) {
+                    separator = RubyString.transcode(runtime.getCurrentContext(), separator,
+                            internal, getExternalEncoding(runtime), runtime.getNil());
+                }
+            }
+        }
 
         return separator;
     }
 
-    private static ByteList getSeparatorFromArgs(Ruby runtime, IRubyObject[] args, int idx) {
-        return separator(args.length > idx ? args[idx] : runtime.getRecordSeparatorVar().get());
+    private ByteList getSeparatorFromArgs(Ruby runtime, IRubyObject[] args, int idx) {
+        return separator(runtime, args.length > idx ? args[idx] : runtime.getRecordSeparatorVar().get());
     }
 
     private ByteList getSeparatorForGets(Ruby runtime, IRubyObject[] args) {
@@ -2087,7 +2098,7 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE, compat = RUBY1_8)
     public IRubyObject gets(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        IRubyObject result = getline(runtime, separator(runtime.getRecordSeparatorVar().get()));
+        IRubyObject result = getline(runtime, separator(runtime, runtime.getRecordSeparatorVar().get()));
 
         if (!result.isNil()) context.getCurrentScope().setLastLine(result);
 
@@ -2096,7 +2107,8 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE, compat = RUBY1_8)
     public IRubyObject gets(ThreadContext context, IRubyObject separatorArg) {
-        IRubyObject result = getline(context.getRuntime(), separator(separatorArg));
+        Ruby runtime = context.getRuntime();
+        IRubyObject result = getline(runtime, separator(runtime, separatorArg));
 
         if (!result.isNil()) context.getCurrentScope().setLastLine(result);
 
@@ -2115,16 +2127,17 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE, compat = RUBY1_9)
     public IRubyObject gets19(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.getRuntime();
         ByteList separator;
         long limit = -1;
         if (arg instanceof RubyInteger) {
             limit = RubyInteger.fix2long(arg);
-            separator = separator(context.getRuntime());
+            separator = separator(runtime);
         } else {
-            separator = separator(arg);
+            separator = separator(runtime, arg);
         }
 
-        IRubyObject result = getline(context.getRuntime(), separator, limit);
+        IRubyObject result = getline(runtime, separator, limit);
 
         if (!result.isNil()) context.getCurrentScope().setLastLine(result);
 
@@ -2133,8 +2146,9 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE, compat = RUBY1_9)
     public IRubyObject gets19(ThreadContext context, IRubyObject separator, IRubyObject limit_arg) {
+        Ruby runtime = context.getRuntime();
         long limit = limit_arg.isNil() ? -1 : RubyNumeric.fix2long(limit_arg);
-        IRubyObject result = getline(context.getRuntime(), separator(separator), limit);
+        IRubyObject result = getline(runtime, separator(runtime, separator), limit);
 
         if (!result.isNil()) context.getCurrentScope().setLastLine(result);
 
@@ -3178,13 +3192,13 @@ public class RubyIO extends RubyObject {
         ByteListCache cache = new ByteListCache();
         if (!io.isNil()) {
             try {
-                ByteList separator = getSeparatorFromArgs(runtime, args, 1);
+                ByteList separator = io.getSeparatorFromArgs(runtime, args, 1);
                 IRubyObject str = io.getline(runtime, separator, cache);
                 while (!str.isNil()) {
                     block.yield(context, str);
                     str = io.getline(runtime, separator, cache);
                     if (runtime.is1_9()) {
-                        separator = getSeparatorFromArgs(runtime, args, 1);
+                        separator = io.getSeparatorFromArgs(runtime, args, 1);
                     }
                 }
             } finally {
