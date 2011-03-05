@@ -120,6 +120,7 @@
 
   <modules>
     <module>maven/jruby</module>
+    <module>maven/jruby-base</module>
     <module>maven/jruby-complete</module>
     <module>maven/jruby-rake-plugin</module>
     <module>docs</module>

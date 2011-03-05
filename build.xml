@@ -394,42 +394,6 @@
       <property name="jar-jruby.hasrun" value="true"/>
   </target>
 
-  <target name="jar-jruby-nogpl" depends="init, compile, unzip-native-libs" unless="jar-up-to-date, jar-jruby.hasrun">
-      <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true" update="true">
-        <fileset dir="${jruby.classes.dir}"/>
-        <zipfileset src="${asm.jar}"/>
-        <zipfileset src="${asm-commons.jar}"/>
-        <zipfileset src="${asm-util.jar}"/>
-        <zipfileset src="${asm-analysis.jar}"/>
-        <zipfileset src="${asm-tree.jar}"/>
-        <zipfileset src="${build.lib.dir}/bytelist.jar"/>
-        <zipfileset src="${build.lib.dir}/constantine.jar"/>
-        <zipfileset src="${build.lib.dir}/jline-0.9.93.jar"/>
-        <zipfileset src="${build.lib.dir}/jcodings.jar"/>
-        <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
-        <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/jaffl.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
-        <zipfileset src="${build.lib.dir}/snakeyaml-1.8.jar"/>
-        <zipfileset src="${build.lib.dir}/yecht.jar"/>
-        <zipfileset src="${build.lib.dir}/yydebug.jar"/>
-        <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
-        <metainf dir="${base.dir}/spi">
-          <include name="services/**"/>
-        </metainf>
-        <manifest>
-          <attribute name="Built-By" value="${user.name}"/>
-          <attribute name="Main-Class" value="org.jruby.Main"/>
-        </manifest>
-      </jar>
-
-      <antcall target="add-emma-jars"/>
-      <antcall target="generate-ri-cache"/>
-
-      <property name="jar-jruby.hasrun" value="true"/>
-  </target>
-
   <target name="add-emma-jars" if="coverage.enabled">
     <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true" update="true">
       <zipfileset src="${build.lib.dir}/emma.jar"/>
@@ -447,32 +411,30 @@
       <property name="generate-ri-cache.hasrun" value="true"/>
   </target>
 
-  <target name="jar-jruby-light" depends="compile" unless="jar-up-to-date">
-      <jar destfile="${lib.dir}/jruby-light.jar" compress="true" index="true">
-        <fileset dir="${jruby.classes.dir}">
-            <exclude name="**/*$Populator.class"/>
-            <exclude name="**/*INVOKER*.class"/>
-            <exclude name="**/AnnotationBinder*.class"/>
-            <exclude name="**/InvokerGenerator.class"/>
-            <exclude name="org/jruby/ext/ffi/**/*"/>
-            <exclude name="org/jruby/embed/**/*"/>
-        </fileset>
+  <!-- Jar up a "base" jar that does not include any maven-sourced dependencies
+       other than ASM, which is rewritten to avoid conflicts. -->
+  <target name="jar-jruby-base" depends="compile" unless="jar-jruby-base.hasrun">
+      <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
+      <jarjar destfile="${lib.dir}/jruby-base.jar" compress="true" index="true">
+        <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${asm.jar}"/>
         <zipfileset src="${asm-util.jar}"/>
-        <zipfileset src="${build.lib.dir}/bytelist.jar"/>
-        <zipfileset src="${build.lib.dir}/constantine.jar"/>
-        <zipfileset src="${build.lib.dir}/jcodings.jar"/>
-        <zipfileset src="${build.lib.dir}/joni.jar"/>
-        <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
-        <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
-        <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+        <metainf dir="${base.dir}/spi">
+          <include name="services/**"/>
+        </metainf>
         <manifest>
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
         </manifest>
-      </jar>
-      
-      <antcall target="generate-ri-cache"/>
+        <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
+      </jarjar>
+      <antcall target="_osgify-jar_">
+        <param name="bndfile" value="jruby.bnd" />
+        <param name="jar.wrap" value="${lib.dir}/jruby.jar" />
+        <param name="bar.wrap" value="${lib.dir}/jruby.bar" />
+      </antcall>
+
+      <property name="jar-jruby-base.hasrun" value="true"/>
   </target>
 
   <target name="jar-jruby-dist" depends="compile">
@@ -523,7 +485,7 @@
           <attribute name="Built-By" value="${user.name}"/>
           <attribute name="Main-Class" value="org.jruby.Main"/>
         </manifest>
-        <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+        <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
       </jarjar>
       <antcall target="_osgify-jar_">
         <param name="bndfile" value="jruby.bnd" />
@@ -547,7 +509,8 @@
       overwrite="true" />
   </target>
 
-  <target name="jar-complete" depends="compile" description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
+  <target name="jar-jruby-complete" depends="compile" unless="jar-jruby-complete.hasrun"
+      description="Create the 'complete' JRuby jar. Pass 'mainclass' and 'filename' to adjust.">
     <property name="mainclass" value="org.jruby.Main"/>
     <property name="filename" value="jruby-complete.jar"/>
     <property name="bilename" value="jruby-complete.bar"/>
@@ -630,23 +593,25 @@
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Main-Class" value="${mainclass}"/>
       </manifest>
-      <rule pattern="org.objectweb.asm.**" result="jruby.objectweb.asm.@1"/>
+      <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
     </jarjar>
     <antcall target="_osgify-jar_">
       <param name="bndfile" value="jruby-complete.bnd" />
       <param name="jar.wrap" value="${dest.lib.dir}/${filename}" />
       <param name="bar.wrap" value="${dest.lib.dir}/${bilename}" />
     </antcall>
+
+    <property name="jar-jruby-complete.hasrun" value="true" />
   </target>
 
-  <target name="test-jar-complete" depends="init,unzip-native-libs,jar-complete"
+  <target name="test-jar-complete" depends="init,unzip-native-libs,jar-jruby-complete"
           description="Do some sanity checks on the complete jar.">
     <java jar="lib/jruby-complete.jar" fork="true" failonerror="true">
       <arg line="-v test/test_jar_complete.rb"/>
     </java>
   </target>
 
-  <target name="dist-jar-complete" depends="jar-complete">
+  <target name="dist-jar-complete" depends="jar-jruby-complete">
     <mkdir dir="${dist.dir}"/>
     <move file="${dest.lib.dir}/jruby-complete.jar" tofile="${dist.dir}/jruby-complete-${version.jruby}.jar"/>
     <checksum file="${dist.dir}/jruby-complete-${version.jruby}.jar" algorithm="md5"/>
@@ -654,20 +619,24 @@
   </target>
 
   <target name="jar-console" depends="compile" description="Create the jruby graphical console jar">
-    <antcall target="jar-complete">
+    <antcall target="jar-jruby-complete">
       <param name="mainclass" value="org.jruby.demo.IRBConsole"/>
       <param name="filename" value="jruby-console.jar"/>
     </antcall>
   </target>
 
-  <target name="jar" depends="init" description="Create the jruby.jar file">
+  <target name="jar" depends="init" description="Create the jruby.jar file. Used during dev.">
     <antcall target="jar-jruby" inheritall="true"/>
   </target>
-  <target name="jar-light" depends="init" description="Create the jruby-light.jar file">
-    <antcall target="jar-jruby-light" inheritall="true"/>
+  
+  <target name="jar-base" depends="init" description="Create the jruby-base.jar file for distribution. This version uses JarJar to rewrite some packages.">
+    <antcall target="jar-jruby-base" inheritall="true"/>
   </target>
-  <target name="jar-dist" depends="init" description="Create the jruby.jar file for distribution. This version uses JarJar Links to rewrite some packages.">
+  <target name="jar-dist" depends="init" description="Create the jruby.jar file for distribution. This version uses JarJar to rewrite some packages.">
     <antcall target="jar-jruby-dist" inheritall="true"/>
+  </target>
+  <target name="jar-complete" depends="init" description="Create the jruby-complete.jar file. This version uses JarJar to rewrite some packages.">
+    <antcall target="jar-jruby-complete" inheritall="true"/>
   </target>
 
   <target name="compile-test" depends="jar" description="Compile the unit tests">
