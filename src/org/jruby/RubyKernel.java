@@ -1667,7 +1667,7 @@ public class RubyKernel {
     @JRubyMethod(name = "spawn", required = 1, rest = true, module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static RubyFixnum spawn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
-        long pid = ShellLauncher.runWithoutWait(runtime, args);
+        long pid = ShellLauncher.runExternalWithoutWait(runtime, args);
         return RubyFixnum.newFixnum(runtime, pid);
     }
 

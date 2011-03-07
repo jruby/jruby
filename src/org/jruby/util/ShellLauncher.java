@@ -371,6 +371,10 @@ public class ShellLauncher {
         return runWithoutWait(runtime, rawArgs, runtime.getOutputStream());
     }
 
+    public static long runExternalWithoutWait(Ruby runtime, IRubyObject[] rawArgs) {
+        return runWithoutWait(runtime, rawArgs, runtime.getOutputStream());
+    }
+
     public static int execAndWait(Ruby runtime, IRubyObject[] rawArgs) {
         File pwd = new File(runtime.getCurrentDirectory());
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, true);
@@ -414,10 +418,21 @@ public class ShellLauncher {
         }
     }
 
-    public static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
+    private static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
         OutputStream error = runtime.getErrorStream();
         try {
             Process aProcess = run(runtime, rawArgs, true);
+            handleStreamsNonblocking(runtime, aProcess, output, error);
+            return getPidFromProcess(aProcess);
+        } catch (IOException e) {
+            throw runtime.newIOErrorFromException(e);
+        }
+    }
+
+    private static long runExternalWithoutWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output) {
+        OutputStream error = runtime.getErrorStream();
+        try {
+            Process aProcess = run(runtime, rawArgs, true, true);
             handleStreamsNonblocking(runtime, aProcess, output, error);
             return getPidFromProcess(aProcess);
         } catch (IOException e) {
@@ -1119,12 +1134,16 @@ public class ShellLauncher {
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) throws IOException {
+        return run(runtime, rawArgs, doExecutableSearch, false);
+    }
+
+    public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
         Process aProcess = null;
         File pwd = new File(runtime.getCurrentDirectory());
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
 
         try {
-            if (cfg.shouldRunInProcess()) {
+            if (!forceExternalProcess && cfg.shouldRunInProcess()) {
                 log(runtime, "Launching in-process");
                 ScriptThreadProcess ipScript = new ScriptThreadProcess(
                         runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
