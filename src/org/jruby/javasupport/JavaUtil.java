@@ -304,7 +304,25 @@ public class JavaUtil {
     private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("(([a-z0-9])([A-Z])|([A-Za-z0-9])([A-Z][a-z]))");
     public static String getRubyCasedName(String javaCasedName) {
         Matcher m = CAMEL_CASE_SPLITTER.matcher(javaCasedName);
-        return m.replaceAll("$2$4_$3$5").toLowerCase();
+        // We do this replace loop manually because Android's Matcher produces null for unmatched $ groups.
+        // See JRUBY-5541
+        if (m.find()) {
+            StringBuffer buffer = new StringBuffer();
+            m.reset();
+            while (m.find()) {
+                if (m.group(2) != null) {
+                    // first part matched
+                    m.appendReplacement(buffer, "$2_$3");
+                } else {
+                    // second part matched {
+                    m.appendReplacement(buffer, "$4_$5");
+                }
+            }
+            m.appendTail(buffer);
+            return buffer.toString().toLowerCase();
+        } else {
+            return javaCasedName;
+        }
     }
 
     private static final Pattern RUBY_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)_([a-z])");
