@@ -374,28 +374,6 @@
                       <void property="allUsers">
                         <boolean>false</boolean>
                       </void>
-                      <void property="programGroupEntryConfigs">
-                        <void method="add">
-                          <object class="com.install4j.runtime.beans.screens.components.ProgramGroupEntryConfig">
-                            <void property="arguments">
-                              <string>/k "cd ${installer:sys.userHome}"</string>
-                            </void>
-                            <void property="iconFile">
-                              <object class="com.install4j.api.beans.ExternalFile">
-                                <string>./command.ico</string>
-                              </object>
-                            </void>
-                            <void property="name">
-                              <string>Command Prompt</string>
-                            </void>
-                            <void property="target">
-                              <object class="java.io.File">
-                                <string>${installer:sys.system32Dir}/cmd.exe</string>
-                              </object>
-                            </void>
-                          </object>
-                        </void>
-                      </void>
                       <void property="programGroupName">
                         <string>${compiler:sys.fullName} ${compiler:sys.version}</string>
                       </void>
