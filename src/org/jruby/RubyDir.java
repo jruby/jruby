@@ -129,7 +129,7 @@ public class RubyDir extends RubyObject {
         String adjustedPath = RubyFile.adjustRootPathOnWindows(getRuntime(), newPath.toString(), null);
         checkDirIsTwoSlashesOnWindows(getRuntime(), adjustedPath);
 
-        dir = JRubyFile.create(null, adjustedPath);
+        dir = JRubyFile.create(getRuntime().getCurrentDirectory(), adjustedPath);
         List<String> snapshotList = RubyDir.getEntries(getRuntime(), adjustedPath);
         snapshot = (String[]) snapshotList.toArray(new String[snapshotList.size()]);
 
