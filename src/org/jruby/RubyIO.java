@@ -96,6 +96,7 @@ import java.util.Arrays;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Arity;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -3208,8 +3209,65 @@ public class RubyIO extends RubyObject {
        
         return runtime.getNil();
     }
+
+    /** rb_io_s_foreach
+    *
+    */
+    public static IRubyObject foreachInternal19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject filename = args[0].convertToString();
+        runtime.checkSafeString(filename);
+
+        boolean hasOptions = false;
+        RubyIO io;
+        // FIXME: This is gross; centralize options logic somewhere.
+        switch (args.length) {
+            case 1:
+                io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
+                break;
+            case 2:
+                if (args[1] instanceof RubyHash) {
+                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename, args[1] }, Block.NULL_BLOCK);
+                    args = new IRubyObject[]{args[0]};
+                } else {
+                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
+                }
+                break;
+            case 3:
+                if (args[1] instanceof RubyHash) {
+                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename, args[2] }, Block.NULL_BLOCK);
+                    args = new IRubyObject[]{args[0], args[1]};
+                } else {
+                    io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
+                }
+                break;
+            default:
+                // Should never be reached.
+                Arity.checkArgumentCount(runtime, args.length, 1, 3);
+                throw runtime.newRuntimeError("invalid argument count in IO.foreach: " + args.length);
+        }
+
+        ByteListCache cache = new ByteListCache();
+        if (!io.isNil()) {
+            try {
+                ByteList separator = io.getSeparatorFromArgs(runtime, args, 1);
+                IRubyObject str = io.getline(runtime, separator, cache);
+                while (!str.isNil()) {
+                    block.yield(context, str);
+                    str = io.getline(runtime, separator, cache);
+                    if (runtime.is1_9()) {
+                        separator = io.getSeparatorFromArgs(runtime, args, 1);
+                    }
+                }
+            } finally {
+                io.close();
+            }
+        }
+
+        return runtime.getNil();
+    }
     
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, meta = true, compat = RUBY1_8)
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.getRuntime(), recv, "foreach", args);
 
@@ -3217,6 +3275,16 @@ public class RubyIO extends RubyObject {
             args[0] = args[0].callMethod(context, "to_path");
         }
         return foreachInternal(context, recv, args, block);
+    }
+
+    @JRubyMethod(name = "foreach", required = 1, optional = 2, meta = true, compat = RUBY1_9)
+    public static IRubyObject foreach19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        if (!block.isGiven()) return enumeratorize(context.getRuntime(), recv, "foreach", args);
+
+        if (!(args[0] instanceof RubyString) && args[0].respondsTo("to_path")) {
+            args[0] = args[0].callMethod(context, "to_path");
+        }
+        return foreachInternal19(context, recv, args, block);
     }
 
     private static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
