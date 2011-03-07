@@ -101,8 +101,7 @@ public class RubyDir extends RubyObject {
 
     private void update() {
         if (snapshot == null || dir.lastModified() > lastModified) {
-            // lastModified = dir.lastModified();
-            lastModified = getRuntime().getPosix().stat(dir.getPath()).mtime();
+            lastModified = dir.lastModified();
             List<String> snapshotList = new ArrayList<String>();
             snapshotList.add(".");
             snapshotList.add("..");
