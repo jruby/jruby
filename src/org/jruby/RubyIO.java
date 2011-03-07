@@ -2570,17 +2570,6 @@ public class RubyIO extends RubyObject {
             boolean empty = buf == null || buf.length() == 0;
             ByteList newBuf = empty ? ByteList.EMPTY_BYTELIST.dup() : buf;
             
-            if (runtime.is1_9()) {
-                Encoding internal = getInternalEncoding(runtime);
-                Encoding external = getExternalEncoding(runtime);
-
-                if (internal != null) {
-                    // Enebo: If this is not whole characters what happens to the rest?
-                    newBuf = RubyString.transcode(context, newBuf, external, internal, runtime.getNil());
-                } else {
-                    newBuf.setEncoding(external);
-                }
-            }
             string.view(newBuf);
 
             if (stream.feof() && empty) return runtime.getNil();
