@@ -50,49 +50,51 @@ public class NativeThread implements ThreadLike {
     }
     
     public void start() {
-        Thread thread = nativeThread.get();
+        Thread thread = getThread();
         if (thread != null) thread.start();
     }
     
     public void interrupt() {
-        Thread thread = nativeThread.get();
+        Thread thread = getThread();
         if (thread != null) thread.interrupt();
     }
     
     public boolean isAlive() {
-        Thread thread = nativeThread.get();
+        Thread thread = getThread();
         if (thread != null) return thread.isAlive();
         return false;
     }
     
     public void join() throws InterruptedException {
-        Thread thread = nativeThread.get();
+        Thread thread = getThread();
         if (thread != null) thread.join();
     }
     
     public void join(long timeoutMillis) throws InterruptedException {
-        Thread thread = nativeThread.get();
+        Thread thread = getThread();
         if (thread != null) thread.join(timeoutMillis);
     }
     
     public int getPriority() {
-        Thread thread = nativeThread.get();
+        Thread thread = getThread();
         if (thread != null) return thread.getPriority();
         return 0;
     }
     
     public void setPriority(int priority) {
-        Thread thread = nativeThread.get();
+        Thread thread = getThread();
         if (thread != null) thread.setPriority(priority);
     }
     
     public boolean isCurrent() {
-        return nativeThread.get() == Thread.currentThread();
+        return getThread() == Thread.currentThread();
     }
     
     public boolean isInterrupted() {
-        Thread thread = this.nativeThread.get();
-        if (thread != null) thread.isInterrupted();
+        Thread thread = getThread();
+        if (thread != null) {
+            return thread.isInterrupted();
+        }
         return false;
     }
 
@@ -101,6 +103,6 @@ public class NativeThread implements ThreadLike {
     }
 
     public String toString() {
-        return "" + nativeThread.get();
+        return "" + getThread();
     }
 }
