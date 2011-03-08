@@ -186,9 +186,17 @@ public class RubyFileTest {
         Ruby runtime = recv.getRuntime();
         JRubyFile file1 = file(filename1);
         JRubyFile file2 = file(filename2);
-
-        return runtime.newBoolean(file1.exists() && file2.exists() &&
-                runtime.getPosix().stat(file1.getAbsolutePath()).isIdentical(runtime.getPosix().stat(file2.getAbsolutePath())));
+        String path1, path2;
+        try {
+            path1 = file1.getCanonicalPath();
+            path2 = file2.getCanonicalPath();
+        } catch (IOException e) {
+            path1 = file1.getAbsolutePath();
+            path2 = file2.getAbsolutePath();
+        }
+        
+        return runtime.newBoolean(file1.exists() && file2.exists() && path1.equals(path2) && 
+               runtime.getPosix().stat(file1.getAbsolutePath()).isIdentical(runtime.getPosix().stat(file2.getAbsolutePath())));
     }
 
     @JRubyMethod(name = "owned?", required = 1, module = true)
