@@ -19,6 +19,24 @@ class TestDir < Test::Unit::TestCase
     setup
   end
 
+  # JRUBY-2519
+  def test_dir_instance_should_not_cache_dir_contents
+    
+    require 'fileutils'
+    require 'tmpdir'
+    
+    testdir = File.join(Dir.tmpdir, Process.pid.to_s)
+    FileUtils.mkdir_p testdir
+    
+    FileUtils.touch File.join(testdir, 'fileA.txt')
+    dir = Dir.new(testdir)
+    FileUtils.touch File.join(testdir, 'fileB.txt')
+    dir.rewind # does nothing
+
+    assert_equal 'fileA.txt', dir.find {|item| item == 'fileA.txt' }
+    assert_equal 'fileB.txt', dir.find {|item| item == 'fileB.txt' }
+  end  
+  
   def test_pwd_and_getwd_equivalent
     assert_equal(Dir.pwd, Dir.getwd)
   end
