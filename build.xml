@@ -419,6 +419,7 @@
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${asm.jar}"/>
         <zipfileset src="${asm-util.jar}"/>
+        <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <metainf dir="${base.dir}/spi">
           <include name="services/**"/>
         </metainf>
@@ -1360,8 +1361,9 @@
     <fixEOLs dist-stage-dir="${dist.stage.bin.dir}"/>
     <rake task="install_dist_gems"/>
     
-    <!-- run jar-dist here to ensure it's the last thing before tarring
+    <!-- wipe out jar and run jar-dist here to ensure it's the last thing before tarring
     see JRUBY-5429. -->
+    <delete file="lib/jruby.jar"/>
     <antcall target="jar-dist"/>
     
     <tar destfile="${dist.dir}/jruby-bin-${version.jruby}.tar.gz" compression="gzip">
