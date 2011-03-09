@@ -100,7 +100,7 @@ public class RubyDir extends RubyObject {
     }
 
     private void update() {
-        if (snapshot == null || dir.lastModified() > lastModified) {
+        if (snapshot == null || dir.exists() && dir.lastModified() > lastModified) {
             lastModified = dir.lastModified();
             List<String> snapshotList = new ArrayList<String>();
             snapshotList.add(".");

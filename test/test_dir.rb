@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 require 'test/unit'
 require 'rbconfig'
 
@@ -160,6 +161,19 @@ class TestDir < Test::Unit::TestCase
       end
       assert !collect.include?("#{jar_file}/abc/foo.rb")
     end
+  end
+
+  def test_foreach_works_in_jar_file
+    jar_file = File.expand_path('../jar_with_relative_require1.jar', __FILE__)
+    jar_path = "file:#{jar_file}!/test"
+    dir = Dir.new(jar_path)
+    assert dir.entries.include?('require_relative1.rb'), "#{jar_path} does not contain require_relative1.rb: #{dir.entries.inspect}"
+    entries = []
+    dir.each {|d| entries << d}
+    assert entries.include?('require_relative1.rb'), "#{jar_path} does not contain require_relative1.rb: #{entries.inspect}"
+    entries = []
+    Dir.foreach(jar_path) {|d| entries << d}
+    assert entries.include?('require_relative1.rb'), "#{jar_path} does not contain require_relative1.rb: #{entries.inspect}"
   end
 
   def jar_file_with_spaces
