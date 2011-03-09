@@ -28,6 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -41,6 +43,7 @@ import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.SafePropertyAccessor;
 
 /**
@@ -54,6 +57,33 @@ public abstract class MethodFactory {
      * A Class[] representing the signature of compiled Ruby method.
      */
     public final static Class[] COMPILED_METHOD_PARAMS = new Class[] {ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class};
+
+    /**
+     * A test to see if we can load bytecode dynamically, so we know whether InvocationMethodFactory will work.
+     */
+    public final static boolean CAN_LOAD_BYTECODE;
+    static {
+        // any exception or error will cause us to consider bytecode-loading impossible
+        boolean can = false;
+        try {
+            InputStream unloaderStream = Ruby.getClassLoader().getResourceAsStream("/org/jruby/util/JDBCDriverUnloader.class");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = unloaderStream.read(buf)) != -1) {
+                baos.write(buf, 0, bytesRead);
+            }
+
+
+            OneShotClassLoader oscl = new OneShotClassLoader(Ruby.getClassLoader());
+            Class unloaderClass = oscl.defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
+            unloaderClass.newInstance();
+            can = true;
+        } catch (Throwable t) {
+            System.err.println("MethodFactory: failed to load bytecode at runtime, falling back on reflection");
+        }
+        CAN_LOAD_BYTECODE = can;
+    }
     
     /**
      * For batched method construction, the logic necessary to bind resulting
@@ -78,9 +108,13 @@ public abstract class MethodFactory {
      * @return A new MethodFactory.
      */
     public static MethodFactory createFactory(ClassLoader classLoader) {
-        if (reflection) return new ReflectionMethodFactory();
+        // if reflection is forced or we've determined that we can't load bytecode, use reflection
+        if (reflection || !CAN_LOAD_BYTECODE) return new ReflectionMethodFactory();
+
+        // if we're dumping invokers to disk, use dumping
         if (dumping) return new DumpingInvocationMethodFactory(dumpingPath, classLoader);
 
+        // otherwise, generate invokers at runtime
         return new InvocationMethodFactory(classLoader);
     }
     
