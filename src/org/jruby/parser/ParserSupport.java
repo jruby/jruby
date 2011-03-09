@@ -1503,6 +1503,18 @@ public class ParserSupport {
     // 1.9
     public ArgumentNode arg_var(Token identifier) {
         String name = (String) identifier.getValue();
+        StaticScope current = getCurrentScope();
+
+        // Multiple _ arguments are allowed.  To not screw with tons of arity
+        // issues in our runtime we will allocate unnamed bogus vars so things
+        // still work. MRI does not use name as intern'd value so they don't
+        // have this issue.
+        if (name == "_") {
+            int count = 0;
+            while (current.exists(name) >= 0) {
+                name = "_$" + count++;
+            }
+        }
         return new ArgumentNode(identifier.getPosition(), name,
                 getCurrentScope().addVariableThisScope(name));
     }
