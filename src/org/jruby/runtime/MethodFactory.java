@@ -66,14 +66,13 @@ public abstract class MethodFactory {
         // any exception or error will cause us to consider bytecode-loading impossible
         boolean can = false;
         try {
-            InputStream unloaderStream = Ruby.getClassLoader().getResourceAsStream("/org/jruby/util/JDBCDriverUnloader.class");
+            InputStream unloaderStream = Ruby.getClassLoader().getResourceAsStream("org/jruby/util/JDBCDriverUnloader.class");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buf = new byte[4096];
             int bytesRead;
             while ((bytesRead = unloaderStream.read(buf)) != -1) {
                 baos.write(buf, 0, bytesRead);
             }
-
 
             OneShotClassLoader oscl = new OneShotClassLoader(Ruby.getClassLoader());
             Class unloaderClass = oscl.defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
