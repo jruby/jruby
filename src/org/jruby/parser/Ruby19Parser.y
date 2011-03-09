@@ -1832,13 +1832,7 @@ f_bad_arg       : tCONSTANT {
 // Token:f_norm_arg [!null]
 f_norm_arg      : f_bad_arg
                 | tIDENTIFIER {
-    // FIXME: Resolve what the hell is going on
-    /*                    if (support.is_local_id($1)) {
-                        support.yyerror("formal argument must be local variable");
-                        }*/
-                     
-                    support.shadowing_lvar($1);
-                    $$ = $1;
+                    $$ = support.formal_argument($1);
                 }
 
 f_arg_item      : f_norm_arg {
@@ -1872,20 +1866,12 @@ f_arg           : f_arg_item {
                 }
 
 f_opt           : tIDENTIFIER '=' arg_value {
-                    if (!support.is_local_id($1)) {
-                        support.yyerror("formal argument must be local variable");
-                    }
-                    support.shadowing_lvar($1);
-                    support.arg_var($1);
+                    support.arg_var(support.formal_argument($1));
                     $$ = new OptArgNode($1.getPosition(), support.assignable($1, $3));
                 }
 
 f_block_opt     : tIDENTIFIER '=' primary_value {
-                    if (!support.is_local_id($1)) {
-                        support.yyerror("formal argument must be local variable");
-                    }
-                    support.shadowing_lvar($1);
-                    support.arg_var($1);
+                    support.arg_var(support.formal_argument($1));
                     $$ = new OptArgNode($1.getPosition(), support.assignable($1, $3));
                 }
 
@@ -1908,10 +1894,10 @@ restarg_mark    : tSTAR2 | tSTAR
 // [!null]
 f_rest_arg      : restarg_mark tIDENTIFIER {
                     if (!support.is_local_id($2)) {
-                        support.yyerror("duplicate rest argument name");
+                        support.yyerror("rest argument must be local variable");
                     }
-                    support.shadowing_lvar($2);
-                    $$ = new RestArgNode(support.arg_var($2));
+                    
+                    $$ = new RestArgNode(support.arg_var(support.shadowing_lvar($2)));
                 }
                 | restarg_mark {
                     $$ = new UnnamedRestArgNode($1.getPosition(), "", support.getCurrentScope().addVariable("*"));
@@ -1925,8 +1911,8 @@ f_block_arg     : blkarg_mark tIDENTIFIER {
                     if (!support.is_local_id($2)) {
                         support.yyerror("block argument must be local variable");
                     }
-                    support.shadowing_lvar($2);
-                    $$ = new BlockArgNode(support.arg_var($2));
+                    
+                    $$ = new BlockArgNode(support.arg_var(support.shadowing_lvar($2)));
                 }
 
 opt_f_block_arg : ',' f_block_arg {

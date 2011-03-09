@@ -36,7 +36,6 @@
 package org.jruby.parser;
 
 import java.math.BigInteger;
-import org.jcodings.Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
@@ -177,7 +176,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 import org.jruby.util.RegexpOptions;
-import org.jruby.util.StringSupport;
 
 /** 
  *
@@ -1509,13 +1507,31 @@ public class ParserSupport {
                 getCurrentScope().addVariableThisScope(name));
     }
 
+    public Token formal_argument(Token identifier) {
+        if (!is_local_id(identifier)) yyerror("formal argument must be local variable");
+
+        return shadowing_lvar(identifier);
+    }
+
     // 1.9
-    public void shadowing_lvar(Token identifier) {
+    public Token shadowing_lvar(Token identifier) {
         String name = (String) identifier.getValue();
 
-        if (getCurrentScope().isDefined(name) > 0) {
-            if (warnings.isVerbose()) warnings.warning(ID.STATEMENT_NOT_REACHED, identifier.getPosition(), "shadowing outer local variable - " + name);
+        if (name == "_") return identifier;
+
+        StaticScope current = getCurrentScope();
+        if (current instanceof BlockStaticScope) {
+            if (current.exists(name) >= 0) yyerror("duplicated argument name");
+
+            if (warnings.isVerbose() && current.isDefined(name) >= 0) {
+                warnings.warning(ID.STATEMENT_NOT_REACHED, identifier.getPosition(),
+                        "shadowing outer local variable - " + name);
+            }
+        } else if (current.exists(name) >= 0) {
+            yyerror("duplicated argument name");
         }
+
+        return identifier;
     }
 
     // 1.9
