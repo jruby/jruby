@@ -21,9 +21,11 @@ public class MetaObject extends Operand {
     }
 
     public static MetaObject create(IRScope scope) {
+		  // Walk up lexical scopes to find the nearest lexical scope that contains the method
+        if (scope instanceof IRMethod) scope = scope.getNearestModule();
+
         if (scope instanceof IRClass) return new ClassMetaObject((IRClass) scope);
         if (scope instanceof IRModule) return new ModuleMetaObject((IRModule) scope);
-        if (scope instanceof IRMethod) return new MethodMetaObject((IRMethod) scope);
         if (scope instanceof IRClosure) return new ClosureMetaObject((IRClosure) scope);
 
         assert false : "IRSCript created";

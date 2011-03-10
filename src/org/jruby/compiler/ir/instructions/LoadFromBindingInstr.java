@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.MetaObject;
@@ -26,38 +28,46 @@ import org.jruby.runtime.builtin.IRubyObject;
  * SSS FIXME: except perhaps when we use class_eval, module_eval, or instance_eval??
  */
 
-public class LoadFromBindingInstr extends GetInstr {
-    private int bindingSlot;
-    public LoadFromBindingInstr(Variable v, IRExecutionScope scope, String slotName) {
-        super(Operation.BINDING_LOAD, v, MetaObject.create(scope.getClosestMethodAncestor()), slotName);
+public class LoadFromBindingInstr extends Instr {
+    private IRMethod sourceMethod;
+    private int      bindingSlot;
+    private String   slotName;
 
-		  MetaObject mo = (MetaObject)getSource();
-		  IRMethod m = (IRMethod)mo.scope;
-        bindingSlot = m.assignBindingSlot(slotName);
+    public LoadFromBindingInstr(Variable v, IRExecutionScope scope, String slotName) {
+        super(Operation.BINDING_LOAD, v);
+
+        this.slotName = slotName;
+        this.sourceMethod = (IRMethod)scope.getClosestMethodAncestor();
+        bindingSlot = sourceMethod.assignBindingSlot(slotName);
+    }
+
+    public String getSlotName() {
+        return slotName;
+    }
+
+    public Operand[] getOperands() { 
+        return new Operand[] { };
+    }
+
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        /* Nothing to do */
     }
 
     @Override
     public String toString() {
-        return "\t" + result + " = BINDING(" + getSource() + ")." + getName();
+        return "\t" + result + " = BINDING(" + sourceMethod + ")." + getSlotName();
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new LoadFromBindingInstr(ii.getRenamedVariable(result), (IRExecutionScope)((MetaObject)getSource()).scope, getName());
-    }
-
-    private IRScope getIRScope(Operand scopeHolder) {
-        assert scopeHolder instanceof MetaObject : "Target should be a MetaObject";
-
-        return ((MetaObject) scopeHolder).getScope();
+        return new LoadFromBindingInstr(ii.getRenamedVariable(result), sourceMethod, getSlotName());
     }
 
     @Interp
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        IRMethod m = (IRMethod)getIRScope(getSource());
-		  LocalVariable v = (LocalVariable)getResult();
+        LocalVariable v = (LocalVariable)getResult();
         if (bindingSlot == -1)
-            bindingSlot = m.getBindingSlot(v.getName());
+            bindingSlot = sourceMethod.getBindingSlot(getSlotName());
         interp.setLocalVariable(v.getLocation(), interp.getSharedBindingVariable(bindingSlot));
         return null;
     }

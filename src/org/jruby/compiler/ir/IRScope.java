@@ -92,4 +92,7 @@ public interface IRScope {
      *  Run the passed in compiler pass on this scope!
      */
     public void runCompilerPass(CompilerPass opt);
+
+    /* Run any necessary passes to get the IR ready for interpretation */
+    public void prepareForInterpretation();
 }

@@ -16,6 +16,11 @@ import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
+import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
+import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
+import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
+import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
+import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
 import org.jruby.parser.StaticScope;
 
 /**
@@ -223,6 +228,18 @@ public abstract class IRScopeImpl implements IRScope {
         runCompilerPassOnNestedScopes(p);
 
         if (!isPreOrder) p.run(this);
+    }
+
+    /* Run any necessary passes to get the IR ready for interpretation */
+    public void prepareForInterpretation() {
+        // SSS FIXME: We should configure different optimization levels
+        // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
+        // IR levels/states (basic, optimized, etc.) and the 
+        runCompilerPass(new LocalOptimizationPass());
+        runCompilerPass(new CFG_Builder());
+        runCompilerPass(new LiveVariableAnalysis());
+        runCompilerPass(new DeadCodeElimination());
+        runCompilerPass(new AddBindingInstructions());
     }
 
     public String toStringInstrs() {

@@ -13,36 +13,30 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class StoreToBindingInstr extends PutInstr {
+	 private IRMethod targetMethod;
     private int bindingSlot;
+
     public StoreToBindingInstr(IRExecutionScope scope, String slotName, Operand value) {
         super(Operation.BINDING_STORE, MetaObject.create(scope.getClosestMethodAncestor()), slotName, value);
 
-        MetaObject mo = (MetaObject)getTarget();
-        IRMethod m = (IRMethod)mo.scope;
-        bindingSlot = m.assignBindingSlot(slotName);
+		  this.targetMethod = (IRMethod)scope.getClosestMethodAncestor();
+        bindingSlot = targetMethod.assignBindingSlot(slotName);
     }
 
     @Override
     public String toString() {
-        return "\tBINDING(" + operands[TARGET] + ")." + ref + " = " + operands[VALUE];
+        return "\tBINDING(" + targetMethod + ")." + ref + " = " + operands[VALUE];
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new StoreToBindingInstr((IRExecutionScope)((MetaObject)operands[TARGET]).scope, ref, operands[VALUE].cloneForInlining(ii));
-    }
-
-    private IRScope getIRScope(Operand scopeHolder) {
-        assert scopeHolder instanceof MetaObject : "Target should be a MetaObject";
-
-        return ((MetaObject) scopeHolder).getScope();
+        return new StoreToBindingInstr(targetMethod, ref, operands[VALUE].cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
 		  LocalVariable v = (LocalVariable) getValue();
-        IRMethod m = (IRMethod)getIRScope(getTarget());
         if (bindingSlot == -1)
-            bindingSlot = m.getBindingSlot(v.getName());
+            bindingSlot = targetMethod.getBindingSlot(v.getName());
         interp.setSharedBindingVariable(bindingSlot, interp.getLocalVariable(v.getLocation()));
         return null;
     }

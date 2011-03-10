@@ -2,6 +2,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.interpreter.NaiveInterpreterContext;
@@ -30,7 +31,13 @@ public class InterpretedIRMethod extends DynamicMethod {
                 temporaryVariableSize, method.getRenamedVariableSize(), args, block);
 //        Arity.checkArgumentCount(context.getRuntime(), args.length, requiredArgsCount, method.get???);
 
-        return Interpreter.interpret(context, method.getCFG(), interp);
+        CFG c = method.getCFG();
+        if (c == null) {
+           // The base IR may not have been processed yet because the method is added dynamically.
+           method.prepareForInterpretation();
+           c = method.getCFG();
+        }
+        return Interpreter.interpret(context, c, interp);
     }
 
     @Override

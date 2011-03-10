@@ -11,11 +11,6 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
-import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
-import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
-import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
-import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
-import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
@@ -32,12 +27,7 @@ public class Interpreter {
     
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
         IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
-
-        scope.runCompilerPass(new LocalOptimizationPass());
-        scope.runCompilerPass(new CFG_Builder());
-        scope.runCompilerPass(new LiveVariableAnalysis());
-        scope.runCompilerPass(new DeadCodeElimination());
-        scope.runCompilerPass(new AddBindingInstructions());
+		  scope.prepareForInterpretation();
 //        scope.runCompilerPass(new CallSplitter());
 
         return interpretTop(runtime, scope, self);
