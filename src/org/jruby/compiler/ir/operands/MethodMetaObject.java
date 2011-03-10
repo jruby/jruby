@@ -10,6 +10,6 @@ public class MethodMetaObject extends MetaObject {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        return ((IRMethod) scope).getContainerModule();
+        return interp.getSelf();
     }
 }

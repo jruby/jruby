@@ -113,6 +113,8 @@ import org.jruby.compiler.ir.instructions.CaseInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
+import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
+import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.compiler.ir.instructions.EQQ_Instr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
@@ -1606,7 +1608,7 @@ public class IRBuilder {
     }
 **/
 
-    private void defineNewMethod(MethodDefNode defNode, IRScope s, Operand container, boolean isInstanceMethod) {
+    private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, Operand container, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(s, container, defNode.getName(), isInstanceMethod, defNode.getScope());
 
         // Build IR for arguments
@@ -1624,25 +1626,25 @@ public class IRBuilder {
             method.addInstr(new ReturnInstr(Nil.NIL));
         }
 
-        // SSS FIXME: Is this correct? This method belongs to 'container'
-        // If it is of type IRModule at IR-build time, we can do this.
-        // If not, this has to be be done at interpret/execute time.
-        // Also, this code could be adding a new method for an object in which case we will
-        // have to instantiate a new meta-class
-        // ENEBO: for module+class methods s.getNearestModule seems to be working...
-//        IRModule methodHolder = isInstanceMethod ? s.getNearestModule() :
-//            new IRMetaClass(method.getLexicalParent(), container, defNode.getScope());
-        IRModule methodHolder = s.getNearestModule();
-        methodHolder.addMethod(method);
+        return method;
     }
 
     public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method
-        defineNewMethod(node, s, MetaObject.create(s), true);
+        Operand container = MetaObject.create(s.getNearestModule());
+        IRMethod method = defineNewMethod(node, s, container, true);
+        s.getNearestModule().addMethod(method);
+        s.addInstr(new DefineInstanceMethodInstr(container, method));
         return null;
     }
 
     public Operand buildDefs(DefsNode node, IRScope s) { // Class method
-        defineNewMethod(node, s, build(node.getReceiverNode(), s), false);
+        Operand container =  build(node.getReceiverNode(), s);
+        IRMethod method = defineNewMethod(node, s, container, false);
+        // ENEBO: Can all metaobjects be used for this?  closure?
+        if (container instanceof MetaObject) {
+            ((IRModule) ((MetaObject) container).getScope()).addMethod(method);
+        }
+        s.addInstr(new DefineClassMethodInstr(container, method));
         return null;
     }
 

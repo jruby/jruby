@@ -182,12 +182,6 @@ used, we are now forced to be conservative.
         assert !IRModule.isAClassRootMethod(method);
 
         methods.add(method);
-
-        Instr instruction = method.isInstanceMethod ?
-            new DefineInstanceMethodInstr(this, method) :
-            new DefineClassMethodInstr(this, method);
-        
-        getRootMethod().addInstr(instruction);
     }
 
     @Override

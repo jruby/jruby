@@ -58,7 +58,8 @@ public class GetConstInstr extends GetInstr {
         if (source instanceof Block) {
             module = ((Block) source).getBinding().getKlass();
         } else {
-            module = (RubyModule) source;
+            module = (RubyModule) (source instanceof RubyModule ? source : ((IRubyObject) source).getMetaClass());
+            System.out.println("MODULE = " + module.getBaseName() + ", getSource() " + getSource() + ", TYPE: " + getSource().getClass());
 /*
             if (getSource() instanceof MetaObject)
                 System.out.println("looking in " + module.getName() + " whose source is " + getSource() + " with hc " + ((MetaObject)getSource()).scope.hashCode());
