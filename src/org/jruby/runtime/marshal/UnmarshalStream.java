@@ -387,6 +387,8 @@ public class UnmarshalStream extends InputStream {
                         }
                         continue;
                     } else if (key.asJavaString().equals("encoding")) {
+                        // read off " byte for the string
+                        read();
                         ByteList encodingName = unmarshalString();
                         Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName);
                         if (entry == null) {
