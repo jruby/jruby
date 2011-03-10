@@ -63,7 +63,9 @@ public class Interpreter {
         InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, metaclass);
 
         IRubyObject rv =  method.call(runtime.getCurrentContext(), self, metaclass, "", new IRubyObject[]{});
-        System.out.println("-- Interpreted " + interpInstrsCount + " instructions");
+        if (debug) {
+            System.out.println("-- Interpreted " + interpInstrsCount + " instructions");
+        }
         return rv;
     }
 
