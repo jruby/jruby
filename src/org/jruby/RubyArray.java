@@ -2373,33 +2373,25 @@ public class RubyArray extends RubyObject implements List {
     @JRubyMethod(name = "select!", compat = RUBY1_9)
     public IRubyObject select_bang(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
-        if (!block.isGiven()) {
-            return enumeratorize(runtime, this, "select!");
-        }
+        if (!block.isGiven()) return enumeratorize(runtime, this, "select!");
 
-        int j = 0;
+        int newLength = 0;
         IRubyObject[] aux = new IRubyObject[values.length];
 
-        for (int i = 0; i < realLength; i++) {
-            // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
-            // See JRUBY-5434
-            IRubyObject value = safeArrayRef(values, begin + i);
-            if (!block.yield(context, value).isTrue()) {
-                continue;
-            }
-            if (i != j) {
-                aux[begin + j] = value;
-            }
-            j++;
+        for (int oldIndex = 0; oldIndex < realLength; oldIndex++) {
+            // Do not coarsen the "safe" check, since it will misinterpret 
+            // AIOOBE from the yield (see JRUBY-5434)
+            IRubyObject value = safeArrayRef(values, begin + oldIndex);
+            
+            if (!block.yield(context, value).isTrue()) continue;
+
+            aux[begin + newLength++] = value;
         }
 
-        if (realLength == j) {
-            return runtime.getNil();
-        }
-        if (j < realLength) {
-            safeArrayCopy(aux, begin, values, begin, j);
-            realLength = j;
-        }
+        if (realLength == newLength) return runtime.getNil(); // No change
+
+        safeArrayCopy(aux, begin, values, begin, newLength);
+        realLength = newLength;
 
         return this;
     }
