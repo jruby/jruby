@@ -98,11 +98,6 @@ public abstract class IRScopeImpl implements IRScope {
         return containerModule;
     }
 
-    public void setContainerModule(RubyModule containerModule) {
-//        System.out.println("PUT: container module of " + getName() + " with hc " + hashCode() + " to " + containerModule.getName());
-        this.containerModule = containerModule;
-    }
-
     public IRScope getLexicalParent() {
         return lexicalParent;
     }
