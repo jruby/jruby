@@ -36,6 +36,11 @@ package org.jruby.javasupport;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import static java.lang.Character.isLetter;
+import static java.lang.Character.isLowerCase;
+import static java.lang.Character.isUpperCase;
+import static java.lang.Character.isDigit;
+import static java.lang.Character.toLowerCase;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -289,40 +294,90 @@ public class JavaUtil {
         }
     }
 
-    private static final Pattern JAVA_PROPERTY_CHOPPER = Pattern.compile("(get|set|is)([A-Z0-9])(.*)");
+    /**
+     * For methods that match /(get|set|is)([A-Z0-9])(.*)/, return the "name"
+     * part of the property with leading lower-case.
+     *
+     * Does not use regex for performance reasons.
+     *
+     * @param beanMethodName the bean method from which to extract a name
+     * @return the bean property name
+     */
     public static String getJavaPropertyName(String beanMethodName) {
-        Matcher m = JAVA_PROPERTY_CHOPPER.matcher(beanMethodName);
-
-        if (!m.find()) return null;
-        String javaPropertyName = m.group(2).toLowerCase() + m.group(3);
-        return javaPropertyName;
-    }
-
-    // This pattern says, "either match a lowercase letter or number
-    // followed by an uppercase letter, or match any letter or number
-    // followed by an uppercase letter and a lowercase letter."
-    private static final Pattern CAMEL_CASE_SPLITTER = Pattern.compile("(([a-z0-9])([A-Z])|([A-Za-z0-9])([A-Z][a-z]))");
-    public static String getRubyCasedName(String javaCasedName) {
-        Matcher m = CAMEL_CASE_SPLITTER.matcher(javaCasedName);
-        // We do this replace loop manually because Android's Matcher produces null for unmatched $ groups.
-        // See JRUBY-5541
-        if (m.find()) {
-            StringBuffer buffer = new StringBuffer();
-            m.reset();
-            while (m.find()) {
-                if (m.group(2) != null) {
-                    // first part matched
-                    m.appendReplacement(buffer, "$2_$3");
+        int length = beanMethodName.length();
+        char ch;
+        if ((beanMethodName.startsWith("get") || beanMethodName.startsWith("set")) && length > 3) {
+            if (isUpperDigit(ch = beanMethodName.charAt(3))) {
+                if (length == 4) {
+                    return Character.toString(toLowerCase(ch));
                 } else {
-                    // second part matched {
-                    m.appendReplacement(buffer, "$4_$5");
+                    return "" + toLowerCase(ch) + beanMethodName.substring(4);
                 }
             }
-            m.appendTail(buffer);
-            return buffer.toString().toLowerCase();
-        } else {
-            return javaCasedName;
+        } else if (beanMethodName.startsWith("is") && length > 2) {
+            if (isUpperDigit(ch = beanMethodName.charAt(2))) {
+                if (length == 3) {
+                    return Character.toString(toLowerCase(ch));
+                } else {
+                    return "" + toLowerCase(ch) + beanMethodName.substring(3);
+                }
+            }
         }
+        return null;
+    }
+
+    /**
+     * For methods that match /(([a-z0-9])([A-Z])|([A-Za-z0-9])([A-Z][a-z]))/,
+     * return the snake-cased equivalent (inserting _ between groups 2 and 3 or
+     * 4 and 5).
+     *
+     * Does not use regex for performance reasons.
+     *
+     * @param javaCasedName the camelCased name to convert
+     * @return the snake_cased result
+     */
+    public static String getRubyCasedName(String javaCasedName) {
+        StringBuilder b = new StringBuilder();
+        char[] chars = javaCasedName.toCharArray();
+        int behind = 0;
+        for (int i = 0; i < chars.length; i++) {
+            if (behind < 2) {
+                behind++;
+            } else {
+                behind = consume(b, chars, i, behind);
+            }
+        }
+        if (behind > 0) {
+            if (behind > 1) {
+                b.append(toLowerCase(chars[chars.length - 2]));
+            }
+            b.append(toLowerCase(chars[chars.length - 1]));
+        }
+        return b.toString();
+    }
+    
+    private static int consume(StringBuilder b, char[] chars, int i, int behind) {
+        char cur, prev, prev2;
+        if (isLowerDigit(prev2 = chars[i - 2]) && isUpperCase(prev = chars[i - 1])) {
+            b.append(prev2).append('_').append(toLowerCase(prev));
+            return 1;
+        } else if (isLetterDigit(prev2) && isUpperCase(prev = chars[i - 1]) && isLowerCase(cur = chars[i])) {
+            b.append(toLowerCase(prev2)).append('_').append(toLowerCase(prev)).append(cur);
+            return 0;
+        } else {
+            b.append(toLowerCase(prev2));
+            return 2;
+        }
+    }
+    
+    private static boolean isUpperDigit(char c) {
+        return isUpperCase(c) || isDigit(c);
+    }
+    private static boolean isLowerDigit(char c) {
+        return isLowerCase(c) || isDigit(c);
+    }
+    private static boolean isLetterDigit(char c) {
+        return isLetter(c) || isDigit(c);
     }
 
     private static final Pattern RUBY_CASE_SPLITTER = Pattern.compile("([a-z][0-9]*)_([a-z])");
