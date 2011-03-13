@@ -58,10 +58,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -2030,18 +2029,18 @@ public class JavaClass extends JavaObject {
     
     private static boolean methodsAreEquivalent(Method child, Method parent) {
         return parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())
-                && Arrays.equals(child.getParameterTypes(), parent.getParameterTypes())
                 && child.getReturnType() == parent.getReturnType()
                 && child.isVarArgs() == parent.isVarArgs()
                 && Modifier.isPublic(child.getModifiers()) == Modifier.isPublic(parent.getModifiers())
                 && Modifier.isProtected(child.getModifiers()) == Modifier.isProtected(parent.getModifiers())
-                && Modifier.isStatic(child.getModifiers()) == Modifier.isStatic(parent.getModifiers());
+                && Modifier.isStatic(child.getModifiers()) == Modifier.isStatic(parent.getModifiers())
+                && Arrays.equals(child.getParameterTypes(), parent.getParameterTypes());
     }
-
-
-    private static void addNewMethods(HashMap<String, List<Method>> nameMethods, Method[] methods, boolean includeStatic, boolean removeDuplicate) {
+    
+    private static int addNewMethods(HashMap<String, List<Method>> nameMethods, Method[] methods, boolean includeStatic, boolean removeDuplicate) {
+        int added = 0;
         Methods: for (Method m : methods) {
-            if (Modifier.isStatic(m.getModifiers()) && !includeStatic) {
+            if (!includeStatic && Modifier.isStatic(m.getModifiers())) {
                 // Skip static methods if we're not suppose to include them.
                 // Generally for superclasses; we only bind statics from the actual
                 // class.
@@ -2050,21 +2049,22 @@ public class JavaClass extends JavaObject {
             List<Method> childMethods = nameMethods.get(m.getName());
             if (childMethods == null) {
                 // first method of this name, add a collection for it
-                childMethods = new ArrayList<Method>();
+                childMethods = new ArrayList<Method>(1);
                 childMethods.add(m);
                 nameMethods.put(m.getName(), childMethods);
+                added++;
             } else {
                 // we have seen other methods; check if we already have
                 // an equivalent one
-                for (Method m2 : childMethods) {
+                for (ListIterator<Method> iter = childMethods.listIterator(); iter.hasNext();) {
+                    Method m2 = iter.next();
                     if (methodsAreEquivalent(m2, m)) {
                         if (removeDuplicate) {
                             // Replace the existing method, since the super call is more general
                             // and virtual dispatch will call the subclass impl anyway.
                             // Used for instance methods, for which we usually want to use the highest-up
                             // callable implementation.
-                            childMethods.remove(m2);
-                            childMethods.add(m);
+                            iter.set(m);
                         } else {
                             // just skip the new method, since we don't need it (already found one)
                             // used for interface methods, which we want to add unconditionally
@@ -2075,13 +2075,18 @@ public class JavaClass extends JavaObject {
                 }
                 // no equivalent; add it
                 childMethods.add(m);
+                added++;
             }
         }
+        return added;
     }
     
-    private static Method[] getMethods(Class<?> javaClass) {
-        HashMap<String, List<Method>> nameMethods = new HashMap<String, List<Method>>();
+    public static Method[] getMethods(Class<?> javaClass) {
+        HashMap<String, List<Method>> nameMethods = new HashMap<String, List<Method>>(30);
 
+        // to better size the final ArrayList below
+        int total = 0;
+        
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for (Class c = javaClass; c != null; c = c.getSuperclass()) {
@@ -2092,7 +2097,7 @@ public class JavaClass extends JavaObject {
                 try {
                     // add methods, including static if this is the actual class,
                     // and replacing child methods with equivalent parent methods
-                    addNewMethods(nameMethods, c.getDeclaredMethods(), c == javaClass, true);
+                    total += addNewMethods(nameMethods, c.getDeclaredMethods(), c == javaClass, true);
                 } catch (SecurityException e) {
                 }
             }
@@ -2103,14 +2108,14 @@ public class JavaClass extends JavaObject {
                     // add methods, not including static (should be none on
                     // interfaces anyway) and not replacing child methods with
                     // parent methods
-                    addNewMethods(nameMethods, i.getMethods(), false, false);
+                    total += addNewMethods(nameMethods, i.getMethods(), false, false);
                 } catch (SecurityException e) {
                 }
             }
         }
         
         // now only bind the ones that remain
-        ArrayList<Method> finalList = new ArrayList<Method>();
+        ArrayList<Method> finalList = new ArrayList<Method>(total);
 
         for (Map.Entry<String, List<Method>> entry : nameMethods.entrySet()) {
             finalList.addAll(entry.getValue());
