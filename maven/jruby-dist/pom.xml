@@ -38,7 +38,7 @@
             <configuration>
               <artifacts>
                 <artifact>
-                  <file>${dist.dir}/${project.artifactId}-bin-${project.version}.zip</file>
+                  <file>${dist.dir}/jruby-bin-${project.version}.zip</file>
                   <type>zip</type>
                   <classifier>bin</classifier>
                 </artifact>
