@@ -91,11 +91,13 @@
           <entry location="lib/native/i386-SunOS" fileType="regular" />
           <entry location="lib/native/ppc-AIX" fileType="regular" />
           <entry location="lib/native/ppc-Linux" fileType="regular" />
+          <entry location="lib/native/s390x-Linux" fileType="regular" />
           <entry location="lib/native/sparc-SunOS" fileType="regular" />
           <entry location="lib/native/sparcv9-SunOS" fileType="regular" />
           <entry location="lib/native/x86_64-FreeBSD" fileType="regular" />
           <entry location="lib/native/x86_64-Linux" fileType="regular" />
           <entry location="lib/native/x86_64-OpenBSD" fileType="regular" />
+          <entry location="lib/native/x86_64-SunOS" fileType="regular" />
           <entry location="lib/ruby" fileType="regular" />
         </exclude>
       </dirEntry>
@@ -109,11 +111,13 @@
           <entry location="lib/native/i386-Windows" fileType="regular" />
           <entry location="lib/native/ppc-AIX" fileType="regular" />
           <entry location="lib/native/ppc-Linux" fileType="regular" />
+          <entry location="lib/native/s390x-Linux" fileType="regular" />
           <entry location="lib/native/sparc-SunOS" fileType="regular" />
           <entry location="lib/native/sparcv9-SunOS" fileType="regular" />
           <entry location="lib/native/x86_64-FreeBSD" fileType="regular" />
           <entry location="lib/native/x86_64-Linux" fileType="regular" />
           <entry location="lib/native/x86_64-OpenBSD" fileType="regular" />
+          <entry location="lib/native/x86_64-SunOS" fileType="regular" />
           <entry location="lib/native/x86_64-Windows" fileType="regular" />
           <entry location="lib/ruby" fileType="regular" />
         </exclude>
