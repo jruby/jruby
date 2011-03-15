@@ -1070,6 +1070,7 @@ public class RubyArray extends RubyObject implements List {
      *
      */
     public IRubyObject subseq(long beg, long len) {
+        int realLength = this.realLength;
         if (beg > realLength || beg < 0 || len < 0) return getRuntime().getNil();
 
         if (beg + len > realLength) {
