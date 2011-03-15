@@ -30,7 +30,6 @@ STDLIB_FILES = %w[
   mathn.rb
   matrix.rb
   minitest
-  mkmf.rb
   monitor.rb
   mutex_m.rb
   net

@@ -39,7 +39,6 @@ STDLIB_FILES = %w[
   mailread.rb
   mathn.rb
   matrix.rb
-  mkmf.rb
   monitor.rb
   mutex_m.rb
   net
