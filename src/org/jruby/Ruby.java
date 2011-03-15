@@ -3735,7 +3735,7 @@ public final class Ruby {
      * @param name the name of the method
      * @param method
      */
-    public void addProfiledMethod(String name, DynamicMethod method) {
+    public synchronized void addProfiledMethod(String name, DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
         if (method.getSerialNumber() > MAX_PROFILE_METHODS) return;

@@ -93,9 +93,14 @@ public class AbstractProfilePrinter {
         Ruby runtime = Ruby.getGlobalRuntime();
         String[] profiledNames = runtime.profiledNames;
         DynamicMethod[] profiledMethods = runtime.profiledMethods;
-        String name = profiledNames[serial];
-        DynamicMethod method = profiledMethods[serial];
-        String displayName = moduleHashMethod(method.getImplementationClass(), name);
+        String displayName;
+        if (serial < profiledNames.length) {
+            String name = profiledNames[serial];
+            DynamicMethod method = profiledMethods[serial];
+            displayName = moduleHashMethod(method.getImplementationClass(), name);
+        } else {
+            displayName = "<unknown>";
+        }
         // System.out.printf("%d - %s\n", serial, displayName);
         return displayName;
     }
