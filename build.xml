@@ -1333,6 +1333,7 @@
   </patternset>
 
   <patternset id="dist.files">
+    <include name="lib/*"/>
     <include name="samples/**"/>
     <include name="docs/**"/>
     <include name="COPYING*"/>
@@ -1343,6 +1344,7 @@
 
   <patternset id="dist.bin.files">
     <patternset refid="dist.files"/>
+    <exclude name="lib/jruby-*.jar"/>
     <exclude name="lib/emma.jar"/>
     <exclude name="lib/emma_ant.jar"/>
     <exclude name="lib/junit.jar"/>
@@ -1429,7 +1431,6 @@
       </tarfileset>
       <tarfileset dir="${dist.stage.bin.dir}" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
-        <exclude name="jruby-*.jar"/>
       </tarfileset>
       <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
         <patternset refid="dist.bin.files"/>
@@ -1447,7 +1448,6 @@
       </zipfileset>
       <zipfileset dir="${dist.stage.bin.dir}" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
-        <exclude name="jruby-*.jar"/>
       </zipfileset>
       <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
         <patternset refid="dist.bin.files"/>
@@ -1482,7 +1482,6 @@
       </tarfileset>
       <tarfileset dir="${dist.stage.src.dir}" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
-        <exclude name="jruby-*.jar"/>
       </tarfileset>
       <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
         <patternset refid="dist.src.files"/>
@@ -1508,7 +1507,6 @@
       </zipfileset>
       <zipfileset dir="${dist.stage.src.dir}" prefix="jruby-${version.jruby}">
         <include name="lib/**"/>
-        <exclude name="jruby-*.jar"/>
       </zipfileset>
       <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
         <patternset refid="dist.src.files"/>
