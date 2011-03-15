@@ -2456,8 +2456,22 @@ public class RubyArray extends RubyObject implements List {
 
         modify();
 
+        IRubyObject nil = getRuntime().getNil();
         IRubyObject obj = values[begin + pos];
+
         try {
+            // fast paths for head and tail
+            if (pos == 0) {
+                values[begin] = nil;
+                begin++;
+                realLength--;
+                return obj;
+            } else if (pos == realLength - 1) {
+                values[begin + realLength - 1] = nil;
+                realLength--;
+                return obj;
+            }
+
             System.arraycopy(values, begin + pos + 1, values, begin + pos, len - (pos + 1));
             values[begin + len - 1] = getRuntime().getNil();
         } catch (ArrayIndexOutOfBoundsException e) {
