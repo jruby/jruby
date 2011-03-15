@@ -205,7 +205,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         this.metaClass = metaClass;
 
         if (runtime.isObjectSpaceEnabled()) addToObjectSpace(runtime);
-        if (runtime.getSafeLevel() >= 3) taint(runtime);
     }
 
     /**
@@ -224,7 +223,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         this.metaClass = metaClass;
 
         if (useObjectSpace) addToObjectSpace(runtime);
-        if (canBeTainted && runtime.getSafeLevel() >= 3) taint(runtime);
     }
 
     protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
