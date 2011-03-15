@@ -589,6 +589,20 @@ public class RubyArray extends RubyObject implements List {
     public IRubyObject initialize_copy(IRubyObject orig) {
         return this.replace(orig);
     }
+
+    /**
+     * Overridden dup for fast-path logic.
+     *
+     * @return A new RubyArray sharing the original backing store.
+     */
+    public IRubyObject dup() {
+        if (metaClass.index != ClassIndex.ARRAY) return super.dup();
+
+        RubyArray dup = new RubyArray(metaClass.getClassRuntime(), values, begin, realLength);
+        dup.isShared = isShared = true;
+
+        return dup;
+    }
     
     /** rb_ary_replace
      *
