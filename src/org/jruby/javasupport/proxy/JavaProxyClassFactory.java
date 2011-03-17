@@ -749,6 +749,10 @@ public class JavaProxyClassFactory {
             throw runtime.newTypeError("cannot extend final class " + superClass.getName());
         }
 
+        if(!hasPublicOrProtectedConstructors(superClass)) {
+            throw runtime.newTypeError("class " + superClass.getName() + " doesn't have any public or private constructors");
+        }
+
         String targetPackage = packageName(targetClassName);
 
         String pkg = targetPackage.replace('.', '/');
@@ -762,6 +766,18 @@ public class JavaProxyClassFactory {
                 throw runtime.newTypeError("package " + p + " is sealed");
             }
         }
+    }
+
+    private static boolean hasPublicOrProtectedConstructors(Class superClass) {
+        Constructor[] constructors = superClass.getDeclaredConstructors();
+        boolean hasPublicOrProtectedConstructors = false;
+        for (Constructor constructor : constructors) {
+            if (Modifier.isPublic(constructor.getModifiers())
+                    || Modifier.isProtected(constructor.getModifiers())) {
+                hasPublicOrProtectedConstructors = true;
+            }
+        }
+        return hasPublicOrProtectedConstructors;
     }
 
     private static String packageName(String clazzName) {
