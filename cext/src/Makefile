@@ -206,6 +206,10 @@ ifneq ($(findstring bsd, $(OS)),)
   LDFLAGS += -pthread
 endif
 
+ifneq ($(findstring sun4, $(CPU)),)
+  CPU=sparc
+endif
+
 ifeq ($(CPU), sparcv9)
   MODEL = 64
 endif
