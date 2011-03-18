@@ -133,13 +133,6 @@ public class CFG {
         return _cfg.vertexSet();
     }
 
-    // SSS FIXME: This is only valid temporarily while the cfg blocks
-    // haven't been reordered around.  This code is there temporarily
-    // to get Tom & Charlie started on the IR interpreter.
-    public BasicBlock getFallThroughBB(BasicBlock bb) {
-        return _fallThruMap[bb.getID()];
-    }
-
     public BasicBlock getTargetBB(Label l) {
         return _bbMap.get(l);
     }

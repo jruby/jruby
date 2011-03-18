@@ -113,6 +113,10 @@ public class Interpreter {
         }
     }
 
+/**
+ * SSS: This skeleton of this code is quite stale now.  But, the inlining part of it can be reused whenever we are
+ * ready to implement inlining once again
+ *
     public static IRubyObject interpret_with_inline(ThreadContext context, CFG cfg, InterpreterContext interp) {
         try {
             BasicBlock basicBlock = cfg.getEntryBB();
@@ -169,4 +173,5 @@ public class Interpreter {
                 context.postMethodScopeOnly();
         }
     }
+**/
 }
