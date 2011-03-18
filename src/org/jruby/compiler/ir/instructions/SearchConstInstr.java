@@ -12,6 +12,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -22,12 +23,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 //
-public class GetConstInstr extends GetInstr {
-    public GetConstInstr(Variable dest, IRScope scope, String constName) {
+public class SearchConstInstr extends GetInstr {
+    public SearchConstInstr(Variable dest, IRScope scope, String constName) {
         super(Operation.GET_CONST, dest, MetaObject.create(scope), constName);
     }
 
-    public GetConstInstr(Variable dest, Operand scopeOrObj, String constName) {
+    public SearchConstInstr(Variable dest, Operand scopeOrObj, String constName) {
         super(Operation.GET_CONST, dest, scopeOrObj, constName);
     }
 
@@ -42,12 +43,25 @@ public class GetConstInstr extends GetInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetConstInstr(ii.getRenamedVariable(result), getSource().cloneForInlining(ii), getName());
+        return new SearchConstInstr(ii.getRenamedVariable(result), getSource().cloneForInlining(ii), getName());
     }
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-//        System.out.println("SOURCE: " + getSource().getClass());
+        System.out.println("SOURCE: " + getSource().getClass());
+        Object n = getSource();
+
+        assert n instanceof MetaObject: "All sources should be a meta object";
+
+        StaticScope staticScope = ((MetaObject) n).getScope().getStaticScope();
+
+        RubyModule object = interp.getRuntime().getObject();
+        getResult().store(interp, staticScope.getConstant(interp.getRuntime(), getName(), object));
+        
+        return null;
+/*
+
+
         Object source = getSource().retrieve(interp);
         RubyModule module;
 
@@ -62,6 +76,6 @@ public class GetConstInstr extends GetInstr {
         }
 
         getResult().store(interp, module.getConstant(getName()));
-        return null;
+        return null;*/
     }
 }

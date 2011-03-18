@@ -118,7 +118,7 @@ import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.compiler.ir.instructions.EQQ_Instr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
-import org.jruby.compiler.ir.instructions.GetConstInstr;
+import org.jruby.compiler.ir.instructions.SearchConstInstr;
 import org.jruby.compiler.ir.instructions.GetClassVariableInstr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
@@ -440,7 +440,7 @@ public class IRBuilder {
             case COLON2NODE: return buildColon2((Colon2Node) node, m); // done
             case COLON3NODE: return buildColon3((Colon3Node) node, m); // done
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, m); // done
-            case CONSTNODE: return buildConst((ConstNode) node, m); // done
+            case CONSTNODE: return loadConst(m, m, ((ConstNode) node).getName()); // done
             case DASGNNODE: return buildDAsgn((DAsgnNode) node, m); // done
             case DEFINEDNODE: return buildDefined(node, m); // SSS FIXME: Incomplete
             case DEFNNODE: return buildDefn((MethodDefNode) node, m); // done
@@ -1034,35 +1034,29 @@ public class IRBuilder {
         return cv;
  */
         Variable v = currScope.getNewTemporaryVariable();
-        currScope.addInstr(new GetConstInstr(v, s, name));
+        currScope.addInstr(new SearchConstInstr(v, s, name));
         return v;
-    }
-
-    public Operand buildConst(ConstNode node, IRScope s) {
-        return loadConst(s, s, node.getName()); 
     }
 
     public Operand buildColon2(final Colon2Node iVisited, IRScope s) {
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
 
-        if (leftNode == null) {
-            return loadConst(s, s, name);
-        } 
-        else if (iVisited instanceof Colon2ConstNode) {
+        // ENEBO: Does this really happen?
+        if (leftNode == null) return loadConst(s, s, name);
+
+        if (iVisited instanceof Colon2ConstNode) {
             // 1. Load the module first (lhs of node)
             // 2. Then load the constant from the module
             Operand module = build(iVisited.getLeftNode(), s);
             if (module instanceof MetaObject) {
                 return loadConst(((MetaObject)module).scope, s, name);
-            }
-            else {
+            } else {
                 Variable constVal = s.getNewTemporaryVariable();
-                s.addInstr(new GetConstInstr(constVal, module, name));
+                s.addInstr(new SearchConstInstr(constVal, module, name));
                 return constVal;
             }
-        }
-        else if (iVisited instanceof Colon2MethodNode) {
+        } else if (iVisited instanceof Colon2MethodNode) {
             Colon2MethodNode c2mNode = (Colon2MethodNode)iVisited;
             List<Operand> args       = setupCallArgs(null, s);
             Operand       block      = setupCallClosure(null, s);
@@ -1078,7 +1072,7 @@ public class IRBuilder {
     public Operand buildColon3(Colon3Node node, IRScope s) {
         Variable cv = s.getNewTemporaryVariable();
         // SSS FIXME: Is this correct?
-        s.addInstr(new GetConstInstr(cv, getSelf(s), node.getName()));
+        s.addInstr(new SearchConstInstr(cv, getSelf(s), node.getName()));
         return cv;
     }
 
