@@ -47,7 +47,6 @@ public class SearchConstInstr extends GetInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        System.out.println("SearchConst: " + getSource().getClass());
         Object n = getSource();
 
         assert n instanceof MetaObject: "All sources should be a meta object";
@@ -58,23 +57,5 @@ public class SearchConstInstr extends GetInstr {
         getResult().store(interp, staticScope.getConstant(interp.getRuntime(), getName(), object));
         
         return null;
-/*
-
-
-        Object source = getSource().retrieve(interp);
-        RubyModule module;
-
-        // Retrieving a MetaObject which is a closure returns a closure and not
-        // the module which contains it.  We could possible add to operand to have a generic
-        // scope() method or resort to if statements :)  So let's figure more out before
-        // fixing this.
-        if (source instanceof Block) {
-            module = ((Block) source).getBinding().getKlass();
-        } else {
-            module = (RubyModule)source;
-        }
-
-        getResult().store(interp, module.getConstant(getName()));
-        return null;*/
     }
 }
