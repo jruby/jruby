@@ -24,10 +24,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * the source operand to get it directly.
  */
 public class GetConstInstr extends GetInstr {
-    public GetConstInstr(Variable dest, IRScope scope, String constName) {
-        super(Operation.GET_CONST, dest, MetaObject.create(scope), constName);
-    }
-
     public GetConstInstr(Variable dest, Operand scopeOrObj, String constName) {
         super(Operation.GET_CONST, dest, scopeOrObj, constName);
     }

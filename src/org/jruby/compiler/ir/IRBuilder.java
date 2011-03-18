@@ -441,7 +441,7 @@ public class IRBuilder {
             case COLON2NODE: return buildColon2((Colon2Node) node, m); // done
             case COLON3NODE: return buildColon3((Colon3Node) node, m); // done
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, m); // done
-            case CONSTNODE: return loadConst(m, m, ((ConstNode) node).getName()); // done
+            case CONSTNODE: return searchConst(m, ((ConstNode) node).getName()); // done
             case DASGNNODE: return buildDAsgn((DAsgnNode) node, m); // done
             case DEFINEDNODE: return buildDefined(node, m); // SSS FIXME: Incomplete
             case DEFNNODE: return buildDefn((MethodDefNode) node, m); // done
@@ -1009,33 +1009,9 @@ public class IRBuilder {
         return val;
     }
 
-    private Operand loadConst(IRScope s, IRScope currScope, String name)
-    {
-/**
- * SSS FIXME: Because of Module.remove_const, all this compile-time resolution of constants won't fly!
- *
- * To be able to use compile-time results safely, we have to guard the looked up value with the
- * version number of the module where the constant came from -- a future optimization!
-
-        if (s instanceof IRMethod) {
-            Operand c = s.getContainer();
-            if (c instanceof MetaObject) {
-                s = ((MetaObject)c).getScope();
-            }
-        }
-
-        // If we could resolve the container scope to an actual 'compile-time' module, we can look up the constant right away
-        // If not, we have to look it up at 'runtime'
-        Operand cv = (s instanceof IRModule) ? ((IRModule)s).getConstantValue(name) : null;
-        if (cv == null) {
-            Variable v = currScope.getNewTemporaryVariable();
-            currScope.addInstr(new GetConstInstr(v, s, name));
-            cv = v;
-        }
-        return cv;
- */
-        Variable v = currScope.getNewTemporaryVariable();
-        currScope.addInstr(new SearchConstInstr(v, s, name));
+    private Operand searchConst(IRScope s, String name) {
+        Variable v = s.getNewTemporaryVariable();
+        s.addInstr(new SearchConstInstr(v, s, name));
         return v;
     }
 
@@ -1044,19 +1020,16 @@ public class IRBuilder {
         final String name = iVisited.getName();
 
         // ENEBO: Does this really happen?
-        if (leftNode == null) return loadConst(s, s, name);
+        if (leftNode == null) return searchConst(s, name);
 
         if (iVisited instanceof Colon2ConstNode) {
             // 1. Load the module first (lhs of node)
             // 2. Then load the constant from the module
             Operand module = build(iVisited.getLeftNode(), s);
-            if (module instanceof MetaObject && !(module instanceof ClosureMetaObject)) {
-                return loadConst(((MetaObject)module).scope, s, name);
-            } else {
-                Variable constVal = s.getNewTemporaryVariable();
-                s.addInstr(new GetConstInstr(constVal, module, name));
-                return constVal;
-            }
+            if (module instanceof MetaObject) module = MetaObject.create(((MetaObject)module).scope);
+            Variable constVal = s.getNewTemporaryVariable();
+            s.addInstr(new GetConstInstr(constVal, module, name));
+            return constVal;
         } else if (iVisited instanceof Colon2MethodNode) {
             Colon2MethodNode c2mNode = (Colon2MethodNode)iVisited;
             List<Operand> args       = setupCallArgs(null, s);
