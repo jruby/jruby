@@ -1,18 +1,14 @@
 package org.jruby.compiler.ir;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.operands.ClassMetaObject;
-import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
@@ -229,7 +225,11 @@ public abstract class IRScopeImpl implements IRScope {
     public void prepareForInterpretation() {
         // SSS FIXME: We should configure different optimization levels
         // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
-        // IR levels/states (basic, optimized, etc.) and the 
+        // IR levels/states (basic, optimized, etc.) and the
+        // ENEBO: If we use a MT optimization mechanism we cannot mutate CFG
+        // while another thread is using it.  This may need to happen on a clone()
+        // and we may need to update the method to return the new method.  Also,
+        // if this scope is held in multiple locations how do we update all references?
         runCompilerPass(new LocalOptimizationPass());
         runCompilerPass(new CFG_Builder());
         runCompilerPass(new LiveVariableAnalysis());
