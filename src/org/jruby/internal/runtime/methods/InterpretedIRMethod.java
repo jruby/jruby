@@ -14,6 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class InterpretedIRMethod extends DynamicMethod {
     public final IRMethod method;
     private final int temporaryVariableSize;
+    boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRMethod method, RubyModule implementationClass) {
@@ -30,22 +31,21 @@ public class InterpretedIRMethod extends DynamicMethod {
                 temporaryVariableSize, method.getRenamedVariableSize(), args, block);
 //        Arity.checkArgumentCount(context.getRuntime(), args.length, requiredArgsCount, method.get???);
         if (Interpreter.isDebug()) {
-            String realName;
             // FIXME: name should probably not be "" ever.
-            if (name == null || "".equals(name)) {
-                realName = method.getName();
-            } else {
-                realName = name;
-            }
-
+            String realName = name == null || "".equals(name) ? method.getName() : name;
             System.out.println("Executing '" + realName + "'");
         }
 
         CFG c = method.getCFG();
         if (c == null) {
-           // The base IR may not have been processed yet because the method is added dynamically.
-           method.prepareForInterpretation();
-           c = method.getCFG();
+            // The base IR may not have been processed yet because the method is added dynamically.
+            method.prepareForInterpretation();
+            c = method.getCFG();
+        }
+        if (Interpreter.isDebug() && displayedCFG == false) {
+            System.out.println("CFG:\n" + c.getGraph());
+            System.out.println("\nInstructions:\n" + c.toStringInstrs());
+            displayedCFG = true;
         }
         return Interpreter.interpret(context, c, interp);
     }
