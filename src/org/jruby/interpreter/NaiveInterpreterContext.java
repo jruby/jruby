@@ -5,8 +5,6 @@
 
 package org.jruby.interpreter;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -181,8 +179,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
         int length = parameters.length - argIndex;
         
         if (length <= 0) return NO_PARAMS;
-
-        System.out.println("AI: " + argIndex + ", parameters.legnth: " + parameters.length + ", LENGTH: " + length);
 
         IRubyObject[] args = new IRubyObject[length];
         System.arraycopy(parameters, argIndex, args, 0, length);
