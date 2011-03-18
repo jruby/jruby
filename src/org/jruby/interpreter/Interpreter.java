@@ -35,6 +35,10 @@ public class Interpreter {
 
     private static int interpInstrsCount = 0;
 
+    public static boolean isDebug() {
+        return debug;
+    }
+
     public static IRubyObject interpretTop(Ruby runtime, IRScope scope, IRubyObject self) {
         assert scope instanceof IRScript : "Must be an IRScript scope at Top!!!";
 

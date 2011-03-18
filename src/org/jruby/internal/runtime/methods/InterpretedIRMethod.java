@@ -29,6 +29,17 @@ public class InterpretedIRMethod extends DynamicMethod {
         InterpreterContext interp = new NaiveInterpreterContext(context, self, method.getLocalVariablesCount(),
                 temporaryVariableSize, method.getRenamedVariableSize(), args, block);
 //        Arity.checkArgumentCount(context.getRuntime(), args.length, requiredArgsCount, method.get???);
+        if (Interpreter.isDebug()) {
+            String realName;
+            // FIXME: name should probably not be "" ever.
+            if (name == null || "".equals(name)) {
+                realName = method.getName();
+            } else {
+                realName = name;
+            }
+
+            System.out.println("Executing '" + realName + "'");
+        }
 
         CFG c = method.getCFG();
         if (c == null) {
