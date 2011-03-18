@@ -54,7 +54,7 @@ static std::map<const char*, jobject, StringCompare> nonConstMethodNameMap;
 VALUE
 jruby::callRubyMethodA(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE* args)
 {
-    assert(recv != 0x0);
+    // Do not do something like 'assert(recv != 0x0);' -> false is 0x0
     assert(methodName != 0x0);
     assert(argCount > 0 ? args != NULL : 1);
 
