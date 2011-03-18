@@ -38,7 +38,7 @@ public enum Operation {
 
 // Loads
     GET_CONST(OpType.load_op), GET_GLOBAL_VAR(OpType.load_op), GET_FIELD(OpType.load_op), GET_CVAR(OpType.load_op), GET_ARRAY(OpType.load_op),
-    BINDING_LOAD(OpType.load_op),
+    BINDING_LOAD(OpType.load_op), SEARCH_CONST(OpType.load_op),
 
 // Stores
     PUT_CONST(OpType.store_op), PUT_GLOBAL_VAR(OpType.store_op), PUT_FIELD(OpType.store_op), PUT_ARRAY(OpType.store_op), PUT_CVAR(OpType.store_op),

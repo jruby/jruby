@@ -1,34 +1,35 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.compiler.ir.IRScope;
+import java.util.Map;
+import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRModule;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-
-import java.util.Map;
-import org.jruby.RubyModule;
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
-// NOTE: the scopeOrObj operand can be a dynamic scope.
-//
-// The runtime method call that GET_CONST is translated to in this case will call
-// a get_constant method on the scope meta-object which does the lookup of the constant table
-// on the meta-object.  In the case of method & closures, the runtime method will delegate
-// this call to the parent scope.
-//
-public class SearchConstInstr extends GetInstr {
-    public SearchConstInstr(Variable dest, IRScope scope, String constName) {
-        super(Operation.SEARCH_CONST, dest, MetaObject.create(scope), constName);
+/**
+ * A constant which we is not lexically scoped.  This instruction will ask
+ * the source operand to get it directly.
+ */
+public class GetConstInstr extends GetInstr {
+    public GetConstInstr(Variable dest, IRScope scope, String constName) {
+        super(Operation.GET_CONST, dest, MetaObject.create(scope), constName);
     }
 
-    public SearchConstInstr(Variable dest, Operand scopeOrObj, String constName) {
-        super(Operation.SEARCH_CONST, dest, scopeOrObj, constName);
+    public GetConstInstr(Variable dest, Operand scopeOrObj, String constName) {
+        super(Operation.GET_CONST, dest, scopeOrObj, constName);
     }
 
     @Override
@@ -47,20 +48,7 @@ public class SearchConstInstr extends GetInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        System.out.println("SearchConst: " + getSource().getClass());
-        Object n = getSource();
-
-        assert n instanceof MetaObject: "All sources should be a meta object";
-
-        StaticScope staticScope = ((MetaObject) n).getScope().getStaticScope();
-
-        RubyModule object = interp.getRuntime().getObject();
-        getResult().store(interp, staticScope.getConstant(interp.getRuntime(), getName(), object));
-        
-        return null;
-/*
-
-
+        System.out.println("GETCONS: " + getSource().getClass());
         Object source = getSource().retrieve(interp);
         RubyModule module;
 
@@ -71,10 +59,10 @@ public class SearchConstInstr extends GetInstr {
         if (source instanceof Block) {
             module = ((Block) source).getBinding().getKlass();
         } else {
-            module = (RubyModule)source;
+            module = (RubyModule) source;
         }
 
         getResult().store(interp, module.getConstant(getName()));
-        return null;*/
+        return null;
     }
 }

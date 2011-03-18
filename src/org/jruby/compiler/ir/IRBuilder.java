@@ -120,6 +120,7 @@ import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.SearchConstInstr;
 import org.jruby.compiler.ir.instructions.GetClassVariableInstr;
+import org.jruby.compiler.ir.instructions.GetConstInstr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -1049,11 +1050,11 @@ public class IRBuilder {
             // 1. Load the module first (lhs of node)
             // 2. Then load the constant from the module
             Operand module = build(iVisited.getLeftNode(), s);
-            if (module instanceof MetaObject) {
+            if (module instanceof MetaObject && !(module instanceof ClosureMetaObject)) {
                 return loadConst(((MetaObject)module).scope, s, name);
             } else {
                 Variable constVal = s.getNewTemporaryVariable();
-                s.addInstr(new SearchConstInstr(constVal, module, name));
+                s.addInstr(new GetConstInstr(constVal, module, name));
                 return constVal;
             }
         } else if (iVisited instanceof Colon2MethodNode) {
