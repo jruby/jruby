@@ -290,6 +290,14 @@ public class RubyArray extends RubyObject implements List {
         this.realLength = length;
         this.isShared = true;
     }
+
+    private RubyArray(Ruby runtime, RubyClass metaClass, IRubyObject[] vals, int begin, int length) {
+        super(runtime, metaClass);
+        this.values = vals;
+        this.begin = begin;
+        this.realLength = length;
+        this.isShared = true;
+    }
     
     private RubyArray(Ruby runtime, int length) {
         super(runtime, runtime.getArray());
@@ -989,10 +997,9 @@ public class RubyArray extends RubyObject implements List {
      * 
      */
     public final RubyArray aryDup() {
-        RubyArray dup = new RubyArray(metaClass.getClassRuntime(), values, begin, realLength);
-        dup.isShared = isShared = true;
-        dup.flags |= flags & TAINTED_F; // from DUP_SETUP
-        dup.flags |= flags & UNTRUSTED_F;
+        RubyArray dup = new RubyArray(metaClass.getClassRuntime(), metaClass, values, begin, realLength);
+        dup.isShared = true;
+        dup.flags |= flags & (TAINTED_F | UNTRUSTED_F); // from DUP_SETUP
         // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
         return dup;
     }
@@ -2512,7 +2519,7 @@ public class RubyArray extends RubyObject implements List {
      * 
      */
     public IRubyObject rejectCommon(ThreadContext context, Block block) {
-        RubyArray ary = (RubyArray)dup();
+        RubyArray ary = aryDup();
         ary.reject_bang(context, block);
         return ary;
     }
@@ -2529,7 +2536,8 @@ public class RubyArray extends RubyObject implements List {
         if (!block.isGiven()) throw context.getRuntime().newLocalJumpErrorNoBlock();
 
         int i2 = 0;
-
+        modify();
+        
         for (int i1 = 0; i1 < realLength; i1++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
@@ -2813,6 +2821,7 @@ public class RubyArray extends RubyObject implements List {
 
         RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
         if (flatten(context, -1, result)) {
+            modifyCheck();
             isShared = false;
             begin = 0;
             realLength = result.realLength;
