@@ -670,6 +670,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return RubyEncoding.decode(value.getUnsafeBytes(), value.begin(), value.length(), charset);
     }
 
+    /**
+     * Overridden dup for fast-path logic.
+     *
+     * @return A new RubyString sharing the original backing store.
+     */
+    public IRubyObject dup() {
+        RubyClass mc = metaClass;
+        if (mc.index != ClassIndex.STRING) return super.dup();
+
+        return strDup(mc.getClassRuntime(), mc);
+    }
+
     /** rb_str_dup
      * 
      */
@@ -5311,14 +5323,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
     
     private IRubyObject smartChopBangCommon(Ruby runtime) {
+        ByteList value = this.value;
         int len = value.getRealSize();
         int p = value.getBegin();
-        byte[]bytes = value.getUnsafeBytes();
-        if (bytes[p + len - 1] == (byte)'\n') {
+        byte[] bytes = value.getUnsafeBytes();
+        byte b = bytes[p + len - 1];
+        if (b == (byte)'\n') {
             len--;
             if (len > 0 && bytes[p + len - 1] == (byte)'\r') len--;
             view(0, len);
-        } else if (bytes[p + len - 1] == (byte)'\r') {
+        } else if (b == (byte)'\r') {
             len--;
             view(0, len);
         } else {
