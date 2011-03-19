@@ -600,6 +600,8 @@ public class RubyArray extends RubyObject implements List {
 
         RubyArray dup = new RubyArray(metaClass.getClassRuntime(), values, begin, realLength);
         dup.isShared = isShared = true;
+        dup.flags |= flags & TAINTED_F; // from DUP_SETUP
+        dup.flags |= flags & UNTRUSTED_F;
 
         return dup;
     }
@@ -2509,7 +2511,7 @@ public class RubyArray extends RubyObject implements List {
      * 
      */
     public IRubyObject rejectCommon(ThreadContext context, Block block) {
-        RubyArray ary = aryDup();
+        RubyArray ary = (RubyArray)dup();
         ary.reject_bang(context, block);
         return ary;
     }
@@ -2526,7 +2528,6 @@ public class RubyArray extends RubyObject implements List {
         if (!block.isGiven()) throw context.getRuntime().newLocalJumpErrorNoBlock();
 
         int i2 = 0;
-        modify();
 
         for (int i1 = 0; i1 < realLength; i1++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
@@ -2811,7 +2812,7 @@ public class RubyArray extends RubyObject implements List {
 
         RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
         if (flatten(context, -1, result)) {
-            modify();
+            isShared = false;
             begin = 0;
             realLength = result.realLength;
             values = result.values;
@@ -2835,6 +2836,7 @@ public class RubyArray extends RubyObject implements List {
 
         RubyArray result = new RubyArray(runtime, getMetaClass(), realLength);
         if (flatten(context, level, result)) {
+            isShared = false;
             begin = 0;
             realLength = result.realLength;
             values = result.values;
