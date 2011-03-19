@@ -2279,15 +2279,15 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "reverse")
     public IRubyObject reverse() {
-        final RubyArray dup; 
         if (realLength > 1) {
-            dup = safeReverse();
+            RubyArray dup = safeReverse();
+            dup.flags |= flags & TAINTED_F; // from DUP_SETUP
+            dup.flags |= flags & UNTRUSTED_F; // from DUP_SETUP
+            // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
+            return dup;
         } else {
-            dup = new RubyArray(getRuntime(), getMetaClass(), this);
+            return dup();
         }
-        dup.flags |= flags & TAINTED_F; // from DUP_SETUP
-        // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
-        return dup;
     }
 
     private RubyArray safeReverse() {
