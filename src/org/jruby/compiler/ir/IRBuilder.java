@@ -348,6 +348,13 @@ public class IRBuilder {
 
         public static void emitJumpChain(IRScope m, Stack<EnsureBlockInfo> ebStack)
         {
+            // SSS: There are 2 ways of encoding this:
+            // 1. Jump to ensure block 1, return back here, jump ensure block 2, return back here, ...
+            //    Generates 3*n instrs. where n is the # of ensure blocks to execute
+            // 2. Jump to ensure block 1, then to block 2, then to 3, ...
+            //    Generates n+1 instrs. where n is the # of ensure blocks to execute
+            // Doesn't really matter all that much since we shouldn't have deep nesting of ensure blocks often
+            // but is there a reason to go with technique 1 at all??
             int n = ebStack.size();
             EnsureBlockInfo[] ebArray = ebStack.toArray(new EnsureBlockInfo[n]);
             for (int i = n-1; i >= 0; i--) {
@@ -1734,6 +1741,7 @@ public class IRBuilder {
 
         EnsureNode ensureNode = (EnsureNode)node;
         Node       bodyNode   = ensureNode.getBodyNode();
+        // SSS: If the body is not a rescue-node, then add a ProtectedRegionStartMarker & EndMarker instructions here!
         Operand rv = (bodyNode instanceof RescueNode) ? buildRescueInternal(bodyNode, m) : build(bodyNode, m);
 
         // Generate the ensure block now
@@ -2599,6 +2607,8 @@ public class IRBuilder {
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
         List<Label> rescueBlockLabels = new ArrayList<Label>();
         m.addInstr(new LABEL_Instr(rBeginLabel));
+        // SSS: add ensure block label to this as well!
+        // Maybe rename this to ProtectedRegionStartMarkerInstr?
         RESCUED_BODY_START_MARKER_Instr rbStartInstr = new RESCUED_BODY_START_MARKER_Instr(rBeginLabel, elseLabel, rEndLabel, rescueBlockLabels);
         m.addInstr(rbStartInstr);
 
@@ -2627,16 +2637,20 @@ public class IRBuilder {
                 EnsureBlockInfo ebi = _ensureBlockStack.peek();
                 ebi.endLabelNeeded = true;
                 ebi.noFallThru = true;
-                m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, ebi.end));
+                // NOTE: rEndLabel is identical to ebi.end, but less confusing to use rEndLabel since that makes more semantic sense
+                m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
                 m.addInstr(new JumpInstr(ebi.start));
             }
         }
         else {
+            // If the body had an explicit return, the return instruction code takes care of setting
+            // up execution of all necessary ensure blocks.  So, nothing to do here! 
             rv = null;
         }
 
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
         // let us discover the edge of the region during linear traversal of instructions during cfg construction.
+        // SSS: Maybe rename this to ProtectedRegionEndMarkerInstr?
         RESCUED_BODY_END_MARKER_Instr rbEndInstr = new RESCUED_BODY_END_MARKER_Instr();
         m.addInstr(rbEndInstr);
 
@@ -2683,6 +2697,7 @@ public class IRBuilder {
                 EnsureBlockInfo ebi = _ensureBlockStack.peek();
                 ebi.endLabelNeeded = true;
                 ebi.noFallThru = true;
+                // SSS FIXME: Puzzled .. shouldn't the return address be set to endLabel rather than ebi.end?
                 m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, ebi.end));
                 m.addInstr(new JumpInstr(ebi.start));
             }
