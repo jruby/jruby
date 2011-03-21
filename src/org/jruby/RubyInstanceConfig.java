@@ -689,6 +689,7 @@ public class RubyInstanceConfig {
 
             if (rubyopt.split("\\s").length != 0) {
                 String[] rubyoptArgs = rubyopt.split("\\s+");
+                endOfArguments = false;
                 new ArgumentProcessor(rubyoptArgs, false, true).processArguments();
             }
         } catch (SecurityException se) {
