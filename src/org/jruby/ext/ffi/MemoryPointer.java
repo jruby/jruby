@@ -4,6 +4,7 @@ package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
@@ -44,8 +45,8 @@ public final class MemoryPointer extends Pointer {
         super(runtime, (RubyClass) klass, io, total, typeSize);
     }
 
-    private final IRubyObject init(ThreadContext context, IRubyObject sizeArg, int count, int align, boolean clear, Block block) {
-        typeSize = calculateSize(context, sizeArg);
+    private final IRubyObject init(ThreadContext context, IRubyObject rbTypeSize, int count, int align, boolean clear, Block block) {
+        typeSize = calculateTypeSize(context, rbTypeSize);
         size = typeSize * count;
         if (size < 0) {
             throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, typeSize));
@@ -83,7 +84,7 @@ public final class MemoryPointer extends Pointer {
 
     @JRubyMethod(name = { "initialize" })
     public final IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, Block block) {
-        return init(context, sizeArg, 1, 1, true, block);
+        return init(context, RubyFixnum.one(context.getRuntime()), RubyFixnum.fix2int(sizeArg), 1, true, block);
     }
     
     @JRubyMethod(name = { "initialize" })

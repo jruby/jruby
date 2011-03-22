@@ -74,7 +74,7 @@ abstract public class AbstractMemory extends RubyObject {
         return result;
     }
     
-    protected static final int calculateSize(ThreadContext context, IRubyObject sizeArg) {
+    protected static final int calculateTypeSize(ThreadContext context, IRubyObject sizeArg) {
         if (sizeArg instanceof RubyFixnum) {
             return (int) ((RubyFixnum) sizeArg).getLongValue();
 

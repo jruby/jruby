@@ -98,7 +98,7 @@ public class Pointer extends AbstractMemory {
                 ? ((Pointer) address).getMemoryIO()
                 : Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address));
         size = Long.MAX_VALUE;
-        typeSize = calculateSize(context, type);
+        typeSize = calculateTypeSize(context, type);
 
         return this;
     }
