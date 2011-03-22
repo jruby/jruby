@@ -41,7 +41,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callsite.CmpCallSite;
 import org.jruby.runtime.callsite.EqCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.runtime.callsite.ModCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.callsite.SuperCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
@@ -66,6 +65,18 @@ public class MethodIndex {
                 !(RubyInstanceConfig.FULL_TRACE_ENABLED)) return getFastOpsCallSite(name);
 
         return new NormalCachingCallSite(name);
+    }
+    
+    public static boolean hasFastOps(String name) {
+        return name.equals("+")
+                || name.equals("-")
+                || name.equals("*")
+                || name.equals("<")
+                || name.equals("<=")
+                || name.equals(">")
+                || name.equals(">=")
+                || name.equals("==")
+                || name.equals("<=>");
     }
 
     public static CallSite getFastOpsCallSite(String name) {

@@ -148,6 +148,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.StringSupport;
@@ -835,28 +836,7 @@ public class ASTCompiler {
 
         if (argsCallback != null && argsCallback.getArity() == 1) {
             Node argument = callNode.getArgsNode().childNodes().get(0);
-            if (name.length() == 1) {
-                switch (name.charAt(0)) {
-                case '+': case '-': case '*': case '/': case '<': case '>':
-                    if (argument instanceof FixnumNode) {
-                        context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
-                        if (!expr) context.consumeCurrentValue();
-                        return;
-                    }
-                }
-            } else if (name.length() == 2) {
-                if (argument instanceof FixnumNode) {
-                    switch (name.charAt(0)) {
-                    case '<': case '>': case '=': case '[':
-                        switch (name.charAt(1)) {
-                        case '=': case '<': case ']':
-                            context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
-                            if (!expr) context.consumeCurrentValue();
-                            return;
-                        }
-                    }
-                }
-            } else if (name.length() == 3 && name.equals("<=>")) {
+            if (MethodIndex.hasFastOps(name)) {
                 if (argument instanceof FixnumNode) {
                     context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
                     if (!expr) context.consumeCurrentValue();
