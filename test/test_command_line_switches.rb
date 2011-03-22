@@ -343,10 +343,8 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_rubyopts_take_effect_with_double_dash
     rubyopt_org = ENV['RUBYOPT']
     ENV['RUBYOPT'] = '-rrubygems -Ilib'
-    with_jruby_shell_spawning do
-      system("jruby -e 'defined?(::Gem) && $LOAD_PATH.include?(\"lib\") or abort' --")
-      assert_equal 0 ,$?.exitstatus
-    end
+    jruby("-e 'defined?(::Gem) && $LOAD_PATH.include?(\"lib\") or abort' --")
+    assert_equal 0 ,$?.exitstatus
   ensure
     ENV['RUBYOPT'] = rubyopt_org
   end
