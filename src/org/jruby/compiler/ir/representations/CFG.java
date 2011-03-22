@@ -25,8 +25,8 @@ import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.MethodLookupInstr;
-import org.jruby.compiler.ir.instructions.RESCUED_BODY_START_MARKER_Instr;
-import org.jruby.compiler.ir.instructions.RESCUED_BODY_END_MARKER_Instr;
+import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
+import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
@@ -74,7 +74,7 @@ public class CFG {
     BasicBlock[]                        _fallThruMap;   // Map of basic block id -> fall thru basic block
     List<BasicBlock>                    _linearizedBBList;  // Linearized list of bbs
     Map<BasicBlock, BasicBlock>         _bbRescuerMap;  // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
-    List<RescuedRegion>                 _outermostRRs;  // Outermost rescued regions
+    List<ExceptionRegion>               _outermostERs;  // Outermost exception regions
 
     private Instr[]       _instrs;
     private Set<Variable> _definedLocalVars;  // Local variables defined in this scope
@@ -86,7 +86,7 @@ public class CFG {
         _postOrderList = null;
         _dfProbs = new HashMap<String, DataFlowProblem>();
         _bbMap = new HashMap<Label, BasicBlock>();
-        _outermostRRs = new ArrayList<RescuedRegion>();
+        _outermostERs = new ArrayList<ExceptionRegion>();
         _bbRescuerMap = new HashMap<BasicBlock, BasicBlock>();
         _instrs = null;
     }
@@ -141,17 +141,17 @@ public class CFG {
         return _scope.getNewLabel();
     }
 
-    private BasicBlock createNewBB(Label l, DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap, Stack<RescuedRegion> nestedRescuedRegions) {
+    private BasicBlock createNewBB(Label l, DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap, Stack<ExceptionRegion> nestedExceptionRegions) {
         BasicBlock b = new BasicBlock(this, l);
         bbMap.put(b._label, b);
         g.addVertex(b);
-        if (!nestedRescuedRegions.empty())
-            nestedRescuedRegions.peek().addBB(b);
+        if (!nestedExceptionRegions.empty())
+            nestedExceptionRegions.peek().addBB(b);
         return b;
     }
 
-    private BasicBlock createNewBB(DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap, Stack<RescuedRegion> nestedRescuedRegions) {
-        return createNewBB(getNewLabel(), g, bbMap, nestedRescuedRegions);
+    private BasicBlock createNewBB(DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap, Stack<ExceptionRegion> nestedExceptionRegions) {
+        return createNewBB(getNewLabel(), g, bbMap, nestedExceptionRegions);
     }
 
     private void removeBB(BasicBlock b) {
@@ -234,18 +234,18 @@ public class CFG {
         List<BasicBlock> excBBs = new ArrayList<BasicBlock>();
 
         // Stack of nested rescue regions
-        Stack<RescuedRegion> nestedRescuedRegions = new Stack<RescuedRegion>();
+        Stack<ExceptionRegion> nestedExceptionRegions = new Stack<ExceptionRegion>();
 
         // List of all rescued regions
-        List<RescuedRegion> allRescuedRegions = new ArrayList<RescuedRegion>();
+        List<ExceptionRegion> allExceptionRegions = new ArrayList<ExceptionRegion>();
 
         DirectedGraph<BasicBlock, CFG_Edge> g = getNewCFG();
 
         // Dummy entry basic block (see note at end to see why)
-        _entryBB = createNewBB(g, _bbMap, nestedRescuedRegions);
+        _entryBB = createNewBB(g, _bbMap, nestedExceptionRegions);
 
         // First real bb
-        BasicBlock firstBB = createNewBB(g, _bbMap, nestedRescuedRegions);
+        BasicBlock firstBB = createNewBB(g, _bbMap, nestedExceptionRegions);
 
         // Build the rest!
         BasicBlock prevBB = null;
@@ -258,7 +258,7 @@ public class CFG {
             if (iop == Operation.LABEL) {
                 Label l = ((LABEL_Instr) i)._lbl;
                 prevBB = currBB;
-                newBB = createNewBB(l, g, _bbMap, nestedRescuedRegions);
+                newBB = createNewBB(l, g, _bbMap, nestedExceptionRegions);
                 if (!bbEndedWithControlXfer) // Jump instruction bbs dont add an edge to the succeeding bb by default
                 {
                     g.addEdge(currBB, newBB);
@@ -274,9 +274,9 @@ public class CFG {
                 }
                 bbEnded = false;
                 bbEndedWithControlXfer = false;
-            } else if (bbEnded && (iop != Operation.RESCUE_BODY_END)) {
+            } else if (bbEnded && (iop != Operation.EXC_REGION_END)) {
                 prevBB = currBB;
-                newBB = createNewBB(g, _bbMap, nestedRescuedRegions);
+                newBB = createNewBB(g, _bbMap, nestedExceptionRegions);
                 if (!bbEndedWithControlXfer) // Jump instruction bbs dont add an edge to the succeeding bb by default
                 {
                     g.addEdge(currBB, newBB); // currBB cannot be null!
@@ -286,24 +286,24 @@ public class CFG {
                 bbEndedWithControlXfer = false;
             }
 
-            if (i instanceof RESCUED_BODY_START_MARKER_Instr) {
+            if (i instanceof ExceptionRegionStartMarkerInstr) {
 // SSS: Do we need this anymore?
 //                currBB.addInstr(i);
-                RESCUED_BODY_START_MARKER_Instr rbsmi = (RESCUED_BODY_START_MARKER_Instr)i;
-                RescuedRegion rr = new RescuedRegion(rbsmi._elseBlock, rbsmi._rescueBlockLabels);
+                ExceptionRegionStartMarkerInstr rbsmi = (ExceptionRegionStartMarkerInstr)i;
+                ExceptionRegion rr = new ExceptionRegion(rbsmi._elseBlock, rbsmi._rescueBlockLabels);
                 rr.addBB(currBB);
-                allRescuedRegions.add(rr);
+                allExceptionRegions.add(rr);
 
-                if (nestedRescuedRegions.empty())
-                    _outermostRRs.add(rr);
+                if (nestedExceptionRegions.empty())
+                    _outermostERs.add(rr);
                 else
-                    nestedRescuedRegions.peek().addNestedRegion(rr);
+                    nestedExceptionRegions.peek().addNestedRegion(rr);
 
-                nestedRescuedRegions.push(rr);
-            } else if (i instanceof RESCUED_BODY_END_MARKER_Instr) {
+                nestedExceptionRegions.push(rr);
+            } else if (i instanceof ExceptionRegionEndMarkerInstr) {
 // SSS: Do we need this anymore?
 //                currBB.addInstr(i);
-                nestedRescuedRegions.pop().setEndBB(currBB);
+                nestedExceptionRegions.pop().setEndBB(currBB);
             } else if (iop.endsBasicBlock()) {
                 bbEnded = true;
                 currBB.addInstr(i);
@@ -365,7 +365,7 @@ public class CFG {
         }
 
         // Process all rescued regions
-        for (RescuedRegion rr: allRescuedRegions) {
+        for (ExceptionRegion rr: allExceptionRegions) {
             BasicBlock firstRescueBB = getTargetBB(rr.getFirstRescueBlockLabel());
 
             // 1. Tell the region that firstRescueBB is its protector!
@@ -390,7 +390,7 @@ public class CFG {
         // * all return bbs to the exit bb
         // * all exception bbs to the exit bb (mark these exception edges)
         // * last bb     -> dummy exit (only if the last bb didn't end with a control transfer!
-        _exitBB = createNewBB(g, _bbMap, nestedRescuedRegions);
+        _exitBB = createNewBB(g, _bbMap, nestedExceptionRegions);
         g.addEdge(_entryBB, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         g.addEdge(_entryBB, firstBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         for (BasicBlock rb : retBBs) {
@@ -507,8 +507,8 @@ public class CFG {
         }
 
         // 5. No need to clone rescued regions -- just assimilate them
-        for (RescuedRegion r: ccfg._outermostRRs) {
-            _outermostRRs.add(r);
+        for (ExceptionRegion r: ccfg._outermostERs) {
+            _outermostERs.add(r);
         }
 
         // 6. Update bb rescuer map
@@ -598,9 +598,9 @@ public class CFG {
             }
         }
 
-        // 5. Clone rescued regions
-        for (RescuedRegion r: mcfg._outermostRRs) {
-            _outermostRRs.add(r.cloneForInlining(ii));
+        // 5. Clone exception regions
+        for (ExceptionRegion r: mcfg._outermostERs) {
+            _outermostERs.add(r.cloneForInlining(ii));
         }
 
         // 6. Update bb rescuer map

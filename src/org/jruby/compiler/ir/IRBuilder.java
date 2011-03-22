@@ -141,8 +141,8 @@ import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
-import org.jruby.compiler.ir.instructions.RESCUED_BODY_START_MARKER_Instr;
-import org.jruby.compiler.ir.instructions.RESCUED_BODY_END_MARKER_Instr;
+import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
+import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
@@ -2608,8 +2608,7 @@ public class IRBuilder {
         List<Label> rescueBlockLabels = new ArrayList<Label>();
         m.addInstr(new LABEL_Instr(rBeginLabel));
         // SSS: add ensure block label to this as well!
-        // Maybe rename this to ProtectedRegionStartMarkerInstr?
-        RESCUED_BODY_START_MARKER_Instr rbStartInstr = new RESCUED_BODY_START_MARKER_Instr(rBeginLabel, elseLabel, rEndLabel, rescueBlockLabels);
+        ExceptionRegionStartMarkerInstr rbStartInstr = new ExceptionRegionStartMarkerInstr(rBeginLabel, elseLabel, rEndLabel, rescueBlockLabels);
         m.addInstr(rbStartInstr);
 
         // Body
@@ -2650,8 +2649,7 @@ public class IRBuilder {
 
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
         // let us discover the edge of the region during linear traversal of instructions during cfg construction.
-        // SSS: Maybe rename this to ProtectedRegionEndMarkerInstr?
-        RESCUED_BODY_END_MARKER_Instr rbEndInstr = new RESCUED_BODY_END_MARKER_Instr();
+        ExceptionRegionEndMarkerInstr rbEndInstr = new ExceptionRegionEndMarkerInstr();
         m.addInstr(rbEndInstr);
 
         // Build the actual rescue block(s)

@@ -6,12 +6,12 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-public class RESCUED_BODY_END_MARKER_Instr extends Instr
+public class ExceptionRegionEndMarkerInstr extends Instr
 {
     private static Operand[] _empty = new Operand[] {};
 
-    public RESCUED_BODY_END_MARKER_Instr() {
-        super(Operation.RESCUE_BODY_END);
+    public ExceptionRegionEndMarkerInstr() {
+        super(Operation.EXC_REGION_END);
     }
 
     public Operand[] getOperands() { return _empty; }

@@ -10,7 +10,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-public class RESCUED_BODY_START_MARKER_Instr extends Instr
+public class ExceptionRegionStartMarkerInstr extends Instr
 {
     private static Operand[] _empty = new Operand[] {};
 
@@ -19,9 +19,9 @@ public class RESCUED_BODY_START_MARKER_Instr extends Instr
     final public Label _end;
     final public List<Label> _rescueBlockLabels;
 
-    public RESCUED_BODY_START_MARKER_Instr(Label rBegin, Label elseBlock, Label rEnd, List<Label> rbLabels)
+    public ExceptionRegionStartMarkerInstr(Label rBegin, Label elseBlock, Label rEnd, List<Label> rbLabels)
     {
-        super(Operation.RESCUE_BODY_START);
+        super(Operation.EXC_REGION_START);
         _begin = rBegin;
         _end = rEnd;
         _rescueBlockLabels = rbLabels;
@@ -46,6 +46,6 @@ public class RESCUED_BODY_START_MARKER_Instr extends Instr
         for (Label l: _rescueBlockLabels)
             newLabels.add(ii.getRenamedLabel(l));
 
-        return new RESCUED_BODY_START_MARKER_Instr(ii.getRenamedLabel(_begin), _elseBlock == null ? null : ii.getRenamedLabel(_elseBlock), ii.getRenamedLabel(_end), newLabels);
+        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(_begin), _elseBlock == null ? null : ii.getRenamedLabel(_elseBlock), ii.getRenamedLabel(_end), newLabels);
     }
 }

@@ -34,7 +34,7 @@ public enum Operation {
     DEF_INST_METH(OpType.dont_care), DEF_CLASS_METH(OpType.dont_care),
 
 // exception instructions
-    THROW(OpType.exc_op), RESCUE_BODY_START(OpType.dont_care), RESCUE_BODY_END(OpType.dont_care), RETRY(OpType.dont_care),
+    THROW(OpType.exc_op), EXC_REGION_START(OpType.dont_care), EXC_REGION_END(OpType.dont_care), RETRY(OpType.dont_care),
 
 // Loads
     GET_CONST(OpType.load_op), GET_GLOBAL_VAR(OpType.load_op), GET_FIELD(OpType.load_op), GET_CVAR(OpType.load_op), GET_ARRAY(OpType.load_op),
