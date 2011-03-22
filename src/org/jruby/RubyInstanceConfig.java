@@ -1377,20 +1377,25 @@ public class RubyInstanceConfig {
         }
 
         private String resolveScript(String scriptName) {
-            // This try/catch is to allow failing over to the "commands" logic
+            // These try/catches are to allow failing over to the "commands" logic
             // when running from within a jruby-complete jar file, which has
             // jruby.home = a jar file URL that does not resolve correctly with
             // JRubyFile.create.
+            File fullName = null;
             try {
                 // try cwd first
-                File fullName = JRubyFile.create(currentDirectory, scriptName);
+                fullName = JRubyFile.create(currentDirectory, scriptName);
                 if (fullName.exists() && fullName.isFile()) {
                     if (DEBUG_SCRIPT_RESOLUTION) {
                         error.println("Found: " + fullName.getAbsolutePath());
                     }
                     return scriptName;
                 }
+            } catch (Exception e) {
+                // keep going, try bin/#{scriptName}
+            }
 
+            try {
                 fullName = JRubyFile.create(getJRubyHome(), "bin/" + scriptName);
                 if (fullName.exists() && fullName.isFile()) {
                     if (DEBUG_SCRIPT_RESOLUTION) {
@@ -1398,26 +1403,30 @@ public class RubyInstanceConfig {
                     }
                     return fullName.getAbsolutePath();
                 }
+            } catch (Exception e) {
+                // keep going, try PATH
+            }
 
-                try {
-                    String path = System.getenv("PATH");
-                    if (path != null) {
-                        String[] paths = path.split(System.getProperty("path.separator"));
-                        for (int i = 0; i < paths.length; i++) {
-                            fullName = JRubyFile.create(paths[i], scriptName);
-                            if (fullName.exists() && fullName.isFile()) {
-                                if (DEBUG_SCRIPT_RESOLUTION) {
-                                    error.println("Found: " + fullName.getAbsolutePath());
-                                }
-                                return fullName.getAbsolutePath();
+            try {
+                String path = System.getenv("PATH");
+                if (path != null) {
+                    String[] paths = path.split(System.getProperty("path.separator"));
+                    for (int i = 0; i < paths.length; i++) {
+                        fullName = JRubyFile.create(paths[i], scriptName);
+                        if (fullName.exists() && fullName.isFile()) {
+                            if (DEBUG_SCRIPT_RESOLUTION) {
+                                error.println("Found: " + fullName.getAbsolutePath());
                             }
+                            return fullName.getAbsolutePath();
                         }
                     }
-                } catch (SecurityException se) {
-                    // ignore and do nothing
                 }
-            } catch (IllegalArgumentException iae) {
-                if (debug) error.println("warning: could not resolve -S script on filesystem: " + scriptName);
+            } catch (Exception e) {
+                // will fall back to JRuby::Commands
+            }
+
+            if (debug) {
+                error.println("warning: could not resolve -S script on filesystem: " + scriptName);
             }
             return null;
         }
