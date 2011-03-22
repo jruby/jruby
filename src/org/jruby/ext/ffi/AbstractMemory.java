@@ -1405,6 +1405,310 @@ abstract public class AbstractMemory extends RubyObject {
 
         return this;
     }
+    
+    /**
+     * Reads an array of signed 8 bit integer values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_int8", "read_array_of_char" }, required = 1)
+    public IRubyObject read_array_of_int8(ThreadContext context, IRubyObject length) {
+        return MemoryUtil.getArrayOfSigned8(context.getRuntime(), io, 0, Util.int32Value(length));
+    }
+
+    /**
+     * Writes an array of signed 8 bit integer values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_int8", "write_array_of_char" }, required = 1)
+    public IRubyObject write_array_of_int8(ThreadContext context, IRubyObject ary) {
+        
+        MemoryUtil.putArrayOfSigned8(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        return this;
+    }
+    
+    /**
+     * Reads an array of unsigned 8 bit integer values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_uint8", "read_array_of_uchar" }, required = 1)
+    public IRubyObject read_array_of_uint8(ThreadContext context, IRubyObject length) {
+        return MemoryUtil.getArrayOfUnsigned8(context.getRuntime(), io, 0, Util.int32Value(length));
+    }
+
+    /**
+     * Writes an array of unsigned 8 bit integer values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @param length The number of values to be written to memory.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_uint8", "write_array_of_uchar" }, required = 1)
+    public IRubyObject write_array_of_uint8(ThreadContext context, IRubyObject ary) {
+        
+        MemoryUtil.putArrayOfUnsigned8(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        return this;
+    }
+    
+    /**
+     * Reads an array of signed 16 bit integer values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_int16", "read_array_of_short" }, required = 1)
+    public IRubyObject read_array_of_int16(ThreadContext context, IRubyObject length) {
+        return MemoryUtil.getArrayOfSigned16(context.getRuntime(), io, 0, Util.int32Value(length));
+    }
+
+    /**
+     * Writes an array of signed 16 bit integer values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_int16", "write_array_of_short" }, required = 1)
+    public IRubyObject write_array_of_int16(ThreadContext context, IRubyObject ary) {
+        
+        MemoryUtil.putArrayOfSigned16(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        return this;
+    }
+    
+    /**
+     * Reads an array of unsigned 16 bit integer values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_uint16", "read_array_of_ushort" }, required = 1)
+    public IRubyObject read_array_of_uint16(ThreadContext context, IRubyObject length) {
+        return MemoryUtil.getArrayOfUnsigned16(context.getRuntime(), io, 0, Util.int32Value(length));
+    }
+
+    /**
+     * Writes an array of unsigned 16 bit integer values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_uint16", "write_array_of_ushort" }, required = 1)
+    public IRubyObject write_array_of_uint16(ThreadContext context, IRubyObject ary) {
+        
+        MemoryUtil.putArrayOfUnsigned16(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        return this;
+    }
+    
+    
+    /**
+     * Reads an array of signed 32 bit integer values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_int32", "read_array_of_int" }, required = 1)
+    public IRubyObject read_array_of_int32(ThreadContext context, IRubyObject length) {
+        return MemoryUtil.getArrayOfSigned32(context.getRuntime(), io, 0, Util.int32Value(length));
+    }
+
+    /**
+     * Writes an array of signed 32 bit integer values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_int32", "write_array_of_int" }, required = 1)
+    public IRubyObject write_array_of_int32(ThreadContext context, IRubyObject ary) {
+        
+        MemoryUtil.putArrayOfSigned32(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        return this;
+    }
+    
+    /**
+     * Reads an array of unsigned 32 bit integer values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_uint32", "read_array_of_uint" }, required = 1)
+    public IRubyObject read_array_of_uint32(ThreadContext context, IRubyObject length) {
+        return MemoryUtil.getArrayOfUnsigned32(context.getRuntime(), io, 0, Util.int32Value(length));
+    }
+
+    /**
+     * Writes an array of unsigned 32 bit integer values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_uint32", "write_array_of_uint" }, required = 1)
+    public IRubyObject write_array_of_uint32(ThreadContext context, IRubyObject ary) {
+        
+        MemoryUtil.putArrayOfUnsigned32(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        return this;
+    }
+
+    /**
+     * Reads an array of signed 64 bit integer values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_int64", "read_array_of_long_long" }, required = 1)
+    public IRubyObject read_array_of_int64(ThreadContext context, IRubyObject length) {
+        return MemoryUtil.getArrayOfSigned64(context.getRuntime(), io, 0, Util.int32Value(length));
+    }
+
+    /**
+     * Writes an array of signed 64 bit integer values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_int64", "write_array_of_long_long" }, required = 1)
+    public IRubyObject write_array_of_int64(ThreadContext context, IRubyObject ary) {
+        
+        MemoryUtil.putArrayOfSigned64(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        return this;
+    }
+    
+    /**
+     * Reads an array of unsigned 64 bit integer values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_uint64", "read_array_of_ulong_long" }, required = 1)
+    public IRubyObject read_array_of_uint64(ThreadContext context, IRubyObject length) {
+        return MemoryUtil.getArrayOfUnsigned64(context.getRuntime(), io, 0, Util.int32Value(length));
+    }
+
+    /**
+     * Writes an array of unsigned 64 bit integer values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_uint64", "write_array_of_ulong_long" }, required = 1)
+    public IRubyObject write_array_of_uint64(ThreadContext context, IRubyObject ary) {
+        
+        MemoryUtil.putArrayOfUnsigned64(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        return this;
+    }
+    
+    /**
+     * Reads an array of signed long integer values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_long" }, required = 1)
+    public IRubyObject read_array_of_long(ThreadContext context, IRubyObject length) {
+        return Platform.getPlatform().longSize() == 32
+                ? read_array_of_int32(context, length)
+                : read_array_of_int64(context, length);
+    }
+
+    /**
+     * Writes an array of signed long integer values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_long" }, required = 1)
+    public IRubyObject write_array_of_long(ThreadContext context, IRubyObject ary) {
+        return Platform.getPlatform().longSize() == 32
+                ? write_array_of_int32(context, ary)
+                : write_array_of_int64(context, ary);
+    }
+    
+    /**
+     * Reads an array of unsigned long integer values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_ulong" }, required = 1)
+    public IRubyObject read_array_of_ulong(ThreadContext context, IRubyObject length) {
+        return Platform.getPlatform().longSize() == 32
+                ? read_array_of_uint32(context, length)
+                : read_array_of_uint64(context, length);
+    }
+
+    /**
+     * Writes an array of unsigned long integer values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_ulong" }, required = 1)
+    public IRubyObject write_array_of_ulong(ThreadContext context, IRubyObject ary) {
+        return Platform.getPlatform().longSize() == 32
+                ? write_array_of_uint32(context, ary)
+                : write_array_of_uint64(context, ary);
+    }
+    
+    /**
+     * Reads an array of signed 32 bit floating point values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "read_array_of_float32", "read_array_of_float" }, required = 1)
+    public IRubyObject read_array_of_float(ThreadContext context, IRubyObject length) {
+        return MemoryUtil.getArrayOfFloat32(context.getRuntime(), io, 0, Util.int32Value(length));
+    }
+
+    /**
+     * Writes an array of 32 bit floating point values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_float32", "write_array_of_float" }, required = 1)
+    public IRubyObject write_array_of_float(ThreadContext context, IRubyObject ary) {
+
+        MemoryUtil.putArrayOfFloat32(context.getRuntime(), io, 0, checkArray(ary));
+
+        return this;
+    }
+
+    /**
+     * Reads an array of signed 64 bit floating point values from the memory address.
+     *
+     * @param length The number of values to be read from memory.
+     * @return An array containing the values.
+     */
+    @JRubyMethod(name = { "get_array_of_float64", "get_array_of_double" }, required = 1)
+    public IRubyObject read_array_of_float64(ThreadContext context, IRubyObject length) {
+        return MemoryUtil.getArrayOfFloat64(context.getRuntime(), io, 0, Util.int32Value(length));
+    }
+
+    /**
+     * Writes an array of 64 bit floating point values to the memory area.
+     *
+     * @param ary The array of values to write to the memory area.
+     * @return <tt>this</tt> object.
+     */
+    @JRubyMethod(name = { "write_array_of_float64", "write_array_of_double" }, required = 1)
+    public IRubyObject write_array_of_float64(ThreadContext context, IRubyObject ary) {
+        MemoryUtil.putArrayOfFloat64(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        return this;
+    }
+    
 
     @JRubyMethod(name = "read_string")
     public IRubyObject read_string(ThreadContext context) {
