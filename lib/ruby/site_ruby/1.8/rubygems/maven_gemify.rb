@@ -241,7 +241,8 @@ module Gem
       def execute(goal, gemname, version, props = {})
         request = DefaultMavenExecutionRequest.new
         request.set_show_errors Gem.configuration.backtrace
-        request.user_properties.put("gemify.skipDependencies", "true")
+        skip_dependencies = (!maven_config["dependencies"]).to_s
+        request.user_properties.put("gemify.skipDependencies", skip_dependencies)
         request.user_properties.put("gemify.tempDir", temp_dir)
         request.user_properties.put("gemify.gemname", gemname)
         request.user_properties.put("gemify.version", version.to_s) if version
