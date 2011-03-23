@@ -673,15 +673,17 @@ public class Dir {
                         }
 
                         st = new JavaSecuredFile(newStringFromUTF8(dir, 5, ix-5));
-                        jar = newStringFromUTF8(dir, ix+1, dir.length-(ix+1));
-                        try {
-                            jf = new JarFile(st);
+                        if(ix<dir.length) {
+                            jar = newStringFromUTF8(dir, ix+1, dir.length-(ix+1));
+                            try {
+                                jf = new JarFile(st);
 
-                            if (jar.startsWith("/")) jar = jar.substring(1);
-                            if (jf.getEntry(jar + "/") != null) jar = jar + "/";
-                        } catch(Exception e) {
-                            jar = null;
-                            jf = null;
+                                if (jar.startsWith("/")) jar = jar.substring(1);
+                                if (jf.getEntry(jar + "/") != null) jar = jar + "/";
+                            } catch(Exception e) {
+                                jar = null;
+                                jf = null;
+                            }
                         }
                     } else {
                         st = new JavaSecuredFile(cwd, newStringFromUTF8(dir));
