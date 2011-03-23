@@ -84,7 +84,10 @@ public final class MemoryPointer extends Pointer {
 
     @JRubyMethod(name = { "initialize" })
     public final IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, Block block) {
-        return init(context, RubyFixnum.one(context.getRuntime()), RubyFixnum.fix2int(sizeArg), 1, true, block);
+        return sizeArg instanceof RubyFixnum
+                ? init(context, RubyFixnum.one(context.getRuntime()), 
+                    RubyFixnum.fix2int(sizeArg), 1, true, block)
+                : init(context, sizeArg, 1, 1, true, block);
     }
     
     @JRubyMethod(name = { "initialize" })

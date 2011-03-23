@@ -7,6 +7,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -91,7 +92,10 @@ public final class Buffer extends AbstractMemory {
 
     @JRubyMethod
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg) {
-        return init(context, RubyFixnum.one(context.getRuntime()), RubyFixnum.fix2int(sizeArg), IN | OUT);
+        return sizeArg instanceof RubyFixnum
+                ? init(context, RubyFixnum.one(context.getRuntime()), 
+                    RubyFixnum.fix2int(sizeArg), IN | OUT)
+                : init(context, sizeArg, 1, IN | OUT);
     }
 
     @JRubyMethod
