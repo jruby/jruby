@@ -95,7 +95,7 @@ public class RubyFixnum extends RubyInteger {
     public static final long MIN = -1 * MAX - 1;
     public static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1; // 0x3fff_ffff
     public static final long MIN_MARSHAL_FIXNUM = - (1L << 30);   // -0x4000_0000
-    public static final int CACHE_OFFSET = 128;
+    public static final int CACHE_OFFSET = 256;
 
     private static IRubyObject fixCoerce(IRubyObject x) {
         do {
@@ -940,6 +940,10 @@ public class RubyFixnum extends RubyInteger {
         }
         return ((RubyBignum) other).op_and(context, this);
     }
+    
+    public IRubyObject op_and(ThreadContext context, long other) {
+        return newFixnum(context.getRuntime(), value & other);
+    }
 
     /** fix_or 
      * 
@@ -951,6 +955,10 @@ public class RubyFixnum extends RubyInteger {
         }
         return ((RubyBignum) other).op_or(context, this);
     }
+    
+    public IRubyObject op_or(ThreadContext context, long other) {
+        return newFixnum(context.getRuntime(), value | other);
+    }
 
     /** fix_xor 
      * 
@@ -961,6 +969,10 @@ public class RubyFixnum extends RubyInteger {
             return newFixnum(context.getRuntime(), value ^ ((RubyFixnum) other).value);
         }
         return ((RubyBignum) other).op_xor(context, this); 
+    }
+    
+    public IRubyObject op_xor(ThreadContext context, long other) {
+        return newFixnum(context.getRuntime(), value ^ other);
     }
 
     /** fix_aref 
@@ -994,8 +1006,10 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_lshift(IRubyObject other) {
         if (!(other instanceof RubyFixnum)) return RubyBignum.newBignum(getRuntime(), value).op_lshift(other);
 
-        long width = ((RubyFixnum)other).getLongValue();
-
+        return op_lshift(((RubyFixnum)other).getLongValue());
+    }
+    
+    public IRubyObject op_lshift(long width) {
         return width < 0 ? rshift(-width) : lshift(width); 
     }
     
@@ -1013,8 +1027,10 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_rshift(IRubyObject other) {
         if (!(other instanceof RubyFixnum)) return RubyBignum.newBignum(getRuntime(), value).op_rshift(other);
 
-        long width = ((RubyFixnum)other).getLongValue();
-
+        return op_rshift(((RubyFixnum)other).getLongValue());
+    }
+    
+    public IRubyObject op_rshift(long width) {
         if (width == 0) return this;
 
         return width < 0 ? lshift(-width) : rshift(width);  

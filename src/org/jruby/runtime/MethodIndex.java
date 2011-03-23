@@ -40,10 +40,15 @@ import org.jruby.runtime.callsite.GeCallSite;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callsite.CmpCallSite;
 import org.jruby.runtime.callsite.EqCallSite;
+import org.jruby.runtime.callsite.BitAndCallSite;
+import org.jruby.runtime.callsite.BitOrCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
+import org.jruby.runtime.callsite.ShiftLeftCallSite;
+import org.jruby.runtime.callsite.ShiftRightCallSite;
 import org.jruby.runtime.callsite.SuperCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
+import org.jruby.runtime.callsite.XorCallSite;
 
 /**
  *
@@ -76,7 +81,12 @@ public class MethodIndex {
                 || name.equals(">")
                 || name.equals(">=")
                 || name.equals("==")
-                || name.equals("<=>");
+                || name.equals("<=>")
+                || name.equals("&")
+                || name.equals("|")
+                || name.equals("^")
+                || name.equals(">>")
+                || name.equals("<<");
     }
 
     public static CallSite getFastOpsCallSite(String name) {
@@ -98,6 +108,16 @@ public class MethodIndex {
             return new EqCallSite();
         } else if (name.equals("<=>")) {
             return new CmpCallSite();
+        } else if (name.equals("&")) {
+            return new BitAndCallSite();
+        } else if (name.equals("|")) {
+            return new BitOrCallSite();
+        } else if (name.equals("^")) {
+            return new XorCallSite();
+        } else if (name.equals(">>")) {
+            return new ShiftRightCallSite();
+        } else if (name.equals("<<")) {
+            return new ShiftLeftCallSite();
         // disabled because Array subclasses often override
 //        } else if (name.equals("[]")) {
 //            return new ArefCallSite();
