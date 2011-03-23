@@ -253,7 +253,7 @@ public class LiveVariableNode extends FlowGraphNode
                     it.remove();
                 }
                 else if (_tmp.get(dv._id) == false) {
-//                    System.out.println("NO!  has side effects! Op is: " + i._op);
+//                    System.out.println("NO!  has side effects! Op is: " + i.operation);
                 }
                 else {
 //                    System.out.println("NO! LIVE result:" + v);

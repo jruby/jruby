@@ -137,6 +137,26 @@ public class CFG {
         return _bbMap.get(l);
     }
 
+	// SSS: For now, do this with utmost inefficiency!
+	// This keeps regular code execution fast.
+    public int getRescuerPC(Instr excInstr) {
+        for (BasicBlock b: _linearizedBBList) {
+            for (Instr i: b.getInstrs()) {
+                if (i == excInstr) {
+                    BasicBlock rescuerBB = _bbRescuerMap.get(b);
+                    if (rescuerBB == null)
+                        return -1;
+                    else
+                        return rescuerBB.getLabel().getTargetPC();
+                }
+            }
+        }
+
+        // SSS FIXME: Cannot happen! Throw runtime exception
+        System.out.println("Fell through looking for rescuer ipc for " + excInstr);
+        return -1;
+    }
+
     private Label getNewLabel() {
         return _scope.getNewLabel();
     }
@@ -226,6 +246,7 @@ public class CFG {
 
         // Map of return address variable and all possible targets (required to connect up ensure blocks with their targets)
         Map<Variable, Set<Label>> retAddrMap = new HashMap<Variable, Set<Label>>();
+        Map<Variable, BasicBlock> retAddrTargetMap = new HashMap<Variable, BasicBlock>();
 
         // List of bbs that have a 'return' instruction
         List<BasicBlock> retBBs = new ArrayList<BasicBlock>();
@@ -290,7 +311,7 @@ public class CFG {
 // SSS: Do we need this anymore?
 //                currBB.addInstr(i);
                 ExceptionRegionStartMarkerInstr rbsmi = (ExceptionRegionStartMarkerInstr)i;
-                ExceptionRegion rr = new ExceptionRegion(rbsmi._elseBlock, rbsmi._rescueBlockLabels);
+                ExceptionRegion rr = new ExceptionRegion(rbsmi._rescueBlockLabels);
                 rr.addBB(currBB);
                 allExceptionRegions.add(rr);
 
@@ -333,10 +354,12 @@ public class CFG {
                 } else if (i instanceof JUMP_INDIRECT_Instr) {
                     tgt = null;
                     bbEndedWithControlXfer = true;
-                    Set<Label> retAddrs = retAddrMap.get(((JUMP_INDIRECT_Instr) i)._target);
+                    Set<Label> retAddrs = retAddrMap.get(((JUMP_INDIRECT_Instr) i).getJumpTarget());
                     for (Label l : retAddrs) {
                         addEdge(g, currBB, l, _bbMap, forwardRefs);
                     }
+                    // Record the target bb for the retaddr var for any set_addr instrs that appear later and use the same retaddr var
+                    retAddrTargetMap.put(((JUMP_INDIRECT_Instr) i).getJumpTarget(), currBB);
                 } else {
                     tgt = null;
                 }
@@ -349,13 +372,22 @@ public class CFG {
             }
 
             if (i instanceof SET_RETADDR_Instr) {
-                Variable v = i.getResult();
-                Set<Label> addrs = retAddrMap.get(v);
-                if (addrs == null) {
-                    addrs = new HashSet<Label>();
-                    retAddrMap.put(v, addrs);
+                Variable   v  = i.getResult();
+                Label      tgtLbl = ((SET_RETADDR_Instr) i).getReturnAddr();
+                BasicBlock tgtBB  = retAddrTargetMap.get(v); 
+                // If we have the target bb, add the edge
+                // If not, record it for fixup later
+                if (tgtBB != null) {
+                    addEdge(g, tgtBB, tgtLbl, _bbMap, forwardRefs);
                 }
-                addrs.add(((SET_RETADDR_Instr) i).getReturnAddr());
+                else {
+                   Set<Label> addrs = retAddrMap.get(v);
+                   if (addrs == null) {
+                       addrs = new HashSet<Label>();
+                       retAddrMap.put(v, addrs);
+                   }
+                   addrs.add(tgtLbl);
+                }
             } else if (i instanceof CallInstr) { // Build CFG for the closure if there exists one
                 Operand closureArg = ((CallInstr)i).getClosureArg();
                 if (closureArg instanceof MetaObject) {

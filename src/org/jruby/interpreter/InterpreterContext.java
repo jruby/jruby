@@ -6,6 +6,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.RubyException;
 
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.Label;
@@ -71,4 +72,10 @@ public interface InterpreterContext {
     public void setMethodExitLabel(Label l);
 
     public Label getMethodExitLabel();
+
+    // Set the most recently raised exception
+    public void setException(RubyException e);
+
+    // Get the most recently raised exception
+    public RubyException getException();
 }

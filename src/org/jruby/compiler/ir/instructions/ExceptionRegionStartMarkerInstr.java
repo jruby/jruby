@@ -15,22 +15,20 @@ public class ExceptionRegionStartMarkerInstr extends Instr
     private static Operand[] _empty = new Operand[] {};
 
     final public Label _begin;
-    final public Label _elseBlock;
     final public Label _end;
     final public List<Label> _rescueBlockLabels;
 
-    public ExceptionRegionStartMarkerInstr(Label rBegin, Label elseBlock, Label rEnd, List<Label> rbLabels)
+    public ExceptionRegionStartMarkerInstr(Label rBegin, Label rEnd, List<Label> rbLabels)
     {
         super(Operation.EXC_REGION_START);
         _begin = rBegin;
         _end = rEnd;
         _rescueBlockLabels = rbLabels;
-        _elseBlock = elseBlock;
     }
 
     public String toString() {
         StringBuffer buf = new StringBuffer(super.toString());
-        buf.append("(").append(_begin).append(", ").append(_elseBlock).append(", ").append(_end).append(", ").append("[");
+        buf.append("(").append(_begin).append(", ").append(_end).append(", ").append("[");
         for (Label l: _rescueBlockLabels)
            buf.append(l).append(",");
         buf.append("])");
@@ -46,6 +44,6 @@ public class ExceptionRegionStartMarkerInstr extends Instr
         for (Label l: _rescueBlockLabels)
             newLabels.add(ii.getRenamedLabel(l));
 
-        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(_begin), _elseBlock == null ? null : ii.getRenamedLabel(_elseBlock), ii.getRenamedLabel(_end), newLabels);
+        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(_begin), ii.getRenamedLabel(_end), newLabels);
     }
 }

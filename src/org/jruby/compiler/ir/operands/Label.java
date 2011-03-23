@@ -1,6 +1,8 @@
 package org.jruby.compiler.ir.operands;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
+// SSS FIXME: Should we try to enforce the canonical property that within a method,
+// there is exactly one label object with the same label string?
 public class Label extends Operand
 {
     public final String _label;

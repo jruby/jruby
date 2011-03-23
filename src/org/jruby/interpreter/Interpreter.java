@@ -27,7 +27,7 @@ public class Interpreter {
     
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
         IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
-		  scope.prepareForInterpretation();
+        scope.prepareForInterpretation();
 //        scope.runCompilerPass(new CallSplitter());
 
         return interpretTop(runtime, scope, self);
@@ -79,8 +79,18 @@ public class Interpreter {
                 
                 if (debug) System.out.println("EXEC'ing: " + lastInstr);
                 
-                Label jumpTarget = lastInstr.interpret(interp, self);
-                ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
+                try {
+                    Label jumpTarget = lastInstr.interpret(interp, self);
+                    ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
+                }
+                catch (org.jruby.exceptions.RaiseException re) {
+                    ipc = cfg.getRescuerPC(lastInstr);
+                    // If no one rescues this exception, pass it along!
+                    if (ipc == -1)
+                        throw re;
+                    else
+                        interp.setException(re.getException());
+                }
             }
 
             // If I am in a closure, and lastInstr was a return, have to return from the nearest method!

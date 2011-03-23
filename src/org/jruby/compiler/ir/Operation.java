@@ -122,7 +122,7 @@ public enum Operation {
     // unless we know more about what the call is, what it does, etc.
     // Similarly for evals, stores, returns.
     public boolean hasSideEffects() {
-        return isCall() || isEval() || isStore() || isReturn() || type == OpType.yield_op;
+        return isCall() || isEval() || isStore() || isReturn() || isException() || type == OpType.yield_op;
     }
 
     @Override
