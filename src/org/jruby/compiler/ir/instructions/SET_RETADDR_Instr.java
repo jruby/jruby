@@ -27,6 +27,10 @@ public class SET_RETADDR_Instr extends OneOperandInstr
         return new SET_RETADDR_Instr(ii.getRenamedVariable(result), ii.getRenamedLabel((Label)argument));
     }
 
+    // Can this instruction raise exceptions?
+    @Override
+    public boolean canRaiseException() { return false; }
+
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
         getResult().store(interp, ((Label)getArg()));

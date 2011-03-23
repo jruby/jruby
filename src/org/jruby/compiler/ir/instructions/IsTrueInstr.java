@@ -36,6 +36,10 @@ public class IsTrueInstr extends OneOperandInstr {
         return new IsTrueInstr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));
     }
 
+    // Can this instruction raise exceptions?
+    @Override
+    public boolean canRaiseException() { return false; }
+
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
         getResult().store(interp, ((IRubyObject) getArg().retrieve(interp)).isTrue());

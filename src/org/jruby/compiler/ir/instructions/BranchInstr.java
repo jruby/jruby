@@ -16,6 +16,10 @@ public abstract class BranchInstr extends TwoOperandInstr {
         return target;
     }
 
+    // Can this instruction raise exceptions?
+    @Override
+    public boolean canRaiseException() { return false; }
+
     @Override
     public String toString() {
         return "\t" + operation + "(" + operand1 + ", " + operand2 + ", " + target + ")";

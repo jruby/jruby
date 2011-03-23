@@ -39,6 +39,11 @@ public class AllocateBindingInstr extends Instr {
         return new AllocateBindingInstr(ii.callerCFG.getScope());
     }
 
+    // Can this instruction raise exceptions?
+	 // If this instruction raises an exception, you are in deep doo-doo.
+    @Override
+    public boolean canRaiseException() { return false; }
+
     @Override
     public String toString() {
         return "\t" + operation + "(" + scope + ")";

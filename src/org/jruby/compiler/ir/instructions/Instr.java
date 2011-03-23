@@ -67,6 +67,11 @@ public abstract class Instr {
         return operation.hasSideEffects();
     }
 
+    // Can this instruction raise exceptions -- this superclass method has to be conservative and cannot affect program correctness.
+    public boolean canRaiseException() { 
+		 return operation.canRaiseException();
+	 }
+
     public void markDead() {
         isDead = true;
     }

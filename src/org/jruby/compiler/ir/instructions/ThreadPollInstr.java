@@ -14,6 +14,10 @@ public class ThreadPollInstr extends NoOperandInstr {
     public Instr cloneForInlining(InlinerInfo ii) {
         return this;
     }
+
+    // Can this instruction raise exceptions?
+    @Override
+    public boolean canRaiseException() { return false; }
     
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {

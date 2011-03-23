@@ -27,6 +27,10 @@ public class NotInstr extends OneOperandInstr {
         return (argument instanceof BooleanLiteral) ? ((BooleanLiteral) argument).logicalNot() : null;
     }
 
+    // Can this instruction raise exceptions?
+    @Override
+    public boolean canRaiseException() { return false; }
+
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
         boolean not = !((IRubyObject) getArg().retrieve(interp)).isTrue();

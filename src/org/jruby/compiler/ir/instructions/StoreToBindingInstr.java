@@ -38,6 +38,10 @@ public class StoreToBindingInstr extends OneOperandInstr {
         return new StoreToBindingInstr(targetMethod, slotName, getArg().cloneForInlining(ii));
     }
 
+    // Any exception raised by the execution of this instruction is an interpreter/compiler bug
+    @Override
+    public boolean canRaiseException() { return false; }
+
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
 		  LocalVariable v = (LocalVariable) getArg();

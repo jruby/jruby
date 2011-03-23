@@ -36,4 +36,7 @@ public class CopyInstr extends OneOperandInstr {
         return null;
     }
 
+    // Can this instruction raise exceptions?
+    @Override
+    public boolean canRaiseException() { return false; }
 }

@@ -137,8 +137,8 @@ public class CFG {
         return _bbMap.get(l);
     }
 
-	// SSS: For now, do this with utmost inefficiency!
-	// This keeps regular code execution fast.
+    // SSS: For now, do this with utmost inefficiency!
+    // This keeps regular code execution fast.
     public int getRescuerPC(Instr excInstr) {
         for (BasicBlock b: _linearizedBBList) {
             for (Instr i: b.getInstrs()) {
@@ -153,7 +153,7 @@ public class CFG {
         }
 
         // SSS FIXME: Cannot happen! Throw runtime exception
-        System.out.println("Fell through looking for rescuer ipc for " + excInstr);
+        System.err.println("Fell through looking for rescuer ipc for " + excInstr);
         return -1;
     }
 
@@ -437,8 +437,8 @@ public class CFG {
 
         _cfg = g;
 
-        // Delete orphaned (with no incoming edges) blocks
-        deleteOrphanedBlocks();
+        // remove useless cfg edges & orphaned bbs
+        optimizeCFG();
     }
 
 /*
@@ -886,8 +886,10 @@ public class CFG {
             }
             if (bbToRemove == null)
                 break;
-            else
+            else {
+//                System.out.println("Removing orphaned BB: " + bbToRemove);
                 removeBB(bbToRemove);
+            }
         }
     }
 
@@ -921,6 +923,37 @@ public class CFG {
 //                c.getCFG().splitCalls();
 //            }
 //        }
+    }
+
+    public void optimizeCFG() {
+        // Remove exception edges from blocks that couldn't possibly thrown an exception!
+        List<CFG_Edge> toRemove = new ArrayList<CFG_Edge>();
+        for (BasicBlock b: getNodes()) {
+            boolean noExceptions = true;
+            for (Instr i: b.getInstrs()) {
+                if (i.canRaiseException()) {
+                    noExceptions = false;
+                    break;
+                }
+            }
+
+            if (noExceptions) {
+//                System.out.println("No exceptions from bb: " + b.getID());
+                for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                    if (e._type == CFG_Edge_Type.EXCEPTION_EDGE) {
+//                        System.out.println("Removing edge: " + e);
+                        toRemove.add(e);
+                        if (_bbRescuerMap.get(e._src) == e._dst)
+                            _bbRescuerMap.remove(e._src);
+                    }
+                }
+            }
+        }
+
+        if (!toRemove.isEmpty()) {
+            _cfg.removeAllEdges(toRemove);
+            deleteOrphanedBlocks();
+        }
     }
 
     public List<BasicBlock> linearize() {
@@ -1038,7 +1071,7 @@ public class CFG {
                 // If curr ends in a jump to next, remove the jump!
                 if (li instanceof JumpInstr) {
                     if (next == _bbMap.get(((JumpInstr)li).target)) {
-                        System.out.println("BB " + curr.getID() + " falls through in layout to BB " + next.getID() + ".  Removing jump from former bb!"); 
+//                        System.out.println("BB " + curr.getID() + " falls through in layout to BB " + next.getID() + ".  Removing jump from former bb!"); 
                         curr.removeInstr(li);
                     }
                 }
@@ -1048,7 +1081,7 @@ public class CFG {
                     if (succs.size() == 1) {
                         BasicBlock tgt = succs.iterator().next()._dst;
                         if ((tgt != next) && ((li == null) || !li.operation.xfersControl())) {
-                            System.out.println("BB " + curr.getID() + " doesn't fall through to " + next.getID() + ".  Adding a jump to " + tgt._label);
+//                            System.out.println("BB " + curr.getID() + " doesn't fall through to " + next.getID() + ".  Adding a jump to " + tgt._label);
                             curr.addInstr(new JumpInstr(tgt._label));
                         }
                     }
@@ -1056,7 +1089,7 @@ public class CFG {
 
                 if (curr == _exitBB) {
                     // Add a dummy ret
-                    System.out.println("Exit bb is not the last bb in the layout!  Adding a dummy return!");
+//                    System.out.println("Exit bb is not the last bb in the layout!  Adding a dummy return!");
                     curr.addInstr(new ReturnInstr(Nil.NIL));
                 }
             }
@@ -1065,7 +1098,7 @@ public class CFG {
                 assert succs.size() == 1;
                 BasicBlock tgt = succs.iterator().next()._dst;
                 if ((li == null) || !li.operation.xfersControl()) {
-                    System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
+//                    System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
                     curr.addInstr(new JumpInstr(tgt._label));
                 }
             }

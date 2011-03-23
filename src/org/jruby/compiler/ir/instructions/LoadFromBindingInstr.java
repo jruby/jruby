@@ -62,6 +62,10 @@ public class LoadFromBindingInstr extends Instr {
         return new LoadFromBindingInstr(ii.getRenamedVariable(result), sourceMethod, getSlotName());
     }
 
+    // Any exception raised by the execution of this instruction is an interpreter/compiler bug
+    @Override
+    public boolean canRaiseException() { return false; }
+
     @Interp
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {

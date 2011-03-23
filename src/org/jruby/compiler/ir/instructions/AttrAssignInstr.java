@@ -58,4 +58,8 @@ public class AttrAssignInstr extends MultiOperandInstr {
         receiver.callMethod(interp.getContext(), attr, args);
         return null;
     }
+
+    // Can this instruction raise exceptions?
+    @Override
+    public boolean canRaiseException() { return false; }
 }

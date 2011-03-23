@@ -1749,11 +1749,11 @@ public class IRBuilder {
             Exception region start marker
             ... IR for protected body ...
             Exception region end marker
-            %v = L3
+            %v = L3       <--- skipped if the protected body had a return!
           L2:
             .. IR for ensure block ..
             jump_indirect %v
-          L10:            # dummy rescue block
+          L10:            <--- dummy rescue block
             e = recv_exception
             %v = L11
             jump L2
@@ -1784,8 +1784,9 @@ public class IRBuilder {
         // End of protected region
         m.addInstr(new ExceptionRegionEndMarkerInstr());
 
-        // Jump to start of ensure block
-        m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
+        // Jump to start of ensure block -- dont bother if we had a return in the protected body 
+        if (rv != null)
+            m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
 
         // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
         _ensureBlockStack.pop();
