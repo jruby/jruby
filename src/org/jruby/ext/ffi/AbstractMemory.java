@@ -50,7 +50,7 @@ import org.jruby.util.ByteList;
  * A abstract memory object that defines operations common to both pointers and
  * memory buffers
  */
-@JRubyClass(name="FFI::" + AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS, parent="Object")
+@JRubyClass(name="FFI::AbtractMemory" + AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS, parent="Object")
 abstract public class AbstractMemory extends RubyObject {
     public final static String ABSTRACT_MEMORY_RUBY_CLASS = "AbstractMemory";
 
@@ -132,7 +132,7 @@ abstract public class AbstractMemory extends RubyObject {
     }
 
     /**
-     * Calculates the absoluate offset within the base memory pointer for a given offset.
+     * Calculates the absolute offset within the base memory pointer for a given offset.
      *
      * @param offset The offset to add to the base offset.
      *
@@ -1691,7 +1691,7 @@ abstract public class AbstractMemory extends RubyObject {
      * @param length The number of values to be read from memory.
      * @return An array containing the values.
      */
-    @JRubyMethod(name = { "get_array_of_float64", "get_array_of_double" }, required = 1)
+    @JRubyMethod(name = { "read_array_of_float64", "read_array_of_double" }, required = 1)
     public IRubyObject read_array_of_float64(ThreadContext context, IRubyObject length) {
         return MemoryUtil.getArrayOfFloat64(context.getRuntime(), io, 0, Util.int32Value(length));
     }
@@ -1775,6 +1775,18 @@ abstract public class AbstractMemory extends RubyObject {
 
         return arr;
     }
+    
+    @JRubyMethod(name = { "read_array_of_string" })
+    public IRubyObject read_array_of_string(ThreadContext context) {
+        return get_array_of_string(context, RubyFixnum.zero(context.getRuntime()));
+    }
+    
+    @JRubyMethod(name = { "read_array_of_string" }, required = 1)
+    public IRubyObject read_array_of_string(ThreadContext context, IRubyObject rbLength) {
+        return get_array_of_string(context, RubyFixnum.zero(context.getRuntime()), rbLength);
+    }
+    
+
 
     @JRubyMethod(name = "put_string")
     public IRubyObject put_string(ThreadContext context, IRubyObject offArg, IRubyObject strArg) {
@@ -1890,6 +1902,18 @@ abstract public class AbstractMemory extends RubyObject {
         }
         return this;
     }
+    
+    @JRubyMethod(name = { "read_array_of_pointer" }, required = 1)
+    public IRubyObject read_array_of_pointer(ThreadContext context, IRubyObject length) {
+        return get_array_of_pointer(context, RubyFixnum.zero(context.getRuntime()), length);
+    }
+    
+    @JRubyMethod(name = { "write_array_of_pointer" }, required = 1)
+    public IRubyObject write_array_of_pointer(ThreadContext context, IRubyObject arrParam) {
+        return put_array_of_pointer(context, RubyFixnum.zero(context.getRuntime()), arrParam);
+    }
+    
+    
 
     @JRubyMethod(name = "put_callback", required = 3)
     public IRubyObject put_callback(ThreadContext context, IRubyObject offset, IRubyObject proc, IRubyObject cbInfo) {
