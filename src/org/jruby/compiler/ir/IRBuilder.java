@@ -836,8 +836,10 @@ public class IRBuilder {
         Operand value = build(caseNode.getCaseNode(), m);
 
         // the CASE instruction
-        Label endLabel = m.getNewLabel();
-        Variable result = m.getNewTemporaryVariable();
+        Label     endLabel  = m.getNewLabel();
+        boolean   hasElse   = (caseNode.getElseNode() != null);
+        Label     elseLabel = hasElse ? m.getNewLabel() : null;
+        Variable  result    = m.getNewTemporaryVariable();
         CaseInstr caseInstr = new CaseInstr(result, value, endLabel);
         m.addInstr(caseInstr);
 
@@ -873,6 +875,9 @@ public class IRBuilder {
                 m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
             }
 
+            // Jump to else or the end in case nothing matches!
+            m.addInstr(new JumpInstr(hasElse ? elseLabel : endLabel));
+
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
             // preserving the order (or maybe not, since we would have to sort the constants first
             // in any case) for outputing jump tables in certain situations.
@@ -882,11 +887,9 @@ public class IRBuilder {
         }
 
         // build "else" if it exists
-        if (caseNode.getElseNode() != null) {
-            Label elseLbl = m.getNewLabel();
-            caseInstr.setElse(elseLbl);
-
-            bodies.put(elseLbl, caseNode.getElseNode());
+        if (hasElse) {
+            caseInstr.setElse(elseLabel);
+            bodies.put(elseLabel, caseNode.getElseNode());
         }
 
         // now emit bodies
