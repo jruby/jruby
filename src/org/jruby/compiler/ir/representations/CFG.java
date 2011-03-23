@@ -926,6 +926,7 @@ public class CFG {
     }
 
     public void optimizeCFG() {
+		  // SSS FIXME: Can't we not add some of these exception edges in the first place??
         // Remove exception edges from blocks that couldn't possibly thrown an exception!
         List<CFG_Edge> toRemove = new ArrayList<CFG_Edge>();
         for (BasicBlock b: getNodes()) {

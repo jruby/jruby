@@ -25,8 +25,4 @@ public abstract class NoOperandInstr extends Instr {
 
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
     }
-
-    // Can this instruction raise exceptions?
-    @Override
-    public boolean canRaiseException() { return false; }
 }
