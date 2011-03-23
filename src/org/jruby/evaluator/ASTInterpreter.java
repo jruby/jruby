@@ -241,7 +241,17 @@ public class ASTInterpreter {
             }
 
             if (bodyNode == null) return runtime.getNil();
-            return INTERPRET_CLASS(runtime, context, bodyNode, type.getBaseName() == null ? "(class)" : "(class " + type.getBaseName() + ")", type, block);
+            String name = type.getBaseName();
+            if (name == null) {
+                if (type.isSingleton()) {
+                    name = "__singleton__";
+                } else if (type.isModule()) { // can these two happen?
+                    name = "<anonymous module>";
+                } else {
+                    name = "<anonymous class>";
+                }
+            }
+            return INTERPRET_CLASS(runtime, context, bodyNode, name, type, block);
         } finally {
             try {
                 if (runtime.hasEventHooks()) {
