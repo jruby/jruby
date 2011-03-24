@@ -855,3 +855,6 @@ assert_converted_to_fixnum(19.0, 1, 1, "1__9")
 assert_converted_to_fixnum(1.9, 1, 1, "1_._9")
 assert_converted_to_fixnum(1.9, 1, 1, "1_.9")
 assert_converted_to_fixnum(1.9, 1, 1, "1._9")
+
+# JRUBY-5641
+test_equal("\n\n\n\n\n".each_line.to_a.size, 5)
