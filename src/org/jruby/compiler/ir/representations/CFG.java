@@ -709,6 +709,16 @@ public class CFG {
                 _postOrderList.add(b);
             }
         }
+
+        // Sanity check!
+        for (BasicBlock b: getNodes()) {
+            if (!bbSet.get(b.getID())) {
+                System.out.println("BB " + b.getID() + " missing from po list!");
+                System.out.println("CFG: " + _cfg);
+                System.out.println("Instrs: " + toStringInstrs());
+                break;
+            }
+		}
     }
 
     public ListIterator<BasicBlock> getPostOrderTraverser() {
@@ -951,10 +961,10 @@ public class CFG {
             }
         }
 
-        if (!toRemove.isEmpty()) {
+        if (!toRemove.isEmpty())
             _cfg.removeAllEdges(toRemove);
-            deleteOrphanedBlocks();
-        }
+
+        deleteOrphanedBlocks();
     }
 
     public List<BasicBlock> linearize() {
