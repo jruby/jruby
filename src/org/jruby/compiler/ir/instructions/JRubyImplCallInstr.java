@@ -39,6 +39,9 @@ public class JRubyImplCallInstr extends CallInstr {
         if (getMethodAddr() == MethAddr.MATCH2) {
             getResult().store(interp, ((RubyRegexp) receiver).op_match(interp.getContext(),
                     (IRubyObject) getCallArgs()[0].retrieve(interp)));
+        } else if (getMethodAddr() == MethAddr.MATCH3) { // ENEBO: Only for rubystring?
+            getResult().store(interp, ((RubyRegexp) receiver).op_match(interp.getContext(),
+                    (IRubyObject) getCallArgs()[0].retrieve(interp)));
         } else if (getMethodAddr().getName().equals("getConstantDefined")) {
             // FIXME: ^^^^----Do somethign better than this for lookup
             String name = getCallArgs()[0].retrieve(interp).toString();
