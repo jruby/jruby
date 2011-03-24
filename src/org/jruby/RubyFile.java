@@ -424,9 +424,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         if (args.length > 0 && args.length < 3) {
-            IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], getRuntime().getFixnum(), "to_int");
-            if (!fd.isNil()) {
-                args[0] = fd;
+            if (args[0] instanceof RubyInteger) {
                 return super.initialize(args, block);
             }
         }
