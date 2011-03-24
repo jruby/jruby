@@ -83,6 +83,8 @@ public class Interpreter {
                     Label jumpTarget = lastInstr.interpret(interp, self);
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
                 }
+                // SSS FIXME: This only catches Ruby exceptions
+                // What about Java exceptions?
                 catch (org.jruby.exceptions.RaiseException re) {
                     ipc = cfg.getRescuerPC(lastInstr);
                     // If no one rescues this exception, pass it along!

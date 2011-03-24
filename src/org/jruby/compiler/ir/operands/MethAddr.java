@@ -27,6 +27,9 @@ public class MethAddr extends Reference {
     public final static MethAddr GET_FILE_NAME     = new MethAddr("getFileName");
     public final static MethAddr UNDEF_METHOD      = new MethAddr("undefMethod");
 
+	 // This sets the 'withinDefined' flag on thread context
+    public final static MethAddr SET_WITHIN_DEFINED = new MethAddr("setWithinDefined");
+
     public MethAddr(String name) {
         super(name);
     }

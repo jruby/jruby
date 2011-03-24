@@ -298,8 +298,8 @@ public class IRBuilder {
     }
 
     /* -----------------------------------------------------------------------------------
-     * Every ensure block has a start label and end label, and at the end, it will execute
-     * an jump to an address stored in a return address variable.
+     * Every ensure block has a start label and end label, and at the end, it will jump
+     * to an address stored in a return address variable.
      *
      * This ruby code will translate to the IR shown below
      * -----------------
@@ -1055,6 +1055,53 @@ public class IRBuilder {
         return cv;
     }
 
+    interface CodeBlock {
+        public Object run(Object[] args);
+    }
+
+    private Object[] protectCode(IRScope m, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock ensureCode, Object[] ensureCodeArgs) {
+        // This effectively mimics a begin-ensure-end code block
+        // Except this silently swallows all exceptions raised by the protected code
+
+        // Push a new ensure block info node onto the stack of ensure block
+        EnsureBlockInfo ebi = new EnsureBlockInfo(m);
+        _ensureBlockStack.push(ebi);
+        Label rBeginLabel = m.getNewLabel();
+        Label rEndLabel   = ebi.end;
+        List<Label> rescueLabels = new ArrayList<Label>() { };
+
+        // Protected region code
+        m.addInstr(new LABEL_Instr(rBeginLabel));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabels));
+        Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
+        m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
+
+        _ensureBlockStack.pop();
+
+        // Ensure block code
+        m.addInstr(new LABEL_Instr(ebi.start));
+        Object v2 = ensureCode.run(ensureCodeArgs); // YIELD: Run the ensure code block
+        m.addInstr(new JUMP_INDIRECT_Instr(ebi.returnAddr));
+
+        // By moving the exception region end marker here to include the ensure block,
+        // we effectively swallow those exceptions -- but we will end up trying to rerun the ensure code again!
+        // SSS FIXME: Wont this get us stuck in an infinite loop?
+        m.addInstr(new ExceptionRegionEndMarkerInstr());
+
+        // Rescue block code
+        // SSS FIXME: How do we get this to catch all exceptions, not just Ruby exceptions?
+        Label dummyRescueBlockLabel = m.getNewLabel();
+        rescueLabels.add(dummyRescueBlockLabel);
+        m.addInstr(new LABEL_Instr(dummyRescueBlockLabel));
+        m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, ebi.end));
+        m.addInstr(new JumpInstr(ebi.start));
+
+        // End
+        m.addInstr(new LABEL_Instr(rEndLabel));
+
+        return new Object[] { v1, v2 };
+    }
+
     public Operand buildGetDefinitionBase(final Node node, IRScope m) {
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE:
@@ -1081,27 +1128,28 @@ public class IRBuilder {
         case CLASSVARNODE:
             // these are all "simple" cases that don't require the heavier defined logic
             return buildGetDefinition(node, m);
-        default:
-            throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinitionBase");
-/**
- * SSS FIXME: To be completed
- *
-        default:
-            BranchCallback reg = new BranchCallback() {
 
-                        public void branch(IRScope m) {
-                            m.inDefined();
-                            buildGetDefinition(node, m);
-                        }
-                    };
-            BranchCallback out = new BranchCallback() {
+        default:
+            m.addInstr(new JRubyImplCallInstr(null, MethAddr.SET_WITHIN_DEFINED, null, new Operand[]{BooleanLiteral.TRUE}));
 
-                        public void branch(IRScope m) {
-                            m.outDefined();
-                        }
-                    };
-            m.protect(reg, out, String.class);
-**/
+            // Protected code
+            CodeBlock protectedCode = new CodeBlock() {
+                public Object run(Object[] args) {
+                   return buildGetDefinition((Node)args[0], (IRScope)args[1]);
+                }
+            };
+
+            // Ensure code
+            CodeBlock ensureCode = new CodeBlock() {
+                public Object run(Object[] args) {
+                    IRScope m = (IRScope)args[0];
+                    m.addInstr(new JRubyImplCallInstr(null, MethAddr.SET_WITHIN_DEFINED, null, new Operand[]{BooleanLiteral.FALSE}));
+                    return null;
+                }
+            };
+
+            Object[] rvs = protectCode(m, protectedCode, new Object[] {node, m}, ensureCode, new Object[] {m});
+            return (Operand)rvs[0];
         }
     }
 
