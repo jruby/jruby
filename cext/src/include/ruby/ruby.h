@@ -35,10 +35,16 @@
 // Some platform specific includes
 #if defined(__WIN32__) || defined(__MINGW32__)
 #   include "jruby_win32.h"
+#   include "asprintf.h"
 #else
 #   define RUBY_DLLSPEC
 #	include <sys/select.h>
 #	include <pthread.h>
+#endif
+
+#if defined (__SVR4) && defined (__sun)
+#   define HAVE_VA_COPY
+#   include "asprintf.h"
 #endif
 
 #ifdef RUBY_EXTCONF_H
