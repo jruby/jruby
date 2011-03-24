@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
-import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
@@ -52,7 +51,7 @@ public class IRMethod extends IRExecutionScope {
         updateVersion();
     }
 
-    public void updateVersion() {
+    public final void updateVersion() {
         version = CodeVersion.getClassVersionToken();
     }
 
