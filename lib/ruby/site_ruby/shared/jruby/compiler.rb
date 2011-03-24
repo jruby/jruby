@@ -23,7 +23,8 @@ module JRuby::Compiler
       :classpath => [],
       :javac_options => [],
       :sha1 => false,
-      :handles => false
+      :handles => false,
+      :preserve_paths => false
     }
   end
   module_function :default_options
@@ -75,6 +76,10 @@ module JRuby::Compiler
         options[:handles] = true
       end
 
+      opts.on('--preserve-paths', 'Do not mangle class paths') do
+        options[:preserve_paths] = true
+      end
+
       opts.parse!(argv)
     end
 
@@ -98,7 +103,8 @@ module JRuby::Compiler
       :javac_options => javac_options,
       :classpath => classpath,
       :sha1 => false,
-      :handles => false
+      :handles => false,
+      :preserve_paths => false
     )
   end
   module_function :compile_files
@@ -120,7 +126,7 @@ module JRuby::Compiler
         if options[:sha1]
           pathname = "ruby.jit.FILE_" + Digest::SHA1.hexdigest(File.read(filename)).upcase
         else
-          pathname = Mangler.mangle_filename_for_classpath(filename, options[:basedir], options[:prefix])
+          pathname = Mangler.mangle_filename_for_classpath(filename, options[:basedir], options[:prefix], true, options[:preserve_paths])
         end
 
         inspector = org.jruby.compiler.ASTInspector.new
