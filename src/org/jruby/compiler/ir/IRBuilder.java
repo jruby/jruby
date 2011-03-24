@@ -896,16 +896,19 @@ public class IRBuilder {
         for (Map.Entry<Label, Node> entry : bodies.entrySet()) {
             m.addInstr(new LABEL_Instr(entry.getKey()));
             Operand bodyValue = build(entry.getValue(), m);
-            // Local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
-            // rather than wait to do it during an optimization pass when a dead jump needs to be removed.
-            Label tgt = endLabel;
-            if (bodyValue instanceof BreakResult) {
-                BreakResult br = (BreakResult)bodyValue;
-                bodyValue = br._result;
-                tgt = br._jumpTarget;
+            // bodyValue can be null if the body ends with a return!
+            if (bodyValue != null) {
+               // Local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
+               // rather than wait to do it during an optimization pass when a dead jump needs to be removed.
+               Label tgt = endLabel;
+               if (bodyValue instanceof BreakResult) {
+                   BreakResult br = (BreakResult)bodyValue;
+                   bodyValue = br._result;
+                   tgt = br._jumpTarget;
+               }
+               m.addInstr(new CopyInstr(result, bodyValue));
+               m.addInstr(new JumpInstr(tgt));
             }
-            m.addInstr(new CopyInstr(result, bodyValue));
-            m.addInstr(new JumpInstr(tgt));
         }
 
         // close it out
