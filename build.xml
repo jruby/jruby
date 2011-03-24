@@ -1399,7 +1399,7 @@
     <include name="**/jruby-cext.dll"/>
   </patternset>
 
-  <target name="dist-bin" depends="build-jruby-cext-native">
+  <target name="dist-bin" depends="install-dev-gems,build-jruby-cext-native">
     <mkdir dir="${dist.stage.bin.dir}"/>
     <copy todir="${dist.stage.bin.dir}">
       <fileset dir="${basedir}">
