@@ -115,7 +115,7 @@ import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
 import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
 import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
-import org.jruby.compiler.ir.instructions.EQQ_Instr;
+import org.jruby.compiler.ir.instructions.EQQInstr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.SearchConstInstr;
@@ -862,7 +862,7 @@ public class IRBuilder {
                     variables.add(eqqResult);
                     labels.add(bodyLabel);
                     
-                    m.addInstr(new EQQ_Instr(eqqResult, build(expression, m), value));
+                    m.addInstr(new EQQInstr(eqqResult, build(expression, m), value));
                     m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
                 }
             } else {
@@ -871,7 +871,7 @@ public class IRBuilder {
                 variables.add(eqqResult);
                 labels.add(bodyLabel);
 
-                m.addInstr(new EQQ_Instr(eqqResult, build(whenNode.getExpressionNodes(), m), value));
+                m.addInstr(new EQQInstr(eqqResult, build(whenNode.getExpressionNodes(), m), value));
                 m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
             }
 
@@ -2783,7 +2783,7 @@ public class IRBuilder {
         if (excType != null) {
             uncaughtLabel = m.getNewLabel();
             Variable eqqResult = m.getNewTemporaryVariable();
-            m.addInstr(new EQQ_Instr(eqqResult, exc, excType));
+            m.addInstr(new EQQInstr(eqqResult, exc, excType));
             m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
         }
 
