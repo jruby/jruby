@@ -28,6 +28,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef __sun
+  #include <alloca.h>
+#endif
 #include <jni.h>
 
 #include "ruby.h"
