@@ -102,7 +102,7 @@ module Gem
 
   module Maven
     class Gemify
-      DEFAULT_PLUGIN_VERSION = "0.25.0"
+      DEFAULT_PLUGIN_VERSION = "0.25.1"
 
       attr_reader :repositories
 
