@@ -47,7 +47,8 @@ public class InterpretedIRMethod extends DynamicMethod {
             System.out.println("\nInstructions:\n" + c.toStringInstrs());
             displayedCFG = true;
         }
-        return Interpreter.interpret(context, c, interp);
+
+        return Interpreter.INTERPRET_METHOD(context, c, interp, name, getImplementationClass(), false);
     }
 
     @Override

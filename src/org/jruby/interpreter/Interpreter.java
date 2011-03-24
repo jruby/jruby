@@ -20,6 +20,8 @@ import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.RubyEvent;
 
 
 public class Interpreter {
@@ -125,65 +127,30 @@ public class Interpreter {
         }
     }
 
-/**
- * SSS: This skeleton of this code is quite stale now.  But, the inlining part of it can be reused whenever we are
- * ready to implement inlining once again
- *
-    public static IRubyObject interpret_with_inline(ThreadContext context, CFG cfg, InterpreterContext interp) {
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, CFG cfg, 
+            InterpreterContext interp, String name, RubyModule implClass, boolean isTraceable) {
+        Ruby runtime = interp.getRuntime();
+        boolean syntheticMethod = name == null || name.equals("");
         try {
-            BasicBlock basicBlock = cfg.getEntryBB();
-            Instr skipTillInstr = null;
-            while (basicBlock != null) {
-                Label jumpTarget = null;
-                Instr prev = null;
-                for (Instr instruction : basicBlock.getInstrs()) {
-                    // Skip till we come back to previous execution point
-                    if (skipTillInstr != null && instruction != skipTillInstr)
-                        continue;
-
-                    skipTillInstr = null;
-
-                    if (debug) System.out.println("EXEC'ing: " + instruction);
-
-                    interpInstrsCount++;
-                    try {
-                        jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
-                    }
-                    catch (InlineMethodHint ih) {
-                        if ("array_each".equals(ih.inlineableMethod.getName())) {
-                            System.out.println("Got inline method hint for: " + ih.inlineableMethod.getFullyQualifiedName() + ". inlining!");
-                            cfg.inlineMethod(ih.inlineableMethod, basicBlock, (CallInstr)instruction);
-                            interp.updateRenamedVariablesCount(cfg.getScope().getRenamedVariableSize());
-                            skipTillInstr = prev;
-
-                            if (debug) {
-                                System.out.println("--------------------");
-                                System.out.println("\nGraph:\n" + cfg.getGraph().toString());
-                                System.out.println("\nInstructions:\n" + cfg.toStringInstrs());
-                                System.out.println("--------------------");
-                            }
-                            break;
-                        } else {
-                            jumpTarget = instruction.interpret(interp, (IRubyObject) interp.getSelf());
-                        }
-                    }
-                    prev = instruction;
-                }
-
-                // Explicit jump or implicit fall-through to next bb for the situation when we haven't inlined
-                if (skipTillInstr == null)
-                    basicBlock = (jumpTarget == null) ? cfg.getFallThroughBB(basicBlock) : cfg.getTargetBB(jumpTarget);
-            }
-
-            return (IRubyObject) interp.getReturnValue();
+            String className = implClass.getName();
+            if (!syntheticMethod) ThreadContext.pushBacktrace(context, className, name, context.getFile(), context.getLine());
+            if (isTraceable) methodPreTrace(runtime, context, name, implClass);
+            return interpret(context, cfg, interp);
         } finally {
-            if (interp.getFrame() != null) {
-                context.popFrame();
-                interp.setFrame(null);
+            if (isTraceable) {
+                try {methodPostTrace(runtime, context, name, implClass);}
+                finally { if (!syntheticMethod) ThreadContext.popBacktrace(context);}
+            } else {
+                if (!syntheticMethod) ThreadContext.popBacktrace(context);
             }
-            if (interp.hasAllocatedDynamicScope()) 
-                context.postMethodScopeOnly();
         }
     }
-**/
+
+    private static void methodPreTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
+        if (runtime.hasEventHooks()) context.trace(RubyEvent.CALL, name, implClass);
+    }
+
+    private static void methodPostTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
+        if (runtime.hasEventHooks()) context.trace(RubyEvent.RETURN, name, implClass);
+    }
 }
