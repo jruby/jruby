@@ -9,6 +9,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.javasupport.util.RuntimeHelpers;
 
 public class JRubyImplCallInstr extends CallInstr {
     public JRubyImplCallInstr(Variable result, MethAddr methAddr, Operand receiver, Operand[] args) {
@@ -42,6 +43,8 @@ public class JRubyImplCallInstr extends CallInstr {
         } else if (getMethodAddr() == MethAddr.MATCH3) { // ENEBO: Only for rubystring?
             getResult().store(interp, ((RubyRegexp) receiver).op_match(interp.getContext(),
                     (IRubyObject) getCallArgs()[0].retrieve(interp)));
+        } else if (getMethodAddr() == MethAddr.TO_ARY) {
+            getResult().store(interp, RuntimeHelpers.aryToAry((IRubyObject) receiver));
         } else if (getMethodAddr().getName().equals("getConstantDefined")) {
             // FIXME: ^^^^----Do somethign better than this for lookup
             String name = getCallArgs()[0].retrieve(interp).toString();
