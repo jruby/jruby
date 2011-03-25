@@ -718,7 +718,7 @@ public class CFG {
                 System.out.println("Instrs: " + toStringInstrs());
                 break;
             }
-		}
+        }
     }
 
     public ListIterator<BasicBlock> getPostOrderTraverser() {
@@ -936,7 +936,7 @@ public class CFG {
     }
 
     public void optimizeCFG() {
-		  // SSS FIXME: Can't we not add some of these exception edges in the first place??
+        // SSS FIXME: Can't we not add some of these exception edges in the first place??
         // Remove exception edges from blocks that couldn't possibly thrown an exception!
         List<CFG_Edge> toRemove = new ArrayList<CFG_Edge>();
         for (BasicBlock b: getNodes()) {
@@ -972,7 +972,7 @@ public class CFG {
             return _linearizedBBList;
 
         _linearizedBBList = new ArrayList<BasicBlock>();
-       
+
         // Linearize the basic blocks of the cfg!
         // This is a simple linearization -- nothing fancy
         BasicBlock root = getEntryBB();
@@ -999,68 +999,68 @@ public class CFG {
                 assert stack.empty();
             }
             else {
-               // Find the basic block that is the target of the 'taken' branch
-               Instr lastInstr = b.getLastInstr();
-               if (lastInstr == null) {
-                   // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
-                   BasicBlock b1 = null, b2 = null; 
+                // Find the basic block that is the target of the 'taken' branch
+                Instr lastInstr = b.getLastInstr();
+                if (lastInstr == null) {
+                    // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
+                    BasicBlock b1 = null, b2 = null; 
+                    for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                        if (b1 == null)
+                            b1 = e._dst;
+                        else if (b2 == null)
+                            b2 = e._dst;
+                        else
+                            throw new RuntimeException("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
+                    }
+
+                    assert (b1 != null);
+
+                    // Process lower number target first!
+                    if (b2 == null) {
+                        pushBBOnStack(stack, bbSet, b1);
+                    }
+                    else if (b1.getID() < b2.getID()) {
+                        pushBBOnStack(stack, bbSet, b2);
+                        pushBBOnStack(stack, bbSet, b1);
+                    }
+                    else {
+                        pushBBOnStack(stack, bbSet, b1);
+                        pushBBOnStack(stack, bbSet, b2);
+                    }
+                }
+                else {
+//                   System.out.println("last instr is: " + lastInstr);
+                   BasicBlock blockToIgnore = null;
+                   if (lastInstr instanceof JumpInstr) {
+                       blockToIgnore = _bbMap.get(((JumpInstr)lastInstr).target);
+
+                       // Check if all of blockToIgnore's predecessors get to it with a jump!
+                       // This can happen because of exceptions and rescue handlers
+                       // If so, dont ignore it.  Process it right away (because everyone will end up ignoring this block!)
+                       boolean allJumps = true;
+                       for (CFG_Edge e: _cfg.incomingEdgesOf(blockToIgnore)) {
+                           if (! (e._src.getLastInstr() instanceof JumpInstr))
+                               allJumps = false;
+                       }
+
+                       if (allJumps)
+                           blockToIgnore = null;
+                   }
+                   else if (lastInstr instanceof BranchInstr) {
+                       // Push the taken block onto the stack first so that it gets processed last!
+                       BasicBlock takenBlock = _bbMap.get(((BranchInstr)lastInstr).getJumpTarget());
+                       pushBBOnStack(stack, bbSet, takenBlock);
+                       blockToIgnore = takenBlock;
+                   }
+
+                   // Push everything else
                    for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
-                       if (b1 == null)
-                           b1 = e._dst;
-                       else if (b2 == null)
-                           b2 = e._dst;
-                       else
-                           throw new RuntimeException("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
+                       BasicBlock x = e._dst;
+                       if (x != blockToIgnore)
+                           pushBBOnStack(stack, bbSet, x);
                    }
-
-                   assert (b1 != null);
-
-                   // Process lower number target first!
-                   if (b2 == null) {
-                       pushBBOnStack(stack, bbSet, b1);
-                   }
-                   else if (b1.getID() < b2.getID()) {
-                       pushBBOnStack(stack, bbSet, b2);
-                       pushBBOnStack(stack, bbSet, b1);
-                   }
-                   else {
-                       pushBBOnStack(stack, bbSet, b1);
-                       pushBBOnStack(stack, bbSet, b2);
-                   }
-               }
-               else {
-//                  System.out.println("last instr is: " + lastInstr);
-                  BasicBlock blockToIgnore = null;
-                  if (lastInstr instanceof JumpInstr) {
-                      blockToIgnore = _bbMap.get(((JumpInstr)lastInstr).target);
-
-                      // Check if all of blockToIgnore's predecessors get to it with a jump!
-                      // This can happen because of exceptions and rescue handlers
-                      // If so, dont ignore it.  Process it right away (because everyone will end up ignoring this block!)
-                      boolean allJumps = true;
-                      for (CFG_Edge e: _cfg.incomingEdgesOf(blockToIgnore)) {
-                          if (! (e._src.getLastInstr() instanceof JumpInstr))
-                              allJumps = false;
-                      }
-
-                      if (allJumps)
-                          blockToIgnore = null;
-                  }
-                  else if (lastInstr instanceof BranchInstr) {
-                      // Push the taken block onto the stack first so that it gets processed last!
-                      BasicBlock takenBlock = _bbMap.get(((BranchInstr)lastInstr).getJumpTarget());
-                      pushBBOnStack(stack, bbSet, takenBlock);
-                      blockToIgnore = takenBlock;
-                  }
-         
-                  // Push everything else
-                  for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
-                      BasicBlock x = e._dst;
-                      if (x != blockToIgnore)
-                          pushBBOnStack(stack, bbSet, x);
-                  }
-               }
-               assert !stack.empty();
+                }
+                assert !stack.empty();
             }
         }
 
