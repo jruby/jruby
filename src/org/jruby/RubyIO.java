@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.util.io.SelectBlob;
 import org.jcodings.exception.EncodingException;
 import com.kenai.constantine.platform.Fcntl;
 import java.io.EOFException;
@@ -3276,27 +3277,9 @@ public class RubyIO extends RubyObject {
         return foreachInternal19(context, recv, args, block);
     }
 
-    private static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
+    public static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyIO) return (RubyIO)obj;
         return (RubyIO)TypeConverter.convertToType(obj, context.getRuntime().getIO(), "to_io");
-    }
-   
-    private static boolean registerSelect(ThreadContext context, Selector selector, IRubyObject obj, RubyIO ioObj, int ops) throws IOException {
-       Channel channel = ioObj.getChannel();
-       if (channel == null || !(channel instanceof SelectableChannel)) {
-           return false;
-       }
-       
-       ((SelectableChannel) channel).configureBlocking(false);
-       int real_ops = ((SelectableChannel) channel).validOps() & ops;
-       SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
-       
-       if (key == null) {
-           ((SelectableChannel) channel).register(selector, real_ops, obj);
-       } else {
-           key.interestOps(key.interestOps()|real_ops);
-       }
-       
-       return true;
     }
    
     @JRubyMethod(name = "select", required = 1, optional = 3, meta = true)
@@ -3304,159 +3287,9 @@ public class RubyIO extends RubyObject {
         return select_static(context, context.getRuntime(), args);
     }
 
-    private static void checkArrayType(Ruby runtime, IRubyObject obj) {
-        if (!(obj instanceof RubyArray)) {
-            throw runtime.newTypeError("wrong argument type "
-                    + obj.getMetaClass().getName() + " (expected Array)");
-        }
-    }
-
     public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
-        Selector selector = null;
-       try {
-            Set pending = new HashSet();
-            Set unselectable_reads = new HashSet();
-            Set unselectable_writes = new HashSet();
-            Map<RubyIO, Boolean> blocking = new HashMap();
-            
-            selector = SelectorFactory.openWithRetryFrom(context.getRuntime(), SelectorProvider.provider());
-            if (!args[0].isNil()) {
-                // read
-                checkArrayType(runtime, args[0]);
-                for (Iterator i = ((RubyArray)args[0]).getList().iterator(); i.hasNext();) {
-                    IRubyObject obj = (IRubyObject)i.next();
-                    RubyIO ioObj = convertToIO(context, obj);
-
-                    // save blocking state
-                    if (ioObj.getChannel() instanceof SelectableChannel) blocking.put(ioObj, ((SelectableChannel)ioObj.getChannel()).isBlocking());
-
-                    // already buffered data? don't bother selecting
-                    if (ioObj.getOpenFile().getMainStreamSafe().readDataBuffered()) {
-                        unselectable_reads.add(obj);
-                    }
-                    if (registerSelect(context, selector, obj, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
-                        if (ioObj.writeDataBuffered()) {
-                            pending.add(obj);
-                        }
-                    } else {
-                        if ((ioObj.openFile.getMode() & OpenFile.READABLE) != 0) {
-                            unselectable_reads.add(obj);
-                        }
-                    }
-                }
-            }
-
-            if (args.length > 1 && !args[1].isNil()) {
-                // write
-                checkArrayType(runtime, args[1]);
-                for (Iterator i = ((RubyArray)args[1]).getList().iterator(); i.hasNext();) {
-                    IRubyObject obj = (IRubyObject)i.next();
-                    RubyIO ioObj = convertToIO(context, obj);
-
-                    // save blocking state
-                    if (!blocking.containsKey(ioObj) && ioObj.getChannel() instanceof SelectableChannel) blocking.put(ioObj, ((SelectableChannel)ioObj.getChannel()).isBlocking());
-
-                    if (!registerSelect(context, selector, obj, ioObj, SelectionKey.OP_WRITE)) {
-                        if ((ioObj.openFile.getMode() & OpenFile.WRITABLE) != 0) {
-                            unselectable_writes.add(obj);
-                        }
-                    }
-                }
-            }
-
-            if (args.length > 2 && !args[2].isNil()) {
-                checkArrayType(runtime, args[2]);
-            // Java's select doesn't do anything about this, so we leave it be.
-            }
-
-            final boolean has_timeout = (args.length > 3 && !args[3].isNil());
-            long timeout = 0;
-            if (has_timeout) {
-                IRubyObject timeArg = args[3];
-                if (timeArg instanceof RubyFloat) {
-                    timeout = Math.round(((RubyFloat)timeArg).getDoubleValue() * 1000);
-                } else if (timeArg instanceof RubyFixnum) {
-                    timeout = Math.round(((RubyFixnum)timeArg).getDoubleValue() * 1000);
-                } else { // TODO: MRI also can hadle Bignum here
-                    throw runtime.newTypeError("can't convert " + timeArg.getMetaClass().getName() + " into time interval");
-                }
-
-                if (timeout < 0) {
-                    throw runtime.newArgumentError("negative timeout given");
-                }
-            }
-
-            if (pending.isEmpty() && unselectable_reads.isEmpty() && unselectable_writes.isEmpty()) {
-                if (has_timeout) {
-                    if (timeout == 0) {
-                        selector.selectNow();
-                    } else {
-                        selector.select(timeout);
-                    }
-                } else {
-                    selector.select();
-                }
-            } else {
-                selector.selectNow();
-            }
-
-            List r = new ArrayList();
-            List w = new ArrayList();
-            List e = new ArrayList();
-            for (Iterator i = selector.selectedKeys().iterator(); i.hasNext();) {
-                SelectionKey key = (SelectionKey)i.next();
-                try {
-                    int interestAndReady = key.interestOps() & key.readyOps();
-                    if ((interestAndReady & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT | SelectionKey.OP_CONNECT)) != 0) {
-                        r.add(key.attachment());
-                        pending.remove(key.attachment());
-                    }
-                    if ((interestAndReady & (SelectionKey.OP_WRITE)) != 0) {
-                        w.add(key.attachment());
-                    }
-                } catch (CancelledKeyException cke) {
-                    // TODO: is this the right thing to do?
-                    pending.remove(key.attachment());
-                    e.add(key.attachment());
-                }
-            }
-            r.addAll(pending);
-            r.addAll(unselectable_reads);
-            w.addAll(unselectable_writes);
-
-            // make all sockets blocking as configured again
-            selector.close(); // close unregisters all channels, so we can safely reset blocking modes
-            for (Map.Entry blockingEntry : blocking.entrySet()) {
-                SelectableChannel channel = (SelectableChannel)((RubyIO)blockingEntry.getKey()).getChannel();
-                synchronized (channel.blockingLock()) {
-                    channel.configureBlocking((Boolean)blockingEntry.getValue());
-                }
-            }
-
-            if (r.isEmpty() && w.isEmpty() && e.isEmpty()) {
-                return runtime.getNil();
-            }
-
-            List ret = new ArrayList();
-
-            ret.add(RubyArray.newArray(runtime, r));
-            ret.add(RubyArray.newArray(runtime, w));
-            ret.add(RubyArray.newArray(runtime, e));
-
-            return RubyArray.newArray(runtime, ret);
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
-        } finally {
-            if (selector != null) {
-                try {
-                    selector.close();
-                } catch (Exception e) {
-                }
-            }
-        }
-   }
+        return new SelectBlob().goForIt(context, runtime, args);
+    }
    
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {

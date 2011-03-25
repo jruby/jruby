@@ -727,7 +727,7 @@ public class RubyArray extends RubyObject implements List {
         return eltOk(offset);
     }
 
-    private final IRubyObject eltOk(long offset) {
+    public final IRubyObject eltOk(long offset) {
         return safeArrayRef(values, begin + (int)offset);
     }
 
