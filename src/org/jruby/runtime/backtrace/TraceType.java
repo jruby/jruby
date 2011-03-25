@@ -3,6 +3,7 @@ package org.jruby.runtime.backtrace;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -72,12 +73,15 @@ public class TraceType {
          */
         NORMAL {
             public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
-        return new BacktraceData(
+        BacktraceData bd = new BacktraceData(
                 Thread.currentThread().getStackTrace(),
                 context.createBacktrace2(0, nativeException),
                 false,
                 false,
                 this);
+        
+//        System.out.println(Arrays.toString(bd.getBacktrace(context.runtime)));
+        return bd;
             }
         },
 

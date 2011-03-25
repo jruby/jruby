@@ -14,6 +14,8 @@ public interface BeanManager {
 
     void register(ClassCacheMBean classCache);
 
+    void register(Runtime runtime);
+
     void unregisterClassCache();
 
     void unregisterCompiler();
@@ -23,5 +25,7 @@ public interface BeanManager {
     void unregisterMethodCache();
 
     void unregisterParserStats();
+    
+    void unregisterRuntime();
 
 }

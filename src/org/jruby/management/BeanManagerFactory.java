@@ -38,10 +38,12 @@ public class BeanManagerFactory {
         public void register(ParserStatsMBean parserStats) {}
         public void register(MethodCacheMBean methodCache) {}
         public void register(ClassCacheMBean classCache) {}
+        public void register(Runtime runtime) {}
         public void unregisterClassCache() {}
         public void unregisterCompiler() {}
         public void unregisterConfig() {}
         public void unregisterMethodCache() {}
         public void unregisterParserStats() {}
+        public void unregisterRuntime() {}
     }
 }

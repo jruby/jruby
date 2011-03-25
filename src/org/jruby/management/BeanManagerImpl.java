@@ -43,6 +43,10 @@ public class BeanManagerImpl implements BeanManager {
     public void register(ClassCacheMBean classCache) {
         if (managementEnabled) register(base + "service=ClassCache", classCache);
     }
+    
+    public void register(Runtime runtime) {
+        if (managementEnabled) register(base + "service=Runtime", runtime);
+    }
 
     public void unregisterCompiler() {
         if (managementEnabled) unregister(base + "service=JITCompiler");
@@ -58,6 +62,9 @@ public class BeanManagerImpl implements BeanManager {
     }
     public void unregisterMethodCache() {
         if (managementEnabled) unregister(base + "service=MethodCache");
+    }
+    public void unregisterRuntime() {
+        if (managementEnabled) unregister(base + "service=Runtime");
     }
 
     private void register(String name, Object bean) {

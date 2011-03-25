@@ -683,6 +683,7 @@ public final class ThreadContext {
      * @return an Array with the backtrace
      */
     public IRubyObject createCallerBacktrace(Ruby runtime, int level) {
+        runtime.incrementCallerCount();
         RubyStackTraceElement[] trace = gatherCallerBacktrace(level);
         RubyArray backtrace = runtime.newArray(trace.length - level);
 

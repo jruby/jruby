@@ -110,6 +110,25 @@ public class RaiseException extends JumpException {
         preRaise(runtime.getCurrentContext());
     }
 
+    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace, boolean nativeException) {
+        super(msg);
+        if (msg == null) {
+            msg = "No message available";
+        }
+        providedMessage = "(" + excptnClass.getName() + ") " + msg;
+        this.nativeException = nativeException;
+        if (DEBUG) {
+            Thread.dumpStack();
+        }
+        setException((RubyException)RuntimeHelpers.invoke(
+                runtime.getCurrentContext(),
+                excptnClass,
+                "new",
+                RubyString.newUnicodeString(excptnClass.getRuntime(), msg)),
+                nativeException);
+        preRaise(runtime.getCurrentContext(), backtrace);
+    }
+
     public RaiseException(RubyException exception, boolean isNativeException) {
         super();
         if (DEBUG) {
@@ -175,10 +194,12 @@ public class RaiseException extends JumpException {
     }
 
     private void preRaise(ThreadContext context, IRubyObject backtrace) {
+        context.runtime.incrementExceptionCount();
         doSetLastError(context);
         doCallEventHook(context);
 
         if (backtrace == null) {
+            context.runtime.incrementBacktraceCount();
             exception.prepareBacktrace(context, nativeException);
         } else {
             exception.forceBacktrace(backtrace);
