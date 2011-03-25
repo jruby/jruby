@@ -1007,12 +1007,16 @@ public class RubyInstanceConfig {
         }
 
         public void processArguments() {
+            processArguments(true);
+        }
+
+        public void processArguments(boolean inline) {
             while (argumentIndex < arguments.size() && isInterpreterArgument(arguments.get(argumentIndex).originalValue)) {
                 processArgument();
                 argumentIndex++;
             }
 
-            if (!hasInlineScript && scriptFileName == null) {
+            if (inline && !hasInlineScript && scriptFileName == null) {
                 if (argumentIndex < arguments.size()) {
                     setScriptFileName(arguments.get(argumentIndex).originalValue); //consume the file name
                     argumentIndex++;
