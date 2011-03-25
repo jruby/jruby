@@ -8,7 +8,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Nil extends Constant {
     public static final Nil NIL = new Nil();
 
-    private Nil() { }
+    protected Nil() { }
 
     @Override
     public String toString() { 

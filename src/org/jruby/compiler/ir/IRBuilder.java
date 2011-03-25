@@ -168,6 +168,7 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.Nil;
+import org.jruby.compiler.ir.operands.UnexecutableNil;
 import org.jruby.compiler.ir.operands.NthRef;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Range;
@@ -225,6 +226,8 @@ import org.jruby.util.ByteList;
 //   Look in buildIf for an example of this
 
 public class IRBuilder {
+    private static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
+
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int     i = isDebug ? 1 : 0;
@@ -1843,7 +1846,7 @@ public class IRBuilder {
         m.addInstr(new ExceptionRegionEndMarkerInstr());
 
         // Jump to start of ensure block -- dont bother if we had a return in the protected body 
-        if (rv != null)
+        if (rv != U_NIL)
             m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
 
         // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
@@ -2122,11 +2125,13 @@ public class IRBuilder {
 
         boolean thenNull = false;
         boolean elseNull = false;
+        boolean thenUnil = false;
+        boolean elseUnil = false;
 
         // Build the then part of the if-statement
         if (ifNode.getThenBody() != null) {
             thenResult = build(ifNode.getThenBody(), s);
-            if (thenResult != null) { // thenResult can be null if then-body ended with a return!
+            if (thenResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
                 // Local optimization of break results to short-circuit the jump right away
                 // rather than wait to do it during an optimization pass.
                 Label tgt = doneLabel;
@@ -2139,10 +2144,11 @@ public class IRBuilder {
                 s.addInstr(new JumpInstr(tgt));
             }
             else {
-                thenNull = true;
+                thenUnil = true;
             }
         }
         else {
+            thenNull = true;
             s.addInstr(new CopyInstr(result, Nil.NIL));
             s.addInstr(new JumpInstr(doneLabel));
         }
@@ -2151,17 +2157,24 @@ public class IRBuilder {
         s.addInstr(new LABEL_Instr(falseLabel));
         if (ifNode.getElseBody() != null) {
             Operand elseResult = build(ifNode.getElseBody(), s);
-            if (elseResult != null) // elseResult can be null if then-body ended with a return!
+            // elseResult can be U_NIL if then-body ended with a return!
+            if (elseResult != U_NIL) {
                 s.addInstr(new CopyInstr(result, elseResult));
-            else
-                elseNull = true;
+            }
+            else {
+                elseUnil = true;
+            }
         }
         else {
+            elseNull = true;
             s.addInstr(new CopyInstr(result, Nil.NIL));
         }
 
         if (thenNull && elseNull) {
             return Nil.NIL;
+        }
+        else if (thenUnil && elseUnil) {
+            return U_NIL;
         }
         else {
             s.addInstr(new LABEL_Instr(doneLabel));
@@ -2193,7 +2206,7 @@ public class IRBuilder {
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
-        if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
+        if (closureRetVal != U_NIL)  // can be U_NIL if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
         return new ClosureMetaObject(closure);
@@ -2732,7 +2745,7 @@ public class IRBuilder {
             tmp = build(rescueNode.getElseNode(), m);
         }
 
-        if (tmp != null) {
+        if (tmp != U_NIL) {
             m.addInstr(new CopyInstr(rv, tmp));
 
             // No explicit return from the protected body
@@ -2750,7 +2763,9 @@ public class IRBuilder {
         else {
             // If the body had an explicit return, the return instruction code takes care of setting
             // up execution of all necessary ensure blocks.  So, nothing to do here! 
-            rv = null;
+				// SSS: FIXME
+            // rv = U_NIL;
+            m.addInstr(new CopyInstr(rv, U_NIL));
         }
 
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
@@ -2794,7 +2809,7 @@ public class IRBuilder {
         // Caught exception case -- build rescue body
         Node realBody = skipOverNewlines(m, rescueBodyNode.getBodyNode());
         Operand x = build(realBody, m);
-        if (x != null) { // can be null if the rescue block has an explicit return
+        if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             m.addInstr(new CopyInstr(rv, x));
             // Jump to end of rescue block since we've caught and processed the exception
             if (!_ensureBlockStack.empty()) {
@@ -2842,7 +2857,11 @@ public class IRBuilder {
         if (!_ensureBlockStack.empty())
             EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
         m.addInstr(new ReturnInstr(retVal));
-        return null;
+
+        // The value of the return itself in the containing expression can never be used because of control-flow reasons.
+        // The expression that uses this result can never be executed beyond this point and hence the value itself is just
+        // a placeholder operand. 
+        return UnexecutableNil.U_NIL;
     }
 
     public IRScope buildRoot(RootNode rootNode) {
@@ -2936,12 +2955,15 @@ public class IRBuilder {
 
             // Looks like while can be treated as an expression!
             // So, capture the result of the body so that it can be returned.
-            Variable whileResult = null;
+            Operand whileResult = null;
             if (bodyNode != null) {
                 Operand v = build(bodyNode, s);
-                if (v != null) {
+                if (v != U_NIL) {
                     whileResult = s.getNewTemporaryVariable();
-                    s.addInstr(new CopyInstr(whileResult, v));
+                    s.addInstr(new CopyInstr((Variable)whileResult, v));
+                }
+                else {
+                    whileResult = U_NIL;
                 }
             }
 
