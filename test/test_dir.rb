@@ -85,14 +85,14 @@ class TestDir < Test::Unit::TestCase
     # elements. This used to throw NPE.
     Dir.mkdir("testDir_2")
     open("testDir_2/testDir_tmp1", "w").close
-    Dir.glob('./**/testDir_tmp1').each {|f| assert File.exist?(f) }
+    Dir.glob('./testDir_2/**/testDir_tmp1').each {|f| assert File.exist?(f) }
   end
 
   def test_glob_with_blocks
     Dir.mkdir("testDir_3")
     open("testDir_3/testDir_tmp1", "w").close
     vals = []
-    glob_val = Dir.glob('**/*tmp1'){|f| vals << f}
+    glob_val = Dir.glob('./testDir_3/**/*tmp1'){|f| vals << f}
     assert_equal(true, glob_val.nil?)
     assert_equal(1, vals.size)
     assert_equal(true, File.exists?(vals[0])) unless vals.empty?
