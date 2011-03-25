@@ -881,6 +881,10 @@ public class ChannelStream implements Stream, Finalizable {
             resultSize = Math.min(bufferedInputBytesRemaining(), number);
         }
 
+        if (resultSize == 0) {
+            return null;
+        }
+        
         ByteList result = new ByteList(resultSize);
         bufferedRead(result, number);
         return result;
