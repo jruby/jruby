@@ -835,6 +835,13 @@ public class IRBuilder {
         // get the incoming case value
         Operand value = build(caseNode.getCaseNode(), m);
 
+        // This is for handling case statements without a value (see example below)
+        //   case 
+        //     when true <blah>
+        //     when false <blah>
+        //   end
+        if (value == null) value = BooleanLiteral.TRUE;
+
         // the CASE instruction
         Label     endLabel  = m.getNewLabel();
         boolean   hasElse   = (caseNode.getElseNode() != null);
