@@ -955,7 +955,7 @@ public class IRBuilder {
         if (classNode.getBodyNode() != null)
             build(classNode.getBodyNode(), c.getRootMethod());
 
-        return null;
+        return Nil.NIL;
     }
 
     public Operand buildSClass(SClassNode sclassNode, IRScope s) {
@@ -978,7 +978,7 @@ public class IRBuilder {
         if (sclassNode.getBodyNode() != null)
             build(sclassNode.getBodyNode(), mc.getRootMethod());
 
-        return null;
+        return Nil.NIL;
     }
 
     public Operand buildClassVar(ClassVarNode node, IRScope s) {
@@ -1662,7 +1662,7 @@ public class IRBuilder {
         IRMethod method = defineNewMethod(node, s, container, true);
         s.getNearestModule().addMethod(method);
         s.addInstr(new DefineInstanceMethodInstr(container, method));
-        return null;
+        return Nil.NIL;
     }
 
     public Operand buildDefs(DefsNode node, IRScope s) { // Class method
@@ -1673,12 +1673,12 @@ public class IRBuilder {
             ((IRModule) ((MetaObject) container).getScope()).addMethod(method);
         }
         s.addInstr(new DefineClassMethodInstr(container, method));
-        return null;
+        return Nil.NIL;
     }
 
     // ENEBO: Since we are now targeting 1.9 semantics then it can be assumed that all
     // method parameters are now going to be local to this scope.
-    public Operand receiveArgs(final ArgsNode argsNode, IRScope s) {
+    public void receiveArgs(final ArgsNode argsNode, IRScope s) {
         final int required = argsNode.getRequiredArgsCount();
         final int opt = argsNode.getOptionalArgsCount();
         final int rest = argsNode.getRestArg();
@@ -1730,9 +1730,6 @@ public class IRBuilder {
         }
 
         // FIXME: Ruby 1.9 post args code needs to come here
-
-            // This is not an expression that computes anything
-        return null;
     }
 
     public String buildType(Node typeNode) {
@@ -2164,7 +2161,7 @@ public class IRBuilder {
         }
 
         if (thenNull && elseNull) {
-            return null;
+            return Nil.NIL;
         }
         else {
             s.addInstr(new LABEL_Instr(doneLabel));
@@ -2260,7 +2257,7 @@ public class IRBuilder {
         if (moduleNode.getBodyNode() != null)
             build(moduleNode.getBodyNode(), m.getRootMethod());
 
-        return null;
+        return Nil.NIL;
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
