@@ -353,8 +353,8 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_rubyopts_is_not_used_to_set_the_script
     rubyopt, ENV['RUBYOPT'] = ENV['RUBYOPT'], 'rubygems'
 
-    #jruby('-e "puts 1"')
-    #assert_equal 0, $?.exitstatus
+    jruby('-e "puts 1"')
+    assert_equal 0, $?.exitstatus
   ensure
     ENV['RUBYOPT'] = rubyopt
   end
