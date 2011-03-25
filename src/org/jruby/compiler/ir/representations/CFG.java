@@ -999,8 +999,6 @@ public class CFG {
                 assert stack.empty();
             }
             else {
-                assert !stack.empty();
-
                // Find the basic block that is the target of the 'taken' branch
                Instr lastInstr = b.getLastInstr();
                if (lastInstr == null) {
@@ -1062,6 +1060,7 @@ public class CFG {
                           pushBBOnStack(stack, bbSet, x);
                   }
                }
+               assert !stack.empty();
             }
         }
 
