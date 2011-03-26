@@ -7,13 +7,13 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.runtime.Visibility.*;
 
 
 @JRubyClass(name = "FFI::Buffer", parent = "FFI::" + AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS)
@@ -107,6 +107,23 @@ public final class Buffer extends AbstractMemory {
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg,
             IRubyObject countArg, IRubyObject clearArg) {
         return init(context, sizeArg, RubyFixnum.fix2int(countArg), IN | OUT);
+    }
+    
+    /**
+     * 
+     */
+    @JRubyMethod(required = 1, visibility=PRIVATE)
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
+        if (this == other) {
+            return this;
+        }
+        Buffer orig = (Buffer) other;
+        this.typeSize = orig.typeSize;
+        this.size = orig.size;
+        this.inout = orig.inout;
+        
+        setMemoryIO(orig.getMemoryIO().dup());
+        return this;
     }
 
     @JRubyMethod(name = { "alloc_inout", "__alloc_inout" }, meta = true)

@@ -56,6 +56,14 @@ class BoundedNativeMemoryIO implements MemoryIO, DirectMemoryIO {
         checkBounds(offset, size);
         return offset == 0 && size == this.size ? this :new BoundedNativeMemoryIO(runtime, this, offset, size);
     }
+    
+    public MemoryIO dup() {
+        AllocatedNativeMemoryIO tmp = AllocatedNativeMemoryIO.allocate(runtime, (int) size, false);
+        
+        IO.memcpy(tmp.address, address, size);
+        
+        return tmp;
+    }
 
     public final java.nio.ByteBuffer asByteBuffer() {
         return IO.newDirectByteBuffer(address, (int) size);

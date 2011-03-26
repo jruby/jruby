@@ -12,6 +12,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.runtime.Visibility.*;
 
 /**
  * C memory pointer operations.
@@ -102,6 +103,24 @@ public class Pointer extends AbstractMemory {
 
         return this;
     }
+    
+    /**
+     * 
+     */
+    @JRubyMethod(required = 1, visibility=PRIVATE)
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
+        if (this == other) {
+            return this;
+        }
+        Pointer orig = (Pointer) other;
+        this.typeSize = orig.typeSize;
+        this.size = orig.size;
+
+        setMemoryIO(orig.getMemoryIO().dup());
+
+        return this;
+    }
+
 
     /**
      * Tests if this <tt>Pointer</tt> represents the C <tt>NULL</tt> value.

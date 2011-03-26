@@ -42,6 +42,10 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     public DirectMemoryIO slice(long offset, long size) {
         return new BoundedNativeMemoryIO(runtime, this, offset, size);
     }
+    
+    public MemoryIO dup() {
+        throw runtime.newNotImplementedError("cannot duplicate unbounded memory area");
+    }
 
     public final java.nio.ByteBuffer asByteBuffer() {
         return IO.newDirectByteBuffer(address, Integer.MAX_VALUE);

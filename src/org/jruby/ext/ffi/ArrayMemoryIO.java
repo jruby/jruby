@@ -86,6 +86,15 @@ public final class ArrayMemoryIO implements MemoryIO {
                 ? this
                 : new ArrayMemoryIO(runtime, array(), arrayOffset() + (int) offset, (int) size);
     }
+
+    public ArrayMemoryIO dup() {
+        ArrayMemoryIO tmp = new ArrayMemoryIO(runtime, length);
+        System.arraycopy(array(), arrayOffset(), tmp.array(), tmp.arrayOffset(), length);
+        
+        return tmp;
+    }
+    
+    
     
     public java.nio.ByteBuffer asByteBuffer() {
         return java.nio.ByteBuffer.wrap(buffer, offset, length).duplicate();

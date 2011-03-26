@@ -100,7 +100,7 @@ public final class MemoryPointer extends Pointer {
             IRubyObject sizeArg, IRubyObject count, IRubyObject clear, Block block) {
         return init(context, sizeArg, RubyNumeric.fix2int(count), 1, clear.isTrue(), block);
     }
-
+    
     @Override
     public final String toString() {
         return String.format("MemoryPointer[address=%#x, size=%d]", getAddress(), size);

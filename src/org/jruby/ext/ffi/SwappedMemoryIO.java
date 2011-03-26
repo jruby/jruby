@@ -39,6 +39,10 @@ public final class SwappedMemoryIO implements MemoryIO, DirectMemoryIO {
     public SwappedMemoryIO slice(long offset, long size) {
         return new SwappedMemoryIO(runtime, io.slice(offset, size));
     }
+    
+    public SwappedMemoryIO dup() {
+        return new SwappedMemoryIO(runtime, io.dup());
+    }
 
     public final java.nio.ByteBuffer asByteBuffer() {
         return io.asByteBuffer().order(order());

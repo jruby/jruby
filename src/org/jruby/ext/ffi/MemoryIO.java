@@ -81,6 +81,13 @@ public interface MemoryIO {
     public MemoryIO slice(long offset, long size);
 
     /**
+     * Duplicates this <tt>MemoryIO</tt>, including its contents.
+     * 
+     * @return A <tt>MemoryIO</tt> instance.
+     */
+    public MemoryIO dup();
+
+    /**
      * Creates a view of this memory object as a java NIO byte buffer.
      *
      * @return A ByteBuffer instance
