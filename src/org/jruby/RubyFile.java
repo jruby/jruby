@@ -328,14 +328,23 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 FileChannel fileChannel = (FileChannel)descriptor.getChannel();
                 int lockMode = RubyNumeric.num2int(lockingConstant);
 
-                // Exclusive locks in Java require the channel to be writable, otherwise
-                // an exception is thrown (terminating JRuby execution).
-                // But flock behavior of MRI is that it allows
-                // exclusive locks even on non-writable file. So we convert exclusive
-                // lock to shared lock if the channel is not writable, to better match
-                // the MRI behavior.
+                // This logic used to attempt a shared lock instead of an exclusive
+                // lock, because LOCK_EX on some systems (as reported in JRUBY-1214)
+                // allow exclusively locking a read-only file. However, the JDK
+                // APIs do not allow acquiring an exclusive lock on files that are
+                // not open for read, and there are other platforms (such as Solaris,
+                // see JRUBY-5627) that refuse at an *OS* level to exclusively lock
+                // files opened only for read. As a result, this behavior is platform-
+                // dependent, and so we will obey the JDK's policy of disallowing
+                // exclusive locks on files opened only for read.
                 if (!openFile.isWritable() && (lockMode & LOCK_EX) > 0) {
-                    lockMode = (lockMode ^ LOCK_EX) | LOCK_SH;
+                    throw context.runtime.newErrnoEBADFError("cannot acquire exclusive lock on File not opened for write");
+                }
+                
+                // Likewise, JDK does not allow acquiring a shared lock on files
+                // that have not been opened for read. We comply here.
+                if (!openFile.isReadable() && (lockMode & LOCK_SH) > 0) {
+                    throw context.runtime.newErrnoEBADFError("cannot acquire shared lock on File not opened for read");
                 }
 
                 try {
