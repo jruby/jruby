@@ -238,13 +238,13 @@ public class SelectBlob {
                 try {
                     int interestAndReady = key.interestOps() & key.readyOps();
                     if (readArray != null && (interestAndReady & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT | SelectionKey.OP_CONNECT)) != 0) {
-                        getReadResults().append(readIOs[ioIndex]);
+                        getReadResults().append(readArray.eltOk(ioIndex));
                         if (pendingReads != null) {
                             pendingReads[ioIndex] = false;
                         }
                     }
                     if (writeArray != null && (interestAndReady & (SelectionKey.OP_WRITE)) != 0) {
-                        getWriteResults().append(writeIOs[ioIndex]);
+                        getWriteResults().append(writeArray.eltOk(ioIndex));
                     }
                 } catch (CancelledKeyException cke) {
                     // TODO: is this the right thing to do?
@@ -258,13 +258,13 @@ public class SelectBlob {
                         }
                         if (fastSearch(errorResults.toJavaArrayUnsafe(), readIOs[ioIndex]) == -1) {
                             // only add to error if not there
-                            getErrorResults().append(readIOs[ioIndex]);
+                            getErrorResults().append(readArray.eltOk(ioIndex));
                         }
                     }
                     if (writeArray != null && (interest & (SelectionKey.OP_WRITE)) != 0) {
                         if (fastSearch(errorResults.toJavaArrayUnsafe(), writeIOs[ioIndex]) == -1) {
                             // only add to error if not there
-                            errorResults.append(writeIOs[ioIndex]);
+                            errorResults.append(writeArray.eltOk(ioIndex));
                         }
                     }
                 }
@@ -276,21 +276,21 @@ public class SelectBlob {
         if (pendingReads != null) {
             for (int i = 0; i < pendingReads.length; i++) {
                 if (pendingReads[i]) {
-                    getReadResults().append(readIOs[i]);
+                    getReadResults().append(readArray.eltOk(i));
                 }
             }
         }
         if (unselectableReads != null) {
             for (int i = 0; i < unselectableReads.length; i++) {
                 if (unselectableReads[i]) {
-                    getReadResults().append(readIOs[i]);
+                    getReadResults().append(readArray.eltOk(i));
                 }
             }
         }
         if (unselectableWrites != null) {
             for (int i = 0; i < unselectableWrites.length; i++) {
                 if (unselectableWrites[i]) {
-                    getWriteResults().append(writeIOs[i]);
+                    getWriteResults().append(writeArray.eltOk(i));
                 }
             }
         }
