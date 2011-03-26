@@ -1583,9 +1583,15 @@ public class RuntimeHelpers {
             // remove this hack too.
 
             if (value.respondsTo("to_a") && value.getMetaClass().searchMethod("to_a").getImplementationClass() != runtime.getKernel()) {
-                value = value.callMethod(context, "to_a");
-                if (!(value instanceof RubyArray)) throw runtime.newTypeError("`to_a' did not return Array");
-                return (RubyArray)value;
+                IRubyObject avalue = value.callMethod(context, "to_a");
+                if (!(avalue instanceof RubyArray)) {
+                    if (runtime.is1_9() && avalue.isNil()) {
+                        return runtime.newArray(value);
+                    } else {
+                        throw runtime.newTypeError("`to_a' did not return Array");
+                    }
+                }
+                return (RubyArray)avalue;
             } else {
                 return runtime.newArray(value);
             }
