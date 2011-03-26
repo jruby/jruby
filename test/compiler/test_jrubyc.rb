@@ -20,11 +20,11 @@ class TestJrubyc < Test::Unit::TestCase
 
   def test_basic
     begin
-      JRuby::Compiler::compile_argv([__FILE__])
+      JRuby::Compiler::compile_argv(["--verbose", __FILE__])
       output = File.read(@tempfile.path)
 
       assert_equal(
-        "Compiling #{__FILE__} to class test/compiler/test_jrubyc\n",
+        "Compiling #{__FILE__}\n",
         output)
 
       assert(File.exist?("test/compiler/test_jrubyc.class"))
@@ -35,11 +35,11 @@ class TestJrubyc < Test::Unit::TestCase
   
   def test_target
     tempdir = File.dirname(@tempfile.path)
-    JRuby::Compiler::compile_argv(["-t", tempdir, __FILE__])
+    JRuby::Compiler::compile_argv(["--verbose", "-t", tempdir, __FILE__])
     output = File.read(@tempfile.path)
 
     assert_equal(
-      "Compiling #{__FILE__} to class test/compiler/test_jrubyc\n",
+      "Compiling #{__FILE__}\n",
       output)
 
     assert(File.exist?(tempdir + "/test/compiler/test_jrubyc.class"))
@@ -48,7 +48,7 @@ class TestJrubyc < Test::Unit::TestCase
   
   def test_bad_target
     begin
-      JRuby::Compiler::compile_argv(["-t", "does_not_exist", __FILE__])
+      JRuby::Compiler::compile_argv(["--verbose", "-t", "does_not_exist", __FILE__])
     rescue Exception => e
     end
 
@@ -58,26 +58,15 @@ class TestJrubyc < Test::Unit::TestCase
       e.message)
   end
   
-  def test_prefix
-    JRuby::Compiler::compile_argv(["-p", "foo", __FILE__])
-    output = File.read(@tempfile.path)
-
-    assert_equal(
-      "Compiling #{__FILE__} to class foo/test/compiler/test_jrubyc\n",
-      output)
-
-    assert(File.exist?("foo/test/compiler/test_jrubyc.class"))
-  end
-  
   def test_require
     $compile_test = false
     File.open("test_file1.rb", "w") {|file| file.write("$compile_test = true")}
     
-    JRuby::Compiler::compile_argv(["test_file1.rb"])
+    JRuby::Compiler::compile_argv(["--verbose", "test_file1.rb"])
     output = File.read(@tempfile.path)
 
     assert_equal(
-      "Compiling test_file1.rb to class test_file1\n",
+      "Compiling test_file1.rb\n",
       output)
 
     assert_nothing_raised { require 'test_file1' }

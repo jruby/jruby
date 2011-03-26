@@ -6,6 +6,8 @@ require 'rbconfig'
 # Necessary because of http://jira.codehaus.org/browse/JRUBY-1579
 require "jruby"
 
+require 'jruby/compiler'
+
 class LoadCompiledRubyClassFromClasspathTest < Test::Unit::TestCase
   include TestHelper
 
@@ -95,8 +97,9 @@ public class #{StarterName} {
 
   def create_compiled_class
     File.open(RubySource, "w") { |f| f << "print 'hello from runner'" }
-    jruby("-S jrubyc -p #{q}#{q} #{RubySource}")
-    assert_equal 0, $?.exitstatus, "jrubyc failed to compile #{RubySource} into #{RubyClass}"
+    JRuby::Compiler::compile_argv([RubySource])
+  rescue Exception => e
+    raise "jrubyc failed to compile #{RubySource} into #{RubyClass}:\n#{e.message}\n#{e.backtrace}"
   ensure
     # just in case, remove the rb file
     FileUtils.rm_rf RubySource
