@@ -2459,46 +2459,6 @@ public class IRBuilder {
         }
     }
 
-/**
-    public Operand buildOpAsgn(Node node, IRScope m) {
-        final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
-
-        Operand ret;
-        if (opAsgnNode.getOperatorName().equals("||")) {
-            ret = buildOpAsgnWithOr(opAsgnNode, m);
-        } else if (opAsgnNode.getOperatorName().equals("&&")) {
-            ret = buildOpAsgnWithAnd(opAsgnNode, m);
-        } else {
-            ret = buildOpAsgnWithMethod(opAsgnNode, m);
-        }
-
-        m.addInstr(new ThreadPollInstr());
-        return ret;
-    }
-
-    public Operand buildOpAsgnWithOr(Node node, IRScope s) {
-        final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
-        Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
-        List<Operand> args = setupCallArgs(opAsgnNode.getValueNode(), s);
-        m.getInvocationCompiler().invokeOpAsgnWithOr(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
-    }
-
-    public Operand buildOpAsgnWithAnd(Node node, IRScope s) {
-        final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
-        Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
-        List<Operand> args = setupCallArgs(opAsgnNode.getValueNode(), s);
-        m.getInvocationCompiler().invokeOpAsgnWithAnd(opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
-    }
-
-    public Operand buildOpAsgnWithMethod(Node node, IRScope s) {
-        final OpAsgnNode opAsgnNode = (OpAsgnNode) node;
-        Operand receiver = build(opAsgnNode.getReceiverNode(), s); // [recv]
-        // eval new value, call operator on old value, and assign
-        Operand val = build(opAsgnNode.getValueNode(), m, true);
-        m.getInvocationCompiler().invokeOpAsgnWithMethod(opAsgnNode.getOperatorName(), opAsgnNode.getVariableName(), opAsgnNode.getVariableNameAsgn(), receiverCallback, argsCallback);
-    }
-**/
-
     public Operand buildOpElementAsgn(Node node, IRScope m) {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
         
@@ -2511,46 +2471,6 @@ public class IRBuilder {
         }
     }
     
-    /**
-    private class OpElementAsgnArgumentsCallback implements ArgumentsCallback  {
-        private Node node;
-
-        public OpElementAsgnArgumentsCallback(Node node) {
-            this.node = node;
-        }
-        
-        public int getArity() {
-            switch (node.getNodeType()) {
-            case ARGSCATNODE:
-            case ARGSPUSHNODE:
-            case SPLATNODE:
-                return -1;
-            case ARRAYNODE:
-                ArrayNode arrayNode = (ArrayNode)node;
-                if (arrayNode.size() == 0) {
-                    return 0;
-                } else if (arrayNode.size() > 3) {
-                    return -1;
-                } else {
-                    return ((ArrayNode)node).size();
-                }
-            default:
-                return 1;
-            }
-        }
-
-        public void call(IRScope m) {
-            if (getArity() == 1) {
-                // if arity 1, just build the one element to save us the array cost
-                build(((ArrayNode)node).get(0), m,true);
-            } else {
-                // build into array
-                buildArguments(node, m);
-            }
-        }
-    };
-*/
-
     // Translate "a[x] ||= n" --> "a[x] = n if !is_true(a[x])"
     // 
     //    tmp = build(a) <-- receiver
@@ -2761,11 +2681,13 @@ public class IRBuilder {
             }
         }
         else {
-            // If the body had an explicit return, the return instruction code takes care of setting
-            // up execution of all necessary ensure blocks.  So, nothing to do here! 
-				// SSS: FIXME
-            // rv = U_NIL;
-            m.addInstr(new CopyInstr(rv, U_NIL));
+            // If the body had an explicit return, the return instruction IR build takes care of setting
+            // up execution of all necessary ensure blocks.  So, nothing to do here!  
+            //
+            // Additionally, the value in 'rv' will never be used, so need to set it to any specific value.
+            // So, we can leave it undefined.  If on the other hand, there was an exception in that block,
+            // 'rv' will get set in the rescue handler -- see the 'rv' being passed into
+            // buildRescueBodyInternal below.  So, in either case, we are good!
         }
 
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
@@ -2955,15 +2877,15 @@ public class IRBuilder {
 
             // Looks like while can be treated as an expression!
             // So, capture the result of the body so that it can be returned.
-            Operand whileResult = null;
+            Variable whileResult = s.getNewTemporaryVariable();
             if (bodyNode != null) {
                 Operand v = build(bodyNode, s);
                 if (v != U_NIL) {
-                    whileResult = s.getNewTemporaryVariable();
                     s.addInstr(new CopyInstr((Variable)whileResult, v));
                 }
                 else {
-                    whileResult = U_NIL;
+                    // If the body of the while had an explicit return, the value in 'whileResult' will never be used.
+                    // So, we dont need to set it to anything.  We can leave it undefined!
                 }
             }
 
