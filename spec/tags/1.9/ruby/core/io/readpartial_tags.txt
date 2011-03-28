@@ -1,0 +1,1 @@
+fails(JRUBY-5663):IO#readpartial reads after ungetc with multibyte characters in the buffer

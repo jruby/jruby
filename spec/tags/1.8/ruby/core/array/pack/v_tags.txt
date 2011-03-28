@@ -1,0 +1,4 @@
+fails(JRUBY-5656):Array#pack with format 'V' taints the output string if the format string is tainted
+fails(JRUBY-5656):Array#pack with format 'V' raises a TypeError when passed nil
+fails(JRUBY-5656):Array#pack with format 'v' taints the output string if the format string is tainted
+fails(JRUBY-5656):Array#pack with format 'v' raises a TypeError when passed nil

@@ -1,0 +1,6 @@
+fails(JRUBY-5656):Array#pack with format 'E' taints the output string if the format string is tainted
+fails(JRUBY-5656):Array#pack with format 'E' raises a ArgumentError if a String does not represent a floating point number
+fails(JRUBY-5656):Array#pack with format 'E' ignores NULL bytes between directives
+fails(JRUBY-5656):Array#pack with format 'e' taints the output string if the format string is tainted
+fails(JRUBY-5656):Array#pack with format 'e' raises a ArgumentError if a String does not represent a floating point number
+fails(JRUBY-5656):Array#pack with format 'e' ignores NULL bytes between directives

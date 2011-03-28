@@ -1,0 +1,1 @@
+fails(JRUBY-5668):Kernel#eval does not share locals across eval scopes

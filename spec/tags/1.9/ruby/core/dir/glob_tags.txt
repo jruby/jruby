@@ -1,0 +1,6 @@
+fails(JRUBY-5667):Dir.glob splits the string on \0 if there is only one string given
+fails(JRUBY-5667):Dir.glob matches non-dotfiles with '*'
+fails(JRUBY-5667):Dir.glob matches non-dotfiles in the current directory with '**'
+fails(JRUBY-5667):Dir.glob recursively matches any nondot subdirectories with '**/'
+fails(JRUBY-5667):Dir.glob matches dot or non-dotfiles with '{,.}*'
+

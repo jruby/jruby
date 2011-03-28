@@ -1,0 +1,2 @@
+fails(JRUBY-5669):String#strip returns a copy of self with trailing NULL bytes and whitespace
+fails(JRUBY-5669):String#strip! modifies self removing trailing NULL bytes and whitespace

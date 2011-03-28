@@ -1,0 +1,2 @@
+fails(JRUBY-5668):Kernel#require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES loads a .rb extensioned file when a non extensioned file is in $LOADED_FEATURES
+fails(JRUBY-5668):Kernel.require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES loads a .rb extensioned file when a non extensioned file is in $LOADED_FEATURES

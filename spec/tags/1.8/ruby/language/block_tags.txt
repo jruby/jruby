@@ -1,0 +1,1 @@
+fails(JRUBY-5668):A block with multiple arguments raises a TypeError if the #to_ary value isn't an Array

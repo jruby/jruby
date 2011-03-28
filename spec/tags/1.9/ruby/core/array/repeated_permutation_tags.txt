@@ -1,0 +1,2 @@
+fails(JRUBY-5668):Array#repeated_permutation allows permutations larger than the number of elements
+fails(JRUBY-5668):Array#repeated_permutation generates from a defensive copy, ignoring mutations

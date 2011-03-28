@@ -1,0 +1,8 @@
+fails(JRUBY-5656):Array#pack with format 'D' taints the output string if the format string is tainted
+fails(JRUBY-5656):Array#pack with format 'D' raises a ArgumentError if a String does not represent a floating point number
+fails(JRUBY-5656):Array#pack with format 'D' ignores NULL bytes between directives
+fails(JRUBY-5656):Array#pack with format 'd' taints the output string if the format string is tainted
+fails(JRUBY-5656):Array#pack with format 'd' raises a ArgumentError if a String does not represent a floating point number
+fails(JRUBY-5656):Array#pack with format 'd' ignores NULL bytes between directives
+fails(JRUBY-5656):Array#pack with format 'D' raises a TypeError if passed a String representation of a floating point number
+fails(JRUBY-5656):Array#pack with format 'd' raises a TypeError if passed a String representation of a floating point number

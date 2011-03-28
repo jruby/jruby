@@ -1,1 +1,3 @@
 fails:Block-local variables can not have the same name as one of the standard parameters
+fails(JRUBY-5668):A block with multiple arguments raises a TypeError if the #to_ary value isn't an Array
+fails(JRUBY-5668):A block with multiple arguments tries to use #to_ary to convert a single incoming value

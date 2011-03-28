@@ -1,1 +1,3 @@
 fails:String#rstrip! raises a RuntimeError if self is frozen
+fails(JRUBY-5669):String#rstrip returns a copy of self with all trailing whitespace and NULL bytes removed
+fails(JRUBY-5669):String#rstrip! modifies self removing trailing NULL bytes and whitespace

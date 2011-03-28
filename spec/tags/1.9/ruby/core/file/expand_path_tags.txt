@@ -1,0 +1,2 @@
+fails(JRUBY-5663):File.expand_path when HOME is not set raises an ArgumentError when passed '~' if HOME is nil
+fails(JRUBY-5663):File.expand_path when HOME is not set raises an ArgumentError when passed '~' if HOME == ''

@@ -1,0 +1,2 @@
+fails(JRUBY-5671):Readline.completer_word_break_characters returns nil
+fails(JRUBY-5671):Readline.completer_word_break_characters= returns the passed string

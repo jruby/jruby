@@ -1,0 +1,1 @@
+fails(JRUBY-5658):Process::Status#success? for a child that was terminated returns nil

@@ -1,3 +1,7 @@
 fails(JRUBY-5242):Numeric#step with [stop, +infinity] does not yield when self > stop
 fails(JRUBY-5242):Numeric#step with [stop, -infinity] yields once if self > stop
 fails(JRUBY-5242):Numeric#step with [stop, -infinity] yields once when self equals stop
+fails(JRUBY-5662):Numeric#step Numeric#step with [stop, +Infinity] does not yield when self > stop
+fails(JRUBY-5662):Numeric#step Numeric#step with [stop, +Infinity] does not yield when stop is -Infinity
+fails(JRUBY-5662):Numeric#step Numeric#step with [stop, -infinity] yields once if stop is -Infinity
+fails(JRUBY-5662):Numeric#step Numeric#step with [stop, -infinity] yields once when self and stop are Infinity

@@ -1,0 +1,4 @@
+fails(JRUBY-5656):Array#pack with format 'M' taints the output string if the format string is tainted
+fails(JRUBY-5656):Array#pack with format 'M' converts Floats to the minimum unique representation
+fails(JRUBY-5656):Array#pack with format 'm' taints the output string if the format string is tainted
+fails(JRUBY-5656):Array#pack with format 'm' raises a TypeError if passed nil

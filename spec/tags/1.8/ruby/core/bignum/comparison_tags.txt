@@ -1,0 +1,2 @@
+fails(JRUBY-5668):Bignum#<=> with an Object raises an exception if #coerce raises a non-StandardError exception
+fails(JRUBY-5668):Bignum#<=> with an Object returns nil if #coerce does not return an Array

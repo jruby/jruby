@@ -10,3 +10,5 @@ fails(rubyspec.org/issues/show/228,JRUBY-5265):Signal.trap accepts long names as
 fails(rubyspec.org/issues/show/228,JRUBY-5265):Signal.trap acceps short names as Strings
 fails(rubyspec.org/issues/show/228,JRUBY-5265):Signal.trap accepts long names as Symbols
 fails(rubyspec.org/issues/show/228,JRUBY-5265):Signal.trap accepts short names as Symbols
+fails(JRUBY-5666):Signal.trap the special EXIT signal code accepts the EXIT code
+fails(JRUBY-5666):Signal.trap the special EXIT signal code runs the proc before at_exit handlers

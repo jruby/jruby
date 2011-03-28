@@ -1,0 +1,6 @@
+fails(JRUBY-5660):Kernel#singleton_methods when not passed an argument returns a unique list for an object extended with a module
+fails(JRUBY-5660):Kernel#singleton_methods when not passed an argument returns a unique list for a subclass
+fails(JRUBY-5660):Kernel#singleton_methods when not passed an argument returns a unique list for a subclass including a module
+fails(JRUBY-5660):Kernel#singleton_methods when passed true returns a unique list for an object extended with a module
+fails(JRUBY-5660):Kernel#singleton_methods when passed true returns a unique list for a subclass
+fails(JRUBY-5660):Kernel#singleton_methods when passed true returns a unique list for a subclass including a module

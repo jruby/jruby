@@ -1,0 +1,2 @@
+fails(JRUBY-5671):Delegator#trust trusts the delegator
+fails(JRUBY-5671):Delegator#trust trusts the delegated object

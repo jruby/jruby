@@ -1,0 +1,4 @@
+fails(JRUBY-5664):Kernel#sprintf with negative values with format %x precedes the number with '..'
+fails(JRUBY-5664):Kernel#sprintf with negative values with format %u precedes the number with '-'
+fails(JRUBY-5664):Kernel#sprintf with negative values with format %b or %B precedes the number with '..'
+fails(JRUBY-5664):Kernel#sprintf passes some tests for negative %u
