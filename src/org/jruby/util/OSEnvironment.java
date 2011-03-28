@@ -34,6 +34,7 @@ import org.jruby.ext.posix.util.Platform;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 public class OSEnvironment {
@@ -70,7 +71,7 @@ public class OSEnvironment {
         if (Ruby.isSecurityRestricted()) {
             return new HashMap();
         } else {
-            return getAsMapOfRubyStrings(runtime, System.getProperties().entrySet());
+            return getAsMapOfRubyStrings(runtime, ((Properties)System.getProperties().clone()).entrySet());
         }
     }
 
