@@ -999,6 +999,7 @@ public class RubyArray extends RubyObject implements List {
     public final RubyArray aryDup() {
         RubyArray dup = new RubyArray(metaClass.getClassRuntime(), metaClass, values, begin, realLength);
         dup.isShared = true;
+        isShared = true;
         dup.flags |= flags & (TAINTED_F | UNTRUSTED_F); // from DUP_SETUP
         // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
         return dup;

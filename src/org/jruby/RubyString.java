@@ -676,10 +676,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
      * @return A new RubyString sharing the original backing store.
      */
     public IRubyObject dup() {
-        RubyClass mc = metaClass;
+        RubyClass mc = metaClass.getRealClass();
         if (mc.index != ClassIndex.STRING) return super.dup();
 
-        return strDup(mc.getClassRuntime(), mc);
+        return strDup(mc.getClassRuntime(), mc.getRealClass());
     }
 
     /** rb_str_dup
