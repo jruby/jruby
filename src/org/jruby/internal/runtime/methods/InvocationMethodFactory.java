@@ -213,7 +213,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private static String getCompiledCallbackName(String typePath, String method) {
-        return (typePath + "#" + method).replaceAll("/", "\\$");
+        return (typePath + "$" + method).replaceAll("/", "\\$");
     }
 
     /**
@@ -775,7 +775,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 if (superClass == null) throw new RuntimeException("invalid multi combination");
                 String superClassString = p(superClass);
                 int dotIndex = desc1.declaringClassName.lastIndexOf('.');
-                ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc1.declaringClassName.substring(dotIndex + 1) + "#" + desc1.name, superClassString);
+                ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc1.declaringClassName.substring(dotIndex + 1) + "$" + desc1.name, superClassString);
 
                 addAnnotatedMethodInvoker(cw, "call", superClassString, descs);
 
@@ -814,7 +814,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     }
 
     private static String getBlockCallbackName(String typePathString, String method) {
-        return (typePathString + "#" + method).replaceAll("/", "\\$");
+        return (typePathString + "$" + method).replaceAll("/", "\\$");
     }
 
     public CompiledBlockCallback getBlockCallback(String method, String file, int line, Object scriptObject) {
