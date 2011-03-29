@@ -1,0 +1,1 @@
+fails(compiler):The def keyword within a closure looks outside the closure for the visibility

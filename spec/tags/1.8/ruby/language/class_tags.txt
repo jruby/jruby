@@ -1,0 +1,1 @@
+fails(compiler):A class definition extending an object (sclass) allows accessing the block of the original scope
