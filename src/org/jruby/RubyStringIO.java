@@ -718,20 +718,18 @@ public class RubyStringIO extends RubyObject {
         return originalString != null ? originalString : getRuntime().newString(buf);
     }
 
+    @JRubyMethod(name="read_nonblock", compat = CompatVersion.RUBY1_9, required = 1, optional = 1)
+    public IRubyObject read_nonblock(ThreadContext contet, IRubyObject[] args) {
+        return sysreadCommon(args);
+    }
+
     /**
      * readpartial(length, [buffer])
-     *  
-     * @param context
-     * @param args
-     * @return
+     *
      */
     @JRubyMethod(name ="readpartial", compat = CompatVersion.RUBY1_9, required = 1, optional = 1)
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
-        IRubyObject result = this.read(args);
-
-        if (data.eof && result.isNil()) throw context.getRuntime().newEOFError();
-
-        return result;
+        return sysreadCommon(args);
     }
 
     @JRubyMethod(name = {"readchar", "readbyte"})
@@ -856,15 +854,16 @@ public class RubyStringIO extends RubyObject {
 
     @JRubyMethod(name = "sysread", optional = 2)
     public IRubyObject sysread(IRubyObject[] args) {
+        return sysreadCommon(args);
+    }
+    
+
+    private IRubyObject sysreadCommon(IRubyObject[] args) {
         IRubyObject obj = read(args);
 
-        if (isEOF()) {
-            if (obj.isNil()) {
-                throw getRuntime().newEOFError();
-            }
-        }
+        if (isEOF() && obj.isNil()) throw getRuntime().newEOFError();
 
-        return obj;
+        return obj;        
     }
 
     @JRubyMethod(name = "truncate", required = 1)
