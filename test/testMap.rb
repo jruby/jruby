@@ -51,7 +51,7 @@ test_ok(!h.key?(0))
 test_equal([1, 2, 3], h.keys)
 test_ok(!h.value?(0.1))
 # java.util.Map has values method. Java's values() is used.
-test_equal("[100, 200, 300]", h.values.to_s)
+test_equal("[100, 200, 300]", h.values.to_a.to_s)
 test_equal(3, h.length)
 h.delete(1)
 test_equal(2, h.length)
