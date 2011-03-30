@@ -102,7 +102,7 @@ module Gem
 
   module Maven
     class Gemify
-      DEFAULT_PLUGIN_VERSION = "0.25.1"
+      DEFAULT_PLUGIN_VERSION = "0.26.0"
 
       attr_reader :repositories
 
@@ -248,8 +248,7 @@ module Gem
         request.user_properties.put("gemify.version", version.to_s) if version
 
         if maven_config["repositories"]
-          repos = maven_config["repositories"].dup
-          @repositories.map {|r| repos << r if r }
+          maven_config["repositories"].each { |r| @repositories << r }
         end
         if @repositories.size > 0
           request.user_properties.put("gemify.repositories", @repositories.join(","))

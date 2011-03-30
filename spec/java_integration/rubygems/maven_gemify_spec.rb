@@ -44,6 +44,10 @@ begin
       Gem::Maven::Gemify.new.get_versions("mvn:commons-lang:commons-lang").should include("2.5.0")
     end
 
+    it "gets a list of versions for a maven artifact from external repository" do
+      Gem::Maven::Gemify.new('https://repository.jboss.org/nexus/content/groups/public-jboss').get_versions("mvn:org.jboss.logging:jboss-logging").should include("3.0.0.b.5")
+    end
+
     it "allows use of colons as artifact delimiters" do
       Gem::Maven::Gemify.new.get_versions("mvn:commons-lang:commons-lang").should include("2.5.0")
     end
