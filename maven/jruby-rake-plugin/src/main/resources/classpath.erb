@@ -5,10 +5,12 @@
 
 module Maven
   extend self
+  BASEDIR = File.expand_path(<%= basedir.inspect %>, __FILE__)
+
   OPTIONS = {
     "scope" => <%= maven["scope"].inspect %>,
     "version" => <%= maven["version"].inspect %>,
-    "classpath" => <%= maven["classpath"].inspect %>
+    "classpath" => <%= maven["classpath"].inspect.gsub('\\#{', '#{') %>
   }
 
   CLASSPATH = [<% classpath.each do |path| %>

@@ -15,6 +15,11 @@ import org.jruby.embed.ScriptingContainer;
  */
 public class ClasspathMojo extends AbstractJRubyMojo {
     /**
+     * @parameter expression="${basedir}"
+     */
+    protected String baseDirectory = null;
+
+    /**
      * @parameter expression="${project.build.directory}"
      */
     protected String targetDirectory = "target";
@@ -54,6 +59,7 @@ public class ClasspathMojo extends AbstractJRubyMojo {
             throw new MojoExecutionException("error resolving dependencies", e);
         }
         Map maven = new HashMap();
+        maven.put("basedir", baseDirectory);
         maven.put("classpath_rb", classpathRb);
         maven.put("options", options);
         maven.put("scope", scope);
