@@ -6797,7 +6797,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     if (enc.isNewLine(bytes, p0, end)) {
                         p = p0 + StringSupport.length(enc, bytes, p0, end);
                         block.yield(context, makeShared19(runtime, val, s, p - s).infectBy(this));
-                        s = p++;
+                        s = p;
+                        continue;
                     }
                 }
                 p++;
