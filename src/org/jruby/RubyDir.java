@@ -546,6 +546,7 @@ public class RubyDir extends RubyObject {
      * Moves to a position <code>d</code>.  <code>pos</code> must be a value
      * returned by <code>tell</code> or 0.
      */
+    
     @JRubyMethod(name = "seek", required = 1)
     public IRubyObject seek(IRubyObject newPos) {
         checkDir();
@@ -556,7 +557,8 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "pos=", required = 1)
     public IRubyObject set_pos(IRubyObject newPos) {
-        this.pos = RubyNumeric.fix2int(newPos);
+        int pos2 = RubyNumeric.fix2int(newPos);
+        if (pos2 >= 0) this.pos = pos2;
         return newPos;
     }
 
