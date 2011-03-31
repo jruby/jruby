@@ -151,7 +151,7 @@ module JRuby::Compiler
           compiler.compile_root(node, asmCompiler, inspector)
 
           class_bytes = String.from_java_bytes(asmCompiler.class_byte_array)
-          File.open(File.join(options[:target], class_filename), 'w') do |f|
+          File.open(File.join(options[:target], class_filename), 'wb') do |f|
             f.write(class_bytes)
           end
 
