@@ -485,7 +485,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
     
     public static RubyString newUnicodeString(Ruby runtime, String str) {
-        return new RubyString(runtime, runtime.getString(), new ByteList(RubyEncoding.encodeUTF8(str), false));
+        ByteList byteList = new ByteList(RubyEncoding.encodeUTF8(str), UTF8Encoding.INSTANCE, false);
+        return new RubyString(runtime, runtime.getString(), byteList);
     }
 
     // String construction routines by NOT byte[] buffer and making the target String shared 
