@@ -83,18 +83,18 @@ module JRuby
     end
   end
   
-  import java.util.concurrent.LinkedBlockingQueue
-  import java.util.HashMap  
+  java_import java.util.concurrent.LinkedBlockingQueue
+  java_import java.util.HashMap  
 
   class ChildVM < VM
     JThread = java.lang.Thread
     Runnable = java.lang.Runnable
-    import org.jruby.RubyInstanceConfig
-    import org.jruby.Ruby
-    import org.jruby.RubyIO
-    import java.nio.channels.Pipe
-    import java.nio.channels.Channels
-    import java.io.PrintStream
+    java_import org.jruby.RubyInstanceConfig
+    java_import org.jruby.Ruby
+    java_import org.jruby.RubyIO
+    java_import java.nio.channels.Pipe
+    java_import java.nio.channels.Channels
+    java_import java.io.PrintStream
     
     attr_reader :stdin
     attr_reader :stdout

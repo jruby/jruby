@@ -53,9 +53,9 @@ module JRuby::Compiler
 
     include AST::visitor::NodeVisitor
 
-    import AST::NodeType
-    import org.jruby.parser.JavaSignatureParser
-    import java.io.ByteArrayInputStream
+    java_import AST::NodeType
+    java_import org.jruby.parser.JavaSignatureParser
+    java_import java.io.ByteArrayInputStream
 
     extend VisitorBuilder
 
