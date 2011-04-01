@@ -97,4 +97,8 @@ public class WrapperMethod extends DynamicMethod {
     public long getSerialNumber() {
         return method.getSerialNumber();
     }
+    
+    public DynamicMethod getRealMethod() {
+        return method;
+    }
 }
