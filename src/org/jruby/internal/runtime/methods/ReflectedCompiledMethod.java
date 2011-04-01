@@ -45,7 +45,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReflectedCompiledMethod extends CompiledMethod {
     private final Method method;
-    private final ISourcePosition position;
     
     public ReflectedCompiledMethod(RubyModule implementationClass, Arity arity,
             Visibility visibility, StaticScope staticScope, Object scriptObject, Method method, CallConfiguration callConfig, ISourcePosition position, String parameterDesc) {
@@ -53,7 +52,6 @@ public class ReflectedCompiledMethod extends CompiledMethod {
         init(implementationClass, arity, visibility, staticScope, scriptObject, callConfig, position, parameterDesc);
         
         this.method = method;
-        this.position = position;
     }
 
     @Override
