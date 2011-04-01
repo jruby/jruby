@@ -924,14 +924,9 @@ public class RubyKernel {
 
         return localVariables;
     }
-    @JRubyMethod(module = true, visibility = PRIVATE, compat = RUBY1_8)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static RubyBinding binding(ThreadContext context, IRubyObject recv, Block block) {
         return RubyBinding.newBinding(context.getRuntime(), context.currentBinding(recv));
-    }
-
-    @JRubyMethod(name = "binding", module = true, visibility = PRIVATE, compat = RUBY1_9)
-    public static RubyBinding binding_1_9(ThreadContext context, IRubyObject recv, Block block) {
-        return RubyBinding.newBinding(context.getRuntime(), context.currentBinding());
     }
 
     @JRubyMethod(name = {"block_given?", "iterator?"}, module = true, visibility = PRIVATE)
