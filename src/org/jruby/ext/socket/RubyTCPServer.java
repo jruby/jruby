@@ -214,8 +214,8 @@ public class RubyTCPServer extends RubyTCPSocket {
                 ssc.configureBlocking(false);
                 selector = SelectorFactory.openWithRetryFrom(getRuntime(), SelectorProvider.provider());
 
-                int selected = selector.selectNow();
-                if (selected == 0) {
+                boolean ready = context.getThread().select(this, SelectionKey.OP_ACCEPT, 0);
+                if (!ready) {
                     // no connection immediately accepted, let them try again
                     throw context.getRuntime().newErrnoEAGAINError("Resource temporarily unavailable");
                 } else {

@@ -930,8 +930,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public boolean select(RubyIO io, int ops) {
         return select(io.getChannel(), io, ops);
     }
+    
+    public boolean select(RubyIO io, int ops, long timeout) {
+        return select(io.getChannel(), io, ops, timeout);
+    }
 
     public boolean select(Channel channel, RubyIO io, int ops) {
+        return select(channel, io, ops, -1);
+    }
+
+    public boolean select(Channel channel, RubyIO io, int ops, long timeout) {
         if (channel instanceof SelectableChannel) {
             SelectableChannel selectable = (SelectableChannel)channel;
             
@@ -948,7 +956,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     key = selectable.register(currentSelector, ops);
 
                     beforeBlockingCall();
-                    int result = currentSelector.select();
+                    int result;
+                    if (timeout < 0) {
+                        result = currentSelector.select();
+                    } else if (timeout == 0) {
+                        result = currentSelector.selectNow();
+                    } else {
+                        result = currentSelector.select(timeout);
+                    }
 
                     // check for thread events, in case we've been woken up to die
                     pollThreadEvents();
