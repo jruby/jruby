@@ -43,8 +43,8 @@ public class RubyInternalCallInstr extends CallInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new RubyInternalCallInstr(ii.getRenamedVariable(result),
-                (MethAddr) _methAddr.cloneForInlining(ii), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
+                (MethAddr) methAddr.cloneForInlining(ii), getReceiver().cloneForInlining(ii),
+                cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 
     @Override

@@ -28,9 +28,9 @@ public class JRubyImplCallInstr extends CallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new JRubyImplCallInstr(ii.getRenamedVariable(result), (MethAddr) _methAddr.cloneForInlining(ii),
+        return new JRubyImplCallInstr(ii.getRenamedVariable(result), (MethAddr) methAddr.cloneForInlining(ii),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
-                _closure == null ? null : _closure.cloneForInlining(ii));
+                closure == null ? null : closure.cloneForInlining(ii));
     }
 
     @Override

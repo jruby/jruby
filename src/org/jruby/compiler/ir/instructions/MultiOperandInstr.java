@@ -14,33 +14,20 @@ import org.jruby.runtime.builtin.IRubyObject;
 //   v = OP(args, attribute_array); Ex: v = CALL(args, v2)
 
 public abstract class MultiOperandInstr extends Instr {
-    public Operand[] _args;
-
-    public MultiOperandInstr(Operation opType, Variable result, Operand[] args) {
+    public MultiOperandInstr(Operation opType, Variable result) {
         super(opType, result);
-
-        _args = args;
     }
 
     @Override
     public String toString() {
-        return super.toString() + Arrays.toString(_args);
-    }
-
-    public Operand[] getOperands() {
-        return _args;
-    }
-
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        for (int i = 0; i < _args.length; i++) {
-            _args[i] = _args[i].getSimplifiedOperand(valueMap);
-        }
+        return super.toString() + Arrays.toString(getOperands());
     }
 
     public Operand[] cloneOperandsForInlining(InlinerInfo ii) {
-        Operand[] newArgs = new Operand[_args.length];
-        for (int i = 0; i < _args.length; i++) {
-            newArgs[i] = _args[i].cloneForInlining(ii);
+		  Operand[] oldArgs = getOperands();
+        Operand[] newArgs = new Operand[oldArgs.length];
+        for (int i = 0; i < oldArgs.length; i++) {
+            newArgs[i] = oldArgs[i].cloneForInlining(ii);
         }
 
         return newArgs;

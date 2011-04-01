@@ -34,13 +34,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * args field: [self, receiver, *args]
  */
 public class CallInstr extends MultiOperandInstr {
-    // SSS FIXME: these 4 variables are cached versions of those in MultiOperandInstr
-    // So, whenever the superclass args are modified, have to update these cached values
-    // Maybe get rid of these cached values?
-    private Operand receiver;
+    private Operand   receiver;
     private Operand[] arguments;
-    MethAddr _methAddr;
-    Operand _closure;
+    MethAddr methAddr;
+    Operand closure;
     
     private boolean _flagsComputed;
     private boolean _canBeEval;
@@ -48,41 +45,45 @@ public class CallInstr extends MultiOperandInstr {
     public HashMap<DynamicMethod, Integer> _profile;
 
     public CallInstr(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        super(Operation.CALL, result, buildAllArgs(methAddr, receiver, args, closure));
+        super(Operation.CALL, result);
 
         this.receiver = receiver;
         this.arguments = args;
+        this.methAddr = methAddr;
+        this.closure = closure;
 
-        _methAddr = methAddr;
-        _closure = closure;
         _flagsComputed = false;
         _canBeEval = true;
         _requiresBinding = true;
     }
 
     public CallInstr(Operation op, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        super(op, result, buildAllArgs(methAddr, receiver, args, closure));
+        super(op, result);
 
         this.receiver = receiver;
         this.arguments = args;
-        
-        _methAddr = methAddr;
-        _closure = closure;
+        this.methAddr = methAddr;
+        this.closure = closure;
+
         _flagsComputed = false;
         _canBeEval = true;
         _requiresBinding = true;
     }
 
+    public Operand[] getOperands() {
+        return buildAllArgs(methAddr, receiver, arguments, closure);
+    }
+
     public void setMethodAddr(MethAddr mh) {
-        _methAddr = mh;
+        this.methAddr = mh;
     }
 
     public MethAddr getMethodAddr() {
-        return _methAddr;
+        return methAddr;
     }
 
     public Operand getClosureArg() {
-        return _closure;
+        return closure;
     }
 
     public Operand getReceiver() {
@@ -93,32 +94,26 @@ public class CallInstr extends MultiOperandInstr {
         return arguments;
     }
 
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        receiver = receiver.getSimplifiedOperand(valueMap);
+        methAddr = (MethAddr)methAddr.getSimplifiedOperand(valueMap);
+        for (int i = 0; i < arguments.length; i++) {
+            arguments[i] = arguments[i].getSimplifiedOperand(valueMap);
+        }
+        if (closure != null) closure = closure.getSimplifiedOperand(valueMap);
+        _flagsComputed = false; // Forces recomputation of flags
+    }
+
     public Operand[] cloneCallArgs(InlinerInfo ii) {
         int length = arguments.length;
         Operand[] clonedArgs = new Operand[length];
 
         for (int i = 0; i < length; i++) {
-            // SSS: Make sure to update both the superclass as well as the cached values in this class
             clonedArgs[i] = arguments[i].cloneForInlining(ii);
-            _args[i+2] = clonedArgs[i];
         }
 
         return clonedArgs;
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        super.simplifyOperands(valueMap);
-
-        // Update cached variables in this instruction
-        _methAddr = (MethAddr) _args[0];
-        _closure = (_closure == null) ? null : _args[_args.length - 1];
-        int n = arguments.length;
-        arguments = new Operand[n];
-        for (int i = 0; i < n; i++)
-            arguments[i] = _args[i+2];
-
-        _flagsComputed = false; // Forces recomputation of flags
     }
 
     public boolean isRubyInternalsCall() {
@@ -133,7 +128,7 @@ public class CallInstr extends MultiOperandInstr {
     // In a JIT context, we might be compiling this call in the context of a surrounding PIC (or a monomorphic IC).
     // If so, the receiver type and hence the target method will be known.
     public IRMethod getTargetMethodWithReceiver(Operand receiver) {
-        String mname = _methAddr.getName();
+        String mname = methAddr.getName();
 
         if (receiver instanceof MetaObject) {
             IRModule m = (IRModule) (((MetaObject) receiver).scope);
@@ -192,12 +187,12 @@ public class CallInstr extends MultiOperandInstr {
         // SSS FIXME: This is conservative, but will let that go for now
         if (canBeEval() /*|| canCaptureCallersBinding()*/) return true;
 
-        if (_closure != null) {
+        if (closure != null) {
             // Can be a symbol .. ex: [1,2,3,4].map(&:foo)
             // SSS FIXME: Is it true that if the closure operand is a symbol, it couldn't access the caller's binding?
-            if (!(_closure instanceof MetaObject)) return false;
+            if (!(closure instanceof MetaObject)) return false;
 
-            IRClosure cl = (IRClosure) ((MetaObject) _closure).scope;
+            IRClosure cl = (IRClosure) ((MetaObject) closure).scope;
             if (cl.requiresBinding() /*|| cl.canCaptureCallersBinding()*/) return true;
         }
 
@@ -246,8 +241,8 @@ public class CallInstr extends MultiOperandInstr {
          * We should do this better by setting default flags for various core library methods
          * and by checking type of receiver to see if the receiver is any core object (string, array, etc.)
          *
-        if (_methAddr instanceof MethAddr) {
-        String n = ((MethAddr)_methAddr).getName();
+        if (methAddr instanceof MethAddr) {
+        String n = ((MethAddr)methAddr).getName();
         return !n.equals("each") && !n.equals("inject") && !n.equals("+") && !n.equals("*") && !n.equals("+=") && !n.equals("*=");
         }
          **/
@@ -275,13 +270,13 @@ public class CallInstr extends MultiOperandInstr {
     public String toString() {
         return "\t"
                 + (result == null ? "" : result + " = ")
-                + operation + "(" + _methAddr + ", " + receiver + ", " +
+                + operation + "(" + methAddr + ", " + receiver + ", " +
                 java.util.Arrays.toString(getCallArgs())
-                + (_closure == null ? "" : ", &" + _closure) + ")";
+                + (closure == null ? "" : ", &" + closure) + ")";
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CallInstr(ii.getRenamedVariable(result), (MethAddr) _methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), _closure == null ? null : _closure.cloneForInlining(ii));
+        return new CallInstr(ii.getRenamedVariable(result), (MethAddr) methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
    }
 
 // --------------- Private methods ---------------
@@ -308,7 +303,7 @@ public class CallInstr extends MultiOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        Object        ma    = _methAddr.retrieve(interp);
+        Object        ma    = methAddr.retrieve(interp);
         IRubyObject[] args  = prepareArguments(getCallArgs(), interp);
         Object resultValue;
         if (ma instanceof MethodHandle) {
@@ -346,7 +341,7 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public Label interpret_with_inline(InterpreterContext interp, IRubyObject self) {
-        Object        ma    = _methAddr.retrieve(interp);
+        Object        ma    = methAddr.retrieve(interp);
         IRubyObject[] args  = prepareArguments(getCallArgs(), interp);
         Object resultValue;
         if (ma instanceof MethodHandle) {
@@ -392,8 +387,8 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     private Block prepareBlock(InterpreterContext interp) {
-        if (_closure == null) return Block.NULL_BLOCK;
-        Object value = _closure.retrieve(interp);
+        if (closure == null) return Block.NULL_BLOCK;
+        Object value = closure.retrieve(interp);
         return value instanceof RubyProc ? ((RubyProc) value).getBlock() : (Block) value;
     }
 }
