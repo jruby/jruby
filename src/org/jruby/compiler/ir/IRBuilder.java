@@ -1669,11 +1669,15 @@ public class IRBuilder {
     }
 
     public Operand buildDefs(DefsNode node, IRScope s) { // Class method
+        System.out.println("defs scope is: " + s.getName() + "; lexical parent is: " + s.getLexicalParent().getName() + "; nearest module is: " + s.getNearestModule().getName());
         Operand container =  build(node.getReceiverNode(), s);
         IRMethod method = defineNewMethod(node, s, container, false);
         // ENEBO: Can all metaobjects be used for this?  closure?
-        if (container instanceof MetaObject) {
-            ((IRModule) ((MetaObject) container).getScope()).addMethod(method);
+        //if (container instanceof MetaObject) {
+        //    ((IRModule) ((MetaObject) container).getScope()).addMethod(method);
+        //}
+        if (s.getLexicalParent() instanceof IRModule) {
+            ((IRModule)s.getLexicalParent()).addMethod(method);
         }
         s.addInstr(new DefineClassMethodInstr(container, method));
         return Nil.NIL;
@@ -2841,6 +2845,10 @@ public class IRBuilder {
     }    
 
     public Operand buildToAry(ToAryNode node, IRScope s) {
+        // FIXME: Two possibilities
+        // 1. Make this a TO_ARY IR instruction to enable optimization 
+        // 2. Alternatively make this a regular call which would be subject to inlining
+        //    if these utility methods are implemented as ruby ir code.
         Operand  array = build(node.getValue(), s);
         return generateJRubyUtilityCall(s, MethAddr.TO_ARY, array, new Operand[]{});
     }
@@ -2938,6 +2946,7 @@ public class IRBuilder {
         return new BacktickString(new StringLiteral(node.getValue()));
     }
 
+/*
     private List<Operand> setupYieldArgs(Node args, IRScope s) {
         List<Operand> argsList = new ArrayList<Operand>();
         if (args != null) {
@@ -2948,11 +2957,11 @@ public class IRBuilder {
 
         return argsList;
     }
+*/
 
     public Operand buildYield(YieldNode node, IRScope s) {
-        List<Operand> args = setupYieldArgs(node.getArgsNode(), s);
-        Variable      ret  = s.getNewTemporaryVariable();
-        s.addInstr(new YieldInstr(ret, args.toArray(new Operand[args.size()])));
+        Variable ret = s.getNewTemporaryVariable();
+        s.addInstr(new YieldInstr(ret, build(node.getArgsNode(), s)));
         return ret;
     }
 
