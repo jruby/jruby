@@ -39,6 +39,7 @@ package org.jruby;
 import org.jruby.util.io.STDIO;
 import java.util.HashMap;
 import java.util.Map;
+import org.jcodings.Encoding;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -53,6 +54,7 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.io.BadDescriptorException;
@@ -148,9 +150,8 @@ public class RubyGlobal {
                 return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
             }
 
-            //return super.aset(getRuntime().newString("sadfasdF"), getRuntime().newString("sadfasdF"));
-            return super.op_aset(context, RuntimeHelpers.invoke(context, key, "to_str"),
-                    value.isNil() ? getRuntime().getNil() : RuntimeHelpers.invoke(context, value, "to_str"));
+            return super.op_aset(context, normalizeEnvString(RuntimeHelpers.invoke(context, key, "to_str")),
+                    value.isNil() ? getRuntime().getNil() : normalizeEnvString(RuntimeHelpers.invoke(context, value, "to_str")));
         }
 
         private RubyString getCorrectKey(IRubyObject key, ThreadContext context) {
@@ -170,6 +171,17 @@ public class RubyGlobal {
                 }
             }
             return actualKey;
+        }
+        
+        private IRubyObject normalizeEnvString(IRubyObject str) {
+            if (str instanceof RubyString) {
+                Encoding enc = getRuntime().getEncodingService().getLocaleEncoding();
+                RubyString newStr = getRuntime().newString(new ByteList(str.toString().getBytes(), enc));
+                newStr.setFrozen(true);
+                return newStr;
+            } else {
+                return str;
+            }
         }
     }
     

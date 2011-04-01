@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import org.jruby.RubyString;
 
 public class OSEnvironment {
     /**
@@ -81,20 +82,30 @@ public class OSEnvironment {
 
         // On Windows, entrySet doesn't have corresponding keys for these
         if (Platform.IS_WINDOWS) {
-            envs.put(runtime.newString("HOME"), runtime.newString(System.getProperty("user.home")));
-            envs.put(runtime.newString("USER"), runtime.newString(System.getProperty("user.name")));
+            addRubyKeyValuePair(runtime, envs, "HOME", System.getProperty("user.home"), encoding);
+            addRubyKeyValuePair(runtime, envs, "USER", System.getProperty("user.name"), encoding);
         }
 
         for (Map.Entry<Object, Object> entry : entrySet) {
             String value = (String)entry.getValue();
             String key = (String)entry.getKey();
 
-            ByteList keyBytes = new ByteList(key.getBytes(), encoding);
-            ByteList valueBytes = new ByteList(value.getBytes(), encoding);
-
-            envs.put(runtime.newString(keyBytes), runtime.newString(valueBytes));
+            addRubyKeyValuePair(runtime, envs, key, value, encoding);
         }
 
         return envs;
+    }
+    
+    private static void addRubyKeyValuePair(Ruby runtime, Map map, String key, String value, Encoding encoding) {
+        ByteList keyBytes = new ByteList(key.getBytes(), encoding);
+        ByteList valueBytes = new ByteList(value.getBytes(), encoding);
+        
+        RubyString keyString = runtime.newString(keyBytes);
+        RubyString valueString = runtime.newString(valueBytes);
+        
+        keyString.setFrozen(true);
+        valueString.setFrozen(true);
+
+        map.put(keyString, valueString);
     }
 }
