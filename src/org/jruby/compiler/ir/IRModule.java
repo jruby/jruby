@@ -22,7 +22,7 @@ import org.jruby.parser.StaticScope;
 
 public class IRModule extends IRScopeImpl {
     // The "root" method of a class -- the scope in which all definitions, and class code executes, equivalent to java clinit
-    private final static String ROOT_METHOD_PREFIX = ":_ROOT_:";
+    private final static String ROOT_METHOD_PREFIX = "<ROOT>";
     private static Map<String, IRClass> coreClasses;
 
     private IRMethod rootMethod; // Dummy top-level method for the class
