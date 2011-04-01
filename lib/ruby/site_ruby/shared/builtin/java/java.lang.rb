@@ -70,3 +70,16 @@ class java::lang::Throwable
     end
   end
 end
+
+Java::byte[].class_eval do
+  def ubyte_get(index)
+    byte = self[index]
+    byte += 256 if byte < 0
+    byte
+  end
+
+  def ubyte_set(index, value)
+    value -= 256 if value > 127
+    self[index] = value
+  end
+end

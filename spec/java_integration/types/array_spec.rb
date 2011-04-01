@@ -135,6 +135,16 @@ describe "A Java primitive Array of type" do
       ret = ArrayReceiver::call_with_byte(arr)
       ret.to_a.should == [13, 42, 120]
     end
+    
+    it "allows setting and getting unsigned bytes with ubyte_set and ubyte_get" do
+      arr = Java::byte[1].new
+      lambda do
+        arr[0] = 0xFF
+      end.should raise_error(RangeError)
+      arr.ubyte_set(0, 0xFF)
+      arr.ubyte_get(0).should == 0xFF
+      arr[0].should == -1
+    end
   end
 
   describe "char" do 
