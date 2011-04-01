@@ -3,10 +3,10 @@ require 'java'
 
 module JRuby
   module Profiler
-    import org.jruby.runtime.profile.AbstractProfilePrinter
-    import org.jruby.runtime.profile.GraphProfilePrinter
-    import org.jruby.runtime.profile.FlatProfilePrinter
-    import org.jruby.Ruby
+    java_import org.jruby.runtime.profile.AbstractProfilePrinter
+    java_import org.jruby.runtime.profile.GraphProfilePrinter
+    java_import org.jruby.runtime.profile.FlatProfilePrinter
+    java_import org.jruby.Ruby
     
     def self.profile(&block)
       start
