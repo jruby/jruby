@@ -12,6 +12,9 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // This is an internal ruby array generated during multiple assignment expressions.
+// FIXME: Rename GetArrayInstr to ArrayArefInstr which would be used
+// in later passes as well when compiler passes replace ruby-array []
+// calls with inlined lookups
 public class GetArrayInstr extends OneOperandInstr {
     public final int index;
     public final boolean all;  // If true, returns the rest of the array starting at the index
@@ -44,7 +47,7 @@ public class GetArrayInstr extends OneOperandInstr {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray array = (RubyArray) getArg().retrieve(interp);
 
-        getResult().store(interp, array.get(index));
+        getResult().store(interp, array.entry(index));
         return null;
     }
 }
