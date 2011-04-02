@@ -826,6 +826,7 @@ RUBY_DLLSPEC VALUE rb_data_object_alloc(VALUE,void*,RUBY_DATA_FUNC,RUBY_DATA_FUN
     sval = (type*)DATA_PTR(obj);\
 } while (0)
 
+static inline void rb_gc() {}; // We'll let the Java GC decide when to run
 RUBY_DLLSPEC void rb_gc_mark_locations(VALUE*, VALUE*);
 RUBY_DLLSPEC void rb_gc_mark(VALUE);
 RUBY_DLLSPEC void rb_gc_mark_maybe(VALUE v);
