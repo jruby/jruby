@@ -46,18 +46,20 @@ import java.util.List;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import static org.jruby.javasupport.util.RuntimeHelpers.metaclass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
+
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.EQL;
+import static org.jruby.runtime.MethodIndex.OP_EQUAL;
+import static org.jruby.runtime.MethodIndex.HASH;
 
 /**
  * RubyObject is the only implementation of the
@@ -206,7 +208,7 @@ public class RubyObject extends RubyBasicObject {
     public boolean equals(Object other) {
         return other == this ||
                 other instanceof IRubyObject &&
-                callMethod(getRuntime().getCurrentContext(), "==", (IRubyObject) other).isTrue();
+                invokedynamic(getRuntime().getCurrentContext(), this, OP_EQUAL, (IRubyObject) other).isTrue();
     }
 
     /**
@@ -327,16 +329,6 @@ public class RubyObject extends RubyBasicObject {
         return context.getRuntime().newBoolean(equalInternal(context, this, other));
     }
 
-    protected static DynamicMethod _op_equal(ThreadContext context, RubyClass metaclass) {
-        if (metaclass.index >= ClassIndex.MAX_CLASSES) return metaclass.searchMethod("==");
-        return context.runtimeCache.getMethod(context, metaclass, metaclass.index * (MethodIndex.OP_EQUAL + 1), "==");
-    }
-
-    protected static DynamicMethod _eql(ThreadContext context, RubyClass metaclass) {
-        if (metaclass.index >= ClassIndex.MAX_CLASSES) return metaclass.searchMethod("eql?");
-        return context.runtimeCache.getMethod(context, metaclass, metaclass.index * (MethodIndex.EQL + 1), "eql?");
-    }
-
     /**
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "==" method.
@@ -351,8 +343,7 @@ public class RubyObject extends RubyBasicObject {
         } else if (a instanceof RubyFloat && b instanceof RubyFloat) {
             return ((RubyFloat)a).fastEqual((RubyFloat)b);
         } else {
-            RubyClass metaclass = metaclass(a);
-            return _op_equal(context, metaclass).call(context, a, metaclass, "==", b).isTrue();
+            return invokedynamic(context, a, OP_EQUAL, b).isTrue();
         }
     }
 
@@ -369,8 +360,7 @@ public class RubyObject extends RubyBasicObject {
             if (a.getClass() != b.getClass()) return false;
             return equalInternal(context, a, b);
         } else {
-            RubyClass metaclass = metaclass(a);
-            return _eql(context, metaclass).call(context, a, metaclass, "eql?", b).isTrue();
+            return invokedynamic(context, a, EQL, b).isTrue();
         }
     }
 
@@ -382,7 +372,7 @@ public class RubyObject extends RubyBasicObject {
      */
     @Override
     public int hashCode() {
-        IRubyObject hashValue = callMethod(getRuntime().getCurrentContext(), "hash");
+        IRubyObject hashValue = invokedynamic(getRuntime().getCurrentContext(), this, HASH);
         if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
         return nonFixnumHashCode(hashValue);
     }

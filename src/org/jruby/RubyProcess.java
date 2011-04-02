@@ -29,7 +29,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import com.kenai.constantine.platform.Errno;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -45,7 +44,8 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ShellLauncher;
 
-import static org.jruby.ext.JRubyPOSIXHelper.checkErrno;
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.OP_EQUAL;
 
 
 /**
@@ -135,7 +135,7 @@ public class RubyProcess {
         @Override
         @JRubyMethod(name = "==")
         public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-            return other.callMethod(context, "==", this.to_i(context.getRuntime()));
+            return invokedynamic(context, other, OP_EQUAL, this.to_i(context.getRuntime()));
         }
         
         @Deprecated

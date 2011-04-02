@@ -69,6 +69,8 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.CompatVersion.*;
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.HASH;
 
 // Design overview:
 //
@@ -1007,8 +1009,8 @@ public class RubyHash extends RubyObject implements Map {
             runtime.registerInspecting(this);
             visitAll(new Visitor() {
                 public void visit(IRubyObject key, IRubyObject value) {
-                    hash[0] ^= key.callMethod(context, "hash").convertToInteger().getLongValue();
-                    hash[0] ^= value.callMethod(context, "hash").convertToInteger().getLongValue();
+                    hash[0] ^= invokedynamic(context, key, HASH).convertToInteger().getLongValue();
+                    hash[0] ^= invokedynamic(context, value, HASH).convertToInteger().getLongValue();
                 }
             });
         } finally {
@@ -1031,12 +1033,12 @@ public class RubyHash extends RubyObject implements Map {
                     }
                     final long[] h = new long[]{size};
                     if(recur) {
-                        h[0] ^= RubyNumeric.num2long(runtime.getHash().callMethod(context, "hash"));
+                        h[0] ^= RubyNumeric.num2long(invokedynamic(context, runtime.getHash(), HASH));
                     } else {
                         visitAll(new Visitor() {
                                 public void visit(IRubyObject key, IRubyObject value) {
-                                    h[0] ^= key.callMethod(context, "hash").convertToInteger().getLongValue();
-                                    h[0] ^= value.callMethod(context, "hash").convertToInteger().getLongValue();
+                                    h[0] ^= invokedynamic(context, key, HASH).convertToInteger().getLongValue();
+                                    h[0] ^= invokedynamic(context, value, HASH).convertToInteger().getLongValue();
                                 }
                             });
 

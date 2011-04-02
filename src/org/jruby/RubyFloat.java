@@ -69,6 +69,9 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Sprintf;
 
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.OP_EQUAL;
+
 /**
   * A representation of a float object
  */
@@ -767,7 +770,7 @@ public class RubyFloat extends RubyNumeric {
                     f_lshift(context, one, f_sub(context,one,rn)));
         }
 
-        if (a.callMethod(context, "==", b).isTrue()) return f_to_r(context, this);
+        if (invokedynamic(context, a, OP_EQUAL, b).isTrue()) return f_to_r(context, this);
 
         IRubyObject[] ary = new IRubyObject[2];
         ary[0] = a;

@@ -36,6 +36,9 @@ import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.OP_EQUAL;
+
 /**
  * Implementation of the Random class.
  */
@@ -230,7 +233,7 @@ public class RubyRandom extends RubyObject {
             return runtime.getFalse();
         } else {
             RubyRandom r2 = (RubyRandom) obj;
-            return this.seed(context).callMethod(context, "==", r2.seed(context));
+            return invokedynamic(context, this.seed(context), OP_EQUAL, r2.seed(context));
         }
     }
 

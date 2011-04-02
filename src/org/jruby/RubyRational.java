@@ -71,6 +71,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.HASH;
+
 /**
  *  1.9 rational.c as of revision: 20011
  */
@@ -941,7 +944,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "hash")
     public IRubyObject hash(ThreadContext context) {
-        return f_xor(context, num.callMethod(context, "hash"), den.callMethod(context, "hash"));
+        return f_xor(context, invokedynamic(context, num, HASH), invokedynamic(context, den, HASH));
     }
 
     /** nurat_to_s

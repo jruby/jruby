@@ -61,6 +61,11 @@ import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.OP_EQUAL;
+import static org.jruby.runtime.MethodIndex.OP_CMP;
+import static org.jruby.runtime.MethodIndex.EQL;
+
 /**
  *
  * @author enebo
@@ -1115,11 +1120,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "!=", required = 1, compat = RUBY1_9)
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
-        return context.getRuntime().newBoolean(!callMethod(context, "==", other).isTrue());
+        return context.getRuntime().newBoolean(!invokedynamic(context, this, OP_EQUAL, other).isTrue());
     }
 
     public int compareTo(IRubyObject other) {
-        return (int)callMethod(getRuntime().getCurrentContext(), "<=>", other).convertToInteger().getLongValue();
+        return (int)invokedynamic(getRuntime().getCurrentContext(), this, OP_CMP, other).convertToInteger().getLongValue();
     }
 
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
@@ -1153,7 +1158,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * equality, and then calling the "==" method.
      */
     protected static boolean equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
-        return that == other || that.callMethod(context, "==", other).isTrue();
+        return that == other || invokedynamic(context, that, OP_EQUAL, other).isTrue();
     }
 
     /** method used for Hash key comparison (specialized for String, Symbol and Fixnum)
@@ -1161,7 +1166,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Will by default just call the Ruby method "eql?"
      */
     public boolean eql(IRubyObject other) {
-        return callMethod(getRuntime().getCurrentContext(), "eql?", other).isTrue();
+        return invokedynamic(getRuntime().getCurrentContext(), this, EQL, other).isTrue();
     }
 
     /**
@@ -1987,7 +1992,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
-        if (this == other || this.callMethod(context, "==", other).isTrue()){
+        if (this == other || invokedynamic(context, this, OP_EQUAL, other).isTrue()){
             return RubyFixnum.zero(runtime);
         }
         return runtime.getNil();

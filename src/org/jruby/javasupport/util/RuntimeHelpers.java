@@ -55,6 +55,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.CompiledBlock;
 import org.jruby.runtime.CompiledBlock19;
 import org.jruby.runtime.CompiledBlockCallback;
@@ -66,6 +67,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Interpreted19Block;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -73,6 +75,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.unsafe.UnsafeFactory;
+
+import static org.jruby.runtime.MethodIndex.OP_EQUAL;
 
 /**
  * Helper methods which are called by the compiler.  Note: These will show no consumers, but
@@ -2049,7 +2053,7 @@ public class RuntimeHelpers {
     public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b) {
         Ruby runtime = context.getRuntime();
         if (a == b) return runtime.getTrue();
-        IRubyObject res = a.callMethod(context, "==", b);
+        IRubyObject res = invokedynamic(context, a, OP_EQUAL, b);
         return runtime.newBoolean(res.isTrue());
     }
 
@@ -2392,5 +2396,22 @@ public class RuntimeHelpers {
         }
 
         return definition;
+    }
+    
+    public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index) {
+        RubyClass metaclass = self.getMetaClass();
+        String name = MethodIndex.METHOD_NAMES[index];
+        return getMethodCached(context, metaclass, index, name).call(context, self, metaclass, name);
+    }
+    
+    public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index, IRubyObject arg0) {
+        RubyClass metaclass = self.getMetaClass();
+        String name = MethodIndex.METHOD_NAMES[index];
+        return getMethodCached(context, metaclass, index, name).call(context, self, metaclass, name, arg0);
+    }
+    
+    private static DynamicMethod getMethodCached(ThreadContext context, RubyClass metaclass, int index, String name) {
+        if (metaclass.index >= ClassIndex.MAX_CLASSES) return metaclass.searchMethod(name);
+        return context.runtimeCache.getMethod(context, metaclass, metaclass.index * (index + 1), name);
     }
 }

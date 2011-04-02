@@ -38,6 +38,8 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.OP_CMP;
 
 /** Implementation of the Comparable module.
  *
@@ -103,7 +105,7 @@ public class RubyComparable {
 
     @JRubyMethod(name = "==", required = 1, compat = CompatVersion.RUBY1_9)
     public static IRubyObject op_equal19(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        return callCmpMethod(context, recv, other, context.getRuntime().newBoolean(false));
+        return callCmpMethod(context, recv, other, context.getRuntime().getFalse());
     }
 
     private static IRubyObject callCmpMethod(ThreadContext context, IRubyObject recv, IRubyObject other, IRubyObject returnValueOnError) {
@@ -112,7 +114,7 @@ public class RubyComparable {
         if (recv == other) return runtime.getTrue();
 
         try {
-            IRubyObject result = recv.callMethod(context, "<=>", other);
+            IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
 
             return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
         } catch (RaiseException e) {
@@ -132,7 +134,7 @@ public class RubyComparable {
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN        
     @JRubyMethod(name = ">", required = 1)
     public static RubyBoolean op_gt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = recv.callMethod(context, "<=>", other);
+        IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
         
         if (result.isNil()) cmperr(recv, other);
 
@@ -144,7 +146,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = ">=", required = 1)
     public static RubyBoolean op_ge(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = recv.callMethod(context, "<=>", other);
+        IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
         
         if (result.isNil()) cmperr(recv, other);
 
@@ -156,7 +158,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "<", required = 1)
     public static RubyBoolean op_lt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = recv.callMethod(context, "<=>", other);
+        IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
 
         if (result.isNil()) cmperr(recv, other);
 
@@ -168,7 +170,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "<=", required = 1)
     public static RubyBoolean op_le(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = recv.callMethod(context, "<=>", other);
+        IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
 
         if (result.isNil()) cmperr(recv, other);
 

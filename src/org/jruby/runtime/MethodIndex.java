@@ -59,7 +59,16 @@ public class MethodIndex {
     public static final int OP_EQUAL = 1;
     public static final int EQL = 2;
     public static final int HASH = 3;
-    public static final int MAX_METHODS = 4;
+    public static final int OP_CMP = 4;
+    public static final int MAX_METHODS = 5;
+    
+    public static final String[] METHOD_NAMES = {
+        "",
+        "==",
+        "eql?",
+        "hash",
+        "<=>"
+    };
 
     public static CallSite getCallSite(String name) {
         // fast and safe respond_to? call site logic

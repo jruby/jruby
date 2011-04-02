@@ -55,6 +55,9 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 import static org.jruby.runtime.Visibility.*;
 
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.HASH;
+
 /**
  * @author  jpetersen
  */
@@ -130,7 +133,7 @@ public class RubyStruct extends RubyObject {
 
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
-            h ^= RubyNumeric.num2long(values[i].callMethod(context, "hash"));
+            h ^= RubyNumeric.num2long(invokedynamic(context, values[i], HASH));
         }
         
         return runtime.newFixnum(h);

@@ -63,6 +63,9 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormat;
 import static org.jruby.CompatVersion.*;
 
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.OP_CMP;
+
 /** The Time class.
  * 
  * @author chadfowler, jpetersen
@@ -486,7 +489,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "===", required = 1)
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return (RubyNumeric.fix2int(callMethod(context, "<=>", other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
+        return (RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     @JRubyMethod(name = "<=>", required = 1)

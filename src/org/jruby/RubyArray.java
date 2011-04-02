@@ -75,6 +75,10 @@ import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.HASH;
+import static org.jruby.runtime.MethodIndex.OP_CMP;
+
 /**
  * The implementation of the built-in class Array in Ruby.
  *
@@ -679,7 +683,7 @@ public class RubyArray extends RubyObject implements List {
             for (int i = myBegin; i < myBegin + realLength; i++) {
                 h = (h << 1) | (h < 0 ? 1 : 0);
                 final IRubyObject value = safeArrayRef(values, i);
-                h ^= RubyNumeric.num2long(value.callMethod(context, "hash"));
+                h ^= RubyNumeric.num2long(invokedynamic(context, value, HASH));
             }
             return runtime.newFixnum(h);
         } finally {
@@ -697,12 +701,12 @@ public class RubyArray extends RubyObject implements List {
                     int begin = RubyArray.this.begin;
                     long h = realLength;
                     if(recur) {
-                        h ^= RubyNumeric.num2long(getRuntime().getArray().callMethod(context, "hash"));
+                        h ^= RubyNumeric.num2long(invokedynamic(context, context.runtime.getArray(), HASH));
                     } else {
                         for(int i = begin; i < begin + realLength; i++) {
                             h = (h << 1) | (h < 0 ? 1 : 0);
                             final IRubyObject value = safeArrayRef(values, i);
-                            h ^= RubyNumeric.num2long(value.callMethod(context, "hash"));
+                            h ^= RubyNumeric.num2long(invokedynamic(context, value, HASH));
                         }
                     }
                     return getRuntime().newFixnum(h);
@@ -2651,7 +2655,7 @@ public class RubyArray extends RubyObject implements List {
             if (len > ary2.realLength) len = ary2.realLength;
 
             for (int i = 0; i < len; i++) {
-                IRubyObject v = elt(i).callMethod(context, "<=>", ary2.elt(i));
+                IRubyObject v = invokedynamic(context, elt(i), OP_CMP, ary2.elt(i));
                 if (!(v instanceof RubyFixnum) || ((RubyFixnum) v).getLongValue() != 0) return v;
             }
         } finally {
@@ -3282,7 +3286,7 @@ public class RubyArray extends RubyObject implements List {
     }
 
     private static int compareOthers(ThreadContext context, IRubyObject o1, IRubyObject o2) {
-        IRubyObject ret = o1.callMethod(context, "<=>", o2);
+        IRubyObject ret = invokedynamic(context, o1, OP_CMP, o2);
         int n = RubyComparable.cmpint(context, ret, o1, o2);
         //TODO: ary_sort_check should be done here
         return n;

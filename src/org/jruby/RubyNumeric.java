@@ -58,6 +58,9 @@ import org.jruby.util.ConvertDouble;
 import org.jruby.util.ConvertBytes;
 import static org.jruby.CompatVersion.*;
 
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.OP_EQUAL;
+
 /**
  * Base class for all numerical types in ruby.
  */
@@ -868,7 +871,7 @@ public class RubyNumeric extends RubyObject {
         // it won't hurt fixnums
         if (this == other)  return getRuntime().getTrue();
 
-        return other.callMethod(context, "==", this);
+        return invokedynamic(context, other, OP_EQUAL, this);
     }
 
     /** num_numerator

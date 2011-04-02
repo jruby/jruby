@@ -37,6 +37,9 @@ import org.jruby.RubyInteger;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.OP_CMP;
+
 public class Numeric {
     public static final boolean CANON = true;
 
@@ -62,7 +65,7 @@ public class Numeric {
             }
             return RubyFixnum.zero(context.getRuntime());
         }
-        return x.callMethod(context, "<=>", y);
+        return invokedynamic(context, x, OP_CMP, y);
     }
 
     /** f_div
