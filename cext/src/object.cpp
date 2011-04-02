@@ -113,7 +113,7 @@ rb_iv_get(VALUE obj, const char* name)
 {
     JLocalEnv env;
 
-    char var_name[strlen(name) + 1];
+    char var_name[strlen(name) + 2];
     (name[0] != '@') ? strcpy(var_name, "@")[0] : var_name[0] = '\0';
     strcat(var_name, name);
 
@@ -129,7 +129,7 @@ rb_iv_set(VALUE obj, const char* name, VALUE value)
 {
     JLocalEnv env;
 
-    char var_name[strlen(name) + 1];
+    char var_name[strlen(name) + 2];
     (name[0] != '@') ? strcpy(var_name, "@")[0] : var_name[0] = '\0';
     strcat(var_name, name);
 
@@ -157,7 +157,7 @@ rb_ivar_defined(VALUE obj, ID ivar)
     JLocalEnv env;
     const char* name = rb_id2name(ivar);
 
-    char var_name[strlen(name) + 1];
+    char var_name[strlen(name) + 2];
     (name[0] != '@') ? strcpy(var_name, "@")[0] : var_name[0] = '\0';
     strcat(var_name, name);
 
