@@ -247,7 +247,10 @@ public class JRuby {
     /** rb_sys_fail */
     public static void sysFail(Ruby runtime, String message) {
         final int n = LastError.getLastError();
+        sysFail(runtime, message, n);
+    }
 
+    public static void sysFail(Ruby runtime, String message, int n) {
         IRubyObject arg = (message != null) ? runtime.newString(message) : runtime.getNil();
 
         RubyClass instance = runtime.getErrno(n);

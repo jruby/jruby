@@ -26,6 +26,7 @@
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
+#include <errno.h>
 #include "Handle.h"
 #include "jruby.h"
 #include "ruby.h"
@@ -206,7 +207,7 @@ extern "C" void
 rb_sys_fail(const char* msg)
 {
     JLocalEnv env;
-    env->CallVoidMethod(JRuby_class, JRuby_sysFail, getRuntime(), env->NewStringUTF(msg));
+    env->CallVoidMethod(JRuby_class, JRuby_sysFail, getRuntime(), env->NewStringUTF(msg), errno);
 }
 
 extern "C" void

@@ -349,7 +349,7 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)J");
     Ruby_defineReadonlyVariable_method = getMethodID(env, Ruby_class, "defineReadonlyVariable",
             "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
-    JRuby_sysFail = getStaticMethodID(env, JRuby_class, "sysFail", "(Lorg/jruby/Ruby;Ljava/lang/String;)V");
+    JRuby_sysFail = getStaticMethodID(env, JRuby_class, "sysFail", "(Lorg/jruby/Ruby;Ljava/lang/String;I)V");
     RubyString_resize_method = getMethodID(env, RubyString_class, "resize", "(I)V");
     RubyArray_newArray = getStaticMethodID(env, RubyArray_class, "newArray", "(Lorg/jruby/Ruby;J)Lorg/jruby/RubyArray;");
     RubyArray_clear_method = getMethodID(env, RubyArray_class, "clear", "()V");
