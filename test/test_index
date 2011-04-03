@@ -36,7 +36,6 @@ testNesting.rb
 testNoMethodError.rb
 testNumber.rb
 testObject.rb
-testObjectSpace.rb
 testPackUnpack.rb
 testPipe.rb
 testProc.rb
