@@ -722,7 +722,6 @@
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/stdlib">
       <classpath refid="jruby.execute.classpath"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
-      <sysproperty key="jruby.objectspace.enabled" value="true"/>
       <jvmarg line="-ea ${java.opts}"/>
       <arg line="-I bin/ -S jrubyc ."/>
     </java>
@@ -970,7 +969,7 @@
     <attribute name="jit.threshold" default="20"/>
     <attribute name="jit.maxsize" default="20"/>
     <attribute name="jit.max" default="-1"/>
-    <attribute name="objectspace.enabled" default="true"/>
+    <attribute name="objectspace.enabled" default="false"/>
     <attribute name="thread.pooling" default="false"/>
     <attribute name="reflection" default="false"/>
     <element name="junit-tests"/>
@@ -1064,11 +1063,12 @@
     <attribute name="jit.maxsize" default="1000000000"/>
     <attribute name="reflection" default="false"/>
     <attribute name="thread.pooling" default="false"/>
+    <attribute name="objectspace.enabled" default="true"/>
 
     <sequential>
       <run-junit compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"
                 reflection="@{reflection}" thread.pooling="@{thread.pooling}"
-                jit.maxsize="@{jit.maxsize}">
+                jit.maxsize="@{jit.maxsize}" objectspace.enabled="@{objectspace.enabled}">
 	<junit-tests>
 	  <test name="${test}" if="test"/>
 	  <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}" unless="test"/>
@@ -1076,6 +1076,7 @@
 	  <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>
 	  <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" unless="test"/>
 	  <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" unless="test"/>
+	  <test name="org.jruby.test.ObjectSpaceTestSuite" todir="${test.results.dir}" unless="test"/>
 	  <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
 	</junit-tests>
       </run-junit>
@@ -1088,6 +1089,7 @@
     <attribute name="jit.maxsize" default="1000000000"/>
     <attribute name="reflection" default="false"/>
     <attribute name="thread.pooling" default="false"/>
+    <attribute name="objectspace.enabled" default="true"/>
 
     <sequential>
       <run-junit objectspace.enabled="false" jruby.version="ruby1_9"
@@ -1134,7 +1136,7 @@
     </java>
   </target>
 
-  <target name="test-rake-targets" depends="init"><rake task="test:rake_targets"/></target>
+  <target name="test-rake-targets" depends="init"><rake task="test:rake_targets" objectspace.enabled="false"/></target>
 
   <macrodef name="rake">
     <attribute name="compile.mode" default="OFF"/>
