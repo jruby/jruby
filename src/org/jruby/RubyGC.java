@@ -30,11 +30,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import static org.jruby.runtime.Visibility.*;
+import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -62,7 +65,7 @@ public class RubyGC {
         return result;        
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject start(ThreadContext context, IRubyObject recv) {
         return context.getRuntime().getNil();
     }
@@ -72,7 +75,7 @@ public class RubyGC {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject enable(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         emptyImplementationWarning(runtime, "GC.enable");
@@ -81,7 +84,7 @@ public class RubyGC {
         return runtime.newBoolean(old);
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject disable(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
         emptyImplementationWarning(runtime, "GC.disable");
@@ -90,17 +93,30 @@ public class RubyGC {
         return runtime.newBoolean(old);
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject stress(ThreadContext context, IRubyObject recv) {
         return context.getRuntime().newBoolean(stress);
     }
 
-    @JRubyMethod(name = "stress=", module = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "stress=", module = true, visibility = PRIVATE)
     public static IRubyObject stress_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         emptyImplementationWarning(runtime, "GC.stress=");
         stress = arg.isTrue();
         return runtime.newBoolean(stress);
+    }
+    
+    @JRubyMethod(module = true, visibility = PRIVATE, compat = RUBY1_9)
+    public static IRubyObject count(ThreadContext context, IRubyObject recv) {
+        try {
+            int count = 0;
+            for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+                count += bean.getCollectionCount();
+            }
+            return context.runtime.newFixnum(count);
+        } catch (Throwable t) {
+            return RubyFixnum.minus_one(context.runtime);
+        }
     }
 
     private static void emptyImplementationWarning(Ruby runtime, String name) {
