@@ -210,13 +210,35 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     assert_match /jruby \d+\.\d+\.\d+/, version_string
   end
 
-  # JRUBY-2648 [Note: jre6 on windows does not ship server VM - use jdk]
-  def test_server_vm_option
-    # server VM when explicitly set --server
-    result = jruby(%Q{--server -rjava \
-      -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_equal 0, $?.exitstatus
-    assert_match /(tiered|server|j9jit24|j9jit23|(oracle|bea) jrockit\(r\) optimizing compiler)/, result.downcase
+  # Only HotSpot has "client" and "server" so pointless to test others
+  if java.lang.System.get_property('java.vm.name') =~ /HotSpot/
+    # JRUBY-2648 [Note: jre6 on windows does not ship server VM - use jdk]
+    def test_server_vm_option
+      # server VM when explicitly set --server
+      result = jruby(%Q{--server -rjava \
+        -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
+      assert_equal 0, $?.exitstatus
+      assert_match /(tiered|server|j9jit24|j9jit23|(oracle|bea) jrockit\(r\) optimizing compiler)/, result.downcase
+    end
+
+    # JRUBY-2648 [Note: Originally these tests had tests for default vm and
+    # also for -J options in addition to jruby options (-J-client versus 
+    # --client).  In other tests we test that -J works and passes thru and
+    # we should not assume to know what versions of Java will have as their
+    # default VM.
+    def test_client_vm_option
+      arch = java.lang.System.getProperty('sun.arch.data.model')
+      if (arch == nil || arch == '64')
+        # Either non-Sun JVM, or x64 JVM (which doesn't have client VM)
+        return
+      end
+
+      # client VM when explicitly set via --client
+      result = jruby(%Q{--client -rjava \
+        -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
+      assert_equal 0, $?.exitstatus
+      assert_match /client|j9jit24|j9jit23|bea jrockit\(r\) optimizing compiler/, result.downcase
+    end
   end
 
   # JRUBY-3962
@@ -233,26 +255,6 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     if rubyopt_org
       ENV['RUBYOPT'] = rubyopt_org
     end
-  end
-
-
-  # JRUBY-2648 [Note: Originally these tests had tests for default vm and
-  # also for -J options in addition to jruby options (-J-client versus 
-  # --client).  In other tests we test that -J works and passes thru and
-  # we should not assume to know what versions of Java will have as their
-  # default VM.
-  def test_client_vm_option
-    arch = java.lang.System.getProperty('sun.arch.data.model')
-    if (arch == nil || arch == '64')
-      # Either non-Sun JVM, or x64 JVM (which doesn't have client VM)
-      return
-    end
-
-    # client VM when explicitly set via --client
-    result = jruby(%Q{--client -rjava \
-      -e "print java.lang.management.ManagementFactory.getCompilationMXBean.name"})
-    assert_equal 0, $?.exitstatus
-    assert_match /client|j9jit24|j9jit23|bea jrockit\(r\) optimizing compiler/, result.downcase
   end
   
   # JRUBY-2821
