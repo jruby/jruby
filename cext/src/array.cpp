@@ -312,7 +312,7 @@ rb_ary_join(VALUE array1, VALUE array2)
 extern "C" VALUE
 rb_ary_reverse(VALUE array)
 {
-    return callMethod(array, "reverse", 0);
+    return callMethod(array, "reverse!", 0);
 }
 
 extern "C" VALUE
