@@ -14,7 +14,6 @@ testExpressions.rb
 testFixnum.rb
 testFixnumBignumAutoconversion.rb
 testFloat.rb
-testGC.rb
 testHash.rb
 testHereDocument.rb
 testHooks.rb
