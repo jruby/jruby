@@ -71,7 +71,7 @@ if (defined?(JRUBY_VERSION))
       obj2 = nil
 
       t = Time.now
-      (JRuby.gc; sleep 0.1) until (Time.now - t > 1) || results.length > 0
+      (JRuby.gc; sleep 0.1) until (Time.now - t > 5) || results.length > 0
       test_equal ["finalizing #{obj1_id}"], results
     end
 
