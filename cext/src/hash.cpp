@@ -92,6 +92,10 @@ rb_hash_foreach(VALUE hash, int (*func)(ANYARGS), VALUE arg)
         case 1: // ST_STOP:
             return;
 
+        case 2: // ST_DELETE:
+            callMethod(hash, "delete", 1, key);
+            continue;
+
         default:
             rb_raise(rb_eArgError, "unsupported hash_foreach value");
         }
