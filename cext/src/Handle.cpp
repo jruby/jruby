@@ -59,6 +59,9 @@ Handle::Handle(JNIEnv* env, jobject obj_, int type_)
 {
     Init();
     setType(type_);
+    if (type_ == T_CLASS || type_ == T_MODULE) {
+        this->flags |= FL_CONST;
+    }
     this->obj = env->NewGlobalRef(obj_);
 }
 
