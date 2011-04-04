@@ -492,7 +492,7 @@ public class RubyProcess {
         pid = runtime.getPosix().waitpid(pid, status, flags);
         raiseErrnoIfSet(runtime, ECHILD);
         
-        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
+        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff));
         return runtime.newFixnum(pid);
     }
 
@@ -525,7 +525,7 @@ public class RubyProcess {
         int pid = runtime.getPosix().wait(status);
         raiseErrnoIfSet(runtime, ECHILD);
         
-        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
+        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff));
         return runtime.newFixnum(pid);
     }
 
@@ -545,7 +545,7 @@ public class RubyProcess {
         int[] status = new int[1];
         int result = posix.wait(status);
         while (result != -1) {
-            results.append(runtime.newArray(runtime.newFixnum(result), RubyProcess.RubyStatus.newProcessStatus(runtime, status[0])));
+            results.append(runtime.newArray(runtime.newFixnum(result), RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff)));
             result = posix.wait(status);
         }
         
@@ -684,7 +684,7 @@ public class RubyProcess {
         int[] status = new int[1];
         pid = checkErrno(runtime, runtime.getPosix().waitpid(pid, status, flags), ECHILD);
         
-        return runtime.newArray(runtime.newFixnum(pid), RubyProcess.RubyStatus.newProcessStatus(runtime, status[0]));
+        return runtime.newArray(runtime.newFixnum(pid), RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff));
     }
 
     @JRubyMethod(name = "initgroups", required = 2, module = true, visibility = PRIVATE)
