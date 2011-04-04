@@ -89,20 +89,22 @@ public class RubyProcess {
     
     @JRubyClass(name="Process::Status")
     public static class RubyStatus extends RubyObject {
-        private long status = 0L;
+        private final long status;
+        private final long pid;
         
         private static final long EXIT_SUCCESS = 0L;
-        public RubyStatus(Ruby runtime, RubyClass metaClass, long status) {
+        public RubyStatus(Ruby runtime, RubyClass metaClass, long status, long pid) {
             super(runtime, metaClass);
             this.status = status;
+            this.pid = pid;
         }
         
-        public static RubyStatus newProcessStatus(Ruby runtime, long status) {
-            return new RubyStatus(runtime, runtime.getProcStatus(), status);
+        public static RubyStatus newProcessStatus(Ruby runtime, long status, long pid) {
+            return new RubyStatus(runtime, runtime.getProcStatus(), status, pid);
         }
         
         // Bunch of methods still not implemented
-        @JRubyMethod(name = {"to_int", "pid", "stopped?", "stopsig", "signaled?", "termsig?", "exited?", "coredump?"}, frame = true)
+        @JRubyMethod(name = {"to_int", "stopped?", "stopsig", "signaled?", "termsig?", "exited?", "coredump?"}, frame = true)
         public IRubyObject not_implemented() {
             String error = "Process::Status#" + getRuntime().getCurrentContext().getFrameName() + " not implemented";
             throw getRuntime().newNotImplementedError(error);
@@ -177,6 +179,11 @@ public class RubyProcess {
         @JRubyMethod(name = "success?")
         public IRubyObject success_p(ThreadContext context) {
             return context.getRuntime().newBoolean(status == EXIT_SUCCESS);
+        }
+        
+        @JRubyMethod
+        public IRubyObject pid(ThreadContext context) {
+            return context.getRuntime().newFixnum(pid);
         }
         
         private long shiftedValue() {
@@ -492,7 +499,7 @@ public class RubyProcess {
         pid = runtime.getPosix().waitpid(pid, status, flags);
         raiseErrnoIfSet(runtime, ECHILD);
         
-        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff));
+        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff, pid));
         return runtime.newFixnum(pid);
     }
 
@@ -525,7 +532,7 @@ public class RubyProcess {
         int pid = runtime.getPosix().wait(status);
         raiseErrnoIfSet(runtime, ECHILD);
         
-        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff));
+        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff, pid));
         return runtime.newFixnum(pid);
     }
 
@@ -545,7 +552,7 @@ public class RubyProcess {
         int[] status = new int[1];
         int result = posix.wait(status);
         while (result != -1) {
-            results.append(runtime.newArray(runtime.newFixnum(result), RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff)));
+            results.append(runtime.newArray(runtime.newFixnum(result), RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff, result)));
             result = posix.wait(status);
         }
         
@@ -684,7 +691,7 @@ public class RubyProcess {
         int[] status = new int[1];
         pid = checkErrno(runtime, runtime.getPosix().waitpid(pid, status, flags), ECHILD);
         
-        return runtime.newArray(runtime.newFixnum(pid), RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff));
+        return runtime.newArray(runtime.newFixnum(pid), RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff, pid));
     }
 
     @JRubyMethod(name = "initgroups", required = 2, module = true, visibility = PRIVATE)

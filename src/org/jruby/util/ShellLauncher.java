@@ -367,6 +367,10 @@ public class ShellLauncher {
         return runAndWait(runtime, rawArgs, runtime.getOutputStream());
     }
 
+    public static long[] runAndWaitPid(Ruby runtime, IRubyObject[] rawArgs) {
+        return runAndWaitPid(runtime, rawArgs, runtime.getOutputStream(), true);
+    }
+
     public static long runWithoutWait(Ruby runtime, IRubyObject[] rawArgs) {
         return runWithoutWait(runtime, rawArgs, runtime.getOutputStream());
     }
@@ -405,12 +409,16 @@ public class ShellLauncher {
     }
 
     public static int runAndWait(Ruby runtime, IRubyObject[] rawArgs, OutputStream output, boolean doExecutableSearch) {
+        return (int)runAndWaitPid(runtime, rawArgs, output, doExecutableSearch)[0];
+    }
+
+    public static long[] runAndWaitPid(Ruby runtime, IRubyObject[] rawArgs, OutputStream output, boolean doExecutableSearch) {
         OutputStream error = runtime.getErrorStream();
         InputStream input = runtime.getInputStream();
         try {
             Process aProcess = run(runtime, rawArgs, doExecutableSearch);
             handleStreams(runtime, aProcess, input, output, error);
-            return aProcess.waitFor();
+            return new long[] {aProcess.waitFor(), getPidFromProcess(aProcess)};
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         } catch (InterruptedException e) {

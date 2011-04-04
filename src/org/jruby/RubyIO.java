@@ -2004,7 +2004,7 @@ public class RubyIO extends RubyObject {
         
         if (openFile.getProcess() != null) {
             obliterateProcess(openFile.getProcess());
-            IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().exitValue());
+            IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().exitValue(), openFile.getPid());
             runtime.getCurrentContext().setLastExitStatus(processResult);
         }
         
@@ -3525,7 +3525,7 @@ public class RubyIO extends RubyObject {
                     if (io.openFile.isOpen()) {
                         io.close();
                     }
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor())));
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor(), ShellLauncher.getPidFromProcess(process)));
                 }
             }
             return io;
@@ -3626,7 +3626,7 @@ public class RubyIO extends RubyObject {
                     if (io.openFile.isOpen()) {
                         io.close();
                     }
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, (process.waitFor())));
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor(), ShellLauncher.getPidFromProcess(process)));
                 }
             }
             return io;
@@ -3656,7 +3656,8 @@ public class RubyIO extends RubyObject {
                     return block.yield(context, yieldArgs);
                 } finally {
                     cleanupPOpen(tuple);
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor()));
+                    context.setLastExitStatus(
+                            RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor(), ShellLauncher.getPidFromProcess(tuple.process)));
                 }
             }
             return yieldArgs;
@@ -3683,7 +3684,7 @@ public class RubyIO extends RubyObject {
                     return block.yield(context, yieldArgs);
                 } finally {
                     cleanupPOpen(tuple);
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor()));
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor(), ShellLauncher.getPidFromProcess(tuple.process)));
                 }
             }
             return yieldArgs;
