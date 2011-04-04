@@ -82,8 +82,8 @@ import java.net.Inet6Address;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.spi.AbstractSelectableChannel;
-import java.util.Arrays;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -148,6 +148,7 @@ public class RubySocket extends RubyBasicSocket {
         super(runtime, type);
     }
 
+    @Override
     protected int getSoTypeDefault() {
         return soType;
     }
@@ -325,6 +326,11 @@ public class RubySocket extends RubyBasicSocket {
         }
 
         return runtime.newFixnum(port);
+    }
+
+    @JRubyMethod(name = "listen", backtrace = true)
+    public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
+        return context.getRuntime().newFixnum(0);
     }
 
     @Deprecated
