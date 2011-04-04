@@ -3719,7 +3719,7 @@ public class RubyIO extends RubyObject {
         Ruby runtime = context.getRuntime();
 
         try {
-            ShellLauncher.POpenProcess process = ShellLauncher.popen3(runtime, args);
+            ShellLauncher.POpenProcess process = ShellLauncher.popen3(runtime, args, false);
             RubyIO input = process.getInput() != null ?
                 new RubyIO(runtime, process.getInput()) :
                 new RubyIO(runtime, process.getInputStream());
