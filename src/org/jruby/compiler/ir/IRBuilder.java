@@ -887,9 +887,6 @@ public class IRBuilder {
                 m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
             }
 
-            // Jump to else or the end in case nothing matches!
-            m.addInstr(new JumpInstr(hasElse ? elseLabel : endLabel));
-
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
             // preserving the order (or maybe not, since we would have to sort the constants first
             // in any case) for outputing jump tables in certain situations.
@@ -897,6 +894,9 @@ public class IRBuilder {
             // add body to map for emitting later
             bodies.put(bodyLabel, whenNode.getBodyNode());
         }
+
+        // Jump to else or the end in case nothing matches!
+        m.addInstr(new JumpInstr(hasElse ? elseLabel : endLabel));
 
         // build "else" if it exists
         if (hasElse) {
