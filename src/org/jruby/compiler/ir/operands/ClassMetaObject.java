@@ -3,9 +3,8 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRClass;
-import org.jruby.compiler.ir.IRMetaClass;
 import org.jruby.interpreter.InterpreterContext;
-
+import org.jruby.parser.StaticScope;
 
 public class ClassMetaObject extends ModuleMetaObject {
     public ClassMetaObject(IRClass scope) {
@@ -19,19 +18,8 @@ public class ClassMetaObject extends ModuleMetaObject {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        RubyModule module = scope.getStaticScope().getModule();
-
-        if (module != null) return module;
-
-        Ruby runtime = interp.getRuntime();
-        RubyModule container = getContainer(interp, runtime);
-        if (scope instanceof IRMetaClass) {
-            module = container.getMetaClass();
-        } else {
-            // TODO: Get superclass
-            module = container.defineOrGetClassUnder(scope.getName(), runtime.getObject());
-        }
-
-        return interpretBody(interp, interp.getContext(), module);
+		  // SSS FIXME: why would this be null? for core classes?
+        StaticScope ssc =  scope.getStaticScope();
+		  return ssc == null ? null : ssc.getModule();
     }
 }

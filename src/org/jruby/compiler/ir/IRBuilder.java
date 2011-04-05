@@ -113,8 +113,10 @@ import org.jruby.compiler.ir.instructions.CaseInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
+import org.jruby.compiler.ir.instructions.DefineClassInstr;
 import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
 import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.compiler.ir.instructions.DefineModuleInstr;
 import org.jruby.compiler.ir.instructions.EQQInstr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
@@ -951,8 +953,10 @@ public class IRBuilder {
         String   className = cpathNode.getName();
         IRClass c = new IRClass(s, container, superClass, className, classNode.getScope());
         s.getNearestModule().addClass(c);
-        if (container != null)
+        if (container != null) {
+            // SSS FIXME: is this a duplicate since we are adding a put-const via addclass?
             s.addInstr(new PutConstInstr(container, className, new ClassMetaObject(c)));
+        }
 
             // Build the class body!
         if (classNode.getBodyNode() != null)
@@ -1669,7 +1673,6 @@ public class IRBuilder {
     }
 
     public Operand buildDefs(DefsNode node, IRScope s) { // Class method
-        System.out.println("defs scope is: " + s.getName() + "; lexical parent is: " + s.getLexicalParent().getName() + "; nearest module is: " + s.getNearestModule().getName());
         Operand container =  build(node.getReceiverNode(), s);
         IRMethod method = defineNewMethod(node, s, container, false);
         // ENEBO: Can all metaobjects be used for this?  closure?
@@ -2267,8 +2270,10 @@ public class IRBuilder {
         String moduleName = moduleNode.getCPath().getName();
         IRModule m = new IRModule(s, container, moduleName, moduleNode.getScope());
         s.getNearestModule().addModule(m);
-        if (container != null)
+        if (container != null) {
+            // SSS FIXME: is this a duplicate??
             s.addInstr(new PutConstInstr(container, moduleName, new ModuleMetaObject(m)));
+        }
 
         // Build the module body
         if (moduleNode.getBodyNode() != null)

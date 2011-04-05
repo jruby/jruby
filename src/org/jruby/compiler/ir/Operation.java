@@ -27,7 +27,7 @@ public enum Operation {
     YIELD(OpType.yield_op),
 
 // def instructions
-    DEF_INST_METH(OpType.dont_care), DEF_CLASS_METH(OpType.dont_care),
+    DEF_MODULE(OpType.dont_care), DEF_CLASS(OpType.dont_care), DEF_INST_METH(OpType.dont_care), DEF_CLASS_METH(OpType.dont_care),
 
 // exception instructions
     THROW(OpType.exc_op), RETRY(OpType.dont_care),

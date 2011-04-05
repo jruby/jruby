@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
-import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.compiler.ir.instructions.DefineClassInstr;
+import org.jruby.compiler.ir.instructions.DefineModuleInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
@@ -156,8 +156,8 @@ used, we are now forced to be conservative.
             // Boxed scope has to be an IR module or class
             cv = ((IRModule) (((MetaObject) p).scope)).getConstantValue(constRef);
 
-				// If cv is null, it can either mean the constant is missing 
-				// or it can mean that we couldn't resolve this at compilation time.
+            // If cv is null, it can either mean the constant is missing 
+            // or it can mean that we couldn't resolve this at compilation time.
         }
         return cv;
 **/
@@ -165,15 +165,22 @@ used, we are now forced to be conservative.
 
     public void setConstantValue(String constRef, Operand val) {
         if (val.isConstant()) constants.put(constRef, val);
+        // SSS FIXME: Should we move this instr. add into IRBuilder?
         ((IRModule) this).getRootMethod().addInstr(new PutConstInstr(this, constRef, val));
     }
 
     public void addModule(IRModule m) {
-        setConstantValue(m.getName(), new ModuleMetaObject(m));
+        ModuleMetaObject mmo = new ModuleMetaObject(m);
+        // SSS FIXME: Should we move this instr. add into IRBuilder?
+        ((IRModule) this).getRootMethod().addInstr(new DefineModuleInstr(mmo));
+        setConstantValue(m.getName(), mmo);
         modules.add(m);
     }
 
     public void addClass(IRClass c) {
+        ClassMetaObject cmo = new ClassMetaObject(c);
+        // SSS FIXME: Should we move this instr. add into IRBuilder?
+        ((IRModule) this).getRootMethod().addInstr(new DefineClassInstr(cmo, c.superClass));
         setConstantValue(c.getName(), new ClassMetaObject(c));
         classes.add(c);
     }

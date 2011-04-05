@@ -4,6 +4,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.parser.StaticScope;
 
 public class ModuleMetaObject extends MetaObject {
     public ModuleMetaObject(IRModule scope) {
@@ -17,15 +18,9 @@ public class ModuleMetaObject extends MetaObject {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        RubyModule module = scope.getStaticScope().getModule();
-
-        if (module != null) return module;
-
-        Ruby runtime = interp.getRuntime();
-        RubyModule container = getContainer(interp, runtime);
-        module = container.defineOrGetModuleUnder(scope.getName());
-
-        return interpretBody(interp, interp.getContext(), module);
+		  // SSS FIXME: why would this be null? for core classes?
+        StaticScope ssc =  scope.getStaticScope();
+		  return ssc == null ? null : ssc.getModule();
     }
 
     @Override

@@ -84,7 +84,7 @@ public class MetaObject extends Operand {
         return (scope instanceof IRModule) ? IRClass.getCoreClass("Module") : null;
     }
 
-    protected RubyModule interpretBody(InterpreterContext interp, ThreadContext context, RubyModule module) {
+    public RubyModule interpretBody(InterpreterContext interp, ThreadContext context, RubyModule module) {
         scope.getStaticScope().setModule(module);
         IRMethod rootMethod = ((IRModule) scope).getRootMethod();
         DynamicMethod method = new InterpretedIRMethod(rootMethod, module.getMetaClass());
@@ -94,7 +94,7 @@ public class MetaObject extends Operand {
         return module;
     }
 
-    protected RubyModule getContainer(InterpreterContext interp, Ruby runtime) {
+    public RubyModule getContainer(InterpreterContext interp, Ruby runtime) {
         return scope.getContainer() != null ?
             (RubyModule) scope.getContainer().retrieve(interp) : runtime.getObject();
     }
