@@ -443,7 +443,7 @@ public final class Ruby {
         if (config.isInlineScript()) {
             return parseInline(inputStream, filename, getCurrentContext().getCurrentScope());
         } else {
-            return parseFile(inputStream, filename, getCurrentContext().getCurrentScope());
+            return parseFileFromMain(inputStream, filename, getCurrentContext().getCurrentScope());
         }
     }
 
@@ -2262,6 +2262,12 @@ public final class Ruby {
         return parser.parse(file, in, scope, new ParserConfiguration(this,
                 lineNumber, false, false, true, config));
     }
+
+    public Node parseFileFromMain(InputStream in, String file, DynamicScope scope) {
+        if (parserStats != null) parserStats.addLoadParse();
+        return parser.parse(file, in, scope, new ParserConfiguration(this,
+                0, false, false, true, true, config));
+    }
     
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
         return parseFile(in, file, scope, 0);
@@ -2278,7 +2284,7 @@ public final class Ruby {
     public Node parseEval(String content, String file, DynamicScope scope, int lineNumber) {
         if (parserStats != null) parserStats.addEvalParse();
         return parser.parse(file, content.getBytes(), scope, new ParserConfiguration(this,
-                lineNumber, false, false, false, config));
+                lineNumber, false, false, false, false, config));
     }
 
     @Deprecated

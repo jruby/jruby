@@ -110,7 +110,7 @@ public class Parser {
         parser.setWarnings(runtime.getWarnings());
         try {
             result = parser.parse(configuration, lexerSource);
-            if (result.getEndOffset() >= 0) {
+            if (result.getEndOffset() >= 0 && configuration.isSaveData()) {
                 IRubyObject verbose = runtime.getVerbose();
                 runtime.setVerbose(runtime.getNil());
                 try {

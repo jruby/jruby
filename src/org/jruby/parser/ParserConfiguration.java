@@ -56,6 +56,8 @@ public class ParserConfiguration {
     private boolean isDubyExtensionsEnabled = SafePropertyAccessor.getBoolean("jruby.duby.enabled", false);
     // Should we display extra debug information while parsing?
     private boolean isDebug = false;
+    // whether we should save the end-of-file data as DATA
+    private boolean saveData = false;
 
     private CompatVersion version;
 
@@ -69,23 +71,29 @@ public class ParserConfiguration {
     
     public ParserConfiguration(Ruby runtime, int lineNumber,
             boolean extraPositionInformation, boolean inlineSource, CompatVersion version) {
-        this(runtime, lineNumber, extraPositionInformation, inlineSource, true, version);
+        this(runtime, lineNumber, extraPositionInformation, inlineSource, true, version, false);
     }
 
     public ParserConfiguration(Ruby runtime, int lineNumber, boolean extraPositionInformation,
-            boolean inlineSource, boolean isFileParse, CompatVersion version) {
+            boolean inlineSource, boolean isFileParse, CompatVersion version, boolean saveData) {
         this.runtime = runtime;
         this.inlineSource = inlineSource;
         this.lineNumber = lineNumber;
         this.extraPositionInformation = extraPositionInformation;
         this.isEvalParse = !isFileParse;
         this.version = version;
+        this.saveData = saveData;
     }
 
     public ParserConfiguration(Ruby runtime, int lineNumber, boolean extraPositionInformation,
             boolean inlineSource, boolean isFileParse, RubyInstanceConfig config) {
+        this(runtime, lineNumber, extraPositionInformation, inlineSource, isFileParse, false, config);
+    }
+
+    public ParserConfiguration(Ruby runtime, int lineNumber, boolean extraPositionInformation,
+            boolean inlineSource, boolean isFileParse, boolean saveData, RubyInstanceConfig config) {
         this(runtime, lineNumber, extraPositionInformation, inlineSource, isFileParse,
-                config.getCompatVersion());
+                config.getCompatVersion(), saveData);
 
         this.isDebug = config.isParserDebug();
     }
@@ -186,8 +194,18 @@ public class ParserConfiguration {
         return new ManyVarsDynamicScope(new LocalStaticScope(null), existingScope);
     }
 
+    /**
+     * Get the compatibility version we're targeting with this parse.
+     */
     public CompatVersion getVersion() {
         return version;
+    }
+    
+    /**
+     * Get whether we are saving the DATA contents of the file.
+     */
+    public boolean isSaveData() {
+        return saveData;
     }
     
     /**
