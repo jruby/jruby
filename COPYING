@@ -66,7 +66,7 @@ lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
  distributed under the GPL v3. It is not distributed with JRuby and
  will be removed in a future release.
 
- build_lib/jline-0.9.93 (http://jline.sourceforge.net) is distributed
+ build_lib/jline-* (http://jline.sourceforge.net) is distributed
  under the following license:
 
    Redistribution and use in source and binary forms, with or
