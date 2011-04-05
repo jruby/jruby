@@ -38,6 +38,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
 		  super.simplifyOperands(valueMap);
         Operand o = method.getContainer();
         Operand v = valueMap.get(o);
+        // SSS FIXME: Dumb design leaking operand into IRScopeImpl -- hence this setting going on here.  Fix it!
         if (v != null)
             method.setContainer(v);
     }

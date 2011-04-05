@@ -52,6 +52,7 @@ import org.jruby.parser.StaticScope;
  * and so on ...
  */
 public abstract class IRScopeImpl implements IRScope {
+    // SSS FIXME: Dumb design leaking a live operand into a non-operand!!
     Operand container;       // Parent container for this context
     RubyModule containerModule; // Live version of container
     IRScope lexicalParent;  // Lexical parent scope
