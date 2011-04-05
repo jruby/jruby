@@ -8,6 +8,8 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // SSS NOTE: 'variables' are used only during optimizations -- they don't contribute to
 // the list of inputs to the case statement during dataflow analyses.
@@ -53,6 +55,12 @@ public class CaseInstr extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-		 throw new RuntimeException("Not implemented yet!");
-	 }
+        throw new RuntimeException("Not implemented yet!");
+    }
+
+    @Override
+    public Label interpret(InterpreterContext interp, IRubyObject self) {
+		  /* Nothing to do .. this is just a marker instruction */
+        return null;
+    }
 }
