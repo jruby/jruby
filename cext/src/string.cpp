@@ -384,7 +384,7 @@ rb_str_to_str(VALUE obj)
 extern "C" VALUE
 rb_string_value(VALUE* ptr)
 {
-    if (!(rb_obj_is_kind_of(*ptr, rb_cString))) {
+    if (TYPE(*ptr) != T_STRING) {
         *ptr = rb_str_to_str(*ptr);
     }
     return *ptr;
