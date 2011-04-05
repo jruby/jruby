@@ -154,14 +154,14 @@ endif
 
 ifeq ($(OS), darwin)
   PLATFORM = Darwin
-  MACSDK = /Developer/SDKs/MacOSX10.5.sdk
+  MACSDK = $(firstword $(wildcard /Developer/SDKs/MacOSX*.sdk))
   JDK_INCLUDES = -I$(MACSDK)/System/Library/Frameworks/JavaVM.framework/Headers
   ARCHES = ppc
   ifneq ($(findstring $(CPU), i386 x86_64),)
     ARCHES= i386 x86_64
   endif
 
-  CFLAGS += -isysroot $(MACSDK) -DTARGET_RT_MAC_CFM=0
+  CFLAGS += -isysroot $(MACSDK) -DTARGET_RT_MAC_CFM=0 -I/usr/include
   ARCHFLAGS = $(foreach arch, $(ARCHES),-arch $(arch))
   LDFLAGS = $(foreach arch, $(ARCHES),-arch $(arch)) -dynamiclib -framework JavaVM \
 	-Wl,-syslibroot,$(MACSDK) -mmacosx-version-min=10.5
