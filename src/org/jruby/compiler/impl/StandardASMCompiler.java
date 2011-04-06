@@ -177,7 +177,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     private CacheCompiler cacheCompiler;
     
     public static final Constructor invDynInvCompilerConstructor;
-    public static final Method invDynSupportInstaller;
 
     private List<InvokerDescriptor> invokerDescriptors = new ArrayList<InvokerDescriptor>();
     private List<BlockCallbackDescriptor> blockCallbackDescriptors = new ArrayList<BlockCallbackDescriptor>();
@@ -194,14 +193,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 Class support =
                         Class.forName("org.jruby.runtime.invokedynamic.InvokeDynamicSupport");
                 compilerConstructor = compiler.getConstructor(BaseBodyCompiler.class, SkinnyMethodAdapter.class);
-                installerMethod = support.getDeclaredMethod("installBytecode", MethodVisitor.class, String.class);
             }
         } catch (Exception e) {
             e.printStackTrace();
             // leave it null and fall back on our normal invocation logic
         }
         invDynInvCompilerConstructor = compilerConstructor;
-        invDynSupportInstaller = installerMethod;
     }
     
     /** Creates a new instance of StandardCompilerContext */
@@ -606,23 +603,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         clinitMethod = new SkinnyMethodAdapter(cv, ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(Void.TYPE), null, null);
         clinitMethod.start();
-
-        if (invDynSupportInstaller != null) {
-            // install invokedynamic bootstrapper
-            // TODO need to abstract this setup behind another compiler interface
-            try {
-                invDynSupportInstaller.invoke(null, clinitMethod, getClassname());
-            } catch (IllegalAccessException ex) {
-                ex.printStackTrace();
-                // ignore; we won't use invokedynamic
-            } catch (IllegalArgumentException ex) {
-                ex.printStackTrace();
-                // ignore; we won't use invokedynamic
-            } catch (InvocationTargetException ex) {
-                ex.printStackTrace();
-                // ignore; we won't use invokedynamic
-            }
-        }
     }
 
     private void endClassInit() {

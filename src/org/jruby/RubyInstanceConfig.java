@@ -357,8 +357,12 @@ public class RubyInstanceConfig {
         
         if (specVersion.equals("1.5")) {
             JAVA_VERSION = Opcodes.V1_5;
-        } else {
+        } else if (specVersion.equals("1.6")) {
             JAVA_VERSION = Opcodes.V1_6;
+        } else if (specVersion.equals("1.7")) {
+            JAVA_VERSION = Opcodes.V1_7;
+        } else {
+            throw new RuntimeException("unsupported Java version: " + specVersion);
         }
     }
 

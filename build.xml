@@ -14,11 +14,11 @@
 
   <property name="shared.lib.dir" value="lib/ruby/site_ruby/shared"/>
   
-  <property name="asm.jar" value="${build.lib.dir}/asm-3.3.1.jar"/>
-  <property name="asm-commons.jar" value="${build.lib.dir}/asm-commons-3.3.1.jar"/>
-  <property name="asm-util.jar" value="${build.lib.dir}/asm-util-3.3.1.jar"/>
-  <property name="asm-analysis.jar" value="${build.lib.dir}/asm-analysis-3.3.1.jar"/>
-  <property name="asm-tree.jar" value="${build.lib.dir}/asm-tree-3.3.1.jar"/>
+  <property name="asm.jar" value="${build.lib.dir}/asm-${asm.version}.jar"/>
+  <property name="asm-commons.jar" value="${build.lib.dir}/asm-commons-${asm.version}.jar"/>
+  <property name="asm-util.jar" value="${build.lib.dir}/asm-util-${asm.version}.jar"/>
+  <property name="asm-analysis.jar" value="${build.lib.dir}/asm-analysis-${asm.version}.jar"/>
+  <property name="asm-tree.jar" value="${build.lib.dir}/asm-tree-${asm.version}.jar"/>
 
   <path id="build.classpath">
     <fileset dir="${build.lib.dir}" includes="*.jar"/>

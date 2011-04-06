@@ -21,6 +21,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodHandle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.TraceMethodVisitor;
@@ -179,8 +180,8 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, arg1, arg2, arg3);
     }
 
-    public void invokedynamic(String arg1, String arg2, String arg3) {
-        getMethodVisitor().visitMethodInsn(INVOKEDYNAMIC, arg1, arg2, arg3);
+    public void invokedynamic(String arg0, String arg1, MethodHandle arg2, Object... arg3) {
+        getMethodVisitor().visitInvokeDynamicInsn(arg0, arg1, arg2, arg3);
     }
     
     public void aprintln() {
@@ -869,6 +870,10 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
 
     public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3) {
         getMethodVisitor().visitMethodInsn(arg0, arg1, arg2, arg3);
+    }
+    
+    public void visitInvokeDynamicInsn(String arg0, String arg1, MethodHandle arg2, Object... arg3) {
+        getMethodVisitor().visitInvokeDynamicInsn(arg0, arg1, arg2, arg3);
     }
 
     public void visitJumpInsn(int arg0, Label arg1) {

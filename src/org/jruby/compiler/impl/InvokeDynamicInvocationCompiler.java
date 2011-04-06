@@ -34,6 +34,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import static org.jruby.util.CodegenUtils.*;
 
 /**
@@ -122,6 +123,6 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
-        method.invokedynamic(p(Object.class), invokeName, signature);
+        method.invokedynamic(invokeName, signature, InvokeDynamicSupport.bootstrapHandle());
     }
 }

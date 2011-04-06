@@ -1,11 +1,12 @@
 package org.jruby.runtime.invokedynamic;
 
-import java.dyn.CallSite;
-import java.dyn.MethodHandle;
-import java.dyn.MethodHandles;
-import java.dyn.MethodType;
-import java.dyn.MutableCallSite;
-import java.dyn.NoAccessException;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyLocalJumpError;
@@ -22,10 +23,10 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.util.CodegenUtils;
 import org.jruby.util.SafePropertyAccessor;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 @SuppressWarnings("deprecation")
 public class InvokeDynamicSupport {
@@ -48,7 +49,7 @@ public class InvokeDynamicSupport {
         }
     }
 
-    public static CallSite bootstrap(Class caller, String name, MethodType type) {
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
         JRubyCallSite site;
 
         if (name == "call") {
@@ -59,7 +60,7 @@ public class InvokeDynamicSupport {
         
         MethodType fallbackType = type.insertParameterTypes(0, JRubyCallSite.class);
         MethodHandle myFallback = MethodHandles.insertArguments(
-                findStatic(InvokeDynamicSupport.class, "fallback",
+                lookup.findStatic(InvokeDynamicSupport.class, "fallback",
                 fallbackType),
                 0,
                 site);
@@ -67,18 +68,18 @@ public class InvokeDynamicSupport {
         return site;
     }
     
-    public static void installBytecode(MethodVisitor method, String classname) {
-        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(method);
-        mv.ldc(c(classname));
-        mv.invokestatic(p(Class.class), "forName", sig(Class.class, params(String.class)));
-        mv.getstatic(p(InvokeDynamicSupport.class), "BOOTSTRAP", ci(MethodHandle.class));
-        mv.invokestatic(p(java.dyn.Linkage.class), "registerBootstrapMethod", sig(void.class, Class.class, MethodHandle.class));
+    public final static MethodType BOOTSTRAP_SIGNATURE      = MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
+    public final static String     BOOTSTRAP_SIGNATURE_DESC = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
+    
+    public static org.objectweb.asm.MethodHandle bootstrapHandle() {
+        return new org.objectweb.asm.MethodHandle(Opcodes.MH_INVOKESTATIC, p(InvokeDynamicSupport.class), "bootstrap", BOOTSTRAP_SIGNATURE_DESC);
     }
 
     private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
         if (entry.method.getNativeCall() != null) {
             DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
             Class[] nativeSig = nativeCall.getNativeSignature();
+            // if enabled, use invokedynamic for ruby to ruby calls
             if (SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic.rubyDirect", true) &&
                     nativeSig.length > 0 &&
                     AbstractScript.class.isAssignableFrom(nativeSig[0]) &&
@@ -87,6 +88,7 @@ public class InvokeDynamicSupport {
                     return createRubyGWT(nativeCall, test, fallback, entry, site);
                 }
             } else {
+                // if enabled, use invokedynamic for ruby to native calls
                 if (SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic.nativeDirect", true) &&
                         getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
                     if (nativeSig.length > 0 && nativeSig[0] == ThreadContext.class && nativeSig[nativeSig.length - 1] != Block.class) {
@@ -460,9 +462,6 @@ public class InvokeDynamicSupport {
         throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.getRuntime().getNil(), "retry outside of rescue not supported");
     }
 
-    private static final MethodType BOOTSTRAP_TYPE = MethodType.methodType(CallSite.class, Class.class, String.class, MethodType.class);
-    public static final MethodHandle BOOTSTRAP = findStatic(InvokeDynamicSupport.class, "bootstrap", BOOTSTRAP_TYPE);
-
     private static final MethodHandle GETMETHOD;
     static {
         MethodHandle getMethod = findStatic(InvokeDynamicSupport.class, "getMethod", MethodType.methodType(DynamicMethod.class, CacheEntry.class));
@@ -812,14 +811,18 @@ public class InvokeDynamicSupport {
     private static MethodHandle findStatic(Class target, String name, MethodType type) {
         try {
             return MethodHandles.lookup().findStatic(target, name, type);
-        } catch (NoAccessException nae) {
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        } catch (IllegalAccessException nae) {
             throw new RuntimeException(nae);
         }
     }
     private static MethodHandle findVirtual(Class target, String name, MethodType type) {
         try {
             return MethodHandles.lookup().findVirtual(target, name, type);
-        } catch (NoAccessException nae) {
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        } catch (IllegalAccessException nae) {
             throw new RuntimeException(nae);
         }
     }
