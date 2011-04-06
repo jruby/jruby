@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.RubyClass;
+import org.jruby.RubyClass.VariableAccessor;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
@@ -26,7 +27,9 @@ public class GetFieldInstr extends GetInstr {
         RubyClass clazz = object.getMetaClass().getRealClass();
 
         // FIXME: Should add this as a field for instruction
-        getResult().store(interp, clazz.getVariableAccessorForRead(getName()).get(object));
+        VariableAccessor accessor = clazz.getVariableAccessorForRead(getName());
+		  Object v = (accessor == null) ? null : accessor.get(object);
+        getResult().store(interp, v == null ? interp.getRuntime().getNil() : v);
         return null;
     }
 }
