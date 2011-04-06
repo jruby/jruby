@@ -30,7 +30,7 @@ public class YieldInstr extends Instr {
         if (yieldArg == null) {
             resultValue = interp.getBlock().call(interp.getContext());
         } else {
-            resultValue = interp.getBlock().call(interp.getContext(), (IRubyObject)yieldArg.retrieve(interp));
+            resultValue = interp.getBlock().yield(interp.getContext(), (IRubyObject)yieldArg.retrieve(interp));
         }
         getResult().store(interp, resultValue);
         return null;
