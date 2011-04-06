@@ -29,6 +29,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import com.kenai.constantine.platform.Signal;
+import java.util.EnumSet;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -826,29 +828,23 @@ public class RubyProcess {
         return runtime.newFixnum(checkErrno(runtime, runtime.getPosix().getegid()));
     }
     
-    private static String[] signals = new String[] {"EXIT", "HUP", "INT", "QUIT", "ILL", "TRAP", 
-        "ABRT", "POLL", "FPE", "KILL", "BUS", "SEGV", "SYS", "PIPE", "ALRM", "TERM", "URG", "STOP",
-        "TSTP", "CONT", "CHLD", "TTIN", "TTOU", "XCPU", "XFSZ", "VTALRM", "PROF", "USR1", "USR2"};
-    
     private static int parseSignalString(Ruby runtime, String value) {
         int startIndex = 0;
         boolean negative = value.startsWith("-");
         
-        if (negative) startIndex++;
+        if (value.startsWith("-")) startIndex++;
+        String signalName = value.startsWith("SIG", startIndex)
+                ? value 
+                : "SIG" + value.substring(startIndex);
         
-        boolean signalString = value.startsWith("SIG", startIndex);
-        
-        if (signalString) startIndex += 3;
-       
-        String signalName = value.substring(startIndex);
-        
-        // FIXME: This table will get moved into POSIX library so we can get all actual supported
-        // signals.  This is a quick fix to support basic signals until that happens.
-        for (int i = 0; i < signals.length; i++) {
-            if (signals[i].equals(signalName)) return negative ? -i : i;
+        try {
+            int signalValue = Signal.valueOf(signalName).value();
+            return negative ? -signalValue : signalValue;
+
+        } catch (IllegalArgumentException ex) {
+            throw runtime.newArgumentError("unsupported name `SIG" + signalName + "'");
         }
         
-        throw runtime.newArgumentError("unsupported name `SIG" + signalName + "'");
     }
 
     @Deprecated
