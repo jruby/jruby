@@ -36,7 +36,9 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.cext.ModuleLoader;
+import org.jruby.util.SafePropertyAccessor;
 
 /**
  * This class wraps the {@link ModuleLoader} for loading c-extensions 
@@ -90,6 +92,9 @@ public class CExtension implements Library {
             file = dstFile.getAbsolutePath();
         }
         ModuleLoader.load(runtime, file);
+        
+        // set a "global" property to indicate we have loaded a C extension
+        RubyInstanceConfig.setLoadedNativeExtensions(true);
     }
 
 }

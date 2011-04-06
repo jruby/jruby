@@ -898,7 +898,8 @@ public class ShellLauncher {
          * or "irb" in the name.
          */
         private boolean shouldRunInProcess() {
-            if (!runtime.getInstanceConfig().isRunRubyInProcess()) {
+            if (!runtime.getInstanceConfig().isRunRubyInProcess()
+                    || RubyInstanceConfig.hasLoadedNativeExtensions()) {
                 return false;
             }
 
