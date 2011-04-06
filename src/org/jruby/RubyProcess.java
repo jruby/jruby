@@ -173,7 +173,7 @@ public class RubyProcess {
             return inspect(context.getRuntime());
         }
         public IRubyObject inspect(Ruby runtime) {
-            return runtime.newString("#<Process::Status: pid=????,exited(" + String.valueOf(status) + ")>");
+            return runtime.newString("#<Process::Status: pid=" + pid + ",exited(" + String.valueOf(status) + ")>");
         }
         
         @JRubyMethod(name = "success?")
