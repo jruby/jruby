@@ -97,7 +97,7 @@ module FFI
         if invokers.empty?
           begin
             function = lib.find_function(cname.to_s)
-            raise NotFoundError.new(name, cname.to_s) unless function
+            raise FFI::NotFoundError.new(cname.to_s, ffi_libraries.map { |lib| lib.name }) unless function
             invokers << if arg_types.length > 0 && arg_types[arg_types.length - 1] == FFI::NativeType::VARARGS
               FFI::VariadicInvoker.new(arg_types, find_type(ret_type), function, options)
             else
