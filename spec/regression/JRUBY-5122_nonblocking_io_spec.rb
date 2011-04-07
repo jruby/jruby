@@ -1,6 +1,7 @@
 require 'socket'
 require 'timeout'
 require 'fcntl'
+require 'rbconfig'
 
 describe "nonblocking IO blocking behavior: JRUBY-5122" do
   Socket.do_not_reverse_lookup = true
@@ -239,7 +240,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
         t.status.should == false
       end
     end
-    if type == :blocked
+    if type == :blocked && RbConfig::CONFIG['host_os'] !~ /mingw|mswin/ 
       value.should == 3
       t.status.should == false
     end
