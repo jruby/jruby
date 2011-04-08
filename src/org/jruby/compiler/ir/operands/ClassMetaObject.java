@@ -20,9 +20,4 @@ public class ClassMetaObject extends ModuleMetaObject {
         StaticScope ssc =  scope.getStaticScope();
 		  return ssc == null ? null : ssc.getModule();
     }
-
-    @Override
-    public String toString() {
-        return "CMO:" + scope.toString();
-    }
 }
