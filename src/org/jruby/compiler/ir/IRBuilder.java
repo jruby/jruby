@@ -113,8 +113,10 @@ import org.jruby.compiler.ir.instructions.CaseInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
+import org.jruby.compiler.ir.instructions.DefineClassInstr;
 import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
 import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.compiler.ir.instructions.DefineModuleInstr;
 import org.jruby.compiler.ir.instructions.EQQInstr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
@@ -154,6 +156,7 @@ import org.jruby.compiler.ir.operands.Backref;
 import org.jruby.compiler.ir.operands.BacktickString;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.BreakResult;
+import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.CompoundString;
 import org.jruby.compiler.ir.operands.DynamicSymbol;
@@ -164,6 +167,7 @@ import org.jruby.compiler.ir.operands.KeyValuePair;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
+import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.UnexecutableNil;
 import org.jruby.compiler.ir.operands.NthRef;
@@ -947,15 +951,12 @@ public class IRBuilder {
             // Build a new class and add it to the current scope (could be a script / module / class)
         String   className = cpathNode.getName();
         IRClass c = new IRClass(s, container, superClass, className, classNode.getScope());
+        ClassMetaObject cmo = (ClassMetaObject)MetaObject.create(c);
+        s.getNearestModule().getRootMethod().addInstr(new DefineClassInstr(cmo, c.superClass));
         s.getNearestModule().addClass(c);
-        if (container != null) {
-            // SSS FIXME: is this a duplicate since we are adding a put-const via addclass?
-            s.addInstr(new PutConstInstr(container, className, MetaObject.create(c)));
-        }
 
             // Build the class body!
-        if (classNode.getBodyNode() != null)
-            build(classNode.getBodyNode(), c.getRootMethod());
+        if (classNode.getBodyNode() != null) build(classNode.getBodyNode(), c.getRootMethod());
 
         return Nil.NIL;
     }
@@ -976,9 +977,10 @@ public class IRBuilder {
 
         // Record the new class as being lexically defined in scope s
         s.getNearestModule().addClass(mc);
+        ClassMetaObject cmo = (ClassMetaObject)MetaObject.create(mc);
+        s.getNearestModule().getRootMethod().addInstr(new DefineClassInstr(cmo, mc.superClass));
 
-        if (sclassNode.getBodyNode() != null)
-            build(sclassNode.getBodyNode(), mc.getRootMethod());
+        if (sclassNode.getBodyNode() != null) build(sclassNode.getBodyNode(), mc.getRootMethod());
 
         return Nil.NIL;
     }
@@ -1013,6 +1015,7 @@ public class IRBuilder {
         if (constNode == null) {
             // SSS FIXME: Shouldn't we be adding a put const instr. here?
             s.getNearestModule().setConstantValue(constDeclNode.getName(), val);
+            s.getNearestModule().getRootMethod().addInstr(new PutConstInstr(s.getNearestModule(), constDeclNode.getName(), val));
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
@@ -2264,15 +2267,11 @@ public class IRBuilder {
         // Build the new module
         String moduleName = moduleNode.getCPath().getName();
         IRModule m = new IRModule(s, container, moduleName, moduleNode.getScope());
+        s.getNearestModule().getRootMethod().addInstr(new DefineModuleInstr((ModuleMetaObject) MetaObject.create(m)));
         s.getNearestModule().addModule(m);
-        if (container != null) {
-            // SSS FIXME: is this a duplicate??
-            s.addInstr(new PutConstInstr(container, moduleName, MetaObject.create(m)));
-        }
 
         // Build the module body
-        if (moduleNode.getBodyNode() != null)
-            build(moduleNode.getBodyNode(), m.getRootMethod());
+        if (moduleNode.getBodyNode() != null) build(moduleNode.getBodyNode(), m.getRootMethod());
 
         return Nil.NIL;
     }

@@ -1,7 +1,5 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;

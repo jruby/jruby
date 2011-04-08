@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
-import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -31,10 +30,7 @@ public class PutConstInstr extends PutInstr {
 
         assert module != null : "MODULE should always be something";
 
-        // Modules and classes set this constant as a side-effect
-        if (!(getValue() instanceof ModuleMetaObject)) {
-            module.setConstant(getName(), value);
-        }
+        module.setConstant(getName(), value);
         return null;
     }
 }

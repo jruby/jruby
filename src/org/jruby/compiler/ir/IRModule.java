@@ -164,24 +164,15 @@ used, we are now forced to be conservative.
     }
 
     public void setConstantValue(String constRef, Operand val) {
+        // FIXME: isConstant can be confusing since we have Ruby constants and constants in the compiler sense
         if (val.isConstant()) constants.put(constRef, val);
-        // SSS FIXME: Should we move this instr. add into IRBuilder?
-        ((IRModule) this).getRootMethod().addInstr(new PutConstInstr(this, constRef, val));
     }
 
     public void addModule(IRModule m) {
-        ModuleMetaObject mmo = (ModuleMetaObject)MetaObject.create(m);
-        // SSS FIXME: Should we move this instr. add into IRBuilder?
-        ((IRModule) this).getRootMethod().addInstr(new DefineModuleInstr(mmo));
-        setConstantValue(m.getName(), mmo);
         modules.add(m);
     }
 
     public void addClass(IRClass c) {
-        ClassMetaObject cmo = (ClassMetaObject)MetaObject.create(c);
-        // SSS FIXME: Should we move this instr. add into IRBuilder?
-        ((IRModule) this).getRootMethod().addInstr(new DefineClassInstr(cmo, c.superClass));
-        setConstantValue(c.getName(), cmo);
         classes.add(c);
     }
 
