@@ -2965,7 +2965,7 @@ public class IRBuilder {
         Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
         Variable   ret   = s.getNewTemporaryVariable();
         s.addInstr(new RubyInternalCallInstr(ret, MethAddr.ZSUPER, getSelf(s),
-                ((IRMethod)s).getCallArgs(), block));
+                ((IRExecutionScope) s).getClosestMethodAncestor().getCallArgs(), block));
         return ret;
     }
 
