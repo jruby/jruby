@@ -930,33 +930,22 @@ public class IRBuilder {
         return result;
     }
 
+    /**
+     * Build a new class and add it to the current scope (s).
+     */
     public Operand buildClass(ClassNode classNode, IRScope s) {
-        final Node       superNode = classNode.getSuperNode();
-        final Colon3Node cpathNode = classNode.getCPath();
-
+        Node superNode = classNode.getSuperNode();
+        Colon3Node cpath = classNode.getCPath();
         Operand superClass = (superNode == null) ? MetaObject.create(IRClass.getCoreClass("Object")) : build(superNode, s);
+        String className = cpath.getName();
+        Operand container = getContainerFromCPath(cpath, s);
 
-            // By default, the container for this class is 's'
-        Operand container = null;
-
-            // Do we have a dynamic container?
-        if (cpathNode instanceof Colon2Node) {
-            Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
-            if (leftNode != null)
-                container = build(leftNode, s);
-        } else if (cpathNode instanceof Colon3Node) {
-            container = MetaObject.create(IRClass.getCoreClass("Object"));
-        }
-
-            // Build a new class and add it to the current scope (could be a script / module / class)
-        String   className = cpathNode.getName();
         IRClass c = new IRClass(s, container, superClass, className, classNode.getScope());
-        ClassMetaObject cmo = (ClassMetaObject)MetaObject.create(c);
+        ClassMetaObject cmo = (ClassMetaObject) MetaObject.create(c);
         s.getNearestModule().getRootMethod().addInstr(new DefineClassInstr(cmo, c.superClass));
         s.getNearestModule().addClass(c);
 
-            // Build the class body!
-        if (classNode.getBodyNode() != null) build(classNode.getBodyNode(), c.getRootMethod());
+        build(classNode.getBodyNode(), c.getRootMethod());
 
         return Nil.NIL;
     }
@@ -980,7 +969,7 @@ public class IRBuilder {
         ClassMetaObject cmo = (ClassMetaObject)MetaObject.create(mc);
         s.getNearestModule().getRootMethod().addInstr(new DefineClassInstr(cmo, mc.superClass));
 
-        if (sclassNode.getBodyNode() != null) build(sclassNode.getBodyNode(), mc.getRootMethod());
+        build(sclassNode.getBodyNode(), mc.getRootMethod());
 
         return Nil.NIL;
     }
@@ -2249,29 +2238,31 @@ public class IRBuilder {
         return generateJRubyUtilityCall(m, MethAddr.MATCH3, receiver, new Operand[]{value});
     }
 
-    public Operand buildModule(ModuleNode moduleNode, IRScope s) {
-        final Colon3Node cpathNode  = moduleNode.getCPath();
-
-        // By default, the container for this class is 's'
+    private Operand getContainerFromCPath(Colon3Node cpath, IRScope s) {
         Operand container = null;
 
-        // Get the container for this new module
-        if (cpathNode instanceof Colon2Node) {
-            Node leftNode = ((Colon2Node) cpathNode).getLeftNode();
-            if (leftNode != null)
-                container = build(leftNode, s);
-        } else if (cpathNode instanceof Colon3Node) {
+        if (cpath instanceof Colon2Node) {
+            Node leftNode = ((Colon2Node) cpath).getLeftNode();
+            
+            if (leftNode != null) container = build(leftNode, s);
+        } else {
             container = MetaObject.create(IRClass.getCoreClass("Object"));
         }
 
+        return container;
+    }
+
+    public Operand buildModule(ModuleNode moduleNode, IRScope s) {
+        Colon3Node cpath = moduleNode.getCPath();
+        String moduleName = cpath.getName();
+        Operand container = getContainerFromCPath(cpath, s);
+
         // Build the new module
-        String moduleName = moduleNode.getCPath().getName();
         IRModule m = new IRModule(s, container, moduleName, moduleNode.getScope());
         s.getNearestModule().getRootMethod().addInstr(new DefineModuleInstr((ModuleMetaObject) MetaObject.create(m)));
         s.getNearestModule().addModule(m);
 
-        // Build the module body
-        if (moduleNode.getBodyNode() != null) build(moduleNode.getBodyNode(), m.getRootMethod());
+        build(moduleNode.getBodyNode(), m.getRootMethod());
 
         return Nil.NIL;
     }
