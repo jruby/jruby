@@ -170,7 +170,7 @@ used, we are now forced to be conservative.
     }
 
     public void addModule(IRModule m) {
-        ModuleMetaObject mmo = new ModuleMetaObject(m);
+        ModuleMetaObject mmo = (ModuleMetaObject)MetaObject.create(m);
         // SSS FIXME: Should we move this instr. add into IRBuilder?
         ((IRModule) this).getRootMethod().addInstr(new DefineModuleInstr(mmo));
         setConstantValue(m.getName(), mmo);
@@ -178,10 +178,10 @@ used, we are now forced to be conservative.
     }
 
     public void addClass(IRClass c) {
-        ClassMetaObject cmo = new ClassMetaObject(c);
+        ClassMetaObject cmo = (ClassMetaObject)MetaObject.create(c);
         // SSS FIXME: Should we move this instr. add into IRBuilder?
         ((IRModule) this).getRootMethod().addInstr(new DefineClassInstr(cmo, c.superClass));
-        setConstantValue(c.getName(), new ClassMetaObject(c));
+        setConstantValue(c.getName(), cmo);
         classes.add(c);
     }
 

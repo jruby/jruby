@@ -7,7 +7,7 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 
 public class ModuleMetaObject extends MetaObject {
-    public ModuleMetaObject(IRModule scope) {
+    protected ModuleMetaObject(IRModule scope) {
         super(scope);
     }
 

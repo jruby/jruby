@@ -8,7 +8,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClosureMetaObject extends MetaObject {
-    public ClosureMetaObject(IRClosure scope) {
+    protected ClosureMetaObject(IRClosure scope) {
         super(scope);
     }
 

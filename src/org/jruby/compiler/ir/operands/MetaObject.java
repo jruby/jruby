@@ -34,7 +34,7 @@ public class MetaObject extends Operand {
 
     @Override
     public String toString() {
-        return scope.toString();
+        return scope == null ? "<NULL SCOPE>" : scope.toString();
     }
 
     @Override

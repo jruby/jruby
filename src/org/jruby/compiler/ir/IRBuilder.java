@@ -113,10 +113,8 @@ import org.jruby.compiler.ir.instructions.CaseInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
-import org.jruby.compiler.ir.instructions.DefineClassInstr;
 import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
 import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
-import org.jruby.compiler.ir.instructions.DefineModuleInstr;
 import org.jruby.compiler.ir.instructions.EQQInstr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
@@ -156,8 +154,6 @@ import org.jruby.compiler.ir.operands.Backref;
 import org.jruby.compiler.ir.operands.BacktickString;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.BreakResult;
-import org.jruby.compiler.ir.operands.ClassMetaObject;
-import org.jruby.compiler.ir.operands.ClosureMetaObject;
 import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.CompoundString;
 import org.jruby.compiler.ir.operands.DynamicSymbol;
@@ -168,7 +164,6 @@ import org.jruby.compiler.ir.operands.KeyValuePair;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
-import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.UnexecutableNil;
 import org.jruby.compiler.ir.operands.NthRef;
@@ -935,7 +930,7 @@ public class IRBuilder {
         final Node       superNode = classNode.getSuperNode();
         final Colon3Node cpathNode = classNode.getCPath();
 
-        Operand superClass = (superNode == null) ? new ClassMetaObject(IRClass.getCoreClass("Object")) : build(superNode, s);
+        Operand superClass = (superNode == null) ? MetaObject.create(IRClass.getCoreClass("Object")) : build(superNode, s);
 
             // By default, the container for this class is 's'
         Operand container = null;
@@ -946,7 +941,7 @@ public class IRBuilder {
             if (leftNode != null)
                 container = build(leftNode, s);
         } else if (cpathNode instanceof Colon3Node) {
-            container = new ClassMetaObject(IRClass.getCoreClass("Object"));
+            container = MetaObject.create(IRClass.getCoreClass("Object"));
         }
 
             // Build a new class and add it to the current scope (could be a script / module / class)
@@ -955,7 +950,7 @@ public class IRBuilder {
         s.getNearestModule().addClass(c);
         if (container != null) {
             // SSS FIXME: is this a duplicate since we are adding a put-const via addclass?
-            s.addInstr(new PutConstInstr(container, className, new ClassMetaObject(c)));
+            s.addInstr(new PutConstInstr(container, className, MetaObject.create(c)));
         }
 
             // Build the class body!
@@ -2072,7 +2067,7 @@ public class IRBuilder {
         if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
-        return new ClosureMetaObject(closure);
+        return MetaObject.create(closure);
     }
 
     public Operand buildGlobalAsgn(GlobalAsgnNode globalAsgnNode, IRScope m) {
@@ -2216,7 +2211,7 @@ public class IRBuilder {
         if (closureRetVal != U_NIL)  // can be U_NIL if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
-        return new ClosureMetaObject(closure);
+        return MetaObject.create(closure);
     }
 
     public Operand buildLiteral(LiteralNode literalNode, IRScope s) {
@@ -2263,7 +2258,7 @@ public class IRBuilder {
             if (leftNode != null)
                 container = build(leftNode, s);
         } else if (cpathNode instanceof Colon3Node) {
-            container = new ClassMetaObject(IRClass.getCoreClass("Object"));
+            container = MetaObject.create(IRClass.getCoreClass("Object"));
         }
 
         // Build the new module
@@ -2272,7 +2267,7 @@ public class IRBuilder {
         s.getNearestModule().addModule(m);
         if (container != null) {
             // SSS FIXME: is this a duplicate??
-            s.addInstr(new PutConstInstr(container, moduleName, new ModuleMetaObject(m)));
+            s.addInstr(new PutConstInstr(container, moduleName, MetaObject.create(m)));
         }
 
         // Build the module body
