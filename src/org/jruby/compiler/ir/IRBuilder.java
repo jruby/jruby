@@ -228,6 +228,7 @@ import org.jruby.util.ByteList;
 
 public class IRBuilder {
     private static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
+	 private static final Operand[] NO_ARGS = new Operand[]{};
 
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
@@ -1259,7 +1260,7 @@ public class IRBuilder {
             case VCALLNODE:
             {
                 Variable tmp = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(tmp, new MethAddr("getMetaClass"), getSelf(s), new Operand[]{}));
+                s.addInstr(new JRubyImplCallInstr(tmp, new MethAddr("getMetaClass"), getSelf(s), NO_ARGS));
 
                 Variable tmpVar = s.getNewTemporaryVariable();
                 StringLiteral mName = new StringLiteral(((VCallNode) node).getName());
@@ -1291,10 +1292,17 @@ public class IRBuilder {
                 buildDefinitionCheck(s, tmpVar, "instance-variable");
                 return tmpVar;
             }
+            case YIELDNODE:
+				{
+                Variable tmpVar = s.getNewTemporaryVariable();
+                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("block_isGiven"), null, NO_ARGS));
+                buildDefinitionCheck(s, tmpVar, "yield");
+                return tmpVar;
+            }
             case FCALLNODE:
             {
                 Variable tmpVar = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("getMetaClass"), getSelf(s), new Operand[]{}));
+                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("getMetaClass"), getSelf(s), NO_ARGS));
                 Label undefLabel = s.getNewLabel();
                 Label defLabel   = s.getNewLabel();
                 StringLiteral mName = new StringLiteral(((FCallNode)node).getName());
@@ -1316,7 +1324,7 @@ public class IRBuilder {
 
                 // store previous exception for restoration if we rescue something
                 Variable errInfo = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(errInfo, new MethAddr("threadContext_stashErrInfo"), null, new Operand[]{}));
+                s.addInstr(new JRubyImplCallInstr(errInfo, new MethAddr("threadContext_stashErrInfo"), null, NO_ARGS));
 
                 CodeBlock protectedCode = new CodeBlock() {
                     public Object run(Object[] args) {
@@ -1328,7 +1336,7 @@ public class IRBuilder {
                         if (n instanceof Colon2Node) {
                             v = build(((Colon2Node) n).getLeftNode(), m);
                         } else {
-                            m.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("runtime_getObject"), null, new Operand[]{}));
+                            m.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("runtime_getObject"), null, NO_ARGS));
                             v = tmpVar;
                         }
                         m.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("getDefinedConstantOrBoundMethod"), null, new Operand[]{v, new StringLiteral(name)}));
@@ -1340,6 +1348,7 @@ public class IRBuilder {
                 CodeBlock rescueBlock = new CodeBlock() {
                     public Object run(Object[] args) {
                         // Nothing to do -- ignore the exception, and restore stashed error info!
+                        // SSS FIXME: Is this correct?  Or, do we compare against a specific exception type?
                         IRScope  m  = (IRScope)args[0];
                         m.addInstr(new JRubyImplCallInstr(null, new MethAddr("threadContext_restoreErrInfo"), null, new Operand[]{(Variable)args[1]}));
                         return Nil.NIL;
@@ -1353,6 +1362,66 @@ public class IRBuilder {
 /**
  *  SSS FIXME: To be completed
  *
+            case CALLNODE:
+            {
+                final CallNode iVisited = (CallNode) node;
+                Object isnull = m.getNewEnding();
+                Object ending = m.getNewEnding();
+                buildGetDefinition(iVisited.getReceiverNode(), m);
+                m.ifNull(isnull);
+
+                m.rescue(new BranchCallback() {
+
+                            public void branch(IRScope m) {
+                                build(iVisited.getReceiverNode(), m,true); //[IRubyObject]
+                                m.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
+                                m.metaclass(); //[IRubyObject, RubyClass]
+                                m.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
+                                m.getVisibilityFor(iVisited.getName()); //[IRubyObject, RubyClass, Visibility]
+                                m.duplicateCurrentValue(); //[IRubyObject, RubyClass, Visibility, Visibility]
+                                final Object isfalse = m.getNewEnding();
+                                Object isreal = m.getNewEnding();
+                                Object ending = m.getNewEnding();
+                                m.isPrivate(isfalse, 3); //[IRubyObject, RubyClass, Visibility]
+                                m.isNotProtected(isreal, 1); //[IRubyObject, RubyClass]
+                                m.selfIsKindOf(isreal); //[IRubyObject]
+                                m.consumeCurrentValue();
+                                m.go(isfalse);
+                                m.setEnding(isreal); //[]
+
+                                m.isMethodBound(iVisited.getName(), new BranchCallback() {
+
+                                            public void branch(IRScope m) {
+                                                buildGetArgumentDefinition(iVisited.getArgsNode(), m, "method");
+                                            }
+                                        },
+                                        new BranchCallback() {
+
+                                            public void branch(IRScope m) {
+                                                m.go(isfalse);
+                                            }
+                                        });
+                                m.go(ending);
+                                m.setEnding(isfalse);
+                                m.pushNull();
+                                m.setEnding(ending);
+                            }
+                        }, JumpException.class,
+                        new BranchCallback() {
+
+                            public void branch(IRScope m) {
+                                m.pushNull();
+                            }
+                        }, String.class);
+
+                //          m.swapValues();
+        //m.consumeCurrentValue();
+                m.go(ending);
+                m.setEnding(isnull);
+                m.pushNull();
+                m.setEnding(ending);
+                break;
+            }
             case BACKREFNODE:
                     // SSS FIXME!
                 Operand x = m.backref();
@@ -1370,78 +1439,6 @@ public class IRBuilder {
                             }
                         });
                 break;
-            case YIELDNODE:
-                m.hasBlock(new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return new StringLiteral("yield");
-                            }
-                        },
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return Nil.NIL;
-                            }
-                        });
-                break;
-            case CALLNODE:
-                {
-                    final CallNode iVisited = (CallNode) node;
-                    Object isnull = m.getNewEnding();
-                    Object ending = m.getNewEnding();
-                    buildGetDefinition(iVisited.getReceiverNode(), m);
-                    m.ifNull(isnull);
-
-                    m.rescue(new BranchCallback() {
-
-                                public void branch(IRScope m) {
-                                    build(iVisited.getReceiverNode(), m,true); //[IRubyObject]
-                                    m.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
-                                    m.metaclass(); //[IRubyObject, RubyClass]
-                                    m.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
-                                    m.getVisibilityFor(iVisited.getName()); //[IRubyObject, RubyClass, Visibility]
-                                    m.duplicateCurrentValue(); //[IRubyObject, RubyClass, Visibility, Visibility]
-                                    final Object isfalse = m.getNewEnding();
-                                    Object isreal = m.getNewEnding();
-                                    Object ending = m.getNewEnding();
-                                    m.isPrivate(isfalse, 3); //[IRubyObject, RubyClass, Visibility]
-                                    m.isNotProtected(isreal, 1); //[IRubyObject, RubyClass]
-                                    m.selfIsKindOf(isreal); //[IRubyObject]
-                                    m.consumeCurrentValue();
-                                    m.go(isfalse);
-                                    m.setEnding(isreal); //[]
-
-                                    m.isMethodBound(iVisited.getName(), new BranchCallback() {
-
-                                                public void branch(IRScope m) {
-                                                    buildGetArgumentDefinition(iVisited.getArgsNode(), m, "method");
-                                                }
-                                            },
-                                            new BranchCallback() {
-
-                                                public void branch(IRScope m) {
-                                                    m.go(isfalse);
-                                                }
-                                            });
-                                    m.go(ending);
-                                    m.setEnding(isfalse);
-                                    m.pushNull();
-                                    m.setEnding(ending);
-                                }
-                            }, JumpException.class,
-                            new BranchCallback() {
-
-                                public void branch(IRScope m) {
-                                    m.pushNull();
-                                }
-                            }, String.class);
-
-                    //          m.swapValues();
-            //m.consumeCurrentValue();
-                    m.go(ending);
-                    m.setEnding(isnull);
-                    m.pushNull();
-                    m.setEnding(ending);
-                    break;
-                }
             case CLASSVARNODE:
                 {
                     ClassVarNode iVisited = (ClassVarNode) node;
@@ -2065,7 +2062,7 @@ public class IRBuilder {
         Operand  receiver = build(forNode.getIterNode(), m);
         Operand  forBlock = buildForIter(forNode, m);     
         // SSS FIXME: Really?  Why the internal call?
-        m.addInstr(new RubyInternalCallInstr(ret, MethAddr.FOR_EACH, receiver, new Operand[]{}, forBlock));
+        m.addInstr(new RubyInternalCallInstr(ret, MethAddr.FOR_EACH, receiver, NO_ARGS, forBlock));
         return ret;
     }
 
@@ -2251,7 +2248,7 @@ public class IRBuilder {
 
     public Operand buildMatch(MatchNode matchNode, IRScope m) {
         Operand regexp = build(matchNode.getRegexpNode(), m);
-        return generateJRubyUtilityCall(m, MethAddr.MATCH, regexp, new Operand[]{});
+        return generateJRubyUtilityCall(m, MethAddr.MATCH, regexp, NO_ARGS);
     }
 
     public Operand buildMatch2(Match2Node matchNode, IRScope m) {
@@ -2376,7 +2373,7 @@ public class IRBuilder {
         Operand  v1 = build(opAsgnNode.getReceiverNode(), s);
         Variable      getResult   = s.getNewTemporaryVariable();
         Instr callInstr = new CallInstr(getResult, new MethAddr(opAsgnNode.getVariableName()), v1,
-                new Operand[]{}, null);
+                NO_ARGS, null);
         s.addInstr(callInstr);
 
         // call operator
@@ -2870,7 +2867,7 @@ public class IRBuilder {
         // 2. Alternatively make this a regular call which would be subject to inlining
         //    if these utility methods are implemented as ruby ir code.
         Operand  array = build(node.getValue(), s);
-        return generateJRubyUtilityCall(s, MethAddr.TO_ARY, array, new Operand[]{});
+        return generateJRubyUtilityCall(s, MethAddr.TO_ARY, array, NO_ARGS);
     }
 
     public Operand buildTrue(Node node, IRScope m) {
@@ -2880,7 +2877,7 @@ public class IRBuilder {
 
     public Operand buildUndef(Node node, IRScope m) {
         Operand methName = build(((UndefNode) node).getName(), m);
-        return generateJRubyUtilityCall(m, MethAddr.UNDEF_METHOD, methName, new Operand[]{});
+        return generateJRubyUtilityCall(m, MethAddr.UNDEF_METHOD, methName, NO_ARGS);
     }
 
     private Operand buildConditionalLoop(IRExecutionScope s, Node conditionNode, Node bodyNode, boolean isWhile, boolean isLoopHeadCondition)
@@ -2953,7 +2950,7 @@ public class IRBuilder {
     public Operand buildVCall(VCallNode node, IRScope s) {
         List<Operand> args       = new ArrayList<Operand>(); args.add(getSelf(s));
         Variable      callResult = s.getNewTemporaryVariable();
-        Instr      callInstr  = new CallInstr(callResult, new MethAddr(node.getName()), getSelf(s), new Operand[]{}, null);
+        Instr         callInstr  = new CallInstr(callResult, new MethAddr(node.getName()), getSelf(s), NO_ARGS, null);
         s.addInstr(callInstr);
         return callResult;
     }

@@ -58,7 +58,7 @@ public class JRubyImplCallInstr extends CallInstr {
             String name = getCallArgs()[0].retrieve(interp).toString();
             getResult().store(interp, rt.newBoolean(interp.getContext().getConstantDefined(name)));
         } else if (getMethodAddr().getName().equals("self_hasInstanceVariable")) {
-            receiver = getReceiver().retrieve(interp); // This should be identical to self?
+            receiver = getReceiver().retrieve(interp); // SSS: This should be identical to self. Add an assert?
             String name = getCallArgs()[0].retrieve(interp).toString();
             getResult().store(interp, rt.newBoolean(((IRubyObject)receiver).getInstanceVariables().fastHasInstanceVariable(name)));
         } else if (getMethodAddr().getName().equals("runtime_isGlobalDefined")) {
@@ -66,6 +66,8 @@ public class JRubyImplCallInstr extends CallInstr {
             getResult().store(interp, rt.newBoolean(rt.getGlobalVariables().isDefined(name)));
         } else if (getMethodAddr().getName().equals("runtime_getObject")) {
             getResult().store(interp, rt.getObject());
+        } else if (getMethodAddr().getName().equals("block_isGiven")) {
+            getResult().store(interp, rt.newBoolean(interp.getBlock().isGiven()));
         } else {
             super.interpret(interp, self);
         }
