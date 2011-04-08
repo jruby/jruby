@@ -2711,15 +2711,17 @@ public class IRBuilder {
         m.addInstr(new RECV_EXCEPTION_Instr(exc));
         // SSS: FIXME: Is this correct?
         // Compute all elements of the exception array eagerly
-        Operand excType = (exceptionList == null) ? null : build(exceptionList, m);
+//        Operand excType = (exceptionList == null) ? null : build(exceptionList, m);
 
         // Compare and branch as necessary!
         Label uncaughtLabel = null;
-        if (excType != null) {
+        if (exceptionList != null) {
             uncaughtLabel = m.getNewLabel();
             Variable eqqResult = m.getNewTemporaryVariable();
-            m.addInstr(new EQQInstr(eqqResult, exc, excType));
-            m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
+            for (Node excType : ((ListNode) exceptionList).childNodes()) {
+                m.addInstr(new EQQInstr(eqqResult, build(excType, m), exc));
+                m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
+            }
         }
 
         // Caught exception case -- build rescue body
