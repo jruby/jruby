@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
@@ -35,20 +36,36 @@ public class JRubyImplCallInstr extends CallInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        Object receiver = getReceiver().retrieve(interp);
+        Object receiver;
+        Ruby   rt = interp.getRuntime();
 
         if (getMethodAddr() == MethAddr.MATCH2) {
+            receiver = getReceiver().retrieve(interp);
             getResult().store(interp, ((RubyRegexp) receiver).op_match(interp.getContext(),
                     (IRubyObject) getCallArgs()[0].retrieve(interp)));
         } else if (getMethodAddr() == MethAddr.MATCH3) { // ENEBO: Only for rubystring?
+            receiver = getReceiver().retrieve(interp);
             getResult().store(interp, ((RubyRegexp) receiver).op_match(interp.getContext(),
                     (IRubyObject) getCallArgs()[0].retrieve(interp)));
         } else if (getMethodAddr() == MethAddr.TO_ARY) {
+            receiver = getReceiver().retrieve(interp);
             getResult().store(interp, RuntimeHelpers.aryToAry((IRubyObject) receiver));
-        } else if (getMethodAddr().getName().equals("getConstantDefined")) {
-            // FIXME: ^^^^----Do somethign better than this for lookup
+        } else if (getMethodAddr().getName().equals("threadContext_saveErrInfo")) {
+            getResult().store(interp, interp.getContext().getErrorInfo());
+        } else if (getMethodAddr().getName().equals("threadContext_restoreErrInfo")) {
+            interp.getContext().setErrorInfo((IRubyObject)getCallArgs()[0].retrieve(interp));
+        } else if (getMethodAddr().getName().equals("threadContext_getConstantDefined")) {
             String name = getCallArgs()[0].retrieve(interp).toString();
-            getResult().store(interp, interp.getRuntime().newBoolean(interp.getContext().getConstantDefined(name)));
+            getResult().store(interp, rt.newBoolean(interp.getContext().getConstantDefined(name)));
+        } else if (getMethodAddr().getName().equals("self_hasInstanceVariable")) {
+            receiver = getReceiver().retrieve(interp); // This should be identical to self?
+            String name = getCallArgs()[0].retrieve(interp).toString();
+            getResult().store(interp, rt.newBoolean(((IRubyObject)receiver).getInstanceVariables().fastHasInstanceVariable(name)));
+        } else if (getMethodAddr().getName().equals("runtime_isGlobalDefined")) {
+            String name = getCallArgs()[0].retrieve(interp).toString();
+            getResult().store(interp, rt.newBoolean(rt.getGlobalVariables().isDefined(name)));
+        } else if (getMethodAddr().getName().equals("runtime_getObject")) {
+            getResult().store(interp, rt.getObject());
         } else {
             super.interpret(interp, self);
         }

@@ -1060,7 +1060,7 @@ public class IRBuilder {
         public Object run(Object[] args);
     }
 
-    private Object[] protectCode(IRScope m, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock ensureCode, Object[] ensureCodeArgs) {
+    private Object[] protectCodeWithEnsure(IRScope m, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock ensureCode, Object[] ensureCodeArgs) {
         // This effectively mimics a begin-ensure-end code block
         // Except this silently swallows all exceptions raised by the protected code
 
@@ -1100,7 +1100,38 @@ public class IRBuilder {
         // End
         m.addInstr(new LABEL_Instr(rEndLabel));
 
+        // SSS FIXME: Is this correct?  Shoudln't we be copying v1 & v2 into an variable and returning that instead?
         return new Object[] { v1, v2 };
+    }
+
+    private Operand protectCodeWithRescue(IRScope m, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock rescueBlock, Object[] rescueBlockArgs) {
+        // This effectively mimics a begin-rescue-end code block
+        // Except this catches all exceptions raised by the protected code
+
+        Variable rv = m.getNewTemporaryVariable();
+        Label rBeginLabel = m.getNewLabel();
+        Label rEndLabel = m.getNewLabel();
+        List<Label> rescueLabels = new ArrayList<Label>() { };
+
+        // Protected region code
+        m.addInstr(new LABEL_Instr(rBeginLabel));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabels));
+        Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
+        m.addInstr(new CopyInstr(rv, (Operand)v1));
+        m.addInstr(new JumpInstr(rEndLabel));
+        m.addInstr(new ExceptionRegionEndMarkerInstr());
+
+        // Rescue code
+        Label rbLabel = m.getNewLabel();
+        rescueLabels.add(rbLabel);
+        m.addInstr(new LABEL_Instr(rbLabel));
+        Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
+        if (v2 != null) m.addInstr(new CopyInstr(rv, (Operand)v1));
+
+        // End
+        m.addInstr(new LABEL_Instr(rEndLabel));
+
+        return rv;
     }
 
     public Operand buildGetDefinitionBase(final Node node, IRScope m) {
@@ -1149,7 +1180,7 @@ public class IRBuilder {
                 }
             };
 
-            Object[] rvs = protectCode(m, protectedCode, new Object[] {node, m}, ensureCode, new Object[] {m});
+            Object[] rvs = protectCodeWithEnsure(m, protectedCode, new Object[] {node, m}, ensureCode, new Object[] {m});
             return (Operand)rvs[0];
         }
     }
@@ -1184,20 +1215,15 @@ public class IRBuilder {
         }
     }
 
-    private Operand buildDefinitionCheck(IRScope s, Operand receiver, String nameToCheck, String definitionCheckerMethod, String definedReturnValue) {
+    private void buildDefinitionCheck(IRScope s, Variable tmpVar, String definedReturnValue) {
         Label undefLabel = s.getNewLabel();
         Label defLabel   = s.getNewLabel();
-        Variable tmpVar  = s.getNewTemporaryVariable();
-        StringLiteral mName = new StringLiteral(nameToCheck);
-        Instr callInstr  = new JRubyImplCallInstr(tmpVar, new MethAddr(definitionCheckerMethod), receiver, new Operand[]{mName, BooleanLiteral.FALSE});
-        s.addInstr(callInstr);
         s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
         s.addInstr(new CopyInstr(tmpVar, new StringLiteral(definedReturnValue)));
         s.addInstr(new JumpInstr(defLabel));
         s.addInstr(new LABEL_Instr(undefLabel));
         s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
         s.addInstr(new LABEL_Instr(defLabel));
-        return tmpVar;
     }
 
     public Operand buildGetDefinition(final Node node, IRScope s) {
@@ -1234,28 +1260,36 @@ public class IRBuilder {
             {
                 Variable tmp = s.getNewTemporaryVariable();
                 s.addInstr(new JRubyImplCallInstr(tmp, new MethAddr("getMetaClass"), getSelf(s), new Operand[]{}));
-                return buildDefinitionCheck(s, tmp, ((VCallNode) node).getName(), "isMethodBound", "method"); // m.isMethodBound
+
+                Variable tmpVar = s.getNewTemporaryVariable();
+                StringLiteral mName = new StringLiteral(((VCallNode) node).getName());
+                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("isMethodBound"), tmp, new Operand[]{mName, BooleanLiteral.FALSE}));
+                buildDefinitionCheck(s, tmpVar, "method");
+                return tmpVar;
             }
             case CONSTNODE:
             {
-                // FIXME: If lexically defined then just return "constant"
-                Operand receiver = getSelf(s);
-                // FIXME: receiver == thread context
-                return buildDefinitionCheck(s, receiver, ((ConstNode) node).getName(), "getConstantDefined", "constant"); // m.isConstantDefined
+                Variable tmpVar = s.getNewTemporaryVariable();
+                StringLiteral mName = new StringLiteral(((ConstNode) node).getName());
+                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("threadContext_getConstantDefined"), null, new Operand[]{mName}));
+                buildDefinitionCheck(s, tmpVar, "constant");
+                return tmpVar;
             }
             case GLOBALVARNODE:
             {
-                Operand receiver = getSelf(s);
-                // FIXME: receiver == runtime
-                Variable tmp = s.getNewTemporaryVariable();
-                s.addInstr(new CallInstr(tmp, new MethAddr("getGlobalVariables"), receiver, new Operand[]{}, null));
-                return buildDefinitionCheck(s, tmp, ((GlobalVarNode) node).getName(), "isDefined", "global-variable"); // FIXME: m.isGlobalDefined
+                Variable tmpVar = s.getNewTemporaryVariable();
+                StringLiteral mName = new StringLiteral(((GlobalVarNode) node).getName());
+                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("runtime_isGlobalDefined"), null, new Operand[]{mName}));
+                buildDefinitionCheck(s, tmpVar, "global-variable");
+                return tmpVar;
             }
             case INSTVARNODE:
             {
-                Variable tmp = s.getNewTemporaryVariable();
-                s.addInstr(new CallInstr(tmp, new MethAddr("getInstanceVariables"), getSelf(s), new Operand[]{}, null));
-                return buildDefinitionCheck(s, tmp, ((InstVarNode) node).getName(), "fastHasinstanceVariable", "instance-variable"); // FIXME: m.isInstanceVariableDefined -- uses invokeinterface
+                Variable tmpVar = s.getNewTemporaryVariable();
+                StringLiteral mName = new StringLiteral(((GlobalVarNode) node).getName());
+                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("self_hasInstanceVariable"), getSelf(s), new Operand[]{mName}));
+                buildDefinitionCheck(s, tmpVar, "instance-variable");
+                return tmpVar;
             }
             case FCALLNODE:
             {
@@ -1273,6 +1307,46 @@ public class IRBuilder {
                 s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
                 s.addInstr(new LABEL_Instr(defLabel));
                 return tmpVar;
+            }
+            case COLON3NODE:
+            case COLON2NODE:
+            {
+                final Colon3Node iVisited = (Colon3Node) node;
+                final String name = iVisited.getName();
+
+                // store previous exception for restoration if we rescue something
+                Variable errInfo = s.getNewTemporaryVariable();
+                s.addInstr(new JRubyImplCallInstr(errInfo, new MethAddr("threadContext_stashErrInfo"), null, new Operand[]{}));
+
+                CodeBlock protectedCode = new CodeBlock() {
+                    public Object run(Object[] args) {
+                        IRScope  m      = (IRScope)args[0];
+                        Node     n      = (Node)args[1];
+                        String   name   = (String)args[2];
+                        Variable tmpVar = m.getNewTemporaryVariable();
+                        Operand v;
+                        if (n instanceof Colon2Node) {
+                            v = build(((Colon2Node) n).getLeftNode(), m);
+                        } else {
+                            m.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("runtime_getObject"), null, new Operand[]{}));
+                            v = tmpVar;
+                        }
+                        m.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("getDefinedConstantOrBoundMethod"), null, new Operand[]{v, new StringLiteral(name)}));
+                        return tmpVar;
+                    }
+                };
+
+                // rescue block
+                CodeBlock rescueBlock = new CodeBlock() {
+                    public Object run(Object[] args) {
+                        // Nothing to do -- ignore the exception, and restore stashed error info!
+                        IRScope  m  = (IRScope)args[0];
+                        m.addInstr(new JRubyImplCallInstr(null, new MethAddr("threadContext_restoreErrInfo"), null, new Operand[]{(Variable)args[1]}));
+                        return Nil.NIL;
+                    }
+                };
+
+                return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, name}, rescueBlock, new Object[] {s, errInfo});
             }
             default:
                 throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinition.");
@@ -1308,44 +1382,6 @@ public class IRBuilder {
                             }
                         });
                 break;
-            case COLON3NODE:
-            case COLON2NODE:
-                {
-                    final Colon3Node iVisited = (Colon3Node) node;
-
-                    final String name = iVisited.getName();
-
-                    BranchCallback setup = new BranchCallback() {
-
-                                public void branch(IRScope m) {
-                                    if (iVisited instanceof Colon2Node) {
-                                        final Node leftNode = ((Colon2Node) iVisited).getLeftNode();
-                                        build(leftNode, m,true);
-                                    } else {
-                                        m.loadObject();
-                                    }
-                                }
-                            };
-                    BranchCallback isConstant = new BranchCallback() {
-
-                                public void branch(IRScope m) {
-                                    return new StringLiteral("constant");
-                                }
-                            };
-                    BranchCallback isMethod = new BranchCallback() {
-
-                                public void branch(IRScope m) {
-                                    return new StringLiteral("method");
-                                }
-                            };
-                    BranchCallback none = new BranchCallback() {
-                                public void branch(IRScope m) {
-                                    return Nil.NIL;
-                                }
-                            };
-                    m.isConstantBranch(setup, isConstant, isMethod, none, name);
-                    break;
-                }
             case CALLNODE:
                 {
                     final CallNode iVisited = (CallNode) node;
@@ -1622,14 +1658,6 @@ public class IRBuilder {
             
         return current;
     }
-
-/**
- * SSS FIXME: Used anywhere?  I don't see calls to this anywhere
-    public Operand buildDAsgnAssignment(Node node, IRScope s) {
-        DAsgnNode dasgnNode = (DAsgnNode) node;
-        s.getVariableCompiler().assignLocalVariable(dasgnNode.getIndex(), dasgnNode.getDepth());
-    }
-**/
 
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, Operand container, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(s, container, defNode.getName(), isInstanceMethod, defNode.getScope());
