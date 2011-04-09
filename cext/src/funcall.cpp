@@ -61,6 +61,13 @@ rb_funcall2(VALUE recv, ID meth, int argCount, VALUE* args)
 }
 
 extern "C" VALUE
+rb_funcall3(VALUE recv, ID mid, int argc, const VALUE *argv)
+{
+    // FIXME: This is supposed to only call public methods
+    return rb_funcall2(recv, mid, argc, (VALUE*)argv);
+}
+
+extern "C" VALUE
 rb_call_super(int argc, const VALUE *argv)
 {
     JLocalEnv env;
