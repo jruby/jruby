@@ -70,6 +70,9 @@ public class LambdaNode extends IterNode {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        // JRUBY-5686: do this before executing so first time sets cref module
+        getScope().determineModule();
+        
         return RubyProc.newProc(runtime, Interpreted19Block.newInterpretedClosure(context, getBlockBody(), self), Block.Type.LAMBDA, getPosition());
     }
 }
