@@ -71,23 +71,24 @@ module Open3
   # Closing stdin, stdout and stderr does not wait the process.
   #
   def popen3(*cmd, &block)
-    if Hash === cmd.last
-      opts = cmd.pop.dup
-    else
-      opts = {}
-    end
-
-    in_r, in_w = IO.pipe
-    opts[:in] = in_r
-    in_w.sync = true
-
-    out_r, out_w = IO.pipe
-    opts[:out] = out_w
-
-    err_r, err_w = IO.pipe
-    opts[:err] = err_w
-
-    popen_run(cmd, opts, [in_r, out_w, err_w], [in_w, out_r, err_r], &block)
+    IO::popen3(*cmd, &p)
+    # if Hash === cmd.last
+    #   opts = cmd.pop.dup
+    # else
+    #   opts = {}
+    # end
+    # 
+    # in_r, in_w = IO.pipe
+    # opts[:in] = in_r
+    # in_w.sync = true
+    # 
+    # out_r, out_w = IO.pipe
+    # opts[:out] = out_w
+    # 
+    # err_r, err_w = IO.pipe
+    # opts[:err] = err_w
+    # 
+    # popen_run(cmd, opts, [in_r, out_w, err_w], [in_w, out_r, err_r], &block)
   end
   module_function :popen3
 
