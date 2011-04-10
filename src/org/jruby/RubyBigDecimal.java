@@ -1061,11 +1061,16 @@ public class RubyBigDecimal extends RubyNumeric {
 
         return RubyArray.newArrayNoCopy(runtime, array);
     }
+    
+    @Deprecated
+    public IRubyObject round(IRubyObject[] args) {
+        return round(getRuntime().getCurrentContext(), args);
+    }
 
     @JRubyMethod(name = "round", optional = 2)
-    public IRubyObject round(IRubyObject[] args) {
+    public IRubyObject round(ThreadContext context, IRubyObject[] args) {
         int scale = args.length > 0 ? num2int(args[0]) : 0;
-        int mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(args[1]) : BigDecimal.ROUND_HALF_UP;
+        RoundingMode mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(args[1]) : getRoundingMode(context.runtime);
         // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
         if (scale < 0) {
           // shift the decimal point just to the right of the digit to be rounded to (divide by 10**(abs(scale)))
@@ -1081,8 +1086,8 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
-    private int javaRoundingModeFromRubyRoundingMode(IRubyObject arg) {
-      return num2int(arg);
+    private RoundingMode javaRoundingModeFromRubyRoundingMode(IRubyObject arg) {
+      return RoundingMode.valueOf(num2int(arg));
     }
     
     @JRubyMethod(name = "sign")
