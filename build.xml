@@ -576,7 +576,7 @@
     </copy>
 
     <copy todir="${build.dir}/jar-complete/cext">
-      <fileset dir="${lib.dir}/native">
+      <fileset dir="${lib.dir}">
         <patternset refid="dist.jruby-cext-native.files"/>
       </fileset>
     </copy>
@@ -1343,7 +1343,6 @@
     <include name="LICENSE.RUBY"/>
     <include name="README"/>
     <exclude name="lib/ruby/**"/>
-    <include name="lib/native/include/**"/>
   </patternset>
 
   <patternset id="dist.bin.files">
@@ -1401,6 +1400,7 @@
     <include name="**/libjruby-cext.a"/>
     <include name="**/libjruby-cext.jnilib"/>
     <include name="**/jruby-cext.dll"/>
+    <include name="**/native/include/**"/>
   </patternset>
 
   <target name="dist-bin" depends="install-dev-gems,build-jruby-cext-native">
