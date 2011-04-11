@@ -239,8 +239,8 @@ public class PsychParser extends RubyObject {
                 }
             } catch (ParserException pe) {
                 parser = null;
-                RubyKernel.raise(context, runtime.getModule("Psych").getConstant("SyntaxError"),
-                    new IRubyObject[] {runtime.newString(pe.getLocalizedMessage())},
+                RubyKernel.raise(context, runtime.getKernel(),
+                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(pe.getLocalizedMessage())},
                     Block.NULL_BLOCK);
             } catch (ScannerException se) {
                 parser = null;
