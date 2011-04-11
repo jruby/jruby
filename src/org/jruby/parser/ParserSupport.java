@@ -284,7 +284,8 @@ public class ParserSupport {
         case Tokens.kFALSE:
             return new FalseNode(token.getPosition());
         case Tokens.k__FILE__:
-            return new FileNode(token.getPosition(), ByteList.create(token.getPosition().getFile()));
+            return new FileNode(token.getPosition(), new ByteList(token.getPosition().getFile().getBytes(),
+                    getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
         case Tokens.k__LINE__:
             return new FixnumNode(token.getPosition(), token.getPosition().getStartLine()+1);
         case Tokens.k__ENCODING__:
