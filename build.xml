@@ -1343,6 +1343,7 @@
     <include name="LICENSE.RUBY"/>
     <include name="README"/>
     <exclude name="lib/ruby/**"/>
+    <include name="lib/native/include/**"/>
   </patternset>
 
   <patternset id="dist.bin.files">
