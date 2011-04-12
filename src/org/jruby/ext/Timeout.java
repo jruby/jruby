@@ -31,13 +31,14 @@ import org.jruby.util.RegexpOptions;
 public class Timeout implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
         RubyModule timeout = runtime.defineModule("Timeout");
-        RubyClass timeoutError = runtime.defineClassUnder("Error", runtime.getInterrupt(), runtime.getInterrupt().getAllocator(), timeout);
-        runtime.defineClassUnder("ExitException", runtime.getException(), runtime.getInterrupt().getAllocator(), timeout);
+        RubyClass superclass = runtime.is1_9() ? runtime.getRuntimeError() : runtime.getInterrupt();
+        RubyClass timeoutError = runtime.defineClassUnder("Error", superclass, superclass.getAllocator(), timeout);
+        runtime.defineClassUnder("ExitException", runtime.getException(), runtime.getException().getAllocator(), timeout);
 
         // Here we create an "anonymous" exception type used for unrolling the stack.
         // MRI creates a new one for *every call* to timeout, which can be costly.
         // We opt to use a single exception type for all cases to avoid this overhead.
-        RubyClass anonEx = runtime.defineClassUnder("AnonymousException", runtime.getException(), runtime.getInterrupt().getAllocator(), timeout);
+        RubyClass anonEx = runtime.defineClassUnder("AnonymousException", runtime.getException(), runtime.getException().getAllocator(), timeout);
         anonEx.setBaseName(null); // clear basename so it's anonymous when raising
 
         // These are not really used by timeout, but exposed for compatibility

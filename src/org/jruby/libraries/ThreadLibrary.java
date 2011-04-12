@@ -33,7 +33,7 @@ package org.jruby.libraries;
 import java.io.IOException;
 import java.util.LinkedList;
 
-import org.jruby.CompatVersion;
+import static org.jruby.CompatVersion.*;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
@@ -64,7 +64,7 @@ public class ThreadLibrary implements Library {
     }
 
     public static class ThreadMethods {
-        @JRubyMethod(name = "exclusive", meta = true, compat = CompatVersion.RUBY1_8)
+        @JRubyMethod(name = "exclusive", meta = true, compat = RUBY1_8)
         public static IRubyObject exclusive(ThreadContext context, IRubyObject receiver, Block block) {
             ThreadService service  = context.getRuntime().getThreadService();
             boolean old = service.getCritical();
@@ -155,7 +155,7 @@ public class ThreadLibrary implements Library {
             return this;
         }
 
-        @JRubyMethod(name = "unlock", compat = CompatVersion.RUBY1_8)
+        @JRubyMethod(name = "unlock", compat = RUBY1_8)
         public synchronized IRubyObject unlock(ThreadContext context) {
             Ruby runtime = context.getRuntime();
 
@@ -172,7 +172,7 @@ public class ThreadLibrary implements Library {
             return this;
         }
 
-        @JRubyMethod(name = "unlock", compat = CompatVersion.RUBY1_9)
+        @JRubyMethod(name = "unlock", compat = RUBY1_9)
         public synchronized IRubyObject unlock19(ThreadContext context) {
             Ruby runtime = context.getRuntime();
 
@@ -187,6 +187,34 @@ public class ThreadLibrary implements Library {
             owner = null;
             notify();
             return this;
+        }
+
+        @JRubyMethod(compat = RUBY1_9)
+        public IRubyObject sleep(ThreadContext context) {
+            long beg = System.currentTimeMillis();
+            try {
+                unlock(context);
+                context.getThread().sleep(-1);
+            } catch (InterruptedException ex) {
+                // ignore interrupted
+            } finally {
+                lock(context);
+            }
+            return context.runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
+        }
+
+        @JRubyMethod(compat = RUBY1_9)
+        public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
+            long beg = System.currentTimeMillis();
+            try {
+                unlock(context);
+                context.getThread().sleep((long)(timeout.convertToFloat().getDoubleValue() * 1000));
+            } catch (InterruptedException ex) {
+                // ignore interrupted
+            } finally {
+                lock(context);
+            }
+            return context.runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
         }
 
         @JRubyMethod
