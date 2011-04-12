@@ -768,7 +768,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             pollThreadEvents();
             try {
                 status = Status.SLEEP;
-                wait(millis);
+                if (millis == -1) {
+                    wait();
+                } else {
+                    wait(millis);
+                }
             } finally {
                 result = (status != Status.RUN);
                 pollThreadEvents();
