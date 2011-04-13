@@ -1783,6 +1783,20 @@ public class RubyModule extends RubyObject {
 
         return getRuntime().getNil();
     }
+
+    /** rb_mod_initialize
+     *
+     */
+    @JRubyMethod(name = "initialize", frame = true, compat = RUBY1_9, visibility = PRIVATE)
+    public IRubyObject initialize19(ThreadContext context, Block block) {
+        if (block.isGiven()) {
+            // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
+            block.getBinding().setVisibility(PUBLIC);
+            module_exec(context, block);
+        }
+
+        return getRuntime().getNil();
+    }
     
     public void addReadWriteAttribute(ThreadContext context, String name) {
         addAccessor(context, name.intern(), PUBLIC, true, true);

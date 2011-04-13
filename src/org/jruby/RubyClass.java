@@ -827,30 +827,30 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(compat = RUBY1_8, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         checkNotInitialized();
-        return initializeCommon(runtime.getObject(), block, false);
+        return initializeCommon(context, runtime.getObject(), block, false);
     }
         
     @JRubyMethod(compat = RUBY1_8, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
-        return initializeCommon((RubyClass)superObject, block, false);
+        return initializeCommon(context, (RubyClass)superObject, block, false);
     }
         
     @JRubyMethod(name = "initialize", compat = RUBY1_9, visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, Block block) {
         checkNotInitialized();
-        return initializeCommon(runtime.getObject(), block, true);
+        return initializeCommon(context, runtime.getObject(), block, true);
     }
         
     @JRubyMethod(name = "initialize", compat = RUBY1_9, visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
-        return initializeCommon((RubyClass)superObject, block, true);
+        return initializeCommon(context, (RubyClass)superObject, block, true);
     }
 
-    private IRubyObject initializeCommon(RubyClass superClazz, Block block, boolean callInheritBeforeSuper) {
+    private IRubyObject initializeCommon(ThreadContext context, RubyClass superClazz, Block block, boolean ruby1_9 /*callInheritBeforeSuper*/) {
         setSuperClass(superClazz);
         allocator = superClazz.allocator;
         makeMetaClass(superClazz.getMetaClass());
@@ -859,9 +859,9 @@ public class RubyClass extends RubyModule {
 
         superClazz.addSubclass(this);
 
-        if (callInheritBeforeSuper) {
+        if (ruby1_9) {
             inherit(superClazz);
-            super.initialize(block);
+            super.initialize19(context, block);
         } else {
             super.initialize(block);
             inherit(superClazz);
