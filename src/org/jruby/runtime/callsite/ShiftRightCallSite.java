@@ -11,7 +11,7 @@ public class ShiftRightCallSite extends NormalCachingCallSite {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
-        if (self instanceof RubyFixnum) {
+        if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
             return ((RubyFixnum) self).op_rshift(fixnum);
         }
         return super.call(context, caller, self, fixnum);
@@ -19,7 +19,7 @@ public class ShiftRightCallSite extends NormalCachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
-        if (self instanceof RubyFixnum) {
+        if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
             return ((RubyFixnum) self).op_rshift(arg);
         }
         return super.call(context, caller, self, arg);

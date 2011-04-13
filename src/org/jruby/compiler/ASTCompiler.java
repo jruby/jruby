@@ -801,27 +801,31 @@ public class ASTCompiler {
         DYNOPT: if (RubyInstanceConfig.DYNOPT_COMPILE_ENABLED) {
             // dynopt does not handle non-local block flow control yet, so we bail out
             // if there's a closure.
+            System.out.println(callNode);
             if (callNode.getIterNode() != null) break DYNOPT;
             if (callNode.callAdapter instanceof CachingCallSite) {
+                    System.out.println("is caching");
                 CachingCallSite cacheSite = (CachingCallSite)callNode.callAdapter;
                 if (cacheSite.isOptimizable()) {
+                    System.out.println("is optimizable");
                     CacheEntry entry = cacheSite.getCache();
                     if (entry.method.getNativeCall() != null) {
+                    System.out.println("has nativecall");
                         NativeCall nativeCall = entry.method.getNativeCall();
 
                         // only do direct calls for specific arity
                         if (argsCallback == null || argsCallback.getArity() >= 0 && argsCallback.getArity() <= 3) {
-                            if (compileIntrinsic(context, callNode, cacheSite.methodName, entry.token, entry.method, receiverCallback, argsCallback, closureArg)) {
-                                // intrinsic compilation worked, hooray!
-                                return;
-                            } else {
+//                            if (compileIntrinsic(context, callNode, cacheSite.methodName, entry.token, entry.method, receiverCallback, argsCallback, closureArg)) {
+//                                // intrinsic compilation worked, hooray!
+//                                return;
+//                            } else {
                                 // otherwise, normal straight-through native call
                                 context.getInvocationCompiler().invokeNative(
                                         name, nativeCall, entry.token, receiverCallback,
                                         argsCallback, closureArg, CallType.NORMAL,
                                         callNode.getIterNode() instanceof IterNode);
                                 return;
-                            }
+//                            }
                         }
                     }
 
