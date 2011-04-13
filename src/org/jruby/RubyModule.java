@@ -472,6 +472,7 @@ public class RubyModule extends RubyObject {
 
         doIncludeModule(module);
         invalidateConstantCache();
+        invalidateCoreClasses();
         invalidateCacheDescendants();
     }
 
@@ -795,6 +796,7 @@ public class RubyModule extends RubyObject {
     public void addMethodInternal(String name, DynamicMethod method) {
         synchronized(getMethodsForWrite()) {
             addMethodAtBootTimeOnly(name, method);
+            invalidateCoreClasses();
             invalidateCacheDescendants();
         }
     }
@@ -831,6 +833,7 @@ public class RubyModule extends RubyObject {
                 throw runtime.newNameError("method '" + name + "' not defined in " + getName(), name);
             }
 
+            invalidateCoreClasses();
             invalidateCacheDescendants();
         }
         
@@ -1011,13 +1014,27 @@ public class RubyModule extends RubyObject {
 
     public void invalidateCacheDescendants() {
         if (DEBUG) System.out.println("invalidating descendants: " + classId);
-        generation = getRuntime().getNextModuleGeneration();
+        invalidateCacheDescendantsInner();
         // update all hierarchies into which this module has been included
         synchronized (getRuntime().getHierarchyLock()) {
             for (RubyClass includingHierarchy : includingHierarchies) {
                 includingHierarchy.invalidateCacheDescendants();
             }
         }
+    }
+    
+    protected void invalidateCoreClasses() {
+        if (!getRuntime().isBooting()) {
+            if (this == getRuntime().getFixnum()) {
+                getRuntime().setFixnumReopened(true);
+            } else if (this == getRuntime().getFloat()) {
+                getRuntime().setFloatReopened(true);
+            }
+        }
+    }
+
+    protected void invalidateCacheDescendantsInner() {
+        generation = getRuntime().getNextModuleGeneration();
     }
     
     protected void invalidateConstantCache() {
@@ -1118,6 +1135,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
+        invalidateCoreClasses();
         invalidateCacheDescendants();
         putMethod(name, new AliasMethod(this, method, oldName));
     }
@@ -1145,6 +1163,7 @@ public class RubyModule extends RubyObject {
 
             putMethod(name, new AliasMethod(this, method, oldName));
         }
+        invalidateCoreClasses();
         invalidateCacheDescendants();
     }
 
@@ -1307,6 +1326,7 @@ public class RubyModule extends RubyObject {
                 addMethod(name, new WrapperMethod(this, method, visibility));
             }
 
+            invalidateCoreClasses();
             invalidateCacheDescendants();
         }
     }

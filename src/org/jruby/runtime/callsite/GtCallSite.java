@@ -12,16 +12,16 @@ public class GtCallSite extends NormalCachingCallSite {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
-        if (self instanceof RubyFixnum) {
+        if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
             return ((RubyFixnum) self).op_gt(context, fixnum);
-        } else if (self instanceof RubyFloat) {
+        } else if (self instanceof RubyFloat && !context.runtime.isFloatReopened()) {
             return ((RubyFloat) self).op_gt(context, fixnum);
         }
         return super.call(context, caller, self, fixnum);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote) {
-        if (self instanceof RubyFloat) {
+        if (self instanceof RubyFloat && !context.runtime.isFloatReopened()) {
             return ((RubyFloat) self).op_gt(context, flote);
         }
         return super.call(context, caller, self, flote);
@@ -29,9 +29,9 @@ public class GtCallSite extends NormalCachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
-        if (self instanceof RubyFixnum) {
+        if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
             return ((RubyFixnum) self).op_gt(context, arg);
-        } else if (self instanceof RubyFloat) {
+        } else if (self instanceof RubyFloat && !context.runtime.isFloatReopened()) {
             return ((RubyFloat) self).op_gt(context, arg);
         }
         return super.call(context, caller, self, arg);
