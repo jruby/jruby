@@ -622,3 +622,7 @@ end
 ruby_object = Node4345.new
 ruby_object.add_child
 test_equal ruby_object.to_yaml, YAML.load(ruby_object.to_yaml).to_yaml
+
+# JRUBY-5581
+test_equal YAML.load("---\ndate: 2011-03-03 00:00:01.0210000000 Z").to_yaml, "--- \ndate: 2011-03-03 00:03:31 Z\n"
+test_equal YAML.load("---\ndate: 2011-03-03 00:00:01.0000000012 Z").to_yaml, "--- \ndate: 2011-03-03 00:00:01.000012 Z\n"
