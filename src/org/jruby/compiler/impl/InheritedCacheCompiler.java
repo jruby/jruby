@@ -14,6 +14,7 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -53,6 +54,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     Map<String, Integer> stringEncodings = new HashMap<String, Integer>();
     Map<String, Integer> symbolIndices = new HashMap<String, Integer>();
     Map<Long, Integer> fixnumIndices = new HashMap<Long, Integer>();
+    Map<Double, Integer> floatIndices = new HashMap<Double, Integer>();
     int inheritedSymbolCount = 0;
     int inheritedStringCount = 0;
     int inheritedEncodingCount = 0;
@@ -61,6 +63,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     int inheritedVariableReaderCount = 0;
     int inheritedVariableWriterCount = 0;
     int inheritedFixnumCount = 0;
+    int inheritedFloatCount = 0;
     int inheritedConstantCount = 0;
     int inheritedBlockBodyCount = 0;
     int inheritedBlockCallbackCount = 0;
@@ -218,6 +221,22 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 method.method.ldc(value);
                 method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum", sig(RubyFixnum.class, Ruby.class, int.class, long.class));
             }
+        }
+    }
+    
+    public void cacheFloat(BaseBodyCompiler method, double value) {
+        Integer index = Integer.valueOf(inheritedFloatCount++);
+        floatIndices.put(value, index);
+
+        method.loadThis();
+        method.loadRuntime();
+        if (index < AbstractScript.NUMBERED_FLOAT_COUNT) {
+            method.method.ldc(value);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getFloat" + index, sig(RubyFloat.class, Ruby.class, double.class));
+        } else {
+            method.method.pushInt(index.intValue());
+            method.method.ldc(value);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getFloat", sig(RubyFloat.class, Ruby.class, int.class, double.class));
         }
     }
 
@@ -486,6 +505,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         int otherCount = scopeCount
                 + inheritedSymbolCount
                 + inheritedFixnumCount
+                + inheritedFloatCount
                 + inheritedConstantCount
                 + inheritedRegexpCount
                 + inheritedBigIntegerCount
@@ -523,6 +543,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
             descriptor.append((char)scopeCount);
             descriptor.append((char)inheritedSymbolCount);
             descriptor.append((char)inheritedFixnumCount);
+            descriptor.append((char)inheritedFloatCount);
             descriptor.append((char)inheritedConstantCount);
             descriptor.append((char)inheritedRegexpCount);
             descriptor.append((char)inheritedBigIntegerCount);
