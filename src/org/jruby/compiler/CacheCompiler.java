@@ -28,6 +28,8 @@ public interface CacheCompiler {
     
     public void cacheFixnum(BaseBodyCompiler method, long value);
     
+    public void cacheFloat(BaseBodyCompiler method, double value);
+    
     public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint);
 
     public void cachedGetVariable(BaseBodyCompiler method, String name);

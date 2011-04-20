@@ -7,6 +7,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyClass.VariableAccessor;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -130,6 +131,14 @@ public class RuntimeCache {
         return fixnum;
     }
 
+    public final RubyFloat getFloat(Ruby runtime, int index, double value) {
+        RubyFloat flote = floats[index];
+        if (flote == null) {
+            return floats[index] = RubyFloat.newFloat(runtime, value);
+        }
+        return flote;
+    }
+
     public final RubyRegexp getRegexp(Ruby runtime, int index, ByteList pattern, int options) {
         RubyRegexp regexp = regexps[index];
         if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
@@ -246,7 +255,8 @@ public class RuntimeCache {
     private static final int SCOPE = 0;
     private static final int SYMBOL = SCOPE + 1;
     private static final int FIXNUM = SYMBOL + 1;
-    private static final int CONSTANT = FIXNUM + 1;
+    private static final int FLOAT = FIXNUM + 1;
+    private static final int CONSTANT = FLOAT + 1;
     private static final int REGEXP = CONSTANT + 1;
     private static final int BIGINTEGER = REGEXP + 1;
     private static final int VARIABLEREADER = BIGINTEGER + 1;
@@ -285,6 +295,8 @@ public class RuntimeCache {
         if (symbolCount > 0) initSymbols(symbolCount);
         int fixnumCount = getDescriptorValue(descriptor, FIXNUM);
         if (fixnumCount > 0) initFixnums(fixnumCount);
+        int floatCount = getDescriptorValue(descriptor, FLOAT);
+        if (floatCount > 0) initFloats(floatCount);
         int constantCount = getDescriptorValue(descriptor, CONSTANT);
         if (constantCount > 0) initConstants(constantCount);
         int regexpCount = getDescriptorValue(descriptor, REGEXP);
@@ -333,6 +345,10 @@ public class RuntimeCache {
 
     public final void initFixnums(int size) {
         fixnums = new RubyFixnum[size];
+    }
+
+    public final void initFloats(int size) {
+        floats = new RubyFloat[size];
     }
 
     public final void initRegexps(int size) {
@@ -626,6 +642,8 @@ public class RuntimeCache {
     public Encoding[] encodings = EMPTY_ENCODINGS;
     private static final RubyFixnum[] EMPTY_FIXNUMS = {};
     public RubyFixnum[] fixnums = EMPTY_FIXNUMS;
+    private static final RubyFloat[] EMPTY_FLOATS = {};
+    public RubyFloat[] floats = EMPTY_FLOATS;
     private static final RubyRegexp[] EMPTY_RUBYREGEXPS = {};
     public RubyRegexp[] regexps = EMPTY_RUBYREGEXPS;
     private static final BigInteger[] EMPTY_BIGINTEGERS = {};

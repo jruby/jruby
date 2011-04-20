@@ -10,6 +10,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -195,6 +196,20 @@ public abstract class AbstractScript implements Script {
     public final RubyFixnum getFixnum7(Ruby runtime, int value) {return runtimeCache.getFixnum(runtime, 7, value);}
     public final RubyFixnum getFixnum8(Ruby runtime, int value) {return runtimeCache.getFixnum(runtime, 8, value);}
     public final RubyFixnum getFixnum9(Ruby runtime, int value) {return runtimeCache.getFixnum(runtime, 9, value);}
+
+    public static final int NUMBERED_FLOAT_COUNT = 10;
+
+    public final RubyFloat getFloat(Ruby runtime, int i, double value) {return runtimeCache.getFloat(runtime, i, value);}
+    public final RubyFloat getFloat0(Ruby runtime, double value) {return runtimeCache.getFloat(runtime, 0, value);}
+    public final RubyFloat getFloat1(Ruby runtime, double value) {return runtimeCache.getFloat(runtime, 1, value);}
+    public final RubyFloat getFloat2(Ruby runtime, double value) {return runtimeCache.getFloat(runtime, 2, value);}
+    public final RubyFloat getFloat3(Ruby runtime, double value) {return runtimeCache.getFloat(runtime, 3, value);}
+    public final RubyFloat getFloat4(Ruby runtime, double value) {return runtimeCache.getFloat(runtime, 4, value);}
+    public final RubyFloat getFloat5(Ruby runtime, double value) {return runtimeCache.getFloat(runtime, 5, value);}
+    public final RubyFloat getFloat6(Ruby runtime, double value) {return runtimeCache.getFloat(runtime, 6, value);}
+    public final RubyFloat getFloat7(Ruby runtime, double value) {return runtimeCache.getFloat(runtime, 7, value);}
+    public final RubyFloat getFloat8(Ruby runtime, double value) {return runtimeCache.getFloat(runtime, 8, value);}
+    public final RubyFloat getFloat9(Ruby runtime, double value) {return runtimeCache.getFloat(runtime, 9, value);}
 
     public static final int NUMBERED_REGEXP_COUNT = 10;
 
