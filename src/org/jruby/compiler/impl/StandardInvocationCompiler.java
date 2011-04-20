@@ -45,6 +45,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
 
 /**
  *
@@ -813,24 +814,69 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeDynamicSelfNoBlockSpecificArity(String name, ArgumentsCallback argsCallback) {
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name);
+        methodCompiler.loadThis();
         methodCompiler.loadThreadContext();
         methodCompiler.loadSelf();
-        method.dup();
-        method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
-        method.ldc(name);
         argsCallback.call(methodCompiler);
+        String thisClass = methodCompiler.getScriptCompiler().getClassname();
+        String signature1;
         switch (argsCallback.getArity()) {
         case 1:
-            method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
+            signature1 = sig(IRubyObject.class, "L" + thisClass + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class);
             break;
         case 2:
-            method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
+            signature1 = sig(IRubyObject.class, "L" + thisClass + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class);
             break;
         case 3:
-            method.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            signature1 = sig(IRubyObject.class, "L" + thisClass + ";", ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class);
             break;
+        default:
+            throw new RuntimeException("invalid arity for inline dyncall: " + argsCallback.getArity());
         }
+        String synthMethodName = methodCompiler.getNativeMethodName() + "$call" + methodCompiler.getScriptCompiler().getAndIncrementMethodIndex();
+        SkinnyMethodAdapter m2 = new SkinnyMethodAdapter(
+                methodCompiler.getScriptCompiler().getClassVisitor(),
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                synthMethodName,
+                signature1,
+                null,
+                null);
+        method.invokestatic(thisClass, synthMethodName, signature1);
+        
+        SkinnyMethodAdapter oldMethod = methodCompiler.method;
+        methodCompiler.method = m2;
+        m2.start();
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name);
+        m2.aload(1); // ThreadContext
+        m2.aload(2); // receiver
+        m2.aload(2); // receiver
+        m2.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
+        m2.ldc(name);
+        
+        String signature2;
+        switch (argsCallback.getArity()) {
+        case 1:
+            signature2 = sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class);
+            m2.aload(3);
+            break;
+        case 2:
+            signature2 = sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class);
+            m2.aload(3);
+            m2.aload(4);
+            break;
+        case 3:
+            signature2 = sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class);
+            m2.aload(3);
+            m2.aload(4);
+            m2.aload(5);
+            break;
+        default:
+            throw new RuntimeException("invalid arity for inline dyncall: " + argsCallback.getArity());
+        }
+        m2.invokevirtual(p(DynamicMethod.class), "call", signature2);
+        m2.areturn();
+        m2.end();
+        methodCompiler.method = oldMethod;
     }
 
     public void invokeDynamicNoBlockZero(String name, CompilerCallback receiverCallback) {
