@@ -228,7 +228,7 @@ import org.jruby.util.ByteList;
 
 public class IRBuilder {
     private static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
-	 private static final Operand[] NO_ARGS = new Operand[]{};
+    private static final Operand[] NO_ARGS = new Operand[]{};
 
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
@@ -1190,12 +1190,30 @@ public class IRBuilder {
         return buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
     }
 
+    private Variable buildDefnCheckIfThenPaths(IRScope s, Label undefLabel, Variable tmpVar, Operand defVal) {
+        Label defLabel = s.getNewLabel();
+        s.addInstr(new CopyInstr(tmpVar, defVal));
+        s.addInstr(new JumpInstr(defLabel));
+        s.addInstr(new LABEL_Instr(undefLabel));
+        s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
+        s.addInstr(new LABEL_Instr(defLabel));
+        return tmpVar;
+    }
+
+    private Variable buildDefinitionCheck(IRScope s, String defnChecker, Operand receiver, String nameToCheck, String definedReturnValue) {
+        Label undefLabel = s.getNewLabel();
+        Variable tmpVar  = s.getNewTemporaryVariable();
+        Operand[] args   = nameToCheck == null ? NO_ARGS : new Operand[]{new StringLiteral(nameToCheck)};
+        s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr(defnChecker), receiver, args));
+        s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+        return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, new StringLiteral(definedReturnValue));
+    }
+
     public Operand buildGetArgumentDefinition(final Node node, IRScope m, String type) {
         if (node == null) {
             return new StringLiteral(type);
         } else { 
             Label failLabel = m.getNewLabel();
-            Label doneLabel = m.getNewLabel();
             Variable rv = m.getNewTemporaryVariable();
             if (node instanceof ArrayNode) {
                 for (int i = 0; i < ((ArrayNode) node).size(); i++) {
@@ -1207,24 +1225,8 @@ public class IRBuilder {
                 Operand def = buildGetDefinition(node, m);
                 m.addInstr(new BEQInstr(def, Nil.NIL, failLabel));
             }
-            m.addInstr(new CopyInstr(rv, new StringLiteral(type)));
-            m.addInstr(new JumpInstr(doneLabel));
-            m.addInstr(new LABEL_Instr(failLabel));
-            m.addInstr(new CopyInstr(rv, Nil.NIL));
-            m.addInstr(new LABEL_Instr(doneLabel));
-            return rv;
+            return buildDefnCheckIfThenPaths(m, failLabel, rv, new StringLiteral(type));
         }
-    }
-
-    private void buildDefinitionCheck(IRScope s, Variable tmpVar, String definedReturnValue) {
-        Label undefLabel = s.getNewLabel();
-        Label defLabel   = s.getNewLabel();
-        s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
-        s.addInstr(new CopyInstr(tmpVar, new StringLiteral(definedReturnValue)));
-        s.addInstr(new JumpInstr(defLabel));
-        s.addInstr(new LABEL_Instr(undefLabel));
-        s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
-        s.addInstr(new LABEL_Instr(defLabel));
     }
 
     public Operand buildGetDefinition(final Node node, IRScope s) {
@@ -1258,63 +1260,28 @@ public class IRBuilder {
             case SELFNODE:
                 return new StringLiteral("self");
             case VCALLNODE:
-            {
-                Variable tmp = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(tmp, new MethAddr("getMetaClass"), getSelf(s), NO_ARGS));
-
-                Variable tmpVar = s.getNewTemporaryVariable();
-                StringLiteral mName = new StringLiteral(((VCallNode) node).getName());
-                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("isMethodBound"), tmp, new Operand[]{mName, BooleanLiteral.FALSE}));
-                buildDefinitionCheck(s, tmpVar, "method");
-                return tmpVar;
-            }
+                // SSS FIXME: Can we get away without passing in self?
+                return buildDefinitionCheck(s, "self_isMethodBound", getSelf(s), ((VCallNode) node).getName(), "method");
             case CONSTNODE:
-            {
-                Variable tmpVar = s.getNewTemporaryVariable();
-                StringLiteral mName = new StringLiteral(((ConstNode) node).getName());
-                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("threadContext_getConstantDefined"), null, new Operand[]{mName}));
-                buildDefinitionCheck(s, tmpVar, "constant");
-                return tmpVar;
-            }
+                return buildDefinitionCheck(s, "threadContext_getConstantDefined", null, ((ConstNode) node).getName(), "constant");
             case GLOBALVARNODE:
-            {
-                Variable tmpVar = s.getNewTemporaryVariable();
-                StringLiteral mName = new StringLiteral(((GlobalVarNode) node).getName());
-                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("runtime_isGlobalDefined"), null, new Operand[]{mName}));
-                buildDefinitionCheck(s, tmpVar, "global-variable");
-                return tmpVar;
-            }
+                return buildDefinitionCheck(s, "runtime_isGlobalDefined", null, ((GlobalVarNode) node).getName(), "global-variable");
             case INSTVARNODE:
-            {
-                Variable tmpVar = s.getNewTemporaryVariable();
-                StringLiteral mName = new StringLiteral(((GlobalVarNode) node).getName());
-                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("self_hasInstanceVariable"), getSelf(s), new Operand[]{mName}));
-                buildDefinitionCheck(s, tmpVar, "instance-variable");
-                return tmpVar;
-            }
+                // SSS FIXME: Can we get away without passing in self?
+                return buildDefinitionCheck(s, "self_hasInstanceVariable", getSelf(s), ((InstVarNode) node).getName(), "instance-variable");
             case YIELDNODE:
-				{
-                Variable tmpVar = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("block_isGiven"), null, NO_ARGS));
-                buildDefinitionCheck(s, tmpVar, "yield");
-                return tmpVar;
-            }
+                return buildDefinitionCheck(s, "block_isGiven", null, null, "yield");
+            case BACKREFNODE:
+                return buildDefinitionCheck(s, "backref_isRubyMatchData", null, null, "$" + ((BackRefNode) node).getType());
             case FCALLNODE:
             {
-                Variable tmpVar = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("getMetaClass"), getSelf(s), NO_ARGS));
                 Label undefLabel = s.getNewLabel();
-                Label defLabel   = s.getNewLabel();
+                Variable tmpVar = s.getNewTemporaryVariable();
                 StringLiteral mName = new StringLiteral(((FCallNode)node).getName());
-                Instr callInstr  = new JRubyImplCallInstr(tmpVar, new MethAddr("isMethodBound"), tmpVar, new Operand[]{mName, BooleanLiteral.FALSE});
-                s.addInstr(callInstr);
+                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("self_isMethodBound"), getSelf(s), new Operand[]{mName}));
                 s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
-                s.addInstr(new CopyInstr(tmpVar, buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method")));
-                s.addInstr(new JumpInstr(defLabel));
-                s.addInstr(new LABEL_Instr(undefLabel));
-                s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
-                s.addInstr(new LABEL_Instr(defLabel));
-                return tmpVar;
+                Operand defVal = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
+                return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, defVal);
             }
             case COLON3NODE:
             case COLON2NODE:
@@ -1422,10 +1389,6 @@ public class IRBuilder {
                 m.setEnding(ending);
                 break;
             }
-            case BACKREFNODE:
-                    // SSS FIXME!
-                Operand x = m.backref();
-                return x instanceof RubyMatchData.class ? new StringLiteral("$" + ((BackRefNode) node).getType()) : Nil.NIL;
             case NTHREFNODE:
                 m.isCaptured(((NthRefNode) node).getMatchNumber(),
                         new BranchCallback() {

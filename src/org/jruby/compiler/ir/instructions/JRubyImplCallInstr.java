@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -68,6 +69,22 @@ public class JRubyImplCallInstr extends CallInstr {
             getResult().store(interp, rt.getObject());
         } else if (getMethodAddr().getName().equals("block_isGiven")) {
             getResult().store(interp, rt.newBoolean(interp.getBlock().isGiven()));
+        } else if (getMethodAddr().getName().equals("self_isMethodBound")) {
+            receiver = getReceiver().retrieve(interp); // SSS: This should be identical to self. Add an assert?
+            boolean bound = ((IRubyObject)receiver).getMetaClass().isMethodBound(((StringLiteral)getCallArgs()[0])._str_value, false); // No visibility check
+            getResult().store(interp, rt.newBoolean(bound));
+        } else if (getMethodAddr().getName().equals("getBackref")) {
+            getResult().store(interp, RuntimeHelpers.getBackref(rt, interp.getContext()));
+        } else if (getMethodAddr().getName().equals("backref_isRubyMatchData")) {
+            // bRef = getBackref()
+            // flag = bRef instanceof RubyMatchData
+            try {
+                IRubyObject bRef = RuntimeHelpers.getBackref(rt, interp.getContext());
+                getResult().store(interp, rt.newBoolean(Class.forName("RubyMatchData").isInstance(bRef)));
+            } catch (ClassNotFoundException e) {
+                // Should never get here!
+                throw new RuntimeException(e);
+            }
         } else {
             super.interpret(interp, self);
         }
