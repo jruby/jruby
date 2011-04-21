@@ -841,6 +841,10 @@ public class ASTCompiler {
                     context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
                     if (!expr) context.consumeCurrentValue();
                     return;
+                } else if (argument instanceof FloatNode) {
+                    context.getInvocationCompiler().invokeBinaryFloatRHS(name, receiverCallback, ((FloatNode)argument).getValue());
+                    if (!expr) context.consumeCurrentValue();
+                    return;
                 }
             }
         }

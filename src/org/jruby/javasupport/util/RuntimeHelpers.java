@@ -161,7 +161,7 @@ public class RuntimeHelpers {
         return receiver0.isTrue() || receiver1.isTrue() || receiver2.isTrue();
     }
     
-    public static CompiledBlockCallback createBlockCallback(Ruby runtime, Object scriptObject, String closureMethod, String file, int line) {
+    public static CompiledBlockCallback createBlockCallback(Object scriptObject, String closureMethod, String file, int line) {
         Class scriptClass = scriptObject.getClass();
         ClassLoader scriptClassLoader = scriptClass.getClassLoader();
         MethodFactory factory = MethodFactory.createFactory(scriptClassLoader);
@@ -169,7 +169,7 @@ public class RuntimeHelpers {
         return factory.getBlockCallback(closureMethod, file, line, scriptObject);
     }
 
-    public static CompiledBlockCallback19 createBlockCallback19(Ruby runtime, Object scriptObject, String closureMethod, String file, int line) {
+    public static CompiledBlockCallback19 createBlockCallback19(Object scriptObject, String closureMethod, String file, int line) {
         Class scriptClass = scriptObject.getClass();
         ClassLoader scriptClassLoader = scriptClass.getClassLoader();
         MethodFactory factory = MethodFactory.createFactory(scriptClassLoader);
@@ -265,12 +265,12 @@ public class RuntimeHelpers {
         if (light) {
             return CompiledBlockLight.newCompiledBlockLight(
                     Arity.createArity(arity), staticScope,
-                    createBlockCallback(context.getRuntime(), scriptObject, closureMethod, file, line),
+                    createBlockCallback(scriptObject, closureMethod, file, line),
                     hasMultipleArgsHead, argsNodeType);
         } else {
             return CompiledBlock.newCompiledBlock(
                     Arity.createArity(arity), staticScope,
-                    createBlockCallback(context.getRuntime(), scriptObject, closureMethod, file, line),
+                    createBlockCallback(scriptObject, closureMethod, file, line),
                     hasMultipleArgsHead, argsNodeType);
         }
     }
@@ -291,12 +291,12 @@ public class RuntimeHelpers {
         if (light) {
             return CompiledBlockLight19.newCompiledBlockLight(
                     Arity.createArity(arity), staticScope,
-                    createBlockCallback19(context.getRuntime(), scriptObject, closureMethod, file, line),
+                    createBlockCallback19(scriptObject, closureMethod, file, line),
                     hasMultipleArgsHead, argsNodeType, parameterList.split(";"));
         } else {
             return CompiledBlock19.newCompiledBlock(
                     Arity.createArity(arity), staticScope,
-                    createBlockCallback19(context.getRuntime(), scriptObject, closureMethod, file, line),
+                    createBlockCallback19(scriptObject, closureMethod, file, line),
                     hasMultipleArgsHead, argsNodeType, parameterList.split(";"));
         }
     }

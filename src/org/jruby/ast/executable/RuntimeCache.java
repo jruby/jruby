@@ -87,24 +87,24 @@ public class RuntimeCache {
         return body;
     }
 
-    public final CompiledBlockCallback getBlockCallback(Object scriptObject, Ruby runtime, int index, String method) {
+    public final CompiledBlockCallback getBlockCallback(Object scriptObject, int index, String method) {
         CompiledBlockCallback callback = blockCallbacks[index];
         if (callback == null) {
-            return createCompiledBlockCallback(scriptObject, runtime, index, method);
+            return createCompiledBlockCallback(scriptObject, index, method);
         }
         return callback;
     }
 
-    public final RubySymbol getSymbol(Ruby runtime, int index, String name) {
+    public final RubySymbol getSymbol(ThreadContext context, int index, String name) {
         RubySymbol symbol = symbols[index];
         if (symbol == null) {
-            return symbols[index] = runtime.newSymbol(name);
+            return symbols[index] = context.runtime.newSymbol(name);
         }
         return symbol;
     }
 
-    public final RubyString getString(Ruby runtime, int index, int codeRange) {
-        return RubyString.newStringShared(runtime, getByteList(index), codeRange);
+    public final RubyString getString(ThreadContext context, int index, int codeRange) {
+        return RubyString.newStringShared(context.runtime, getByteList(index), codeRange);
     }
 
     public final ByteList getByteList(int index) {
@@ -115,34 +115,34 @@ public class RuntimeCache {
         return encodings[index];
     }
 
-    public final RubyFixnum getFixnum(Ruby runtime, int index, int value) {
+    public final RubyFixnum getFixnum(ThreadContext context, int index, int value) {
         RubyFixnum fixnum = fixnums[index];
         if (fixnum == null) {
-            return fixnums[index] = RubyFixnum.newFixnum(runtime, value);
+            return fixnums[index] = RubyFixnum.newFixnum(context.runtime, value);
         }
         return fixnum;
     }
 
-    public final RubyFixnum getFixnum(Ruby runtime, int index, long value) {
+    public final RubyFixnum getFixnum(ThreadContext context, int index, long value) {
         RubyFixnum fixnum = fixnums[index];
         if (fixnum == null) {
-            return fixnums[index] = RubyFixnum.newFixnum(runtime, value);
+            return fixnums[index] = RubyFixnum.newFixnum(context.runtime, value);
         }
         return fixnum;
     }
 
-    public final RubyFloat getFloat(Ruby runtime, int index, double value) {
+    public final RubyFloat getFloat(ThreadContext context, int index, double value) {
         RubyFloat flote = floats[index];
         if (flote == null) {
-            return floats[index] = RubyFloat.newFloat(runtime, value);
+            return floats[index] = RubyFloat.newFloat(context.runtime, value);
         }
         return flote;
     }
 
-    public final RubyRegexp getRegexp(Ruby runtime, int index, ByteList pattern, int options) {
+    public final RubyRegexp getRegexp(ThreadContext context, int index, ByteList pattern, int options) {
         RubyRegexp regexp = regexps[index];
-        if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
-            regexp = RubyRegexp.newRegexp(runtime, pattern, RegexpOptions.fromEmbeddedOptions(options));
+        if (regexp == null || context.runtime.getKCode() != regexp.getKCode()) {
+            regexp = RubyRegexp.newRegexp(context.runtime, pattern, RegexpOptions.fromEmbeddedOptions(options));
             regexp.setLiteral();
             regexps[index] = regexp;
         }
@@ -163,7 +163,7 @@ public class RuntimeCache {
         return regexp;
     }
 
-    public final BigInteger getBigInteger(Ruby runtime, int index, String pattern) {
+    public final BigInteger getBigInteger(int index, String pattern) {
         BigInteger bigint = bigIntegers[index];
         if (bigint == null) {
             return bigIntegers[index] = new BigInteger(pattern, 16);
@@ -171,7 +171,7 @@ public class RuntimeCache {
         return bigint;
     }
 
-    public final IRubyObject getVariable(Ruby runtime, int index, String name, IRubyObject object) {
+    public final IRubyObject getVariable(ThreadContext context, int index, String name, IRubyObject object) {
         VariableAccessor variableAccessor = variableReaders[index];
         RubyClass cls = object.getMetaClass().getRealClass();
         if (variableAccessor.getClassId() != cls.hashCode()) {
@@ -181,6 +181,7 @@ public class RuntimeCache {
         if (value != null) {
             return value;
         }
+        Ruby runtime = context.runtime;
         if (runtime.isVerbose()) {
             warnAboutUninitializedIvar(runtime, name);
         }
@@ -191,7 +192,7 @@ public class RuntimeCache {
         runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
     }
 
-    public final IRubyObject setVariable(Ruby runtime, int index, String name, IRubyObject object, IRubyObject value) {
+    public final IRubyObject setVariable(int index, String name, IRubyObject object, IRubyObject value) {
         VariableAccessor variableAccessor = variableWriters[index];
         RubyClass cls = object.getMetaClass().getRealClass();
         if (variableAccessor.getClassId() != cls.hashCode()) {
@@ -443,8 +444,8 @@ public class RuntimeCache {
         return blockBodies[index] = body;
     }
 
-    private CompiledBlockCallback createCompiledBlockCallback(Object scriptObject, Ruby runtime, int index, String method) {
-        CompiledBlockCallback callback = RuntimeHelpers.createBlockCallback(runtime, scriptObject, method, "(internal)", -1);
+    private CompiledBlockCallback createCompiledBlockCallback(Object scriptObject, int index, String method) {
+        CompiledBlockCallback callback = RuntimeHelpers.createBlockCallback(scriptObject, method, "(internal)", -1);
         return blockCallbacks[index] = callback;
     }
 

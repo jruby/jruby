@@ -119,31 +119,31 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
 
         method.loadThis();
-        method.loadRuntime();
+        method.loadThreadContext();
         if (index < AbstractScript.NUMBERED_SYMBOL_COUNT) {
             method.method.ldc(symbol);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol" + index, sig(RubySymbol.class, Ruby.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol" + index, sig(RubySymbol.class, ThreadContext.class, String.class));
         } else {
             method.method.ldc(index.intValue());
             method.method.ldc(symbol);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol", sig(RubySymbol.class, Ruby.class, int.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getSymbol", sig(RubySymbol.class, ThreadContext.class, int.class, String.class));
         }
     }
 
     public void cacheRegexp(BaseBodyCompiler method, ByteList pattern, int options) {
 
         method.loadThis();
-        method.loadRuntime();
+        method.loadThreadContext();
         int index = inheritedRegexpCount++;
         if (index < AbstractScript.NUMBERED_REGEXP_COUNT) {
             cacheByteList(method, pattern);
             method.method.ldc(options);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp" + index, sig(RubyRegexp.class, Ruby.class, ByteList.class, int.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp" + index, sig(RubyRegexp.class, ThreadContext.class, ByteList.class, int.class));
         } else {
             method.method.pushInt(index);
             cacheByteList(method, pattern);
             method.method.ldc(options);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, Ruby.class, int.class, ByteList.class, int.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getRegexp", sig(RubyRegexp.class, ThreadContext.class, int.class, ByteList.class, int.class));
         }
     }
 
@@ -206,20 +206,20 @@ public class InheritedCacheCompiler implements CacheCompiler {
             }
             
             method.loadThis();
-            method.loadRuntime();
+            method.loadThreadContext();
             if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
                 if (index < AbstractScript.NUMBERED_FIXNUM_COUNT) {
                     method.method.pushInt((int)value);
-                    method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum" + index, sig(RubyFixnum.class, Ruby.class, int.class));
+                    method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum" + index, sig(RubyFixnum.class, ThreadContext.class, int.class));
                 } else {
                     method.method.pushInt(index.intValue());
                     method.method.pushInt((int)value);
-                    method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum", sig(RubyFixnum.class, Ruby.class, int.class, int.class));
+                    method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum", sig(RubyFixnum.class, ThreadContext.class, int.class, int.class));
                 }
             } else {
                 method.method.pushInt(index.intValue());
                 method.method.ldc(value);
-                method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum", sig(RubyFixnum.class, Ruby.class, int.class, long.class));
+                method.method.invokevirtual(scriptCompiler.getClassname(), "getFixnum", sig(RubyFixnum.class, ThreadContext.class, int.class, long.class));
             }
         }
     }
@@ -229,14 +229,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
         floatIndices.put(value, index);
 
         method.loadThis();
-        method.loadRuntime();
+        method.loadThreadContext();
         if (index < AbstractScript.NUMBERED_FLOAT_COUNT) {
             method.method.ldc(value);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getFloat" + index, sig(RubyFloat.class, Ruby.class, double.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getFloat" + index, sig(RubyFloat.class, ThreadContext.class, double.class));
         } else {
             method.method.pushInt(index.intValue());
             method.method.ldc(value);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getFloat", sig(RubyFloat.class, Ruby.class, int.class, double.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getFloat", sig(RubyFloat.class, ThreadContext.class, int.class, double.class));
         }
     }
 
@@ -281,14 +281,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
 
         method.loadThis();
-        method.loadRuntime();
+        method.loadThreadContext();
         if (index < AbstractScript.NUMBERED_STRING_COUNT) {
             method.method.pushInt(codeRange);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getString" + index, sig(RubyString.class, Ruby.class, int.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getString" + index, sig(RubyString.class, ThreadContext.class, int.class));
         } else {
             method.method.pushInt(index.intValue());
             method.method.pushInt(codeRange);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getString", sig(RubyString.class, Ruby.class, int.class, int.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getString", sig(RubyString.class, ThreadContext.class, int.class, int.class));
         }
     }
 
@@ -348,49 +348,47 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
     public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint) {
         method.loadThis();
-        method.loadRuntime();
         int index = inheritedBigIntegerCount++;
         if (index < AbstractScript.NUMBERED_BIGINTEGER_COUNT) {
             method.method.ldc(bigint.toString(16));
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getBigInteger" + index, sig(BigInteger.class, Ruby.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getBigInteger" + index, sig(BigInteger.class, String.class));
         } else {
             method.method.pushInt(index);
             method.method.ldc(bigint.toString(16));
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getBigInteger", sig(BigInteger.class, Ruby.class, int.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getBigInteger", sig(BigInteger.class, int.class, String.class));
         }
     }
 
     public void cachedGetVariable(BaseBodyCompiler method, String name) {
         method.loadThis();
-        method.loadRuntime();
+        method.loadThreadContext();
         int index = inheritedVariableReaderCount++;
         if (index < AbstractScript.NUMBERED_VARIABLEREADER_COUNT) {
             method.method.ldc(name);
             method.loadSelf();
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getVariable" + index, sig(IRubyObject.class, Ruby.class, String.class, IRubyObject.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getVariable" + index, sig(IRubyObject.class, ThreadContext.class, String.class, IRubyObject.class));
         } else {
             method.method.pushInt(index);
             method.method.ldc(name);
             method.loadSelf();
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getVariable", sig(IRubyObject.class, Ruby.class, int.class, String.class, IRubyObject.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getVariable", sig(IRubyObject.class, ThreadContext.class, int.class, String.class, IRubyObject.class));
         }
     }
 
     public void cachedSetVariable(BaseBodyCompiler method, String name, CompilerCallback valueCallback) {
         method.loadThis();
-        method.loadRuntime();
         int index = inheritedVariableWriterCount++;
         if (index < AbstractScript.NUMBERED_VARIABLEWRITER_COUNT) {
             method.method.ldc(name);
             method.loadSelf();
             valueCallback.call(method);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "setVariable" + index, sig(IRubyObject.class, Ruby.class, String.class, IRubyObject.class, IRubyObject.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "setVariable" + index, sig(IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
         } else {
             method.method.pushInt(index);
             method.method.ldc(name);
             method.loadSelf();
             valueCallback.call(method);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "setVariable", sig(IRubyObject.class, Ruby.class, int.class, String.class, IRubyObject.class, IRubyObject.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "setVariable", sig(IRubyObject.class, int.class, String.class, IRubyObject.class, IRubyObject.class));
         }
     }
 
@@ -449,15 +447,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
     public void cacheSpecialClosure(BaseBodyCompiler method, String closureMethod) {
         method.loadThis();
-        method.loadRuntime();
-
+        
         if (inheritedBlockCallbackCount < AbstractScript.NUMBERED_BLOCKCALLBACK_COUNT) {
             method.method.ldc(closureMethod);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockCallback" + inheritedBlockCallbackCount, sig(CompiledBlockCallback.class, Ruby.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockCallback" + inheritedBlockCallbackCount, sig(CompiledBlockCallback.class, String.class));
         } else {
             method.method.pushInt(inheritedBlockCallbackCount);
             method.method.ldc(closureMethod);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockCallback", sig(CompiledBlockCallback.class, Ruby.class, int.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockCallback", sig(CompiledBlockCallback.class, int.class, String.class));
         }
 
         inheritedBlockCallbackCount++;
