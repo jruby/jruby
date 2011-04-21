@@ -225,6 +225,12 @@ import org.jruby.util.ByteList;
 // - We should be returning null from the build methods where it is a normal "error" condition
 // - We should be returning Nil.NIL where the actual return value of a build is the ruby nil operand
 //   Look in buildIf for an example of this
+//
+// 3. Temporary variable reuse
+// ---------------------------
+// I am reusing variables a lot in places in this code.  Should I instead always get a new variable when I need it
+// This introduces artificial data dependencies, but fewer variables.  But, if we are going to implement SSA pass
+// this is not a big deal.  Think this through!
 
 public class IRBuilder {
     private static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
@@ -1283,6 +1289,34 @@ public class IRBuilder {
                 Operand defVal = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
                 return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, defVal);
             }
+            case NTHREFNODE:
+            {
+                /* -------------------------------------------------------------------------------------
+                 * We have to generate IR for this:
+                 *    v = backref; (!(v instanceof RubyMatchData) || v.group(n).nil?) ? nil : "$#{n}"
+                 *
+                 * which happens to be identical to: (where nthRef implicitly fetches backref again!)
+                 *    v = backref; (!(v instanceof RubyMatchData) || nthRef(n).nil?) ? nil : "$#{n}"
+                 *
+                 * I am using the second form since it let us encode it in fewer IR instructions
+                 * and reuse existing operands & instructions rather than create a new 'InstanceOfInstr' IR Instr
+                 * But, note that this second form is not as clean as the first one plus it fetches backref twice!
+                 * ------------------------------------------------------------------------------------- */
+                int n = ((NthRefNode) node).getMatchNumber();
+                Label undefLabel = s.getNewLabel();
+                Variable tmpVar = s.getNewTemporaryVariable();
+                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("backref_isRubyMatchData"), null, NO_ARGS));
+                s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                // SSS FIXME: 
+                // - Can/Should I use BNEInstr here instead of the CALL + BEQ?
+                //    new BNEInstr(tmpVar, new NthRef(n), Nil.NIL, ..) -- but have to deal with reversed polarity of check
+                // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
+                //   the nil? method is not monkey-patched?
+                // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
+                s.addInstr(new CallInstr(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
+                s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.TRUE, undefLabel));
+                return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, new StringLiteral("$" + n));
+            }
             case COLON3NODE:
             case COLON2NODE:
             {
@@ -1389,19 +1423,6 @@ public class IRBuilder {
                 m.setEnding(ending);
                 break;
             }
-            case NTHREFNODE:
-                m.isCaptured(((NthRefNode) node).getMatchNumber(),
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return new StringLiteral("$" + ((NthRefNode) node).getMatchNumber());
-                            }
-                        },
-                        new BranchCallback() {
-                            public void branch(IRScope m) {
-                                return Nil.NIL;
-                            }
-                        });
-                break;
             case CLASSVARNODE:
                 {
                     ClassVarNode iVisited = (ClassVarNode) node;

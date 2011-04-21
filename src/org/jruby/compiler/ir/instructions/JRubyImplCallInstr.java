@@ -73,12 +73,14 @@ public class JRubyImplCallInstr extends CallInstr {
             receiver = getReceiver().retrieve(interp); // SSS: This should be identical to self. Add an assert?
             boolean bound = ((IRubyObject)receiver).getMetaClass().isMethodBound(((StringLiteral)getCallArgs()[0])._str_value, false); // No visibility check
             getResult().store(interp, rt.newBoolean(bound));
-        } else if (getMethodAddr().getName().equals("getBackref")) {
+        } else if (getMethodAddr().getName().equals("runtime_getBackref")) {
+            // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
             getResult().store(interp, RuntimeHelpers.getBackref(rt, interp.getContext()));
         } else if (getMethodAddr().getName().equals("backref_isRubyMatchData")) {
             // bRef = getBackref()
             // flag = bRef instanceof RubyMatchData
             try {
+                // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
                 IRubyObject bRef = RuntimeHelpers.getBackref(rt, interp.getContext());
                 getResult().store(interp, rt.newBoolean(Class.forName("RubyMatchData").isInstance(bRef)));
             } catch (ClassNotFoundException e) {
