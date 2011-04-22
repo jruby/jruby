@@ -1308,8 +1308,7 @@ public class IRBuilder {
                 s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("backref_isRubyMatchData"), null, NO_ARGS));
                 s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
                 // SSS FIXME: 
-                // - Can/Should I use BNEInstr here instead of the CALL + BEQ?
-                //    new BNEInstr(tmpVar, new NthRef(n), Nil.NIL, ..) -- but have to deal with reversed polarity of check
+                // - Can/should I use BEQInstr(new NthRef(n), Nil.NIL, undefLabel)? instead of .nil? & compare with flag?
                 // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
                 //   the nil? method is not monkey-patched?
                 // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
@@ -1358,71 +1357,54 @@ public class IRBuilder {
 
                 return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, name}, rescueBlock, new Object[] {s, errInfo});
             }
+            case CALLNODE:
+            {
+                Label    undefLabel = s.getNewLabel();
+                CallNode iVisited = (CallNode) node;
+                Operand  receiver = buildGetDefinition(iVisited.getReceiverNode(), s);
+                s.addInstr(new BEQInstr(receiver, Nil.NIL, undefLabel));
+
+                // protected main block
+                CodeBlock protectedCode = new CodeBlock() {
+                    public Object run(Object[] args) {
+                        /* --------------------------------------------------------------------------
+                         * Generate IR for this sequence:
+                         *
+                         *    1. r  = receiver
+                         *    2. mc = r.metaClass
+                         *    3. v  = mc.getVisibility(methodName)
+                         *    4. f  = v.isPrivate? || (v.isProtected? && receiver/self? instanceof mc.getRealClass)
+                         *    5. return f ? nil : --check args definition and return "method" or nil--
+                         *
+                         * Hide the complexity of instrs 2-4 into a verifyMethodIsPublicAccessible call
+                         * which can executely entirely in Java-land.  No reason to expose the guts in IR.
+                         * ------------------------------------------------------------------------------ */
+                        IRScope  s          = (IRScope)args[0];
+                        CallNode iVisited   = (CallNode)args[1];
+                        Label    undefLabel = (Label)args[2];
+                        String   methodName = iVisited.getName();
+                        Variable tmpVar     = s.getNewTemporaryVariable();
+                        Operand  receiver   = build(iVisited.getReceiverNode(), s);
+                        s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("verifyMethodIsPublicAccessible"), receiver, new Operand[]{new StringLiteral(methodName)}));
+                        s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                        Operand argsCheckOutput = buildGetArgumentDefinition(iVisited.getArgsNode(), s, "method");
+                        return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, argsCheckOutput);
+                    }
+                };
+
+                // rescue block
+                CodeBlock rescueBlock = new CodeBlock() {
+                    public Object run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
+                };
+
+                // Try verifying definition, and if we get an exception, throw it out, and return nil
+                return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
+            }
             default:
                 throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinition.");
 /**
  *  SSS FIXME: To be completed
  *
-            case CALLNODE:
-            {
-                final CallNode iVisited = (CallNode) node;
-                Object isnull = m.getNewEnding();
-                Object ending = m.getNewEnding();
-                buildGetDefinition(iVisited.getReceiverNode(), m);
-                m.ifNull(isnull);
-
-                m.rescue(new BranchCallback() {
-
-                            public void branch(IRScope m) {
-                                build(iVisited.getReceiverNode(), m,true); //[IRubyObject]
-                                m.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
-                                m.metaclass(); //[IRubyObject, RubyClass]
-                                m.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
-                                m.getVisibilityFor(iVisited.getName()); //[IRubyObject, RubyClass, Visibility]
-                                m.duplicateCurrentValue(); //[IRubyObject, RubyClass, Visibility, Visibility]
-                                final Object isfalse = m.getNewEnding();
-                                Object isreal = m.getNewEnding();
-                                Object ending = m.getNewEnding();
-                                m.isPrivate(isfalse, 3); //[IRubyObject, RubyClass, Visibility]
-                                m.isNotProtected(isreal, 1); //[IRubyObject, RubyClass]
-                                m.selfIsKindOf(isreal); //[IRubyObject]
-                                m.consumeCurrentValue();
-                                m.go(isfalse);
-                                m.setEnding(isreal); //[]
-
-                                m.isMethodBound(iVisited.getName(), new BranchCallback() {
-
-                                            public void branch(IRScope m) {
-                                                buildGetArgumentDefinition(iVisited.getArgsNode(), m, "method");
-                                            }
-                                        },
-                                        new BranchCallback() {
-
-                                            public void branch(IRScope m) {
-                                                m.go(isfalse);
-                                            }
-                                        });
-                                m.go(ending);
-                                m.setEnding(isfalse);
-                                m.pushNull();
-                                m.setEnding(ending);
-                            }
-                        }, JumpException.class,
-                        new BranchCallback() {
-
-                            public void branch(IRScope m) {
-                                m.pushNull();
-                            }
-                        }, String.class);
-
-                //          m.swapValues();
-        //m.consumeCurrentValue();
-                m.go(ending);
-                m.setEnding(isnull);
-                m.pushNull();
-                m.setEnding(ending);
-                break;
-            }
             case CLASSVARNODE:
                 {
                     ClassVarNode iVisited = (ClassVarNode) node;
