@@ -34,10 +34,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * args field: [self, receiver, *args]
  */
 public class CallInstr extends MultiOperandInstr {
-    private Operand   receiver;
-    private Operand[] arguments;
-    MethAddr methAddr;
-    Operand closure;
+    protected Operand   receiver;
+    protected Operand[] arguments;
+    protected MethAddr methAddr;
+    protected Operand closure;
     
     private boolean _flagsComputed;
     private boolean _canBeEval;

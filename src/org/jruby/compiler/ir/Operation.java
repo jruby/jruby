@@ -14,6 +14,9 @@ public enum Operation {
 // primitive alu operations -- unboxed primitive ops (not native ruby)
     ADD(OpType.alu_op), SUB(OpType.alu_op), MUL(OpType.alu_op), DIV(OpType.alu_op),
 
+// java instanceof bytecode
+    INSTANCE_OF(OpType.dont_care),
+
 // method handle, arg receive, return value, and  call instructions
 //   BREAK is a ret_op not a branch_op because it can only be used within closures
 //   and the net result is to return from the closure

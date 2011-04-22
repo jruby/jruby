@@ -1,8 +1,11 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyClass;
+import org.jruby.RubyModule;
+import org.jruby.MetaClass;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -30,6 +33,29 @@ public class JRubyImplCallInstr extends CallInstr {
         return true;
     }
 
+    public Operand[] getOperands() {
+        int       offset  = (receiver != null) ? 2 : 1;
+        Operand[] allArgs = new Operand[arguments.length + offset];
+
+        allArgs[0] = methAddr;
+        if (receiver != null) allArgs[1] = receiver;
+        for (int i = 0; i < arguments.length; i++) {
+            assert arguments[i] != null : "ARG " + i + " is null";
+            allArgs[i + offset] = arguments[i];
+        }
+
+        return allArgs;
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        if (receiver != null) receiver = receiver.getSimplifiedOperand(valueMap);
+        methAddr = (MethAddr)methAddr.getSimplifiedOperand(valueMap);
+        for (int i = 0; i < arguments.length; i++) {
+            arguments[i] = arguments[i].getSimplifiedOperand(valueMap);
+        }
+    }
+
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new JRubyImplCallInstr(ii.getRenamedVariable(result), (MethAddr) methAddr.cloneForInlining(ii),
@@ -45,12 +71,18 @@ public class JRubyImplCallInstr extends CallInstr {
         Ruby     rt    = interp.getRuntime();
         Object   rVal  = null;
 
+        // SSS FIXME:
+        // Should we convert these handful of method names into enums here
+        // and use a switch for fast dispatch?
+
         if (ma == MethAddr.MATCH2) {
             receiver = getReceiver().retrieve(interp);
             rVal = ((RubyRegexp) receiver).op_match(interp.getContext(), (IRubyObject) getCallArgs()[0].retrieve(interp));
         } else if (ma == MethAddr.MATCH3) { // ENEBO: Only for rubystring?
             receiver = getReceiver().retrieve(interp);
             rVal = ((RubyRegexp) receiver).op_match(interp.getContext(), (IRubyObject) getCallArgs()[0].retrieve(interp));
+        } else if (ma == MethAddr.UNDEF_METHOD) {
+            rVal = RuntimeHelpers.undefMethod(interp.getContext(), getReceiver().retrieve(interp));
         } else if (ma == MethAddr.TO_ARY) {
             receiver = getReceiver().retrieve(interp);
             rVal = RuntimeHelpers.aryToAry((IRubyObject) receiver);
@@ -62,11 +94,16 @@ public class JRubyImplCallInstr extends CallInstr {
             //String name = getCallArgs()[0].retrieve(interp).toString();
             String name = ((StringLiteral)getCallArgs()[0])._str_value;
             rVal = rt.newBoolean(interp.getContext().getConstantDefined(name));
+        } else if (mName.equals("threadContext_getCurrentModule")) {
+            rVal = interp.getContext().getCurrentScope().getStaticScope().getModule();
+        } else if (mName.equals("self_getMetaClass")) {
+            // SSS FIXME: Should we pass self in as a receiver and let this go to super.interpret?
+            rVal = self.getMetaClass();
         } else if (mName.equals("self_hasInstanceVariable")) {
-            receiver = getReceiver().retrieve(interp); // SSS: This should be identical to self. Add an assert?
+            // SSS FIXME: Should we pass self in as a receiver and let this go to super.interpret?
             //String name = getCallArgs()[0].retrieve(interp).toString();
             String name = ((StringLiteral)getCallArgs()[0])._str_value;
-            rVal = rt.newBoolean(((IRubyObject)receiver).getInstanceVariables().fastHasInstanceVariable(name));
+            rVal = rt.newBoolean(self.getInstanceVariables().fastHasInstanceVariable(name));
         } else if (mName.equals("runtime_isGlobalDefined")) {
             //String name = getCallArgs()[0].retrieve(interp).toString();
             String name = ((StringLiteral)getCallArgs()[0])._str_value;
@@ -104,6 +141,18 @@ public class JRubyImplCallInstr extends CallInstr {
             String      arg = ((StringLiteral)getCallArgs()[0])._str_value;
             Visibility  v   = mc.searchMethod(arg).getVisibility();
             rVal = rt.newBoolean(v.isPrivate() || (v.isProtected() && mc.getRealClass().isInstance(r)));
+        } else if (mName.equals("isClassVarDefined")) {
+            // cm.classVarDefined(name) || (cm.isSingleton && !(cm.attached instanceof RubyModule) && cm.attached.classVarDefined(name))
+            RubyModule cm   = (RubyModule)getReceiver().retrieve(interp);
+            String     name = ((StringLiteral)getCallArgs()[0])._str_value;
+            boolean    flag = cm.fastIsClassVarDefined(name);
+            if (!flag) {
+                if (cm.isSingleton()) {
+                    IRubyObject ao = ((MetaClass)cm).getAttached();
+                    if (ao instanceof RubyModule) flag = ((RubyModule)ao).fastIsClassVarDefined(name);
+                }
+            }
+            rVal = rt.newBoolean(flag);
         } else {
             super.interpret(interp, self);
         }
