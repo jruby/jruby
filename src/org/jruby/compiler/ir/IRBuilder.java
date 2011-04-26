@@ -1502,14 +1502,15 @@ public class IRBuilder {
                 return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
             }
             case ZSUPERNODE:
-            {
-                // To be implemented
-                throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinition.");
-            }
+                return buildDefinitionCheck(s, "frame_superMethodBound", null, null, "super");
             case SUPERNODE:
             {
-                // To be implemented
-                throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinition.");
+                Label undefLabel = s.getNewLabel();
+                Variable tmpVar  = s.getNewTemporaryVariable();
+                s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("frame_superMethodBound"), null, NO_ARGS));
+                s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
+                return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, superDefnVal);
             }
             default:
                 // protected code
@@ -1529,67 +1530,6 @@ public class IRBuilder {
 
                 // always an expression as long as we didn't get an exception in the code above
                 return new StringLiteral("expression");
-/**
- *  SSS FIXME: To be completed
- *
-            case ZSUPERNODE:
-                {
-                    Object fail = m.getNewEnding();
-                    Object fail2 = m.getNewEnding();
-                    Object fail_easy = m.getNewEnding();
-                    Object ending = m.getNewEnding();
-
-
-                    m.getFrameName(); //[String]
-                    m.duplicateCurrentValue(); //[String, String]
-                    m.ifNull(fail); //[String]
-                    m.getFrameKlazz(); //[String, RubyClass]
-                    m.duplicateCurrentValue(); //[String, RubyClass, RubyClass]
-                    m.ifNull(fail2); //[String, RubyClass]
-                    m.superClass();
-                    m.ifNotSuperMethodBound(fail_easy);
-
-                    Operand sl = new StringLiteral("super");
-                    m.go(ending);
-
-                    m.setEnding(fail2);
-                    m.consumeCurrentValue();
-                    m.setEnding(fail);
-                    m.consumeCurrentValue();
-                    m.setEnding(fail_easy);
-                    m.pushNull();
-                    m.setEnding(ending);
-                }
-                break;
-            case SUPERNODE:
-                {
-                    Object fail = m.getNewEnding();
-                    Object fail2 = m.getNewEnding();
-                    Object fail_easy = m.getNewEnding();
-                    Object ending = m.getNewEnding();
-
-                    m.getFrameName(); //[String]
-                    m.duplicateCurrentValue(); //[String, String]
-                    m.ifNull(fail); //[String]
-                    m.getFrameKlazz(); //[String, RubyClass]
-                    m.duplicateCurrentValue(); //[String, RubyClass, RubyClass]
-                    m.ifNull(fail2); //[String, RubyClass]
-                    m.superClass();
-                    m.ifNotSuperMethodBound(fail_easy);
-
-                    buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), m, "super");
-                    m.go(ending);
-
-                    m.setEnding(fail2);
-                    m.consumeCurrentValue();
-                    m.setEnding(fail);
-                    m.consumeCurrentValue();
-                    m.setEnding(fail_easy);
-                    m.pushNull();
-                    m.setEnding(ending);
-                    break;
-                }
-**/
         }
     }
 

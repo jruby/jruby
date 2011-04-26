@@ -16,6 +16,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 public class JRubyImplCallInstr extends CallInstr {
@@ -150,6 +151,17 @@ public class JRubyImplCallInstr extends CallInstr {
                 if (cm.isSingleton()) {
                     IRubyObject ao = ((MetaClass)cm).getAttached();
                     if (ao instanceof RubyModule) flag = ((RubyModule)ao).fastIsClassVarDefined(name);
+                }
+            }
+            rVal = rt.newBoolean(flag);
+        } else if (mName.equals("frame_superMethodBound")) {
+            boolean flag = false;
+            ThreadContext tc = interp.getContext();
+            String        fn = tc.getFrameName();
+            if (fn != null) {
+                RubyModule fc = tc.getFrameKlazz();
+                if (fc != null) {
+                    flag = RuntimeHelpers.findImplementerIfNecessary(self.getMetaClass(), fc).getSuperClass().isMethodBound(fn, false);
                 }
             }
             rVal = rt.newBoolean(flag);
