@@ -1231,18 +1231,35 @@ public class IRBuilder {
         if (node == null) {
             return new StringLiteral(type);
         } else { 
-            Label failLabel = m.getNewLabel();
+            Operand rv = new StringLiteral(type);
+            boolean failPathReqd = false;
+            Label   failLabel    = m.getNewLabel();
             if (node instanceof ArrayNode) {
                 for (int i = 0; i < ((ArrayNode) node).size(); i++) {
                     Node iterNode = ((ArrayNode) node).get(i);
                     Operand def = buildGetDefinition(iterNode, m);
-                    m.addInstr(new BEQInstr(def, Nil.NIL, failLabel));
+                    if (def == Nil.NIL) { // Optimization!
+                        rv = Nil.NIL;
+                        break;
+                    }
+                    else if (!def.isConstant()) { // Optimization!
+                        failPathReqd = true;
+                        m.addInstr(new BEQInstr(def, Nil.NIL, failLabel));
+                    }
                 }
             } else {
                 Operand def = buildGetDefinition(node, m);
-                m.addInstr(new BEQInstr(def, Nil.NIL, failLabel));
+                if (def == Nil.NIL) { // Optimization!
+                    rv = Nil.NIL;
+                }
+                else if (!def.isConstant()) { // Optimization!
+                    failPathReqd = true;
+                    m.addInstr(new BEQInstr(def, Nil.NIL, failLabel));
+                }
             }
-            return buildDefnCheckIfThenPaths(m, failLabel, new StringLiteral(type));
+
+            // Optimization!
+            return failPathReqd ? buildDefnCheckIfThenPaths(m, failLabel, rv) : rv;
         }
     }
 
