@@ -1295,13 +1295,19 @@ public class IRBuilder {
                 return buildDefinitionCheck(s, "backref_isRubyMatchData", null, null, "$" + ((BackRefNode) node).getType());
             case FCALLNODE:
             {
+                /* ------------------------------------------------------------------
+                 * Generate IR for:
+                 *    r = self/receiver
+                 *    mc = r.metaclass
+                 *    return mc.methodBound(meth) ? buildGetArgumentDefn(..) : false
+                 * ----------------------------------------------------------------- */
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar = s.getNewTemporaryVariable();
                 StringLiteral mName = new StringLiteral(((FCallNode)node).getName());
                 s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("self_isMethodBound"), getSelf(s), new Operand[]{mName}));
                 s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
-                Operand defVal = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
-                return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, defVal);
+                Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
+                return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, argsCheckDefn);
             }
             case NTHREFNODE:
             {
@@ -1317,8 +1323,7 @@ public class IRBuilder {
                  * which happens to be identical to: (where nthRef implicitly fetches backref again!)
                  *    v = backref; (!(v instanceof RubyMatchData) || nthRef(n).nil?) ? nil : "$#{n}"
                  *
-                 * I am using the second form since it let us encode it in fewer IR instructions
-                 * and reuse existing operands & instructions rather than create a new 'InstanceOfInstr' IR Instr
+                 * I am using the second form since it let us encode it in fewer IR instructions.
                  * But, note that this second form is not as clean as the first one plus it fetches backref twice!
                  * ------------------------------------------------------------------------------------- */
                 int n = ((NthRefNode) node).getMatchNumber();
@@ -1372,13 +1377,13 @@ public class IRBuilder {
                 CodeBlock rescueBlock = new CodeBlock() {
                     public Object run(Object[] args) {
                         // Nothing to do -- ignore the exception, and restore stashed error info!
-                        // SSS FIXME: Is this correct?  Or, do we compare against a specific exception type?
                         IRScope  m  = (IRScope)args[0];
                         m.addInstr(new JRubyImplCallInstr(null, new MethAddr("threadContext_restoreErrInfo"), null, new Operand[]{(Variable)args[1]}));
                         return Nil.NIL;
                     }
                 };
 
+                // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
                 return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, name}, rescueBlock, new Object[] {s, errInfo});
             }
             case CALLNODE:
@@ -1390,8 +1395,8 @@ public class IRBuilder {
 
                 Label    undefLabel = s.getNewLabel();
                 CallNode iVisited = (CallNode) node;
-                Operand  receiver = buildGetDefinition(iVisited.getReceiverNode(), s);
-                s.addInstr(new BEQInstr(receiver, Nil.NIL, undefLabel));
+                Operand  receiverDefn = buildGetDefinition(iVisited.getReceiverNode(), s);
+                s.addInstr(new BEQInstr(receiverDefn, Nil.NIL, undefLabel));
 
                 // protected main block
                 CodeBlock protectedCode = new CodeBlock() {
@@ -1402,7 +1407,7 @@ public class IRBuilder {
                          *    1. r  = receiver
                          *    2. mc = r.metaClass
                          *    3. v  = mc.getVisibility(methodName)
-                         *    4. f  = v.isPrivate? || (v.isProtected? && receiver/self? instanceof mc.getRealClass)
+                         *    4. f  = v.isPrivate? || (v.isProtected? && receiver/self?.kindof(mc.getRealClass)
                          *    5. return f ? nil : --check args definition and return "method" or nil--
                          *
                          * Hide the complexity of instrs 2-4 into a verifyMethodIsPublicAccessible call
@@ -1416,8 +1421,8 @@ public class IRBuilder {
                         Operand  receiver   = build(iVisited.getReceiverNode(), s);
                         s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("verifyMethodIsPublicAccessible"), receiver, new Operand[]{new StringLiteral(methodName)}));
                         s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
-                        Operand argsCheckOutput = buildGetArgumentDefinition(iVisited.getArgsNode(), s, "method");
-                        return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, argsCheckOutput);
+                        Operand argsCheckDefn = buildGetArgumentDefinition(iVisited.getArgsNode(), s, "method");
+                        return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, argsCheckDefn);
                     }
                 };
 
@@ -1449,17 +1454,59 @@ public class IRBuilder {
                 s.addInstr(new LABEL_Instr(l));
                 return buildDefinitionCheck(s, "isClassVarDefined", cm, iVisited.getName(), "class-variable");
             }
+            case ATTRASSIGNNODE:
+            {
+                Label  undefLabel = s.getNewLabel();
+                AttrAssignNode iVisited = (AttrAssignNode) node;
+                Operand receiverDefn = buildGetDefinition(iVisited.getReceiverNode(), s);
+                s.addInstr(new BEQInstr(receiverDefn, Nil.NIL, undefLabel));
+
+                // protected main block
+                CodeBlock protectedCode = new CodeBlock() {
+                    public Object run(Object[] args) {
+                        /* --------------------------------------------------------------------------
+                         * This basically combines checks from CALLNODE and FCALLNODE
+                         *
+                         * Generate IR for this sequence
+                         *
+                         *    1. r  = receiver
+                         *    2. mc = r.metaClass
+                         *    3. v  = mc.getVisibility(methodName)
+                         *    4. f  = v.isPrivate? || (v.isProtected? && receiver/self?.kindof(mc.getRealClass))
+                         *    5. return f && mc.methodBound(attrmethod) ? buildGetArgumentDefn(..) : false
+                         *
+                         * Hide the complexity of instrs 2-4 into a verifyMethodIsPublicAccessible call
+                         * which can executely entirely in Java-land.  No reason to expose the guts in IR.
+                         * ------------------------------------------------------------------------------ */
+                        IRScope s = (IRScope)args[0];
+                        AttrAssignNode iVisited = (AttrAssignNode)args[1];
+                        Label undefLabel = (Label)args[2];
+                        StringLiteral attrMethodName = new StringLiteral(iVisited.getName());
+                        Variable tmpVar     = s.getNewTemporaryVariable();
+                        Operand  receiver   = build(iVisited.getReceiverNode(), s);
+                        s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("verifyMethodIsPublicAccessible"), receiver, new Operand[]{attrMethodName}));
+                        s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                        s.addInstr(new JRubyImplCallInstr(tmpVar, new MethAddr("self_isMethodBound"), getSelf(s), new Operand[]{attrMethodName}));
+                        s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                        Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "assignment");
+                        return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, argsCheckDefn);
+                    }
+                };
+
+                // rescue block
+                CodeBlock rescueBlock = new CodeBlock() {
+                    public Object run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
+                };
+
+                // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
+                return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
+            }
             case ZSUPERNODE:
             {
                 // To be implemented
                 throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinition.");
             }
             case SUPERNODE:
-            {
-                // To be implemented
-                throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinition.");
-            }
-            case ATTRASSIGNNODE:
             {
                 // To be implemented
                 throw new NotCompilableException(node + " is not yet IR-compilable in buildGetDefinition.");
@@ -1477,7 +1524,7 @@ public class IRBuilder {
                     public Object run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
                 };
 
-                // Try verifying definition, and if we get an exception, throw it out, and return nil
+                // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
                 protectCodeWithRescue(s, protectedCode, new Object[]{node, s}, rescueBlock, null);
 
                 // always an expression as long as we didn't get an exception in the code above
@@ -1538,64 +1585,6 @@ public class IRBuilder {
                     m.setEnding(fail);
                     m.consumeCurrentValue();
                     m.setEnding(fail_easy);
-                    m.pushNull();
-                    m.setEnding(ending);
-                    break;
-                }
-            case ATTRASSIGNNODE:
-                {
-                    final AttrAssignNode iVisited = (AttrAssignNode) node;
-                    Object isnull = m.getNewEnding();
-                    Object ending = m.getNewEnding();
-                    buildGetDefinition(iVisited.getReceiverNode(), m);
-                    m.ifNull(isnull);
-
-                    m.rescue(new BranchCallback() {
-
-                                public void branch(IRScope m) {
-                                    build(iVisited.getReceiverNode(), m,true); //[IRubyObject]
-                                    m.duplicateCurrentValue(); //[IRubyObject, IRubyObject]
-                                    m.metaclass(); //[IRubyObject, RubyClass]
-                                    m.duplicateCurrentValue(); //[IRubyObject, RubyClass, RubyClass]
-                                    m.getVisibilityFor(iVisited.getName()); //[IRubyObject, RubyClass, Visibility]
-                                    m.duplicateCurrentValue(); //[IRubyObject, RubyClass, Visibility, Visibility]
-                                    final Object isfalse = m.getNewEnding();
-                                    Object isreal = m.getNewEnding();
-                                    Object ending = m.getNewEnding();
-                                    m.isPrivate(isfalse, 3); //[IRubyObject, RubyClass, Visibility]
-                                    m.isNotProtected(isreal, 1); //[IRubyObject, RubyClass]
-                                    m.selfIsKindOf(isreal); //[IRubyObject]
-                                    m.consumeCurrentValue();
-                                    m.go(isfalse);
-                                    m.setEnding(isreal); //[]
-
-                                    m.isMethodBound(iVisited.getName(), new BranchCallback() {
-
-                                                public void branch(IRScope m) {
-                                                    buildGetArgumentDefinition(iVisited.getArgsNode(), m, "assignment");
-                                                }
-                                            },
-                                            new BranchCallback() {
-
-                                                public void branch(IRScope m) {
-                                                    m.go(isfalse);
-                                                }
-                                            });
-                                    m.go(ending);
-                                    m.setEnding(isfalse);
-                                    m.pushNull();
-                                    m.setEnding(ending);
-                                }
-                            }, JumpException.class,
-                            new BranchCallback() {
-
-                                public void branch(IRScope m) {
-                                    m.pushNull();
-                                }
-                            }, String.class);
-
-                    m.go(ending);
-                    m.setEnding(isnull);
                     m.pushNull();
                     m.setEnding(ending);
                     break;
