@@ -7,6 +7,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.MetaClass;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
@@ -21,11 +22,18 @@ import org.jruby.runtime.Visibility;
 
 public class JRubyImplCallInstr extends CallInstr {
     public enum JRubyImplementationMethod {
-       MATCH("match"), 
-       MATCH2("match2"), 
+       // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
+       // and we are replicating it here ... Is this a bug there?
+       MATCH("op_match2"), 
+       MATCH2("op_match"), 
        MATCH3("match3"),
-       UNDEF_METHOD("undefMethod"),
+       // SSS FIXME: This method (at least in the context of multiple assignment) is a little weird.
+       // It calls regular to_ary on the object.  But, if it encounters a method_missing, the value
+       // is inserted into an 1-element array!
+       // try "a,b,c = 1" first; then define Fixnum.to_ary method and try it again.
+       // Ex: http://gist.github.com/163551
        TO_ARY("to_ary"),
+       UNDEF_METHOD("undefMethod"),
        BLOCK_GIVEN("block_isGiven"),
        RT_IS_GLOBAL_DEFINED("runtime_isGlobalDefined"),
        RT_GET_OBJECT("runtime_getObject"),
@@ -109,14 +117,11 @@ public class JRubyImplCallInstr extends CallInstr {
         Object   rVal = null;
 
         switch (this.implMethod) {
+            // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
+            // and we are replicating it here ... Is this a bug there?
             case MATCH:
-                // FIXME: Not implemented yet!
-                break;
-            case SET_WITHIN_DEFINED:
-                // FIXME: Not implemented yet!
-                break;
-            case RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD:
-                // FIXME: Not implemented yet!
+                receiver = getReceiver().retrieve(interp);
+                rVal = ((RubyRegexp) receiver).op_match2(interp.getContext());
                 break;
             case MATCH2:
                 receiver = getReceiver().retrieve(interp);
@@ -133,6 +138,16 @@ public class JRubyImplCallInstr extends CallInstr {
                 receiver = getReceiver().retrieve(interp);
                 rVal = RuntimeHelpers.aryToAry((IRubyObject) receiver);
                 break;
+            case SET_WITHIN_DEFINED:
+                interp.getContext().setWithinDefined(((BooleanLiteral)getCallArgs()[0]).isTrue());
+                break;
+            case RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD:
+            {
+                IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(interp);
+                name = ((StringLiteral)getCallArgs()[1])._str_value;
+                rVal = (new StringLiteral(RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name))).retrieve(interp);
+                break;
+            }
             case BLOCK_GIVEN:
                 rVal = rt.newBoolean(interp.getBlock().isGiven());
                 break;
