@@ -455,7 +455,7 @@ public class IRBuilder {
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, m); // done
             case CONSTNODE: return searchConst(m, ((ConstNode) node).getName()); // done
             case DASGNNODE: return buildDAsgn((DAsgnNode) node, m); // done
-            case DEFINEDNODE: return buildDefined(node, m); // SSS FIXME: Incomplete
+            case DEFINEDNODE: return buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
             case DEFNNODE: return buildDefn((MethodDefNode) node, m); // done
             case DEFSNODE: return buildDefs((DefsNode) node, m); // done
             case DOTNODE: return buildDot((DotNode) node, m); // done
@@ -1207,12 +1207,9 @@ public class IRBuilder {
         }
     }
 
-    public Operand buildDefined(final Node node, IRScope m) {
-        return buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
-    }
-
-    private Variable buildDefnCheckIfThenPaths(IRScope s, Label undefLabel, Variable tmpVar, Operand defVal) {
+    private Variable buildDefnCheckIfThenPaths(IRScope s, Label undefLabel, Operand defVal) {
         Label defLabel = s.getNewLabel();
+        Variable tmpVar  = s.getNewTemporaryVariable();
         s.addInstr(new CopyInstr(tmpVar, defVal));
         s.addInstr(new JumpInstr(defLabel));
         s.addInstr(new LABEL_Instr(undefLabel));
@@ -1227,7 +1224,7 @@ public class IRBuilder {
         Operand[] args   = nameToCheck == null ? NO_ARGS : new Operand[]{new StringLiteral(nameToCheck)};
         s.addInstr(new JRubyImplCallInstr(tmpVar, defnChecker, receiver, args));
         s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
-        return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, new StringLiteral(definedReturnValue));
+        return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral(definedReturnValue));
     }
 
     public Operand buildGetArgumentDefinition(final Node node, IRScope m, String type) {
@@ -1235,7 +1232,6 @@ public class IRBuilder {
             return new StringLiteral(type);
         } else { 
             Label failLabel = m.getNewLabel();
-            Variable rv = m.getNewTemporaryVariable();
             if (node instanceof ArrayNode) {
                 for (int i = 0; i < ((ArrayNode) node).size(); i++) {
                     Node iterNode = ((ArrayNode) node).get(i);
@@ -1246,7 +1242,7 @@ public class IRBuilder {
                 Operand def = buildGetDefinition(node, m);
                 m.addInstr(new BEQInstr(def, Nil.NIL, failLabel));
             }
-            return buildDefnCheckIfThenPaths(m, failLabel, rv, new StringLiteral(type));
+            return buildDefnCheckIfThenPaths(m, failLabel, new StringLiteral(type));
         }
     }
 
@@ -1308,7 +1304,7 @@ public class IRBuilder {
                 s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), new Operand[]{mName}));
                 s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
                 Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
-                return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, argsCheckDefn);
+                return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
             }
             case NTHREFNODE:
             {
@@ -1339,7 +1335,7 @@ public class IRBuilder {
                 // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
                 s.addInstr(new CallInstr(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
                 s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.TRUE, undefLabel));
-                return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, new StringLiteral("$" + n));
+                return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("$" + n));
             }
             case COLON3NODE:
             case COLON2NODE:
@@ -1423,7 +1419,7 @@ public class IRBuilder {
                         s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.METHOD_PUBLIC_ACCESSIBLE, receiver, new Operand[]{new StringLiteral(methodName)}));
                         s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
                         Operand argsCheckDefn = buildGetArgumentDefinition(iVisited.getArgsNode(), s, "method");
-                        return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, argsCheckDefn);
+                        return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
                     }
                 };
 
@@ -1490,7 +1486,7 @@ public class IRBuilder {
                         s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), new Operand[]{attrMethodName}));
                         s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
                         Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "assignment");
-                        return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, argsCheckDefn);
+                        return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
                     }
                 };
 
@@ -1511,7 +1507,7 @@ public class IRBuilder {
                 s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.FRAME_SUPER_METHOD_BOUND, null, NO_ARGS));
                 s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
                 Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
-                return buildDefnCheckIfThenPaths(s, undefLabel, tmpVar, superDefnVal);
+                return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);
             }
             default:
                 // protected code
