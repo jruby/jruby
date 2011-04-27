@@ -40,6 +40,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -1347,29 +1348,73 @@ public class RubyEnumerable {
 
     @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject zip(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
-        return zipCommon(context, self, args, block, "to_a");
+        return zipCommon(context, self, args, block);
     }
     
     @JRubyMethod(name = "zip", rest = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject zip19(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
-        return zipCommon(context, self, args, block, "to_ary");
+        return zipCommon19(context, self, args, block);
     }
 
-    public static IRubyObject[] zipCommonConvert(Ruby runtime, IRubyObject[] args, String methodConverter) {
+    public static IRubyObject[] zipCommonConvert(Ruby runtime, IRubyObject[] args) {
+        return zipCommonConvert(runtime, args, "to_a");
+    }
+
+    public static IRubyObject[] zipCommonConvert(Ruby runtime, IRubyObject[] args, String method) {
         RubyClass array = runtime.getArray();
 
         for (int i = 0; i < args.length; i++) {
-            args[i] = TypeConverter.convertToType(args[i], array, methodConverter);
+            args[i] = TypeConverter.convertToType(args[i], array, method);
         }
 
         return args;
     }
 
     public static IRubyObject zipCommon(ThreadContext context, IRubyObject self,
-            IRubyObject[] aArgs, final Block block, String methodConverter) {
+            IRubyObject[] aArgs, final Block block) {
         final Ruby runtime = context.getRuntime();
-        final int aLen = aArgs.length + 1;
-        final IRubyObject[] args = zipCommonConvert(runtime, aArgs, methodConverter);
+        final IRubyObject[] args = zipCommonConvert(runtime, aArgs);
+
+        return zipCommonAry(context, self, args, block);
+    }
+
+    public static IRubyObject zipCommon19(ThreadContext context, IRubyObject self,
+            IRubyObject[] args, final Block block) {
+        final Ruby runtime = context.getRuntime();
+        final int aLen = args.length + 1;
+        RubyClass array = runtime.getArray();
+        
+        final IRubyObject[] newArgs = new IRubyObject[args.length];
+
+        boolean hasUncoercible = false;
+        for (int i = 0; i < args.length; i++) {
+            newArgs[i] = TypeConverter.convertToType(args[i], array, "to_ary", false);
+            if (newArgs[i].isNil()) {
+                hasUncoercible = true;
+            }
+        }
+        
+        // Handle uncoercibles by trying to_enum conversion
+        if (hasUncoercible) {
+            RubySymbol each = runtime.newSymbol("each");
+            for (int i = 0; i < args.length; i++) {
+                newArgs[i] = args[i].callMethod(context, "to_enum", each);
+            }
+        }
+        
+        if (hasUncoercible) {
+            return zipCommonEnum(context, self, newArgs, block);
+        } else {
+            return zipCommonAry(context, self, newArgs, block);
+        }
+    }
+
+    // TODO: Eliminate duplication here and zipCommonEnum
+    // See enum_zip + zip_ary in Ruby source (1.9, anyway)
+    public static IRubyObject zipCommonAry(ThreadContext context, IRubyObject self,
+            final IRubyObject[] args, final Block block) {
+        final Ruby runtime = context.getRuntime();
+        final int len = args.length + 1;
 
         if (block.isGiven()) {
             callEach(runtime, context, self, block.arity(), new BlockCallback() {
@@ -1377,7 +1422,7 @@ public class RubyEnumerable {
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
-                    RubyArray array = runtime.newArray(aLen);
+                    RubyArray array = runtime.newArray(len);
                     int myIx = ix.getAndIncrement();
                     array.append(larg);
                     for (int i = 0, j = args.length; i < j; i++) {
@@ -1395,7 +1440,7 @@ public class RubyEnumerable {
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
-                    RubyArray array = runtime.newArray(aLen);
+                    RubyArray array = runtime.newArray(len);
                     array.append(larg);
                     int myIx = ix.getAndIncrement();
                     for (int i = 0, j = args.length; i < j; i++) {
@@ -1408,6 +1453,71 @@ public class RubyEnumerable {
                 }
             });
             return zip;
+        }
+    }
+
+    // TODO: Eliminate duplication here and zipCommonAry
+    // See enum_zip + zip_i in Ruby source
+    public static IRubyObject zipCommonEnum(ThreadContext context, IRubyObject self,
+            final IRubyObject[] args, final Block block) {
+        final Ruby runtime = context.getRuntime();
+        final int len = args.length + 1;
+
+        if (block.isGiven()) {
+            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+                AtomicInteger ix = new AtomicInteger(0);
+
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = checkArgs(runtime, largs);
+                    RubyArray array = runtime.newArray(len);
+                    int myIx = ix.getAndIncrement();
+                    array.append(larg);
+                    for (int i = 0, j = args.length; i < j; i++) {
+                        array.append(zipEnumNext(ctx, args[i]));
+                    }
+                    block.yield(ctx, array);
+                    return runtime.getNil();
+                }
+            });
+            return runtime.getNil();
+        } else {
+            final RubyArray zip = runtime.newArray();
+            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+                AtomicInteger ix = new AtomicInteger(0);
+
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = checkArgs(runtime, largs);
+                    RubyArray array = runtime.newArray(len);
+                    array.append(larg);
+                    int myIx = ix.getAndIncrement();
+                    for (int i = 0, j = args.length; i < j; i++) {
+                        array.append(zipEnumNext(ctx, args[i]));
+                    }
+                    synchronized (zip) {
+                        zip.append(array);
+                    }
+                    return runtime.getNil();
+                }
+            });
+            return zip;
+        }
+    }
+    
+    private static IRubyObject zipEnumNext(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+        
+        if (arg.isNil()) {
+            return context.nil;
+        } else {
+            try {
+                return arg.callMethod(context, "next");
+            } catch (RaiseException re) {
+                if (re.getException().getMetaClass() == runtime.getStopIteration()) {
+                    return context.nil;
+                } else {
+                    throw re;
+                }
+            }
         }
     }
 
