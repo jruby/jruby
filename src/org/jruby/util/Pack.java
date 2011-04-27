@@ -841,9 +841,9 @@ public class Pack {
                 case '@' :
                     try {
                         if (occurrences == IS_STAR) {
-                            encode.position(encode.remaining());
+                            encode.position(encodedString.begin() + encode.remaining());
                         } else {
-                            encode.position(occurrences);
+                            encode.position(encodedString.begin() + occurrences);
                         }
                     } catch (IllegalArgumentException iae) {
                         throw runtime.newArgumentError("@ outside of string");
