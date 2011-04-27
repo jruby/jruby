@@ -60,6 +60,7 @@ public class Platform {
     private static final String FREEBSD = "freebsd";
     private static final String OPENBSD = "openbsd";
     private static final String SOLARIS = "solaris";
+    private static final String OPENVMS = "openvms";
 
     private static final String GCJ = "GNU libgcj";
 
@@ -102,6 +103,7 @@ public class Platform {
     public static final boolean IS_LINUX = OS.equals(LINUX);
     public static final boolean IS_SOLARIS = OS.equals(SOLARIS);
     public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD;
+    public static final boolean IS_OPENVMS = OS.equals(OPENVMS);
     public static final String NAME = String.format("%s-%s", ARCH, OS);
     public static final int BIG_ENDIAN = 4321;
     public static final int LITTLE_ENDIAN = 1234;
