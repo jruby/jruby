@@ -105,4 +105,9 @@ class TestPack < Test::Unit::TestCase
   def test_pack_CC
     assert_raises(ArgumentError) { [0].pack('CC') }
   end
+
+  def test_unpack_at_on_substring
+    assert_equal([?c], 'abcdef'[1..-1].unpack('@1c'))
+    assert_equal([?f], 'abcdef'[1..-1].unpack('x1@*c'))
+  end
 end
