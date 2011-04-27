@@ -1431,29 +1431,33 @@ public class Pack {
         public abstract void encode(Ruby runtime, IRubyObject from, ByteList result);
     }
 
-    private static ConverterExecutor executor18 = new ConverterExecutor() {
-        @Override
-        public IRubyObject decode(Ruby runtime, ByteBuffer format) {
-            return converter.decode(runtime, format);
-        }
+    private static ConverterExecutor executor18() {
+        return new ConverterExecutor() {
+            @Override
+            public IRubyObject decode(Ruby runtime, ByteBuffer format) {
+                return converter.decode(runtime, format);
+            }
 
-        @Override
-        public void encode(Ruby runtime, IRubyObject from, ByteList result) {
-            converter.encode(runtime, from, result);
-        }
-    };
+            @Override
+            public void encode(Ruby runtime, IRubyObject from, ByteList result) {
+                converter.encode(runtime, from, result);
+            }
+        };
+    }
 
-    private static ConverterExecutor executor19 = new ConverterExecutor() {
-        @Override
-        public IRubyObject decode(Ruby runtime, ByteBuffer format) {
-            return converter.decode19(runtime, format);
-        }
+    private static ConverterExecutor executor19() {
+        return new ConverterExecutor() {
+            @Override
+            public IRubyObject decode(Ruby runtime, ByteBuffer format) {
+                return converter.decode19(runtime, format);
+            }
 
-        @Override
-        public void encode(Ruby runtime, IRubyObject from, ByteList result) {
-            converter.encode19(runtime, from, result);
-        }
-    };
+            @Override
+            public void encode(Ruby runtime, IRubyObject from, ByteList result) {
+                converter.encode19(runtime, from, result);
+            }
+        };
+    }
 
     public abstract static class Converter {
         public int size;
@@ -1713,19 +1717,19 @@ public class Pack {
      **/
     @SuppressWarnings("fallthrough")
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString, boolean taint) {
-        return packCommon(runtime, list, formatString, taint, executor18);
+        return packCommon(runtime, list, formatString, taint, executor18());
     }
 
     /**
      * Same as pack(Ruby, RubyArray, ByteList) but defaults tainting of output to false.
      */
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
-        return packCommon(runtime, list, formatString, false, executor18);
+        return packCommon(runtime, list, formatString, false, executor18());
     }
 
     @SuppressWarnings("fallthrough")
     public static RubyString pack19(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
-        RubyString pack = packCommon(runtime, list, formatString.getByteList(), formatString.isTaint(), executor19);
+        RubyString pack = packCommon(runtime, list, formatString.getByteList(), formatString.isTaint(), executor19());
         pack = (RubyString) pack.infectBy(formatString);
 
         for (IRubyObject element : list.toJavaArray()) {
