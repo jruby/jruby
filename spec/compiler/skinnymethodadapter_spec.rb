@@ -28,13 +28,11 @@ describe "SkinnyMethodAdapter" do
     keyword_opcodes = [] # gather opcodes that are named after keywords separately
     insn_opcodes = Opcodes.constants.select do |c|
       case c
-      when /ACC_/ # access modifiers
-        false
-      when /V1_/ # version identifiers
-        false
-      when /T_/ # type identifiers
-        false
-      when /F_/ # framing hints
+      when /ACC_/, # access modifiers
+           /V1_/, # version identifiers
+           /T_/, # type identifiers
+           /F_/, # framing hints
+           /MH_/ # method handles
         false
       when "DOUBLE", "FLOAT", "INTEGER", "LONG", "NULL", "TOP", "UNINITIALIZED_THIS"
         false
