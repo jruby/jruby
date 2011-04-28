@@ -22,15 +22,16 @@ import org.jruby.runtime.Visibility;
  * @author headius
  */
 public abstract class TypePopulator {
-    public void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, CallConfiguration callConfig) {
+    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, CallConfiguration callConfig, boolean notImplemented) {
         javaMethod.setIsBuiltin(true);
         javaMethod.setArity(Arity.createArity(arity));
         javaMethod.setJavaName(simpleName);
         javaMethod.setSingleton(isStatic);
         javaMethod.setCallConfig(callConfig);
+        javaMethod.setNotImplemented(notImplemented);
     }
     
-    public DynamicMethod populateModuleMethod(RubyModule cls, JavaMethod javaMethod) {
+    public static DynamicMethod populateModuleMethod(RubyModule cls, JavaMethod javaMethod) {
         DynamicMethod moduleMethod = javaMethod.dup();
         moduleMethod.setImplementationClass(cls.getSingletonClass());
         moduleMethod.setVisibility(Visibility.PUBLIC);

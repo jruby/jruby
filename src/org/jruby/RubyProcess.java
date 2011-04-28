@@ -45,6 +45,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ShellLauncher;
+import static org.jruby.CompatVersion.*;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
 import static org.jruby.runtime.MethodIndex.OP_EQUAL;
@@ -945,8 +946,13 @@ public class RubyProcess {
         return runtime.newFixnum(runtime.getPosix().getpid());
     }
     
-    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, compat = RUBY1_8)
     public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
+        return RubyKernel.fork(context, recv, block);
+    }
+    
+    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, compat = RUBY1_9, notImplemented = true)
+    public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
         return RubyKernel.fork(context, recv, block);
     }
 

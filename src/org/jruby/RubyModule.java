@@ -1356,6 +1356,15 @@ public class RubyModule extends RubyObject {
         }
         return false;
     }
+    
+    public boolean isMethodBound(String name, boolean checkVisibility, boolean checkRespondTo) {
+        if (!checkRespondTo) return isMethodBound(name, checkVisibility);
+        DynamicMethod method = searchMethod(name);
+        if (!method.isUndefined() && !method.isNotImplemented()) {
+            return !(checkVisibility && method.getVisibility() == PRIVATE);
+        }
+        return false;
+    }
 
     public void checkMethodBound(ThreadContext context, IRubyObject[] args, Visibility visibility) {
         if (args.length == 0) {

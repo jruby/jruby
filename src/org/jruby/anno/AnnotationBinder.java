@@ -380,7 +380,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             getArityValue(anno, actualRequired) + ", \"" +
                             md.getSimpleName() + "\", " +
                             isStatic + ", " +
-                            "CallConfiguration." + getCallConfigNameByAnno(anno) + ");");
+                            "CallConfiguration." + getCallConfigNameByAnno(anno) + ", " +
+                            anno.notImplemented() + ");");
                     out.println("        javaMethod.setNativeCall("
                             + md.getDeclaringType().getQualifiedName() + ".class, "
                             + "\"" + md.getSimpleName() + "\", "
@@ -422,7 +423,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             "-1, \"" +
                             md.getSimpleName() + "\", " +
                             isStatic + ", " +
-                            "CallConfiguration." + getCallConfigNameByAnno(anno) + ");");
+                            "CallConfiguration." + getCallConfigNameByAnno(anno) + ", " +
+                            anno.notImplemented() + ");");
                     generateMethodAddCalls(md, anno);
                 }
             }

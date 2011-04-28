@@ -2051,7 +2051,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public IRubyObject respond_to_p19(IRubyObject mname) {
         String name = mname.asJavaString();
-        IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, true));
+        IRubyObject respond = getRuntime().newBoolean(getMetaClass().isMethodBound(name, true, true));
         if (!respond.isTrue()) {
             respond = RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "respond_to_missing?", mname, getRuntime().getFalse());
             respond = getRuntime().newBoolean(respond.isTrue());

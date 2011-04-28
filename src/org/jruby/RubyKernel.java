@@ -1752,8 +1752,14 @@ public class RubyKernel {
         return runtime.getNil();
     }
 
-    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, compat = RUBY1_8)
     public static IRubyObject fork(ThreadContext context, IRubyObject recv, Block block) {
+        Ruby runtime = context.getRuntime();
+        throw runtime.newNotImplementedError("fork is not available on this platform");
+    }
+
+    @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, compat = RUBY1_9, notImplemented = true)
+    public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = context.getRuntime();
         throw runtime.newNotImplementedError("fork is not available on this platform");
     }
