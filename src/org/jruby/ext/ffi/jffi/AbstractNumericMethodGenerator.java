@@ -336,7 +336,8 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                 break;
 
             case POINTER:
-                boxResult(mv, type, "newPointer", getInvokerIntType());
+                boxResult(mv, type, "newPointer" + Platform.getPlatform().addressSize(),
+                    getInvokerIntType());
                 break;
 
             case STRING:

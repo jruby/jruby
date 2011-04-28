@@ -1,6 +1,7 @@
 package org.jruby.ext.ffi.jffi;
 
 import java.math.BigInteger;
+import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
@@ -216,12 +217,21 @@ public final class JITRuntime {
         return context.getRuntime().getNil();
     }
     
-    public static IRubyObject newPointer(ThreadContext context, int address) {
-        return new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address));
+    public static IRubyObject newPointer32(ThreadContext context, int address) {
+        Ruby runtime = context.getRuntime();
+        return new Pointer(runtime, 
+                NativeMemoryIO.wrap(runtime, ((long) address) & 0xffffffffL));
     }
     
-    public static IRubyObject newPointer(ThreadContext context, long address) {
-        return new Pointer(context.getRuntime(), NativeMemoryIO.wrap(context.getRuntime(), address));
+    public static IRubyObject newPointer32(ThreadContext context, long address) {
+        Ruby runtime = context.getRuntime();
+        return new Pointer(runtime, 
+                NativeMemoryIO.wrap(runtime, address & 0xffffffffL));
+    }
+    
+    public static IRubyObject newPointer64(ThreadContext context, long address) {
+        Ruby runtime = context.getRuntime();
+        return new Pointer(runtime, NativeMemoryIO.wrap(runtime, address));
     }
     
     public static IRubyObject newString(ThreadContext context, int address) {
