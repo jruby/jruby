@@ -16,20 +16,23 @@ public abstract class MethodFactory {
     public static final DynamicMethod createDynamicMethod(Ruby runtime, RubyModule module,
             com.kenai.jffi.Function function, Type returnType, Type[] parameterTypes,
             CallingConvention convention, IRubyObject enums) {
-        DynamicMethod dm;
-        if (convention == CallingConvention.DEFAULT
-            && FastIntMethodFactory.getFactory().isFastIntMethod(returnType, parameterTypes)) {
-            dm = FastIntMethodFactory.getFactory().createMethod(module,
-                    function, returnType, parameterTypes, enums);
-        } else if (convention == CallingConvention.DEFAULT
-            && FastLongMethodFactory.getFactory().isFastLongMethod(returnType, parameterTypes)) {
-            dm = FastLongMethodFactory.getFactory().createMethod(module,
-                    function, returnType, parameterTypes, enums);
-        } else {
-            dm = DefaultMethodFactory.getFactory().createMethod(module,
-                    function, returnType, parameterTypes, convention, enums);
+        
+        final MethodFactory[] factories = new MethodFactory[] { 
+            DefaultMethodFactory.getFactory()
+            
+        };
+        
+        for (MethodFactory f : factories) {
+            if (f.isSupported(returnType, parameterTypes, convention)) {
+                return f.createMethod(module, function, returnType, parameterTypes, convention, enums);
+            }
         }
-    
-        return dm;
+        
+        throw runtime.newRuntimeError("cannot create dynamic method");
     }
+    
+    abstract boolean isSupported(Type returnType, Type[] parameterTypes, 
+            CallingConvention convention);
+    abstract DynamicMethod createMethod(RubyModule module, com.kenai.jffi.Function function, 
+            Type returnType, Type[] parameterTypes, CallingConvention convention, IRubyObject enums);
 }

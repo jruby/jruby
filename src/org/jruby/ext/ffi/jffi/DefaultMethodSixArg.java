@@ -6,9 +6,9 @@ import org.jruby.RubyModule;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-class DefaultMethodThreeArg extends DefaultMethod {
+class DefaultMethodSixArg extends DefaultMethod {
     
-    public DefaultMethodThreeArg(RubyModule implementationClass, Function function,
+    public DefaultMethodSixArg(RubyModule implementationClass, Function function,
             FunctionInvoker functionInvoker, ParameterMarshaller[] marshallers,
             Signature signature) {
         super(implementationClass, function, functionInvoker, marshallers, signature);
@@ -16,8 +16,9 @@ class DefaultMethodThreeArg extends DefaultMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
-            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return getNativeInvoker().invoke(context, arg1, arg2, arg3);
+            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4,
+            IRubyObject arg5, IRubyObject arg6) {
+        return getNativeInvoker().invoke(context, arg1, arg2, arg3, arg4, arg5, arg6);
     }
     
 }

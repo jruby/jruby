@@ -2,74 +2,51 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Function;
-import com.kenai.jffi.HeapInvocationBuffer;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A DynamicMethod that has a callback argument as the last parameter.  It will
  * treat any block as the last argument.
  */
-final class CallbackMethodWithBlock extends DynamicMethod {
-    private final ParameterMarshaller[] marshallers;
-    private final Function function;
-    private final FunctionInvoker functionInvoker;
+final class CallbackMethodWithBlock extends DefaultMethod {
     private final int cbindex;
     
     public CallbackMethodWithBlock(RubyModule implementationClass, Function function, 
-            FunctionInvoker functionInvoker, ParameterMarshaller[] marshallers, int cbindex) {
-        super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameFullScopeFull);
-        this.function = function;
-        this.functionInvoker = functionInvoker;
-        this.marshallers = marshallers;
+            FunctionInvoker functionInvoker, ParameterMarshaller[] marshallers, Signature signature, int cbindex) {
+        super(implementationClass, function, functionInvoker, marshallers, signature);
         this.cbindex = cbindex;
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self,
             RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        boolean blockGiven = block.isGiven();
-        Arity.checkArgumentCount(context.getRuntime(), args,
-                marshallers.length - (blockGiven ? 1 : 0), marshallers.length);
         
-        Invocation invocation = new Invocation(context, 0, 0);
-        try {
-            HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
-
-            if (!blockGiven) {
-                for (int i = 0; i < args.length; ++i) {
-                    marshallers[i].marshal(invocation, buffer, args[i]);
-                }
-            } else {
-                for (int i = 0; i < cbindex; ++i) {
-                    marshallers[i].marshal(invocation, buffer, args[i]);
-                }
-                ((CallbackMarshaller)marshallers[cbindex]).marshal(invocation, buffer, block);
-                for (int i = cbindex + 1; i < marshallers.length; ++i) {
-                    marshallers[i].marshal(invocation, buffer, args[i - 1]);
-                }
+        if (!block.isGiven()) {
+            arity.checkArity(context.getRuntime(), args);
+            return getNativeInvoker().invoke(context, args);
+        
+        } else {
+            Arity.checkArgumentCount(context.getRuntime(), args, 
+                    arity.getValue() - 1, arity.getValue());
+            
+            IRubyObject[] params = new IRubyObject[arity.getValue()];
+            for (int i = 0; i < cbindex; i++) {
+                params[i] = args[i];
             }
-            return functionInvoker.invoke(context, function, buffer);
-        } finally {
-            invocation.finish();
+            
+            params[cbindex] = CallbackManager.getInstance().getCallback(context.getRuntime(), 
+                    (CallbackInfo) signature.getParameterType(cbindex), block);
+            
+            for (int i = cbindex + 1; i < params.length; i++) {
+                params[i] = args[i - 1];
+            }
+            
+            return getNativeInvoker().invoke(context, params);
         }
-    }
-    @Override
-    public DynamicMethod dup() {
-        return this;
-    }
-    @Override
-    public Arity getArity() {
-        return Arity.fixed(marshallers.length);
-    }
-    @Override
-    public boolean isNative() {
-        return true;
     }
 }

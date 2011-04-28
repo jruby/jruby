@@ -2,7 +2,6 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Function;
-import com.kenai.jffi.HeapInvocationBuffer;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -12,13 +11,18 @@ import org.jruby.runtime.builtin.IRubyObject;
 class DefaultMethod extends JFFIDynamicMethod {
     private final ParameterMarshaller[] marshallers;
     protected final boolean needsInvocationSession;
-    protected final int postInvokeCount;
-    protected final int referenceCount;
+    protected  final Signature signature;
+    private final NativeInvoker defaultInvoker;
+    private NativeInvoker compiledInvoker;
+    private JITHandle jitHandle;
+    
 
     public DefaultMethod(RubyModule implementationClass, Function function,
-            FunctionInvoker functionInvoker, ParameterMarshaller[] marshallers) {
+            FunctionInvoker functionInvoker, ParameterMarshaller[] marshallers,
+            Signature signature) {
         super(implementationClass, Arity.fixed(marshallers.length), function, functionInvoker);
         this.marshallers = marshallers;
+        this.signature = signature;
 
         int piCount = 0;
         int refCount = 0;
@@ -31,30 +35,44 @@ class DefaultMethod extends JFFIDynamicMethod {
                 ++refCount;
             }
         }
-        this.postInvokeCount = piCount;
-        this.referenceCount = refCount;
         this.needsInvocationSession = piCount > 0 || refCount > 0;
+        this.compiledInvoker = null;
+        this.jitHandle = null;
+        this.defaultInvoker = new BufferNativeInvoker(function, functionInvoker, marshallers);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         arity.checkArity(context.getRuntime(), args);
-        HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
-        if (needsInvocationSession) {
-            Invocation invocation = new Invocation(context, postInvokeCount, referenceCount);
-            try {
-                for (int i = 0; i < args.length; ++i) {
-                    marshallers[i].marshal(invocation, buffer, args[i]);
-                }
-                return functionInvoker.invoke(context, function, buffer);
-            } finally {
-                invocation.finish();
-            }
-        } else {
-            for (int i = 0; i < args.length; ++i) {
-                marshallers[i].marshal(context, buffer, args[i]);
-            }
-            return functionInvoker.invoke(context, function, buffer);
+        
+        return getNativeInvoker().invoke(context, args);
+    }
+    
+    protected final NativeInvoker getNativeInvoker() {
+        return compiledInvoker != null ? compiledInvoker : tryCompilation();
+    }
+    
+    private synchronized NativeInvoker tryCompilation() {
+        if (compiledInvoker != null) {
+            return compiledInvoker;
         }
+
+        if (jitHandle == null) {
+            jitHandle = JITCompiler.getInstance().getHandle(signature);
+        }
+
+        NativeInvoker invoker = jitHandle.compile(function, signature);
+        if (invoker != null) {
+            return compiledInvoker = invoker;
+        }
+        
+        //
+        // Once compilation has failed, always fallback to the default invoker
+        //
+        if (jitHandle.compilationFailed()) {
+            compiledInvoker = defaultInvoker;
+        }
+        
+        return defaultInvoker;
     }
 }

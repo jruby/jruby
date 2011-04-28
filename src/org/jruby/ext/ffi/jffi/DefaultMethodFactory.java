@@ -35,13 +35,22 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 
-public final class DefaultMethodFactory {
+public final class DefaultMethodFactory extends MethodFactory {
+
     private static final class SingletonHolder {
         private static final DefaultMethodFactory INSTANCE = new DefaultMethodFactory();
     }
-    private DefaultMethodFactory() {}
-    public static final DefaultMethodFactory getFactory() {
+    
+    public static DefaultMethodFactory getFactory() {
         return SingletonHolder.INSTANCE;
+    }
+
+    private DefaultMethodFactory() {}
+
+    
+    @Override
+    boolean isSupported(Type returnType, Type[] parameterTypes, CallingConvention convention) {
+        return true;
     }
     
     DynamicMethod createMethod(RubyModule module, Function function, 
@@ -57,6 +66,10 @@ public final class DefaultMethodFactory {
             }
         }
 
+        Signature signature = new Signature(returnType, parameterTypes, convention, 
+                false, enums instanceof RubyHash ? (RubyHash) enums : null);
+
+        
         /*
          * If there is exactly _one_ callback argument to the function,
          * then a block can be given and automatically subsituted for the callback
@@ -64,81 +77,43 @@ public final class DefaultMethodFactory {
          */
         if (marshallers.length > 0) {
             int cbcount = 0, cbindex = -1;
-            for (int i = 0; i < marshallers.length; ++i) {
-                if (marshallers[i] instanceof CallbackMarshaller) {
+            for (int i = 0; i < parameterTypes.length; ++i) {
+                if (parameterTypes[i] instanceof CallbackInfo) {
                     cbcount++;
                     cbindex = i;
                 }
             }
             if (cbcount == 1) {
-                return new CallbackMethodWithBlock(module, function, functionInvoker, marshallers, cbindex);
+                return new CallbackMethodWithBlock(module, function, 
+                        functionInvoker, marshallers, signature, cbindex);
             }
         }
-
-        //
-        // Determine if the parameter might be passed as a 32bit int parameter.
-        // This just applies to buffer/pointer types.
-        //
-        FastIntMethodFactory fastIntFactory = FastIntMethodFactory.getFactory();
-        boolean canBeFastInt = parameterTypes.length <= 3 
-                && fastIntFactory.isFastIntResult(returnType) && convention == CallingConvention.DEFAULT;
-        for (int i = 0; canBeFastInt && i < parameterTypes.length; ++i) {
-            Type t = parameterTypes[i] instanceof MappedType
-                    ? ((MappedType) parameterTypes[i]).getRealType()
-                    : parameterTypes[i];
-
-            if (!(t instanceof Type.Builtin) || marshallers[i].requiresPostInvoke()) {
-                canBeFastInt = false;
-            } else {
-                switch (t.getNativeType()) {
-                    case POINTER:
-                    case BUFFER_IN:
-                    case BUFFER_OUT:
-                    case BUFFER_INOUT:
-                        canBeFastInt = Platform.getPlatform().addressSize() == 32;
-                        break;
-                    default:
-                        canBeFastInt = fastIntFactory.isFastIntParam(parameterTypes[i]);
-                        break;
-                }
-            }
-        }
-
-        if (!canBeFastInt) switch (parameterTypes.length) {
-            case 0:
-                return new DefaultMethodZeroArg(module, function, functionInvoker);
-            case 1:
-                return new DefaultMethodOneArg(module, function, functionInvoker, marshallers);
-            case 2:
-                return new DefaultMethodTwoArg(module, function, functionInvoker, marshallers);
-            case 3:
-                return new DefaultMethodThreeArg(module, function, functionInvoker, marshallers);
-            default:
-                return new DefaultMethod(module, function, functionInvoker, marshallers);
-        }
-        //
-        // Set up for potentially fast-int operations
-        //
         
-        IntResultConverter resultConverter = fastIntFactory.getIntResultConverter(returnType);
-        IntParameterConverter[] intParameterConverters = new IntParameterConverter[parameterTypes.length];
-        for (int i = 0; i < parameterTypes.length; ++i) {
-            intParameterConverters[i] = fastIntFactory.getIntParameterConverter(parameterTypes[i], enums);
-        }
         switch (parameterTypes.length) {
             case 0:
-                return new FastIntMethodZeroArg(module, function, resultConverter, intParameterConverters);
+                return new DefaultMethodZeroArg(module, function, functionInvoker, signature);
+            
             case 1:
-                return new FastIntPointerMethodOneArg(module, function, resultConverter, 
-                        intParameterConverters, marshallers);
+                return new DefaultMethodOneArg(module, function, functionInvoker, marshallers, signature);
+            
             case 2:
-                return new FastIntPointerMethodTwoArg(module, function, resultConverter,
-                        intParameterConverters, marshallers);
+                return new DefaultMethodTwoArg(module, function, functionInvoker, marshallers, signature);
+            
             case 3:
-                return new FastIntPointerMethodThreeArg(module, function, resultConverter,
-                        intParameterConverters, marshallers);
+                return new DefaultMethodThreeArg(module, function, functionInvoker, marshallers, signature);
+            
+            case 4:
+                return new DefaultMethodFourArg(module, function, functionInvoker, marshallers, signature);
+            
+            case 5:
+                return new DefaultMethodFiveArg(module, function, functionInvoker, marshallers, signature);
+            
+            case 6:
+                return new DefaultMethodSixArg(module, function, functionInvoker, marshallers, signature);
+            
+            default:
+                return new DefaultMethod(module, function, functionInvoker, marshallers, signature);
         }
-        throw new IllegalArgumentException("Parameter types not supported");
     }
 
     static FunctionInvoker getFunctionInvoker(Type returnType) {
@@ -146,14 +121,16 @@ public final class DefaultMethodFactory {
             return getFunctionInvoker(returnType.getNativeType());
 
         } else if (returnType instanceof CallbackInfo) {
-            return new CallbackInvoker((CallbackInfo) returnType);
+            return new ConvertingInvoker(getFunctionInvoker(NativeType.POINTER), 
+                    DataConverters.getResultConverter(returnType));
 
         } else if (returnType instanceof StructByValue) {
             return new StructByValueInvoker((StructByValue) returnType);
         
         } else if (returnType instanceof MappedType) {
             MappedType ctype = (MappedType) returnType;
-            return new MappedTypeInvoker(getFunctionInvoker(ctype.getRealType()), ctype);
+            return new ConvertingInvoker(getFunctionInvoker(ctype.getRealType()), 
+                    DataConverters.getResultConverter(ctype));
         }
 
         throw returnType.getRuntime().newArgumentError("Cannot get FunctionInvoker for " + returnType);
@@ -213,14 +190,18 @@ public final class DefaultMethodFactory {
             return enums != null && !enums.isNil() ? getEnumMarshaller(type, enums) : getMarshaller(type.getNativeType());
 
         } else if (type instanceof org.jruby.ext.ffi.CallbackInfo) {
-            return new CallbackMarshaller((org.jruby.ext.ffi.CallbackInfo) type, convention);
+            return new ConvertingMarshaller(getMarshaller(type.getNativeType()), 
+                    DataConverters.getParameterConverter(type, null));
 
         } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
             return new StructByValueMarshaller((org.jruby.ext.ffi.StructByValue) type);
         
         } else if (type instanceof org.jruby.ext.ffi.MappedType) {
             MappedType ctype = (MappedType) type;
-            return new MappedTypeMarshaller(getMarshaller(ctype.getRealType(), convention, enums), ctype);
+            return new ConvertingMarshaller(
+                    getMarshaller(ctype.getRealType(), convention, enums), 
+                    DataConverters.getParameterConverter(type, 
+                        enums instanceof RubyHash ? (RubyHash) enums : null));
 
         } else {
             return null;
@@ -485,42 +466,17 @@ public final class DefaultMethodFactory {
      * Invokes the native function, then passes the return value off to a
      * conversion method to massage it to a custom ruby type.
      */
-    private static final class MappedTypeInvoker extends BaseInvoker {
+    private static final class ConvertingInvoker extends BaseInvoker {
         private final FunctionInvoker nativeInvoker;
-        private final MappedType mappedType;
+        private final NativeDataConverter converter;
 
-        public MappedTypeInvoker(FunctionInvoker nativeInvoker, MappedType converter) {
+        public ConvertingInvoker(FunctionInvoker nativeInvoker, NativeDataConverter converter) {
             this.nativeInvoker = nativeInvoker;
-            this.mappedType = converter;
+            this.converter = converter;
         }
 
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return mappedType.fromNative(context, nativeInvoker.invoke(context, function, args));
-        }
-    }
-
-    /**
-     * Invokes the native function with a callback/function pointer return value.
-     * Returns a {@link Invoker} to ruby.
-     */
-    private static final class CallbackInvoker extends BaseInvoker {
-        NativeFunctionInfo functionInfo;
-        
-        public CallbackInvoker(CallbackInfo cbInfo) {
-            this.functionInfo = new NativeFunctionInfo(cbInfo.getRuntime(),
-                    cbInfo.getReturnType(), cbInfo.getParameterTypes(),
-                    cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT);
-        }
-        
-
-        public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            long address = invoker.invokeAddress(function, args);
-            if (address == 0) {
-                return context.getRuntime().getNil();
-            }
-            return new org.jruby.ext.ffi.jffi.Function(context.getRuntime(),
-                    context.getRuntime().fastGetModule("FFI").fastGetClass("Function"),
-                    new CodeMemoryIO(context.getRuntime(), address), functionInfo, null);
+            return converter.fromNative(context, nativeInvoker.invoke(context, function, args));
         }
     }
 
@@ -560,14 +516,16 @@ public final class DefaultMethodFactory {
      */
     static final class BooleanMarshaller extends BaseMarshaller {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putByte(parameter.isTrue() ? 1 : 0);
-        }
-        public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
             if (!(parameter instanceof RubyBoolean)) {
-                throw invocation.getThreadContext().getRuntime().newTypeError("wrong argument type.  Expected true or false");
+                throw context.getRuntime().newTypeError("wrong argument type.  Expected true or false");
             }
             buffer.putByte(parameter.isTrue() ? 1 : 0);
         }
+        
+        public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
+            marshal(invocation.getThreadContext(), buffer, parameter);
+        }
+        
         public static final ParameterMarshaller INSTANCE = new BooleanMarshaller();
     }
 
@@ -850,38 +808,38 @@ public final class DefaultMethodFactory {
             marshal(invocation.getThreadContext(), buffer, parameter);
         }
     }
-
-    static final class MappedTypeMarshaller implements ParameterMarshaller {
+    
+    static final class ConvertingMarshaller implements ParameterMarshaller {
         private final ParameterMarshaller nativeMarshaller;
-        private final MappedType mappedType;
+        private final NativeDataConverter converter;
 
-        public MappedTypeMarshaller(ParameterMarshaller nativeMarshaller, MappedType mappedType) {
+        public ConvertingMarshaller(ParameterMarshaller nativeMarshaller, NativeDataConverter converter) {
             this.nativeMarshaller = nativeMarshaller;
-            this.mappedType = mappedType;
+            this.converter = converter;
         }
 
 
         public void marshal(Invocation invocation, InvocationBuffer buffer, IRubyObject parameter) {
             ThreadContext context = invocation.getThreadContext();
-            final IRubyObject nativeValue = mappedType.toNative(context, parameter);
+            final IRubyObject nativeValue = converter.toNative(context, parameter);
 
             // keep a hard ref to the converted value if needed
-            if (mappedType.isReferenceRequired()) {
+            if (converter.isReferenceRequired()) {
                 invocation.addReference(nativeValue);
             }
             nativeMarshaller.marshal(context, buffer, nativeValue);
         }
 
         public void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            nativeMarshaller.marshal(context, buffer, mappedType.toNative(context, parameter));
+            nativeMarshaller.marshal(context, buffer, converter.toNative(context, parameter));
         }
 
         public boolean requiresPostInvoke() {
-            return mappedType.isReferenceRequired();
+            return converter.isReferenceRequired();
         }
 
         public boolean requiresReference() {
-            return mappedType.isReferenceRequired();
+            return converter.isReferenceRequired();
         }
     }
 }
