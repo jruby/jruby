@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/docs.iml" filepath="$PROJECT_DIR$/docs.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jruby.iml" filepath="$PROJECT_DIR$/jruby.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jruby-common.iml" filepath="$PROJECT_DIR$/jruby-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jruby-complete.iml" filepath="$PROJECT_DIR$/jruby-complete.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jruby-core.iml" filepath="$PROJECT_DIR$/jruby-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jruby-dist.iml" filepath="$PROJECT_DIR$/jruby-dist.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jruby-rake-plugin.iml" filepath="$PROJECT_DIR$/jruby-rake-plugin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jruby-stdlib.iml" filepath="$PROJECT_DIR$/jruby-stdlib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/man.iml" filepath="$PROJECT_DIR$/man.iml" />
+      <module fileurl="file://$PROJECT_DIR$/shared.iml" filepath="$PROJECT_DIR$/shared.iml" />
+    </modules>
+  </component>
+</project>
+

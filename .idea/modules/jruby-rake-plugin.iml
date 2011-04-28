@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="false">
+    <output url="file://$MODULE_DIR$/maven/jruby-rake-plugin/target/classes" />
+    <output-test url="file://$MODULE_DIR$/maven/jruby-rake-plugin/target/test-classes" />
+    <content url="file://$MODULE_DIR$/maven/jruby-rake-plugin">
+      <sourceFolder url="file://$MODULE_DIR$/maven/jruby-rake-plugin/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/maven/jruby-rake-plugin/src/main/resources" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/maven/jruby-rake-plugin/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Maven: org.apache.maven:maven-plugin-api:2.0.4" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.maven:maven-project:2.0.4" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.maven:maven-settings:2.0.4" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.maven:maven-model:2.0.4" level="project" />
+    <orderEntry type="library" name="Maven: org.codehaus.plexus:plexus-utils:1.1" level="project" />
+    <orderEntry type="library" name="Maven: org.codehaus.plexus:plexus-container-default:1.0-alpha-9" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.7" level="project" />
+    <orderEntry type="library" name="Maven: classworlds:classworlds:1.1-alpha-2" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.maven:maven-profile:2.0.4" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.maven:maven-artifact-manager:2.0.4" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.maven:maven-repository-metadata:2.0.4" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.maven:maven-artifact:2.0.4" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.maven.wagon:wagon-provider-api:1.0-alpha-6" level="project" />
+    <orderEntry type="library" name="Maven: ant:ant:1.6.2" level="project" />
+    <orderEntry type="module" module-name="jruby-complete" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: bsf:bsf:2.3.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.apache.ant:ant:1.7.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.apache.ant:ant-launcher:1.7.0" level="project" />
+  </component>
+</module>
+

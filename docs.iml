@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="false">
+    <output url="file://$MODULE_DIR$/../build/classes/jruby" />
+    <output-test url="file://$MODULE_DIR$/docs/target/test-classes" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/docs">
+      <excludeFolder url="file://$MODULE_DIR$/docs/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.7" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: bsf:bsf:2.3.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.apache.ant:ant:1.7.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.apache.ant:ant-launcher:1.7.0" level="project" />
+  </component>
+</module>
+
