@@ -106,85 +106,95 @@ public class InvokeDynamicSupport {
     }
 
     private static MethodHandle createNativeGWT(DynamicMethod.NativeCall nativeCall, MethodHandle test, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
-        try {
-            boolean isStatic = nativeCall.isStatic();
-            MethodHandle nativeTarget;
-            if (isStatic) {
+        MethodHandle nativeTarget = (MethodHandle)entry.method.getHandle();
+        
+        if (nativeTarget == null) {
+            try {
+                boolean isStatic = nativeCall.isStatic();
+                if (isStatic) {
+                    nativeTarget = MethodHandles.lookup().findStatic(
+                            nativeCall.getNativeTarget(),
+                            nativeCall.getNativeName(),
+                            MethodType.methodType(nativeCall.getNativeReturn(),
+                            nativeCall.getNativeSignature()));
+                } else {
+                    nativeTarget = MethodHandles.lookup().findVirtual(
+                            nativeCall.getNativeTarget(),
+                            nativeCall.getNativeName(),
+                            MethodType.methodType(nativeCall.getNativeReturn(),
+                            nativeCall.getNativeSignature()));
+                }
+                int argCount = getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
+                switch (argCount) {
+                    case 0:
+                        nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2} : new int[] {2, 0});
+                        break;
+                    case -1:
+                    case 1:
+                        nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2, 4} : new int[] {2, 0, 4});
+                        break;
+                    case 2:
+                        nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2, 4, 5} : new int[] {2, 0, 4, 5});
+                        break;
+                    case 3:
+                        nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2, 4, 5, 6} : new int[] {2, 0, 4, 5, 6});
+                        break;
+                    default:
+                        throw new RuntimeException("unknown arg count: " + argCount);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            entry.method.setHandle(nativeTarget);
+        }
+        
+        MethodHandle myFallback = MethodHandles.insertArguments(fallback, 0, site);
+        MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
+        MethodHandle gwt = MethodHandles.guardWithTest(myTest, nativeTarget, myFallback);
+        return MethodHandles.convertArguments(gwt, site.type());
+    }
+
+    private static MethodHandle createRubyGWT(DynamicMethod.NativeCall nativeCall, MethodHandle test, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
+        MethodHandle nativeTarget = (MethodHandle)entry.method.getHandle();
+        
+        if (nativeTarget == null) {
+            try {
                 nativeTarget = MethodHandles.lookup().findStatic(
                         nativeCall.getNativeTarget(),
                         nativeCall.getNativeName(),
                         MethodType.methodType(nativeCall.getNativeReturn(),
                         nativeCall.getNativeSignature()));
-            } else {
-                nativeTarget = MethodHandles.lookup().findVirtual(
-                        nativeCall.getNativeTarget(),
-                        nativeCall.getNativeName(),
-                        MethodType.methodType(nativeCall.getNativeReturn(),
-                        nativeCall.getNativeSignature()));
+                CompiledMethod cm = (CompiledMethod)entry.method;
+                nativeTarget = MethodHandles.insertArguments(nativeTarget, 0, cm.getScriptObject());
+                nativeTarget = MethodHandles.insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
+                int argCount = getRubyArgCount(nativeCall.getNativeSignature());
+                switch (argCount) {
+                    case 0:
+                        nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2});
+                        break;
+                    case -1:
+                    case 1:
+                        nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4});
+                        break;
+                    case 2:
+                        nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4, 5});
+                        break;
+                    case 3:
+                        nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4, 5, 6});
+                        break;
+                    default:
+                        throw new RuntimeException("unknown arg count: " + argCount);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-            int argCount = getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
-            switch (argCount) {
-                case 0:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2} : new int[] {2, 0});
-                    break;
-                case -1:
-                case 1:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2, 4} : new int[] {2, 0, 4});
-                    break;
-                case 2:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2, 4, 5} : new int[] {2, 0, 4, 5});
-                    break;
-                case 3:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2, 4, 5, 6} : new int[] {2, 0, 4, 5, 6});
-                    break;
-                default:
-                    throw new RuntimeException("unknown arg count: " + argCount);
-            }
-            MethodHandle myFallback = MethodHandles.insertArguments(fallback, 0, site);
-            MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
-            MethodHandle gwt = MethodHandles.guardWithTest(myTest, nativeTarget, myFallback);
-            return MethodHandles.convertArguments(gwt, site.type());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            entry.method.setHandle(nativeTarget);
         }
-    }
-
-    private static MethodHandle createRubyGWT(DynamicMethod.NativeCall nativeCall, MethodHandle test, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
-        try {
-            MethodHandle nativeTarget;
-            nativeTarget = MethodHandles.lookup().findStatic(
-                    nativeCall.getNativeTarget(),
-                    nativeCall.getNativeName(),
-                    MethodType.methodType(nativeCall.getNativeReturn(),
-                    nativeCall.getNativeSignature()));
-            CompiledMethod cm = (CompiledMethod)entry.method;
-            nativeTarget = MethodHandles.insertArguments(nativeTarget, 0, cm.getScriptObject());
-            nativeTarget = MethodHandles.insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
-            int argCount = getRubyArgCount(nativeCall.getNativeSignature());
-            switch (argCount) {
-                case 0:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2});
-                    break;
-                case -1:
-                case 1:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4});
-                    break;
-                case 2:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4, 5});
-                    break;
-                case 3:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4, 5, 6});
-                    break;
-                default:
-                    throw new RuntimeException("unknown arg count: " + argCount);
-            }
-            MethodHandle myFallback = MethodHandles.insertArguments(fallback, 0, site);
-            MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
-            MethodHandle gwt = MethodHandles.guardWithTest(myTest, nativeTarget, myFallback);
-            return MethodHandles.convertArguments(gwt, site.type());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        
+        MethodHandle myFallback = MethodHandles.insertArguments(fallback, 0, site);
+        MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
+        MethodHandle gwt = MethodHandles.guardWithTest(myTest, nativeTarget, myFallback);
+        return MethodHandles.convertArguments(gwt, site.type());
     }
 
     private static int getArgCount(Class[] args, boolean isStatic) {

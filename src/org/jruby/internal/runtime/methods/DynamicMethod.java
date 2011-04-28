@@ -78,6 +78,8 @@ public abstract class DynamicMethod {
     protected String name;
     /** Whether this method is "not implemented". */
     protected boolean notImplemented = false;
+    /** An arbitrarily-typed "method handle" for use by compilers and call sites */
+    protected Object handle;
 
     /**
      * Base constructor for dynamic method handles.
@@ -521,6 +523,24 @@ public abstract class DynamicMethod {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    /**
+     * Get the "handle" associated with this DynamicMethod.
+     * 
+     * @return the handle
+     */
+    public Object getHandle() {
+        return handle;
+    }
+
+    /**
+     * Set the "handle" associated with this DynamicMethod.
+     * 
+     * @param handle the handle
+     */
+    public void setHandle(Object handle) {
+        this.handle = handle;
     }
     
     /**
