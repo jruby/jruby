@@ -38,6 +38,7 @@ import java.util.List;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
+import org.jruby.anno.TypePopulator;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -121,10 +122,14 @@ public class ReflectionMethodFactory extends MethodFactory {
             Method method = desc.getDeclaringClass().getDeclaredMethod(desc.name, desc.getParameterClasses());
             JavaMethod ic = new ReflectedJavaMethod(implementationClass, method, desc.anno);
 
-            ic.setIsBuiltin(true);
-            ic.setJavaName(method.getName());
-            ic.setSingleton(Modifier.isStatic(method.getModifiers()));
-            ic.setCallConfig(CallConfiguration.getCallConfigByAnno(desc.anno));
+            TypePopulator.populateMethod(
+                    ic,
+                    ic.getArity().getValue(),
+                    method.getName(),
+                    Modifier.isStatic(method.getModifiers()),
+                    CallConfiguration.getCallConfigByAnno(desc.anno),
+                    desc.anno.notImplemented());
+                
             return ic;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -155,10 +160,13 @@ public class ReflectionMethodFactory extends MethodFactory {
             
             JavaMethod ic = new ReflectedJavaMultiMethod(implementationClass, methods, annotations);
 
-            ic.setIsBuiltin(true);
-            ic.setJavaName(method0.getName());
-            ic.setSingleton(Modifier.isStatic(method0.getModifiers()));
-            ic.setCallConfig(CallConfiguration.getCallConfigByAnno(anno0));
+            TypePopulator.populateMethod(
+                    ic,
+                    ic.getArity().getValue(),
+                    method0.getName(),
+                    Modifier.isStatic(method0.getModifiers()),
+                    CallConfiguration.getCallConfigByAnno(anno0),
+                    anno0.notImplemented());
             return ic;
         } catch (Exception e) {
             throw new RuntimeException(e);

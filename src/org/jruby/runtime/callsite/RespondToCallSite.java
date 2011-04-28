@@ -117,7 +117,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         Ruby runtime = context.getRuntime();
         CacheEntry respondToLookupResult = klass.searchWithCache(newString);
         IRubyObject respondsTo;
-        if (!respondToLookupResult.method.isUndefined()) {
+        if (!respondToLookupResult.method.isUndefined() && !respondToLookupResult.method.isNotImplemented()) {
             respondsTo = checkVisibilityAndCache(respondToLookupResult, checkVisibility, runtime);
         } else {
             respondsTo = runtime.getFalse();

@@ -42,6 +42,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
+import org.jruby.anno.TypePopulator;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.exceptions.JumpException;
@@ -699,10 +700,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc1.anno.visibility()});
 
-                ic.setArity(Arity.OPTIONAL);
-                ic.setJavaName(javaMethodName);
-                ic.setSingleton(desc1.isStatic);
-                ic.setCallConfig(CallConfiguration.getCallConfig(info.isFrame(), info.isScope(), info.isBacktrace()));
+                TypePopulator.populateMethod(
+                        ic,
+                        Arity.optional().getValue(),
+                        javaMethodName,
+                        desc1.isStatic,
+                        CallConfiguration.getCallConfig(info.isFrame(), info.isScope(), info.isBacktrace()),
+                        desc1.anno.notImplemented());
                 return ic;
             } catch(Exception e) {
                 e.printStackTrace();
@@ -801,10 +805,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc.anno.visibility()});
 
-                ic.setArity(Arity.fromAnnotation(desc.anno, desc.actualRequired));
-                ic.setJavaName(javaMethodName);
-                ic.setSingleton(desc.isStatic);
-                ic.setCallConfig(CallConfiguration.getCallConfigByAnno(desc.anno));
+                TypePopulator.populateMethod(
+                        ic,
+                        Arity.fromAnnotation(desc.anno, desc.actualRequired).getValue(),
+                        javaMethodName,
+                        desc.isStatic,
+                        CallConfiguration.getCallConfigByAnno(desc.anno),
+                        desc.anno.notImplemented());
                 return ic;
             } catch(Exception e) {
                 e.printStackTrace();
