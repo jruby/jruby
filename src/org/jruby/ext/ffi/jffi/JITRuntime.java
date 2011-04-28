@@ -127,7 +127,7 @@ public final class JITRuntime {
     }
     
     public static long double2long(IRubyObject parameter) {
-        if (parameter instanceof RubyNumeric) {
+        if (parameter instanceof RubyFloat) {
             return Double.doubleToRawLongBits(((RubyFloat) parameter).getDoubleValue());
         
         } else {
