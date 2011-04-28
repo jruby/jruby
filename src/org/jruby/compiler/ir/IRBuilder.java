@@ -1765,6 +1765,7 @@ public class IRBuilder {
         Label rBeginLabel = m.getNewLabel();
         Label rEndLabel   = ebi.end;
         List<Label> rescueLabels = new ArrayList<Label>() { };
+		  _rescueBlockLabelStack.push(rBeginLabel);
 
         // Start of region
         m.addInstr(new LABEL_Instr(rBeginLabel));
@@ -1782,6 +1783,7 @@ public class IRBuilder {
 
         // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
         _ensureBlockStack.pop();
+		  _rescueBlockLabelStack.pop();
 
         // Generate the ensure block now
         m.addInstr(new LABEL_Instr(ebi.start));
@@ -2573,6 +2575,7 @@ public class IRBuilder {
         Label   rBeginLabel = availableBeginLabel != null ? availableBeginLabel : m.getNewLabel();  
         Label   rEndLabel   = noEnsure ? m.getNewLabel() : ebi.end;
         Label   elseLabel   = rescueNode.getElseNode() == null ? null : m.getNewLabel();
+		  _rescueBlockLabelStack.push(rBeginLabel);
 
         // Only generate the label instruction if we weren't passed in a label
         // Optimization to eliminate extra labels in begin-rescue-ensure-end code
@@ -2636,6 +2639,7 @@ public class IRBuilder {
         if (noEnsure)
             m.addInstr(new LABEL_Instr(rEndLabel));
 
+		  _rescueBlockLabelStack.pop();
         return rv;
     }
 
@@ -2697,7 +2701,7 @@ public class IRBuilder {
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
         if (_rescueBlockLabelStack.empty()) {
-            StringLiteral exc = new StringLiteral("retry found outside of rescue clause!");
+            StringLiteral exc = new StringLiteral("retry outside of rescue not supported");
             s.addInstr(new THROW_EXCEPTION_Instr(exc));
         }
         else {
