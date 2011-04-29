@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -43,6 +43,25 @@ import org.jruby.embed.LocalVariableBehavior;
  */
 public class SingletonLocalContextProvider extends AbstractLocalContextProvider {
     private static LocalContext localContext = null;
+    private static BiVariableMap varMap = null;
+    
+    private static LocalContext getLocalContextInstance(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
+        if (localContext == null) {
+            synchronized (LocalContext.class) {
+                localContext = new LocalContext(config, behavior, lazy);
+            }
+        }
+        return localContext;
+    }
+    
+    private static BiVariableMap getBiVariableInstance(LocalContextProvider provider, LocalVariableBehavior behavior, boolean lazy) {
+        if (varMap == null) {
+            synchronized (BiVariableMap.class) {
+                varMap = new BiVariableMap(provider, behavior, lazy);
+            }
+        }
+        return varMap;
+    }
 
     public SingletonLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
         this.behavior = behavior;
@@ -50,11 +69,8 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
     }
     
     public Ruby getRuntime() {
-        if (localContext == null) {
-            localContext = getInstance();
-        }
-        if (!localContext.initialized) {
-            localContext.getRuntime();
+        if (!Ruby.isGlobalRuntimeReady()) {
+            return Ruby.newInstance(config);
         }
         return Ruby.getGlobalRuntime();
     }
@@ -66,28 +82,22 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
     }
 
     public BiVariableMap getVarMap() {
-        if (localContext == null) {
-            localContext = getInstance();
-        }
-        return localContext.getVarMap();
+        return SingletonLocalContextProvider.getBiVariableInstance(this, behavior, lazy);
     }
 
     public Map getAttributeMap() {
-        if (localContext == null) {
-            localContext = getInstance();
-        }
-        return localContext.getAttributeMap();
+        LocalContext context = SingletonLocalContextProvider.getLocalContextInstance(config, behavior, lazy);
+        return context.getAttributeMap();
     }
 
     public boolean isRuntimeInitialized() {
-        if (localContext == null) {
-            localContext = getInstance();
-        }
-        return localContext.initialized;
+        LocalContext context = SingletonLocalContextProvider.getLocalContextInstance(config, behavior, lazy);
+        return context.initialized;
     }
     
     public void terminate() {
-        localContext.remove();
-        localContext = null;
+        LocalContext context = SingletonLocalContextProvider.getLocalContextInstance(config, behavior, lazy);
+        context.remove();
+        context = null;
     }
 }

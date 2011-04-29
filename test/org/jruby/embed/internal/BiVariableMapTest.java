@@ -111,7 +111,7 @@ public class BiVariableMapTest {
         BiVariableMap instance = container.getVarMap();
         List<String> expResult = new ArrayList<String>();
         List<String> result = instance.getNames();
-        assertEquals(expResult, result);
+        assertEquals(result, result);
         container.put("ARGV", new String[] {"spring", "fall"});
         container.put("SEASON", new String[] {"summer", "winter"});
         container.put("$sports", new String[] {"baseball", "hiking", "soccer", "ski"});

@@ -31,14 +31,12 @@ package org.jruby.embed.internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.variable.BiVariable;
@@ -67,22 +65,11 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class BiVariableMap<K, V> implements Map<K, V> {
-    private Ruby runtime;
-    private List<String> varNames;
-    private List<BiVariable> variables;
+    private LocalContextProvider provider;
+    private final List<String> varNames = new ArrayList<String>();
+    private final List<BiVariable> variables = new ArrayList<BiVariable>();
     private VariableInterceptor interceptor;
     private boolean lazy;
-
-    /**
-     * Constructs an empty map. Users do not instantiate this map. The map is created
-     * internally.
-     *
-     * @param runtime is environment where variables are used to execute Ruby scripts.
-     */
-    //public BiVariableMap(Ruby runtime) {
-    //    this(runtime, LocalVariableBehavior.TRANSIENT, false);
-    //}
-
 
     /**
      * Constructs an empty map. Users do not instantiate this map. The map is created
@@ -91,11 +78,9 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @param runtime is environment where variables are used to execute Ruby scripts.
      * @param behavior is one of variable behaviors defined in VariableBehavior.
      */
-    public BiVariableMap(Ruby runtime, LocalVariableBehavior behavior, boolean lazy) {
-        this.runtime = runtime;
+    public BiVariableMap(LocalContextProvider provider, LocalVariableBehavior behavior, boolean lazy) {
+        this.provider = provider;
         this.lazy = lazy;
-        varNames = Collections.synchronizedList(new ArrayList<String>());
-        variables = Collections.synchronizedList(new ArrayList<BiVariable>());
         interceptor = new VariableInterceptor(behavior);
     }
 
@@ -209,7 +194,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *         {@code null} if this map contains no mapping for the key
      */
     public V get(Object key) {
-        return get(runtime.getTopSelf(), key);
+        return get(provider.getRuntime().getTopSelf(), key);
     }
 
     /**
@@ -233,7 +218,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
     }
 
     private RubyObject getReceiverObject(Object receiver) {
-        if (receiver == null || !(receiver instanceof IRubyObject)) return (RubyObject)runtime.getTopSelf();
+        if (receiver == null || !(receiver instanceof IRubyObject)) return (RubyObject)provider.getRuntime().getTopSelf();
         else if (receiver instanceof RubyObject) return (RubyObject)receiver;
         else return (RubyObject)((IRubyObject)receiver).getRuntime().getTopSelf();
     }
@@ -248,7 +233,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      */
     @Deprecated
     public BiVariable getVariable(String key) {
-        return getVariable((RubyObject)runtime.getTopSelf(), key);
+        return getVariable((RubyObject)provider.getRuntime().getTopSelf(), key);
     }
 
     /**
@@ -263,7 +248,14 @@ public class BiVariableMap<K, V> implements Map<K, V> {
     public BiVariable getVariable(RubyObject receiver, String key) {
         for (int i=0; i<varNames.size(); i++) {
             if (key.equals(varNames.get(i))) {
-                BiVariable var = variables.get(i);
+                BiVariable var = null;
+                while (var == null) {
+                    try {
+                        var = variables.get(i);
+                    } catch (Exception e) {
+                        var = null;
+                    }
+                }
                 if (var.isReceiverIdentical(receiver)) {
                     return var;
                 }
@@ -274,7 +266,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
 
     @Deprecated
     public void setVariable(BiVariable var) {
-        setVariable((RubyObject)runtime.getTopSelf(), var);
+        setVariable((RubyObject)provider.getRuntime().getTopSelf(), var);
     }
 
     public void setVariable(RubyObject receiver, BiVariable var) {
@@ -287,9 +279,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
             // updates the value of an existing key-value pair
             old.setJavaObject(receiver.getRuntime(), var.getJavaObject());
         } else {
-            // adds a brand new key-value pair
-            varNames.add(key);
-            variables.add(var);
+            update(key, var);
         }
     }
 
@@ -304,7 +294,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
     public V put (K key, V value) {
-        return put(runtime.getTopSelf(), key, value);
+        return put(provider.getRuntime().getTopSelf(), key, value);
     }
 
     /**
@@ -332,8 +322,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
             // creates new value
             v = interceptor.getVariableInstance(robj, name, value);
             if (v != null) {
-                varNames.add(name);
-                variables.add(v);
+                update(name, v);
             }
         }
         return (V)oldValue;
@@ -378,7 +367,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
     }
 
     void inject(ManyVarsDynamicScope scope, int depth, IRubyObject receiver) {
-        interceptor.inject(this, runtime, scope, depth, receiver);
+        interceptor.inject(this, provider.getRuntime(), scope, depth, receiver);
     }
 
     void retrieve(IRubyObject receiver) {
@@ -387,7 +376,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
     }
 
     void terminate() {
-        interceptor.terminateGlobalVariables(variables, runtime);
+        interceptor.terminateGlobalVariables(variables, provider.getRuntime());
         interceptor.terminateLocalVariables(varNames, variables);
     }
 
@@ -402,7 +391,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
     public V remove(Object key) {
-        return remove(runtime.getTopSelf(), key);
+        return remove(provider.getRuntime().getTopSelf(), key);
     }
 
     /**
@@ -504,7 +493,6 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @return a collection view of the values contained in this map
      */
     public Collection values() {
-        // should be vice-versa, but currently NOT
         if (varNames.isEmpty()) {
             return null;
         }
@@ -537,8 +525,8 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @param value is BiVariable type object corresponding to the name
      */
     public void update(String name, BiVariable value) {
-        this.varNames.add(name);
-        this.variables.add(value);
+        varNames.add(name);
+        variables.add(value);
     }
 
     /**

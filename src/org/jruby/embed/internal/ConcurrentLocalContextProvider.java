@@ -74,11 +74,12 @@ public class ConcurrentLocalContextProvider extends AbstractLocalContextProvider
 
     @Override
     public RubyInstanceConfig getRubyInstanceConfig() {
-        return config;
+        if (Ruby.isGlobalRuntimeReady()) return Ruby.getGlobalRuntime().getInstanceConfig();
+        else return config;
     }
 
     public BiVariableMap getVarMap() {
-        return contextHolder.get().getVarMap(getRuntime());
+        return contextHolder.get().getVarMap(this);
     }
 
     public Map getAttributeMap() {

@@ -136,6 +136,7 @@ public class VariableInterceptor {
             }
         }
         List<BiVariable> variables = map.getVariables();
+        if (variables == null) return;
         for (int i=0; i<variables.size(); i++) {
             variables.get(i).inject();
         }
@@ -213,6 +214,7 @@ public class VariableInterceptor {
      * @param runtime Ruby runtime
      */
     public void terminateGlobalVariables(List<BiVariable> variables, Ruby runtime) {
+        if (variables == null) return;
         if (LocalVariableBehavior.GLOBAL == behavior) {
             for (int i = 0; i < variables.size(); i++) {
                 if (BiVariable.Type.LocalGlobalVariable == variables.get(i).getType()) {
@@ -231,6 +233,7 @@ public class VariableInterceptor {
      * @param variables variable value list to be cleared
      */
     public void terminateLocalVariables(List<String> varNames, List<BiVariable> variables) {
+        if (variables == null) return;
         if (LocalVariableBehavior.TRANSIENT == behavior) {
             for (int i = 0; i < variables.size(); i++) {
                 if (BiVariable.Type.LocalVariable == variables.get(i).getType()) {
