@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -45,36 +45,41 @@ public class SingleThreadLocalContextProvider extends AbstractLocalContextProvid
         this.lazy = lazy;
         localContext = null;
     }
-
-    public Ruby getRuntime() {
+    
+    private void initializeLocalContext() {
         if (localContext == null) {
             localContext = getInstance();
         }
-        return localContext.getRuntime();
+    }
+
+    public Ruby getRuntime() {
+        initializeLocalContext();
+        if (localContext.runtime == null) {
+            // stopped loading java library (runtime.getLoadService().require("java");)
+            // during the intialization process.
+            localContext.runtime = Ruby.newInstance(config);
+            localContext.initialized = true;
+        }
+        return localContext.runtime;
     }
 
     public BiVariableMap getVarMap() {
-        if (localContext == null) {
-            localContext = getInstance();
-        }
-        return localContext.getVarMap();
+        initializeLocalContext();
+        return localContext.getVarMap(this);
     }
 
     public Map getAttributeMap() {
-        if (localContext == null) {
-            localContext = getInstance();
-        }
+        initializeLocalContext();
         return localContext.getAttributeMap();
     }
 
     public boolean isRuntimeInitialized() {
-        if (localContext == null) {
-            localContext = getInstance();
-        }
+        initializeLocalContext();
         return localContext.initialized;
     }
     
     public void terminate() {
+        initializeLocalContext();
         localContext.remove();
         localContext = null;
     }
