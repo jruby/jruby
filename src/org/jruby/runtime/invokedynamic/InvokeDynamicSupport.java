@@ -30,6 +30,7 @@ import org.objectweb.asm.Opcodes;
 
 @SuppressWarnings("deprecation")
 public class InvokeDynamicSupport {
+    private static final int MAX_FAIL_COUNT = SafePropertyAccessor.getInt("jruby.compile.invokedynamic.maxfail", 2);
     public static class JRubyCallSite extends MutableCallSite {
         private final CallType callType;
         private final MethodType type;
@@ -78,6 +79,10 @@ public class InvokeDynamicSupport {
     }
 
     private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
+        return createGWT(test, target, fallback, entry, site, true);
+    }
+
+    private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
         if (entry.method.getNativeCall() != null) {
             DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
             Class[] nativeSig = nativeCall.getNativeSignature();
@@ -87,21 +92,21 @@ public class InvokeDynamicSupport {
                     AbstractScript.class.isAssignableFrom(nativeSig[0]) &&
                     entry.method instanceof CompiledMethod) {
                 if (entry.method.getCallConfig().framing() == Framing.None) {
-                    return createRubyGWT(nativeCall, test, fallback, entry, site);
+                    return createRubyGWT(nativeCall, test, fallback, entry, site, curryFallback);
                 }
             } else {
                 // if enabled, use invokedynamic for ruby to native calls
                 if (SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic.nativeDirect", true) &&
                         getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
                     if (nativeSig.length > 0 && nativeSig[0] == ThreadContext.class && nativeSig[nativeSig.length - 1] != Block.class) {
-                        return createNativeGWT(nativeCall, test, fallback, entry, site);
+                        return createNativeGWT(nativeCall, test, fallback, entry, site, curryFallback);
                     }
                 }
             }
         }
         MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
         MethodHandle myTarget = MethodHandles.insertArguments(target, 0, entry);
-        MethodHandle myFallback = MethodHandles.insertArguments(fallback, 0, site);
+        MethodHandle myFallback = curryFallback ? MethodHandles.insertArguments(fallback, 0, site) : fallback;
         MethodHandle guardWithTest = MethodHandles.guardWithTest(myTest, myTarget, myFallback);
         
         return MethodHandles.convertArguments(guardWithTest, site.type());
@@ -112,7 +117,13 @@ public class InvokeDynamicSupport {
         return myFail;
     }
 
-    private static MethodHandle createNativeGWT(DynamicMethod.NativeCall nativeCall, MethodHandle test, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
+    private static MethodHandle createNativeGWT(
+            DynamicMethod.NativeCall nativeCall,
+            MethodHandle test,
+            MethodHandle fallback,
+            CacheEntry entry,
+            JRubyCallSite site,
+            boolean curryFallback) {
         MethodHandle nativeTarget = (MethodHandle)entry.method.getHandle();
         
         if (nativeTarget == null) {
@@ -155,13 +166,19 @@ public class InvokeDynamicSupport {
             entry.method.setHandle(nativeTarget);
         }
         
-        MethodHandle myFallback = MethodHandles.insertArguments(fallback, 0, site);
+        MethodHandle myFallback = curryFallback ? MethodHandles.insertArguments(fallback, 0, site) : fallback;
         MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
         MethodHandle gwt = MethodHandles.guardWithTest(myTest, nativeTarget, myFallback);
         return MethodHandles.convertArguments(gwt, site.type());
     }
 
-    private static MethodHandle createRubyGWT(DynamicMethod.NativeCall nativeCall, MethodHandle test, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
+    private static MethodHandle createRubyGWT(
+            DynamicMethod.NativeCall nativeCall,
+            MethodHandle test,
+            MethodHandle fallback,
+            CacheEntry entry,
+            JRubyCallSite site,
+            boolean curryFallback) {
         MethodHandle nativeTarget = (MethodHandle)entry.method.getHandle();
         
         if (nativeTarget == null) {
@@ -198,7 +215,7 @@ public class InvokeDynamicSupport {
             entry.method.setHandle(nativeTarget);
         }
         
-        MethodHandle myFallback = MethodHandles.insertArguments(fallback, 0, site);
+        MethodHandle myFallback = curryFallback ? MethodHandles.insertArguments(fallback, 0, site) : fallback;
         MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
         MethodHandle gwt = MethodHandles.guardWithTest(myTest, nativeTarget, myFallback);
         return MethodHandles.convertArguments(gwt, site.type());
@@ -266,10 +283,14 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name);
         }
-        if (site.failCount++ > 0) {
+        if (site.failCount++ > MAX_FAIL_COUNT) {
             site.setTarget(createFail(FAIL_0, site));
         } else {
-            site.setTarget(createGWT(TEST_0, TARGET_0, FALLBACK_0, entry, site));
+            if (site.getTarget() != null) {
+                site.setTarget(createGWT(TEST_0, TARGET_0, site.getTarget(), entry, site, false));
+            } else {
+                site.setTarget(createGWT(TEST_0, TARGET_0, FALLBACK_0, entry, site));
+            }
         }
 
         return entry.method.call(context, self, selfClass, name);
@@ -281,10 +302,14 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0);
         }
-        if (site.failCount++ > 0) {
+        if (site.failCount++ > MAX_FAIL_COUNT) {
             site.setTarget(createFail(FAIL_1, site));
         } else {
-            site.setTarget(createGWT(TEST_1, TARGET_1, FALLBACK_1, entry, site));
+            if (site.getTarget() != null) {
+                site.setTarget(createGWT(TEST_1, TARGET_1, site.getTarget(), entry, site, false));
+            } else {
+                site.setTarget(createGWT(TEST_1, TARGET_1, FALLBACK_1, entry, site));
+            }
         }
 
         return entry.method.call(context, self, selfClass, name, arg0);
@@ -296,10 +321,14 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1);
         }
-        if (site.failCount++ > 0) {
+        if (site.failCount++ > MAX_FAIL_COUNT) {
             site.setTarget(createFail(FAIL_2, site));
         } else {
-            site.setTarget(createGWT(TEST_2, TARGET_2, FALLBACK_2, entry, site));
+            if (site.getTarget() != null) {
+                site.setTarget(createGWT(TEST_2, TARGET_2, site.getTarget(), entry, site, false));
+            } else {
+                site.setTarget(createGWT(TEST_2, TARGET_2, FALLBACK_2, entry, site));
+            }
         }
 
         return entry.method.call(context, self, selfClass, name, arg0, arg1);
@@ -311,10 +340,14 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2);
         }
-        if (site.failCount++ > 0) {
+        if (site.failCount++ > MAX_FAIL_COUNT) {
             site.setTarget(createFail(FAIL_3, site));
         } else {
-            site.setTarget(createGWT(TEST_3, TARGET_3, FALLBACK_3, entry, site));
+            if (site.getTarget() != null) {
+                site.setTarget(createGWT(TEST_3, TARGET_3, site.getTarget(), entry, site, false));
+            } else {
+                site.setTarget(createGWT(TEST_3, TARGET_3, FALLBACK_3, entry, site));
+            }
         }
 
         return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2);
@@ -326,10 +359,14 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, args);
         }
-        if (site.failCount++ > 0) {
+        if (site.failCount++ > MAX_FAIL_COUNT) {
             site.setTarget(createFail(FAIL_N, site));
         } else {
-            site.setTarget(createGWT(TEST_N, TARGET_N, FALLBACK_N, entry, site));
+            if (site.getTarget() != null) {
+                site.setTarget(createGWT(TEST_N, TARGET_N, site.getTarget(), entry, site, false));
+            } else {
+                site.setTarget(createGWT(TEST_N, TARGET_N, FALLBACK_N, entry, site));
+            }
         }
 
         return entry.method.call(context, self, selfClass, name, args);
@@ -343,10 +380,14 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, block);
             }
-            if (site.failCount++ > 0) {
+            if (site.failCount++ > MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_0_B, site));
             } else {
-                site.setTarget(createGWT(TEST_0_B, TARGET_0_B, FALLBACK_0_B, entry, site));
+                if (site.getTarget() != null) {
+                    site.setTarget(createGWT(TEST_0_B, TARGET_0_B, site.getTarget(), entry, site, false));
+                } else {
+                    site.setTarget(createGWT(TEST_0_B, TARGET_0_B, FALLBACK_0_B, entry, site));
+                }
             }
             return entry.method.call(context, self, selfClass, name, block);
         } catch (JumpException.BreakJump bj) {
@@ -366,10 +407,14 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, block);
             }
-            if (site.failCount++ > 0) {
+            if (site.failCount++ > MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_1_B, site));
             } else {
-                site.setTarget(createGWT(TEST_1_B, TARGET_1_B, FALLBACK_1_B, entry, site));
+                if (site.getTarget() != null) {
+                    site.setTarget(createGWT(TEST_1_B, TARGET_1_B, site.getTarget(), entry, site, false));
+                } else {
+                    site.setTarget(createGWT(TEST_1_B, TARGET_1_B, FALLBACK_1_B, entry, site));
+                }
             }
             return entry.method.call(context, self, selfClass, name, arg0, block);
         } catch (JumpException.BreakJump bj) {
@@ -389,10 +434,14 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, block);
             }
-            if (site.failCount++ > 0) {
+            if (site.failCount++ > MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_2_B, site));
             } else {
-                site.setTarget(createGWT(TEST_2_B, TARGET_2_B, FALLBACK_2_B, entry, site));
+                if (site.getTarget() != null) {
+                    site.setTarget(createGWT(TEST_2_B, TARGET_2_B, site.getTarget(), entry, site, false));
+                } else {
+                    site.setTarget(createGWT(TEST_2_B, TARGET_2_B, FALLBACK_2_B, entry, site));
+                }
             }
             return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
         } catch (JumpException.BreakJump bj) {
@@ -412,10 +461,14 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2, block);
             }
-            if (site.failCount++ > 0) {
+            if (site.failCount++ > MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_3_B, site));
             } else {
-                site.setTarget(createGWT(TEST_3_B, TARGET_3_B, FALLBACK_3_B, entry, site));
+                if (site.getTarget() != null) {
+                    site.setTarget(createGWT(TEST_3_B, TARGET_3_B, site.getTarget(), entry, site, false));
+                } else {
+                    site.setTarget(createGWT(TEST_3_B, TARGET_3_B, FALLBACK_3_B, entry, site));
+                }
             }
             return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
         } catch (JumpException.BreakJump bj) {
@@ -435,10 +488,14 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, args, block);
             }
-            if (site.failCount++ > 0) {
+            if (site.failCount++ >= MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_N_B, site));
             } else {
-                site.setTarget(createGWT(TEST_N_B, TARGET_N_B, FALLBACK_N_B, entry, site));
+                if (site.getTarget() != null) {
+                    site.setTarget(createGWT(TEST_N_B, TARGET_N_B, site.getTarget(), entry, site, false));
+                } else {
+                    site.setTarget(createGWT(TEST_N_B, TARGET_N_B, FALLBACK_N_B, entry, site));
+                }
             }
             return entry.method.call(context, self, selfClass, name, args, block);
         } catch (JumpException.BreakJump bj) {
