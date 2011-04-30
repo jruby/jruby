@@ -21,7 +21,6 @@
 module FFI
   class StructLayoutBuilder
     attr_reader :size, :alignment
-    attr_accessor :byte_order
     
     def initialize
       @size = 0
@@ -152,7 +151,7 @@ module FFI
         raise TypeError, "invalid struct field type #{type.inspect}"
       end
 
-      field_class.new(name, offset, type, :byte_order => @byte_order)
+      field_class.new(name, offset, type)
     end
   end
 
