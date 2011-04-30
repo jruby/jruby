@@ -33,6 +33,8 @@ public class InvokeDynamicSupport {
     public static class JRubyCallSite extends MutableCallSite {
         private final CallType callType;
         private final MethodType type;
+        public CacheEntry entry = CacheEntry.NULL_CACHE;
+        public volatile int failCount = 0;
 
         public JRubyCallSite(MethodType type, CallType callType) {
             super(type);
@@ -103,6 +105,11 @@ public class InvokeDynamicSupport {
         MethodHandle guardWithTest = MethodHandles.guardWithTest(myTest, myTarget, myFallback);
         
         return MethodHandles.convertArguments(guardWithTest, site.type());
+    }
+
+    private static MethodHandle createFail(MethodHandle fail, JRubyCallSite site) {
+        MethodHandle myFail = MethodHandles.insertArguments(fail, 0, site);
+        return myFail;
     }
 
     private static MethodHandle createNativeGWT(DynamicMethod.NativeCall nativeCall, MethodHandle test, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
@@ -259,7 +266,11 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name);
         }
-        site.setTarget(createGWT(TEST_0, TARGET_0, FALLBACK_0, entry, site));
+        if (site.failCount++ > 0) {
+            site.setTarget(createFail(FAIL_0, site));
+        } else {
+            site.setTarget(createGWT(TEST_0, TARGET_0, FALLBACK_0, entry, site));
+        }
 
         return entry.method.call(context, self, selfClass, name);
     }
@@ -270,7 +281,11 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0);
         }
-        site.setTarget(createGWT(TEST_1, TARGET_1, FALLBACK_1, entry, site));
+        if (site.failCount++ > 0) {
+            site.setTarget(createFail(FAIL_1, site));
+        } else {
+            site.setTarget(createGWT(TEST_1, TARGET_1, FALLBACK_1, entry, site));
+        }
 
         return entry.method.call(context, self, selfClass, name, arg0);
     }
@@ -281,7 +296,11 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1);
         }
-        site.setTarget(createGWT(TEST_2, TARGET_2, FALLBACK_2, entry, site));
+        if (site.failCount++ > 0) {
+            site.setTarget(createFail(FAIL_2, site));
+        } else {
+            site.setTarget(createGWT(TEST_2, TARGET_2, FALLBACK_2, entry, site));
+        }
 
         return entry.method.call(context, self, selfClass, name, arg0, arg1);
     }
@@ -292,7 +311,11 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2);
         }
-        site.setTarget(createGWT(TEST_3, TARGET_3, FALLBACK_3, entry, site));
+        if (site.failCount++ > 0) {
+            site.setTarget(createFail(FAIL_3, site));
+        } else {
+            site.setTarget(createGWT(TEST_3, TARGET_3, FALLBACK_3, entry, site));
+        }
 
         return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2);
     }
@@ -303,7 +326,11 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, args);
         }
-        site.setTarget(createGWT(TEST_N, TARGET_N, FALLBACK_N, entry, site));
+        if (site.failCount++ > 0) {
+            site.setTarget(createFail(FAIL_N, site));
+        } else {
+            site.setTarget(createGWT(TEST_N, TARGET_N, FALLBACK_N, entry, site));
+        }
 
         return entry.method.call(context, self, selfClass, name, args);
     }
@@ -316,7 +343,11 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, block);
             }
-            site.setTarget(createGWT(TEST_0_B, TARGET_0_B, FALLBACK_0_B, entry, site));
+            if (site.failCount++ > 0) {
+                site.setTarget(createFail(FAIL_0_B, site));
+            } else {
+                site.setTarget(createGWT(TEST_0_B, TARGET_0_B, FALLBACK_0_B, entry, site));
+            }
             return entry.method.call(context, self, selfClass, name, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
@@ -335,7 +366,11 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, block);
             }
-            site.setTarget(createGWT(TEST_1_B, TARGET_1_B, FALLBACK_1_B, entry, site));
+            if (site.failCount++ > 0) {
+                site.setTarget(createFail(FAIL_1_B, site));
+            } else {
+                site.setTarget(createGWT(TEST_1_B, TARGET_1_B, FALLBACK_1_B, entry, site));
+            }
             return entry.method.call(context, self, selfClass, name, arg0, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
@@ -354,7 +389,11 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, block);
             }
-            site.setTarget(createGWT(TEST_2_B, TARGET_2_B, FALLBACK_2_B, entry, site));
+            if (site.failCount++ > 0) {
+                site.setTarget(createFail(FAIL_2_B, site));
+            } else {
+                site.setTarget(createGWT(TEST_2_B, TARGET_2_B, FALLBACK_2_B, entry, site));
+            }
             return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
@@ -373,7 +412,11 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2, block);
             }
-            site.setTarget(createGWT(TEST_3_B, TARGET_3_B, FALLBACK_3_B, entry, site));
+            if (site.failCount++ > 0) {
+                site.setTarget(createFail(FAIL_3_B, site));
+            } else {
+                site.setTarget(createGWT(TEST_3_B, TARGET_3_B, FALLBACK_3_B, entry, site));
+            }
             return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
@@ -392,8 +435,201 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, args, block);
             }
-            site.setTarget(createGWT(TEST_N_B, TARGET_N_B, FALLBACK_N_B, entry, site));
+            if (site.failCount++ > 0) {
+                site.setTarget(createFail(FAIL_N_B, site));
+            } else {
+                site.setTarget(createGWT(TEST_N_B, TARGET_N_B, FALLBACK_N_B, entry, site));
+            }
             return entry.method.call(context, self, selfClass, name, args, block);
+        } catch (JumpException.BreakJump bj) {
+            return handleBreakJump(context, bj);
+        } catch (JumpException.RetryJump rj) {
+            return retryJumpError(context);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public static IRubyObject fail(JRubyCallSite site, 
+            ThreadContext context,
+            IRubyObject caller,
+            IRubyObject self,
+            String name) {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name);
+        } else {
+            site.entry = entry = selfClass.searchWithCache(name);
+            if (methodMissing(entry, site.callType(), name, caller)) {
+                return callMethodMissing(entry, site.callType(), context, self, name);
+            }
+            return entry.method.call(context, self, selfClass, name);
+        }
+    }
+
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0) {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name, arg0);
+        } else {
+            site.entry = entry = selfClass.searchWithCache(name);
+            if (methodMissing(entry, site.callType(), name, caller)) {
+                return callMethodMissing(entry, site.callType(), context, self, name, arg0);
+            }
+            return entry.method.call(context, self, selfClass, name, arg0);
+        }
+    }
+
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1) {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name, arg0, arg1);
+        } else {
+            site.entry = entry = selfClass.searchWithCache(name);
+            if (methodMissing(entry, site.callType(), name, caller)) {
+                return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1);
+            }
+            return entry.method.call(context, self, selfClass, name, arg0, arg1);
+        }
+    }
+
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2);
+        } else {
+            site.entry = entry = selfClass.searchWithCache(name);
+            if (methodMissing(entry, site.callType(), name, caller)) {
+                return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2);
+            }
+            return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2);
+        }
+    }
+
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args) {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, name, args);
+        } else {
+            site.entry = entry = selfClass.searchWithCache(name);
+            if (methodMissing(entry, site.callType(), name, caller)) {
+                return callMethodMissing(entry, site.callType(), context, self, name, args);
+            }
+            return entry.method.call(context, self, selfClass, name, args);
+        }
+    }
+
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, Block block) {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        try {
+            if (entry.typeOk(selfClass)) {
+                return entry.method.call(context, self, selfClass, name, block);
+            } else {
+                site.entry = entry = selfClass.searchWithCache(name);
+                if (methodMissing(entry, site.callType(), name, caller)) {
+                    return callMethodMissing(entry, site.callType(), context, self, name, block);
+                }
+                return entry.method.call(context, self, selfClass, name, block);
+            }
+        } catch (JumpException.BreakJump bj) {
+            return handleBreakJump(context, bj);
+        } catch (JumpException.RetryJump rj) {
+            return retryJumpError(context);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, Block block) {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        try {
+            if (entry.typeOk(selfClass)) {
+                return entry.method.call(context, self, selfClass, name, arg0, block);
+            } else {
+                site.entry = entry = selfClass.searchWithCache(name);
+                if (methodMissing(entry, site.callType(), name, caller)) {
+                    return callMethodMissing(entry, site.callType(), context, self, name, arg0, block);
+                }
+                return entry.method.call(context, self, selfClass, name, arg0, block);
+            }
+        } catch (JumpException.BreakJump bj) {
+            return handleBreakJump(context, bj);
+        } catch (JumpException.RetryJump rj) {
+            return retryJumpError(context);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        try {
+            if (entry.typeOk(selfClass)) {
+                return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
+            } else {
+                site.entry = entry = selfClass.searchWithCache(name);
+                if (methodMissing(entry, site.callType(), name, caller)) {
+                    return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, block);
+                }
+                return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
+            }
+        } catch (JumpException.BreakJump bj) {
+            return handleBreakJump(context, bj);
+        } catch (JumpException.RetryJump rj) {
+            return retryJumpError(context);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        try {
+            if (entry.typeOk(selfClass)) {
+                return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
+            } else {
+                site.entry = entry = selfClass.searchWithCache(name);
+                if (methodMissing(entry, site.callType(), name, caller)) {
+                    return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2, block);
+                }
+                return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
+            }
+        } catch (JumpException.BreakJump bj) {
+            return handleBreakJump(context, bj);
+        } catch (JumpException.RetryJump rj) {
+            return retryJumpError(context);
+        } finally {
+            block.escape();
+        }
+    }
+
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, Block block) {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        try {
+            if (entry.typeOk(selfClass)) {
+                return entry.method.call(context, self, selfClass, name, args, block);
+            } else {
+                site.entry = entry = selfClass.searchWithCache(name);
+                if (methodMissing(entry, site.callType(), name, caller)) {
+                    return callMethodMissing(entry, site.callType(), context, self, name, args, block);
+                }
+                return entry.method.call(context, self, selfClass, name, args, block);
+            }
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
         } catch (JumpException.RetryJump rj) {
@@ -557,6 +793,8 @@ public class InvokeDynamicSupport {
     }
     private static final MethodHandle FALLBACK_0 = findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+    private static final MethodHandle FAIL_0 = findStatic(InvokeDynamicSupport.class, "fail",
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
 
     private static final MethodHandle PGC_1 = dropNameAndArgs(PGC, 4, 1, false);
     private static final MethodHandle GETMETHOD_1 = dropNameAndArgs(GETMETHOD, 5, 1, false);
@@ -581,6 +819,8 @@ public class InvokeDynamicSupport {
     }
     private static final MethodHandle FALLBACK_1 = findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
+    private static final MethodHandle FAIL_1 = findStatic(InvokeDynamicSupport.class, "fail",
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
 
     private static final MethodHandle PGC_2 = dropNameAndArgs(PGC, 4, 2, false);
     private static final MethodHandle GETMETHOD_2 = dropNameAndArgs(GETMETHOD, 5, 2, false);
@@ -602,6 +842,8 @@ public class InvokeDynamicSupport {
         TARGET_2 = target;
     }
     private static final MethodHandle FALLBACK_2 = findStatic(InvokeDynamicSupport.class, "fallback",
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
+    private static final MethodHandle FAIL_2 = findStatic(InvokeDynamicSupport.class, "fail",
             MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
 
     private static final MethodHandle PGC_3 = dropNameAndArgs(PGC, 4, 3, false);
@@ -625,6 +867,8 @@ public class InvokeDynamicSupport {
     }
     private static final MethodHandle FALLBACK_3 = findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+    private static final MethodHandle FAIL_3 = findStatic(InvokeDynamicSupport.class, "fail",
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
     private static final MethodHandle PGC_N = dropNameAndArgs(PGC, 4, -1, false);
     private static final MethodHandle GETMETHOD_N = dropNameAndArgs(GETMETHOD, 5, -1, false);
@@ -646,6 +890,8 @@ public class InvokeDynamicSupport {
         TARGET_N = target;
     }
     private static final MethodHandle FALLBACK_N = findStatic(InvokeDynamicSupport.class, "fallback",
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
+    private static final MethodHandle FAIL_N = findStatic(InvokeDynamicSupport.class, "fail",
             MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
 
     private static final MethodHandle BREAKJUMP;
@@ -705,6 +951,8 @@ public class InvokeDynamicSupport {
     }
     private static final MethodHandle FALLBACK_0_B = findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
+    private static final MethodHandle FAIL_0_B = findStatic(InvokeDynamicSupport.class, "fail",
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
 
     private static final MethodHandle PGC_1_B = dropNameAndArgs(PGC, 4, 1, true);
     private static final MethodHandle GETMETHOD_1_B = dropNameAndArgs(GETMETHOD, 5, 1, true);
@@ -732,6 +980,8 @@ public class InvokeDynamicSupport {
         TARGET_1_B = target;
     }
     private static final MethodHandle FALLBACK_1_B = findStatic(InvokeDynamicSupport.class, "fallback",
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
+    private static final MethodHandle FAIL_1_B = findStatic(InvokeDynamicSupport.class, "fail",
             MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
 
     private static final MethodHandle PGC_2_B = dropNameAndArgs(PGC, 4, 2, true);
@@ -761,6 +1011,8 @@ public class InvokeDynamicSupport {
     }
     private static final MethodHandle FALLBACK_2_B = findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+    private static final MethodHandle FAIL_2_B = findStatic(InvokeDynamicSupport.class, "fail",
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
 
     private static final MethodHandle PGC_3_B = dropNameAndArgs(PGC, 4, 3, true);
     private static final MethodHandle GETMETHOD_3_B = dropNameAndArgs(GETMETHOD, 5, 3, true);
@@ -789,6 +1041,8 @@ public class InvokeDynamicSupport {
     }
     private static final MethodHandle FALLBACK_3_B = findStatic(InvokeDynamicSupport.class, "fallback",
             MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+    private static final MethodHandle FAIL_3_B = findStatic(InvokeDynamicSupport.class, "fail",
+            MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
     private static final MethodHandle PGC_N_B = dropNameAndArgs(PGC, 4, -1, true);
     private static final MethodHandle GETMETHOD_N_B = dropNameAndArgs(GETMETHOD, 5, -1, true);
@@ -816,6 +1070,8 @@ public class InvokeDynamicSupport {
         TARGET_N_B = target;
     }
     private static final MethodHandle FALLBACK_N_B = findStatic(InvokeDynamicSupport.class, "fallback",
+                    MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
+    private static final MethodHandle FAIL_N_B = findStatic(InvokeDynamicSupport.class, "fail",
                     MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
     
     private static MethodHandle findStatic(Class target, String name, MethodType type) {
