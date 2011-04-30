@@ -168,7 +168,7 @@ module FFI
         builder.union = self < Union
         builder.packed = @packed if defined?(@packed)
         builder.alignment = @min_alignment if defined?(@min_alignment)
-        builder.byte_order = @byte_order
+        builder.byte_order = defined?(@byte_order) ? @byte_order : :native
 
         if spec[0].kind_of?(Hash)
           hash_layout(builder, spec)
