@@ -34,6 +34,7 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.SafePropertyAccessor;
 
 /**
  *
@@ -91,7 +92,7 @@ public class Platform {
 
     private static final OS_TYPE determineOS() {
         String osName = System.getProperty("os.name").split(" ")[0].toLowerCase();
-        if (osName.startsWith("mac") || osName.startsWith("darwin")) {
+        if (osName.startsWith("mac") || osName.startsWith("darwin") || osName.equalsIgnoreCase("darwin")) {
             return OS.DARWIN;
         } else if (osName.startsWith("sunos") || osName.startsWith("solaris")) {
             return OS.SOLARIS;
@@ -137,9 +138,18 @@ public class Platform {
             return CPU.SPARCV9;
         } else if ("s390x".equals(archString)) {
             return CPU.S390X;
-	} else {
-            return CPU.UNKNOWN;
+        } else if ("universal".equals(archString)) {
+            // OS X OpenJDK7 builds report "universal" right now
+            String bits = SafePropertyAccessor.getProperty("sun.arch.data.model");
+            if ("32".equals(bits)) {
+                System.setProperty("os.arch", "i386");
+                return CPU.I386;
+            } else if ("64".equals(bits)) {
+                System.setProperty("os.arch", "x86_64");
+                return CPU.X86_64;
+            }
         }
+        return CPU.UNKNOWN;
     }
 
     private static final String determineLibC() {
