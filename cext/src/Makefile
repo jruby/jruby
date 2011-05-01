@@ -154,7 +154,7 @@ endif
 
 ifeq ($(OS), darwin)
   PLATFORM = Darwin
-  MACSDK = $(firstword $(wildcard /Developer/SDKs/MacOSX*.sdk))
+  MACSDK = $(firstword $(filter-out %/MacOSX10.4u.sdk, $(wildcard /Developer/SDKs/MacOSX*.sdk)))
   JDK_INCLUDES = -I$(MACSDK)/System/Library/Frameworks/JavaVM.framework/Headers
   ARCHES = ppc
   ifneq ($(findstring $(CPU), i386 x86_64),)
