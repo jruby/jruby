@@ -29,9 +29,13 @@
  */
 package org.jruby.embed.internal;
 
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.embed.AttributeName;
 import org.jruby.embed.LocalVariableBehavior;
 
 /**
@@ -44,8 +48,9 @@ import org.jruby.embed.LocalVariableBehavior;
 public class SingletonLocalContextProvider extends AbstractLocalContextProvider {
     private static LocalContext localContext = null;
     private static BiVariableMap varMap = null;
+    private static HashMap attribute = null;
     
-    private static LocalContext getLocalContextInstance(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
+    public static LocalContext getLocalContextInstance(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
         if (localContext == null) {
             synchronized (LocalContext.class) {
                 localContext = new LocalContext(config, behavior, lazy);
@@ -54,13 +59,30 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
         return localContext;
     }
     
-    private static BiVariableMap getBiVariableInstance(LocalContextProvider provider, LocalVariableBehavior behavior, boolean lazy) {
+    private static BiVariableMap getBiVariableInstance(LocalContextProvider provider, boolean lazy) {
         if (varMap == null) {
             synchronized (BiVariableMap.class) {
-                varMap = new BiVariableMap(provider, behavior, lazy);
+                varMap = new BiVariableMap(provider, lazy);
             }
         }
         return varMap;
+    }
+    
+    private static HashMap getAttributeInstance() {
+        if (attribute == null) {
+            synchronized (HashMap.class) {
+                attribute = new HashMap();
+                attribute.put(AttributeName.READER, new InputStreamReader(System.in));
+                attribute.put(AttributeName.WRITER, new PrintWriter(System.out, true));
+                attribute.put(AttributeName.ERROR_WRITER, new PrintWriter(System.err, true));
+            }
+        }
+        return attribute;
+    }
+    
+    public static LocalVariableBehavior getLocalVariableBehaviorOrNull() {
+        if (localContext == null) return null;
+        else return localContext.getLocalVariableBehavior();
     }
 
     public SingletonLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
@@ -82,12 +104,11 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
     }
 
     public BiVariableMap getVarMap() {
-        return SingletonLocalContextProvider.getBiVariableInstance(this, behavior, lazy);
+        return SingletonLocalContextProvider.getBiVariableInstance(this, lazy);
     }
 
     public Map getAttributeMap() {
-        LocalContext context = SingletonLocalContextProvider.getLocalContextInstance(config, behavior, lazy);
-        return context.getAttributeMap();
+        return SingletonLocalContextProvider.getAttributeInstance();
     }
 
     public boolean isRuntimeInitialized() {

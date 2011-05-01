@@ -65,10 +65,9 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class BiVariableMap<K, V> implements Map<K, V> {
-    private LocalContextProvider provider;
+    private final LocalContextProvider provider;
     private final List<String> varNames = new ArrayList<String>();
     private final List<BiVariable> variables = new ArrayList<BiVariable>();
-    private VariableInterceptor interceptor;
     private boolean lazy;
 
     /**
@@ -78,10 +77,9 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * @param runtime is environment where variables are used to execute Ruby scripts.
      * @param behavior is one of variable behaviors defined in VariableBehavior.
      */
-    public BiVariableMap(LocalContextProvider provider, LocalVariableBehavior behavior, boolean lazy) {
+    public BiVariableMap(LocalContextProvider provider, boolean lazy) {
         this.provider = provider;
         this.lazy = lazy;
-        interceptor = new VariableInterceptor(behavior);
     }
 
     /**
@@ -103,12 +101,12 @@ public class BiVariableMap<K, V> implements Map<K, V> {
     }
 
     /**
-     * Returns a list of all values in this map.
+     * Returns a local variable behavior
      *
-     * @return a List of all values.
+     * @return a local variable behavior
      */
-    public VariableInterceptor getVariableInterceptor() {
-        return interceptor;
+    public LocalVariableBehavior getLocalVariableBehavior() {
+        return provider.getLocalVariableBehavior();
     }
 
     /**
@@ -211,7 +209,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
         checkKey(key);
         RubyObject robj = getReceiverObject(receiver);
         // attemps to retrieve global variables
-        if (lazy) interceptor.tryLazyRetrieval(this, robj, key);
+        if (lazy) VariableInterceptor.tryLazyRetrieval(provider.getLocalVariableBehavior(), this, robj, key);
         BiVariable var = getVariable(robj, (String)key);
         if (var == null) return null;
         else return (V) var.getJavaObject();
@@ -320,7 +318,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
             v.setJavaObject(robj.getRuntime(), value);
         } else {
             // creates new value
-            v = interceptor.getVariableInstance(robj, name, value);
+            v = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, name, value);
             if (v != null) {
                 update(name, v);
             }
@@ -367,17 +365,17 @@ public class BiVariableMap<K, V> implements Map<K, V> {
     }
 
     void inject(ManyVarsDynamicScope scope, int depth, IRubyObject receiver) {
-        interceptor.inject(this, provider.getRuntime(), scope, depth, receiver);
+        VariableInterceptor.inject(this, provider.getRuntime(), scope, depth, receiver);
     }
 
     void retrieve(IRubyObject receiver) {
         RubyObject robj = getReceiverObject(receiver);
-        interceptor.retrieve(this, robj);
+        VariableInterceptor.retrieve(provider.getLocalVariableBehavior(), this, robj);
     }
 
     void terminate() {
-        interceptor.terminateGlobalVariables(variables, provider.getRuntime());
-        interceptor.terminateLocalVariables(varNames, variables);
+        VariableInterceptor.terminateGlobalVariables(provider.getLocalVariableBehavior(), variables, provider.getRuntime());
+        VariableInterceptor.terminateLocalVariables(provider.getLocalVariableBehavior(), varNames, variables);
     }
 
     /**

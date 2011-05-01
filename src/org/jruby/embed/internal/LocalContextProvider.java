@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.util.ClassCache;
 
 /**
@@ -80,7 +81,13 @@ public interface LocalContextProvider {
      * @return a Ruby runtime
      */
     Ruby getRuntime();
-
+    
+    /**
+     * Returns a local variable behavior associated to the scope.
+     *
+     * @return a local variable behavior
+     */
+    LocalVariableBehavior getLocalVariableBehavior();
     /**
      * Returns a {@link BiVariableMap} of a specified scope.
      * 

@@ -65,4 +65,8 @@ public abstract class AbstractLocalContextProvider implements LocalContextProvid
     protected LocalContext getInstance() {
         return new LocalContext(config, behavior, lazy);
     }
+    
+    public LocalVariableBehavior getLocalVariableBehavior() {
+        return behavior;
+    }
 }

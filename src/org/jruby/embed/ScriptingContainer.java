@@ -239,7 +239,9 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
                 return new SingleThreadLocalContextProvider(behavior, lazy);
             case SINGLETON :
             default :
-                return new SingletonLocalContextProvider(behavior, lazy);
+                LocalVariableBehavior b = SingletonLocalContextProvider.getLocalVariableBehaviorOrNull();
+                if (b == null) return new SingletonLocalContextProvider(behavior, lazy);
+                else return new SingletonLocalContextProvider(b, lazy);
         }
     }
 

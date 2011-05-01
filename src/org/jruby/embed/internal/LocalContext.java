@@ -47,7 +47,7 @@ public class LocalContext {
     private boolean lazy;
     Ruby runtime = null;
     private BiVariableMap varMap = null;  // singleton doesn't use this varMap.
-    private final HashMap attribute = new HashMap();
+    private HashMap attribute = null;
     boolean initialized = false;
 
     public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
@@ -58,10 +58,6 @@ public class LocalContext {
         this.config = config;
         this.behavior = behavior;
         this.lazy = lazy;
-
-        attribute.put(AttributeName.READER, new InputStreamReader(System.in));
-        attribute.put(AttributeName.WRITER, new PrintWriter(System.out, true));
-        attribute.put(AttributeName.ERROR_WRITER, new PrintWriter(System.err, true));
     }
 
     // This method is used only from ThreadLocalContextProvider.
@@ -81,16 +77,27 @@ public class LocalContext {
     // local runtime
     public BiVariableMap getVarMap(LocalContextProvider provider) {
         if (varMap == null) {
-            varMap = new BiVariableMap(provider, behavior, lazy);
+            varMap = new BiVariableMap(provider, lazy);
         }
         return varMap;
     }
+    
+    public LocalVariableBehavior getLocalVariableBehavior() {
+        return behavior;
+    }
 
     public HashMap getAttributeMap() {
+        if (attribute == null) {
+            attribute = new HashMap();
+            attribute.put(AttributeName.READER, new InputStreamReader(System.in));
+            attribute.put(AttributeName.WRITER, new PrintWriter(System.out, true));
+            attribute.put(AttributeName.ERROR_WRITER, new PrintWriter(System.err, true));
+        }
         return attribute;
     }
     
     public void remove() {
+        if (attribute == null) return;
         attribute.clear();
         varMap.clear();
     }

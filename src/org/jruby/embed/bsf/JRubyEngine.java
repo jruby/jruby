@@ -17,7 +17,7 @@
  * Copyright (C) 2004-2008 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -157,16 +157,15 @@ public class JRubyEngine extends BSFEngineImpl {
         Ruby runtime = container.getProvider().getRuntime();
 
         if (someDeclaredBeans != null && someDeclaredBeans.size() > 0) {
-            VariableInterceptor interceptor = container.getVarMap().getVariableInterceptor();
             for (int i = 0; i < someDeclaredBeans.size(); i++) {
                 BSFDeclaredBean bean = (BSFDeclaredBean) someDeclaredBeans.get(i);
-                setVariable(interceptor, bean);
+                setVariable(bean);
             }
         }
         runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(manager, this)));
     }
 
-    private void setVariable(VariableInterceptor interceptor, BSFDeclaredBean bean) {
+    private void setVariable(BSFDeclaredBean bean) {
         String name = bean.name;
         if ("$bsf".equals(name)) {
             return;
@@ -176,7 +175,7 @@ public class JRubyEngine extends BSFEngineImpl {
         }
         RubyObject receiver = (RubyObject)container.getProvider().getRuntime().getTopSelf();
         BiVariable v =
-            interceptor.getVariableInstance(receiver, name, bean.bean, bean.type);
+            VariableInterceptor.getVariableInstance(LocalVariableBehavior.BSF,receiver, name, bean.bean, bean.type);
         container.getVarMap().setVariable(receiver, v);
     }
 
@@ -192,8 +191,7 @@ public class JRubyEngine extends BSFEngineImpl {
     @Override
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
         assert bean != null;
-        VariableInterceptor interceptor = container.getVarMap().getVariableInterceptor();
-        setVariable(interceptor, bean);
+        setVariable(bean);
     }
 
     @Override
