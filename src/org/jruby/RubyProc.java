@@ -232,7 +232,7 @@ public class RubyProc extends RubyObject implements DataType {
         return call(context, args, null, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = {"call", "[]", "yield"}, rest = true, compat = RUBY1_9)
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, compat = RUBY1_9)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
         if (isLambda()) {
             this.block.arity().checkArity(context.getRuntime(), args.length);
