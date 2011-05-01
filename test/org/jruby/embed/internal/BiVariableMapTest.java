@@ -188,28 +188,28 @@ public class BiVariableMapTest {
     }
 
     /**
-     * Test of getVariableInterceptor method, of class BiVariableMap.
+     * Test of getLocalVariableBehavior method, of class BiVariableMap.
      */
     @Test
-    public void testGetVariableInterceptor() {
+    public void testGetLocalVariableBehavior() {
         logger1.info("getVariableInterceptor");
         ScriptingContainer container =
                 new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT);
         BiVariableMap instance = container.getVarMap();
-        VariableInterceptor result = instance.getVariableInterceptor();
-        assertNotNull(result);
+        LocalVariableBehavior result = LocalVariableBehavior.TRANSIENT;
+        assertEquals(result, instance.getLocalVariableBehavior());
         container = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.BSF);
         instance = container.getVarMap();
-        result = instance.getVariableInterceptor();
-        assertNotNull(result);
+        result = LocalVariableBehavior.BSF;
+        assertEquals(result, instance.getLocalVariableBehavior());
         container = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.GLOBAL);
         instance = container.getVarMap();
-        result = instance.getVariableInterceptor();
-        assertNotNull(result);
+        result = LocalVariableBehavior.GLOBAL;
+        assertEquals(result, instance.getLocalVariableBehavior());
         container = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.PERSISTENT);
         instance = container.getVarMap();
-        result = instance.getVariableInterceptor();
-        assertNotNull(result);
+        result = LocalVariableBehavior.PERSISTENT;
+        assertEquals(result, instance.getLocalVariableBehavior());
     }
 
     /**

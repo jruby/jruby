@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -37,6 +37,7 @@ import org.jruby.embed.AttributeName;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.variable.TransientLocalVariable;
+import org.jruby.embed.variable.VariableInterceptor;
 
 /**
  * A collection of JSR223 specific utility methods.
@@ -158,7 +159,7 @@ public class Utils {
     }
 
     static boolean isRubyVariable(ScriptingContainer container, String name) {
-        return container.getVarMap().getVariableInterceptor().isKindOfRubyVariable(name);
+        return VariableInterceptor.isKindOfRubyVariable(container.getProvider().getLocalVariableBehavior(), name);
     }
 
     private static String adjustKey(String key) {
@@ -172,8 +173,7 @@ public class Utils {
     }
     
     private static boolean shouldLVarBeDeleted(ScriptingContainer container, String key) {
-        LocalVariableBehavior behavior = 
-                container.getProvider().getVarMap().getVariableInterceptor().getLocalVariableBehavior();
+        LocalVariableBehavior behavior = container.getProvider().getLocalVariableBehavior();
         if (behavior != LocalVariableBehavior.TRANSIENT) return false;
         return TransientLocalVariable.isValidName(key);
     }

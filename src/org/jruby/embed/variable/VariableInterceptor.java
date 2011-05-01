@@ -44,20 +44,20 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class VariableInterceptor {
-    private LocalVariableBehavior behavior;
+    //private LocalVariableBehavior behavior;
 
     /**
      * Constructs an instance with a given local variable behavior.
      *
      * @param behavior local variable behavior
      */
-    public VariableInterceptor(LocalVariableBehavior behavior) {
-        this.behavior = behavior;
-    }
+    //public VariableInterceptor(LocalVariableBehavior behavior) {
+    //    this.behavior = behavior;
+    //}
     
-    public LocalVariableBehavior getLocalVariableBehavior() {
-        return behavior;
-    }
+    //public LocalVariableBehavior getLocalVariableBehavior() {
+    //    return behavior;
+    //}
 
     /**
      * Returns an appropriate type of a variable instance to the specified local
@@ -68,7 +68,7 @@ public class VariableInterceptor {
      * @param value variable value
      * @return an appropriate type of the variable instance.
      */
-    public BiVariable getVariableInstance(RubyObject receiver, String name, Object... value) {
+    public static BiVariable getVariableInstance(LocalVariableBehavior behavior, RubyObject receiver, String name, Object... value) {
         if (value == null || value.length < 1) {
             return null;
         }
@@ -105,7 +105,7 @@ public class VariableInterceptor {
         }
     }
 
-    private BiVariable resolve(BiVariable[] entries) {
+    private static BiVariable resolve(BiVariable[] entries) {
         for (BiVariable e : entries) {
             if (e != null) {
                 return e;
@@ -124,7 +124,7 @@ public class VariableInterceptor {
      * @param depth depth of a frame to inject local variable values
      * @param receiver a receiver when the script has been evaluated once
      */
-    public void inject(BiVariableMap map, Ruby runtime, ManyVarsDynamicScope scope, int depth, IRubyObject receiver) {
+    public static void inject(BiVariableMap map, Ruby runtime, ManyVarsDynamicScope scope, int depth, IRubyObject receiver) {
         // lvar might not be given while parsing but be given when evaluating.
         // to avoid ArrayIndexOutOfBoundsException, checks the length of scope.getValues()
         if (scope != null && scope.getValues().length > 0) {
@@ -150,7 +150,7 @@ public class VariableInterceptor {
      * @param runtime Ruby runtime
      * @param receiver a receiver when the script has been evaluated once
      */
-    public void retrieve(BiVariableMap map, RubyObject receiver) {
+    public static void retrieve(LocalVariableBehavior behavior, BiVariableMap map, RubyObject receiver) {
         Argv.retrieve(receiver, map);
         switch (behavior) {
             case GLOBAL:
@@ -179,7 +179,7 @@ public class VariableInterceptor {
      * @param receiver a receiver when the script has been evaluated once
      * @
      */
-    public void tryLazyRetrieval(BiVariableMap map, IRubyObject receiver, Object key) {
+    public static void tryLazyRetrieval(LocalVariableBehavior behavior, BiVariableMap map, IRubyObject receiver, Object key) {
         if (Argv.isValidName(key)) {
             Argv.retrieveByKey((RubyObject)receiver, map, (String)key);
             return;
@@ -213,7 +213,7 @@ public class VariableInterceptor {
      * @param variables a variable list to be cleared from Ruby runtime
      * @param runtime Ruby runtime
      */
-    public void terminateGlobalVariables(List<BiVariable> variables, Ruby runtime) {
+    public static void terminateGlobalVariables(LocalVariableBehavior behavior, List<BiVariable> variables, Ruby runtime) {
         if (variables == null) return;
         if (LocalVariableBehavior.GLOBAL == behavior) {
             for (int i = 0; i < variables.size(); i++) {
@@ -232,7 +232,7 @@ public class VariableInterceptor {
      * @param varNames variable name list to be cleared
      * @param variables variable value list to be cleared
      */
-    public void terminateLocalVariables(List<String> varNames, List<BiVariable> variables) {
+    public static void terminateLocalVariables(LocalVariableBehavior behavior, List<String> varNames, List<BiVariable> variables) {
         if (variables == null) return;
         if (LocalVariableBehavior.TRANSIENT == behavior) {
             for (int i = 0; i < variables.size(); i++) {
@@ -250,7 +250,7 @@ public class VariableInterceptor {
      * @param name a given name to be checked
      * @return true when the name is a legal Ruby variable/constant name, otherwise false.
      */
-    public boolean isKindOfRubyVariable(String name) {
+    public static boolean isKindOfRubyVariable(LocalVariableBehavior behavior, String name) {
         if ("ARGV".equals(name)) return true;
         switch (behavior) {
             case GLOBAL:
