@@ -49,6 +49,11 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         methodCompiler.getScriptCompiler().getClassInitMethod();
     }
 
+    public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+        // TODO: NORMAL versus VARIABLE call type test
+        invokeDynamic(name, receiverCallback, argsCallback, CallType.VARIABLE, null, false);
+    }
+
     @Override
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
         if (callType == CallType.SUPER) {
