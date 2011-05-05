@@ -54,6 +54,7 @@ import java.util.zip.ZipException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFile;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
@@ -459,10 +460,11 @@ public class LoadService {
         if (caseInsensitiveFS) {
             // on a case-insensitive filesystem, we need to search case-insensitively
             // to remove the loaded feature
-            for (Iterator iter = loadedFeaturesInternal.iterator(); iter.hasNext();) {
-                Object feature = iter.next();
-                if (feature.toString().equalsIgnoreCase(name)) {
-                    iter.remove();
+            RubyString nameRubyString = runtime.newString(name);
+            for (int i = 0; i < loadedFeatures.size(); i++) {
+                RubyString feature = loadedFeatures.eltInternal(i).convertToString();
+                if (((RubyFixnum)feature.casecmp(runtime.getCurrentContext(), nameRubyString)).getLongValue() == 0) {
+                    loadedFeatures.remove(i);
                 }
             }
         } else {
@@ -472,12 +474,11 @@ public class LoadService {
 
     protected boolean featureAlreadyLoaded(RubyString loadNameRubyString) {
         if (caseInsensitiveFS) {
-            String name = loadNameRubyString.toString();
             // on a case-insensitive filesystem, we need to search case-insensitively
             // to find the loaded feature
-            for (Iterator iter = loadedFeaturesInternal.iterator(); iter.hasNext();) {
-                Object feature = iter.next();
-                if (feature.toString().equalsIgnoreCase(name)) {
+            for (int i = 0; i < loadedFeatures.size(); i++) {
+                RubyString feature = loadedFeatures.eltInternal(i).convertToString();
+                if (((RubyFixnum)feature.casecmp(runtime.getCurrentContext(), loadNameRubyString)).getLongValue() == 0) {
                     return true;
                 }
             }
