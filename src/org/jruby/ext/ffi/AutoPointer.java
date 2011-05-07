@@ -13,6 +13,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.PhantomReferenceReaper;
+import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name = "FFI::" + AutoPointer.AUTOPTR_CLASS_NAME, parent = "FFI::Pointer")
 public final class AutoPointer extends Pointer {
@@ -62,7 +63,7 @@ public final class AutoPointer extends Pointer {
     }
 
     @Override
-    @JRubyMethod(name = "initialize")
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context, IRubyObject pointerArg) {
 
         Ruby runtime = context.getRuntime();
@@ -82,7 +83,7 @@ public final class AutoPointer extends Pointer {
     }
 
     @Override
-    @JRubyMethod(name = "initialize")
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context, IRubyObject pointerArg, IRubyObject releaser) {
 
         checkPointer(context.getRuntime(), pointerArg);

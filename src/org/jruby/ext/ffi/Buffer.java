@@ -90,7 +90,7 @@ public final class Buffer extends AbstractMemory {
         return this;
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg) {
         return sizeArg instanceof RubyFixnum
                 ? init(context, RubyFixnum.one(context.getRuntime()), 
@@ -98,12 +98,12 @@ public final class Buffer extends AbstractMemory {
                 : init(context, sizeArg, 1, IN | OUT);
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, IRubyObject arg2) {
         return init(context, sizeArg, getCount(arg2), IN | OUT);
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg,
             IRubyObject countArg, IRubyObject clearArg) {
         return init(context, sizeArg, RubyFixnum.fix2int(countArg), IN | OUT);

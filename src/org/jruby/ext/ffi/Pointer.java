@@ -82,7 +82,7 @@ public class Pointer extends AbstractMemory {
                 size, typeSize);
     }
 
-    @JRubyMethod(name = { "initialize" })
+    @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject address) {
         io = address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
@@ -93,7 +93,7 @@ public class Pointer extends AbstractMemory {
         return this;
     }
 
-    @JRubyMethod(name = { "initialize" })
+    @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject address) {
         io = address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()

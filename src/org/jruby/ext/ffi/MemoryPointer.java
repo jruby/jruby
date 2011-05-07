@@ -14,6 +14,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::Pointer")
 public final class MemoryPointer extends Pointer {
@@ -82,7 +83,7 @@ public final class MemoryPointer extends Pointer {
         return new MemoryPointer(runtime, runtime.fastGetModule("FFI").fastGetClass("MemoryPointer"), io, total, typeSize);
     }
 
-    @JRubyMethod(name = { "initialize" })
+    @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, Block block) {
         return sizeArg instanceof RubyFixnum
                 ? init(context, RubyFixnum.one(context.getRuntime()), 
@@ -90,12 +91,12 @@ public final class MemoryPointer extends Pointer {
                 : init(context, sizeArg, 1, 1, true, block);
     }
     
-    @JRubyMethod(name = { "initialize" })
+    @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, IRubyObject count, Block block) {
         return init(context, sizeArg, RubyNumeric.fix2int(count), 1, true, block);
     }
     
-    @JRubyMethod(name = { "initialize" })
+    @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context,
             IRubyObject sizeArg, IRubyObject count, IRubyObject clear, Block block) {
         return init(context, sizeArg, RubyNumeric.fix2int(count), 1, clear.isTrue(), block);

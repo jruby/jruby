@@ -8,11 +8,11 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="FFI::Struct", parent="Object")
 public class Struct extends RubyObject implements StructLayout.Storage {
@@ -115,7 +115,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return new Struct(runtime, (RubyClass) klass, getStructLayout(runtime, klass), ptr);
     }
 
-    @JRubyMethod(name = "initialize")
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
 
         memory = MemoryPointer.allocate(context.getRuntime(), layout.getSize(), 1, true);
@@ -123,7 +123,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return this;
     }
 
-    @JRubyMethod(name = "initialize")
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject ptr) {
         
         if (!(ptr instanceof AbstractMemory)) {
@@ -141,7 +141,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return this;
     }
 
-    @JRubyMethod(name = "initialize_copy")
+    @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
         if (other == this) {
             return this;
