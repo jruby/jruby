@@ -10,7 +10,7 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- *Inner
+ *
  * Copyright (C) 2008 JRuby project
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -54,6 +54,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import static org.jruby.runtime.Visibility.*;
 
 /**
  * Defines the memory layout for a native structure.
@@ -563,7 +564,7 @@ public final class StructLayout extends Type {
             init(args[0], args[2], args[1], io);
         }
 
-        @JRubyMethod(name="initialize", required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
             
             init(args[0], args[2], args[1]);
@@ -753,7 +754,7 @@ public final class StructLayout extends Type {
         }
 
         @Override
-        @JRubyMethod(name="initialize", required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
         public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
             
             IRubyObject type = args[2];
@@ -782,7 +783,7 @@ public final class StructLayout extends Type {
         }
         
         @Override
-        @JRubyMethod(name="initialize", required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
 
             IRubyObject type = args[2];
@@ -812,7 +813,7 @@ public final class StructLayout extends Type {
         }
 
         @Override
-        @JRubyMethod(name="initialize", required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
         public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
 
             IRubyObject type = args[2];
