@@ -935,8 +935,9 @@ public final class StructLayout extends Type {
 
         @JRubyMethod(name = { "size" })
         public IRubyObject size(ThreadContext context) {
-            return context.getRuntime().newFixnum(arrayType.getNativeSize());
+            return arrayType.length(context);
         }
+
         /**
          * Needed for Enumerable implementation
          */
