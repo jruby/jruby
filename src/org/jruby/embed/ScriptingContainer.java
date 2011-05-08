@@ -70,15 +70,17 @@ import org.jruby.util.KCode;
  * for embedding Ruby in Java. Using this class, users can run Ruby scripts from
  * Java programs easily. Also, users can use methods defined or implemented by Ruby.
  *
- * ScriptingContainer allows users to set configuration parameters, which are per-container
- * properties and per-evaluation attributes. For example, a local context scope,
- * local variable behavior, load paths are per-container properties. Please see
- * {@link PropertyName} and {@link AttributeName} for more details.
- * The per-container properties should be given prior to the Ruby runtime is
- * instantiated; otherwise, default values are applied to. SCriptingContainer delays
- * Ruby runtime initialization as much as possible to improve startup time. When
- * some values are put into the ScriptingContainer, or runScriptlet method is used,
- * Ruby runtime is created internally.
+ * ScriptingContainer allows users to set various configuration parameters. 
+ * Some of them are per-container properties, while others are per-evaluation attributes.
+ * For example, a local context scope, local variable behavior, load paths are 
+ * per-container properties. Please see {@link PropertyName} and {@link AttributeName}
+ * for more details. Be aware that the per-container properties should be set prior to
+ * get Ruby runtime be instantiated; otherwise, default values are applied to. 
+ * SCriptingContainer delays Ruby runtime initialization as much as possible to
+ * improve startup time. When values are put into the ScriptingContainer, or runScriptlet
+ * method gets run Ruby runtime is created internally. However, the default, singleton
+ * local context scope behave slightly different. If Ruby runtime has been already instantiated
+ * by another ScriptingContainer, application, etc, the same runtime will be used.
  *
  * Below are examples.
  *
