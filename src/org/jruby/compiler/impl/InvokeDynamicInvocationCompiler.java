@@ -44,9 +44,6 @@ import static org.jruby.util.CodegenUtils.*;
 public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler {
     public InvokeDynamicInvocationCompiler(BaseBodyCompiler methodCompiler, SkinnyMethodAdapter method) {
         super(methodCompiler, method);
-
-        // HACK: force clinit to be created
-        methodCompiler.getScriptCompiler().getClassInitMethod();
     }
 
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {

@@ -317,6 +317,8 @@ public class RubyInstanceConfig {
     public static final boolean JIT_LOADING_DEBUG = SafePropertyAccessor.getBoolean("jruby.jit.debug", false);
 
     public static final boolean CAN_SET_ACCESSIBLE = SafePropertyAccessor.getBoolean("jruby.ji.setAccessible", true);
+    
+    public static final boolean USE_INVOKEDYNAMIC = SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic", true);
 
     private TraceType traceType =
             TraceType.traceTypeFor(SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed"));

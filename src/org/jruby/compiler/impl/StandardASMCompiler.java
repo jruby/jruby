@@ -184,10 +184,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
     static {
         Constructor compilerConstructor = null;
-        Method installerMethod = null;
         try {
-            if (SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic")) {
-                // if that succeeds, the others should as well
+            if (RubyInstanceConfig.USE_INVOKEDYNAMIC) {
+                // attempt to access an invokedynamic-related class
+                Class.forName("java.lang.invoke.MethodHandle");
+                
+                // if that succeeds, use invokedynamic compiler stuff
                 Class compiler =
                         Class.forName("org.jruby.compiler.impl.InvokeDynamicInvocationCompiler");
                 Class support =
@@ -195,7 +197,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 compilerConstructor = compiler.getConstructor(BaseBodyCompiler.class, SkinnyMethodAdapter.class);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             // leave it null and fall back on our normal invocation logic
         }
         invDynInvCompilerConstructor = compilerConstructor;
