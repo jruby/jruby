@@ -5,15 +5,13 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.ast.executable.AbstractScript;
-import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.CompiledMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.Framing;
@@ -25,7 +23,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.SafePropertyAccessor;
 import static org.jruby.util.CodegenUtils.*;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 @SuppressWarnings("deprecation")
@@ -83,7 +80,7 @@ public class InvokeDynamicSupport {
     }
 
     private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
-        if (entry.method.getNativeCall() != null) {
+        if (entry.method.getNativeCall() != null && entry.method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
             DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
             Class[] nativeSig = nativeCall.getNativeSignature();
             // if enabled, use invokedynamic for ruby to ruby calls
