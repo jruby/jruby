@@ -30,11 +30,11 @@
 	<classpathentry kind="lib" path="build_lib/joda-time-1.6.2.jar"/>
 	<classpathentry kind="lib" path="build_lib/jgrapht-jdk1.5.jar"/>
 	<classpathentry kind="lib" path="build_lib/livetribe-jsr223-2.0.6.jar"/>
-	<classpathentry kind="lib" path="build_lib/asm-3.3.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/asm-analysis-3.3.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/asm-commons-3.3.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/asm-tree-3.3.1.jar"/>
-	<classpathentry kind="lib" path="build_lib/asm-util-3.3.1.jar"/>
+	<classpathentry kind="lib" path="build_lib/asm-4.0_RC1.jar"/>
+	<classpathentry kind="lib" path="build_lib/asm-analysis-4.0_RC1.jar"/>
+	<classpathentry kind="lib" path="build_lib/asm-commons-4.0_RC1.jar"/>
+	<classpathentry kind="lib" path="build_lib/asm-tree-4.0_RC1.jar"/>
+	<classpathentry kind="lib" path="build_lib/asm-util-4.0_RC1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/ANT"/>
 	<classpathentry kind="lib" path="build_lib/jnr-netdb.jar"/>
 	<classpathentry kind="lib" path="build_lib/org.osgi.core-4.2.0.jar"/>
