@@ -109,7 +109,7 @@ public class Java implements Library {
 
     public void load(Ruby runtime, boolean wrap) throws IOException {
         createJavaModule(runtime);
-        runtime.getLoadService().smartLoad("builtin/javasupport");
+        runtime.getLoadService().require("builtin/javasupport");
         RubyClassPathVariable.createClassPathVariable(runtime);
     }
 

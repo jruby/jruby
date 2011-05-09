@@ -1083,7 +1083,7 @@ public final class Ruby {
 
         // Require in all libraries specified on command line
         for (String scriptName : config.requiredLibraries()) {
-            loadService.smartLoad(scriptName);
+            loadService.require(scriptName);
         }
     }
 

@@ -314,7 +314,7 @@ public class LoadService {
 
                 long startTime = loadTimer.startLoad(requireName);
                 try {
-                    return smartLoad(requireName);
+                    return smartLoadInternal(requireName);
                 } finally {
                     loadTimer.endLoad(requireName, startTime);
                 }
@@ -326,9 +326,14 @@ public class LoadService {
         }
     }
 
+    @Deprecated
+    public boolean smartLoad(String file) {
+        return smartLoadInternal(file);
+    }
+    
     protected Map requireLocks = new Hashtable();
 
-    public boolean smartLoad(String file) {
+    private boolean smartLoadInternal(String file) {
         checkEmptyLoad(file);
         if (Platform.IS_WINDOWS) {
             file = file.replace('\\', '/');
