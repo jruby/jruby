@@ -292,7 +292,7 @@ public class LoadService {
         return state;
     }
 
-    public boolean lockAndRequire(String requireName) {
+    public boolean require(String requireName) {
         Object requireLock;
         try {
             synchronized (requireLocks) {
@@ -304,7 +304,20 @@ public class LoadService {
             }
 
             synchronized (requireLock) {
-                return require(requireName);
+                if(!runtime.getProfile().allowRequire(requireName)) {
+                    throw runtime.newLoadError("No such file to load -- " + requireName);
+                }
+
+                if (featureAlreadyLoaded(RubyString.newString(runtime, requireName))) {
+                    return false;
+                }
+
+                long startTime = loadTimer.startLoad(requireName);
+                try {
+                    return smartLoad(requireName);
+                } finally {
+                    loadTimer.endLoad(requireName, startTime);
+                }
             }
         } finally {
             synchronized (requireLocks) {
@@ -366,24 +379,6 @@ public class LoadService {
                     + (System.currentTimeMillis() - startTime) + "ms");
             indent.decrementAndGet();
         }
-    }
-
-    public boolean require(String file) {
-        if(!runtime.getProfile().allowRequire(file)) {
-            throw runtime.newLoadError("No such file to load -- " + file);
-        }
-
-        if (featureAlreadyLoaded(RubyString.newString(runtime, file))) {
-            return false;
-        }
-
-        long startTime = loadTimer.startLoad(file);
-        try {
-            return smartLoad(file);
-        } finally {
-            loadTimer.endLoad(file, startTime);
-        }
-
     }
 
     /**
