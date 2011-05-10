@@ -300,6 +300,11 @@ public class LoadService {
                 if (requireLock == null) {
                     requireLock = new Object();
                     requireLocks.put(requireName, requireLock);
+                } else {
+                    if (runtime.isVerbose()) {
+                        warnCircularRequire(requireName);
+                    }
+                    return false;
                 }
             }
 
@@ -326,9 +331,23 @@ public class LoadService {
         }
     }
 
+    protected void warnCircularRequire(String requireName) {
+        runtime.getWarnings().warn("loading in progress, circular require considered harmful - " + requireName);
+        // it's a hack for c:rb_backtrace impl.
+        // We should introduce new method to Ruby.TraceType when rb_backtrace is widely used not only for this purpose.
+        RaiseException ex = new RaiseException(runtime, runtime.getRuntimeError(), null, false);
+        String trace = runtime.getInstanceConfig().getTraceType().printBacktrace(ex.getException());
+        // rb_backtrace dumps to stderr directly.
+        System.err.println(trace.replaceFirst("[^\n]*\n", ""));
+    }
+
+    /**
+     * This method did require the specified file without getting a lock.
+     * Now we offer safe version only. Use {@link LoadService#require(String)} instead.
+     */
     @Deprecated
     public boolean smartLoad(String file) {
-        return smartLoadInternal(file);
+        return require(file);
     }
     
     protected Map requireLocks = new Hashtable();
@@ -490,11 +509,6 @@ public class LoadService {
 
     protected boolean isJarfileLibrary(SearchState state, final String file) {
         return state.library instanceof JarredScript && file.endsWith(".jar");
-    }
-
-    protected void removeLoadedFeature(RubyString loadNameRubyString) {
-
-        loadedFeaturesInternal.remove(loadNameRubyString);
     }
 
     protected void reraiseRaiseExceptions(Throwable e) throws RaiseException {
@@ -744,16 +758,9 @@ public class LoadService {
         // attempt to load the found library
         RubyString loadNameRubyString = RubyString.newString(runtime, state.loadName);
         try {
-            synchronized (loadedFeaturesInternal) {
-                if (featureAlreadyLoaded(loadNameRubyString)) {
-                    return false;
-                } else {
-                    addLoadedFeature(loadNameRubyString);
-                }
-            }
-            
             // otherwise load the library we've found
             state.library.load(runtime, false);
+            addLoadedFeature(loadNameRubyString);
             return true;
         } catch (MainExitException mee) {
             // allow MainExitException to propagate out for exec and friends
@@ -762,8 +769,6 @@ public class LoadService {
             if(isJarfileLibrary(state, state.searchFile)) {
                 return true;
             }
-
-            removeLoadedFeature(loadNameRubyString);
             reraiseRaiseExceptions(e);
 
             if(runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
