@@ -365,16 +365,16 @@ public class LoadService {
                 file = file.replaceAll(".so$", ".jar");
             }
             state = findFileForLoad(file);
-            RubyString searchName = RubyString.newString(runtime, state.loadName);
+            RubyString requireName = RubyString.newString(runtime, state.loadName);
             
             // check with long name
-            if (featureAlreadyLoaded(searchName)) {
+            if (featureAlreadyLoaded(requireName)) {
                 return false;
             }
 
             boolean loaded = tryLoadingLibraryOrScript(runtime, state);
             if (loaded) {
-                addLoadedFeature(searchName);
+                addLoadedFeature(requireName);
             }
             return loaded;
 
