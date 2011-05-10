@@ -41,7 +41,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -294,35 +293,33 @@ public class LoadService {
 
     public boolean require(String requireName) {
         Object requireLock;
-        try {
-            synchronized (requireLocks) {
-                requireLock = requireLocks.get(requireName);
-                if (requireLock == null) {
-                    requireLock = new Object();
-                    requireLocks.put(requireName, requireLock);
-                } else {
-                    if (runtime.isVerbose() && runtime.is1_9()) {
-                        warnCircularRequire(requireName);
-                    }
-                    return false;
+        synchronized (requireLocks) {
+            requireLock = requireLocks.get(requireName);
+            if (requireLock == null) {
+                requireLock = new Object();
+                requireLocks.put(requireName, requireLock);
+            } else {
+                if (runtime.isVerbose() && runtime.is1_9()) {
+                    warnCircularRequire(requireName);
                 }
+                return false;
+            }
+        }
+        try {
+            if(!runtime.getProfile().allowRequire(requireName)) {
+                throw runtime.newLoadError("No such file to load -- " + requireName);
+            }
+            
+            // check with requireName (no extensions)
+            if (featureAlreadyLoaded(RubyString.newString(runtime, requireName))) {
+                return false;
             }
 
-            synchronized (requireLock) {
-                if(!runtime.getProfile().allowRequire(requireName)) {
-                    throw runtime.newLoadError("No such file to load -- " + requireName);
-                }
-
-                if (featureAlreadyLoaded(RubyString.newString(runtime, requireName))) {
-                    return false;
-                }
-
-                long startTime = loadTimer.startLoad(requireName);
-                try {
-                    return smartLoadInternal(requireName);
-                } finally {
-                    loadTimer.endLoad(requireName, startTime);
-                }
+            long startTime = loadTimer.startLoad(requireName);
+            try {
+                return smartLoadInternal(requireName);
+            } finally {
+                loadTimer.endLoad(requireName, startTime);
             }
         } finally {
             synchronized (requireLocks) {
@@ -350,7 +347,7 @@ public class LoadService {
         return require(file);
     }
     
-    protected Map requireLocks = new Hashtable();
+    protected Map<String, Object> requireLocks = new HashMap<String, Object>();
 
     private boolean smartLoadInternal(String file) {
         checkEmptyLoad(file);
@@ -368,8 +365,19 @@ public class LoadService {
                 file = file.replaceAll(".so$", ".jar");
             }
             state = findFileForLoad(file);
+            RubyString searchName = RubyString.newString(runtime, state.loadName);
+            
+            // check with long name
+            if (featureAlreadyLoaded(searchName)) {
+                return false;
+            }
 
-            return tryLoadingLibraryOrScript(runtime, state);
+            boolean loaded = tryLoadingLibraryOrScript(runtime, state);
+            if (loaded) {
+                addLoadedFeature(searchName);
+            }
+            return loaded;
+
         } catch (AlreadyLoaded al) {
             // Library has already been loaded in some form, bail out
             return false;
@@ -756,11 +764,8 @@ public class LoadService {
     
     protected boolean tryLoadingLibraryOrScript(Ruby runtime, SearchState state) {
         // attempt to load the found library
-        RubyString loadNameRubyString = RubyString.newString(runtime, state.loadName);
         try {
-            // otherwise load the library we've found
             state.library.load(runtime, false);
-            addLoadedFeature(loadNameRubyString);
             return true;
         } catch (MainExitException mee) {
             // allow MainExitException to propagate out for exec and friends
