@@ -301,7 +301,7 @@ public class LoadService {
                     requireLock = new Object();
                     requireLocks.put(requireName, requireLock);
                 } else {
-                    if (runtime.isVerbose()) {
+                    if (runtime.isVerbose() && runtime.is1_9()) {
                         warnCircularRequire(requireName);
                     }
                     return false;
@@ -338,7 +338,7 @@ public class LoadService {
         RaiseException ex = new RaiseException(runtime, runtime.getRuntimeError(), null, false);
         String trace = runtime.getInstanceConfig().getTraceType().printBacktrace(ex.getException());
         // rb_backtrace dumps to stderr directly.
-        System.err.println(trace.replaceFirst("[^\n]*\n", ""));
+        System.err.print(trace.replaceFirst("[^\n]*\n", ""));
     }
 
     /**
