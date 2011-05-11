@@ -217,7 +217,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 RubyClass   mc  = r.getMetaClass();
                 String      arg = ((StringLiteral)getCallArgs()[0])._str_value;
                 Visibility  v   = mc.searchMethod(arg).getVisibility();
-                rVal = rt.newBoolean(v.isPrivate() || (v.isProtected() && mc.getRealClass().isInstance(r)));
+                rVal = rt.newBoolean((v != null) && !v.isPrivate() && !(v.isProtected() && mc.getRealClass().isInstance(r)));
                 break;
             }
             case CLASS_VAR_DEFINED:
