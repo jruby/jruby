@@ -36,7 +36,7 @@ public class DefineClassInstr extends TwoOperandInstr {
             module = container.getMetaClass();
         } else {
             RubyClass sc = (RubyClass)getOperand2().retrieve(interp);
-            module = container.defineOrGetClassUnder(scope.getName(), sc == null ? runtime.getObject() : sc);
+            module = container.defineOrGetClassUnder(scope.getName(), sc);
         }
 
         cmo.interpretBody(interp, interp.getContext(), module);
