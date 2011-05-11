@@ -10,6 +10,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
+import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
@@ -145,7 +146,8 @@ public class JRubyImplCallInstr extends CallInstr {
             {
                 IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(interp);
                 name = ((StringLiteral)getCallArgs()[1])._str_value;
-                rVal = (new StringLiteral(RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name))).retrieve(interp);
+					 String definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
+                rVal = (definedType == null ? Nil.NIL : (new StringLiteral(definedType))).retrieve(interp);
                 break;
             }
             case BLOCK_GIVEN:
