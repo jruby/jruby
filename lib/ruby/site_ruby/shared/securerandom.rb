@@ -94,9 +94,28 @@ class SecureRandom
   # 0.0 <= SecureRandom.random_number() < 1.0.
   def self.random_number(n=0)
     if 0 < n
-      java.security.SecureRandom.new.nextInt(n)
+      hex = n.to_s(16)
+      hex = '0' + hex if (hex.length & 1) == 1
+      bin = [hex].pack("H*")
+      mask = string_ord_of_initial_byte(bin)
+      mask |= mask >> 1
+      mask |= mask >> 2
+      mask |= mask >> 4
+      begin
+        rnd = SecureRandom.random_bytes(bin.length)
+        rnd[0] = (string_ord_of_initial_byte(rnd) & mask).chr
+      end until rnd < bin
+      rnd.unpack("H*")[0].hex
     else
       java.security.SecureRandom.new.nextDouble
+    end
+  end
+
+  class << self
+    private
+    # String[0].ord for both 1.8.7 & 1.9.2 compatible.
+    def string_ord_of_initial_byte(bin)
+      bin.bytes.first
     end
   end
 end
