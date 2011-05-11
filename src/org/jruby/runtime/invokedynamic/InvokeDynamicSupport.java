@@ -14,7 +14,6 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.CompiledMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.Framing;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -29,6 +28,8 @@ import org.objectweb.asm.Opcodes;
 @SuppressWarnings("deprecation")
 public class InvokeDynamicSupport {
     private static final int MAX_FAIL_COUNT = SafePropertyAccessor.getInt("jruby.compile.invokedynamic.maxfail", 2);
+    private static final boolean LOG_INDY_BINDINGS = SafePropertyAccessor.getBoolean("jruby.invokedynamic.log.binding");
+    
     public static class JRubyCallSite extends MutableCallSite {
         private final CallType callType;
         private final MethodType type;
@@ -76,13 +77,14 @@ public class InvokeDynamicSupport {
         return new org.objectweb.asm.MethodHandle(Opcodes.MH_INVOKESTATIC, p(InvokeDynamicSupport.class), "bootstrap", BOOTSTRAP_SIGNATURE_DESC);
     }
 
-    private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
-        return createGWT(test, target, fallback, entry, site, true);
+    private static MethodHandle createGWT(String name, MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
+        return createGWT(name, test, target, fallback, entry, site, true);
     }
 
-    private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
+    private static MethodHandle createGWT(String name, MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
         // only direct invoke if no block passed (for now)
-        if (site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class) {
+        if (site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class &&
+                entry.method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
             MethodHandle nativeTarget = handleForMethod(entry.method);
             if (nativeTarget != null) {
                 DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
@@ -99,6 +101,8 @@ public class InvokeDynamicSupport {
         }
         
         // no direct native path, use DynamicMethod.call target provided
+        if (LOG_INDY_BINDINGS) System.out.println("binding " + name + " as DynamicMethod.call");
+        
         MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
         MethodHandle myTarget = MethodHandles.insertArguments(target, 0, entry);
         MethodHandle myFallback = curryFallback ? MethodHandles.insertArguments(fallback, 0, site) : fallback;
@@ -202,6 +206,18 @@ public class InvokeDynamicSupport {
         SELF_TC_3ARG_PERMUTE,
         SELF_TC_NARG_PERMUTE
     };
+    private static final int[] SELF_PERMUTE = {2};
+    private static final int[] SELF_1ARG_PERMUTE = {2, 4};
+    private static final int[] SELF_2ARG_PERMUTE = {2, 4, 5};
+    private static final int[] SELF_3ARG_PERMUTE = {2, 4, 5, 6};
+    private static final int[] SELF_NARG_PERMUTE = {2, 4};
+    private static final int[][] SELF_ARGS_PERMUTES = {
+        SELF_PERMUTE,
+        SELF_1ARG_PERMUTE,
+        SELF_2ARG_PERMUTE,
+        SELF_3ARG_PERMUTE,
+        SELF_NARG_PERMUTE
+    };
     private static final int[] SELF_TC_BLOCK_PERMUTE = {2, 0, 4};
     private static final int[] SELF_TC_1ARG_BLOCK_PERMUTE = {2, 0, 4, 5};
     private static final int[] SELF_TC_2ARG_BLOCK_PERMUTE = {2, 0, 4, 5, 6};
@@ -213,6 +229,18 @@ public class InvokeDynamicSupport {
         SELF_TC_2ARG_BLOCK_PERMUTE,
         SELF_TC_3ARG_BLOCK_PERMUTE,
         SELF_TC_NARG_BLOCK_PERMUTE
+    };
+    private static final int[] SELF_BLOCK_PERMUTE = {2, 4};
+    private static final int[] SELF_1ARG_BLOCK_PERMUTE = {2, 4, 5};
+    private static final int[] SELF_2ARG_BLOCK_PERMUTE = {2, 4, 5, 6};
+    private static final int[] SELF_3ARG_BLOCK_PERMUTE = {2, 4, 5, 6, 7};
+    private static final int[] SELF_NARG_BLOCK_PERMUTE = {2, 4, 5};
+    private static final int[][] SELF_ARGS_BLOCK_PERMUTES = {
+        SELF_BLOCK_PERMUTE,
+        SELF_1ARG_BLOCK_PERMUTE,
+        SELF_2ARG_BLOCK_PERMUTE,
+        SELF_3ARG_BLOCK_PERMUTE,
+        SELF_NARG_BLOCK_PERMUTE
     };
     private static final int[] TC_SELF_PERMUTE = {0, 2};
     private static final int[] TC_SELF_1ARG_PERMUTE = {0, 2, 4};
@@ -269,18 +297,24 @@ public class InvokeDynamicSupport {
                 int argCount = getArgCount(nativeCall.getNativeSignature(), isStatic);
                 MethodType inboundType = STANDARD_NATIVE_TYPES[argCount];
                 if (nativeSig.length > 0) {
+                    int[] permute;
                     if (nativeSig[0] == ThreadContext.class) {
-                        int[] permute;
                         if (nativeSig[nativeSig.length - 1] == Block.class) {
                             permute = isStatic ? TC_SELF_ARGS_BLOCK_PERMUTES[argCount] : SELF_TC_ARGS_BLOCK_PERMUTES[argCount];
                         } else {
                             permute = isStatic ? TC_SELF_ARGS_PERMUTES[argCount] : SELF_TC_ARGS_PERMUTES[argCount];
                         }
-
-                        nativeTarget = MethodHandles.permuteArguments(nativeTarget, inboundType, permute);
-                        method.setHandle(nativeTarget);
-                        return nativeTarget;
+                    } else {
+                        if (nativeSig[nativeSig.length - 1] == Block.class) {
+                            permute = isStatic ? SELF_ARGS_BLOCK_PERMUTES[argCount] : SELF_ARGS_BLOCK_PERMUTES[argCount];
+                        } else {
+                            permute = isStatic ? SELF_ARGS_PERMUTES[argCount] : SELF_ARGS_PERMUTES[argCount];
+                        }
                     }
+
+                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, inboundType, permute);
+                    method.setHandle(nativeTarget);
+                    return nativeTarget;
                 }
             }
         }
@@ -317,6 +351,9 @@ public class InvokeDynamicSupport {
             MethodHandle fallback,
             JRubyCallSite site,
             boolean curryFallback) {
+        
+        if (LOG_INDY_BINDINGS) System.out.println("binding native target: " + nativeCall);
+        
         MethodHandle myFallback = curryFallback ? MethodHandles.insertArguments(fallback, 0, site) : fallback;
         MethodHandle myTest = MethodHandles.insertArguments(test, 0, token);
         MethodHandle gwt = MethodHandles.guardWithTest(myTest, nativeTarget, myFallback);
@@ -331,6 +368,8 @@ public class InvokeDynamicSupport {
             MethodHandle fallback,
             JRubyCallSite site,
             boolean curryFallback) {
+        
+        if (LOG_INDY_BINDINGS) System.out.println("binding ruby target: " + nativeCall);
         
         try {
             // juggle args into correct places
@@ -432,9 +471,9 @@ public class InvokeDynamicSupport {
             site.setTarget(createFail(FAIL_0, site));
         } else {
             if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_0, TARGET_0, site.getTarget(), entry, site, false));
+                site.setTarget(createGWT(name, TEST_0, TARGET_0, site.getTarget(), entry, site, false));
             } else {
-                site.setTarget(createGWT(TEST_0, TARGET_0, FALLBACK_0, entry, site));
+                site.setTarget(createGWT(name, TEST_0, TARGET_0, FALLBACK_0, entry, site));
             }
         }
 
@@ -451,9 +490,9 @@ public class InvokeDynamicSupport {
             site.setTarget(createFail(FAIL_1, site));
         } else {
             if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_1, TARGET_1, site.getTarget(), entry, site, false));
+                site.setTarget(createGWT(name, TEST_1, TARGET_1, site.getTarget(), entry, site, false));
             } else {
-                site.setTarget(createGWT(TEST_1, TARGET_1, FALLBACK_1, entry, site));
+                site.setTarget(createGWT(name, TEST_1, TARGET_1, FALLBACK_1, entry, site));
             }
         }
 
@@ -470,9 +509,9 @@ public class InvokeDynamicSupport {
             site.setTarget(createFail(FAIL_2, site));
         } else {
             if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_2, TARGET_2, site.getTarget(), entry, site, false));
+                site.setTarget(createGWT(name, TEST_2, TARGET_2, site.getTarget(), entry, site, false));
             } else {
-                site.setTarget(createGWT(TEST_2, TARGET_2, FALLBACK_2, entry, site));
+                site.setTarget(createGWT(name, TEST_2, TARGET_2, FALLBACK_2, entry, site));
             }
         }
 
@@ -489,9 +528,9 @@ public class InvokeDynamicSupport {
             site.setTarget(createFail(FAIL_3, site));
         } else {
             if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_3, TARGET_3, site.getTarget(), entry, site, false));
+                site.setTarget(createGWT(name, TEST_3, TARGET_3, site.getTarget(), entry, site, false));
             } else {
-                site.setTarget(createGWT(TEST_3, TARGET_3, FALLBACK_3, entry, site));
+                site.setTarget(createGWT(name, TEST_3, TARGET_3, FALLBACK_3, entry, site));
             }
         }
 
@@ -508,9 +547,9 @@ public class InvokeDynamicSupport {
             site.setTarget(createFail(FAIL_N, site));
         } else {
             if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_N, TARGET_N, site.getTarget(), entry, site, false));
+                site.setTarget(createGWT(name, TEST_N, TARGET_N, site.getTarget(), entry, site, false));
             } else {
-                site.setTarget(createGWT(TEST_N, TARGET_N, FALLBACK_N, entry, site));
+                site.setTarget(createGWT(name, TEST_N, TARGET_N, FALLBACK_N, entry, site));
             }
         }
 
@@ -529,9 +568,9 @@ public class InvokeDynamicSupport {
                 site.setTarget(createFail(FAIL_0_B, site));
             } else {
                 if (site.getTarget() != null) {
-                    site.setTarget(createGWT(TEST_0_B, TARGET_0_B, site.getTarget(), entry, site, false));
+                    site.setTarget(createGWT(name, TEST_0_B, TARGET_0_B, site.getTarget(), entry, site, false));
                 } else {
-                    site.setTarget(createGWT(TEST_0_B, TARGET_0_B, FALLBACK_0_B, entry, site));
+                    site.setTarget(createGWT(name, TEST_0_B, TARGET_0_B, FALLBACK_0_B, entry, site));
                 }
             }
             return entry.method.call(context, self, selfClass, name, block);
@@ -556,9 +595,9 @@ public class InvokeDynamicSupport {
                 site.setTarget(createFail(FAIL_1_B, site));
             } else {
                 if (site.getTarget() != null) {
-                    site.setTarget(createGWT(TEST_1_B, TARGET_1_B, site.getTarget(), entry, site, false));
+                    site.setTarget(createGWT(name, TEST_1_B, TARGET_1_B, site.getTarget(), entry, site, false));
                 } else {
-                    site.setTarget(createGWT(TEST_1_B, TARGET_1_B, FALLBACK_1_B, entry, site));
+                    site.setTarget(createGWT(name, TEST_1_B, TARGET_1_B, FALLBACK_1_B, entry, site));
                 }
             }
             return entry.method.call(context, self, selfClass, name, arg0, block);
@@ -583,9 +622,9 @@ public class InvokeDynamicSupport {
                 site.setTarget(createFail(FAIL_2_B, site));
             } else {
                 if (site.getTarget() != null) {
-                    site.setTarget(createGWT(TEST_2_B, TARGET_2_B, site.getTarget(), entry, site, false));
+                    site.setTarget(createGWT(name, TEST_2_B, TARGET_2_B, site.getTarget(), entry, site, false));
                 } else {
-                    site.setTarget(createGWT(TEST_2_B, TARGET_2_B, FALLBACK_2_B, entry, site));
+                    site.setTarget(createGWT(name, TEST_2_B, TARGET_2_B, FALLBACK_2_B, entry, site));
                 }
             }
             return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
@@ -610,9 +649,9 @@ public class InvokeDynamicSupport {
                 site.setTarget(createFail(FAIL_3_B, site));
             } else {
                 if (site.getTarget() != null) {
-                    site.setTarget(createGWT(TEST_3_B, TARGET_3_B, site.getTarget(), entry, site, false));
+                    site.setTarget(createGWT(name, TEST_3_B, TARGET_3_B, site.getTarget(), entry, site, false));
                 } else {
-                    site.setTarget(createGWT(TEST_3_B, TARGET_3_B, FALLBACK_3_B, entry, site));
+                    site.setTarget(createGWT(name, TEST_3_B, TARGET_3_B, FALLBACK_3_B, entry, site));
                 }
             }
             return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
@@ -637,9 +676,9 @@ public class InvokeDynamicSupport {
                 site.setTarget(createFail(FAIL_N_B, site));
             } else {
                 if (site.getTarget() != null) {
-                    site.setTarget(createGWT(TEST_N_B, TARGET_N_B, site.getTarget(), entry, site, false));
+                    site.setTarget(createGWT(name, TEST_N_B, TARGET_N_B, site.getTarget(), entry, site, false));
                 } else {
-                    site.setTarget(createGWT(TEST_N_B, TARGET_N_B, FALLBACK_N_B, entry, site));
+                    site.setTarget(createGWT(name, TEST_N_B, TARGET_N_B, FALLBACK_N_B, entry, site));
                 }
             }
             return entry.method.call(context, self, selfClass, name, args, block);
