@@ -87,9 +87,9 @@ public class MetaObject extends Operand {
     public RubyModule interpretBody(InterpreterContext interp, ThreadContext context, RubyModule module) {
         scope.getStaticScope().setModule(module);
         IRMethod rootMethod = ((IRModule) scope).getRootMethod();
-        DynamicMethod method = new InterpretedIRMethod(rootMethod, module.getMetaClass());
+        DynamicMethod method = new InterpretedIRMethod(rootMethod, module);
 
-        method.call(context, module, module.getMetaClass(), "", new IRubyObject[]{});
+        method.call(context, module, module, "", new IRubyObject[]{});
 
         return module;
     }

@@ -6,6 +6,7 @@
 package org.jruby.interpreter;
 
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
@@ -37,8 +38,12 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
     private Label methodExitLabel = null;
 
-    public NaiveInterpreterContext(ThreadContext context, IRubyObject self, int localVariablesSize, int temporaryVariablesSize, int renamedVariablesSize, IRubyObject[] parameters, Block block) {
-        context.preMethodFrameOnly(self.getMetaClass(), null, self, block);
+	 // currentModule is:
+	 // - self if we are executing a class method of 'self'
+	 // - self.getMetaClass() if we are executing an instance method of 'self'
+	 // - the class in which the closure is lexically defined in if we are executing a closure
+    public NaiveInterpreterContext(ThreadContext context, RubyModule currentModule, IRubyObject self, int localVariablesSize, int temporaryVariablesSize, int renamedVariablesSize, IRubyObject[] parameters, Block block) {
+        context.preMethodFrameOnly(currentModule, null, self, block);
         this.frame = context.getCurrentFrame();
 
         this.context = context;
