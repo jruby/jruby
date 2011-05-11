@@ -37,6 +37,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.internal.runtime.methods.AttrWriterMethod;
+import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
@@ -69,8 +71,6 @@ import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
-import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.internal.runtime.methods.MethodMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.ProfilingDynamicMethod;
@@ -1253,43 +1253,12 @@ public class RubyModule extends RubyObject {
         }
         final String variableName = ("@" + internedName).intern();
         if (readable) {
-            addMethod(internedName, new JavaMethodZero(this, visibility, CallConfiguration.FrameNoneScopeNone) {
-                private RubyClass.VariableAccessor accessor = RubyClass.VariableAccessor.DUMMY_ACCESSOR;
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                    IRubyObject variable = (IRubyObject)verifyAccessor(self.getMetaClass().getRealClass()).get(self);
-
-                    return variable == null ? runtime.getNil() : variable;
-                }
-
-                private RubyClass.VariableAccessor verifyAccessor(RubyClass cls) {
-                    RubyClass.VariableAccessor localAccessor = accessor;
-                    if (localAccessor.getClassId() != cls.id) {
-                        localAccessor = cls.getVariableAccessorForRead(variableName);
-                        accessor = localAccessor;
-                    }
-                    return localAccessor;
-                }
-            });
+            addMethod(internedName, new AttrReaderMethod(this, visibility, CallConfiguration.FrameNoneScopeNone, variableName));
             callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
         }
         if (writeable) {
             internedName = (internedName + "=").intern();
-            addMethod(internedName, new JavaMethodOne(this, visibility, CallConfiguration.FrameNoneScopeNone) {
-                private RubyClass.VariableAccessor accessor = RubyClass.VariableAccessor.DUMMY_ACCESSOR;
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg1) {
-                    verifyAccessor(self.getMetaClass().getRealClass()).set(self, arg1);
-                    return arg1;
-                }
-
-                private RubyClass.VariableAccessor verifyAccessor(RubyClass cls) {
-                    RubyClass.VariableAccessor localAccessor = accessor;
-                    if (localAccessor.getClassId() != cls.id) {
-                        localAccessor = cls.getVariableAccessorForWrite(variableName);
-                        accessor = localAccessor;
-                    }
-                    return localAccessor;
-                }
-            });
+            addMethod(internedName, new AttrWriterMethod(this, visibility, CallConfiguration.FrameNoneScopeNone, variableName));
             callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
         }
     }
