@@ -81,13 +81,20 @@ public class InvokeDynamicSupport {
     }
 
     private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
-        MethodHandle nativeTarget = handleForMethod(entry.method);
-        if (nativeTarget != null) {
-            DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
-            if (entry.method instanceof CompiledMethod) {
-                return createRubyGWT(entry.token, nativeTarget, nativeCall, test, fallback, site, curryFallback);
-            } else {
-                return createNativeGWT(entry.token, nativeTarget, nativeCall, test, fallback, site, curryFallback);
+        // only direct invoke if no block passed (for now)
+        if (site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class) {
+            MethodHandle nativeTarget = handleForMethod(entry.method);
+            if (nativeTarget != null) {
+                DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
+                if (entry.method instanceof CompiledMethod) {
+                    return createRubyGWT(entry.token, nativeTarget, nativeCall, test, fallback, site, curryFallback);
+                } else {
+                    if (site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class
+                            && nativeTarget.type().parameterArray()[nativeTarget.type().parameterCount() - 1] == Block.class) {
+                        nativeTarget = MethodHandles.insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
+                    }
+                    return createNativeGWT(entry.token, nativeTarget, nativeCall, test, fallback, site, curryFallback);
+                }
             }
         }
         
@@ -101,96 +108,185 @@ public class InvokeDynamicSupport {
     }
     
     private static MethodHandle handleForMethod(DynamicMethod method) {
-        if (method.getHandle() != null) return (MethodHandle)method.getHandle();
+        MethodHandle nativeTarget = null;
         
-        if (method.getNativeCall() != null) {
-            DynamicMethod.NativeCall nativeCall = method.getNativeCall();
-            Class[] nativeSig = nativeCall.getNativeSignature();
-            // use invokedynamic for ruby to ruby calls
-            if (nativeSig.length > 0 && AbstractScript.class.isAssignableFrom(nativeSig[0])) {
-                if (method instanceof CompiledMethod) {
-                    return createRubyHandle(method);
+        if (method.getHandle() != null) {
+            nativeTarget = (MethodHandle)method.getHandle();
+        } else {
+            if (method.getNativeCall() != null) {
+                DynamicMethod.NativeCall nativeCall = method.getNativeCall();
+                Class[] nativeSig = nativeCall.getNativeSignature();
+                // use invokedynamic for ruby to ruby calls
+                if (nativeSig.length > 0 && AbstractScript.class.isAssignableFrom(nativeSig[0])) {
+                    if (method instanceof CompiledMethod) {
+                        return createRubyHandle(method);
+                    }
                 }
-            }
-            // use invokedynamic for ruby to native calls
-            if (getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
-                if (nativeSig.length > 0 && nativeSig[0] == ThreadContext.class && nativeSig[nativeSig.length - 1] != Block.class) {
-                    return createNativeHandle(method);
-                }
+
+                // use invokedynamic for ruby to native calls
+                nativeTarget = createNativeHandle(method);
             }
         }
         
-        // could not build a handle
-        return null;
+        return nativeTarget;
     }
 
     private static MethodHandle createFail(MethodHandle fail, JRubyCallSite site) {
         MethodHandle myFail = MethodHandles.insertArguments(fail, 0, site);
         return myFail;
     }
-
-    private static MethodHandle createNativeGWT(
-            int token,
-            MethodHandle nativeTarget,
-            DynamicMethod.NativeCall nativeCall,
-            MethodHandle test,
-            MethodHandle fallback,
-            JRubyCallSite site,
-            boolean curryFallback) {
-        try {
-            boolean isStatic = nativeCall.isStatic();
-            int argCount = getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
-            switch (argCount) {
-                case 0:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2} : new int[] {2, 0});
-                    break;
-                case -1:
-                case 1:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2, 4} : new int[] {2, 0, 4});
-                    break;
-                case 2:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2, 4, 5} : new int[] {2, 0, 4, 5});
-                    break;
-                case 3:
-                    nativeTarget = MethodHandles.permuteArguments(nativeTarget, site.type(), isStatic ? new int[] {0, 2, 4, 5, 6} : new int[] {2, 0, 4, 5, 6});
-                    break;
-                default:
-                    throw new RuntimeException("unknown arg count: " + argCount);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        
-        MethodHandle myFallback = curryFallback ? MethodHandles.insertArguments(fallback, 0, site) : fallback;
-        MethodHandle myTest = MethodHandles.insertArguments(test, 0, token);
-        MethodHandle gwt = MethodHandles.guardWithTest(myTest, nativeTarget, myFallback);
-        return MethodHandles.convertArguments(gwt, site.type());
-    }
+    
+    private static final MethodType STANDARD_NATIVE_TYPE_0 = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // caller
+            IRubyObject.class, // self
+            String.class, // method name
+            Block.class // block
+            );
+    private static final MethodType STANDARD_NATIVE_TYPE_1 = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // caller
+            IRubyObject.class, // self
+            String.class, // method name
+            IRubyObject.class, // arg0
+            Block.class // block
+            );
+    private static final MethodType STANDARD_NATIVE_TYPE_2 = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // caller
+            IRubyObject.class, // self
+            String.class, // method name
+            IRubyObject.class, // arg0
+            IRubyObject.class, // arg1
+            Block.class // block
+            );
+    private static final MethodType STANDARD_NATIVE_TYPE_3 = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // caller
+            IRubyObject.class, // self
+            String.class, // method name
+            IRubyObject.class, // arg0
+            IRubyObject.class, // arg1
+            IRubyObject.class, // arg2
+            Block.class // block
+            );
+    private static final MethodType STANDARD_NATIVE_TYPE_N = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // caller
+            IRubyObject.class, // self
+            String.class, // method name
+            IRubyObject[].class, // args
+            Block.class // block
+            );
+    private static final MethodType[] STANDARD_NATIVE_TYPES = {
+        STANDARD_NATIVE_TYPE_0,
+        STANDARD_NATIVE_TYPE_1,
+        STANDARD_NATIVE_TYPE_2,
+        STANDARD_NATIVE_TYPE_3,
+        STANDARD_NATIVE_TYPE_N,
+    };
+    private static final int[] SELF_TC_PERMUTE = {2, 0};
+    private static final int[] SELF_TC_1ARG_PERMUTE = {2, 0, 4};
+    private static final int[] SELF_TC_2ARG_PERMUTE = {2, 0, 4, 5};
+    private static final int[] SELF_TC_3ARG_PERMUTE = {2, 0, 4, 5, 6};
+    private static final int[] SELF_TC_NARG_PERMUTE = {2, 0, 4};
+    private static final int[][] SELF_TC_ARGS_PERMUTES = {
+        SELF_TC_PERMUTE,
+        SELF_TC_1ARG_PERMUTE,
+        SELF_TC_2ARG_PERMUTE,
+        SELF_TC_3ARG_PERMUTE,
+        SELF_TC_NARG_PERMUTE
+    };
+    private static final int[] SELF_TC_BLOCK_PERMUTE = {2, 0, 4};
+    private static final int[] SELF_TC_1ARG_BLOCK_PERMUTE = {2, 0, 4, 5};
+    private static final int[] SELF_TC_2ARG_BLOCK_PERMUTE = {2, 0, 4, 5, 6};
+    private static final int[] SELF_TC_3ARG_BLOCK_PERMUTE = {2, 0, 4, 5, 6, 7};
+    private static final int[] SELF_TC_NARG_BLOCK_PERMUTE = {2, 0, 4, 5};
+    private static final int[][] SELF_TC_ARGS_BLOCK_PERMUTES = {
+        SELF_TC_BLOCK_PERMUTE,
+        SELF_TC_1ARG_BLOCK_PERMUTE,
+        SELF_TC_2ARG_BLOCK_PERMUTE,
+        SELF_TC_3ARG_BLOCK_PERMUTE,
+        SELF_TC_NARG_BLOCK_PERMUTE
+    };
+    private static final int[] TC_SELF_PERMUTE = {0, 2};
+    private static final int[] TC_SELF_1ARG_PERMUTE = {0, 2, 4};
+    private static final int[] TC_SELF_2ARG_PERMUTE = {0, 2, 4, 5};
+    private static final int[] TC_SELF_3ARG_PERMUTE = {0, 2, 4, 5, 6};
+    private static final int[] TC_SELF_NARG_PERMUTE = {0, 2, 4};
+    private static final int[][] TC_SELF_ARGS_PERMUTES = {
+        TC_SELF_PERMUTE,
+        TC_SELF_1ARG_PERMUTE,
+        TC_SELF_2ARG_PERMUTE,
+        TC_SELF_3ARG_PERMUTE,
+        TC_SELF_NARG_PERMUTE,
+    };
+    private static final int[] TC_SELF_BLOCK_PERMUTE = {0, 2, 4};
+    private static final int[] TC_SELF_1ARG_BLOCK_PERMUTE = {0, 2, 4, 5};
+    private static final int[] TC_SELF_2ARG_BLOCK_PERMUTE = {0, 2, 4, 5, 6};
+    private static final int[] TC_SELF_3ARG_BLOCK_PERMUTE = {0, 2, 4, 5, 6, 7};
+    private static final int[] TC_SELF_NARG_BLOCK_PERMUTE = {0, 2, 4, 5};
+    private static final int[][] TC_SELF_ARGS_BLOCK_PERMUTES = {
+        TC_SELF_BLOCK_PERMUTE,
+        TC_SELF_1ARG_BLOCK_PERMUTE,
+        TC_SELF_2ARG_BLOCK_PERMUTE,
+        TC_SELF_3ARG_BLOCK_PERMUTE,
+        TC_SELF_NARG_BLOCK_PERMUTE,
+    };
 
     private static MethodHandle createNativeHandle(DynamicMethod method) {
-        DynamicMethod.NativeCall nativeCall = method.getNativeCall();
-        MethodHandle nativeTarget;
+        MethodHandle nativeTarget = null;
         
-        try {
+        if (method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
+            DynamicMethod.NativeCall nativeCall = method.getNativeCall();
+            Class[] nativeSig = nativeCall.getNativeSignature();
             boolean isStatic = nativeCall.isStatic();
-            if (isStatic) {
-                nativeTarget = MethodHandles.lookup().findStatic(
-                        nativeCall.getNativeTarget(),
-                        nativeCall.getNativeName(),
-                        MethodType.methodType(nativeCall.getNativeReturn(),
-                        nativeCall.getNativeSignature()));
-            } else {
-                nativeTarget = MethodHandles.lookup().findVirtual(
-                        nativeCall.getNativeTarget(),
-                        nativeCall.getNativeName(),
-                        MethodType.methodType(nativeCall.getNativeReturn(),
-                        nativeCall.getNativeSignature()));
+            
+            try {
+                if (isStatic) {
+                    nativeTarget = MethodHandles.lookup().findStatic(
+                            nativeCall.getNativeTarget(),
+                            nativeCall.getNativeName(),
+                            MethodType.methodType(nativeCall.getNativeReturn(),
+                            nativeCall.getNativeSignature()));
+                } else {
+                    nativeTarget = MethodHandles.lookup().findVirtual(
+                            nativeCall.getNativeTarget(),
+                            nativeCall.getNativeName(),
+                            MethodType.methodType(nativeCall.getNativeReturn(),
+                            nativeCall.getNativeSignature()));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-            method.setHandle(nativeTarget);
-            return nativeTarget;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            
+            if (getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
+                int argCount = getArgCount(nativeCall.getNativeSignature(), isStatic);
+                MethodType inboundType = STANDARD_NATIVE_TYPES[argCount];
+                if (nativeSig.length > 0) {
+                    if (nativeSig[0] == ThreadContext.class) {
+                        int[] permute;
+                        if (nativeSig[nativeSig.length - 1] == Block.class) {
+                            permute = isStatic ? TC_SELF_ARGS_BLOCK_PERMUTES[argCount] : SELF_TC_ARGS_BLOCK_PERMUTES[argCount];
+                        } else {
+                            permute = isStatic ? TC_SELF_ARGS_PERMUTES[argCount] : SELF_TC_ARGS_PERMUTES[argCount];
+                        }
+
+                        nativeTarget = MethodHandles.permuteArguments(nativeTarget, inboundType, permute);
+                        method.setHandle(nativeTarget);
+                        return nativeTarget;
+                    }
+                }
+            }
         }
+        
+        // can't build native handle for it
+        return null;
     }
 
     private static MethodHandle createRubyHandle(DynamicMethod method) {
@@ -213,6 +309,20 @@ public class InvokeDynamicSupport {
         }
     }
 
+    private static MethodHandle createNativeGWT(
+            int token,
+            MethodHandle nativeTarget,
+            DynamicMethod.NativeCall nativeCall,
+            MethodHandle test,
+            MethodHandle fallback,
+            JRubyCallSite site,
+            boolean curryFallback) {
+        MethodHandle myFallback = curryFallback ? MethodHandles.insertArguments(fallback, 0, site) : fallback;
+        MethodHandle myTest = MethodHandles.insertArguments(test, 0, token);
+        MethodHandle gwt = MethodHandles.guardWithTest(myTest, nativeTarget, myFallback);
+        return MethodHandles.convertArguments(gwt, site.type());
+    }
+
     private static MethodHandle createRubyGWT(
             int token,
             MethodHandle nativeTarget,
@@ -221,6 +331,7 @@ public class InvokeDynamicSupport {
             MethodHandle fallback,
             JRubyCallSite site,
             boolean curryFallback) {
+        
         try {
             // juggle args into correct places
             int argCount = getRubyArgCount(nativeCall.getNativeSignature());
@@ -244,6 +355,7 @@ public class InvokeDynamicSupport {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        
         
         // wire up GWT + test and fallback
         MethodHandle myFallback = curryFallback ? MethodHandles.insertArguments(fallback, 0, site) : fallback;
