@@ -3638,21 +3638,19 @@ public class RubyArray extends RubyObject implements List {
         if (realLength == 0) {
             return context.nil;
         }
-        return eltOk(begin + context.runtime.getRandom().nextInt(realLength));
+        return eltOk((int) (context.runtime.getDefaultRand().genrandReal() * realLength));
     }
-
+    
     @JRubyMethod(name = "shuffle!", compat = RUBY1_8)
     public IRubyObject shuffle_bang(ThreadContext context) {
         modify();
-        Random random = context.getRuntime().getRandom();
-        
         int i = realLength;
         
         try {
             while (i > 0) {
-                int r = random.nextInt(i);
-                IRubyObject tmp = values[begin + --i];
-                values[begin + i] = values[begin + r];
+                int r = (int)(context.runtime.getDefaultRand().genrandReal() * i);
+                IRubyObject tmp = eltOk(--i);
+                values[begin + i] = eltOk(r);
                 values[begin + r] = tmp;
             }
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -3673,12 +3671,11 @@ public class RubyArray extends RubyObject implements List {
             }
         }
         int i = realLength;
-
         try {
             while (i > 0) {
-                int r = randomReal(context, randgen, i);
-                IRubyObject tmp = values[begin + --i];
-                values[begin + i] = values[begin + r];
+                int r = (int) (RubyRandom.randomReal(context, randgen) * i);
+                IRubyObject tmp = eltOk(--i);
+                values[begin + i] = eltOk(r);
                 values[begin + r] = tmp;
             }
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -3711,7 +3708,7 @@ public class RubyArray extends RubyObject implements List {
                 if (realLength == 0)
                     return context.nil;
                 int i = realLength == 1 ? 0 : randomReal(context, randgen, realLength);
-                return values[begin + i];
+                return eltOk(i);
             }
             if (args.length > 0) {
                 IRubyObject hash = TypeConverter.checkHashType(context.runtime,
@@ -3727,9 +3724,9 @@ public class RubyArray extends RubyObject implements List {
                 if (realLength == 0) {
                     return context.nil;
                 } else if (realLength == 1) {
-                    return values[0];
+                    return eltOk(0);
                 }
-                return values[randomReal(context, randgen, realLength)];
+                return eltOk(randomReal(context, randgen, realLength));
             }
             Ruby runtime = context.getRuntime();
             int n = RubyNumeric.num2int(args[0]);
@@ -3753,13 +3750,13 @@ public class RubyArray extends RubyObject implements List {
                 if (realLength <= 0)
                     return newEmptyArray(runtime);
 
-                return newArray(runtime, values[begin + (int) (rnds[0] * realLength)]);
+                return newArray(runtime, eltOk((int) (rnds[0] * realLength)));
             case 2:
                 i = (int) (rnds[0] * realLength);
                 j = (int) (rnds[1] * (realLength - 1));
                 if (j >= i)
                     j++;
-                return newArray(runtime, values[begin + i], values[begin + j]);
+                return newArray(runtime, eltOk(i), eltOk(j));
             case 3:
                 i = (int) (rnds[0] * realLength);
                 j = (int) (rnds[1] * (realLength - 1));
@@ -3772,8 +3769,8 @@ public class RubyArray extends RubyObject implements List {
                 }
                 if (k >= l && (++k >= g))
                     ++k;
-                return new RubyArray(runtime, new IRubyObject[] { values[begin + i],
-                        values[begin + j], values[begin + k] });
+                return new RubyArray(runtime, new IRubyObject[] { eltOk(i),
+                        eltOk(j), eltOk(k) });
             }
 
             int len = realLength;
@@ -3795,7 +3792,7 @@ public class RubyArray extends RubyObject implements List {
                 }
                 IRubyObject[] result = new IRubyObject[n];
                 for (i = 0; i < n; i++)
-                    result[i] = values[begin + idx[i]];
+                    result[i] = eltOk(idx[i]);
                 return new RubyArray(runtime, result);
             } else {
                 IRubyObject[] result = new IRubyObject[len];
@@ -3815,84 +3812,11 @@ public class RubyArray extends RubyObject implements List {
             return this; // not reached
         }
     }
-    
-    @JRubyMethod(name = "sample", compat = RUBY1_9)
-    public IRubyObject sample(ThreadContext context, IRubyObject nv) {
-        Ruby runtime = context.getRuntime();
-        Random random = runtime.getRandom();
-        int n = RubyNumeric.num2int(nv);
-
-        if (n < 0) throw runtime.newArgumentError("negative sample number");
-        if (n > realLength) n = realLength;
-
-        int i, j, k;
-        try {
-            switch (n) {
-            case 0:
-                return newEmptyArray(runtime);
-            case 1:
-                if (realLength <= 0) return newEmptyArray(runtime);
-
-                return newArray(runtime, values[begin + random.nextInt(realLength)]);
-            case 2:
-                i = random.nextInt(realLength);
-                j = random.nextInt(realLength - 1);
-                if (j >= i) j++;
-                return newArray(runtime, values[begin + i], values[begin + j]);
-            case 3:
-                i = random.nextInt(realLength);
-                j = random.nextInt(realLength - 1);
-                k = random.nextInt(realLength - 2);
-                int l = j, g = i;
-                if (j >= i) {
-                    l = i;
-                    g = ++j;
-                }
-                if (k >= l && (++k >= g)) ++k;
-                return new RubyArray(runtime, new IRubyObject[] {values[begin + i], values[begin + j], values[begin + k]});
-            }
-
-            int len = realLength;
-            if (n > len) n = len;
-            if (n < SORTED_THRESHOLD) {
-                int idx[] = new int[SORTED_THRESHOLD];
-                int sorted[] = new int[SORTED_THRESHOLD];
-                sorted[0] = idx[0] = random.nextInt(len);
-                for (i = 1; i < n; i++) {
-                    k = random.nextInt(--len);
-                    for (j = 0; j < i; j++) {
-                        if (k < sorted[j]) break;
-                        k++;
-                    }
-                    System.arraycopy(sorted, j, sorted, j + 1, i - j);
-                    sorted[j] = idx[i] = k;
-                }
-                IRubyObject[]result = new IRubyObject[n];
-                for (i = 0; i < n; i++) result[i] = values[begin + idx[i]];
-                return new RubyArray(runtime, result);
-            } else {
-                IRubyObject[]result = new IRubyObject[len];
-                System.arraycopy(values, begin, result, 0, len);
-                for (i = 0; i < n; i++) {
-                    j = random.nextInt(len - i) + i;
-                    IRubyObject tmp = result[j];
-                    result[j] = result[i];
-                    result[i] = tmp;
-                }
-                RubyArray ary = new RubyArray(runtime, result);
-                ary.realLength = n;
-                return ary;
-            }
-        } catch (ArrayIndexOutOfBoundsException aioob) {
-            concurrentModification();
-            return this; // not reached
-        }
-    }
 
     private int randomReal(ThreadContext context, IRubyObject randgen, int len) {
         return (int) (RubyRandom.randomReal(context, randgen) * len);
     }
-    
+
     private static void aryReverse(IRubyObject[] _p1, int p1, IRubyObject[] _p2, int p2) {
         while(p1 < p2) {
             IRubyObject tmp = _p1[p1];

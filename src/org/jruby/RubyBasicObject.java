@@ -795,13 +795,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return TypeConverter.convertToTypeWithCheck(this, getRuntime().getArray(), "to_ary");
     }
 
-    // 1.9 rb_check_to_integer
-    IRubyObject checkIntegerType(Ruby runtime, IRubyObject obj, String method) {
-        if (obj instanceof RubyFixnum) return obj;
-        IRubyObject conv = TypeConverter.convertToType(obj, getRuntime().getInteger(), method, false);
-        return conv instanceof RubyInteger ? conv : obj.getRuntime().getNil();
-    }
-
     /**
      * @see IRubyObject.toJava
      */

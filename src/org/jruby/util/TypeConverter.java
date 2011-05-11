@@ -29,6 +29,10 @@ package org.jruby.util;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyInteger;
+import org.jruby.RubyNumeric;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -229,6 +233,26 @@ public class TypeConverter {
         if (val.isNil()) return val;
         if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
         return val;
+    }
+
+    // rb_check_to_integer
+    public static IRubyObject checkIntegerType(Ruby runtime, IRubyObject obj, String method) {
+        if (obj instanceof RubyFixnum) {
+            return obj;
+        }
+        IRubyObject conv = TypeConverter.convertToType(obj, runtime.getInteger(), method, false);
+        return conv instanceof RubyInteger ? conv : runtime.getNil();
+    }
+
+    // 1.9 rb_check_to_float
+    public static IRubyObject checkFloatType(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyFloat) {
+            return obj;
+        }
+        if (!(obj instanceof RubyNumeric)) {
+            return runtime.getNil();
+        }
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getFloat(), "to_f");
     }
 
     // 1.9 rb_check_hash_type

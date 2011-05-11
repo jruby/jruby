@@ -29,7 +29,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 public class Random {
-    private static int N = 624;
+    public static int N = 624;
     private static int M = 397;
     private static int MATRIX_A = 0x9908b0df; /* constant vector a */
     private static int UMASK = 0x80000000; /* most significant w-r bits */
@@ -45,13 +45,6 @@ public class Random {
 
     private final int[] state = new int[N];
     private int left = 1;
-
-    public static void main(String[] args) {
-        Random mt = new Random(1);
-        for (int idx = 0; idx < 1; ++idx) {
-            System.err.println(mt.genrandReal2());
-        }
-    }
 
     public Random(int s) {
         initGenrand(s);

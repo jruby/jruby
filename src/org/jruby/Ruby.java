@@ -52,7 +52,6 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
@@ -128,7 +127,6 @@ import java.io.File;
 import java.nio.channels.ClosedChannelException;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
@@ -1157,10 +1155,6 @@ public final class Ruby {
 
         encodingService = new EncodingService(this);
 
-        if (is1_9()) {
-            RubyRandom.createRandomClass(this);
-        }
-
         RubySymbol.createSymbolClass(this);
 
         if (profile.allowClass("ThreadGroup")) {
@@ -1209,6 +1203,12 @@ public final class Ruby {
         }
         if (profile.allowClass("Bignum")) {
             RubyBignum.createBignumClass(this);
+            // RubyRandom depends on Bignum existence.
+            if (is1_9()) {
+                RubyRandom.createRandomClass(this);
+            } else {
+                setDefaultRand(new RubyRandom.RandomType(this));
+            }
         }
         ioClass = RubyIO.createIOClass(this);
 
@@ -1921,7 +1921,14 @@ public final class Ruby {
     }
     void setStructClass(RubyClass structClass) {
         this.structClass = structClass;
-    }    
+    }
+    
+    public RubyClass getRandomClass() {
+        return randomClass;
+    }
+    void setRandomClass(RubyClass randomClass) {
+        this.randomClass = randomClass;
+    }
 
     public IRubyObject getTmsStruct() {
         return tmsStruct;
@@ -2159,12 +2166,13 @@ public final class Ruby {
         return invalidByteSequenceError;
     }
 
-    public RubyClass getRandomClass() {
-        return randomClass;
+    private RubyRandom.RandomType defaultRand;
+    public RubyRandom.RandomType getDefaultRand() {
+        return defaultRand;
     }
-
-    public void setRandomClass(RubyClass randomClass) {
-        this.randomClass = randomClass;
+    
+    public void setDefaultRand(RubyRandom.RandomType defaultRand) {
+        this.defaultRand = defaultRand;
     }
 
     private RubyHash charsetMap;
@@ -3320,18 +3328,6 @@ public final class Ruby {
         return symbolTable;
     }
 
-    public void setRandomSeed(long randomSeed) {
-        this.randomSeed = randomSeed;
-    }
-
-    public long getRandomSeed() {
-        return randomSeed;
-    }
-
-    public Random getRandom() {
-        return random;
-    }
-
     public ObjectSpace getObjectSpace() {
         return objectSpace;
     }
@@ -3383,10 +3379,6 @@ public final class Ruby {
     @Deprecated
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
         return ChannelDescriptor.getDescriptorByFileno(aFileno);
-    }
-
-    public long incrementRandomSeedSequence() {
-        return randomSeedSequence++;
     }
 
     public InputStream getIn() {
@@ -3874,10 +3866,6 @@ public final class Ruby {
     private final ObjectSpace objectSpace = new ObjectSpace();
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
-
-    private long randomSeed = 0;
-    private long randomSeedSequence = 0;
-    private Random random = new Random();
 
     private final List<EventHook> eventHooks = new Vector<EventHook>();
     private boolean hasEventHooks;  
