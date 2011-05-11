@@ -1052,7 +1052,7 @@ public class RubyKernel {
     }
 
     private static IRubyObject requireCommon(Ruby runtime, IRubyObject recv, IRubyObject name, Block block) {
-        if (runtime.getLoadService().lockAndRequire(name.convertToString().toString())) {
+        if (runtime.getLoadService().require(name.convertToString().toString())) {
             return runtime.getTrue();
         }
         return runtime.getFalse();
