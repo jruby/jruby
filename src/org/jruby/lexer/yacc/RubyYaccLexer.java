@@ -421,7 +421,6 @@ public class RubyYaccLexer {
         }
     }
 
-
     public void setState(LexState state) {
         this.lex_state = state;
 //        printState();
@@ -945,6 +944,8 @@ public class RubyYaccLexer {
             case Tokens.tLAMBDA: System.err.print("tLAMBDA,"); break;
             case Tokens.tLAMBEG: System.err.print("tLAMBEG,"); break;
             case Tokens.tRPAREN: System.err.print("tRPAREN,"); break;
+            case Tokens.tLABEL: System.err.print("tLABEL("+
+                    ((Token) value()).getValue() +":),"); break;
             case '\n': System.err.println("NL"); break;
             case EOF: System.out.println("EOF"); break;
             default: System.err.print("'" + (char)token + "',"); break;
@@ -953,7 +954,7 @@ public class RubyYaccLexer {
 
     // DEBUGGING HELP 
     private int yylex2() throws IOException {
-        int currentToken = yylex2();
+        int currentToken = yylex();
         
         printToken(currentToken);
         
@@ -1407,7 +1408,6 @@ public class RubyYaccLexer {
         return c;
     }
 
-
     private int doKeyword(LexState state) {
         commandStart = true;
 
@@ -1595,8 +1595,8 @@ public class RubyYaccLexer {
     private int identifier(int c, boolean commandState) throws IOException {
         if (!isIdentifierChar(c)) {
             String badChar = "\\" + Integer.toOctalString(c & 0xff);
-            throw new SyntaxException(PID.CHARACTER_BAD, getPosition(), "Invalid char `" + badChar +
-                    "' ('" + (char) c + "') in expression", badChar);
+            throw new SyntaxException(PID.CHARACTER_BAD, getPosition(), getCurrentLine(),
+                    "Invalid char `" + badChar + "' ('" + (char) c + "') in expression", badChar);
         }
     
         tokenBuffer.setLength(0);
@@ -2182,8 +2182,8 @@ public class RubyYaccLexer {
                         throw new SyntaxException(PID.BAD_HEX_NUMBER, getPosition(), 
                                 getCurrentLine(), "Hexadecimal number without hex-digits.");
                     } else if (nondigit != '\0') {
-                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
-                                getCurrentLine(), "Trailing '_' in number.");
+                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
+                                getPosition(), getCurrentLine(), "Trailing '_' in number.");
                     }
                     yaccValue = getInteger(tokenBuffer.toString(), 16);
                     return Tokens.tINTEGER;
@@ -2209,8 +2209,8 @@ public class RubyYaccLexer {
                         throw new SyntaxException(PID.EMPTY_BINARY_NUMBER, getPosition(),
                                 getCurrentLine(), "Binary number without digits.");
                     } else if (nondigit != '\0') {
-                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
-                                getCurrentLine(), "Trailing '_' in number.");
+                        throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
+                                getPosition(), getCurrentLine(), "Trailing '_' in number.");
                     }
                     yaccValue = getInteger(tokenBuffer.toString(), 2);
                     return Tokens.tINTEGER;
@@ -2512,7 +2512,7 @@ public class RubyYaccLexer {
                 return ' ';
             case 'M' :
                 if ((c = src.read()) != '-') {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(), 
+                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
                             getCurrentLine(), "Invalid escape character syntax");
                 } else if ((c = src.read()) == '\\') {
                     return (char) (readEscape() | 0x80);
@@ -2558,7 +2558,7 @@ public class RubyYaccLexer {
         for (; i < count; i++) {
             int h1 = src.read();
 
-            if (!RubyYaccLexer.isHexChar(h1)) {
+            if (!isHexChar(h1)) {
                 src.unread(h1);
                 break;
             }
@@ -2589,7 +2589,7 @@ public class RubyYaccLexer {
         for (; i < count; i++) {
             int h1 = src.read();
 
-            if (!RubyYaccLexer.isHexChar(h1)) {
+            if (!isHexChar(h1)) {
                 src.unread(h1);
                 break;
             }
@@ -2613,7 +2613,7 @@ public class RubyYaccLexer {
         for (int i = 0; i < count; i++) {
             int c = src.read();
 
-            if (!RubyYaccLexer.isOctChar(c)) {
+            if (!isOctChar(c)) {
                 src.unread(c);
                 break;
             }

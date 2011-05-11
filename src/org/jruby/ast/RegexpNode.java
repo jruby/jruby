@@ -74,7 +74,6 @@ public class RegexpNode extends Node implements ILiteralNode {
 
     /**
      * Gets the options.
-     * @return Returns a int
      */
     public RegexpOptions getOptions() {
         return options;

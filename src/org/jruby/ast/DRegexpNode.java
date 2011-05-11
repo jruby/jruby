@@ -99,7 +99,6 @@ public class DRegexpNode extends DNode implements ILiteralNode {
 
     /**
      * Gets the options.
-     * @return Returns a int
      */
     public RegexpOptions getOptions() {
         return options;
