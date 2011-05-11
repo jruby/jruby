@@ -3638,7 +3638,7 @@ public class RubyArray extends RubyObject implements List {
         if (realLength == 0) {
             return context.nil;
         }
-        return eltOk(begin + context.runtime.getRandom().nextInt(realLength));
+        return eltOk(context.runtime.getRandom().nextInt(realLength));
     }
 
     @JRubyMethod(name = "shuffle!", compat = RUBY1_8)
