@@ -344,10 +344,15 @@ public class JavaUtil {
             if (behind < 2) {
                 behind++;
             } else {
-                behind = consume(b, chars, i, behind);
+                behind = consume(b, chars, i);
             }
         }
-        if (behind > 0) {
+
+        if (behind == 2) {
+            b.append(toLowerCase(chars[chars.length - 2]));
+            if (isUpperCase(chars[chars.length - 1]) && !isUpperCase(chars[chars.length - 2])) b.append('_');
+            b.append(toLowerCase(chars[chars.length - 1]));
+        } else if (behind > 0) {
             if (behind > 1) {
                 b.append(toLowerCase(chars[chars.length - 2]));
             }
@@ -356,7 +361,7 @@ public class JavaUtil {
         return b.toString();
     }
     
-    private static int consume(StringBuilder b, char[] chars, int i, int behind) {
+    private static int consume(StringBuilder b, char[] chars, int i) {
         char cur, prev, prev2;
         if (isLowerDigit(prev2 = chars[i - 2]) && isUpperCase(prev = chars[i - 1])) {
             b.append(prev2).append('_').append(toLowerCase(prev));
