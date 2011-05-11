@@ -95,7 +95,12 @@ describe "Java instance method names" do
                                 "get_my_value",
                                 "my_value",
                                 "set_my_value",
-                                "my_value=")
+                                "my_value=",
+                                "getX",
+                                "get_x",
+                                "x",
+                                "bigO",
+                                "big_o")
 
     members.should_not have_strings("values2",
                                     "values2=",

@@ -23,7 +23,7 @@ public class MethodNames {
     public static boolean hasThird1() {return false;}
     public static boolean hasFourth1(Object something) {return false;}
     public static String __send__() { return "foo"; }
-    
+
     public void lowercase2() {}
     public void camelCase2() {}
     public void camelWithUPPER2() {}
@@ -34,6 +34,10 @@ public class MethodNames {
     public Object getValues2(Object something) {return null;}
     public void setValue2(Object value) {}
     public void setValues2(Object value, Object otherValue) {}
+
+    // Single letter method should exist (1.6.0 regression)
+    public double getX() { return 1.0; }
+    public int bigO() { return 0; }
 
     // Another case [A-Z].[A-Z] that is tricky to get split correctly
     public Object getMyValue() {return null;}
