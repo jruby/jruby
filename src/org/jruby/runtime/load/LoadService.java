@@ -45,6 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -292,13 +293,13 @@ public class LoadService {
     }
 
     public boolean require(String requireName) {
-        Object requireLock;
+        ReentrantLock requireLock;
         synchronized (requireLocks) {
             requireLock = requireLocks.get(requireName);
             if (requireLock == null) {
-                requireLock = new Object();
+                requireLock = new ReentrantLock();
                 requireLocks.put(requireName, requireLock);
-            } else {
+            } else if (requireLock.isHeldByCurrentThread()) {
                 if (runtime.isVerbose() && runtime.is1_9()) {
                     warnCircularRequire(requireName);
                 }
@@ -306,10 +307,11 @@ public class LoadService {
             }
         }
         try {
-            if(!runtime.getProfile().allowRequire(requireName)) {
+            requireLock.lock();
+            if (!runtime.getProfile().allowRequire(requireName)) {
                 throw runtime.newLoadError("No such file to load -- " + requireName);
             }
-            
+
             // check with requireName (no extensions)
             if (featureAlreadyLoaded(RubyString.newString(runtime, requireName))) {
                 return false;
@@ -323,6 +325,9 @@ public class LoadService {
             }
         } finally {
             synchronized (requireLocks) {
+                if (requireLock.isLocked()) {
+                    requireLock.unlock();
+                }
                 requireLocks.remove(requireName);
             }
         }
@@ -347,7 +352,7 @@ public class LoadService {
         return require(file);
     }
     
-    protected Map<String, Object> requireLocks = new HashMap<String, Object>();
+    protected Map<String, ReentrantLock> requireLocks = new HashMap<String, ReentrantLock>();
 
     private boolean smartLoadInternal(String file) {
         checkEmptyLoad(file);
