@@ -11,16 +11,13 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
-import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.RubyEvent;
 
 
