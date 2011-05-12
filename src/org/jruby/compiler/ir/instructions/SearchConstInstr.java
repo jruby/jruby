@@ -11,10 +11,12 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.Map;
 import org.jruby.RubyModule;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
+// ENEBO: Which case does this?  I think I just reversed this changed based on usage I can see.
 // NOTE: the scopeOrObj operand can be a dynamic scope.
 //
 // The runtime method call that GET_CONST is translated to in this case will call
@@ -23,12 +25,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 // this call to the parent scope.
 //
 public class SearchConstInstr extends GetInstr {
-    public SearchConstInstr(Variable dest, IRScope scope, String constName) {
-        super(Operation.SEARCH_CONST, dest, MetaObject.create(scope), constName);
-    }
-
-    public SearchConstInstr(Variable dest, Operand scopeOrObj, String constName) {
-        super(Operation.SEARCH_CONST, dest, scopeOrObj, constName);
+    public SearchConstInstr(Variable dest, Operand scope, String constName) {
+        super(Operation.SEARCH_CONST, dest, scope, constName);
     }
 
     @Override
@@ -54,7 +52,14 @@ public class SearchConstInstr extends GetInstr {
         StaticScope staticScope = ((MetaObject) n).getScope().getStaticScope();
 
         RubyModule object = interp.getRuntime().getObject();
-        getResult().store(interp, staticScope.getConstant(interp.getRuntime(), getName(), object));
+        Object constant;
+        if (staticScope == null) { // FIXME: CORE CLASSES have no staticscope yet...hack for now
+            constant = object.getConstant(getName());
+        } else {
+            constant = staticScope.getConstant(interp.getRuntime(), getName(), object);
+        }
+        
+        getResult().store(interp, constant);
         
         return null;
     }

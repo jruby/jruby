@@ -1048,7 +1048,7 @@ public class IRBuilder {
 
     private Operand searchConst(IRScope s, String name) {
         Variable v = s.getNewTemporaryVariable();
-        s.addInstr(new SearchConstInstr(v, s, name));
+        s.addInstr(new SearchConstInstr(v, MetaObject.create(s), name));
         return v;
     }
 
@@ -1082,8 +1082,8 @@ public class IRBuilder {
 
     public Operand buildColon3(Colon3Node node, IRScope s) {
         Variable cv = s.getNewTemporaryVariable();
-        // SSS FIXME: Is this correct?
-        s.addInstr(new SearchConstInstr(cv, getSelf(s), node.getName()));
+        MetaObject object = MetaObject.create(IRClass.getCoreClass("Object"));
+        s.addInstr(new SearchConstInstr(cv, object, node.getName()));
         return cv;
     }
 
