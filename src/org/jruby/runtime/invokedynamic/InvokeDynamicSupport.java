@@ -5,6 +5,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.util.Arrays;
+import java.util.Comparator;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyLocalJumpError;
@@ -82,20 +84,32 @@ public class InvokeDynamicSupport {
     }
 
     private static MethodHandle createGWT(String name, MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
-        // only direct invoke if no block passed (for now)
+        // only direct invoke if no block passed (for now) and if no frame/scope are required
         if (site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class &&
                 entry.method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
             MethodHandle nativeTarget = handleForMethod(entry.method);
             if (nativeTarget != null) {
                 DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
-                if (entry.method instanceof CompiledMethod) {
-                    return createRubyGWT(entry.token, nativeTarget, nativeCall, test, fallback, site, curryFallback);
-                } else {
-                    if (site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class
-                            && nativeTarget.type().parameterArray()[nativeTarget.type().parameterCount() - 1] == Block.class) {
-                        nativeTarget = MethodHandles.insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
+                
+                Comparator comp = new Comparator<Object>() {
+                    public int compare(Object t, Object t1) {
+                        return t == t1 ? 0 : 1;
                     }
-                    return createNativeGWT(entry.token, nativeTarget, nativeCall, test, fallback, site, curryFallback);
+                };
+                
+                if (getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) == 4 &&
+                        site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class) {
+                    // mismatch call site to target IRubyObject[] args; call back on DynamicMethod.call for now
+                } else {
+                    if (entry.method instanceof CompiledMethod) {
+                        return createRubyGWT(entry.token, nativeTarget, nativeCall, test, fallback, site, curryFallback);
+                    } else {
+                        if (site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class
+                                && nativeTarget.type().parameterArray()[nativeTarget.type().parameterCount() - 1] == Block.class) {
+                            nativeTarget = MethodHandles.insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
+                        }
+                        return createNativeGWT(entry.token, nativeTarget, nativeCall, test, fallback, site, curryFallback);
+                    }
                 }
             }
         }
@@ -423,9 +437,9 @@ public class InvokeDynamicSupport {
             
             if (length == 1) {
                 if (hasContext && args[2] == IRubyObject[].class) {
-                    length = -1;
+                    length = 4;
                 } else if (args[1] == IRubyObject[].class) {
-                    length = -1;
+                    length = 4;
                 }
             }
         } else {
@@ -440,9 +454,9 @@ public class InvokeDynamicSupport {
 
             if (length == 1) {
                 if (hasContext && args[1] == IRubyObject[].class) {
-                    length = -1;
+                    length = 4;
                 } else if (args[0] == IRubyObject[].class) {
-                    length = -1;
+                    length = 4;
                 }
             }
         }
