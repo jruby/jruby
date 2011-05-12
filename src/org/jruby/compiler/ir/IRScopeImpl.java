@@ -112,6 +112,18 @@ public abstract class IRScopeImpl implements IRScope {
 
         return (IRModule) current;
     }
+    
+    public IRMethod getNearestMethod() {
+        IRScope current = this;
+        
+        while (current != null && !(current instanceof IRMethod)) {
+            current = current.getLexicalParent();
+        }
+        
+        assert current instanceof IRMethod : "All scopes must be surrounded by at least one method";
+        
+        return (IRMethod) current;
+    }
 
     public int getNextClosureId() {
         nextClosureIndex++;
