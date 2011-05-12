@@ -2205,8 +2205,12 @@ public class IRBuilder {
         if (cpath instanceof Colon2Node) {
             Node leftNode = ((Colon2Node) cpath).getLeftNode();
             
-            if (leftNode != null) container = build(leftNode, s);
-        } else {
+            if (leftNode != null) { // Foo::Bar
+                container = build(leftNode, s);
+            } else { // Only name with no left-side Bar <- Note no :: on left
+                container = MetaObject.create(s);
+            }
+        } else { //::Bar
             container = MetaObject.create(IRClass.getCoreClass("Object"));
         }
 
