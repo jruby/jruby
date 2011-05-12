@@ -986,7 +986,8 @@ public class IRBuilder {
 
     public Operand buildClassVar(ClassVarNode node, IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new GetClassVariableInstr(ret, MetaObject.create(s).getNearestClass(), node.getName()));
+        Variable classFor = containingClassVariableFor(s);
+        s.addInstr(new GetClassVariableInstr(ret, classFor, node.getName()));
         return ret;
     }
 
