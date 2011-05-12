@@ -56,6 +56,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
             Instr i = it.previous();
+            //System.out.println("-----\nInstr " + i);
+            //System.out.println("Before: " + java.util.Arrays.toString(reqdLoads.toArray()));
 
             if (i.operation == Operation.BINDING_STORE) continue;
 
@@ -76,35 +78,39 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                     cl_blp.setup(cl_cfg);
                     cl_blp.compute_MOP_Solution();
                     cl_cfg.setDataFlowSolution(cl_blp.getName(), cl_blp);
-                    if (call.requiresBinding()) {
-                        reqdLoads.clear();
-                    }
 
                     // Variables defined in the closure do not need to be loaded anymore at
                     // program points before the call.
                     Set<Variable> newReqdLoads = new HashSet<Variable>(reqdLoads);
                     for (Variable v : reqdLoads) {
-                        if (cl_blp.scopeDefinesVariable(v)) newReqdLoads.remove(v);
+                        if (cl_blp.scopeDefinesVariable(v)) {
+                           newReqdLoads.remove(v);
+                        }
                     }
                     reqdLoads = newReqdLoads;
                 }
                 // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
-                else if (call.requiresBinding()) {
+                if (call.requiresBinding()) {
                     reqdLoads.clear();
                 }
             }
 
             // The variables used as arguments will need to be loaded
             for (Variable x : i.getUsedVariables()) {
-                if (x instanceof LocalVariable)
+                if (x instanceof LocalVariable) {
                     reqdLoads.add(x);
+                }
             }
+            //System.out.println("After: " + java.util.Arrays.toString(reqdLoads.toArray()));
         }
 
         // At the beginning of the scope, required loads can be discarded.
         if (_bb == _prob.getCFG().getEntryBB()) reqdLoads.clear();
 
         if (_outReqdLoads.equals(reqdLoads)) {
+            //System.out.println("\n For CFG " + _prob.getCFG() + " BB " + _bb.getID());
+            //System.out.println("\t--> IN reqd loads   : " + java.util.Arrays.toString(_inReqdLoads.toArray()));
+            //System.out.println("\t--> OUT reqd loads  : " + java.util.Arrays.toString(_outReqdLoads.toArray()));
             return false;
         } else {
             _outReqdLoads = reqdLoads;
@@ -141,7 +147,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                     BindingLoadPlacementProblem cl_blp = (BindingLoadPlacementProblem) cl_cfg.getDataFlowSolution(blp.getName());
 
                     // Only those variables that are defined in the closure, and are in the required loads set 
-                    // will need to be loaded from the binding after the call!
+                    // will need to be loaded from the binding after the call!  Rest can wait ..
                     Set<Variable> newReqdLoads = new HashSet<Variable>(reqdLoads);
                     it.next();
                     for (Variable v : reqdLoads) {
@@ -156,7 +162,10 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
                     // add loads in the closure
                     ((BindingLoadPlacementProblem) cl_cfg.getDataFlowSolution(blp.getName())).addLoads();
-                } else if (call.requiresBinding()) {
+                } 
+
+                // In this case, we are going to blindly load everything
+                if (call.requiresBinding()) {
                     it.next();
                     for (Variable v : reqdLoads) {
                         it.add(new LoadFromBindingInstr(v, s, v.getName()));
@@ -176,10 +185,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
         // Load first use of variables in closures
         if ((s instanceof IRClosure) && (_bb == _prob.getCFG().getEntryBB())) {
-/**
-            System.out.println("\n[In Entry BB] For CFG " + _prob.getCFG() + ":");
-            System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
-**/
+            // System.out.println("\n[In Entry BB] For CFG " + _prob.getCFG() + ":");
+            // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
             for (Variable v : reqdLoads) {
                 if (blp.scopeUsesVariable(v)) {
                     it.add(new LoadFromBindingInstr(v, s, v.getName()));
