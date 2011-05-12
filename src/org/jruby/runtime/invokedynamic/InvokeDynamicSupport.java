@@ -716,10 +716,11 @@ public class InvokeDynamicSupport {
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, selfClass, name);
         } else {
-            site.entry = entry = selfClass.searchWithCache(name);
+            entry = selfClass.searchWithCache(name);
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name);
             }
+            site.entry = entry;
             return entry.method.call(context, self, selfClass, name);
         }
     }
@@ -731,10 +732,11 @@ public class InvokeDynamicSupport {
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, selfClass, name, arg0);
         } else {
-            site.entry = entry = selfClass.searchWithCache(name);
+            entry = selfClass.searchWithCache(name);
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0);
             }
+            site.entry = entry;
             return entry.method.call(context, self, selfClass, name, arg0);
         }
     }
@@ -746,10 +748,11 @@ public class InvokeDynamicSupport {
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, selfClass, name, arg0, arg1);
         } else {
-            site.entry = entry = selfClass.searchWithCache(name);
+            entry = selfClass.searchWithCache(name);
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1);
             }
+            site.entry = entry;
             return entry.method.call(context, self, selfClass, name, arg0, arg1);
         }
     }
@@ -761,10 +764,11 @@ public class InvokeDynamicSupport {
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2);
         } else {
-            site.entry = entry = selfClass.searchWithCache(name);
+            entry = selfClass.searchWithCache(name);
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2);
             }
+            site.entry = entry;
             return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2);
         }
     }
@@ -776,10 +780,11 @@ public class InvokeDynamicSupport {
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, selfClass, name, args);
         } else {
-            site.entry = entry = selfClass.searchWithCache(name);
+            entry = selfClass.searchWithCache(name);
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, args);
             }
+            site.entry = entry;
             return entry.method.call(context, self, selfClass, name, args);
         }
     }
@@ -791,10 +796,11 @@ public class InvokeDynamicSupport {
             if (entry.typeOk(selfClass)) {
                 return entry.method.call(context, self, selfClass, name, block);
             } else {
-                site.entry = entry = selfClass.searchWithCache(name);
+                entry = selfClass.searchWithCache(name);
                 if (methodMissing(entry, site.callType(), name, caller)) {
                     return callMethodMissing(entry, site.callType(), context, self, name, block);
                 }
+                site.entry = entry;
                 return entry.method.call(context, self, selfClass, name, block);
             }
         } catch (JumpException.BreakJump bj) {
@@ -813,10 +819,11 @@ public class InvokeDynamicSupport {
             if (entry.typeOk(selfClass)) {
                 return entry.method.call(context, self, selfClass, name, arg0, block);
             } else {
-                site.entry = entry = selfClass.searchWithCache(name);
+                entry = selfClass.searchWithCache(name);
                 if (methodMissing(entry, site.callType(), name, caller)) {
                     return callMethodMissing(entry, site.callType(), context, self, name, arg0, block);
                 }
+                site.entry = entry;
                 return entry.method.call(context, self, selfClass, name, arg0, block);
             }
         } catch (JumpException.BreakJump bj) {
@@ -835,10 +842,11 @@ public class InvokeDynamicSupport {
             if (entry.typeOk(selfClass)) {
                 return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
             } else {
-                site.entry = entry = selfClass.searchWithCache(name);
+                entry = selfClass.searchWithCache(name);
                 if (methodMissing(entry, site.callType(), name, caller)) {
                     return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, block);
                 }
+                site.entry = entry;
                 return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
             }
         } catch (JumpException.BreakJump bj) {
@@ -857,10 +865,11 @@ public class InvokeDynamicSupport {
             if (entry.typeOk(selfClass)) {
                 return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
             } else {
-                site.entry = entry = selfClass.searchWithCache(name);
+                entry = selfClass.searchWithCache(name);
                 if (methodMissing(entry, site.callType(), name, caller)) {
                     return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2, block);
                 }
+                site.entry = entry;
                 return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
             }
         } catch (JumpException.BreakJump bj) {
@@ -879,10 +888,11 @@ public class InvokeDynamicSupport {
             if (entry.typeOk(selfClass)) {
                 return entry.method.call(context, self, selfClass, name, args, block);
             } else {
-                site.entry = entry = selfClass.searchWithCache(name);
+                entry = selfClass.searchWithCache(name);
                 if (methodMissing(entry, site.callType(), name, caller)) {
                     return callMethodMissing(entry, site.callType(), context, self, name, args, block);
                 }
+                site.entry = entry;
                 return entry.method.call(context, self, selfClass, name, args, block);
             }
         } catch (JumpException.BreakJump bj) {
