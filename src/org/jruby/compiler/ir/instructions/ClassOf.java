@@ -18,7 +18,7 @@ public class ClassOf extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getCallResultVariable(), getArg().cloneForInlining(ii));
+        return new CopyInstr(ii.getRenamedVariable(result), getArg().cloneForInlining(ii));
     }
 
     @Override

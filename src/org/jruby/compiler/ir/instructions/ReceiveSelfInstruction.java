@@ -15,7 +15,9 @@ public class ReceiveSelfInstruction extends NoOperandInstr {
         super(Operation.RECV_SELF, destination);
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
+		  // SSS FIXME: CopyInstr??
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallReceiver());
     }
 
