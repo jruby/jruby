@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir;
 
-enum OpType { dont_care, debug_op, obj_op, alu_op, call_op, yield_op, recv_arg_op, ret_op, eval_op, branch_op, compare_op, exc_op, load_op, store_op, declare_type_op, guard_op, box_op, marker_op };
+enum OpType { dont_care, debug_op, obj_op, alu_op, call_op, yield_op, recv_arg_op, ret_op, eval_op, branch_op, compare_op, exc_op, load_op, store_op, declare_type_op, guard_op, box_op, marker_op, class_of };
 
 public enum Operation {
 // ------ Define the operations below ----
@@ -44,7 +44,7 @@ public enum Operation {
 // Loads
     GET_CONST(OpType.load_op), GET_GLOBAL_VAR(OpType.load_op), GET_FIELD(OpType.load_op), GET_CVAR(OpType.load_op),
     // SSS: Are these 3 loads really?
-	 GET_ARRAY(OpType.load_op), BINDING_LOAD(OpType.load_op), SEARCH_CONST(OpType.load_op),
+	 GET_ARRAY(OpType.load_op), BINDING_LOAD(OpType.load_op), SEARCH_CONST(OpType.load_op), CLASS_OF(OpType.class_of),
 
 // Stores
     PUT_CONST(OpType.store_op), PUT_GLOBAL_VAR(OpType.store_op), PUT_FIELD(OpType.store_op), PUT_ARRAY(OpType.store_op), PUT_CVAR(OpType.store_op),
