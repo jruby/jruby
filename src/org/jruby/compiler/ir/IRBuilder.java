@@ -110,6 +110,7 @@ import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CaseInstr;
+import org.jruby.compiler.ir.instructions.ClassOf;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
@@ -992,13 +993,33 @@ public class IRBuilder {
     // SSS FIXME: Where is this set up?  How is this diff from ClassVarDeclNode??
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode, IRScope s) {
         Operand val = build(classVarAsgnNode.getValueNode(), s);
-        s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), classVarAsgnNode.getName(), val));
+        Variable classFor = containingClassVariableFor(s);
+        s.addInstr(new PutClassVariableInstr(classFor, classVarAsgnNode.getName(), val));
         return val;
+    }
+    
+    /**
+     * We commonly have cases where we need either self or self's class.
+     * This method determines this based on whether we are in an instance
+     * variable scope or any other scope.  Note that for closures we just
+     * walk out until we find a method (class/modules scopes have a special
+     * method type so we are guaranteed to find it.
+     */
+    public Variable containingClassVariableFor(IRScope s) {
+        IRMethod containingMethod = s.getNearestMethod();
+
+        if (!containingMethod.isInstanceMethod) return getSelf(s); // %self
+        
+        Variable tmp = s.getNewTemporaryVariable();
+        s.addInstr(new ClassOf(tmp, getSelf(s)));   // %v_x = class_of %self
+
+        return tmp;
     }
 
     public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode, IRScope s) {
         Operand val = build(classVarDeclNode.getValueNode(), s);
-        s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), classVarDeclNode.getName(), val));
+        Variable classFor = containingClassVariableFor(s);        
+        s.addInstr(new PutClassVariableInstr(classFor, classVarDeclNode.getName(), val));
         return val;
     }
 
