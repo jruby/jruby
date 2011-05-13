@@ -277,15 +277,15 @@ public class LoadService {
         }
     }
 
-    public SearchState findFileForLoad(String file) throws AlreadyLoaded {
+    public SearchState findFileForLoad(String file) {
         SearchState state = new SearchState(file);
         state.prepareRequireSearch(file);
 
         for (LoadSearcher searcher : searchers) {
             if (searcher.shouldTrySearch(state)) {
-                searcher.trySearch(state);
-            } else {
-                continue;
+                if (!searcher.trySearch(state)) {
+                    return null;
+                }
             }
         }
 
@@ -362,31 +362,28 @@ public class LoadService {
 
         SearchState state;
 
-        try {
-            // Even if we don't support .so, some stdlib require .so directly.
-            // Replace it with .jar to look for a java extension
-            // JRUBY-5033: The ExtensionSearcher will locate C exts, too, this way.
-            if (file.endsWith(".so")) {
-                file = file.replaceAll(".so$", ".jar");
-            }
-            state = findFileForLoad(file);
-            RubyString requireName = RubyString.newString(runtime, state.loadName);
-            
-            // check with long name
-            if (featureAlreadyLoaded(requireName)) {
-                return false;
-            }
-
-            boolean loaded = tryLoadingLibraryOrScript(runtime, state);
-            if (loaded) {
-                addLoadedFeature(requireName);
-            }
-            return loaded;
-
-        } catch (AlreadyLoaded al) {
-            // Library has already been loaded in some form, bail out
+        // Even if we don't support .so, some stdlib require .so directly.
+        // Replace it with .jar to look for a java extension
+        // JRUBY-5033: The ExtensionSearcher will locate C exts, too, this way.
+        if (file.endsWith(".so")) {
+            file = file.replaceAll(".so$", ".jar");
+        }
+        state = findFileForLoad(file);
+        if (state == null) {
             return false;
         }
+        RubyString requireName = RubyString.newString(runtime, state.loadName);
+        
+        // check with long name
+        if (featureAlreadyLoaded(requireName)) {
+            return false;
+        }
+
+        boolean loaded = tryLoadingLibraryOrScript(runtime, state);
+        if (loaded) {
+            addLoadedFeature(requireName);
+        }
+        return loaded;
     }
 
     private static class LoadTimer {
@@ -531,20 +528,17 @@ public class LoadService {
     }
     
     public interface LoadSearcher {
+        /**
+         * @param state
+         * @return true if trySearch should be called.
+         */
         public boolean shouldTrySearch(SearchState state);
-        public void trySearch(SearchState state) throws AlreadyLoaded;
-    }
-    
-    public static class AlreadyLoaded extends Exception {
-        private RubyString searchNameString;
         
-        public AlreadyLoaded(RubyString searchNameString) {
-            this.searchNameString = searchNameString;
-        }
-        
-        public RubyString getSearchNameString() {
-            return searchNameString;
-        }
+        /**
+         * @param state
+         * @return false if loadSearch must be bail-out.
+         */
+        public boolean trySearch(SearchState state);
     }
 
     public class BailoutSearcher implements LoadSearcher {
@@ -552,25 +546,26 @@ public class LoadService {
             return state.library == null;
         }
 
-        protected void trySearch(String file, SuffixType suffixType) throws AlreadyLoaded {
+        protected boolean trySearch(String file, SuffixType suffixType) {
             for (String suffix : suffixType.getSuffixes()) {
                 String searchName = file + suffix;
                 RubyString searchNameString = RubyString.newString(runtime, searchName);
                 if (featureAlreadyLoaded(searchNameString)) {
-                    throw new AlreadyLoaded(searchNameString);
+                    return false;
                 }
             }
+            return true;
         }
 
-        public void trySearch(SearchState state) throws AlreadyLoaded {
-            trySearch(state.searchFile, state.suffixType);
+        public boolean trySearch(SearchState state) {
+            return trySearch(state.searchFile, state.suffixType);
         }
     }
 
     public class SourceBailoutSearcher extends BailoutSearcher {
         public boolean shouldTrySearch(SearchState state) {
             // JRUBY-5032: Load extension files if they are required
-            // explicitely, and even if an rb file of the same name
+            // explicitly, and even if an rb file of the same name
             // has already been loaded (effectively skipping the search for a source file).
             return !extensionPattern.matcher(state.loadName).find();
         }
@@ -578,8 +573,8 @@ public class LoadService {
         // According to Rubyspec, source files should be loaded even if an equally named
         // extension is loaded already. So we use the bailout search twice, once only
         // for source files and once for whatever suffix type the state determines
-        public void trySearch(SearchState state) throws AlreadyLoaded {
-            super.trySearch(state.searchFile, SuffixType.Source);
+        public boolean trySearch(SearchState state) {
+            return super.trySearch(state.searchFile, SuffixType.Source);
         }
     }
 
@@ -588,8 +583,9 @@ public class LoadService {
             return state.library == null;
         }
         
-        public void trySearch(SearchState state) {
+        public boolean trySearch(SearchState state) {
             state.library = findLibraryWithoutCWD(state, state.searchFile, state.suffixType);
+            return true;
         }
     }
 
@@ -598,8 +594,9 @@ public class LoadService {
             return state.library == null;
         }
         
-        public void trySearch(SearchState state) {
+        public boolean trySearch(SearchState state) {
             state.library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
+            return true;
         }
     }
 
@@ -608,7 +605,7 @@ public class LoadService {
             return (state.library == null || state.library instanceof JarredScript) && !state.searchFile.equalsIgnoreCase("");
         }
         
-        public void trySearch(SearchState state) {
+        public boolean trySearch(SearchState state) {
             // This code exploits the fact that all .jar files will be found for the JarredScript feature.
             // This is where the basic extension mechanism gets fixed
             Library oldLibrary = state.library;
@@ -652,6 +649,7 @@ public class LoadService {
             if(state.library == null && oldLibrary != null) {
                 state.library = oldLibrary;
             }
+            return true;
         }
     }
 
@@ -672,7 +670,7 @@ public class LoadService {
             return state.library == null;
         }
         
-        public void trySearch(SearchState state) throws RaiseException {
+        public boolean trySearch(SearchState state) throws RaiseException {
             // no library or extension found, try to load directly as a class
             Script script;
             String className = buildClassName(state.searchFile);
@@ -692,6 +690,7 @@ public class LoadService {
                 throw runtime.newLoadError("no such file to load -- " + state.searchFile);
             }
             state.library = new ScriptClassLibrary(script);
+            return true;
         }
     }
 
