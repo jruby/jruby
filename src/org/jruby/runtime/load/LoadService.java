@@ -310,6 +310,12 @@ public class LoadService {
             if (!runtime.getProfile().allowRequire(requireName)) {
                 throw runtime.newLoadError("no such file to load -- " + requireName);
             }
+
+            // check for requiredName without extension.
+            if (featureAlreadyLoaded(requireName)) {
+                return false;
+            }
+
             long startTime = loadTimer.startLoad(requireName);
             try {
                 return smartLoadInternal(requireName);
@@ -542,10 +548,6 @@ public class LoadService {
         }
 
         protected boolean trySearch(String file, SuffixType suffixType) {
-            // check for requiredName without extension.
-            if (featureAlreadyLoaded(file)) {
-                return false;
-            }
             for (String suffix : suffixType.getSuffixes()) {
                 String searchName = file + suffix;
                 if (featureAlreadyLoaded(searchName)) {
