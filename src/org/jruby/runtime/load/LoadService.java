@@ -54,7 +54,6 @@ import java.util.zip.ZipException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFile;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
@@ -369,15 +368,15 @@ public class LoadService {
         if (state.library == null) {
             throw runtime.newLoadError("no such file to load -- " + state.searchFile);
         }
-        RubyString requireName = RubyString.newString(runtime, state.loadName);
-        
+       
         // check with long name
-        if (featureAlreadyLoaded(requireName)) {
+        if (featureAlreadyLoaded(state.loadName)) {
             return false;
         }
 
         boolean loaded = tryLoadingLibraryOrScript(runtime, state);
         if (loaded) {
+            RubyString requireName = RubyString.newString(runtime, state.loadName);
             addLoadedFeature(requireName);
         }
         return loaded;
@@ -482,35 +481,34 @@ public class LoadService {
         builtinLibraries.remove(name);
     }
 
-    public void removeInternalLoadedFeature(String name) {
+    public void removeInternalLoadedFeature(String loadName) {
         if (caseInsensitiveFS) {
             // on a case-insensitive filesystem, we need to search case-insensitively
             // to remove the loaded feature
-            RubyString nameRubyString = runtime.newString(name);
-            for (int i = 0; i < loadedFeatures.size(); i++) {
-                RubyString feature = loadedFeatures.eltInternal(i).convertToString();
-                if (((RubyFixnum)feature.casecmp(runtime.getCurrentContext(), nameRubyString)).getLongValue() == 0) {
-                    loadedFeatures.remove(i);
+            for (Object str : loadedFeaturesInternal) {
+                String feature = (String)str;
+                if (feature.equalsIgnoreCase(loadName)) {
+                    loadedFeaturesInternal.remove(str);
                 }
             }
         } else {
-            loadedFeaturesInternal.remove(name);
+            loadedFeaturesInternal.remove(loadName);
         }
     }
 
-    protected boolean featureAlreadyLoaded(RubyString loadNameRubyString) {
+    protected boolean featureAlreadyLoaded(String loadName) {
         if (caseInsensitiveFS) {
             // on a case-insensitive filesystem, we need to search case-insensitively
             // to find the loaded feature
-            for (int i = 0; i < loadedFeatures.size(); i++) {
-                RubyString feature = loadedFeatures.eltInternal(i).convertToString();
-                if (((RubyFixnum)feature.casecmp(runtime.getCurrentContext(), loadNameRubyString)).getLongValue() == 0) {
+            for (Object str : loadedFeaturesInternal) {
+                String feature = (String)str;
+                if (feature.equalsIgnoreCase(loadName)) {
                     return true;
                 }
             }
             return false;
         } else {
-            return loadedFeaturesInternal.contains(loadNameRubyString);
+            return loadedFeaturesInternal.contains(loadName);
         }
     }
 
@@ -545,13 +543,12 @@ public class LoadService {
 
         protected boolean trySearch(String file, SuffixType suffixType) {
             // check for requiredName without extension.
-            if (featureAlreadyLoaded(RubyString.newString(runtime, file))) {
+            if (featureAlreadyLoaded(file)) {
                 return false;
             }
             for (String suffix : suffixType.getSuffixes()) {
                 String searchName = file + suffix;
-                RubyString searchNameString = RubyString.newString(runtime, searchName);
-                if (featureAlreadyLoaded(searchNameString)) {
+                if (featureAlreadyLoaded(searchName)) {
                     return false;
                 }
             }
