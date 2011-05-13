@@ -254,7 +254,7 @@ public class LoadService {
 
     public void load(String file, boolean wrap) {
         if(!runtime.getProfile().allowLoad(file)) {
-            throw runtime.newLoadError("No such file to load -- " + file);
+            throw runtime.newLoadError("no such file to load -- " + file);
         }
 
         SearchState state = new SearchState(file);
@@ -266,7 +266,7 @@ public class LoadService {
         if (library == null) {
             library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
             if (library == null) {
-                throw runtime.newLoadError("No such file to load -- " + file);
+                throw runtime.newLoadError("no such file to load -- " + file);
             }
         }
         try {
@@ -309,7 +309,7 @@ public class LoadService {
         try {
             requireLock.lock();
             if (!runtime.getProfile().allowRequire(requireName)) {
-                throw runtime.newLoadError("No such file to load -- " + requireName);
+                throw runtime.newLoadError("no such file to load -- " + requireName);
             }
 
             // check with requireName (no extensions)
@@ -371,6 +371,9 @@ public class LoadService {
         state = findFileForLoad(file);
         if (state == null) {
             return false;
+        }
+        if (state.library == null) {
+            throw runtime.newLoadError("no such file to load -- " + state.searchFile);
         }
         RubyString requireName = RubyString.newString(runtime, state.loadName);
         
@@ -687,7 +690,7 @@ public class LoadService {
                 Class scriptClass = Class.forName(className);
                 script = (Script) scriptClass.newInstance();
             } catch (Exception cnfe) {
-                throw runtime.newLoadError("no such file to load -- " + state.searchFile);
+                return true;
             }
             state.library = new ScriptClassLibrary(script);
             return true;
@@ -816,7 +819,7 @@ public class LoadService {
 
     protected void checkEmptyLoad(String file) throws RaiseException {
         if (file.equals("")) {
-            throw runtime.newLoadError("No such file to load -- " + file);
+            throw runtime.newLoadError("no such file to load -- " + file);
         }
     }
 
