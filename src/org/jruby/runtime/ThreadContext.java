@@ -40,9 +40,7 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.profile.IProfileData;
 import java.util.ArrayList;
 import org.jruby.runtime.profile.ProfileData;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import org.jruby.Ruby;
@@ -53,8 +51,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
-import org.jruby.compiler.JITCompiler;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
@@ -63,7 +59,6 @@ import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.JavaNameMangler;
 
 public final class ThreadContext {
     public static ThreadContext newContext(Ruby runtime) {
@@ -685,13 +680,13 @@ public final class ThreadContext {
     public IRubyObject createCallerBacktrace(Ruby runtime, int level) {
         runtime.incrementCallerCount();
         RubyStackTraceElement[] trace = gatherCallerBacktrace(level);
-        RubyArray backtrace = runtime.newArray(trace.length - level);
+        RubyArray newTrace = runtime.newArray(trace.length - level);
 
         for (int i = level; i < trace.length; i++) {
-            addBackTraceElement(runtime, backtrace, trace[i]);
+            addBackTraceElement(runtime, newTrace, trace[i]);
         }
         
-        return backtrace;
+        return newTrace;
     }
     
     public RubyStackTraceElement[] gatherCallerBacktrace(int level) {
@@ -764,7 +759,7 @@ public final class ThreadContext {
     public static String createRawBacktraceStringFromThrowable(Throwable t) {
         StackTraceElement[] javaStackTrace = t.getStackTrace();
         
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         if (javaStackTrace != null && javaStackTrace.length > 0) {
             StackTraceElement element = javaStackTrace[0];
 
