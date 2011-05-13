@@ -311,12 +311,6 @@ public class LoadService {
             if (!runtime.getProfile().allowRequire(requireName)) {
                 throw runtime.newLoadError("no such file to load -- " + requireName);
             }
-
-            // check with requireName (no extensions)
-            if (featureAlreadyLoaded(RubyString.newString(runtime, requireName))) {
-                return false;
-            }
-
             long startTime = loadTimer.startLoad(requireName);
             try {
                 return smartLoadInternal(requireName);
@@ -550,6 +544,10 @@ public class LoadService {
         }
 
         protected boolean trySearch(String file, SuffixType suffixType) {
+            // check for requiredName without extension.
+            if (featureAlreadyLoaded(RubyString.newString(runtime, file))) {
+                return false;
+            }
             for (String suffix : suffixType.getSuffixes()) {
                 String searchName = file + suffix;
                 RubyString searchNameString = RubyString.newString(runtime, searchName);
