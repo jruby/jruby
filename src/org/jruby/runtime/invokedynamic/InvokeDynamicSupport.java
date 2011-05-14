@@ -13,6 +13,8 @@ import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.AttrReaderMethod;
+import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.CompiledMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -46,10 +48,6 @@ public class InvokeDynamicSupport {
 
         public CallType callType() {
             return callType;
-        }
-
-        public MethodType type() {
-            return type;
         }
     }
 
@@ -87,6 +85,10 @@ public class InvokeDynamicSupport {
         // only direct invoke if no block passed (for now) and if no frame/scope are required
         if (site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class &&
                 entry.method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
+            if (entry.method instanceof AttrReaderMethod || entry.method instanceof AttrWriterMethod) {
+                return createAttrGWT(entry, test, fallback, site, curryFallback);
+            }
+            
             MethodHandle nativeTarget = handleForMethod(entry.method);
             if (nativeTarget != null) {
                 DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
@@ -208,6 +210,253 @@ public class InvokeDynamicSupport {
         STANDARD_NATIVE_TYPE_3,
         STANDARD_NATIVE_TYPE_N,
     };
+    
+    private static final MethodType TARGET_SELF_TC = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            ThreadContext.class //context
+            );
+    private static final MethodType TARGET_SELF_TC_1ARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            ThreadContext.class, //context
+            IRubyObject.class
+            );
+    private static final MethodType TARGET_SELF_TC_2ARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            ThreadContext.class, //context
+            IRubyObject.class,
+            IRubyObject.class
+            );
+    private static final MethodType TARGET_SELF_TC_3ARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            ThreadContext.class, //context
+            IRubyObject.class,
+            IRubyObject.class,
+            IRubyObject.class
+            );
+    private static final MethodType TARGET_SELF_TC_NARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            ThreadContext.class, //context
+            IRubyObject[].class
+            );
+    private static final MethodType[] TARGET_SELF_TC_ARGS = {
+        TARGET_SELF_TC,
+        TARGET_SELF_TC_1ARG,
+        TARGET_SELF_TC_2ARG,
+        TARGET_SELF_TC_3ARG,
+        TARGET_SELF_TC_NARG,
+    };
+    
+    private static final MethodType TARGET_SELF_TC_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            ThreadContext.class, //context
+            Block.class
+            );
+    private static final MethodType TARGET_SELF_TC_1ARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            ThreadContext.class, //context
+            IRubyObject.class,
+            Block.class
+            );
+    private static final MethodType TARGET_SELF_TC_2ARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            ThreadContext.class, //context
+            IRubyObject.class,
+            IRubyObject.class,
+            Block.class
+            );
+    private static final MethodType TARGET_SELF_TC_3ARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            ThreadContext.class, //context
+            IRubyObject.class,
+            IRubyObject.class,
+            IRubyObject.class,
+            Block.class
+            );
+    private static final MethodType TARGET_SELF_TC_NARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            ThreadContext.class, //context
+            IRubyObject[].class,
+            Block.class
+            );
+    private static final MethodType[] TARGET_SELF_TC_ARGS_BLOCK = {
+        TARGET_SELF_TC_BLOCK,
+        TARGET_SELF_TC_1ARG_BLOCK,
+        TARGET_SELF_TC_2ARG_BLOCK,
+        TARGET_SELF_TC_3ARG_BLOCK,
+        TARGET_SELF_TC_NARG_BLOCK,
+    };
+    
+    private static final MethodType TARGET_TC_SELF = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class // self
+            );
+    private static final MethodType TARGET_TC_SELF_1ARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // self
+            IRubyObject.class
+            );
+    private static final MethodType TARGET_TC_SELF_2ARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // self
+            IRubyObject.class,
+            IRubyObject.class
+            );
+    private static final MethodType TARGET_TC_SELF_3ARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // self
+            IRubyObject.class,
+            IRubyObject.class,
+            IRubyObject.class
+            );
+    private static final MethodType TARGET_TC_SELF_NARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // self
+            IRubyObject[].class
+            );
+    private static final MethodType[] TARGET_TC_SELF_ARGS = {
+        TARGET_TC_SELF,
+        TARGET_TC_SELF_1ARG,
+        TARGET_TC_SELF_2ARG,
+        TARGET_TC_SELF_3ARG,
+        TARGET_TC_SELF_NARG,
+    };
+    
+    private static final MethodType TARGET_TC_SELF_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // self
+            Block.class
+            );
+    private static final MethodType TARGET_TC_SELF_1ARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // self
+            IRubyObject.class,
+            Block.class
+            );
+    private static final MethodType TARGET_TC_SELF_2ARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // self
+            IRubyObject.class,
+            IRubyObject.class,
+            Block.class
+            );
+    private static final MethodType TARGET_TC_SELF_3ARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // self
+            IRubyObject.class,
+            IRubyObject.class,
+            IRubyObject.class,
+            Block.class
+            );
+    private static final MethodType TARGET_TC_SELF_NARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            ThreadContext.class, //context
+            IRubyObject.class, // self
+            IRubyObject[].class,
+            Block.class
+            );
+    private static final MethodType[] TARGET_TC_SELF_ARGS_BLOCK = {
+        TARGET_TC_SELF_BLOCK,
+        TARGET_TC_SELF_1ARG_BLOCK,
+        TARGET_TC_SELF_2ARG_BLOCK,
+        TARGET_TC_SELF_3ARG_BLOCK,
+        TARGET_TC_SELF_NARG_BLOCK,
+    };
+    
+    
+    private static final MethodType TARGET_SELF = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class // self
+            );
+    private static final MethodType TARGET_SELF_1ARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            IRubyObject.class
+            );
+    private static final MethodType TARGET_SELF_2ARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            IRubyObject.class,
+            IRubyObject.class
+            );
+    private static final MethodType TARGET_SELF_3ARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            IRubyObject.class,
+            IRubyObject.class,
+            IRubyObject.class
+            );
+    private static final MethodType TARGET_SELF_NARG = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            IRubyObject[].class
+            );
+    private static final MethodType[] TARGET_SELF_ARGS = {
+        TARGET_SELF,
+        TARGET_SELF_1ARG,
+        TARGET_SELF_2ARG,
+        TARGET_SELF_3ARG,
+        TARGET_SELF_NARG,
+    };
+    
+    private static final MethodType TARGET_SELF_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            Block.class
+            );
+    private static final MethodType TARGET_SELF_1ARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            IRubyObject.class,
+            Block.class
+            );
+    private static final MethodType TARGET_SELF_2ARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            IRubyObject.class,
+            IRubyObject.class,
+            Block.class
+            );
+    private static final MethodType TARGET_SELF_3ARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            IRubyObject.class,
+            IRubyObject.class,
+            IRubyObject.class,
+            Block.class
+            );
+    private static final MethodType TARGET_SELF_NARG_BLOCK = MethodType.methodType(
+            IRubyObject.class, // return value
+            IRubyObject.class, // self
+            IRubyObject[].class,
+            Block.class
+            );
+    private static final MethodType[] TARGET_SELF_ARGS_BLOCK = {
+        TARGET_SELF_BLOCK,
+        TARGET_SELF_1ARG_BLOCK,
+        TARGET_SELF_2ARG_BLOCK,
+        TARGET_SELF_3ARG_BLOCK,
+        TARGET_SELF_NARG_BLOCK,
+    };
+    
     private static final int[] SELF_TC_PERMUTE = {2, 0};
     private static final int[] SELF_TC_1ARG_PERMUTE = {2, 0, 4};
     private static final int[] SELF_TC_2ARG_PERMUTE = {2, 0, 4, 5};
@@ -310,22 +559,29 @@ public class InvokeDynamicSupport {
             if (getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
                 int argCount = getArgCount(nativeCall.getNativeSignature(), isStatic);
                 MethodType inboundType = STANDARD_NATIVE_TYPES[argCount];
+                
                 if (nativeSig.length > 0) {
                     int[] permute;
+                    MethodType convert;
                     if (nativeSig[0] == ThreadContext.class) {
                         if (nativeSig[nativeSig.length - 1] == Block.class) {
+                            convert = isStatic ? TARGET_TC_SELF_ARGS_BLOCK[argCount] : TARGET_SELF_TC_ARGS_BLOCK[argCount];
                             permute = isStatic ? TC_SELF_ARGS_BLOCK_PERMUTES[argCount] : SELF_TC_ARGS_BLOCK_PERMUTES[argCount];
                         } else {
+                            convert = isStatic ? TARGET_TC_SELF_ARGS[argCount] : TARGET_SELF_TC_ARGS[argCount];
                             permute = isStatic ? TC_SELF_ARGS_PERMUTES[argCount] : SELF_TC_ARGS_PERMUTES[argCount];
                         }
                     } else {
                         if (nativeSig[nativeSig.length - 1] == Block.class) {
-                            permute = isStatic ? SELF_ARGS_BLOCK_PERMUTES[argCount] : SELF_ARGS_BLOCK_PERMUTES[argCount];
+                            convert = TARGET_SELF_ARGS_BLOCK[argCount];
+                            permute = SELF_ARGS_BLOCK_PERMUTES[argCount];
                         } else {
-                            permute = isStatic ? SELF_ARGS_PERMUTES[argCount] : SELF_ARGS_PERMUTES[argCount];
+                            convert = TARGET_SELF_ARGS[argCount];
+                            permute = SELF_ARGS_PERMUTES[argCount];
                         }
                     }
 
+                    nativeTarget = MethodHandles.convertArguments(nativeTarget, convert);
                     nativeTarget = MethodHandles.permuteArguments(nativeTarget, inboundType, permute);
                     method.setHandle(nativeTarget);
                     return nativeTarget;
@@ -355,6 +611,71 @@ public class InvokeDynamicSupport {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static MethodHandle creatAttrHandle(DynamicMethod method) {
+        MethodHandle target = (MethodHandle)method.getHandle();
+        if (target != null) return target;
+        
+        try {
+            if (method instanceof AttrReaderMethod) {
+                AttrReaderMethod reader = (AttrReaderMethod)method;
+                target = MethodHandles.lookup().findVirtual(
+                        AttrReaderMethod.class,
+                        "call",
+                        MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
+                target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class));
+                target = MethodHandles.permuteArguments(
+                        target,
+                        MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class),
+                        new int[] {0,2,4,1,5});
+                // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String
+                target = MethodHandles.insertArguments(target, 0, reader);
+                // IRubyObject, RubyClass, ThreadContext, IRubyObject, IRubyObject, String
+                target = MethodHandles.foldArguments(target, PGC2_0);
+                // IRubyObject, ThreadContext, IRubyObject, IRubyObject, String
+            } else {
+                AttrWriterMethod writer = (AttrWriterMethod)method;
+                target = MethodHandles.lookup().findVirtual(
+                        AttrWriterMethod.class,
+                        "call",
+                        MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
+                target = MethodHandles.convertArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class));
+                target = MethodHandles.permuteArguments(
+                        target,
+                        MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class),
+                        new int[] {0,2,4,1,5,6});
+                // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String
+                target = MethodHandles.insertArguments(target, 0, writer);
+                // IRubyObject, RubyClass, ThreadContext, IRubyObject, IRubyObject, String
+                target = MethodHandles.foldArguments(target, PGC2_1);
+                // IRubyObject, ThreadContext, IRubyObject, IRubyObject, String
+            }
+            method.setHandle(target);
+            return target;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static MethodHandle createAttrGWT(
+            CacheEntry entry,
+            MethodHandle test,
+            MethodHandle fallback,
+            JRubyCallSite site,
+            boolean curryFallback) {
+        
+//        if (LOG_INDY_BINDINGS) System.out.println("binding attr target: " + site.name());
+        
+        MethodHandle target = creatAttrHandle(entry.method);
+        System.out.println(target);
+        
+        MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
+        MethodHandle myTarget = target;
+        MethodHandle myFallback = curryFallback ? MethodHandles.insertArguments(fallback, 0, site) : fallback;
+        MethodHandle guardWithTest = MethodHandles.guardWithTest(myTest, myTarget, myFallback);
+        
+        return MethodHandles.convertArguments(guardWithTest, site.type());
     }
 
     private static MethodHandle createNativeGWT(
@@ -481,14 +802,31 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name);
         }
+        
         if (site.failCount++ > MAX_FAIL_COUNT) {
             site.setTarget(createFail(FAIL_0, site));
         } else {
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(name, TEST_0, TARGET_0, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(name, TEST_0, TARGET_0, FALLBACK_0, entry, site));
-            }
+//            if (entry.method instanceof AttrReaderMethod) {
+//                MethodHandle reader = findVirtual(IRubyObject.class, "getVariable", MethodType.methodType(Object.class, int.class));
+//                reader = MethodHandles.insertArguments(reader, 1, selfClass.getVariableAccessorForRead(name).getIndex());
+//                reader = MethodHandles.permuteArguments(
+//                        reader,
+//                        MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class),
+//                        new int[]{2});
+//                if (LOG_INDY_BINDINGS) System.out.println("binding " + name + " as attribute");
+//
+//                MethodHandle myTest = MethodHandles.insertArguments(TEST_0, 0, entry.token);
+//                MethodHandle myFallback = MethodHandles.insertArguments(FALLBACK_0, 0, site);
+//                MethodHandle guardWithTest = MethodHandles.guardWithTest(myTest, reader, myFallback);
+//
+//                site.setTarget(MethodHandles.convertArguments(guardWithTest, site.type()));
+//            } else {
+                if (site.getTarget() != null) {
+                    site.setTarget(createGWT(name, TEST_0, TARGET_0, site.getTarget(), entry, site, false));
+                } else {
+                    site.setTarget(createGWT(name, TEST_0, TARGET_0, FALLBACK_0, entry, site));
+                }
+//            }
         }
 
         return entry.method.call(context, self, selfClass, name);
@@ -655,19 +993,22 @@ public class InvokeDynamicSupport {
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = selfClass.searchWithCache(name);
 
+        // because of a bug in catchException/spreadArguments for calls with 10
+        // or more arguments, we always fail to IC here for now.
+        // http://mail.openjdk.java.net/pipermail/mlvm-dev/2011-May/003031.html
         try {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2, block);
             }
-            if (site.failCount++ > MAX_FAIL_COUNT) {
+//            if (site.failCount++ > MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_3_B, site));
-            } else {
-                if (site.getTarget() != null) {
-                    site.setTarget(createGWT(name, TEST_3_B, TARGET_3_B, site.getTarget(), entry, site, false));
-                } else {
-                    site.setTarget(createGWT(name, TEST_3_B, TARGET_3_B, FALLBACK_3_B, entry, site));
-                }
-            }
+//            } else {
+//                if (site.getTarget() != null) {
+//                    site.setTarget(createGWT(name, TEST_3_B, TARGET_3_B, site.getTarget(), entry, site, false));
+//                } else {
+//                    site.setTarget(createGWT(name, TEST_3_B, TARGET_3_B, FALLBACK_3_B, entry, site));
+//                }
+//            }
             return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
@@ -962,6 +1303,13 @@ public class InvokeDynamicSupport {
         throw bj;
     }
 
+    public static IRubyObject handleBreakJump(JumpException.BreakJump bj, CacheEntry entry, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws JumpException.BreakJump {
+        if (context.getFrameJumpTarget() == bj.getTarget()) {
+            return (IRubyObject) bj.getValue();
+        }
+        throw bj;
+    }
+
     private static IRubyObject handleBreakJump(ThreadContext context, JumpException.BreakJump bj) throws JumpException.BreakJump {
         if (context.getFrameJumpTarget() == bj.getTarget()) {
             return (IRubyObject) bj.getValue();
@@ -993,6 +1341,12 @@ public class InvokeDynamicSupport {
                 IRubyObject.class),
             0,
             CacheEntry.class);
+
+    private static final MethodHandle PGC2 = MethodHandles.dropArguments(
+            findStatic(InvokeDynamicSupport.class, "pollAndGetClass",
+                MethodType.methodType(RubyClass.class, ThreadContext.class, IRubyObject.class)),
+            1,
+            IRubyObject.class);
 
     private static final MethodHandle TEST = MethodHandles.dropArguments(
             findStatic(InvokeDynamicSupport.class, "test",
@@ -1102,6 +1456,7 @@ public class InvokeDynamicSupport {
 //    }
 
     private static final MethodHandle PGC_0 = dropNameAndArgs(PGC, 4, 0, false);
+    private static final MethodHandle PGC2_0 = dropNameAndArgs(PGC2, 3, 0, false);
     private static final MethodHandle GETMETHOD_0 = dropNameAndArgs(GETMETHOD, 5, 0, false);
     private static final MethodHandle TEST_0 = dropNameAndArgs(TEST, 4, 0, false);
     private static final MethodHandle TARGET_0;
@@ -1126,6 +1481,7 @@ public class InvokeDynamicSupport {
             MethodType.methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
 
     private static final MethodHandle PGC_1 = dropNameAndArgs(PGC, 4, 1, false);
+    private static final MethodHandle PGC2_1 = dropNameAndArgs(PGC2, 3, 1, false);
     private static final MethodHandle GETMETHOD_1 = dropNameAndArgs(GETMETHOD, 5, 1, false);
     private static final MethodHandle TEST_1 = dropNameAndArgs(TEST, 4, 1, false);
     private static final MethodHandle TARGET_1;
@@ -1361,10 +1717,13 @@ public class InvokeDynamicSupport {
         target = MethodHandles.foldArguments(target, PGC_3_B);
         // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
 
-        MethodHandle breakJump = dropNameAndArgs(BREAKJUMP, 5, 3, true);
+        MethodHandle breakJump = findStatic(InvokeDynamicSupport.class, "handleBreakJump", MethodType.methodType(IRubyObject.class, JumpException.BreakJump.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
         MethodHandle retryJump = dropNameAndArgs(RETRYJUMP, 5, 3, true);
-        target = MethodHandles.catchException(target, JumpException.BreakJump.class, breakJump);
-        target = MethodHandles.catchException(target, JumpException.RetryJump.class, retryJump);
+        // because of a bug in catchException/spreadArguments for calls with 10
+        // or more arguments, we don't wire these up here or TARGET_3_B above in fallback().
+        // http://mail.openjdk.java.net/pipermail/mlvm-dev/2011-May/003031.html
+//        target = MethodHandles.catchException(target, JumpException.BreakJump.class, breakJump);
+//        target = MethodHandles.catchException(target, JumpException.RetryJump.class, retryJump);
         
         TARGET_3_B = target;
     }
