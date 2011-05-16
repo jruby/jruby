@@ -51,6 +51,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * A method or operator call.
@@ -170,7 +171,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     }
 
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (receiverNode.definition(runtime, context, self, aBlock) != null) {
             try {
                 IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
@@ -181,7 +182,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
                 if (visibility != Visibility.PRIVATE &&
                         (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
                     if (!method.isUndefined()) {
-                        return ASTInterpreter.getArgumentDefinition(runtime, context, getArgsNode(), "method", self, aBlock);
+                        return ASTInterpreter.getArgumentDefinition(runtime, context, getArgsNode(), METHOD_BYTELIST, self, aBlock);
                     }
                 }
             } catch (JumpException excptn) {

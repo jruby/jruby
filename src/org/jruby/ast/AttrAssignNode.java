@@ -47,6 +47,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Node that represents an assignment of either an array element or attribute.
@@ -255,7 +256,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     }
     
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (receiverNode.definition(runtime, context, self, aBlock) != null) {
             try {
                 IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
@@ -266,7 +267,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
                 if (visibility != Visibility.PRIVATE && 
                         (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
                     if (metaClass.isMethodBound(name, false)) {
-                        return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, "assignment", self, aBlock);
+                        return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, ASSIGNMENT_BYTELIST, self, aBlock);
                     }
                 }
             } catch (JumpException e) {

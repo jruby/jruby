@@ -42,6 +42,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Global scope node (::FooBar).  This is used to gain access to the global scope (that of the 
@@ -99,14 +100,14 @@ public class Colon3Node extends Node implements INameNode {
     }
     
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         try {
             RubyModule left = runtime.getObject();
 
             if (hasConstant(left)) {
-                return "constant";
+                return CONSTANT_BYTELIST;
             } else if (hasMethod(left)) {
-                return "method";
+                return METHOD_BYTELIST;
             }
         } catch (JumpException excptn) {
         }

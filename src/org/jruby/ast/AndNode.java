@@ -39,6 +39,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /** 
  * Represents a && (and) operator.
@@ -95,11 +96,11 @@ public class AndNode extends Node implements BinaryOperatorNode {
     }
 
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (!context.getRuntime().is1_9()) {
             return super.definition(runtime, context, self, aBlock);
         } else {
-            return "expression";
+            return EXPRESSION_BYTELIST;
         }
     }
 }

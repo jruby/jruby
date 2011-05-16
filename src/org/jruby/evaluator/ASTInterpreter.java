@@ -55,6 +55,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.InterpretedBlock;
+import org.jruby.util.ByteList;
 
 public class ASTInterpreter {
     public static IRubyObject INTERPRET_METHOD(
@@ -263,7 +264,7 @@ public class ASTInterpreter {
         }
     }
 
-    public static String getArgumentDefinition(Ruby runtime, ThreadContext context, Node node, String type, IRubyObject self, Block block) {
+    public static ByteList getArgumentDefinition(Ruby runtime, ThreadContext context, Node node, ByteList type, IRubyObject self, Block block) {
         if (node == null) return type;
             
         if (node instanceof ArrayNode) {

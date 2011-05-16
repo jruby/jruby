@@ -40,6 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * not is !
@@ -85,8 +86,8 @@ public class NotNode extends Node {
     }
 
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String definition = super.definition(runtime, context, self, aBlock);
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        ByteList definition = super.definition(runtime, context, self, aBlock);
         return RuntimeHelpers.getDefinedNot(runtime, definition);
     }
 }

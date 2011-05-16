@@ -69,8 +69,8 @@ public abstract class DNode extends ListNode {
     }
 
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String definition = super.definition(runtime, context, self, aBlock);
-        return is19() && definition == null ? "expression" : definition;
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        ByteList definition = super.definition(runtime, context, self, aBlock);
+        return is19() && definition == null ? EXPRESSION_BYTELIST : definition;
     }
 }
