@@ -539,6 +539,7 @@ public interface BodyCompiler {
     public void stringOrNil();
     public void pushNull();
     public void pushString(String strVal);
+    public void pushByteList(ByteList bl);
     public void isMethodBound(String name, BranchCallback trueBranch, BranchCallback falseBranch);
     public void hasBlock(BranchCallback trueBranch, BranchCallback falseBranch);
     public void isGlobalDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);

@@ -40,6 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  *	access to a global variable.
@@ -82,7 +83,7 @@ public class GlobalVarNode extends Node implements INameNode {
     }
     
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getGlobalVariables().isDefined(name) ? "global-variable" : null;
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return runtime.getGlobalVariables().isDefined(name) ? GLOBAL_VARIABLE_BYTELIST : null;
     }
 }

@@ -1844,9 +1844,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void stringOrNil() {
-        loadRuntime();
-        loadNil();
-        invokeUtilityMethod("stringOrNil", sig(IRubyObject.class, String.class, Ruby.class, IRubyObject.class));
+        loadThreadContext();
+        invokeUtilityMethod("stringOrNil", sig(IRubyObject.class, ByteList.class, ThreadContext.class));
     }
 
     public void pushNull() {
@@ -1855,6 +1854,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void pushString(String str) {
         method.ldc(str);
+    }
+    
+    public void pushByteList(ByteList byteList) {
+        script.getCacheCompiler().cacheByteList(this, byteList);
     }
 
     public void isMethodBound(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
@@ -2003,7 +2006,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             public void branch(BodyCompiler context) {
                 setup.branch(BaseBodyCompiler.this);
                 method.ldc(name); //[C, C, String]
-                invokeUtilityMethod("getDefinedConstantOrBoundMethod", sig(String.class, IRubyObject.class, String.class));
+                invokeUtilityMethod("getDefinedConstantOrBoundMethod", sig(ByteList.class, IRubyObject.class, String.class));
             }
         };
         String mname = getNewRescueName();
@@ -2011,7 +2014,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 script.getClassVisitor(),
                     ACC_PUBLIC | ACC_SYNTHETIC | ACC_STATIC,
                     mname,
-                    sig(String.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class),
+                    sig(ByteList.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class),
                     null,
                     null);
         SkinnyMethodAdapter old_method = null;
@@ -2089,7 +2092,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokestatic(
                 script.getClassname(),
                 mname,
-                sig(String.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class));
+                sig(ByteList.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class));
     }
 
     public void metaclass() {
@@ -2874,12 +2877,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.dup2_x1();
         method.pop2();
         method.ldc(name);
-        invokeUtilityMethod("getDefinedCall", sig(String.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+        invokeUtilityMethod("getDefinedCall", sig(ByteList.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
     }
 
     public void definedNot() {
         loadRuntime();
         method.swap();
-        invokeUtilityMethod("getDefinedNot", sig(String.class, Ruby.class, String.class));
+        invokeUtilityMethod("getDefinedNot", sig(ByteList.class, Ruby.class, ByteList.class));
     }
 }

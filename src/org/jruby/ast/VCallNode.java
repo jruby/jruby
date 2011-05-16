@@ -42,6 +42,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * RubyMethod call without any arguments
@@ -86,7 +87,7 @@ public class VCallNode extends Node implements INameNode {
     }
     
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return self.getMetaClass().isMethodBound(getName(), false) ? "method" : null;
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return self.getMetaClass().isMethodBound(getName(), false) ? METHOD_BYTELIST : null;
     }
 }

@@ -42,6 +42,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * A method or operator call.
@@ -68,8 +69,8 @@ public final class CallNoArgNode extends CallNode {
     }
     
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String definition = null;
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        ByteList definition = null;
         if (getReceiverNode().definition(runtime, context, self, aBlock) != null) {
             try {
                 IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);

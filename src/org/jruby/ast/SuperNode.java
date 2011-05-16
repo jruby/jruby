@@ -44,6 +44,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * A call to super(...) with arguments to a method.
@@ -113,14 +114,14 @@ public class SuperNode extends Node implements BlockAcceptingNode {
     }
     
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         String name = context.getFrameName();
         RubyModule klazz = context.getFrameKlazz();
 
         if (name != null &&
                 klazz != null &&
                 RuntimeHelpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass().isMethodBound(name, false)) {
-            return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, "super", self, aBlock);
+            return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, SUPER_BYTELIST, self, aBlock);
         }
             
         return null;

@@ -1423,9 +1423,9 @@ public class RuntimeHelpers {
         return runtime.getTrue();
     }
     
-    public static IRubyObject stringOrNil(String value, Ruby runtime, IRubyObject nil) {
-        if (value == null) return nil;
-        return RubyString.newString(runtime, value);
+    public static IRubyObject stringOrNil(ByteList value, ThreadContext context) {
+        if (value == null) return context.nil;
+        return RubyString.newStringShared(context.runtime, value);
     }
     
     public static void preLoad(ThreadContext context, String[] varNames) {
@@ -2134,9 +2134,9 @@ public class RuntimeHelpers {
         return left instanceof RubyModule && ((RubyModule) left).fastGetConstantFromNoConstMissing(name) != null;
     }
 
-    public static String getDefinedConstantOrBoundMethod(IRubyObject left, String name) {
-        if (isModuleAndHasConstant(left, name)) return "constant";
-        if (left.getMetaClass().isMethodBound(name, true)) return "method";
+    public static ByteList getDefinedConstantOrBoundMethod(IRubyObject left, String name) {
+        if (isModuleAndHasConstant(left, name)) return Node.CONSTANT_BYTELIST;
+        if (left.getMetaClass().isMethodBound(name, true)) return Node.METHOD_BYTELIST;
         return null;
     }
 
@@ -2373,26 +2373,26 @@ public class RuntimeHelpers {
         return parms;
     }
 
-    public static String getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
+    public static ByteList getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
         RubyClass metaClass = receiver.getMetaClass();
         DynamicMethod method = metaClass.searchMethod(name);
         Visibility visibility = method.getVisibility();
 
         if (visibility != Visibility.PRIVATE &&
                 (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self)) && !method.isUndefined()) {
-            return "method";
+            return Node.METHOD_BYTELIST;
         }
 
         if (context.getRuntime().is1_9() && receiver.callMethod(context, "respond_to_missing?",
             new IRubyObject[]{context.getRuntime().newSymbol(name), context.getRuntime().getFalse()}).isTrue()) {
-            return "method";
+            return Node.METHOD_BYTELIST;
         }
         return null;
     }
 
-    public static String getDefinedNot(Ruby runtime, String definition) {
+    public static ByteList getDefinedNot(Ruby runtime, ByteList definition) {
         if (definition != null && runtime.is1_9()) {
-            definition = "method";
+            definition = Node.METHOD_BYTELIST;
         }
 
         return definition;

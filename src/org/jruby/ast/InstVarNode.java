@@ -46,6 +46,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /** 
  * Represents an instance variable accessor.
@@ -118,7 +119,7 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     }
     
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return self.getInstanceVariables().fastHasInstanceVariable(name) ? "instance-variable" : null;
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return self.getInstanceVariables().fastHasInstanceVariable(name) ? INSTANCE_VARIABLE_BYTELIST : null;
     }
 }

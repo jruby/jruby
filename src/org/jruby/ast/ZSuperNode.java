@@ -46,6 +46,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * a call to 'super' with no arguments in a method.
@@ -101,14 +102,14 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
     }
     
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         String name = context.getFrameName();
         RubyModule klazz = context.getFrameKlazz();
 
         if (name != null &&
                 klazz != null &&
                 RuntimeHelpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass().isMethodBound(name, false)) {
-            return "super";
+            return SUPER_BYTELIST;
         }
 
         return null;

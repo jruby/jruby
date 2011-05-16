@@ -41,6 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  *	Regexp back reference:
@@ -54,10 +55,14 @@ public class BackRefNode extends Node {
      * the character which generated the back reference
      **/
     private final char type;
+    
+    /** ByteList for the name of this backref global */
+    private final ByteList nameByteList;
 
     public BackRefNode(ISourcePosition position, int type) {
         super(position);
         this.type = (char) type;
+        this.nameByteList = ByteList.create("$" + (char)type);
     }
 
     public NodeType getNodeType() {
@@ -105,11 +110,11 @@ public class BackRefNode extends Node {
     }
     
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
 
         if (backref instanceof RubyMatchData) {
-            return context.getRuntime().is1_9() ? "global-variable" : "$" + type;
+            return context.getRuntime().is1_9() ? GLOBAL_VARIABLE_BYTELIST : nameByteList;
         }
         return null;
     }

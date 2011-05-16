@@ -43,6 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Access to a class variable.
@@ -93,20 +94,20 @@ public class ClassVarNode extends Node implements INameNode {
     }
     
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         //RubyModule module = context.getRubyClass();
         RubyModule module = context.getCurrentScope().getStaticScope().getModule();
         
         if (module == null && self.getMetaClass().fastIsClassVarDefined(name)) {
-            return "class variable";
+            return CLASS_VARIABLE_BYTELIST;
         } else if (module.fastIsClassVarDefined(name)) {
-            return "class variable";
+            return CLASS_VARIABLE_BYTELIST;
         }
 
         IRubyObject attached = module.isSingleton() ? ((MetaClass)module).getAttached() : null;
         
         if (attached instanceof RubyModule && ((RubyModule) attached).fastIsClassVarDefined(name)) {
-            return "class variable"; 
+            return CLASS_VARIABLE_BYTELIST; 
         }
 
         return null;

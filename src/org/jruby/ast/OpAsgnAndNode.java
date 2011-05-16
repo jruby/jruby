@@ -41,6 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
     private final Node firstNode;
@@ -99,10 +100,10 @@ public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
     }
 
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         try {
             interpret(runtime, context, self, aBlock);
-            return "assignment";
+            return ASSIGNMENT_BYTELIST;
         } catch (JumpException jumpExcptn) {
         }
 

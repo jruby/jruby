@@ -12,6 +12,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * Represents a constant path which ends in a method (e.g. Foo::bar).  Note: methods with
@@ -30,9 +31,9 @@ public class Colon2MethodNode extends Colon2Node {
     }
 
     @Override
-    public String definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
        try {
-           if (hasMethod(leftNode.interpret(runtime, context, self, aBlock))) return "method";
+           if (hasMethod(leftNode.interpret(runtime, context, self, aBlock))) return METHOD_BYTELIST;
         } catch (JumpException e) {
         }
 

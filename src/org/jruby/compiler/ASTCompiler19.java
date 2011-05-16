@@ -107,7 +107,7 @@ public class ASTCompiler19 extends ASTCompiler {
 
     @Override
     protected void compileDefinedAndOrDStrDRegexp(final Node node, BodyCompiler context) {
-        context.pushString("expression");
+        context.pushByteList(Node.EXPRESSION_BYTELIST);
     }
 
     @Override
@@ -117,7 +117,7 @@ public class ASTCompiler19 extends ASTCompiler {
                 new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        context.pushString("global-variable");
+                        context.pushByteList(Node.GLOBAL_VARIABLE_BYTELIST);
                     }
                 },
                 new BranchCallback() {
@@ -130,7 +130,7 @@ public class ASTCompiler19 extends ASTCompiler {
 
     @Override
     protected void compileDefinedDVar(final Node node, BodyCompiler context) {
-        context.pushString("local-variable");
+        context.pushByteList(Node.LOCAL_VARIABLE_BYTELIST);
     }
 
     @Override
@@ -139,7 +139,7 @@ public class ASTCompiler19 extends ASTCompiler {
                 new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        context.pushString("global-variable");
+                        context.pushByteList(Node.GLOBAL_VARIABLE_BYTELIST);
                     }
                 },
                 new BranchCallback() {

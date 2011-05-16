@@ -35,11 +35,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * a defined statement.
@@ -83,8 +85,8 @@ public class DefinedNode extends Node {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         try {
             context.setWithinDefined(true);
-            String definition = expressionNode.definition(runtime, context, self, aBlock);
-            return definition != null ? runtime.newString(definition) : runtime.getNil();
+            ByteList definition = expressionNode.definition(runtime, context, self, aBlock);
+            return definition != null ? RubyString.newStringShared(runtime, definition) : runtime.getNil();
         } finally {
             context.setWithinDefined(false);
         }
