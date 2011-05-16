@@ -20,6 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.ByteList;
 
 public class JRubyImplCallInstr extends CallInstr {
     public enum JRubyImplementationMethod {
@@ -146,7 +147,7 @@ public class JRubyImplCallInstr extends CallInstr {
             {
                 IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(interp);
                 name = ((StringLiteral)getCallArgs()[1])._str_value;
-					 String definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
+					 ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
                 rVal = (definedType == null ? Nil.NIL : (new StringLiteral(definedType))).retrieve(interp);
                 break;
             }
