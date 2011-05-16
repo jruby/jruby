@@ -33,13 +33,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
+import org.jruby.util.collections.StringArraySet;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -54,7 +54,6 @@ import java.util.zip.ZipException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFile;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
@@ -62,6 +61,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
@@ -156,8 +156,7 @@ public class LoadService {
     protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|bundle|jar)$");
 
     protected RubyArray loadPath;
-    protected RubyArray loadedFeatures;
-    protected List loadedFeaturesInternal;
+    protected StringArraySet loadedFeatures;
     protected final Map<String, Library> builtinLibraries = new HashMap<String, Library>();
 
     protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
@@ -179,8 +178,23 @@ public class LoadService {
 
     public void init(List additionalDirectories) {
         loadPath = RubyArray.newArray(runtime);
-        loadedFeatures = RubyArray.newArray(runtime);
-        loadedFeaturesInternal = Collections.synchronizedList(loadedFeatures);
+        
+        String jrubyHome = runtime.getJRubyHome();
+        if (jrubyHome != null) {
+            String lowerCaseJRubyHome = jrubyHome.toLowerCase();
+            String upperCaseJRubyHome = lowerCaseJRubyHome.toUpperCase();
+
+            try {
+                String canonNormal = new File(jrubyHome).getCanonicalPath();
+                String canonLower = new File(lowerCaseJRubyHome).getCanonicalPath();
+                String canonUpper = new File(upperCaseJRubyHome).getCanonicalPath();
+                if (canonNormal.equals(canonLower) && canonLower.equals(canonUpper)) {
+                    caseInsensitiveFS = true;
+                }
+            } catch (Exception e) {}
+        }
+        
+        loadedFeatures = new StringArraySet(runtime, caseInsensitiveFS);
         
         // add all startup load paths to the list first
         for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
@@ -200,7 +214,6 @@ public class LoadService {
 
         // wrap in try/catch for security exceptions in an applet
         try {
-            String jrubyHome = runtime.getJRubyHome();
             if (jrubyHome != null) {
                 char sep = '/';
                 String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
@@ -217,18 +230,6 @@ public class LoadService {
                     addPath(rubyDir + "site_ruby" + sep + "shared");
                     addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
                 }
-
-                String lowerCaseJRubyHome = jrubyHome.toLowerCase();
-                String upperCaseJRubyHome = lowerCaseJRubyHome.toUpperCase();
-
-                try {
-                    String canonNormal = new File(jrubyHome).getCanonicalPath();
-                    String canonLower = new File(lowerCaseJRubyHome).getCanonicalPath();
-                    String canonUpper = new File(upperCaseJRubyHome).getCanonicalPath();
-                    if (canonNormal.equals(canonLower) && canonLower.equals(canonUpper)) {
-                        caseInsensitiveFS = true;
-                    }
-                } catch (Exception e) {}
             }
 
         } catch(SecurityException ignore) {}
@@ -240,7 +241,7 @@ public class LoadService {
     }
 
     protected void addLoadedFeature(RubyString loadNameRubyString) {
-        loadedFeaturesInternal.add(loadNameRubyString);
+        loadedFeatures.append(loadNameRubyString);
     }
 
     protected void addPath(String path) {
@@ -489,35 +490,12 @@ public class LoadService {
     }
 
     public void removeInternalLoadedFeature(String name) {
-        if (caseInsensitiveFS) {
-            // on a case-insensitive filesystem, we need to search case-insensitively
-            // to remove the loaded feature
-            RubyString nameRubyString = runtime.newString(name);
-            for (int i = 0; i < loadedFeatures.size(); i++) {
-                RubyString feature = loadedFeatures.eltInternal(i).convertToString();
-                if (((RubyFixnum)feature.casecmp(runtime.getCurrentContext(), nameRubyString)).getLongValue() == 0) {
-                    loadedFeatures.remove(i);
-                }
-            }
-        } else {
-            loadedFeaturesInternal.remove(name);
-        }
+        RubyString nameRubyString = runtime.newString(name);
+        loadedFeatures.delete(runtime.getCurrentContext(), nameRubyString, Block.NULL_BLOCK);
     }
 
     protected boolean featureAlreadyLoaded(RubyString loadNameRubyString) {
-        if (caseInsensitiveFS) {
-            // on a case-insensitive filesystem, we need to search case-insensitively
-            // to find the loaded feature
-            for (int i = 0; i < loadedFeatures.size(); i++) {
-                RubyString feature = loadedFeatures.eltInternal(i).convertToString();
-                if (((RubyFixnum)feature.casecmp(runtime.getCurrentContext(), loadNameRubyString)).getLongValue() == 0) {
-                    return true;
-                }
-            }
-            return false;
-        } else {
-            return loadedFeaturesInternal.contains(loadNameRubyString);
-        }
+        return loadedFeatures.include_p(runtime.getCurrentContext(), loadNameRubyString).isTrue();
     }
 
     protected boolean isJarfileLibrary(SearchState state, final String file) {
