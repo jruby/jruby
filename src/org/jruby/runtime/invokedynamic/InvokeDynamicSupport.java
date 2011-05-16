@@ -993,22 +993,19 @@ public class InvokeDynamicSupport {
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = selfClass.searchWithCache(name);
 
-        // because of a bug in catchException/spreadArguments for calls with 10
-        // or more arguments, we always fail to IC here for now.
-        // http://mail.openjdk.java.net/pipermail/mlvm-dev/2011-May/003031.html
         try {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2, block);
             }
-//            if (site.failCount++ > MAX_FAIL_COUNT) {
+            if (site.failCount++ > MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_3_B, site));
-//            } else {
-//                if (site.getTarget() != null) {
-//                    site.setTarget(createGWT(name, TEST_3_B, TARGET_3_B, site.getTarget(), entry, site, false));
-//                } else {
-//                    site.setTarget(createGWT(name, TEST_3_B, TARGET_3_B, FALLBACK_3_B, entry, site));
-//                }
-//            }
+            } else {
+                if (site.getTarget() != null) {
+                    site.setTarget(createGWT(name, TEST_3_B, TARGET_3_B, site.getTarget(), entry, site, false));
+                } else {
+                    site.setTarget(createGWT(name, TEST_3_B, TARGET_3_B, FALLBACK_3_B, entry, site));
+                }
+            }
             return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(context, bj);
@@ -1719,11 +1716,8 @@ public class InvokeDynamicSupport {
 
         MethodHandle breakJump = findStatic(InvokeDynamicSupport.class, "handleBreakJump", MethodType.methodType(IRubyObject.class, JumpException.BreakJump.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
         MethodHandle retryJump = dropNameAndArgs(RETRYJUMP, 5, 3, true);
-        // because of a bug in catchException/spreadArguments for calls with 10
-        // or more arguments, we don't wire these up here or TARGET_3_B above in fallback().
-        // http://mail.openjdk.java.net/pipermail/mlvm-dev/2011-May/003031.html
-//        target = MethodHandles.catchException(target, JumpException.BreakJump.class, breakJump);
-//        target = MethodHandles.catchException(target, JumpException.RetryJump.class, retryJump);
+        target = MethodHandles.catchException(target, JumpException.BreakJump.class, breakJump);
+        target = MethodHandles.catchException(target, JumpException.RetryJump.class, retryJump);
         
         TARGET_3_B = target;
     }
