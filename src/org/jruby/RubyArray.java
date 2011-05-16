@@ -303,7 +303,7 @@ public class RubyArray extends RubyObject implements List {
         this.isShared = true;
     }
     
-    private RubyArray(Ruby runtime, int length) {
+    protected RubyArray(Ruby runtime, int length) {
         super(runtime, runtime.getArray());
         values = new IRubyObject[length];
     }
