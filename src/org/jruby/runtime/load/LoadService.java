@@ -302,18 +302,18 @@ public class LoadService {
     }
 
     public boolean require(String requireName) {
-        return requireCommon(requireName) == RequireState.LOADED;
+        return requireCommon(requireName, true) == RequireState.LOADED;
     }
     
     public boolean autoloadRequire(String requireName) {
-        return requireCommon(requireName) != RequireState.CIRCULAR;
+        return requireCommon(requireName, false) != RequireState.CIRCULAR;
     }
     
     private enum RequireState {
         LOADED, ALREADY_LOADED, CIRCULAR
     };
     
-    private RequireState requireCommon(String requireName) {
+    private RequireState requireCommon(String requireName, boolean circularRequireWarning) {
         ReentrantLock requireLock;
         synchronized (requireLocks) {
             requireLock = requireLocks.get(requireName);
@@ -321,7 +321,7 @@ public class LoadService {
                 requireLock = new ReentrantLock();
                 requireLocks.put(requireName, requireLock);
             } else if (requireLock.isHeldByCurrentThread()) {
-                if (runtime.isVerbose() && runtime.is1_9()) {
+                if (circularRequireWarning && runtime.isVerbose() && runtime.is1_9()) {
                     warnCircularRequire(requireName);
                 }
                 return RequireState.CIRCULAR;
