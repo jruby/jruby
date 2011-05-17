@@ -161,7 +161,7 @@ public class LoadService {
 
     protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
 
-    protected final Map<String, IAutoloadMethod> autoloadMap = new HashMap<String, IAutoloadMethod>();
+    protected final Map<String, IAutoloadMethod> autoloadMap = Collections.synchronizedMap(new HashMap<String, IAutoloadMethod>());
 
     protected final Ruby runtime;
 
@@ -292,6 +292,18 @@ public class LoadService {
     }
 
     public boolean require(String requireName) {
+        return requireCommon(requireName) == RequireState.LOADED;
+    }
+    
+    public boolean autoloadRequire(String requireName) {
+        return requireCommon(requireName) != RequireState.CIRCULAR;
+    }
+    
+    private enum RequireState {
+        LOADED, ALREADY_LOADED, CIRCULAR
+    };
+    
+    private RequireState requireCommon(String requireName) {
         ReentrantLock requireLock;
         synchronized (requireLocks) {
             requireLock = requireLocks.get(requireName);
@@ -302,7 +314,7 @@ public class LoadService {
                 if (runtime.isVerbose() && runtime.is1_9()) {
                     warnCircularRequire(requireName);
                 }
-                return false;
+                return RequireState.CIRCULAR;
             }
         }
         try {
@@ -313,12 +325,13 @@ public class LoadService {
 
             // check for requiredName without extension.
             if (featureAlreadyLoaded(requireName)) {
-                return false;
+                return RequireState.ALREADY_LOADED;
             }
 
             long startTime = loadTimer.startLoad(requireName);
             try {
-                return smartLoadInternal(requireName);
+                boolean loaded = smartLoadInternal(requireName);
+                return loaded ? RequireState.LOADED : RequireState.ALREADY_LOADED;
             } finally {
                 loadTimer.endLoad(requireName, startTime);
             }
@@ -468,7 +481,7 @@ public class LoadService {
     }
 
     public IRubyObject autoload(String name) {
-        IAutoloadMethod loadMethod = autoloadMap.remove(name);
+        IAutoloadMethod loadMethod = autoloadMap.get(name);
         if (loadMethod != null) {
             return loadMethod.load(runtime, name);
         }
