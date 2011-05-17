@@ -277,6 +277,16 @@ public class LoadService {
     }
 
     public SearchState findFileForLoad(String file) {
+        if (Platform.IS_WINDOWS) {
+            file = file.replace('\\', '/');
+        }
+        // Even if we don't support .so, some stdlib require .so directly.
+        // Replace it with .jar to look for a java extension
+        // JRUBY-5033: The ExtensionSearcher will locate C exts, too, this way.
+        if (file.endsWith(".so")) {
+            file = file.replaceAll(".so$", ".jar");
+        }
+        
         SearchState state = new SearchState(file);
         state.prepareRequireSearch(file);
 
@@ -368,19 +378,7 @@ public class LoadService {
 
     private boolean smartLoadInternal(String file) {
         checkEmptyLoad(file);
-        if (Platform.IS_WINDOWS) {
-            file = file.replace('\\', '/');
-        }
-
-        SearchState state;
-
-        // Even if we don't support .so, some stdlib require .so directly.
-        // Replace it with .jar to look for a java extension
-        // JRUBY-5033: The ExtensionSearcher will locate C exts, too, this way.
-        if (file.endsWith(".so")) {
-            file = file.replaceAll(".so$", ".jar");
-        }
-        state = findFileForLoad(file);
+        SearchState state = findFileForLoad(file);
         if (state == null) {
             return false;
         }
