@@ -241,8 +241,8 @@ public class LoadService {
         }
     }
 
-    protected void addLoadedFeature(RubyString loadNameRubyString) {
-        loadedFeatures.append(loadNameRubyString);
+    protected void addLoadedFeature(String name) {
+        loadedFeatures.append(RubyString.newString(runtime, name));
     }
 
     protected void addPath(String path) {
@@ -396,8 +396,7 @@ public class LoadService {
 
         boolean loaded = tryLoadingLibraryOrScript(runtime, state);
         if (loaded) {
-            RubyString requireName = RubyString.newString(runtime, state.loadName);
-            addLoadedFeature(requireName);
+            addLoadedFeature(state.loadName);
         }
         return loaded;
     }
@@ -507,8 +506,7 @@ public class LoadService {
     }
 
     protected boolean featureAlreadyLoaded(String name) {
-        RubyString loadNameRubyString = runtime.newString(name);
-        return loadedFeatures.include_p(runtime.getCurrentContext(), loadNameRubyString).isTrue();
+        return loadedFeatures.containsString(name);
     }
 
     protected boolean isJarfileLibrary(SearchState state, final String file) {
