@@ -344,6 +344,10 @@ public class StringArraySet extends RubyArray {
         return result;
     }
 
+    public synchronized boolean containsString(String element) {
+        return set.contains(element);
+    }
+
     private String getStringFromItem(IRubyObject item) {
         String string = item.convertToString().asJavaString();
         if (caseInsensitive) {

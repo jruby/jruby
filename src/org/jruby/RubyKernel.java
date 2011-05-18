@@ -204,8 +204,9 @@ public class RubyKernel {
              * @see org.jruby.runtime.load.IAutoloadMethod#load(Ruby, String)
              */
             public IRubyObject load(Ruby runtime, String name) {
-                boolean required = loadService.require(file());
-                
+                boolean required = loadService.autoloadRequire(file());
+                loadService.removeAutoLoadFor(module.getName() + "::" + baseName);
+
                 // File to be loaded by autoload has already been or is being loaded.
                 if (!required) return null;
                 

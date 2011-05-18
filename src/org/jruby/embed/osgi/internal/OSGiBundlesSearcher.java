@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.embed.osgi.internal;
 
-import org.jruby.runtime.load.LoadService.AlreadyLoaded;
 import org.jruby.runtime.load.LoadService.LoadSearcher;
 import org.jruby.runtime.load.LoadService.SearchState;
 
@@ -48,8 +47,8 @@ public class OSGiBundlesSearcher implements LoadSearcher {
     /* (non-Javadoc)
      * @see org.jruby.runtime.load.LoadService.LoadSearcher#trySearch(org.jruby.runtime.load.LoadService.SearchState)
      */
-    public void trySearch(SearchState state) throws AlreadyLoaded {
-        
+    public boolean trySearch(SearchState state) {
+        return true;
     }
 
 }
