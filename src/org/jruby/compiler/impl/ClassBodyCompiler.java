@@ -27,8 +27,7 @@ public class ClassBodyCompiler extends RootScopedBodyCompiler {
     public void performReturn() {
         // return in a class body raises error
         loadThreadContext();
-        invokeUtilityMethod("returnJump", sig(JumpException.ReturnJump.class, IRubyObject.class, ThreadContext.class));
-        method.athrow();
+        invokeUtilityMethod("throwReturnJump", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class));
     }
 
     public boolean isSimpleRoot() {

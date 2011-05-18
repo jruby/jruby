@@ -103,8 +103,7 @@ public class ChildScopedBodyCompiler extends BaseBodyCompiler {
 
     public void performReturn() {
         loadThreadContext();
-        invokeUtilityMethod("returnJump", sig(JumpException.ReturnJump.class, IRubyObject.class, ThreadContext.class));
-        method.athrow();
+        invokeUtilityMethod("throwReturnJump", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class));
     }
 
     public void issueBreakEvent(CompilerCallback value) {

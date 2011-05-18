@@ -359,7 +359,7 @@ public class RubyInstanceConfig {
         
         // stack map calculation is failing for some compilation scenarios, so
         // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.
-        if (specVersion.equals("1.5") || specVersion.equals("1.6")) {
+        if (specVersion.equals("1.5")) {// || specVersion.equals("1.6")) {
             JAVA_VERSION = Opcodes.V1_5;
         } else if (specVersion.equals("1.6")) {
             JAVA_VERSION = Opcodes.V1_6;

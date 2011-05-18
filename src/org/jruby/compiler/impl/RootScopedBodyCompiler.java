@@ -116,8 +116,7 @@ public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
         // normal return for method body. return jump for within a begin/rescue/ensure
         if (inNestedMethod) {
             loadThreadContext();
-            invokeUtilityMethod("returnJump", sig(JumpException.ReturnJump.class, IRubyObject.class, ThreadContext.class));
-            method.athrow();
+            invokeUtilityMethod("throwReturnJump", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class));
         } else {
             method.areturn();
         }
