@@ -316,21 +316,15 @@ public class LoadService {
     };
     
     private RequireState requireCommon(String requireName, boolean circularRequireWarning) {
-        ReentrantLock requireLock;
-        synchronized (requireLocks) {
-            requireLock = requireLocks.get(requireName);
+        ReentrantLock requireLock = null;
+        try {
+            requireLock = acquireRequireLock(requireName);
             if (requireLock == null) {
-                requireLock = new ReentrantLock();
-                requireLocks.put(requireName, requireLock);
-            } else if (requireLock.isHeldByCurrentThread()) {
                 if (circularRequireWarning && runtime.isVerbose() && runtime.is1_9()) {
                     warnCircularRequire(requireName);
                 }
                 return RequireState.CIRCULAR;
             }
-        }
-        try {
-            requireLock.lock();
             if (!runtime.getProfile().allowRequire(requireName)) {
                 throw runtime.newLoadError("no such file to load -- " + requireName);
             }
@@ -348,12 +342,33 @@ public class LoadService {
                 loadTimer.endLoad(requireName, startTime);
             }
         } finally {
-            synchronized (requireLocks) {
-                if (requireLock.isLocked()) {
-                    requireLock.unlock();
-                }
-                requireLocks.remove(requireName);
+            if (requireLock != null) {
+                releaseRequireLock(requireName, requireLock);
             }
+        }
+    }
+
+    private ReentrantLock acquireRequireLock(String requireName) {
+        ReentrantLock requireLock;
+        synchronized (requireLocks) {
+            requireLock = requireLocks.get(requireName);
+            if (requireLock == null) {
+                requireLock = new ReentrantLock();
+                requireLocks.put(requireName, requireLock);
+            } else if (requireLock.isHeldByCurrentThread()) {
+                return null;
+            }
+        }
+        requireLock.lock();
+        return requireLock;
+    }
+
+    private void releaseRequireLock(String requireName, ReentrantLock requireLock) {
+        synchronized (requireLocks) {
+            if (requireLock.isLocked()) {
+                requireLock.unlock();
+            }
+            requireLocks.remove(requireName);
         }
     }
 
