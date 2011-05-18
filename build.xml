@@ -845,14 +845,6 @@
     description="Runs unit tests.">
   </target>
 
-  <target name="test-indy" depends="
-    copy-test-files,
-    install-gems,
-    run-junit-indy-short,
-    test-rake-targets"
-    description="Runs unit tests.">
-  </target>
-
   <target name="test-extended" depends="
     copy-test-files,
     install-gems,
@@ -893,8 +885,6 @@
   <target name="run-junit-compiled"><run-junit-1.8 compile.mode="JIT" jit.threshold="0"/></target>
   <target name="run-junit-compiled-short"><run-junit-1.8-short compile.mode="JIT" jit.threshold="0"/></target>
   <target name="run-junit-interpreted-short"><run-junit-1.8-short/></target>
-  <target name="run-junit-indy-short"><run-junit-1.8-indy-short/></target>
-  <!-- temporarily disabled during compiler work -->
   <target name="run-junit-compiled-1.9"><run-junit-1.9 compile.mode="JIT" jit.threshold="0"/></target>
   <target name="run-junit-reflected-compiled"><run-junit-1.8 compile.mode="JIT" jit.threshold="0" reflection="true"/></target>
   <target name="run-junit-reflected-compiled-1.9"><run-junit-1.9 compile.mode="JIT" jit.threshold="0" reflection="true"/></target>
@@ -919,61 +909,6 @@
     <pathelement path="${test.dir}/requireTest.jar"/>
     <pathelement location="${test.dir}"/>
   </path>
-
-  <macrodef name="run-junit-indy">
-    <attribute name="jruby.version" default="ruby1_8"/>
-    <attribute name="compile.mode" default="-X+O"/>
-    <attribute name="jit.threshold" default="0"/>
-    <attribute name="jit.maxsize" default="1000000000"/>
-    <attribute name="jit.max" default="-1"/>
-    <attribute name="objectspace.enabled" default="true"/>
-    <attribute name="thread.pooling" default="false"/>
-    <attribute name="reflection" default="false"/>
-    <element name="junit-tests"/>
-    <sequential>
-      <echo message="compile=@{compile.mode}, jit.threshold=@{jit.threshold}, jit.maxsize=@{jit.maxsize}, jit.max=@{jit.max}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection} version=@{jruby.version}"/>
-      <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
-
-      <junit jvm="${jruby.test.jvm}" fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="1800000">
-	<classpath refid="test.class.path"/>
-
-        <sysproperty key="jruby.compile.invokedynamic" value="true"/>
-	<sysproperty key="java.awt.headless" value="true"/>
-	<sysproperty key="jruby.home" value="${basedir}"/>
-	<sysproperty key="jruby.lib" value="${lib.dir}"/>
-	<sysproperty key="jruby.compile.mode" value="@{compile.mode}"/>
-	<sysproperty key="jruby.jit.threshold" value="@{jit.threshold}"/>
-	<sysproperty key="jruby.jit.maxsize" value="@{jit.maxsize}"/>
-	<sysproperty key="jruby.jit.max" value="@{jit.max}"/>
-	<sysproperty key="jruby.compat.version" value="@{jruby.version}"/>
-	<sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
-	<sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
-	<sysproperty key="jruby.reflection" value="@{reflection}"/>
-	<sysproperty key="jruby.jit.logging.verbose" value="true"/>
-	<sysproperty key="jruby.compile.lazyHandles" value="true"/>
-
-        <!-- emma coverage tool properties -->
-	<sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma" />
-	<sysproperty key="emma.coverage.out.merge" value="true" />
-        <sysproperty key="emma.verbosity.level" value="silent" />
-
-        <syspropertyset refid="test.sysproperties"/>
-
-        <!-- force client VM to improve test run times AND -->
-        <!-- set a larger max permgen, since the tests load a lot of bytecode -->
-        <jvmarg line="-ea ${java.opts} -client -XX:MaxPermSize=256M -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles -XX:+EnableInvokeDynamic"/>
-
-	<formatter type="xml"/>
-	<formatter type="brief" usefile="false" />
-
-	<junit-tests/>
-      </junit>
-      <junitreport todir="${test.results.dir}">
-	<fileset dir="${test.results.dir}" includes="TEST-*.xml"/>
-	<report format="frames" todir="${html.test.results.dir}"/>
-      </junitreport>
-    </sequential>
-  </macrodef>
 
   <macrodef name="run-junit">
     <attribute name="jruby.version" default="ruby1_8"/>
@@ -1050,21 +985,6 @@
 	  <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
 	</junit-tests>
       </run-junit>
-    </sequential>
-  </macrodef>
-
-  <!-- runs junit tests for 1.8 functionality -->
-  <macrodef name="run-junit-1.8-indy-short">
-    <sequential>
-      <run-junit-indy>
-	<junit-tests>
-	  <test name="${test}" if="test"/>
-	  <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}" unless="test"/>
-	  <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" unless="test"/>
-	  <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>
-	  <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
-	</junit-tests>
-      </run-junit-indy>
     </sequential>
   </macrodef>
 
