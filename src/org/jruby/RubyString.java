@@ -4754,7 +4754,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             prepared = regexp.preparePattern(this);
         } else {
             regexp = null;
-            tuFlags = 0;
+            tuFlags = arg.isTaint() ? RubyBasicObject.TAINTED_F : 0;
             pattern = getStringPattern19(runtime, arg);
             prepared = RubyRegexp.preparePattern(runtime, pattern, this);
         }
