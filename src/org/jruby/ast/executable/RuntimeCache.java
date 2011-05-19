@@ -363,7 +363,7 @@ public class RuntimeCache {
     public final void initConstants(int size) {
         constants = new IRubyObject[size];
         constantTargetHashes = new int[size];
-        constantGenerations = new int[size];
+        constantGenerations = new Object[size];
         Arrays.fill(constantGenerations, -1);
         Arrays.fill(constantTargetHashes, -1);
     }
@@ -395,11 +395,11 @@ public class RuntimeCache {
     }
 
     private boolean isCached(ThreadContext context, IRubyObject value, int index) {
-        return value != null && constantGenerations[index] == context.getRuntime().getConstantGeneration();
+        return value != null && constantGenerations[index] == context.getRuntime().getConstantInvalidator().getData();
     }
 
     public IRubyObject reCache(ThreadContext context, String name, int index) {
-        int newGeneration = context.getRuntime().getConstantGeneration();
+        Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
         IRubyObject value = context.getConstant(name);
         constants[index] = value;
         if (value != null) {
@@ -420,11 +420,11 @@ public class RuntimeCache {
     }
 
     private boolean isCachedFrom(RubyModule target, ThreadContext context, IRubyObject value, int index) {
-        return value != null && constantGenerations[index] == context.getRuntime().getConstantGeneration() && constantTargetHashes[index] == target.hashCode();
+        return value != null && constantGenerations[index] == context.getRuntime().getConstantInvalidator().getData() && constantTargetHashes[index] == target.hashCode();
     }
 
     public IRubyObject reCacheFrom(RubyModule target, ThreadContext context, String name, int index) {
-        int newGeneration = context.getRuntime().getConstantGeneration();
+        Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
         IRubyObject value = target.fastGetConstantFromNoConstMissing(name);
         constants[index] = value;
         if (value != null) {
@@ -654,6 +654,7 @@ public class RuntimeCache {
     public VariableAccessor[] variableWriters = EMPTY_VARIABLE_ACCESSORS;
     public IRubyObject[] constants = IRubyObject.NULL_ARRAY;
     private static final int[] EMPTY_INTS = {};
-    public int[] constantGenerations = EMPTY_INTS;
+    private static final Object[] EMPTY_OBJS = {};
+    public Object[] constantGenerations = EMPTY_OBJS;
     public int[] constantTargetHashes = EMPTY_INTS;
 }

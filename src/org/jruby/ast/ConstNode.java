@@ -48,7 +48,7 @@ import org.jruby.util.ByteList;
 public class ConstNode extends Node implements INameNode {
     private String name;
     private volatile transient IRubyObject cachedValue = null;
-    private int generation = -1;
+    private Object generation = -1;
     
     public ConstNode(ISourcePosition position, String name) {
         super(position);
@@ -104,11 +104,11 @@ public class ConstNode extends Node implements INameNode {
     }
     
     private boolean isCached(ThreadContext context, IRubyObject value) {
-        return value != null && generation == context.getRuntime().getConstantGeneration();
+        return value != null && generation == context.getRuntime().getConstantInvalidator().getData();
     }
     
     public IRubyObject reCache(ThreadContext context, String name) {
-        int newGeneration = context.getRuntime().getConstantGeneration();
+        Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
         IRubyObject value = context.getConstant(name);
             
         cachedValue = value;

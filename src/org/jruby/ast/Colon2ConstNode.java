@@ -21,7 +21,7 @@ import org.jruby.util.ByteList;
  */
 public class Colon2ConstNode extends Colon2Node {
     private volatile transient IRubyObject cachedValue = null;
-    private volatile int generation = -1;
+    private volatile Object generation = -1;
     private volatile int hash = -1;
     
     public Colon2ConstNode(ISourcePosition position, Node leftNode, String name) {
@@ -61,12 +61,12 @@ public class Colon2ConstNode extends Colon2Node {
         // We could probably also detect if LHS value came out of cache and avoid some of this
         return
                 value != null &&
-                generation == context.getRuntime().getConstantGeneration() &&
+                generation == context.getRuntime().getConstantInvalidator().getData() &&
                 hash == target.hashCode();
     }
 
     public IRubyObject reCache(ThreadContext context, RubyModule target) {
-        int newGeneration = context.getRuntime().getConstantGeneration();
+        Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
         IRubyObject value = target.fastGetConstantFromNoConstMissing(name);
 
         cachedValue = value;

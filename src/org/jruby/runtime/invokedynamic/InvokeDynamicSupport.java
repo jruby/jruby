@@ -5,6 +5,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.SwitchPoint;
 import java.util.Arrays;
 import java.util.Comparator;
 import org.jruby.RubyBasicObject;
@@ -33,6 +34,7 @@ import org.objectweb.asm.Opcodes;
 public class InvokeDynamicSupport {
     private static final int MAX_FAIL_COUNT = SafePropertyAccessor.getInt("jruby.compile.invokedynamic.maxfail", 2);
     private static final boolean LOG_INDY_BINDINGS = SafePropertyAccessor.getBoolean("jruby.invokedynamic.log.binding");
+    private static final boolean LOG_INDY_CONSTANTS = SafePropertyAccessor.getBoolean("jruby.invokedynamic.log.constants");
     
     public static class JRubyCallSite extends MutableCallSite {
         private final CallType callType;
@@ -48,6 +50,19 @@ public class InvokeDynamicSupport {
 
         public CallType callType() {
             return callType;
+        }
+    }
+    
+    public static class RubyConstantCallSite extends MutableCallSite {
+        private final String name;
+
+        public RubyConstantCallSite(MethodType type, String name) {
+            super(type);
+            this.name = name;
+        }
+        
+        public String name() {
+            return name;
         }
     }
 
@@ -69,12 +84,59 @@ public class InvokeDynamicSupport {
         site.setTarget(myFallback);
         return site;
     }
+
+    public static CallSite getConstantBootstrap(MethodHandles.Lookup lookup, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+        RubyConstantCallSite site;
+
+        site = new RubyConstantCallSite(type, name);
+        
+        MethodType fallbackType = type.insertParameterTypes(0, RubyConstantCallSite.class);
+        MethodHandle myFallback = MethodHandles.insertArguments(
+                lookup.findStatic(InvokeDynamicSupport.class, "constantFallback",
+                fallbackType),
+                0,
+                site);
+        site.setTarget(myFallback);
+        return site;
+    }
+
+    public static IRubyObject constantFallback(RubyConstantCallSite site, 
+            ThreadContext context) {
+        IRubyObject value = context.getConstant(site.name());
+        
+        if (value != null) {
+            if (LOG_INDY_CONSTANTS) System.out.println("binding constant " + site.name() + " with invokedynamic");
+            
+            MethodHandle valueHandle = MethodHandles.constant(IRubyObject.class, value);
+            valueHandle = MethodHandles.dropArguments(valueHandle, 0, ThreadContext.class);
+
+            MethodHandle fallback = MethodHandles.insertArguments(
+                    findStatic(InvokeDynamicSupport.class, "constantFallback",
+                    MethodType.methodType(IRubyObject.class, RubyConstantCallSite.class, ThreadContext.class)),
+                    0,
+                    site);
+
+            SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
+            MethodHandle gwt = switchPoint.guardWithTest(valueHandle, fallback);
+            site.setTarget(gwt);
+        } else {
+            value = context.getCurrentScope().getStaticScope().getModule()
+                    .callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(site.name()));
+        }
+        
+        return value;
+    }
     
     public final static MethodType BOOTSTRAP_SIGNATURE      = MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
     public final static String     BOOTSTRAP_SIGNATURE_DESC = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
+    public final static String     GETCONSTANT_SIGNATURE_DESC = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
     
     public static org.objectweb.asm.MethodHandle bootstrapHandle() {
         return new org.objectweb.asm.MethodHandle(Opcodes.MH_INVOKESTATIC, p(InvokeDynamicSupport.class), "bootstrap", BOOTSTRAP_SIGNATURE_DESC);
+    }
+    
+    public static org.objectweb.asm.MethodHandle getConstantHandle() {
+        return new org.objectweb.asm.MethodHandle(Opcodes.MH_INVOKESTATIC, p(InvokeDynamicSupport.class), "getConstantBootstrap", GETCONSTANT_SIGNATURE_DESC);
     }
 
     private static MethodHandle createGWT(String name, MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {

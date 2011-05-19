@@ -130,6 +130,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
+import org.jruby.runtime.opto.ObjectIdentityInvalidator;
+import org.jruby.runtime.opto.Invalidator;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -143,6 +145,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.io.SelectorPool;
+import org.objectweb.asm.Opcodes;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -279,6 +282,20 @@ public final class Ruby {
 
         this.runtimeCache = new RuntimeCache();
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES * MethodIndex.MAX_METHODS);
+        
+        Invalidator myConstantInvalidator;
+        if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7) {
+            try {
+                myConstantInvalidator = (Invalidator)Class.forName("org.jruby.runtime.opto.SwitchPointInvalidator").newInstance();
+            } catch (Throwable t) {
+                t.printStackTrace();
+                // ignore
+                myConstantInvalidator = new ObjectIdentityInvalidator();
+            }
+            constantInvalidator = myConstantInvalidator;
+        } else {
+            constantInvalidator = new ObjectIdentityInvalidator();
+        }
     }
     
     /**
@@ -3668,12 +3685,22 @@ public final class Ruby {
         return timeZoneCache;
     }
 
+    @Deprecated
     public int getConstantGeneration() {
         return constantGeneration;
     }
 
+    @Deprecated
     public synchronized void incrementConstantGeneration() {
         constantGeneration++;
+    }
+    
+    public Invalidator getConstantInvalidator() {
+        return constantInvalidator;
+    }
+    
+    public void invalidateConstants() {
+        
     }
 
     public <E extends Enum<E>> void loadConstantSet(RubyModule module, Class<E> enumClass) {
@@ -3861,6 +3888,7 @@ public final class Ruby {
     }
 
     private volatile int constantGeneration = 1;
+    private final Invalidator constantInvalidator;
     private final ThreadService threadService;
     
     private POSIX posix;

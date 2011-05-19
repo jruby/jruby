@@ -51,7 +51,7 @@ import org.jruby.util.ByteList;
 public class Colon3Node extends Node implements INameNode {
     protected String name;
     private volatile transient IRubyObject cachedValue;
-    private volatile int generation;
+    private volatile Object generation;
     
     public Colon3Node(ISourcePosition position, String name) {
         super(position);
@@ -130,12 +130,12 @@ public class Colon3Node extends Node implements INameNode {
     }
 
     private boolean isCached(ThreadContext context, IRubyObject value) {
-        return value != null && generation == context.getRuntime().getConstantGeneration();
+        return value != null && generation == context.getRuntime().getConstantInvalidator().getData();
     }
 
     public IRubyObject reCache(ThreadContext context, String name) {
         Ruby runtime = context.getRuntime();
-        int newGeneration = runtime.getConstantGeneration();
+        Object newGeneration = runtime.getConstantInvalidator().getData();
         IRubyObject value = runtime.getObject().fastGetConstantFromNoConstMissing(name);
 
         cachedValue = value;
