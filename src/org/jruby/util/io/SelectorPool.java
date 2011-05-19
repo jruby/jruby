@@ -30,9 +30,6 @@
 package org.jruby.util.io;
 
 import java.io.IOException;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,22 +37,19 @@ import java.util.List;
 import java.nio.channels.spi.SelectorProvider;
 
 /**
- * This is a simple implementation of a soft-referenced java.nio.channels.Selector
+ * This is a simple implementation of a hard-referenced java.nio.channels.Selector
  * pool. It is intended to allow us to reuse a small pool of selectors rather
  * than creating them new for each use (which causes problem for Windows and
  * its socket-per-selector impl) or saving them per-thread (which causes
  * problems when there are many not-quite-dead threads in flight.
  *
- * The selectors are kept in soft references, so that if there's memory
- * pressure and they are not in use, they'll get dereferenced and eventually
- * close and finalize. Weak references would be too transient, and there's no
- * reason to keep them open in hard references forever.
+ * The selectors are kept open in the pool and you should call {@link #cleanup()}
+ * for releasing selectors.
  *
  * @author headius
  */
 public class SelectorPool {
-    private final List<SoftReference<Selector>> pool = new ArrayList();
-    private final ReferenceQueue queue = new ReferenceQueue();
+    private final List<Selector> pool = new ArrayList<Selector>();
 
     /**
      * Get a selector from the pool (or create a new one). Selectors come from
@@ -76,33 +70,33 @@ public class SelectorPool {
     public synchronized void put(Selector selector) {
         returnToPool(selector);
     }
+    
+    /**
+     * Clean up a pool.
+     * 
+     * All selectors in a pool are closed and the pool gets empty.
+     * 
+     */
+    public synchronized void cleanup() {
+        while (!pool.isEmpty()) {
+            Selector selector = pool.remove(pool.size() - 1);
+            try {
+                selector.close();
+            } catch (IOException ioe) {
+                // ignore IOException at termination.
+            }
+        }
+    }
 
     private Selector retrieveFromPool() throws IOException {
-        // scrub pool
-        clean();
-
-        Selector selector = null;
-
-        // try to get from pool
-        while (!pool.isEmpty() && selector == null) {
-            Reference<Selector> ref = pool.remove(pool.size() - 1);
-            selector = ref.get();
+        if (!pool.isEmpty()) {
+            return pool.remove(pool.size() - 1);
         }
-
-        if (selector != null) return selector;
 
         return SelectorFactory.openWithRetryFrom(null, SelectorProvider.provider());
     }
 
     private void returnToPool(Selector selector) {
-        clean();
-        pool.add(new SoftReference<Selector>(selector, queue));
-    }
-
-    private void clean() {
-        Reference ref;
-        while ((ref = queue.poll()) != null) {
-            pool.remove((SoftReference)ref);
-        }
+        pool.add(selector);
     }
 }
