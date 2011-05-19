@@ -668,7 +668,6 @@ public class InvokeDynamicSupport {
 //        if (LOG_INDY_BINDINGS) System.out.println("binding attr target: " + site.name());
         
         MethodHandle target = creatAttrHandle(entry.method);
-        System.out.println(target);
         
         MethodHandle myTest = MethodHandles.insertArguments(test, 0, entry.token);
         MethodHandle myTarget = target;
