@@ -1038,7 +1038,7 @@ public class RubyModule extends RubyObject {
     }
     
     protected void invalidateConstantCache() {
-        getRuntime().incrementConstantGeneration();
+        getRuntime().getConstantInvalidator().invalidate();
     }    
 
     /**

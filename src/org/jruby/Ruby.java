@@ -3687,12 +3687,12 @@ public final class Ruby {
 
     @Deprecated
     public int getConstantGeneration() {
-        return constantGeneration;
+        return -1;
     }
 
     @Deprecated
     public synchronized void incrementConstantGeneration() {
-        constantGeneration++;
+        constantInvalidator.invalidate();
     }
     
     public Invalidator getConstantInvalidator() {

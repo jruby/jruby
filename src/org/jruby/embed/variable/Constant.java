@@ -222,10 +222,10 @@ public class Constant extends AbstractVariable {
             if (rubyModule == null) return;
 
             rubyModule.storeConstant(name, irubyObject);
-            receiver.getRuntime().incrementConstantGeneration();
         } else {
             receiver.getMetaClass().storeConstant(name, irubyObject);
         }
+        receiver.getRuntime().getConstantInvalidator().invalidate();
         initialized = true;
     }
 
