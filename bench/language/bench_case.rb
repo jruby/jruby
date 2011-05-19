@@ -64,6 +64,14 @@ class BenchCase
     case :jx; when :ax; when :bx; when :cx; when :dx; when :ex; when :fx; when :gx; when :hx; when :ix; when :jx; end
     case :jx; when :ax; when :bx; when :cx; when :dx; when :ex; when :fx; when :gx; when :hx; when :ix; when :jx; end
   end
+  
+  def do_case_custom_object(obj)
+    case 1; when 10; when 9; when 8; when 7; when 6; when 5; when 4; when 3; when 2; when obj; end
+    case 1; when 10; when 9; when 8; when 7; when 6; when 5; when 4; when 3; when 2; when obj; end
+    case 1; when 10; when 9; when 8; when 7; when 6; when 5; when 4; when 3; when 2; when obj; end
+    case 1; when 10; when 9; when 8; when 7; when 6; when 5; when 4; when 3; when 2; when obj; end
+    case 1; when 10; when 9; when 8; when 7; when 6; when 5; when 4; when 3; when 2; when obj; end
+  end
 end
 
 def bench_case(bm)
@@ -129,6 +137,15 @@ def bench_case(bm)
     a = 0
     while a < 1_000_000
       bc.do_case_nil_false_true_else
+      a += 1
+    end
+  end
+
+  bm.report "1m x5 cases, 9 fixnum 1 custom" do
+    a = 0
+    obj = Object.new
+    while a < 1_000_000
+      bc.do_case_custom_object(obj)
       a += 1
     end
   end

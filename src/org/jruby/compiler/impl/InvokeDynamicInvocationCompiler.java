@@ -29,6 +29,7 @@
 package org.jruby.compiler.impl;
 
 import org.jruby.compiler.ArgumentsCallback;
+import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -126,5 +127,27 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
         method.invokedynamic(invokeName, signature, InvokeDynamicSupport.bootstrapHandle());
+    }
+
+    @Override
+    public void invokeEqq(ArgumentsCallback receivers, final CompilerCallback argument) {
+        if (argument == null) {
+            super.invokeEqq(receivers, argument);
+        } else {
+            if (receivers.getArity() == 1) {
+                invokeDynamic("===", receivers, new ArgumentsCallback() {
+                    public int getArity() {
+                        return 1;
+                    }
+
+                    public void call(BodyCompiler context) {
+                        argument.call(context);
+                    }
+                }, CallType.FUNCTIONAL, null, false);
+                methodCompiler.isTrue();
+            } else {
+                super.invokeEqq(receivers, argument);
+            }
+        }
     }
 }

@@ -774,7 +774,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     /**
      * Invoke IRubyObject.isTrue
      */
-    private void isTrue() {
+    public void isTrue() {
         invokeIRubyObject("isTrue", sig(Boolean.TYPE));
     }
 
