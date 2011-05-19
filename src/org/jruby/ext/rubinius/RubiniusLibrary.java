@@ -36,5 +36,7 @@ public class RubiniusLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
         runtime.getOrCreateModule("Rubinius");
         RubyTuple.createTupleClass(runtime);
+        
+        RubiniusChannel.createChannelClass(runtime);
     }
 }
