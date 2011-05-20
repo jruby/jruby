@@ -197,7 +197,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
                 invCompilerConstructor = compiler.getConstructor(BaseBodyCompiler.class, SkinnyMethodAdapter.class);
                 compiler =
                         Class.forName("org.jruby.compiler.impl.InvokeDynamicCacheCompiler");
-                cacheCompilerConstructor = compiler.getConstructor(ScriptCompiler.class);
+                cacheCompilerConstructor = compiler.getConstructor(StandardASMCompiler.class);
             }
         } catch (Exception e) {
             // leave it null and fall back on our normal invocation logic
