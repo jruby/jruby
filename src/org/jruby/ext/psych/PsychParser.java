@@ -36,6 +36,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyException;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -81,7 +82,7 @@ public class PsychParser extends RubyObject {
 
         psychParser.defineAnnotatedMethods(PsychParser.class);
 
-        psych.defineClassUnder("SyntaxError", runtime.getSyntaxError(), OBJECT_ALLOCATOR);
+        psych.defineClassUnder("SyntaxError", runtime.getSyntaxError(), RubyException.EXCEPTION_ALLOCATOR);
     }
 
     public PsychParser(Ruby runtime, RubyClass klass) {
