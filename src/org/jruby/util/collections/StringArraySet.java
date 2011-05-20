@@ -345,6 +345,9 @@ public class StringArraySet extends RubyArray {
     }
 
     public synchronized boolean containsString(String element) {
+        if (caseInsensitive) {
+            element = element.toLowerCase();
+        }
         return set.contains(element);
     }
 
