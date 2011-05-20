@@ -82,7 +82,7 @@ public class RubyException extends RubyObject {
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
     }
     
-    private static ObjectAllocator EXCEPTION_ALLOCATOR = new ObjectAllocator() {
+    public static ObjectAllocator EXCEPTION_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyException instance = new RubyException(runtime, klass);
             
