@@ -38,16 +38,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * An optionally case-insensitive RubyArray that maintains an O(1) Set for fast
- * include? operations.
+ * An RubyArray that maintains an O(1) Set for fast include? operations.
  */
 public class StringArraySet extends RubyArray {
     private final Set<String> set = new HashSet<String>();
-    private final boolean caseInsensitive;
 
-    public StringArraySet(Ruby runtime, boolean caseInsensitive) {
+    public StringArraySet(Ruby runtime) {
         super(runtime, 4);
-        this.caseInsensitive = caseInsensitive;
     }
 
     @Override
@@ -345,18 +342,11 @@ public class StringArraySet extends RubyArray {
     }
 
     public synchronized boolean containsString(String element) {
-        if (caseInsensitive) {
-            element = element.toLowerCase();
-        }
         return set.contains(element);
     }
 
     private String getStringFromItem(IRubyObject item) {
-        String string = item.convertToString().asJavaString();
-        if (caseInsensitive) {
-            string = string.toLowerCase();
-        }
-        return string;
+        return item.convertToString().asJavaString();
     }
 
     private void rehash() {

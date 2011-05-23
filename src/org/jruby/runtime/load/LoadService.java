@@ -164,8 +164,6 @@ public class LoadService {
     protected final Map<String, IAutoloadMethod> autoloadMap = new HashMap<String, IAutoloadMethod>();
 
     protected final Ruby runtime;
-
-    protected boolean caseInsensitiveFS = false;
     
     public LoadService(Ruby runtime) {
         this.runtime = runtime;
@@ -180,21 +178,7 @@ public class LoadService {
         loadPath = RubyArray.newArray(runtime);
         
         String jrubyHome = runtime.getJRubyHome();
-        if (jrubyHome != null) {
-            String lowerCaseJRubyHome = jrubyHome.toLowerCase();
-            String upperCaseJRubyHome = lowerCaseJRubyHome.toUpperCase();
-
-            try {
-                String canonNormal = new File(jrubyHome).getCanonicalPath();
-                String canonLower = new File(lowerCaseJRubyHome).getCanonicalPath();
-                String canonUpper = new File(upperCaseJRubyHome).getCanonicalPath();
-                if (canonNormal.equals(canonLower) && canonLower.equals(canonUpper)) {
-                    caseInsensitiveFS = true;
-                }
-            } catch (Exception e) {}
-        }
-        
-        loadedFeatures = new StringArraySet(runtime, caseInsensitiveFS);
+        loadedFeatures = new StringArraySet(runtime);
         
         // add all startup load paths to the list first
         for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
@@ -1365,16 +1349,5 @@ public class LoadService {
             s = "./" + s;
         }
         return s;
-    }
-
-    /**
-     * Is the jruby home dir on a case-insensitive fs. Determined by comparing
-     * a canonicalized jruby home with canonicalized lower and upper-case versions
-     * of the same path.
-     *
-     * @return true if jruby home is on a case-insensitive FS; false otherwise
-     */
-    public boolean isCaseInsensitiveFS() {
-        return caseInsensitiveFS;
     }
 }
