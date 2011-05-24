@@ -360,6 +360,7 @@ public class RubyGlobal {
                                                        environmentVariableMap, runtime.getNil());
         h1.getSingletonClass().defineAnnotatedMethods(CaseInsensitiveStringOnlyRubyHash.class);
         runtime.defineGlobalConstant("ENV", h1);
+        runtime.setENV(h1);
 
         // Define System.getProperties() in ENV_JAVA
         Map systemProps = environment.getSystemPropertiesMap(runtime);

@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2010 Charles O Nutter <headius@headius.com>
+ * Copyright (C) 2011 Charles O Nutter <headius@headius.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -30,13 +30,55 @@ package org.jruby.ext.rubinius;
 
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
+import org.jruby.RubyObject;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
+import static org.jruby.runtime.Visibility.*;
 
 public class RubiniusLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        runtime.getOrCreateModule("Rubinius");
+        RubyModule rubinius = runtime.getOrCreateModule("Rubinius");
         RubyTuple.createTupleClass(runtime);
+
+        final IRubyObject undefined = new RubyObject(runtime, runtime.getObject());
+        runtime.getKernel().addMethod("undefined", new JavaMethod.JavaMethodZero(runtime.getKernel(), PRIVATE) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                return undefined;
+            }
+        });
+
+        // Toplevel "Ruby" module with some utility classes
+        RubyModule rbxRuby = runtime.getOrCreateModule("Ruby");
+        rbxRuby.defineAnnotatedMethods(RubiniusRuby.class);
         
+        // Type module
+        RubyModule type = runtime.defineModule("Type");
+        type.defineAnnotatedMethods(RubiniusType.class);
+        runtime.getLoadService().require("rubinius/kernel/common/type.rb");
+
+        // LookupTable is just Hash for now
+        rubinius.setConstant("LookupTable", runtime.getHash());
+        
+        // EnvironmentAccess
+        RubyModule envAccess = rubinius.defineModuleUnder("EnvironmentAccess");
+        envAccess.defineAnnotatedMethods(RubiniusEnvironmentAccess.class);
+        runtime.getLoadService().require("rubinius/kernel/common/env.rb");
+        
+        // Thread-borne recursion detector stuff
+        runtime.getLoadService().require("rubinius/kernel/common/thread.rb");
+        
+        // Extensions to Kernel
+        runtime.getKernel().defineAnnotatedMethods(RubiniusKernel.class);
+        
+        // Channel class; we require bootstrap, overwrite it, and then require common
+        runtime.getLoadService().require("rubinius/kernel/bootstrap/channel.rb");
         RubiniusChannel.createChannelClass(runtime);
+        runtime.getLoadService().require("rubinius/kernel/common/channel.rb");
     }
 }

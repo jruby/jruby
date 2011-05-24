@@ -2023,6 +2023,14 @@ public final class Ruby {
     void setPrecision(RubyModule precisionModule) {
         this.precisionModule = precisionModule;
     }
+    
+    public RubyHash getENV() {
+        return envObject;
+    }
+    
+    public void setENV(RubyHash env) {
+        envObject = env;
+    }
 
     public RubyModule getErrno() {
         return errnoModule;
@@ -4103,4 +4111,6 @@ public final class Ruby {
     private boolean fixnumReopened, floatReopened;
     
     private volatile boolean booting = true;
+    
+    private RubyHash envObject;
 }
