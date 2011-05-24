@@ -41,7 +41,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubiniusChannel extends RubyObject {
-    private LinkedBlockingQueue<IRubyObject> queue = new LinkedBlockingQueue();
+    private final LinkedBlockingQueue<IRubyObject> queue = new LinkedBlockingQueue();
 
     public RubiniusChannel(Ruby runtime, RubyClass metaclass) {
         super(runtime, metaclass);

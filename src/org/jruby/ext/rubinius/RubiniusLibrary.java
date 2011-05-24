@@ -30,16 +30,25 @@ package org.jruby.ext.rubinius;
 
 import java.io.IOException;
 import org.jruby.Ruby;
-import org.jruby.RubyHash;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import static org.jruby.runtime.Visibility.*;
 
+/**
+ * This extension defines a number of classes/modules and modifications to core
+ * that are used by parts of Rubinius's kernel and libraries. The intent here is
+ * to provide as many of those Rubinius-borne features as possible to allow
+ * users to write to those APIs (for their own libraries or for extending JRuby)
+ * and eventually to share more of Rubinius's core class implementations with
+ * JRuby.
+ */
 public class RubiniusLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
         RubyModule rubinius = runtime.getOrCreateModule("Rubinius");
@@ -80,5 +89,20 @@ public class RubiniusLibrary implements Library {
         runtime.getLoadService().require("rubinius/kernel/bootstrap/channel.rb");
         RubiniusChannel.createChannelClass(runtime);
         runtime.getLoadService().require("rubinius/kernel/common/channel.rb");
+        
+        // Rubinius exception types
+        RubyClass vmException = rubinius.defineClassUnder("VMException", runtime.getException(), runtime.getException().getAllocator());
+        rubinius.defineClassUnder("ObjectBoundsExceededError", vmException, vmException.getAllocator());
+        rubinius.defineClassUnder("AssertionError", vmException, vmException.getAllocator());
+        
+        // ByteArray
+        RubiniusByteArray.createByteArrayClass(runtime);
+        runtime.getLoadService().require("rubinius/kernel/common/bytearray.rb");
+    }
+    
+    public static RaiseException object_bounds_exceeded_error(ThreadContext context, String message) {
+        throw context.runtime.newRaiseException(
+                (RubyClass)context.runtime.getClassFromPath("Rubinius::ObjectBoundsExceededError"),
+                message);
     }
 }

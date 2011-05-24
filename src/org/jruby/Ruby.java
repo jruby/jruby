@@ -3323,7 +3323,7 @@ public final class Ruby {
      * @param message
      * @return
      */
-    private RaiseException newRaiseException(RubyClass exceptionClass, String message) {
+    public RaiseException newRaiseException(RubyClass exceptionClass, String message) {
         return new RaiseException(this, exceptionClass, message, true);
     }
 

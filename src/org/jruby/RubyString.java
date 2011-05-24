@@ -2356,6 +2356,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public boolean isEVStr(int c) {
         return c == '$' || c == '@' || c == '{';
     }
+    
+    public int size() {
+        return value.getRealSize();
+    }
 
     /** rb_str_length
      *
