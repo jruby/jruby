@@ -6,7 +6,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
-import java.util.Arrays;
 import java.util.Comparator;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
@@ -32,7 +31,7 @@ import org.objectweb.asm.Opcodes;
 
 @SuppressWarnings("deprecation")
 public class InvokeDynamicSupport {
-    private static final int MAX_FAIL_COUNT = SafePropertyAccessor.getInt("jruby.compile.invokedynamic.maxfail", 2);
+    private static final int MAX_FAIL_COUNT = SafePropertyAccessor.getInt("jruby.invokedynamic.maxfail", 2);
     private static final boolean LOG_INDY_BINDINGS = SafePropertyAccessor.getBoolean("jruby.invokedynamic.log.binding");
     private static final boolean LOG_INDY_CONSTANTS = SafePropertyAccessor.getBoolean("jruby.invokedynamic.log.constants");
     
@@ -864,7 +863,8 @@ public class InvokeDynamicSupport {
             return callMethodMissing(entry, site.callType(), context, self, name);
         }
         
-        if (site.failCount++ > MAX_FAIL_COUNT) {
+        if (++site.failCount > MAX_FAIL_COUNT) {
+            if (LOG_INDY_BINDINGS) System.out.println("failing over to inline cache for '" + name + "' call");
             site.setTarget(createFail(FAIL_0, site));
         } else {
 //            if (entry.method instanceof AttrReaderMethod) {
@@ -899,7 +899,7 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0);
         }
-        if (site.failCount++ > MAX_FAIL_COUNT) {
+        if (++site.failCount > MAX_FAIL_COUNT) {
             site.setTarget(createFail(FAIL_1, site));
         } else {
             if (site.getTarget() != null) {
@@ -918,7 +918,7 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1);
         }
-        if (site.failCount++ > MAX_FAIL_COUNT) {
+        if (++site.failCount > MAX_FAIL_COUNT) {
             site.setTarget(createFail(FAIL_2, site));
         } else {
             if (site.getTarget() != null) {
@@ -937,7 +937,7 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2);
         }
-        if (site.failCount++ > MAX_FAIL_COUNT) {
+        if (++site.failCount > MAX_FAIL_COUNT) {
             site.setTarget(createFail(FAIL_3, site));
         } else {
             if (site.getTarget() != null) {
@@ -956,7 +956,7 @@ public class InvokeDynamicSupport {
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name, args);
         }
-        if (site.failCount++ > MAX_FAIL_COUNT) {
+        if (++site.failCount > MAX_FAIL_COUNT) {
             site.setTarget(createFail(FAIL_N, site));
         } else {
             if (site.getTarget() != null) {
@@ -977,7 +977,7 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, block);
             }
-            if (site.failCount++ > MAX_FAIL_COUNT) {
+            if (++site.failCount > MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_0_B, site));
             } else {
                 if (site.getTarget() != null) {
@@ -1004,7 +1004,7 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, block);
             }
-            if (site.failCount++ > MAX_FAIL_COUNT) {
+            if (++site.failCount > MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_1_B, site));
             } else {
                 if (site.getTarget() != null) {
@@ -1031,7 +1031,7 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, block);
             }
-            if (site.failCount++ > MAX_FAIL_COUNT) {
+            if (++site.failCount > MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_2_B, site));
             } else {
                 if (site.getTarget() != null) {
@@ -1058,7 +1058,7 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2, block);
             }
-            if (site.failCount++ > MAX_FAIL_COUNT) {
+            if (++site.failCount > MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_3_B, site));
             } else {
                 if (site.getTarget() != null) {
@@ -1085,7 +1085,7 @@ public class InvokeDynamicSupport {
             if (methodMissing(entry, site.callType(), name, caller)) {
                 return callMethodMissing(entry, site.callType(), context, self, name, args, block);
             }
-            if (site.failCount++ >= MAX_FAIL_COUNT) {
+            if (++site.failCount >= MAX_FAIL_COUNT) {
                 site.setTarget(createFail(FAIL_N_B, site));
             } else {
                 if (site.getTarget() != null) {
