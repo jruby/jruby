@@ -103,7 +103,7 @@ public final class AutoPointer extends Pointer {
             throw context.getRuntime().newRuntimeError("pointer already freed");
         }
 
-        r.release(context);
+        r.release(context, true);
         reaper = null;
         
         return context.getRuntime().getNil();
@@ -126,29 +126,34 @@ public final class AutoPointer extends Pointer {
         private final Pointer pointer;
         private final IRubyObject proc;
         private final String methodName;
+        private volatile boolean autorelease;
 
         private Reaper(AutoPointer pointer, Pointer ptr, IRubyObject proc, String methodName) {
             super(pointer);
             this.pointer = ptr;
             this.proc = proc;
             this.methodName = methodName;
+            this.autorelease = true;
         }
 
-        public final void release(ThreadContext context) {
+        public synchronized final void release(ThreadContext context, boolean always) {
             referenceSet.remove(this);
-            proc.callMethod(context, methodName, pointer);
+            if (autorelease || always) {
+                proc.callMethod(context, methodName, pointer);
+            }
         }
 
-        public final void autorelease(boolean autorelease) {
+        public synchronized final void autorelease(boolean autorelease) {
             if (!autorelease) {
                 referenceSet.remove(this);
             } else {
                 referenceSet.putIfAbsent(this, Boolean.TRUE);
             }
+            this.autorelease = autorelease;
         }
 
         public void run() {
-            release(pointer.getRuntime().getCurrentContext());
+            release(pointer.getRuntime().getCurrentContext(), false);
         }
     }
 }
