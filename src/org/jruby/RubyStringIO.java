@@ -30,6 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.util.StringSupport;
+import org.jcodings.Encoding;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -295,15 +297,17 @@ public class RubyStringIO extends RubyObject {
         Ruby runtime = context.getRuntime();
         ByteList bytes = data.internal.getByteList();
         int len = bytes.getRealSize();
+        int end = bytes.getBegin() + len;
+        Encoding enc = runtime.is1_9() ? bytes.getEncoding() : runtime.getKCode().getEncoding();        
         while (data.pos < len) {
-            int pos = (int)this.data.pos;
-            byte c = bytes.getUnsafeBytes()[bytes.getBegin() + pos];
-            int n = runtime.getKCode().getEncoding().length(c);
-            if(len < pos + n) {
-                n = len - pos;
-            }
-            this.data.pos += n;
-            block.yield(context, data.internal.substr19(runtime, pos, n));
+            int pos = (int) data.pos;
+            int n = StringSupport.length(enc, bytes.getUnsafeBytes(), pos, end);
+
+            if(len < pos + n) n = len - pos;
+
+            data.pos += n;
+
+            block.yield(context, data.internal.makeShared19(runtime, pos, n));
         }
 
         return this;

@@ -1,2 +1,0 @@
-fails(JRUBY-5511):StringIO#each_char yields each character code in turn
-fails(JRUBY-5511):StringIO#each_char returns an Enumerator when passed no block
