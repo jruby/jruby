@@ -618,7 +618,7 @@ public class RubySocket extends RubyBasicSocket {
             InetAddress addr = getRubyInetAddress(hostname.convertToString().getByteList());
             Ruby runtime = context.getRuntime();
             IRubyObject[] ret = new IRubyObject[4];
-            ret[0] = runtime.newString(addr.getHostAddress());
+            ret[0] = runtime.newString(addr.getCanonicalHostName());
             ret[1] = runtime.newArray();
             ret[2] = runtime.newFixnum(2); // AF_INET
             ret[3] = runtime.newString(new ByteList(addr.getAddress()));
