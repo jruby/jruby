@@ -17,6 +17,7 @@ cygwin=false
 case "`uname`" in
   CYGWIN*) cygwin=true;;
   Darwin) darwin=true;;
+  MINGW*) jruby.exe "$@"; exit $?;;
 esac
 
 # ----- Verify and Set Required Environment Variables -------------------------
