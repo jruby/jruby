@@ -23,9 +23,4 @@ class Rubinius::ByteArray
   def <=>(other)
     compare_bytes other, size, other.size
   end
-
-  def reverse(start, total)
-    Ruby.primitive :bytearray_reverse
-    raise PrimitiveFailure, "ByteArray#reverse primitive failed"
-  end
 end

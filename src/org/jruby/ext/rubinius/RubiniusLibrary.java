@@ -105,4 +105,8 @@ public class RubiniusLibrary implements Library {
                 (RubyClass)context.runtime.getClassFromPath("Rubinius::ObjectBoundsExceededError"),
                 message);
     }
+    
+    public static RaiseException argument_error(ThreadContext context, String message) {
+        throw context.runtime.newArgumentError(message);
+    }
 }
