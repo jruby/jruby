@@ -52,7 +52,6 @@ import static org.jruby.runtime.Visibility.*;
 public class RubiniusLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
         RubyModule rubinius = runtime.getOrCreateModule("Rubinius");
-        RubyTuple.createTupleClass(runtime);
 
         final IRubyObject undefined = new RubyObject(runtime, runtime.getObject());
         runtime.getKernel().addMethod("undefined", new JavaMethod.JavaMethodZero(runtime.getKernel(), PRIVATE) {
@@ -61,6 +60,10 @@ public class RubiniusLibrary implements Library {
                 return undefined;
             }
         });
+        
+        // Tuple class
+        RubiniusTuple.createTupleClass(runtime);
+        runtime.getLoadService().require("rubinius/kernel/common/tuple.rb");
 
         // Toplevel "Ruby" module with some utility classes
         RubyModule rbxRuby = runtime.getOrCreateModule("Ruby");
