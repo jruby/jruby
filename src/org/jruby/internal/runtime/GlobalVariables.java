@@ -49,7 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class GlobalVariables {
     private Ruby runtime;
     private Map<String, GlobalVariable> globalVariables = new ConcurrentHashMap<String, GlobalVariable>();
-
+    
     public GlobalVariables(Ruby runtime) {
         this.runtime = runtime;
     }
@@ -184,5 +184,14 @@ public class GlobalVariables {
 
     public void setDefaultSeparator(IRubyObject defaultSeparator) {
         this.defaultSeparator = defaultSeparator;    
+    }
+    
+    public GlobalVariables getClone() throws CloneNotSupportedException {
+        GlobalVariables clone = (GlobalVariables)super.clone();
+        clone.runtime = this.runtime;
+        clone.defaultSeparator = this.defaultSeparator;
+        clone.globalVariables = new ConcurrentHashMap<String, GlobalVariable>();
+        clone.globalVariables.putAll(this.globalVariables);
+        return clone;
     }
 }

@@ -58,7 +58,7 @@ public class JRubyCompiledScript extends CompiledScript {
             JRubyEngine engine, String script) {
         this.container = container;
         this.engine = engine;
-        Utils.preEval(container, (JRubyContext) engine.getContext());
+        Utils.preEval(container, engine.getContext());
         unit = container.parse(script);
     }
 
@@ -67,7 +67,7 @@ public class JRubyCompiledScript extends CompiledScript {
         this.container = container;
         this.engine = engine;
         String filename = System.getProperty(ScriptEngine.FILENAME);
-        Utils.preEval(container, (JRubyContext) engine.getContext());
+        Utils.preEval(container, engine.getContext());
         unit = container.parse(reader, filename, Utils.getLineNumber(engine.getContext()));
     }
 
@@ -81,9 +81,8 @@ public class JRubyCompiledScript extends CompiledScript {
     }
     
     public Object eval(ScriptContext context) throws ScriptException {
-        JRubyContext tmpContext = JRubyContext.convert(container, context);
         try {
-            Utils.preEval(container, tmpContext);
+            Utils.preEval(container, context);
             IRubyObject ret = unit.run();
             if (!(ret instanceof RubyNil)) {
                 return JavaEmbedUtils.rubyToJava(ret);
@@ -92,9 +91,9 @@ public class JRubyCompiledScript extends CompiledScript {
         } catch (Exception e) {
             throw wrapException(e);
         } finally {
-            Utils.postEval(container, tmpContext);
-            if (tmpContext != context) JRubyContext.update(tmpContext, context);
-            if(Utils.isTerminationOn(tmpContext)) {
+            Utils.postEval(container, context);
+            boolean termination = Utils.isTerminationOn(context);
+            if (termination) {
                 container.terminate();
             }
         }
