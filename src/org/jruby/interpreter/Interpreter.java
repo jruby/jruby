@@ -50,12 +50,11 @@ public class Interpreter {
             root.getStaticScope().setModule(runtime.getObject());
         }
 
+		  RubyModule currModule = root.getStaticScope().getModule();
         IRMethod rootMethod = root.getRootClass().getRootMethod();
-        RubyModule metaclass = self.getMetaClass();
+        InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule);
 
-        InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, metaclass);
-
-        IRubyObject rv =  method.call(runtime.getCurrentContext(), self, metaclass, "", new IRubyObject[]{});
+        IRubyObject rv =  method.call(runtime.getCurrentContext(), self, currModule, "", new IRubyObject[]{});
         if (debug) {
             System.out.println("-- Interpreted " + interpInstrsCount + " instructions");
         }
