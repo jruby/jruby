@@ -2363,7 +2363,7 @@ public class IRBuilder {
     public Operand buildOpAsgnOr(final OpAsgnOrNode orNode, IRScope s) {
         Label    l1 = s.getNewLabel();
         Label    l2 = null;
-        Variable f = s.getNewTemporaryVariable();
+        Variable flag = s.getNewTemporaryVariable();
         Operand  v1;
         boolean  needsDefnCheck = needsDefinitionCheck(orNode.getFirstNode());
         if (needsDefnCheck) {
@@ -2371,18 +2371,21 @@ public class IRBuilder {
             v1 = buildGetDefinitionBase(orNode.getFirstNode(), s);
             s.addInstr(new BEQInstr(v1, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
         }
+        Variable result = s.getNewTemporaryVariable();
         v1 = build(orNode.getFirstNode(), s); // build of 'x'
-        s.addInstr(new IsTrueInstr(f, v1));
-        s.addInstr(new BEQInstr(f, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
+        s.addInstr(new CopyInstr(result, v1));
+        s.addInstr(new IsTrueInstr(flag, v1));
+        s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         if (needsDefnCheck) {
             s.addInstr(new LABEL_Instr(l2));
         }
-        build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
+        Operand computedValue = build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
+        s.addInstr(new CopyInstr(result, computedValue));
         s.addInstr(new LABEL_Instr(l1));
         s.addInstr(new ThreadPollInstr());
 
         // Return value of x ||= y is always 'x'
-        return v1;
+        return result;
     }
 
     /**
