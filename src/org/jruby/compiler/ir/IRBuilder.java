@@ -1787,7 +1787,7 @@ public class IRBuilder {
         Label rBeginLabel = m.getNewLabel();
         Label rEndLabel   = ebi.end;
         List<Label> rescueLabels = new ArrayList<Label>() { };
-		  _rescueBlockLabelStack.push(rBeginLabel);
+        _rescueBlockLabelStack.push(rBeginLabel);
 
         // Start of region
         m.addInstr(new LABEL_Instr(rBeginLabel));
@@ -1805,7 +1805,7 @@ public class IRBuilder {
 
         // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
         _ensureBlockStack.pop();
-		  _rescueBlockLabelStack.pop();
+        _rescueBlockLabelStack.pop();
 
         // Generate the ensure block now
         m.addInstr(new LABEL_Instr(ebi.start));
@@ -2305,31 +2305,54 @@ public class IRBuilder {
     }
 
     public Operand buildOpAsgn(OpAsgnNode opAsgnNode, IRScope s) {
-        if (opAsgnNode.getOperatorName().equals("||") || opAsgnNode.getOperatorName().equals("&&")) {
-            throw new NotCompilableException("Unknown node encountered in builder: " + opAsgnNode);
-        }
-        
+        Label l = null;
+        Variable getResult = s.getNewTemporaryVariable();
+        Variable setResult = s.getNewTemporaryVariable();
+
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode(), s);
-        Variable      getResult   = s.getNewTemporaryVariable();
-        Instr callInstr = new CallInstr(getResult, new MethAddr(opAsgnNode.getVariableName()), v1,
-                NO_ARGS, null);
-        s.addInstr(callInstr);
+        s.addInstr(new CallInstr(getResult, new MethAddr(opAsgnNode.getVariableName()), v1, NO_ARGS, null));
 
-        // call operator
-        Operand  v2 = build(opAsgnNode.getValueNode(), s);
-        Variable      setValue   = s.getNewTemporaryVariable();
-        callInstr = new CallInstr(setValue, new MethAddr(opAsgnNode.getOperatorName()), getResult,
-                new Operand[]{v2}, null);
-        s.addInstr(callInstr);
+        // Ex: e.val ||= n
+        if (opAsgnNode.getOperatorName().equals("||")) {
+            l = s.getNewLabel();
+            Variable flag = s.getNewTemporaryVariable();
+            s.addInstr(new IsTrueInstr(flag, v1));
+            s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l));
 
-        // set attr
-        Variable      setResult   = s.getNewTemporaryVariable();
-        callInstr    = new CallInstr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()),
-                v1, new Operand[] {setValue}, null);
-        s.addInstr(callInstr);
+            // compute value and set it
+            Operand  v2 = build(opAsgnNode.getValueNode(), s);
+            s.addInstr(new CallInstr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {v2}, null));
+            s.addInstr(new CopyInstr(getResult, setResult));
+            s.addInstr(new LABEL_Instr(l));
 
-        return setResult;
+            return getResult;
+        }
+        // Ex: e.val &&= n
+        else if (opAsgnNode.getOperatorName().equals("&&")) {
+            l = s.getNewLabel();
+            Variable flag = s.getNewTemporaryVariable();
+            s.addInstr(new IsTrueInstr(flag, v1));
+            s.addInstr(new BEQInstr(flag, BooleanLiteral.FALSE, l));
+
+            // compute value and set it
+            Operand  v2 = build(opAsgnNode.getValueNode(), s);
+            s.addInstr(new CallInstr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {v2}, null));
+            s.addInstr(new CopyInstr(getResult, setResult));
+            s.addInstr(new LABEL_Instr(l));
+
+            return getResult;
+        }
+        else {
+            // call operator
+            Operand  v2 = build(opAsgnNode.getValueNode(), s);
+            Variable setValue = s.getNewTemporaryVariable();
+            s.addInstr(new CallInstr(setValue, new MethAddr(opAsgnNode.getOperatorName()), getResult, new Operand[]{v2}, null));
+           
+            // set attr
+            s.addInstr(new CallInstr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {setValue}, null));
+            return setResult;
+        }
     }
 
     // Translate "x &&= y" --> "x = y if is_true(x)" -->
@@ -2604,7 +2627,7 @@ public class IRBuilder {
         Label   rBeginLabel = availableBeginLabel != null ? availableBeginLabel : m.getNewLabel();  
         Label   rEndLabel   = noEnsure ? m.getNewLabel() : ebi.end;
         Label   elseLabel   = rescueNode.getElseNode() == null ? null : m.getNewLabel();
-		  _rescueBlockLabelStack.push(rBeginLabel);
+        _rescueBlockLabelStack.push(rBeginLabel);
 
         // Only generate the label instruction if we weren't passed in a label
         // Optimization to eliminate extra labels in begin-rescue-ensure-end code
@@ -2668,7 +2691,7 @@ public class IRBuilder {
         if (noEnsure)
             m.addInstr(new LABEL_Instr(rEndLabel));
 
-		  _rescueBlockLabelStack.pop();
+        _rescueBlockLabelStack.pop();
         return rv;
     }
 
