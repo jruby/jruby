@@ -196,7 +196,7 @@ public class RubyFileTest {
         }
         
         return runtime.newBoolean(file1.exists() && file2.exists() && path1.equals(path2) && 
-               runtime.getPosix().stat(file1.getAbsolutePath()).isIdentical(runtime.getPosix().stat(file2.getAbsolutePath())));
+               runtime.getPosix().stat(path1).isIdentical(runtime.getPosix().stat(path2)));
     }
 
     @JRubyMethod(name = "owned?", required = 1, module = true)
