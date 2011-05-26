@@ -546,7 +546,7 @@ public class JRubyEngineTest {
         ScriptEngineManager manager = new ScriptEngineManager();
         ScriptEngine instance = manager.getEngineByName("jruby");
         ScriptContext result = instance.getContext();
-        assertTrue(result instanceof JRubyContext);
+        assertNotNull(result);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
         instance = null;

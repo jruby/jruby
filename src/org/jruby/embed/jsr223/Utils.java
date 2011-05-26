@@ -75,44 +75,47 @@ public class Utils {
     }
 
     static boolean isTerminationOn(ScriptContext context) {
-        boolean termination = false;
         Object obj = context.getAttribute(AttributeName.TERMINATION.toString());
         if (obj != null && obj instanceof Boolean && ((Boolean) obj) == true) {
-            termination = true;
+            return true;
         }
-        return termination;
+        return false;
     }
 
-    static void preEval(ScriptingContainer container, JRubyContext jrubyContext) {
-        Object receiver = getReceiverObject(jrubyContext);
-        Bindings bindings = jrubyContext.getEngineScopeBindings();
+    static void preEval(ScriptingContainer container, ScriptContext context) {
+        Object receiver = getReceiverObject(context);
+        Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
         Set<String> keys = bindings.keySet();
         for (String key : keys) {
             Object value = bindings.get(key);
-            put(container, receiver, key, value);
+            Utils.put(container, receiver, key, value, context);
         }
+        
+        //container.setReader(context.getReader());
+        container.setWriter(context.getWriter());
+        container.setErrorWriter(context.getErrorWriter());
 
         // if key of globalMap exists in engineMap, this key-value pair should be skipped.
-        bindings = jrubyContext.getGlobalScopeBindings();
+        bindings = context.getBindings(ScriptContext.GLOBAL_SCOPE);
         if (bindings == null) return;
         keys = bindings.keySet();
         for (String key : keys) {
             if (container.getVarMap().containsKey(key)) continue;
             Object value = bindings.get(key);
-            put(container, receiver, key, value);
+            put(container, receiver, key, value, context);
         }
     }
 
-    private static Object getReceiverObject(JRubyContext jrubyContext) {
-        if (jrubyContext == null) return null;
-        return jrubyContext.getAttribute(AttributeName.RECEIVER.toString(), ScriptContext.ENGINE_SCOPE);
+    private static Object getReceiverObject(ScriptContext context) {
+        if (context == null) return null;
+        return context.getAttribute(AttributeName.RECEIVER.toString(), ScriptContext.ENGINE_SCOPE);
     }
 
-    static void postEval(ScriptingContainer container, JRubyContext jrubyContext) {
-        if (jrubyContext == null) return;
-        Object receiver = getReceiverObject(jrubyContext);
+    static void postEval(ScriptingContainer container, ScriptContext context) {
+        if (context == null) return;
+        Object receiver = getReceiverObject(context);
         
-        Bindings engineMap = jrubyContext.getEngineScopeBindings();
+        Bindings engineMap = context.getBindings(ScriptContext.ENGINE_SCOPE);
         int size = engineMap.keySet().size();
         String[] names = engineMap.keySet().toArray(new String[size]);
         for (int i=0; i<names.length; i++) {
@@ -128,7 +131,7 @@ public class Utils {
             }
         }
 
-        Bindings globalMap = jrubyContext.getGlobalScopeBindings();
+        Bindings globalMap = context.getBindings(ScriptContext.ENGINE_SCOPE);
         if (globalMap == null) return;
         keys = globalMap.keySet();
         if (keys != null && keys.size() > 0) {
@@ -140,13 +143,24 @@ public class Utils {
         }
     }
 
-    private static Object put(ScriptingContainer container, Object receiver, String key, Object value) {
+    private static Object put(ScriptingContainer container, Object receiver, String key, Object value, ScriptContext context) {
         Object oldValue = null;
         String adjustedKey = adjustKey(key);
         if (isRubyVariable(container, adjustedKey)) {
-            oldValue = container.put(receiver, adjustedKey, value);
+            boolean sharing_variables = true;
+            Object obj = context.getAttribute(AttributeName.SHARING_VARIABLES.toString(), ScriptContext.ENGINE_SCOPE);
+            if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
+                sharing_variables = false;
+            }
+            if (sharing_variables || "ARGV".equals(adjustedKey)) {
+                oldValue = container.put(receiver, adjustedKey, value);
+            }
         } else {
-            oldValue = container.setAttribute(adjustedKey, value);
+            if (adjustedKey.equals(AttributeName.SHARING_VARIABLES.toString())) {
+                oldValue = container.setAttribute(AttributeName.SHARING_VARIABLES, value);
+            } else {
+                oldValue = container.setAttribute(adjustedKey, value);
+            }
             /* Maybe no need anymore?
             if (container.getAttributeMap().containsKey(BACKED_BINDING)) {
                 Bindings b = (Bindings) container.getAttribute(BACKED_BINDING);

@@ -218,8 +218,7 @@ public class VariableInterceptor {
         if (LocalVariableBehavior.GLOBAL == behavior) {
             for (int i = 0; i < variables.size(); i++) {
                 if (BiVariable.Type.LocalGlobalVariable == variables.get(i).getType()) {
-                    IRubyObject irobj = JavaEmbedUtils.javaToRuby(runtime, null);
-                    runtime.getGlobalVariables().set("$" + variables.get(i).getName(), irobj);
+                    runtime.getGlobalVariables().set("$" + variables.get(i).getName(), runtime.getNil());
                 }
             }
         }
