@@ -2352,15 +2352,18 @@ public class IRBuilder {
     // L:
     //
     public Operand buildOpAsgnAnd(OpAsgnAndNode andNode, IRScope s) {
+        Variable result = s.getNewTemporaryVariable();
         Label    l  = s.getNewLabel();
         Operand  v1 = build(andNode.getFirstNode(), s);
+        s.addInstr(new CopyInstr(result, v1));
         Variable f  = s.getNewTemporaryVariable();
         s.addInstr(new IsTrueInstr(f, v1));
         s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
-        build(andNode.getSecondNode(), s);  // This does the assignment!
+        Operand v2 = build(andNode.getSecondNode(), s);  // This does the assignment!
+        s.addInstr(new CopyInstr(result, v2));
         s.addInstr(new LABEL_Instr(l));
         s.addInstr(new ThreadPollInstr());
-        return v1;
+        return result;
     }
 
     // Translate "x ||= y" --> "x = (is_defined(x) && is_true(x) ? x : y)" -->
@@ -2390,8 +2393,8 @@ public class IRBuilder {
         if (needsDefnCheck) {
             s.addInstr(new LABEL_Instr(l2));
         }
-        Operand computedValue = build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
-        s.addInstr(new CopyInstr(result, computedValue));
+        Operand v2 = build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
+        s.addInstr(new CopyInstr(result, v2));
         s.addInstr(new LABEL_Instr(l1));
         s.addInstr(new ThreadPollInstr());
 
