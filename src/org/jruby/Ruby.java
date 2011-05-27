@@ -143,6 +143,7 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.load.BasicLibraryService;
+import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.io.SelectorPool;
 import org.objectweb.asm.Opcodes;
@@ -283,19 +284,7 @@ public final class Ruby {
         this.runtimeCache = new RuntimeCache();
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES * MethodIndex.MAX_METHODS);
         
-        Invalidator myConstantInvalidator;
-        if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7) {
-            try {
-                myConstantInvalidator = (Invalidator)Class.forName("org.jruby.runtime.opto.SwitchPointInvalidator").newInstance();
-            } catch (Throwable t) {
-                t.printStackTrace();
-                // ignore
-                myConstantInvalidator = new ObjectIdentityInvalidator();
-            }
-            constantInvalidator = myConstantInvalidator;
-        } else {
-            constantInvalidator = new ObjectIdentityInvalidator();
-        }
+        constantInvalidator = OptoFactory.newConstantInvalidator();
     }
     
     /**

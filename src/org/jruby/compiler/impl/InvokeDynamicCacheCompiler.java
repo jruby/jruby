@@ -26,6 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.compiler.impl;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
@@ -37,6 +38,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
     }
 
     public void cacheConstant(BaseBodyCompiler method, String constantName) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
+            super.cacheConstant(method, constantName);
+            return;
+        }
+        
         method.loadThreadContext();
         method.method.invokedynamic(
                 constantName,

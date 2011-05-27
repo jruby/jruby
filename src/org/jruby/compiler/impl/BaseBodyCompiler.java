@@ -66,6 +66,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
+import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.SafePropertyAccessor;
@@ -107,20 +108,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method = new SkinnyMethodAdapter(script.getClassVisitor(), ACC_PUBLIC | ACC_STATIC, methodName, getSignature(), null, null);
 
         createVariableCompiler();
-        if (StandardASMCompiler.invDynInvCompilerConstructor != null) {
-            try {
-                invocationCompiler = (InvocationCompiler) StandardASMCompiler.invDynInvCompilerConstructor.newInstance(this, method);
-            } catch (InstantiationException ie) {
-                // do nothing, fall back on default compiler below
-                } catch (IllegalAccessException ie) {
-                // do nothing, fall back on default compiler below
-                } catch (InvocationTargetException ie) {
-                // do nothing, fall back on default compiler below
-                }
-        }
-        if (invocationCompiler == null) {
-            invocationCompiler = new StandardInvocationCompiler(this, method);
-        }
+        invocationCompiler = OptoFactory.newInvocationCompiler(this, method);
     }
 
     public String getNativeMethodName() {

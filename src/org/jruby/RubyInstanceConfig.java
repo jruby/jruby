@@ -319,6 +319,20 @@ public class RubyInstanceConfig {
     public static final boolean CAN_SET_ACCESSIBLE = SafePropertyAccessor.getBoolean("jruby.ji.setAccessible", true);
     
     public static final boolean USE_INVOKEDYNAMIC = SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic", true);
+    
+    // max times an indy call site can fail before it goes to simple IC
+    public static final int MAX_FAIL_COUNT = SafePropertyAccessor.getInt("jruby.invokedynamic.maxfail", 2);
+    
+    // logging of various indy aspects
+    public static final boolean LOG_INDY_BINDINGS = SafePropertyAccessor.getBoolean("jruby.invokedynamic.log.binding");
+    public static final boolean LOG_INDY_CONSTANTS = SafePropertyAccessor.getBoolean("jruby.invokedynamic.log.constants");
+    
+    // properties enabling or disabling certain uses of invokedynamic
+    public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && (SafePropertyAccessor.getBoolean("jruby.invokedynamic.all", false));
+    public static final boolean INVOKEDYNAMIC_INVOCATION = USE_INVOKEDYNAMIC && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.invocation", true));
+    public static final boolean INVOKEDYNAMIC_CACHE = USE_INVOKEDYNAMIC && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.cache", true));
+    public static final boolean INVOKEDYNAMIC_INDIRECT = USE_INVOKEDYNAMIC && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.indirect", false));
+    public static final boolean INVOKEDYNAMIC_CONSTANTS = USE_INVOKEDYNAMIC && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.constants", false));
 
     private TraceType traceType =
             TraceType.traceTypeFor(SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed"));

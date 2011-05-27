@@ -36,7 +36,6 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,14 +55,13 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.OptoFactory;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.JRubyClassLoader;
-import org.jruby.util.SafePropertyAccessor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
@@ -175,36 +173,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     StaticScope topLevelScope;
     
     private CacheCompiler cacheCompiler;
-    
-    public static final Constructor invDynInvCompilerConstructor;
-    public static final Constructor invDynCacheCompilerConstructor;
 
     private List<InvokerDescriptor> invokerDescriptors = new ArrayList<InvokerDescriptor>();
     private List<BlockCallbackDescriptor> blockCallbackDescriptors = new ArrayList<BlockCallbackDescriptor>();
     private List<BlockCallbackDescriptor> blockCallback19Descriptors = new ArrayList<BlockCallbackDescriptor>();
-
-    static {
-        Constructor invCompilerConstructor = null;
-        Constructor cacheCompilerConstructor = null;
-        try {
-            if (RubyInstanceConfig.USE_INVOKEDYNAMIC) {
-                // attempt to access an invokedynamic-related class
-                Class.forName("java.lang.invoke.MethodHandle");
-                
-                // if that succeeds, use invokedynamic compiler stuff
-                Class compiler =
-                        Class.forName("org.jruby.compiler.impl.InvokeDynamicInvocationCompiler");
-                invCompilerConstructor = compiler.getConstructor(BaseBodyCompiler.class, SkinnyMethodAdapter.class);
-                compiler =
-                        Class.forName("org.jruby.compiler.impl.InvokeDynamicCacheCompiler");
-                cacheCompilerConstructor = compiler.getConstructor(StandardASMCompiler.class);
-            }
-        } catch (Exception e) {
-            // leave it null and fall back on our normal invocation logic
-        }
-        invDynInvCompilerConstructor = invCompilerConstructor;
-        invDynCacheCompilerConstructor = cacheCompilerConstructor;
-    }
     
     /** Creates a new instance of StandardCompilerContext */
     public StandardASMCompiler(String classname, String sourcename) {
@@ -456,20 +428,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
 
         beginInit();
         
-        if (invDynCacheCompilerConstructor != null) {
-            try {
-                cacheCompiler = (CacheCompiler)StandardASMCompiler.invDynCacheCompilerConstructor.newInstance(this);
-            } catch (InstantiationException ie) {
-                // do nothing, fall back on default compiler below
-                } catch (IllegalAccessException ie) {
-                // do nothing, fall back on default compiler below
-                } catch (InvocationTargetException ie) {
-                // do nothing, fall back on default compiler below
-                }
-        }
-        if (invDynCacheCompilerConstructor == null) {
-            cacheCompiler = new InheritedCacheCompiler(this);
-        }
+        cacheCompiler = OptoFactory.newCacheCompiler(this);
 
         // This code was originally used to provide debugging info using JSR-45
         // "SMAP" format. However, it breaks using normal Java traces to
