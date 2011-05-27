@@ -2314,11 +2314,13 @@ public class IRBuilder {
         s.addInstr(new CallInstr(getResult, new MethAddr(opAsgnNode.getVariableName()), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
-        if (opAsgnNode.getOperatorName().equals("||")) {
+        //     e.val &&= n
+        String opName = opAsgnNode.getOperatorName();
+        if (opName.equals("||") || opName.equals("&&")) {
             l = s.getNewLabel();
             Variable flag = s.getNewTemporaryVariable();
             s.addInstr(new IsTrueInstr(flag, v1));
-            s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l));
+            s.addInstr(new BEQInstr(flag, opName.equals("||") ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, l));
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
@@ -2328,21 +2330,7 @@ public class IRBuilder {
 
             return getResult;
         }
-        // Ex: e.val &&= n
-        else if (opAsgnNode.getOperatorName().equals("&&")) {
-            l = s.getNewLabel();
-            Variable flag = s.getNewTemporaryVariable();
-            s.addInstr(new IsTrueInstr(flag, v1));
-            s.addInstr(new BEQInstr(flag, BooleanLiteral.FALSE, l));
-
-            // compute value and set it
-            Operand  v2 = build(opAsgnNode.getValueNode(), s);
-            s.addInstr(new CallInstr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {v2}, null));
-            s.addInstr(new CopyInstr(getResult, setResult));
-            s.addInstr(new LABEL_Instr(l));
-
-            return getResult;
-        }
+        // Ex: e.val = e.val.f(n)
         else {
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
