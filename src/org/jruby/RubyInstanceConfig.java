@@ -92,6 +92,29 @@ public class RubyInstanceConfig {
     
     /** The version to use for generated classes. Set to current JVM version by default */
     public static final int JAVA_VERSION;
+    static {
+        String specVersion = null;
+        try {
+            specVersion = System.getProperty("jruby.bytecode.version");
+            if (specVersion == null) {
+                specVersion = System.getProperty("java.specification.version");
+            }
+        } catch (SecurityException se) {
+            specVersion = "1.5";
+        }
+        
+        // stack map calculation is failing for some compilation scenarios, so
+        // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.
+        if (specVersion.equals("1.5")) {// || specVersion.equals("1.6")) {
+            JAVA_VERSION = Opcodes.V1_5;
+        } else if (specVersion.equals("1.6")) {
+            JAVA_VERSION = Opcodes.V1_6;
+        } else if (specVersion.equals("1.7")) {
+            JAVA_VERSION = Opcodes.V1_7;
+        } else {
+            throw new RuntimeException("unsupported Java version: " + specVersion);
+        }
+    }
     
     /**
      * Default size for chained compilation.
@@ -272,7 +295,8 @@ public class RubyInstanceConfig {
 
     public static final String COMPILE_EXCLUDE
             = SafePropertyAccessor.getProperty("jruby.jit.exclude");
-    public static boolean nativeEnabled = true;
+    
+    public final static boolean nativeEnabled = SafePropertyAccessor.getBoolean("jruby.native.enabled", true);
 
     public static final boolean REIFY_RUBY_CLASSES
             = SafePropertyAccessor.getBoolean("jruby.reify.classes", false);
@@ -318,7 +342,9 @@ public class RubyInstanceConfig {
 
     public static final boolean CAN_SET_ACCESSIBLE = SafePropertyAccessor.getBoolean("jruby.ji.setAccessible", true);
     
-    public static final boolean USE_INVOKEDYNAMIC = SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic", true);
+    public static final boolean USE_INVOKEDYNAMIC =
+            JAVA_VERSION == Opcodes.V1_7
+            && SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic", true);
     
     // max times an indy call site can fail before it goes to simple IC
     public static final int MAX_FAIL_COUNT = SafePropertyAccessor.getInt("jruby.invokedynamic.maxfail", 2);
@@ -354,35 +380,6 @@ public class RubyInstanceConfig {
     }
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
-
-
-    static {
-        String specVersion = null;
-        try {
-            specVersion = System.getProperty("jruby.bytecode.version");
-            if (specVersion == null) {
-                specVersion = System.getProperty("java.specification.version");
-            }
-            if (System.getProperty("jruby.native.enabled") != null) {
-                nativeEnabled = Boolean.getBoolean("jruby.native.enabled");
-            }
-        } catch (SecurityException se) {
-            nativeEnabled = false;
-            specVersion = "1.5";
-        }
-        
-        // stack map calculation is failing for some compilation scenarios, so
-        // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.
-        if (specVersion.equals("1.5")) {// || specVersion.equals("1.6")) {
-            JAVA_VERSION = Opcodes.V1_5;
-        } else if (specVersion.equals("1.6")) {
-            JAVA_VERSION = Opcodes.V1_6;
-        } else if (specVersion.equals("1.7")) {
-            JAVA_VERSION = Opcodes.V1_7;
-        } else {
-            throw new RuntimeException("unsupported Java version: " + specVersion);
-        }
-    }
 
     public int characterIndex = 0;
 
