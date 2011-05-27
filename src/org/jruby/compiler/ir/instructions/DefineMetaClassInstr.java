@@ -5,7 +5,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.ir.IRMetaClass;
-import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.ClassMetaObject;
@@ -41,8 +40,7 @@ public class DefineMetaClassInstr extends OneOperandInstr {
             }
             RubyClass singletonClass = obj.getSingletonClass();
             dummyMetaClass.getStaticScope().setModule(singletonClass);
-            IRMethod rootMethod = dummyMetaClass.getRootMethod();
-            DynamicMethod method = new InterpretedIRMethod(rootMethod, singletonClass);
+            DynamicMethod method = new InterpretedIRMethod(dummyMetaClass.getRootMethod(), singletonClass);
             method.call(interp.getContext(), singletonClass, singletonClass, "", new IRubyObject[]{});
             return null;
         }

@@ -11,33 +11,30 @@ import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+// SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
+// identical except for 1 bit in interpret -- or will they diverge?
 public class DefineInstanceMethodInstr extends OneOperandInstr {
-    public final Operand container; // Can be either class of module
     public final IRMethod method;
 
     public DefineInstanceMethodInstr(Operand container, IRMethod method) {
-		  // SSS FIXME: I have to explicitly record method.getContainer() as an operand because it can be an unresolved value and thus a Variable
-		  // We dont want live variable analysis to forget about it!
         super(Operation.DEF_INST_METH, null, container);
-        this.container = container;
         this.method = method;
     }
 
     @Override
     public String toString() {
-        return super.toString() + "(" + container + ", " + method.getName() + ")";
+        return super.toString() + "(" + getArg() + ", " + method.getName() + ")";
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return this;
+        return new DefineInstanceMethodInstr(getArg().cloneForInlining(ii), method);
     }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
-		  super.simplifyOperands(valueMap);
-        Operand o = method.getContainer();
-        Operand v = valueMap.get(o);
+        super.simplifyOperands(valueMap);
+        Operand v = valueMap.get(getArg());
         // SSS FIXME: Dumb design leaking operand into IRScopeImpl -- hence this setting going on here.  Fix it!
         if (v != null)
             method.setContainer(v);
@@ -45,7 +42,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        RubyModule clazz = (RubyModule) method.getContainer().retrieve(interp);
+        RubyModule clazz = (RubyModule) getArg().retrieve(interp);
         clazz.addMethod(method.getName(), new InterpretedIRMethod(method, clazz));
         return null;
     }
