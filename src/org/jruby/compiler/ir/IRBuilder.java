@@ -116,6 +116,7 @@ import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
 import org.jruby.compiler.ir.instructions.DefineClassInstr;
 import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
+import org.jruby.compiler.ir.instructions.DefineMetaClassInstr;
 import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.compiler.ir.instructions.DefineModuleInstr;
 import org.jruby.compiler.ir.instructions.EQQInstr;
@@ -972,13 +973,12 @@ public class IRBuilder {
         // Here, the class << self declaration is in Foo's root method.
         // Foo is the class in whose context this is being defined.
         Operand receiver = build(sclassNode.getReceiverNode(), s);
-        IRClass mc = new IRMetaClass(s, receiver, sclassNode.getScope());
+        IRMethod nearestClassRootMethod = s.getNearestModule().getRootMethod();
 
-        // Record the new class as being lexically defined in scope s
+        // Create a dummy meta class and record it as being lexically defined in scope s
+        IRMetaClass mc = new IRMetaClass(s, sclassNode.getScope());
         s.getNearestModule().addClass(mc);
-        ClassMetaObject cmo = (ClassMetaObject)MetaObject.create(mc);
-        s.getNearestModule().getRootMethod().addInstr(new DefineClassInstr(cmo, mc.superClass));
-
+        nearestClassRootMethod.addInstr(new DefineMetaClassInstr(receiver, mc));
         build(sclassNode.getBodyNode(), mc.getRootMethod());
 
         return Nil.NIL;
