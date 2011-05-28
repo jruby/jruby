@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
-import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
@@ -42,8 +42,8 @@ public class DefineClassMethodInstr extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        RubyModule clazz = (RubyModule) getArg().retrieve(interp);
-        clazz.getMetaClass().addMethod(method.getName(), new InterpretedIRMethod(method, clazz));
+        RubyObject obj = (RubyObject) getArg().retrieve(interp);
+        obj.getMetaClass().addMethod(method.getName(), new InterpretedIRMethod(method, obj.getMetaClass()));
         return null;
     }
 }
