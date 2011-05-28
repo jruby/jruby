@@ -433,9 +433,17 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     /** rb_hash_each
      *
      */
-    @JRubyMethod(name = "each")
+    @JRubyMethod(compat = CompatVersion.RUBY1_8)
     public IRubyObject each(final ThreadContext context, final Block block) {
         return getOrCreateRubyHashMap().each(context, block);
+    }
+    
+    /** rb_hash_each
+     *
+     */
+    @JRubyMethod(name = "each", compat = CompatVersion.RUBY1_9)
+    public IRubyObject each19(final ThreadContext context, final Block block) {
+        return getOrCreateRubyHashMap().each19(context, block);
     }
 
 
