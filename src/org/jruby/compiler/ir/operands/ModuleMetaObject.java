@@ -17,9 +17,19 @@ public class ModuleMetaObject extends MetaObject {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-		  // SSS FIXME: why would this be null? for core classes?
-        StaticScope ssc =  scope.getStaticScope();
-		  return ssc == null ? null : ssc.getModule();
+		  IRModule module = (IRModule)scope;
+        StaticScope ssc =  module.getStaticScope();
+        if (ssc != null) {
+            return ssc.getModule();
+        }
+        else if (module.isACoreClass()) {
+            // static scope would be null for core classes
+            return module.getCoreClassModule(interp.getRuntime());
+        }
+        else {
+            // IR/Interpretation BUG?
+            return null;
+        }
     }
 
     @Override

@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.DefineClassInstr;
 import org.jruby.compiler.ir.instructions.DefineModuleInstr;
@@ -243,8 +245,19 @@ used, we are now forced to be conservative.
         return null;
     }
 
-    public boolean isCoreClass(String className) {
+    public boolean isACoreClass() {
+        return this == IRClass.getCoreClass(getName());
+    }
+
+    public boolean isCoreClassType(String className) {
         return this == IRClass.getCoreClass(className);
+    }
+
+    public RubyModule getCoreClassModule(Ruby runtime) {
+        // SSS FIXME: Here, I dont really care if this is a core class module or not .. so, why the charade?
+        String n = getName();
+        if (n.equals("Object")) return runtime.getObject();
+        else return runtime.getClass(n);
     }
 
     public LocalVariable getLocalVariable(String name) {

@@ -135,19 +135,19 @@ public class LocalOptimizationPass implements CompilerPass
                     if (rm != null) {
                         IRModule rc = rm.getDefiningIRModule();
                         if (rc != null) { // TODO: I am fairly sure I am wallpapering
-                            if (rc.isCoreClass("Fixnum")) {
+                            if (rc.isCoreClassType("Fixnum")) {
                                 Operand[] args = call.getOperands();
                                 if (args[2].isConstant()) {
                                     addMethodGuard(rm, deoptLabel, versionMap, instrs);
                                     val = ((Fixnum) r).computeValue(rm.getName(), (Constant) args[2]);
                                 }
-                            } else if (rc.isCoreClass("Float")) {
+                            } else if (rc.isCoreClassType("Float")) {
                                 Operand[] args = call.getOperands();
                                 if (args[2].isConstant()) {
                                     addMethodGuard(rm, deoptLabel, versionMap, instrs);
                                     val = ((Float) r).computeValue(rm.getName(), (Constant) args[2]);
                                 }
-                            } else if (rc.isCoreClass("Array")) {
+                            } else if (rc.isCoreClassType("Array")) {
                                 Operand[] args = call.getOperands();
                                 if (args[2] instanceof Fixnum && (rm.getName() == "[]")) {
                                     addMethodGuard(rm, deoptLabel, versionMap, instrs);
