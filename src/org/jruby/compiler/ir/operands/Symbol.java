@@ -11,4 +11,9 @@ public class Symbol extends Reference {
     public Object retrieve(InterpreterContext interp) {
         return interp.getRuntime().newSymbol(getName());
     }
+
+    @Override
+    public String toString() {
+        return ":" + getName();
+    }
 }
