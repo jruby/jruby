@@ -13,11 +13,4 @@ public class ClassMetaObject extends ModuleMetaObject {
     public boolean isClass() {
         return true;
     }
-
-    @Override
-    public Object retrieve(InterpreterContext interp) {
-		  // SSS FIXME: why would this be null? for core classes?
-        StaticScope ssc =  scope.getStaticScope();
-		  return ssc == null ? null : ssc.getModule();
-    }
 }
