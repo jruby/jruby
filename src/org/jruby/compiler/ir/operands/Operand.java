@@ -15,7 +15,7 @@ public abstract class Operand {
         return false;
     }
 
-    // Arrays, Ranges, etc. are compound values
+    // Arrays, Ranges, StringLiteral, etc. are compound values
     // Variables, fixnums, floats, etc. are "atomic" values
     public boolean isNonAtomicValue() {
         return false;

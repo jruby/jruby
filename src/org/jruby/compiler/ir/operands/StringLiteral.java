@@ -25,11 +25,29 @@ public class StringLiteral extends Constant
         return IRClass.getCoreClass("String");
     }
 
+    // SSS: Yes, this is non-atomic because you cannot create multiple copies of the string-literal by propagating it.
+    // Because of being able to define singleton methods on strings, "abc" != "abc" for 2 separate instances of the
+    // string literal.  This is similar to the java equality / intern issues with non-atomic objects
+    //
+    // Here is an example in Ruby:
+    // 
+    //    a1 = "abc"
+    //    a2 = "abc"
+    //    class < a1; def bar; puts 'a1'; end; end
+    //    class < a2; def bar; puts 'a2'; end; end
+    //    a2.bar != a1.bar
+    //
+    // Hence, I cannot value-propagate "abc" during optimizations
+    @Override
+    public boolean isNonAtomicValue() { 
+        return true;
+    }
+
     @Override
     public Object retrieve(InterpreterContext interp) {
         // FIXME SSS: Looks like newString just points to _bl_value rather than cloning it?
         // ENEBO: This is not only used for full RubyStrings, but also for bytelist retrieval....extra wrapping
         // return interp.getRuntime().newString(_bl_value); 
-		  return interp.getRuntime().newString(_str_value);
+        return interp.getRuntime().newString(_str_value);
     }
 }
