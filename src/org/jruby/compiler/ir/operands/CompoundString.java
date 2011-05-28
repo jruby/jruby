@@ -73,14 +73,18 @@ public class CompoundString extends Operand {
         return new CompoundString(newPieces);
     }
 
-    @Override
-    public Object retrieve(InterpreterContext interp) {
+    String retrieveJavaString(InterpreterContext interp) {
         StringBuilder buf = new StringBuilder();
 
         for (Operand p : pieces) {
             buf.append(p.retrieve(interp));
         }
 
-        return interp.getRuntime().newString(buf.toString());
+        return buf.toString();
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return interp.getRuntime().newString(retrieveJavaString(interp));
     }
 }
