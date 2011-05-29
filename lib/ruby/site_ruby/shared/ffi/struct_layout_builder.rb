@@ -58,7 +58,7 @@ module FFI
     end
 
 
-    NUMBER_TYPES = [
+    SCALAR_TYPES = [
       Type::INT8,
       Type::UINT8,
       Type::INT16,
@@ -71,6 +71,7 @@ module FFI
       Type::UINT64,
       Type::FLOAT32,
       Type::FLOAT64,
+      Type::BOOL,
     ]
 
     def add(name, type, offset = nil)
@@ -129,7 +130,7 @@ module FFI
       when type.is_a?(FFI::Enum)
         StructLayout::Enum
 
-      when NUMBER_TYPES.include?(type)
+      when SCALAR_TYPES.include?(type)
         StructLayout::Number
 
       when type == Type::POINTER
