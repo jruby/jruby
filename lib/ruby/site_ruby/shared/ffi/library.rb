@@ -172,7 +172,7 @@ module FFI
 
       options = Hash.new
       options[:convention] = defined?(@ffi_convention) ? @ffi_convention : :default
-      options[:enums] = @ffi_enums if defined?(@ffi_enums)
+      options[:enums] = defined?(@ffi_enum_map) ? @ffi_enum_map : nil
 
       cb = FFI::CallbackInfo.new(find_type(ret), params.map { |e| find_type(e) }, options)
 
@@ -198,14 +198,14 @@ module FFI
     def typedef(old, add, info=nil)
       @ffi_typedefs = Hash.new unless defined?(@ffi_typedefs)
 
-      @ffi_typedefs[add] = if old.kind_of?(FFI::Type)
+      @ffi_typedefs[add] = if old.kind_of?(Type)
         old
 
       elsif @ffi_typedefs.has_key?(old)
         @ffi_typedefs[old]
 
       elsif old.is_a?(DataConverter)
-        FFI::Type::Mapped.new(old)
+        Type::Mapped.new(old)
 
       elsif old == :enum
         if add.kind_of?(Array)
@@ -233,23 +233,29 @@ module FFI
       else
         [ nil, args ]
       end
-      @ffi_enums = FFI::Enums.new unless defined?(@ffi_enums)
-      @ffi_enums << (e = FFI::Enum.new(values, name))
+
+      e = Enum.new(values, name)
+      if name
+        @ffi_tagged_enums = Hash.new unless defined?(@ffi_tagged_enums)
+        @ffi_tagged_enums[name] = e
+        # If called as enum :foo, [ :zero, :one, :two ], add a typedef alias
+        typedef(e, name)
+      end
+
       @ffi_enum_map = Hash.new unless defined?(@ffi_enum_map)
+
       # append all the enum values to a global :name => value map
       @ffi_enum_map.merge!(e.symbol_map)
 
-      # If called as enum :foo, [ :zero, :one, :two ], add a typedef alias
-      typedef(e, name) if name
       e
     end
 
     def enum_type(name)
-      @ffi_enums.find(name) if defined?(@ffi_enums)
+      @ffi_tagged_enums[name] if defined?(@ffi_tagged_enums)
     end
 
     def enum_value(symbol)
-      @ffi_enums.__map_symbol(symbol)
+      @ffi_enum_map[symbol]
     end
 
     def find_type(t)
