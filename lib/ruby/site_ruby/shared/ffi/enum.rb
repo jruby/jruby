@@ -56,7 +56,6 @@ module FFI
     def initialize(info, tag=nil)
       @tag = tag
       @kv_map = Hash.new
-      @vk_map = Hash.new
       unless info.nil?
         last_cst = nil
         value = 0
@@ -64,18 +63,17 @@ module FFI
           case i
           when Symbol
             @kv_map[i] = value
-            @vk_map[value] = i
             last_cst = i
             value += 1
           when Integer
             @kv_map[last_cst] = i
-            @vk_map[i] = last_cst
             value = i+1
           end
         end
 
         self.init_values(@kv_map)
       end
+      @vk_map = Hash[@kv_map.map{|k,v| [v,k]}]
     end
 
     def symbols
