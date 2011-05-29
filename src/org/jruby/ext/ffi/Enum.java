@@ -1,17 +1,37 @@
+/***** BEGIN LICENSE BLOCK *****
+ * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Common Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.eclipse.org/legal/cpl-v10.html
+ *
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * Copyright (C) 2010, 2011 Wayne Meissner
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either of the GNU General Public License Version 2 or later (the "GPL"),
+ * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the CPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the CPL, the GPL or the LGPL.
+ ***** END LICENSE BLOCK *****/
 
 package org.jruby.ext.ffi;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 import org.jcodings.util.IntHash;
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyHash;
-import org.jruby.RubyInteger;
-import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
-import org.jruby.RubySymbol;
+import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -24,6 +44,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name="FFI::Enum", parent="Object")
 public final class Enum extends RubyObject {
     private final IRubyObject nativeType;
+    private final RubyHash kv_map;
+    private volatile IRubyObject tag;
+
     private volatile Map<RubySymbol, RubyInteger> symbolToValue = new IdentityHashMap<RubySymbol, RubyInteger>();
     private volatile IntHash<RubySymbol> valueToSymbol = new IntHash<RubySymbol>();
 
@@ -48,33 +71,86 @@ public final class Enum extends RubyObject {
     private Enum(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
         nativeType = runtime.fastGetModule("FFI").fastGetClass("Type").fastGetConstant("INT");
+        kv_map = RubyHash.newHash(runtime);
+        tag = runtime.getNil();
     }
 
-    @JRubyMethod(name = "init_values")
-    public final IRubyObject init_values(ThreadContext context, IRubyObject values) {
-        if (!(values instanceof RubyHash)) {
-            throw context.getRuntime().newTypeError(values, context.getRuntime().getHash());
-        }
-        Map<RubySymbol, RubyInteger> s2v = new IdentityHashMap<RubySymbol, RubyInteger>();
-        IntHash<RubySymbol> v2s = new IntHash<RubySymbol>();
+    @JRubyMethod(name = "initialize")
+    public final IRubyObject initialize(ThreadContext context, IRubyObject values, IRubyObject tag) {
+        this.tag = tag;
+        return initialize(context, values);
+    }
 
-        for (Object obj : ((RubyHash) values).directEntrySet()) {
-            Map.Entry entry = (Map.Entry) obj;
-            if (!(entry.getKey() instanceof RubySymbol)) {
-                throw context.getRuntime().newTypeError(values, context.getRuntime().getSymbol());
-            }
-            if (!(entry.getValue() instanceof RubyInteger)) {
-                throw context.getRuntime().newTypeError(values, context.getRuntime().getInteger());
-            }
-            RubySymbol sym = (RubySymbol) entry.getKey();
-            s2v.put(sym, (RubyInteger) entry.getValue());
-            v2s.put(RubyNumeric.num2int((IRubyObject) entry.getValue()), sym);
+    @JRubyMethod(name = "initialize")
+    public final IRubyObject initialize(ThreadContext context, IRubyObject values) {
+        if (!(values instanceof RubyArray)) {
+            throw context.getRuntime().newTypeError(values, context.getRuntime().getArray());
         }
-        
-        symbolToValue = s2v;
-        valueToSymbol = v2s;
+        RubyArray ary = (RubyArray) values;
+
+        Map<RubySymbol, RubyInteger> s2v = new IdentityHashMap<RubySymbol, RubyInteger>();
+        IRubyObject prevConstant = null;
+        int nextValue = 0;
+
+        for (int i = 0; i < ary.size(); i++) {
+            IRubyObject v = ary.entry(i);
+
+            if (v instanceof RubySymbol) {
+                s2v.put((RubySymbol) v, RubyFixnum.newFixnum(context.getRuntime(), nextValue));
+                prevConstant = v;
+                nextValue++;
+
+            } else if (v instanceof RubyFixnum) {
+                if (prevConstant == null) {
+                    throw context.getRuntime().newArgumentError("invalid enum sequence - no symbol for value "
+                            + v);
+                }
+                s2v.put((RubySymbol) prevConstant, (RubyFixnum) v);
+                nextValue = (int) ((RubyInteger) v).getLongValue() + 1;
+
+            } else {
+                throw context.getRuntime().newTypeError(v, context.getRuntime().getSymbol());
+            }
+        }
+
+        symbolToValue = new IdentityHashMap<RubySymbol, RubyInteger>(s2v);
+        valueToSymbol = new IntHash<RubySymbol>(symbolToValue.size());
+        for (Map.Entry<RubySymbol, RubyInteger> e : symbolToValue.entrySet()) {
+            kv_map.fastASet(e.getKey(), e.getValue());
+            valueToSymbol.put((int) e.getValue().getLongValue(), e.getKey());
+        }
 
         return this;
+    }
+
+    @JRubyMethod(name = { "[]", "find" })
+    public final IRubyObject find(ThreadContext context, IRubyObject query) {
+        if (query instanceof RubySymbol) {
+            IRubyObject value = kv_map.fastARef(query);
+            return value != null ? value : context.getRuntime().getNil();
+
+        } else if (query instanceof RubyInteger) {
+            RubySymbol symbol = valueToSymbol.get((int) ((RubyInteger) query).getLongValue());
+            return symbol != null ? symbol : context.getRuntime().getNil();
+
+        } else {
+            return context.getRuntime().getNil();
+        }
+    }
+
+    @JRubyMethod(name = { "symbol_map", "to_h", "to_hash" })
+    public final IRubyObject symbol_map(ThreadContext context) {
+        return kv_map.dup(context);
+    }
+
+    @JRubyMethod(name = { "symbols" })
+    public final IRubyObject symbols(ThreadContext context) {
+        return kv_map.keys();
+    }
+
+    @JRubyMethod(name = { "tag" })
+    public final IRubyObject tag(ThreadContext context) {
+        return tag;
     }
 
     @JRubyMethod(name = "native_type")
