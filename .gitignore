@@ -58,3 +58,5 @@ dev_null
 /.externalToolBuilders/
 /.settings/
 .metadata
+.idea/workspace.xml
+shared.iml
