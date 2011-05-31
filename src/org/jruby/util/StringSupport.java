@@ -32,6 +32,8 @@ import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import sun.misc.Unsafe;
 
@@ -460,5 +462,26 @@ public final class StringSupport {
         int c;
         while (len-- > 0 && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') olen++;
         return olen;
+    }
+
+    /**
+     * Check whether input object's string value contains a null byte, and if so
+     * throw SecurityError.
+     * @param runtime
+     * @param value 
+     */
+    public static final void checkStringSafety(Ruby runtime, IRubyObject value) {
+        RubyString s = value.asString();
+        if (runtime.getSafeLevel() > 0 && s.isTaint()) {
+            throw runtime.newSecurityError("Unsafe string parameter");
+        }
+        ByteList bl = s.getByteList();
+        final byte[] array = bl.getUnsafeBytes();
+        final int end = bl.length();
+        for (int i = bl.begin(); i < end; ++i) {
+            if (array[i] == (byte) 0) {
+                throw runtime.newSecurityError("string contains null byte");
+            }
+        }
     }
 }
