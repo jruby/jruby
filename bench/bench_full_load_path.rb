@@ -5,7 +5,12 @@ size = (ARGV.shift || '500').to_i
 target_size = (ARGV.shift || '10000').to_i # must be bigger than 50
 require_size = 50
 
-TEST_DIR = File.expand_path('full_load_path_test', File.dirname(__FILE__))
+# for testing with abloute path
+#TEST_DIR = File.expand_path('full_load_path_test', File.dirname(__FILE__))
+
+# for testing with relative path
+Dir.chdir File.dirname(__FILE__)
+TEST_DIR = 'full_load_path_test'
 
 unless File.directory?(TEST_DIR)
   FileUtils.mkdir(TEST_DIR)
@@ -31,6 +36,8 @@ def with_loadvars(size)
     $LOADED_FEATURES.replace(loaded_features)
   end
 end
+
+gets
 
 Benchmark.bmbm do |bm|
   bm.report("empty counterpart") do
