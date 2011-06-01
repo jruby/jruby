@@ -33,6 +33,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 
 public final class DefaultMethodFactory extends MethodFactory {
@@ -750,7 +751,7 @@ public final class DefaultMethodFactory extends MethodFactory {
         
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             if (parameter instanceof RubyString) {
-                Util.checkStringSafety(context.getRuntime(), parameter);
+                StringSupport.checkStringSafety(context.getRuntime(), parameter);
                 ByteList bl = ((RubyString) parameter).getByteList();
                 buffer.putArray(bl.getUnsafeBytes(), bl.begin(), bl.length(),
                         ArrayFlags.IN | ArrayFlags.NULTERMINATE);
