@@ -318,6 +318,7 @@ public class LoadService {
                 return RequireState.ALREADY_LOADED;
             }
 
+            // numbers from loadTimer does not include lock waiting time.
             long startTime = loadTimer.startLoad(requireName);
             try {
                 boolean loaded = smartLoadInternal(requireName);
