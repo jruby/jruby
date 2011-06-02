@@ -5,6 +5,10 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import java.util.List;
 import java.util.Map;
 
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
 // Represents a splat value in Ruby code: *array
 //
 // NOTE: This operand is only used in the initial stages of optimization
@@ -49,5 +53,10 @@ public class Splat extends Operand
 
     public Operand cloneForInlining(InlinerInfo ii) { 
         return isConstant() ? this : new Splat(_array.cloneForInlining(ii));
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return RuntimeHelpers.splatValue19((IRubyObject)_array.retrieve(interp));
     }
 }
