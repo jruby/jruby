@@ -44,12 +44,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
 	 // - the class in which the closure is lexically defined in if we are executing a closure
     public NaiveInterpreterContext(ThreadContext context, RubyModule currentModule, IRubyObject self, int localVariablesSize, int temporaryVariablesSize, int renamedVariablesSize, IRubyObject[] parameters, Block block) {
         context.preMethodFrameOnly(currentModule, null, self, block);
-/**
-		  System.out.println("Curr scope is: " + context.getCurrentScope().getStaticScope().hashCode());
-		  System.out.println("Curr value of currentModule is: " + context.getCurrentScope().getStaticScope().getModule() + "; class is: " + context.getCurrentScope().getStaticScope().getModule());
-		  System.out.println("New value of currentModule is: " + currentModule + "; class is: " + currentModule.getClass());
-**/
-		  context.getCurrentScope().getStaticScope().setModule(currentModule);
         this.frame = context.getCurrentFrame();
 
         this.context = context;

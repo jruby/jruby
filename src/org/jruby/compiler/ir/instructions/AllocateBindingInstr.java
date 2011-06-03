@@ -51,14 +51,20 @@ public class AllocateBindingInstr extends Instr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
+/**
+ * SSS: This is going to be a NO-OP in the current implementation because of the existing JRuby runtime
+ * is structure.  ThreadContext accesses static-scope via a DynamicScope!  This means it expects a
+ * dynamic scope to be allocated for every method context.  So, we cannot make use of our conditional
+ * binding allocation as implemented by this instruction.  In the future, when the runtime is restructured
+ * to separate static and dynamic scopes, we can revive this again.
+ *
         // The impl class may or may not be correct.
         RubyModule implementationClass = scope.getStaticScope().getModule();
-
         if (implementationClass == null) {
             implementationClass = interp.getRuntime().getObject();
         }
-
         interp.allocateSharedBindingScope(scope);
+**/
         return null;
     }
 }

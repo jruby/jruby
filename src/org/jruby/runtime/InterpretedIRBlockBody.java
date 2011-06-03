@@ -67,8 +67,11 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                 args[i] = context.getRuntime().getNil();
             }
         }
-        InterpreterContext interp = new NaiveInterpreterContext(context, closure.getStaticScope().getModule(), self, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
+
+		  RubyModule currentModule = closure.getStaticScope().getModule();
+        InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
         interp.setDynamicScope(binding.getDynamicScope());
+		  context.getCurrentScope().getStaticScope().setModule(currentModule);
 
         return Interpreter.interpret(context, closure.getCFG(), interp);
     }
@@ -97,8 +100,11 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                 args[i] = context.getRuntime().getNil();
             }
         }
-        InterpreterContext interp = new NaiveInterpreterContext(context, closure.getStaticScope().getModule(), self, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
+
+		  RubyModule currentModule = closure.getStaticScope().getModule();
+        InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
         interp.setDynamicScope(binding.getDynamicScope());
+		  context.getCurrentScope().getStaticScope().setModule(currentModule);
 
         return Interpreter.interpret(context, closure.getCFG(), interp);
     }
