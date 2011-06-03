@@ -147,6 +147,8 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.io.SelectorPool;
 import org.objectweb.asm.Opcodes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -162,6 +164,12 @@ import org.objectweb.asm.Opcodes;
  * accessing global runtime structures.
  */
 public final class Ruby {
+    
+    /**
+     * The logger used to log relevant bits.
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(Java.class);
+    
     /**
      * Returns a new instance of the JRuby runtime configured with defaults.
      *
@@ -619,8 +627,8 @@ public final class Ruby {
 
     private void handeCompileError(Node node, Throwable t) {
         if (config.isJitLoggingVerbose() || config.isDebug()) {
-            System.err.println("warning: could not compile: " + node.getPosition().getFile() + "; full trace follows");
-            t.printStackTrace();
+            LOGGER.debug("warning: could not compile: {}; full trace follows", node.getPosition().getFile());
+            LOGGER.debug(t.getMessage(), t);
         }
     }
 
@@ -1398,7 +1406,7 @@ public final class Ruby {
                 // this is currently only here for Android, which seems to have
                 // bugs in its enumeration logic
                 // http://code.google.com/p/android/issues/detail?id=2812
-                e.printStackTrace();
+                LOGGER.error(e.getMessage(), e);
             }
         }
     }
@@ -3205,7 +3213,9 @@ public final class Ruby {
 
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
         if (printWhenVerbose && origException != null && this.isVerbose()) {
-            origException.printStackTrace(getErrorStream());
+            LOGGER.error(origException.getMessage(), origException);
+        } else {
+            LOGGER.debug(origException.getMessage(), origException);
         }
         
         return new RaiseException(new RubyNameError(
@@ -3243,7 +3253,7 @@ public final class Ruby {
 
     public RaiseException newSystemStackError(String message, StackOverflowError soe) {
         if (getDebug().isTrue()) {
-            soe.printStackTrace(getInstanceConfig().getError());
+            LOGGER.debug(soe.getMessage(), soe);
         }
         return newRaiseException(getSystemStackError(), message);
     }
