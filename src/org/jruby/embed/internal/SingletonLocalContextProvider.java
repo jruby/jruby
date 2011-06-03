@@ -112,8 +112,7 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
     }
 
     public boolean isRuntimeInitialized() {
-        LocalContext context = SingletonLocalContextProvider.getLocalContextInstance(config, behavior, lazy);
-        return context.initialized;
+        return Ruby.isGlobalRuntimeReady();
     }
     
     public void terminate() {
