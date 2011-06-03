@@ -73,9 +73,9 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             // Process calls specially -- these are the sites of binding stores!
             if (i instanceof CallInstr) {
                 CallInstr call = (CallInstr) i;
+                // At this call site, a binding will get allocated if it has not been already!
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
-                    // At this call site, a binding will get allocated if it has not been already!
                     bindingAllocated = true;
 
                     IRClosure cl = (IRClosure) ((MetaObject) o).scope;
@@ -86,7 +86,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     cl_cfg.setDataFlowSolution(cl_bsp.getName(), cl_bsp);
 
                     // If the call is an eval, or if the callee can capture this method's binding, we have to spill all variables.
-                    boolean spillAllVars = call.canBeEval() || call.canCaptureCallersBinding();
+                    boolean spillAllVars = call.canBeEval() || call.targetRequiresCallersBinding();
 
                     // - If all variables have to be spilled, then those variables will no longer be dirty after the call site
                     // - If a variable is used in the closure (FIXME: Strictly only those vars that are live at the call site -- 
@@ -101,8 +101,11 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     }
                     dirtyVars = newDirtyVars;
                 } // Call has no closure && it requires stores
-                else if (call.requiresBinding()) {
+                else if (call.targetRequiresCallersBinding()) {
+                    bindingAllocated = true;
                     dirtyVars.clear();
+                }
+                else if (call.canSetDollarVars()) {
                     bindingAllocated = true;
                 }
             }
@@ -180,7 +183,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
                     // If the call is an eval, or if the callee can capture this method's binding,
                     // we have to spill all variables.
-                    boolean spillAllVars = call.canBeEval() || call.canCaptureCallersBinding();
+                    boolean spillAllVars = call.canBeEval() || call.targetRequiresCallersBinding();
 
                     // Unless we have to spill everything, spill only those dirty variables that are:
                     // - used in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
@@ -201,7 +204,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     // add stores in the closure
                     ((BindingStorePlacementProblem) cl_cfg.getDataFlowSolution(bsp.getName())).addStoreAndBindingAllocInstructions();
                 } // Call has no closure && it requires stores
-                else if (call.requiresBinding()) {
+                else if (call.targetRequiresCallersBinding()) {
                     instrs.previous();
                     if (!bindingAllocated) {
                         instrs.add(new AllocateBindingInstr(s));

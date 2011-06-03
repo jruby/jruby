@@ -90,7 +90,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                     reqdLoads = newReqdLoads;
                 }
                 // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
-                if (call.requiresBinding()) {
+                if (call.targetRequiresCallersBinding()) {
                     reqdLoads.clear();
                 }
             }
@@ -165,7 +165,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                 } 
 
                 // In this case, we are going to blindly load everything
-                if (call.requiresBinding()) {
+                if (call.targetRequiresCallersBinding()) {
                     it.next();
                     for (Variable v : reqdLoads) {
                         it.add(new LoadFromBindingInstr(v, s, v.getName()));

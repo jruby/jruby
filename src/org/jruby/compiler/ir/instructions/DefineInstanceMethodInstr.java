@@ -43,6 +43,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
         RubyModule clazz = (RubyModule) getArg().retrieve(interp);
+		  // System.out.println("Adding method: " + method.getName() + " to " + clazz.getName() + "; arg is " + getArg());
         clazz.addMethod(method.getName(), new InterpretedIRMethod(method, clazz));
         return null;
     }

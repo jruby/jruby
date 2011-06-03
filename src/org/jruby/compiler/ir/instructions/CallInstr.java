@@ -36,12 +36,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CallInstr extends MultiOperandInstr {
     protected Operand   receiver;
     protected Operand[] arguments;
-    protected MethAddr methAddr;
-    protected Operand closure;
-    
+    protected MethAddr  methAddr;
+    protected Operand   closure;
+
     private boolean _flagsComputed;
     private boolean _canBeEval;
-    private boolean _requiresBinding;    // Does this call make use of the caller's binding?
+    private boolean _targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
     public HashMap<DynamicMethod, Integer> _profile;
 
     public CallInstr(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
@@ -54,7 +54,7 @@ public class CallInstr extends MultiOperandInstr {
 
         _flagsComputed = false;
         _canBeEval = true;
-        _requiresBinding = true;
+        _targetRequiresCallersBinding = true;
     }
 
     public CallInstr(Operation op, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
@@ -67,7 +67,7 @@ public class CallInstr extends MultiOperandInstr {
 
         _flagsComputed = false;
         _canBeEval = true;
-        _requiresBinding = true;
+        _targetRequiresCallersBinding = true;
     }
 
     public Operand[] getOperands() {
@@ -121,53 +121,25 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public boolean isStaticCallTarget() {
-        return getTargetMethod() != null;
+        return false;
     }
 
-    // SSS FIXME: Right now, this code is not very smart!
-    // In a JIT context, we might be compiling this call in the context of a surrounding PIC (or a monomorphic IC).
-    // If so, the receiver type and hence the target method will be known.
-    public IRMethod getTargetMethodWithReceiver(Operand receiver) {
-        String mname = methAddr.getName();
-
-        if (receiver instanceof MetaObject) {
-            IRModule m = (IRModule) (((MetaObject) receiver).scope);
-            return m.getClassMethod(mname);
-        } // self.foo(..);
-        // If this call instruction is in a class method, we'll fetch a class method
-        // If this call instruction is in an instance method, we'll fetch an instance method
-        else if ((receiver instanceof LocalVariable) && (((LocalVariable)receiver).isSelf())) {
-            return null;
-        } else {
-            IRClass c = receiver.getTargetClass();
-
-            return c == null ? null : c.getInstanceMethod(mname);
-        }
-    }
-
-    public IRMethod getTargetMethod() {
-        return getTargetMethodWithReceiver(getReceiver());
-    }
-
+    // SSS: Unused method
     // Can this call lead to ruby code getting modified?  
     // If we don't know what method we are calling, we assume it can (pessimistic, but safe!)
-    // If we do know the target method, we ask the method itself whether it modifies ruby code
     public boolean canModifyCode() {
-        IRMethod method = getTargetMethod();
-
-        return method == null ? true : method.modifiesCode();
+        return true;
     }
 
     // SSS FIXME: Are all bases covered?
     private boolean getEvalFlag() {
         // ENEBO: This could be made into a recursive two-method thing so then: send(:send, :send, :send, :send, :eval, "Hosed") works
-        // ENEBO: This is not checking for __send__
         String mname = getMethodAddr().getName();
         // checking for "call" is conservative.  It can be eval only if the receiver is a Method
         if (mname.equals("call") || mname.equals("eval")) return true;
 
         // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
-        if (mname.equals("send")) {
+        if (mname.equals("send") || mname.equals("__send__")) {
             Operand[] args = getCallArgs();
             if (args.length >= 2) {
                 Operand meth = args[0];
@@ -175,32 +147,29 @@ public class CallInstr extends MultiOperandInstr {
 
                 // But why?  Why are you killing yourself (and us) doing this?
                 String name = ((StringLiteral) meth)._str_value;
-                if (name.equals("call") || name.equals("eval") || name.equals("send")) return true;
+                if (name.equals("call") || name.equals("eval") || name.equals("send") || name.equals("__send__")) return true;
             }
         }
-            
+
         return false; // All checks passed
     }
 
-    private boolean getRequiresBindingFlag() {
-        // This is an eval
-        // SSS FIXME: This is conservative, but will let that go for now
+    private boolean computeRequiresCallersBindingFlag() {
         if (canBeEval() /*|| canCaptureCallersBinding()*/) return true;
 
         if (closure != null) {
-            // Can be a symbol .. ex: [1,2,3,4].map(&:foo)
-            // SSS FIXME: Is it true that if the closure operand is a symbol, it couldn't access the caller's binding?
-            if (!(closure instanceof MetaObject)) return false;
-
+            /****
             IRClosure cl = (IRClosure) ((MetaObject) closure).scope;
-            if (cl.requiresBinding() /*|| cl.canCaptureCallersBinding()*/) return true;
+            if (cl.requiresBinding()) return true;
+            ****/
+            // SSS FIXME: This is conservative!
+            return true;
         }
 
         // Check if we are calling Proc.new or lambda
         String mname = getMethodAddr().getName();
-        
         if (mname.equals("lambda")) {
-           return true;
+            return true;
         } else if (mname.equals("new")) {
             Operand object = getReceiver();
 
@@ -208,10 +177,9 @@ public class CallInstr extends MultiOperandInstr {
             if (!(object instanceof MetaObject)) return true;
 
             IRScope c = ((MetaObject) object).scope;
-
             if ((c instanceof IRClass) && c.getName().equals("Proc")) return true;
         }
-        
+
         // SSS FIXME: Are all bases covered?
         return false;  // All checks done -- dont need one
     }
@@ -220,7 +188,7 @@ public class CallInstr extends MultiOperandInstr {
         // Order important!
         _flagsComputed = true;
         _canBeEval = getEvalFlag();
-        _requiresBinding   = _canBeEval ? true : getRequiresBindingFlag();
+        _targetRequiresCallersBinding = _canBeEval ? true : computeRequiresCallersBindingFlag();
     }
 
     public boolean canBeEval() {
@@ -229,41 +197,22 @@ public class CallInstr extends MultiOperandInstr {
         return _canBeEval;
     }
 
-    public boolean requiresBinding() {
+    public boolean targetRequiresCallersBinding() {
         if (!_flagsComputed) computeFlags();
 
-        return _requiresBinding;
+        return _targetRequiresCallersBinding;
     }
 
-    // SSS FIXME: Are all bases covered?
-    public boolean canCaptureCallersBinding() {
-        /**
-         * We should do this better by setting default flags for various core library methods
-         * and by checking type of receiver to see if the receiver is any core object (string, array, etc.)
-         *
-        if (methAddr instanceof MethAddr) {
-        String n = ((MethAddr)methAddr).getName();
-        return !n.equals("each") && !n.equals("inject") && !n.equals("+") && !n.equals("*") && !n.equals("+=") && !n.equals("*=");
-        }
-         **/
-
-        Operand r = getReceiver();
-        IRMethod rm = getTargetMethodWithReceiver(r);
-
-        // If we don't know the method we are dispatching to, or if we know that the method can capture the callers frame,
-        // we are in deep doo-doo.  We will need to store all variables in the call frame.
-        //
-        // SSS FIXME:
-        // This is a "static" check and at some point during the execution, the caller's code could change and capture the binding at that point!
-        // We need to set a compilation flag that records this dependency on the caller, so that this method can be recompiled whenever
-        // the caller changes.
-        return ((rm == null) || rm.canCaptureCallersBinding());
+    // Regexp and IO calls can do this -- and since we do not know at IR-build time 
+    // what the call target is, we have to conservatively assume yes
+    public boolean canSetDollarVars() {
+        return true;
     }
 
     public boolean isLVADataflowBarrier() {
         // If the call is an eval, OR if it passes a closure and the callee can capture the caller's binding, we are in trouble
         // We would have to pretty much spill everything at the call site!
-        return canBeEval() || ((getClosureArg() != null) && canCaptureCallersBinding());
+        return canBeEval() || targetRequiresCallersBinding();
     }
 
     @Override
@@ -292,10 +241,10 @@ public class CallInstr extends MultiOperandInstr {
         allArgs[1] = receiver;
         for (int i = 0; i < callArgs.length; i++) {
             assert callArgs[i] != null : "ARG " + i + " is null";
-            
+
             allArgs[i + 2] = callArgs[i];
         }
-        
+
         if (closure != null) allArgs[callArgs.length + 2] = closure;
 
         return allArgs;
@@ -328,7 +277,7 @@ public class CallInstr extends MultiOperandInstr {
         } else {
             IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
             String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
-           
+
             try {
                 resultValue = object.callMethod(interp.getContext(), name, args, prepareBlock(interp));
             } catch (org.jruby.exceptions.JumpException.BreakJump bj) {

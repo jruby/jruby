@@ -198,7 +198,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
             if (i instanceof CallInstr) {
                 CallInstr call = (CallInstr) i;
-                if (call.requiresBinding())
+                if (call.targetRequiresCallersBinding())
                     requiresBinding = true;
 
                 // If this method receives a closure arg, and this call is an eval that has more than 1 argument,

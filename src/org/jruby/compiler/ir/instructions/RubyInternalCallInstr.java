@@ -34,11 +34,13 @@ public class RubyInternalCallInstr extends CallInstr {
         return true;
     }
 
+/***
     // SSS FIXME: Dont optimize these yet!
     @Override
     public IRMethod getTargetMethodWithReceiver(Operand receiver) {
         return null;
     }
+***/
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {

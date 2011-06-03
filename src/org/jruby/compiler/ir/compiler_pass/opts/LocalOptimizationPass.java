@@ -14,7 +14,6 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
-import org.jruby.compiler.ir.instructions.METHOD_VERSION_GUARD_Instr;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.CodeVersion;
 import org.jruby.compiler.ir.operands.Array;
@@ -117,7 +116,7 @@ public class LocalOptimizationPass implements CompilerPass
             else if (iop.isCall()) {
                 val = null;
                 CallInstr call = (CallInstr) i;
-                Operand    r    = call.getReceiver(); 
+                Operand   r    = call.getReceiver(); 
                 // SSS FIXME: r can be null for ruby/jruby internal call instructions!
                 // Cannot optimize them as of now.
                 if (r != null) {
@@ -127,41 +126,6 @@ public class LocalOptimizationPass implements CompilerPass
                         Operand v = valueMap.get(r);
                         if (v != null)
                             r = v;
-                    }
-
-                    // Check if we can optimize this call based on the receiving method and receiver type
-                    // Use the simplified receiver!
-                    IRMethod rm = call.getTargetMethodWithReceiver(r);
-                    if (rm != null) {
-                        IRModule rc = rm.getDefiningIRModule();
-                        if (rc != null) { // TODO: I am fairly sure I am wallpapering
-                            if (rc.isCoreClassType("Fixnum")) {
-                                Operand[] args = call.getOperands();
-                                if (args[2].isConstant()) {
-                                    addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                                    val = ((Fixnum) r).computeValue(rm.getName(), (Constant) args[2]);
-                                }
-                            } else if (rc.isCoreClassType("Float")) {
-                                Operand[] args = call.getOperands();
-                                if (args[2].isConstant()) {
-                                    addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                                    val = ((Float) r).computeValue(rm.getName(), (Constant) args[2]);
-                                }
-                            } else if (rc.isCoreClassType("Array")) {
-                                Operand[] args = call.getOperands();
-                                if (args[2] instanceof Fixnum && (rm.getName() == "[]")) {
-                                    addMethodGuard(rm, deoptLabel, versionMap, instrs);
-                                    val = ((Array) r).fetchCompileTimeArrayElement(((Fixnum) args[2]).value.intValue(), false);
-                                }
-                            }
-                        }
-
-                        // If we got a simplified value, mark the call dead and insert a copy in its place!
-                        if (val != null) {
-                            i.markDead();
-                            instrs.add(new CopyInstr(res, val));
-                            recordSimplification(res, val, valueMap, simplificationMap);
-                        }
                     }
                 }
             }
@@ -182,17 +146,6 @@ public class LocalOptimizationPass implements CompilerPass
                 simplificationMap = new HashMap<Variable,List<Variable>>();
                 versionMap = new HashMap<String, CodeVersion>();
             }
-        }
-    }
-
-    private static void addMethodGuard(IRMethod m, Label deoptLabel, Map<String, CodeVersion> versionMap, ListIterator instrs)
-    {
-        String      fullName     = m.getFullyQualifiedName();
-        CodeVersion knownVersion = versionMap.get(fullName);
-        CodeVersion mVersion     = m.getVersion();
-        if ((knownVersion == null) || (knownVersion._version != mVersion._version)) {
-            instrs.add(new METHOD_VERSION_GUARD_Instr(m, m.getVersion(), deoptLabel));
-            versionMap.put(fullName, mVersion);
         }
     }
 }
