@@ -1,4 +1,4 @@
-public class BenchRubyCaseName {
+public class BenchRubyCasedName {
 
 
     public static void main(String[] args) {
