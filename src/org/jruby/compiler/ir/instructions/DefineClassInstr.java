@@ -7,6 +7,7 @@ import org.jruby.RubyClass;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMetaClass;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.Operation;
@@ -17,7 +18,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineClassInstr extends TwoOperandInstr {
     public DefineClassInstr(ClassMetaObject cmo, Operand superClass) {
-        super(Operation.DEF_CLASS, null, cmo, superClass);
+		  // Get rid of null scenario
+        super(Operation.DEF_CLASS, null, cmo, superClass == null ? Nil.NIL : superClass);
     }
 
     @Override
@@ -35,7 +37,8 @@ public class DefineClassInstr extends TwoOperandInstr {
         if (scope instanceof IRMetaClass) {
             module = container.getMetaClass();
         } else {
-            RubyClass sc = (RubyClass)getOperand2().retrieve(interp);
+				Operand superClass = getOperand2();
+            RubyClass sc = superClass == Nil.NIL ? null : (RubyClass)superClass.retrieve(interp);
             module = container.defineOrGetClassUnder(scope.getName(), sc);
         }
 

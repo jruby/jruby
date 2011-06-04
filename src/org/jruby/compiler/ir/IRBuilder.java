@@ -947,13 +947,13 @@ public class IRBuilder {
     public Operand buildClass(ClassNode classNode, IRScope s) {
         Node superNode = classNode.getSuperNode();
         Colon3Node cpath = classNode.getCPath();
-        Operand superClass = (superNode == null) ? MetaObject.create(IRClass.getCoreClass("Object")) : build(superNode, s);
+        Operand superClass = (superNode == null) ? null : build(superNode, s);
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
 
         IRClass c = new IRClass(s, container, superClass, className, classNode.getScope());
         ClassMetaObject cmo = (ClassMetaObject) MetaObject.create(c);
-        s.getNearestModule().getRootMethod().addInstr(new DefineClassInstr(cmo, c.superClass));
+        s.getNearestModule().getRootMethod().addInstr(new DefineClassInstr(cmo, superClass));
         s.getNearestModule().addClass(c);
 
         build(classNode.getBodyNode(), c.getRootMethod());
