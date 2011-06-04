@@ -216,6 +216,12 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     instrs.next();
                     dirtyVars.clear();
                 }
+                else if (call.canSetDollarVars()) {
+                    if (!bindingAllocated) {
+                        instrs.add(new AllocateBindingInstr(s));
+                        bindingAllocated = true;
+                    }
+                }
             } else if ((i instanceof ClosureReturnInstr) || (i instanceof BREAK_Instr)) {
                 // At closure return and break instructions (both of which are exits from the closure),
                 // we need a binding store on exit only for vars that are both:
