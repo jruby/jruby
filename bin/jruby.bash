@@ -20,7 +20,9 @@ case "`uname`" in
 esac
 
 # ----- Verify and Set Required Environment Variables -------------------------
-JAVA_VM=-client
+if [ -z "$JAVA_VM" ]; then
+  JAVA_VM=-client
+fi
 
 ## resolve links - $0 may be a link to  home
 PRG=$0
