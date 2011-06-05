@@ -644,7 +644,8 @@ public class InvokeDynamicSupport {
                         }
                     }
 
-                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, convert);
+                    // static native methods always receive IRubyObject, so no cast needed
+                    if (!isStatic) nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, convert);
                     nativeTarget = MethodHandles.permuteArguments(nativeTarget, inboundType, permute);
                     method.setHandle(nativeTarget);
                     return nativeTarget;
@@ -687,7 +688,7 @@ public class InvokeDynamicSupport {
                         AttrReaderMethod.class,
                         "call",
                         MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
-                target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class));
+                target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class));
                 target = MethodHandles.permuteArguments(
                         target,
                         MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class),
@@ -703,7 +704,7 @@ public class InvokeDynamicSupport {
                         AttrWriterMethod.class,
                         "call",
                         MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
-                target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class));
+                target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class));
                 target = MethodHandles.permuteArguments(
                         target,
                         MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class),
@@ -1523,7 +1524,7 @@ public class InvokeDynamicSupport {
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
                 MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
-        target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class));
+        target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class));
         target = MethodHandles.permuteArguments(
                 target,
                 MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class),
@@ -1549,7 +1550,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
                 MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
         // IRubyObject, DynamicMethod, ThreadContext, IRubyObject, RubyModule, String, IRubyObject
-        target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class));
+        target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class));
         // IRubyObject, DynamicMethod, ThreadContext, IRubyObject, RubyClass, String, IRubyObject
         target = MethodHandles.permuteArguments(
                 target,
@@ -1574,7 +1575,7 @@ public class InvokeDynamicSupport {
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
                 MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
-        target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class));
+        target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class));
         target = MethodHandles.permuteArguments(
                 target,
                 MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class),
@@ -1598,7 +1599,7 @@ public class InvokeDynamicSupport {
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
                 MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
         target = MethodHandles.permuteArguments(
                 target,
                 MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class),
@@ -1622,7 +1623,7 @@ public class InvokeDynamicSupport {
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
                 MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class));
-        target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class));
+        target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class));
         target = MethodHandles.permuteArguments(
                 target,
                 MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class),
@@ -1676,7 +1677,7 @@ public class InvokeDynamicSupport {
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
                 MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
-        target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, Block.class));
+        target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, Block.class));
         target = MethodHandles.permuteArguments(
                 target,
                 MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class),
@@ -1706,7 +1707,7 @@ public class InvokeDynamicSupport {
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
                 MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
-        target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, Block.class));
+        target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, Block.class));
         target = MethodHandles.permuteArguments(
                 target,
                 MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class),
@@ -1736,7 +1737,7 @@ public class InvokeDynamicSupport {
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
                 MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
-        target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+        target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
         target = MethodHandles.permuteArguments(
                 target,
                 MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class),
@@ -1766,7 +1767,7 @@ public class InvokeDynamicSupport {
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
                 MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-        target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+        target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
         target = MethodHandles.permuteArguments(
                 target,
                 MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class),
@@ -1796,7 +1797,7 @@ public class InvokeDynamicSupport {
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
                 MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
-        target = target.asType(MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class, Block.class));
+        target = MethodHandles.explicitCastArguments(target, MethodType.methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class, Block.class));
         target = MethodHandles.permuteArguments(
                 target,
                 MethodType.methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class),
