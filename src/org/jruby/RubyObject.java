@@ -164,9 +164,14 @@ public class RubyObject extends RubyBasicObject {
         }
     };
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_8)
+    @Deprecated
     public IRubyObject initialize() {
         return getRuntime().getNil();
+    }
+
+    @JRubyMethod(visibility = PRIVATE, compat = RUBY1_8)
+    public IRubyObject initialize(ThreadContext context) {
+        return context.nil;
     }
 
     /**
