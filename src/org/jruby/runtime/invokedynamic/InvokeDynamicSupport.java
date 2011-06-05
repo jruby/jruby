@@ -644,8 +644,7 @@ public class InvokeDynamicSupport {
                         }
                     }
 
-                    // static native methods always receive IRubyObject, so no cast needed
-                    if (!isStatic) nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, convert);
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, convert);
                     nativeTarget = MethodHandles.permuteArguments(nativeTarget, inboundType, permute);
                     method.setHandle(nativeTarget);
                     return nativeTarget;
