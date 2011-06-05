@@ -1,3 +1,10 @@
+# This benchmark was created by Evan Phoenix for GoRuCo 2011 to demonstrate
+# Rubinius performance (especially GC performance) and memory effects. It
+# largely just creates a lot of dead objects in a tight loop and then a few
+# live ones in a chain. The original code used `ps` results to parse out memory
+# size; I have removed that here since it isn't interesting as a perf benchmark
+# metric and it muddies the remainder of the benchmark.
+
 require 'benchmark'
 
 class Simple
