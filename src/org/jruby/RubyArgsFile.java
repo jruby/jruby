@@ -387,6 +387,7 @@ public class RubyArgsFile {
      */
     @JRubyMethod(name = {"each_line", "each"}, optional = 1)
     public static IRubyObject each_line(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
         ArgsFileData data = ArgsFileData.getDataFrom(recv);
         if (!data.next_argv(context)) return context.getRuntime().getNil();
 
