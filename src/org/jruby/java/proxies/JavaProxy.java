@@ -366,7 +366,7 @@ public class JavaProxy extends RubyObject {
                 throw getRuntime().newIOErrorFromException(ioe);
             }
         } else {
-            throw getRuntime().newTypeError("no marshal_dump is defined for class " + getJavaClass());
+            throw getRuntime().newTypeError("Java type is not serializable, cannot be marshaled " + getJavaClass());
         }
     }
 
