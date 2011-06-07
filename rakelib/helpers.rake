@@ -15,17 +15,8 @@ def load_build_properties_into_constants
 
   # two-pass so substitutions can appear above where the var is defined
   constant_names.each do |name|
-    Object.const_get(name).chop!.gsub!(/\$\{([^}]+)\}/) do
-      embed = $1
-      const = embed.gsub(".", "_").upcase
-      if Object.constants.include?(const)
-        Object.const_get(const)
-      elsif /^env\.(.*)$/ =~ embed # for ${env.JAVA_HOME}
-        ENV[$1]
-      else
-        warn("no definition for #{const} in default.build.properties")
-        const
-      end
+    Object.const_get(name).chop!.gsub!(/\$\{([^}]+)\}/) do |embed|
+      Object.const_get($1.gsub!(".", "_").upcase!)
     end
     puts "#{name} = #{Object.const_get(name)}" if Rake.application.options.trace
   end
