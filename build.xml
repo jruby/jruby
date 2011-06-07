@@ -7,6 +7,7 @@
 
   <property name="jruby.gem.home.1.8" location="${basedir}/lib/ruby/gems/1.8"/>
 
+  <property environment="env"/>
   <!-- First try to load machine-specific properties. -->
   <property file="build.properties"/>
 
@@ -97,7 +98,6 @@
   </condition>
 
   <tstamp><format property="build.date" pattern="yyyy-MM-dd"/></tstamp>
-  <property environment="env"/>
   
   <!-- Use JAVA_OPTS env var if set, -ea (supported by all JVMs) otherwise -->
   <condition property="java.opts" value="${env.JAVA_OPTS}"><isset property="env.JAVA_OPTS"/></condition>
