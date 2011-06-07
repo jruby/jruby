@@ -363,7 +363,7 @@ public class JavaProxy extends RubyObject {
 
                 return getRuntime().newString(new ByteList(baos.toByteArray()));
             } catch (IOException ioe) {
-                throw getRuntime().newIOErrorFromException(ioe);
+                throw getRuntime().newTypeError("Java type is not serializable: " + ioe.getMessage());
             }
         } else {
             throw getRuntime().newTypeError("Java type is not serializable, cannot be marshaled " + getJavaClass());
