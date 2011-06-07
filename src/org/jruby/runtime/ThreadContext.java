@@ -150,6 +150,7 @@ public final class ThreadContext {
         }
         ThreadContext.pushBacktrace(this, "", "", "", 0);
         ThreadContext.pushBacktrace(this, "", "", "", 0);
+        fiber = (Fiber) runtime.getRootFiber();
     }
 
     @Override

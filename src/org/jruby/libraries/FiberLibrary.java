@@ -72,6 +72,10 @@ public class FiberLibrary implements Library {
         } else {
             executor = Executors.newCachedThreadPool(new DaemonThreadFactory());
         }
+
+        Fiber rootFiber = new Fiber(runtime, cFiber).makeRootFiber();
+        runtime.setRootFiber(rootFiber);
+        runtime.getCurrentContext().setFiber(rootFiber);
     }
 
     private Executor executor;
@@ -93,7 +97,9 @@ public class FiberLibrary implements Library {
         private IRubyObject result;
         private RubyThread parent;
         private Runnable runnable;
+        private boolean root;
         private FiberState state = FiberState.NOT_STARTED;
+        private Fiber transferredFrom, transferredTo;
 
         @JRubyMethod(rest = true, visibility = PRIVATE)
         public IRubyObject initialize(ThreadContext context, final IRubyObject[] args, Block block) {
@@ -147,8 +153,27 @@ public class FiberLibrary implements Library {
             super(runtime, type);
         }
 
+        public boolean isRoot() {
+            return root;
+        }
+
+        public Fiber makeRootFiber() {
+            root = true;
+            return this;
+        }
+
         @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
         public IRubyObject resume(ThreadContext context, IRubyObject[] args) {
+            return resumeOrTransfer(context, args, false);
+        }
+
+        // This should only be defined after require 'fiber'
+        @JRubyMethod(name = "transfer", rest = true, compat = CompatVersion.RUBY1_9)
+        public IRubyObject transfer(ThreadContext context, IRubyObject[] args) {
+            return resumeOrTransfer(context, args, true);
+        }
+
+        private IRubyObject resumeOrTransfer(ThreadContext context, IRubyObject[] args, boolean transfer) {
             // FIXME: Broken but behaving
             IRubyObject result;
             if (args.length == 0) {
@@ -161,13 +186,39 @@ public class FiberLibrary implements Library {
             try {
                 switch (state) {
                 case NOT_STARTED:
+                    if (isRoot()) {
+                        state = FiberState.RUNNING;
+                        return result;
+                    }
                     executor.execute(runnable);
                 case YIELDED:
+                    if (!transfer && transferredTo != null) {
+                        throw context.getRuntime().newFiberError("double resume");
+                    }
+
+                    if (transfer) {
+                        transferredFrom = context.getFiber();
+                        transferredFrom.transferredTo = this;
+                    }
+
                     resume.put(result);
                     result = yield.take();
                     context.pollThreadEvents();
+
+                    if (transfer) {
+                        if (!transferredFrom.isRoot()) {
+                            result = transferredFrom.yield(context, result);
+                        }
+                        transferredFrom.transferredTo = null;
+                        transferredFrom = null;
+                    }
+
                     return result;
                 case RUNNING:
+                    if (transfer && context.getFiber() == this) {
+                        return result;
+                    }
+
                     throw context.getRuntime().newFiberError("double resume");
                 case FINISHED:
                     throw context.getRuntime().newFiberError("dead fiber called");
@@ -186,13 +237,6 @@ public class FiberLibrary implements Library {
         }
 
         // This should only be defined after require 'fiber'
-        @JRubyMethod(name = "transfer", rest = true, compat = CompatVersion.RUBY1_9)
-        public IRubyObject transfer(ThreadContext context, IRubyObject[] args) {
-            // FIXME: transfer is resume but with some sort of fiber affinity
-            return resume(context, args);
-        }
-
-        // This should only be defined after require 'fiber'
         @JRubyMethod(name = "alive?", compat = CompatVersion.RUBY1_9)
         public IRubyObject alive_p(ThreadContext context) {
             return context.getRuntime().newBoolean(state != FiberState.FINISHED);
@@ -201,32 +245,43 @@ public class FiberLibrary implements Library {
         public Map<Object, IRubyObject> getContextVariables() {
             return contextVariables;
         }
+
+        public IRubyObject yield(ThreadContext context, IRubyObject res) {
+            try {
+                if (res != null) {
+                    result = res;
+                }
+
+                state = FiberState.YIELDED;
+                yield.put(result);
+                result = resume.take();
+                context.pollThreadEvents();
+                state = FiberState.RUNNING;
+            } catch (InterruptedException ie) {
+                context.pollThreadEvents();
+                throw context.getRuntime().newConcurrencyError(ie.getLocalizedMessage());
+            }
+            return result;
+
+        }
     }
 
     public static class FiberMeta {
         @JRubyMethod(compat = CompatVersion.RUBY1_9, rest = true, meta = true)
         public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
             Fiber fiber = context.getFiber();
-            if (fiber == null) {
+            if (fiber.isRoot()) {
                 throw context.getRuntime().newFiberError("can't yield from root fiber");
             }
 
+            IRubyObject result = null;
             if (args.length == 1) {
-                fiber.result = args[0];
+                result = args[0];
             } else if (args.length > 0) {
-                fiber.result = context.getRuntime().newArrayNoCopyLight(args);
+                result = context.getRuntime().newArrayNoCopyLight(args);
             }
-            try {
-                fiber.state = FiberState.YIELDED;
-                fiber.yield.put(fiber.result);
-                fiber.result = fiber.resume.take();
-                context.pollThreadEvents();
-                fiber.state = FiberState.RUNNING;
-            } catch (InterruptedException ie) {
-                context.pollThreadEvents();
-                throw context.getRuntime().newConcurrencyError(ie.getLocalizedMessage());
-            }
-            return fiber.result;
+
+            return fiber.yield(context, result);
         }
     }
 }
