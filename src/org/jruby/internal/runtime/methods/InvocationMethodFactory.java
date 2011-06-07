@@ -155,6 +155,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /** The classloader to use for code loading */
     protected final JRubyClassLoader classLoader;
     
+    /** An object to sync against when loading classes, to avoid dups */
+    protected final Object syncObject;
+    
     /**
      * Whether this factory has seen undefined methods already. This is used to
      * detect likely method handle collisions when we expect to create a new
@@ -177,10 +180,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * JRubyClassLoader instance.
      */
     public InvocationMethodFactory(ClassLoader classLoader) {
+        // use the given classloader as our sync, regardless of whether we wrap it
+        this.syncObject = classLoader;
+        
         if (classLoader instanceof JRubyClassLoader) {
             this.classLoader = (JRubyClassLoader)classLoader;
         } else {
-           this.classLoader = new JRubyClassLoader(classLoader);
+            this.classLoader = new JRubyClassLoader(classLoader);
         }
     }
 
@@ -236,7 +242,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class scriptClass = scriptObject.getClass();
         String typePath = p(scriptClass);
         String invokerPath = getCompiledCallbackName(typePath, method);
-        synchronized (classLoader) {
+        synchronized (syncObject) {
             Class generatedClass = tryClass(invokerPath, scriptClass);
 
             try {
@@ -691,7 +697,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         
         if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
         
-        synchronized (classLoader) {
+        synchronized (syncObject) {
             try {
                 Class c = getAnnotatedMethodClass(descs);
                 
@@ -745,7 +751,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
         String generatedClassPath = generatedClassName.replace('.', '/');
         
-        synchronized (classLoader) {
+        synchronized (syncObject) {
             Class c = tryClass(generatedClassName, desc1.getDeclaringClass());
 
             DescriptorInfo info = new DescriptorInfo(descs);
@@ -799,7 +805,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         String javaMethodName = desc.name;
         
-        synchronized (classLoader) {
+        synchronized (syncObject) {
             try {
                 Class c = getAnnotatedMethodClass(Arrays.asList(desc));
 
@@ -828,29 +834,31 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);
         String mname = getBlockCallbackName(typePathString, method);
-        synchronized (classLoader) {
-            Class c = tryClass(mname);
-            try {
-                if (c == null) {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("no generated handle in classloader for: " + mname);
-                    }
-                    byte[] bytes = getBlockCallbackOffline(method, file, line, typePathString);
-                    c = endCallWithBytes(bytes, mname);
-                } else {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("found generated handle in classloader for: " + mname);
+        try {
+            Class c = tryBlockCallbackClass(mname);
+            if (c == null) {
+                synchronized (syncObject) {
+                    c = tryBlockCallbackClass(mname);
+                    if (c == null) {
+                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                            System.err.println("no generated handle in classloader for: " + mname);
+                        }
+                        byte[] bytes = getBlockCallbackOffline(method, file, line, typePathString);
+                        c = endClassWithBytes(bytes, mname);
+                    } else {
+                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                            System.err.println("found generated handle in classloader for: " + mname);
+                        }
                     }
                 }
-                
-                CompiledBlockCallback ic = (CompiledBlockCallback) c.getConstructor(Object.class).newInstance(scriptObject);
-                return ic;
-            } catch (IllegalArgumentException e) {
-                throw e;
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new IllegalArgumentException(e.getMessage());
             }
+                
+            CompiledBlockCallback ic = (CompiledBlockCallback) c.getConstructor(Object.class).newInstance(scriptObject);
+            return ic;
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -888,29 +896,31 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class typeClass = scriptObject.getClass();
         String typePathString = p(typeClass);
         String mname = getBlockCallbackName(typePathString, method);
-        synchronized (classLoader) {
-            Class c = tryClass(mname);
-            try {
-                if (c == null) {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("no generated handle in classloader for: " + mname);
-                    }
-                    byte[] bytes = getBlockCallback19Offline(method, file, line, typePathString);
-                    c = endClassWithBytes(bytes, mname);
-                } else {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("found generated handle in classloader for: " + mname);
+        try {
+            Class c = tryBlockCallback19Class(mname);
+            if (c == null) {
+                synchronized (syncObject) {
+                    c = tryBlockCallback19Class(mname);
+                    if (c == null) {
+                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                            System.err.println("no generated handle in classloader for: " + mname);
+                        }
+                        byte[] bytes = getBlockCallback19Offline(method, file, line, typePathString);
+                        c = endClassWithBytes(bytes, mname);
+                    } else {
+                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                            System.err.println("found generated handle in classloader for: " + mname);
+                        }
                     }
                 }
-                
-                CompiledBlockCallback19 ic = (CompiledBlockCallback19) c.getConstructor(Object.class).newInstance(scriptObject);
-                return ic;
-            } catch (IllegalArgumentException e) {
-                throw e;
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new IllegalArgumentException(e.getMessage());
             }
+                
+            CompiledBlockCallback19 ic = (CompiledBlockCallback19) c.getConstructor(Object.class).newInstance(scriptObject);
+            return ic;
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -1320,13 +1330,27 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private Class tryClass(String name) {
+    private Class tryBlockCallbackClass(String name) {
         try {
             Class c = classLoader.loadClass(name);
 
             // For JRUBY-5038, try getting a method to ensure classloaders are lining up right
             // If this fails, it usually means we loaded an invoker from a higher-up classloader
             c.getMethod("call", ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class);
+
+            return c;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Class tryBlockCallback19Class(String name) {
+        try {
+            Class c = classLoader.loadClass(name);
+
+            // For JRUBY-5038, try getting a method to ensure classloaders are lining up right
+            // If this fails, it usually means we loaded an invoker from a higher-up classloader
+            c.getMethod("call", ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
 
             return c;
         } catch (Exception e) {
