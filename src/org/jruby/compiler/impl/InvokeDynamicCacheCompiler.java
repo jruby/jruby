@@ -26,10 +26,19 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.compiler.impl;
 
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyRegexp;
+import org.jruby.RubySymbol;
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.util.ByteList;
 import static org.jruby.util.CodegenUtils.*;
 
 public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
@@ -37,6 +46,17 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
         super(scriptCompiler);
     }
 
+    /**
+     * Cache a constant reference using invokedynamic.
+     * 
+     * This cache uses a java.lang.invoke.SwitchPoint as the invalidation
+     * mechanism in order to avoid the cost of constantly pinging a constant
+     * generation in org.jruby.Ruby. This allows a nearly free constant cache.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param constantName the name of the constant to look up
+     */
+    @Override
     public void cacheConstant(BaseBodyCompiler method, String constantName) {
         if (!RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
             super.cacheConstant(method, constantName);
@@ -48,5 +68,119 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 constantName,
                 sig(IRubyObject.class, ThreadContext.class),
                 InvokeDynamicSupport.getConstantHandle());
+    }
+
+    /**
+     * This doesn't get used, since it's only used from cacheRegexp in superclass,
+     * and that is completely bound via invokedynamic now. Implemented here and in
+     * InvokeDynamicSupport for consistency.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param contents the contents of the bytelist to cache
+     */
+    @Override
+    public void cacheByteList(BaseBodyCompiler method, ByteList contents) {
+        String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        String encodingName = new String(contents.getEncoding().getName());
+        
+        method.method.invokedynamic(
+                "getByteList",
+                sig(ByteList.class),
+                InvokeDynamicSupport.getByteListHandle(),
+                asString,
+                encodingName);
+    }
+
+    /**
+     * Cache a Regexp literal using invokedynamic.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param pattern the contents of the bytelist for the regexp pattern
+     * @param options the regexp options
+     */
+    @Override
+    public void cacheRegexp(BaseBodyCompiler method, ByteList pattern, int options) {
+        String asString = RuntimeHelpers.rawBytesToString(pattern.bytes());
+        String encodingName = new String(pattern.getEncoding().getName());
+        
+        method.loadThreadContext();
+        
+        method.method.invokedynamic(
+                "getRegexp",
+                sig(RubyRegexp.class, ThreadContext.class),
+                InvokeDynamicSupport.getRegexpHandle(),
+                asString,
+                encodingName,
+                options);
+    }
+
+    /**
+     * Cache a Fixnum literal using invokedynamic.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param value the value of the Fixnum
+     */
+    public void cacheFixnum(BaseBodyCompiler method, long value) {
+        method.loadThreadContext();
+        
+        method.method.invokedynamic(
+                "getFixnum",
+                sig(RubyFixnum.class, ThreadContext.class),
+                InvokeDynamicSupport.getFixnumHandle(),
+                value);
+    }
+
+    /**
+     * Cache a Float literal using invokedynamic.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param value the value of the Float
+     */
+    public void cacheFloat(BaseBodyCompiler method, double value) {
+        method.loadThreadContext();
+        
+        method.method.invokedynamic(
+                "getFloat",
+                sig(RubyFloat.class, ThreadContext.class),
+                InvokeDynamicSupport.getFloatHandle(),
+                value);
+    }
+
+    public void cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
+        String scopeString = RuntimeHelpers.encodeScope(scope);
+        
+        method.loadThreadContext();
+        
+        method.method.invokedynamic(
+                "getStaticScope",
+                sig(StaticScope.class, ThreadContext.class),
+                InvokeDynamicSupport.getStaticScopeHandle(),
+                scopeString);
+    }
+    
+    public void cacheCallSite(BaseBodyCompiler method, String name, CallType callType) {
+        char callTypeChar = 0;
+        
+        switch (callType) {
+            case NORMAL:
+                callTypeChar = 'N';
+                break;
+            case FUNCTIONAL:
+                callTypeChar = 'F';
+                break;
+            case VARIABLE:
+                callTypeChar = 'V';
+                break;
+            case SUPER:
+                callTypeChar = 'S';
+                break;
+        }
+        
+        method.method.invokedynamic(
+                "getCallSite",
+                sig(CallSite.class),
+                InvokeDynamicSupport.getCallSiteHandle(),
+                name,
+                callTypeChar);
     }
 }
