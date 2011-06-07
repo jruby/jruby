@@ -1,1 +1,0 @@
-fails:Fiber#resume raises a FiberError if the Fiber has transfered control to another Fiber

@@ -1529,6 +1529,14 @@ public final class Ruby {
         return topSelf;
     }
 
+    public IRubyObject getRootFiber() {
+        return rootFiber;
+    }
+
+    public void setRootFiber(IRubyObject fiber) {
+        rootFiber = fiber;
+    }
+
     public void setCurrentDirectory(String dir) {
         currentDirectory = dir;
     }
@@ -3923,6 +3931,7 @@ public final class Ruby {
 
     // Default objects
     private IRubyObject topSelf;
+    private IRubyObject rootFiber;
     private RubyNil nilObject;
     private IRubyObject[] singleNilArray;
     private RubyBoolean trueObject;
