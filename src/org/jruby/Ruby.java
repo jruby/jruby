@@ -3258,6 +3258,10 @@ public final class Ruby {
         }
     }
 
+    public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
+        return newTypeError(receivedObject, expectedType.getName());
+    }
+
     public RaiseException newTypeError(IRubyObject receivedObject, RubyModule expectedType) {
         return newTypeError(receivedObject, expectedType.getName());
     }
