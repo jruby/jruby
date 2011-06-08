@@ -126,7 +126,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
-        method.invokedynamic(invokeName, signature, InvokeDynamicSupport.bootstrapHandle());
+        method.invokedynamic(invokeName, signature, InvokeDynamicSupport.getInvocationHandle());
     }
 
     @Override

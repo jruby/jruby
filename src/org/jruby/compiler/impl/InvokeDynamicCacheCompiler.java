@@ -26,13 +26,19 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.compiler.impl;
 
+import java.math.BigInteger;
+import org.jcodings.Encoding;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyRegexp;
-import org.jruby.RubySymbol;
+import org.jruby.RubyString;
+import org.jruby.ast.NodeType;
+import org.jruby.compiler.ASTInspector;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -41,6 +47,11 @@ import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import static org.jruby.util.CodegenUtils.*;
 
+/**
+ * A CacheCompiler that uses invokedynamic as a lazy thunk for literals and other
+ * invokedynamic features like SwitchPoint to produce fast (nearly free)
+ * invalidatable caches for things like constant lookup.
+ */
 public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
     public InvokeDynamicCacheCompiler(StandardASMCompiler scriptCompiler) {
         super(scriptCompiler);
@@ -92,6 +103,76 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
     }
 
     /**
+     * Cache the __ENCODING__ keyword using invokedynamic.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param encoding the encoding for this script
+     */
+    @Override
+    public void cacheEncoding(BaseBodyCompiler method, Encoding encoding) {
+        String encodingName = new String(encoding.getName());
+        
+        method.loadThreadContext();
+        
+        method.method.invokedynamic(
+                "getEncoding",
+                sig(RubyEncoding.class, ThreadContext.class),
+                InvokeDynamicSupport.getEncodingHandle(),
+                encodingName);
+    }
+
+    /**
+     * Cache a closure body (BlockBody) using invokedynamic.
+     */
+    @Override
+    public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
+        String descriptor = RuntimeHelpers.buildBlockDescriptor(
+                closureMethod,
+                arity,
+                scope,
+                file,
+                line,
+                hasMultipleArgsHead,
+                argsNodeId,
+                inspector);
+
+        method.loadThis();
+        method.loadThreadContext();
+        
+        method.method.invokedynamic(
+                "getBlockBody",
+                sig(BlockBody.class, Object.class, ThreadContext.class),
+                InvokeDynamicSupport.getBlockBodyHandle(),
+                descriptor);
+    }
+
+    /**
+     * Cache a closure body (BlockBody) for 1.9 mode using invokedynamic.
+     */
+    @Override
+    public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, String parameterList, ASTInspector inspector) {
+        String descriptor = RuntimeHelpers.buildBlockDescriptor19(
+                closureMethod,
+                arity,
+                scope,
+                file,
+                line,
+                hasMultipleArgsHead,
+                argsNodeId,
+                parameterList,
+                inspector);
+
+        method.loadThis();
+        method.loadThreadContext();
+        
+        method.method.invokedynamic(
+                "getBlockBody19",
+                sig(BlockBody.class, Object.class, ThreadContext.class),
+                InvokeDynamicSupport.getBlockBody19Handle(),
+                descriptor);
+    }
+
+    /**
      * Cache a Regexp literal using invokedynamic.
      * 
      * @param method the method compiler with which bytecode is emitted
@@ -120,6 +201,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      * @param method the method compiler with which bytecode is emitted
      * @param value the value of the Fixnum
      */
+    @Override
     public void cacheFixnum(BaseBodyCompiler method, long value) {
         method.loadThreadContext();
         
@@ -136,6 +218,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      * @param method the method compiler with which bytecode is emitted
      * @param value the value of the Float
      */
+    @Override
     public void cacheFloat(BaseBodyCompiler method, double value) {
         method.loadThreadContext();
         
@@ -146,6 +229,13 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 value);
     }
 
+    /**
+     * Cache a StaticScope using invokedynamic.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param scope the original scope to base the new one on
+     */
+    @Override
     public void cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
         String scopeString = RuntimeHelpers.encodeScope(scope);
         
@@ -158,6 +248,14 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 scopeString);
     }
     
+    /**
+     * Cache a CallSite object using invokedynamic.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param name the method name the call site invokes, or null for "super"
+     * @param callType the type of call
+     */
+    @Override
     public void cacheCallSite(BaseBodyCompiler method, String name, CallType callType) {
         char callTypeChar = 0;
         
@@ -182,5 +280,45 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 InvokeDynamicSupport.getCallSiteHandle(),
                 name,
                 callTypeChar);
+    }
+
+    /**
+     * Cache a String literal using invokedynamic.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param contents the contents of the bytelist for the String
+     * @param codeRange the code range for the String
+     */
+    @Override
+    public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange) {
+        String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        String encodingName = new String(contents.getEncoding().getName());
+        
+        method.loadThreadContext();
+        
+        method.method.invokedynamic(
+                "getString",
+                sig(RubyString.class, ThreadContext.class),
+                InvokeDynamicSupport.getStringHandle(),
+                asString,
+                encodingName,
+                codeRange);
+    }
+
+    /**
+     * Cache a BigInteger using invokedynamic. Used for Bignum construction
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param bigint the BigInteger to cache
+     */
+    @Override
+    public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint) {
+        String asString = bigint.toString(16);
+        
+        method.method.invokedynamic(
+                "getBigInteger",
+                sig(BigInteger.class),
+                InvokeDynamicSupport.getBigIntegerHandle(),
+                asString);
     }
 }

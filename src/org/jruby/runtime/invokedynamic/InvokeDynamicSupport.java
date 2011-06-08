@@ -7,17 +7,20 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.math.BigInteger;
 import java.util.Comparator;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.exceptions.JumpException;
@@ -30,6 +33,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -73,7 +77,7 @@ public class InvokeDynamicSupport {
         }
     }
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+    public static CallSite invocationBootstrap(MethodHandles.Lookup lookup, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
         JRubyCallSite site;
 
         if (name == "call") {
@@ -277,21 +281,116 @@ public class InvokeDynamicSupport {
         return new ConstantCallSite(MethodHandles.constant(org.jruby.runtime.CallSite.class, callSite));
     }
     
-    public final static MethodType BARE_BOOTSTRAP_TYPE      = MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
-    public final static String     BOOTSTRAP_BARE_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
-    public final static String     BOOTSTRAP_STRING_STRING_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class);
-    public final static String     BOOTSTRAP_STRING_STRING_INT_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class);
-    public final static String     BOOTSTRAP_STRING_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class);
-    public final static String     BOOTSTRAP_STRING_CALLTYPE_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, CallType.class);
-    public final static String     BOOTSTRAP_LONG_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, long.class);
-    public final static String     BOOTSTRAP_DOUBLE_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, double.class);
-    public final static String     BOOTSTRAP_STRING_CHAR_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class);
+    public static CallSite getStringBootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String asString, String encodingName, int codeRange) {
+        byte[] bytes = RuntimeHelpers.stringToRawBytes(asString);
+        Encoding encoding = EncodingDB.getEncodings().get(encodingName.getBytes()).getEncoding();
+        ByteList byteList = new ByteList(bytes, encoding);
+        
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle init = findStatic(
+                InvokeDynamicSupport.class,
+                "initString",
+                MethodType.methodType(RubyString.class, MutableCallSite.class, ThreadContext.class, ByteList.class, int.class));
+        init = MethodHandles.insertArguments(init, 2, byteList, codeRange);
+        init = MethodHandles.insertArguments(
+                init,
+                0,
+                site);
+        site.setTarget(init);
+        return site;
+    }
+    
+    public static RubyString initString(MutableCallSite site, ThreadContext context, ByteList contents, int codeRange) {
+        RubyString string = RubyString.newStringShared(context.runtime, contents, codeRange);
+        site.setTarget(MethodHandles.dropArguments(MethodHandles.constant(RubyString.class, string), 0, ThreadContext.class));
+        return string;
+    }
+
+    public static CallSite getBigIntegerBootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String asString) {
+        BigInteger byteList = new BigInteger(asString, 16);
+        
+        return new ConstantCallSite(MethodHandles.constant(BigInteger.class, byteList));
+    }
+    
+    public static CallSite getEncodingBootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String encodingName) {
+        Encoding encoding = EncodingDB.getEncodings().get(encodingName.getBytes()).getEncoding();
+        
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle init = findStatic(
+                InvokeDynamicSupport.class,
+                "initEncoding",
+                MethodType.methodType(RubyEncoding.class, MutableCallSite.class, ThreadContext.class, Encoding.class));
+        init = MethodHandles.insertArguments(init, 2, encoding);
+        init = MethodHandles.insertArguments(
+                init,
+                0,
+                site);
+        site.setTarget(init);
+        return site;
+    }
+    
+    public static RubyEncoding initEncoding(MutableCallSite site, ThreadContext context, Encoding encoding) {
+        RubyEncoding rubyEncoding = context.runtime.getEncodingService().getEncoding(encoding);
+        site.setTarget(MethodHandles.dropArguments(MethodHandles.constant(RubyEncoding.class, rubyEncoding), 0, ThreadContext.class));
+        return rubyEncoding;
+    }
+    
+    public static CallSite getBlockBodyBootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String descriptor) {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle init = findStatic(
+                InvokeDynamicSupport.class,
+                "initBlockBody",
+                MethodType.methodType(BlockBody.class, MutableCallSite.class, Object.class, ThreadContext.class, String.class));
+        init = MethodHandles.insertArguments(init, 3, descriptor);
+        init = MethodHandles.insertArguments(
+                init,
+                0,
+                site);
+        site.setTarget(init);
+        return site;
+    }
+    
+    public static BlockBody initBlockBody(MutableCallSite site, Object scriptObject, ThreadContext context, String descriptor) {
+        BlockBody body = RuntimeHelpers.createCompiledBlockBody(context, scriptObject, descriptor);
+        site.setTarget(MethodHandles.dropArguments(MethodHandles.constant(BlockBody.class, body), 0, Object.class, ThreadContext.class));
+        return body;
+    }
+    
+    public static CallSite getBlockBody19Bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String descriptor) {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle init = findStatic(
+                InvokeDynamicSupport.class,
+                "initBlockBody19",
+                MethodType.methodType(BlockBody.class, MutableCallSite.class, Object.class, ThreadContext.class, String.class));
+        init = MethodHandles.insertArguments(init, 3, descriptor);
+        init = MethodHandles.insertArguments(
+                init,
+                0,
+                site);
+        site.setTarget(init);
+        return site;
+    }
+    
+    public static BlockBody initBlockBody19(MutableCallSite site, Object scriptObject, ThreadContext context, String descriptor) {
+        BlockBody body = RuntimeHelpers.createCompiledBlockBody19(context, scriptObject, descriptor);
+        site.setTarget(MethodHandles.dropArguments(MethodHandles.constant(BlockBody.class, body), 0, Object.class, ThreadContext.class));
+        return body;
+    }
+    
+    public final static String BOOTSTRAP_BARE_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
+    public final static String BOOTSTRAP_STRING_STRING_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class);
+    public final static String BOOTSTRAP_STRING_STRING_INT_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class);
+    public final static String BOOTSTRAP_STRING_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class);
+    public final static String BOOTSTRAP_STRING_CALLTYPE_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, CallType.class);
+    public final static String BOOTSTRAP_LONG_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, long.class);
+    public final static String BOOTSTRAP_DOUBLE_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, double.class);
+    public final static String BOOTSTRAP_STRING_INT_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class);
     
     public static org.objectweb.asm.MethodHandle getBootstrapHandle(String name, String sig) {
         return new org.objectweb.asm.MethodHandle(Opcodes.MH_INVOKESTATIC, p(InvokeDynamicSupport.class), name, sig);
     }
-    public static org.objectweb.asm.MethodHandle bootstrapHandle() {
-        return getBootstrapHandle("bootstrap", BOOTSTRAP_BARE_SIG);
+    public static org.objectweb.asm.MethodHandle getInvocationHandle() {
+        return getBootstrapHandle("invocationBootstrap", BOOTSTRAP_BARE_SIG);
     }
     
     public static org.objectweb.asm.MethodHandle getConstantHandle() {
@@ -323,7 +422,27 @@ public class InvokeDynamicSupport {
     }
     
     public static org.objectweb.asm.MethodHandle getCallSiteHandle() {
-        return getBootstrapHandle("getCallSiteBootstrap", BOOTSTRAP_STRING_CHAR_SIG);
+        return getBootstrapHandle("getCallSiteBootstrap", BOOTSTRAP_STRING_INT_SIG);
+    }
+    
+    public static org.objectweb.asm.MethodHandle getStringHandle() {
+        return getBootstrapHandle("getStringBootstrap", BOOTSTRAP_STRING_STRING_INT_SIG);
+    }
+    
+    public static org.objectweb.asm.MethodHandle getBigIntegerHandle() {
+        return getBootstrapHandle("getBigIntegerBootstrap", BOOTSTRAP_STRING_SIG);
+    }
+    
+    public static org.objectweb.asm.MethodHandle getEncodingHandle() {
+        return getBootstrapHandle("getEncodingBootstrap", BOOTSTRAP_STRING_SIG);
+    }
+    
+    public static org.objectweb.asm.MethodHandle getBlockBodyHandle() {
+        return getBootstrapHandle("getBlockBodyBootstrap", BOOTSTRAP_STRING_SIG);
+    }
+    
+    public static org.objectweb.asm.MethodHandle getBlockBody19Handle() {
+        return getBootstrapHandle("getBlockBody19Bootstrap", BOOTSTRAP_STRING_SIG);
     }
 
     private static MethodHandle createGWT(String name, MethodHandle test, MethodHandle target, MethodHandle fallback, MethodHandle fail, CacheEntry entry, JRubyCallSite site) {
