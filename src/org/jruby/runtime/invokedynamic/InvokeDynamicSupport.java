@@ -1179,27 +1179,11 @@ public class InvokeDynamicSupport {
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("failing over to inline cache for '" + name + "' call");
             site.setTarget(createFail(FAIL_0, site));
         } else {
-//            if (entry.method instanceof AttrReaderMethod) {
-//                MethodHandle reader = findVirtual(IRubyObject.class, "getVariable", MethodType.methodType(Object.class, int.class));
-//                reader = MethodHandles.insertArguments(reader, 1, selfClass.getVariableAccessorForRead(name).getIndex());
-//                reader = MethodHandles.permuteArguments(
-//                        reader,
-//                        MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class),
-//                        new int[]{2});
-//                if (LOG_INDY_BINDINGS) System.out.println("binding " + name + " as attribute");
-//
-//                MethodHandle myTest = MethodHandles.insertArguments(TEST_0, 0, entry.token);
-//                MethodHandle myFallback = MethodHandles.insertArguments(FALLBACK_0, 0, site);
-//                MethodHandle guardWithTest = MethodHandles.guardWithTest(myTest, reader, myFallback);
-//
-//                site.setTarget(MethodHandles.convertArguments(guardWithTest, site.type()));
-//            } else {
-                if (site.getTarget() != null) {
-                    site.setTarget(createGWT(name, TEST_0, TARGET_0, site.getTarget(), FAIL_0, entry, site, false));
-                } else {
-                    site.setTarget(createGWT(name, TEST_0, TARGET_0, FALLBACK_0, FAIL_0, entry, site));
-                }
-//            }
+            if (site.getTarget() != null) {
+                site.setTarget(createGWT(name, TEST_0, TARGET_0, site.getTarget(), FAIL_0, entry, site, false));
+            } else {
+                site.setTarget(createGWT(name, TEST_0, TARGET_0, FALLBACK_0, FAIL_0, entry, site));
+            }
         }
 
         return entry.method.call(context, self, selfClass, name);
