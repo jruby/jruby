@@ -355,10 +355,13 @@ public class RubyInstanceConfig {
     
     // properties enabling or disabling certain uses of invokedynamic
     public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && (SafePropertyAccessor.getBoolean("jruby.invokedynamic.all", false));
+    
     public static final boolean INVOKEDYNAMIC_INVOCATION = USE_INVOKEDYNAMIC && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.invocation", true));
+    public static final boolean INVOKEDYNAMIC_INDIRECT = USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.indirect", false));
+    
     public static final boolean INVOKEDYNAMIC_CACHE = USE_INVOKEDYNAMIC && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.cache", true));
-    public static final boolean INVOKEDYNAMIC_INDIRECT = USE_INVOKEDYNAMIC && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.indirect", false));
-    public static final boolean INVOKEDYNAMIC_CONSTANTS = USE_INVOKEDYNAMIC && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.constants", false));
+    public static final boolean INVOKEDYNAMIC_CONSTANTS = USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.constants", false));
+    public static final boolean INVOKEDYNAMIC_LITERALS = USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && (INVOKEDYNAMIC_ALL || SafePropertyAccessor.getBoolean("jruby.invokedynamic.literals", true));
 
     private TraceType traceType =
             TraceType.traceTypeFor(SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed"));

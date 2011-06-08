@@ -91,6 +91,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheByteList(BaseBodyCompiler method, ByteList contents) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+            super.cacheByteList(method, contents);
+            return;
+        }
+        
         String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
         String encodingName = new String(contents.getEncoding().getName());
         
@@ -110,6 +115,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheEncoding(BaseBodyCompiler method, Encoding encoding) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+            super.cacheEncoding(method, encoding);
+            return;
+        }
+        
         String encodingName = new String(encoding.getName());
         
         method.loadThreadContext();
@@ -181,6 +191,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheRegexp(BaseBodyCompiler method, ByteList pattern, int options) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+            super.cacheRegexp(method, pattern, options);
+            return;
+        }
+        
         String asString = RuntimeHelpers.rawBytesToString(pattern.bytes());
         String encodingName = new String(pattern.getEncoding().getName());
         
@@ -203,6 +218,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheFixnum(BaseBodyCompiler method, long value) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+            super.cacheFixnum(method, value);
+            return;
+        }
+        
         method.loadThreadContext();
         
         method.method.invokedynamic(
@@ -220,6 +240,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheFloat(BaseBodyCompiler method, double value) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+            super.cacheFloat(method, value);
+            return;
+        }
+        
         method.loadThreadContext();
         
         method.method.invokedynamic(
@@ -291,6 +316,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+            super.cacheString(method, contents, codeRange);
+            return;
+        }
+        
         String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
         String encodingName = new String(contents.getEncoding().getName());
         
@@ -313,6 +343,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+            super.cacheBigInteger(method, bigint);
+            return;
+        }
+        
         String asString = bigint.toString(16);
         
         method.method.invokedynamic(
