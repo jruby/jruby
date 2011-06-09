@@ -299,6 +299,8 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 break;
         }
         
+        if (name == null) name = "super";
+        
         method.method.invokedynamic(
                 "getCallSite",
                 sig(CallSite.class),

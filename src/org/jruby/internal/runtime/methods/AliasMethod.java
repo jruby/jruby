@@ -119,4 +119,14 @@ public class AliasMethod extends DynamicMethod {
     public long getSerialNumber() {
         return oldMethod.getSerialNumber();
     }
+    
+    @Override
+    public NativeCall getNativeCall() {
+        return oldMethod.getNativeCall();
+    }
+    
+    @Override
+    public CallConfiguration getCallConfig() {
+        return oldMethod.getCallConfig();
+    }
 }

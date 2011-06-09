@@ -11,7 +11,9 @@ import java.math.BigInteger;
 import java.util.Comparator;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
@@ -24,11 +26,13 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.CompiledMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
@@ -289,21 +293,15 @@ public class InvokeDynamicSupport {
         MutableCallSite site = new MutableCallSite(type);
         MethodHandle init = findStatic(
                 InvokeDynamicSupport.class,
-                "initString",
-                MethodType.methodType(RubyString.class, MutableCallSite.class, ThreadContext.class, ByteList.class, int.class));
-        init = MethodHandles.insertArguments(init, 2, byteList, codeRange);
-        init = MethodHandles.insertArguments(
-                init,
-                0,
-                site);
+                "newString",
+                MethodType.methodType(RubyString.class, ThreadContext.class, ByteList.class, int.class));
+        init = MethodHandles.insertArguments(init, 1, byteList, codeRange);
         site.setTarget(init);
         return site;
     }
     
-    public static RubyString initString(MutableCallSite site, ThreadContext context, ByteList contents, int codeRange) {
-        RubyString string = RubyString.newStringShared(context.runtime, contents, codeRange);
-        site.setTarget(MethodHandles.dropArguments(MethodHandles.constant(RubyString.class, string), 0, ThreadContext.class));
-        return string;
+    public static RubyString newString(ThreadContext context, ByteList contents, int codeRange) {
+        return RubyString.newStringShared(context.runtime, contents, codeRange);
     }
 
     public static CallSite getBigIntegerBootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String asString) {
@@ -458,6 +456,7 @@ public class InvokeDynamicSupport {
             }
             
             MethodHandle nativeTarget = handleForMethod(entry.method);
+        
             if (nativeTarget != null) {
                 DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
                 
@@ -467,17 +466,29 @@ public class InvokeDynamicSupport {
                     }
                 };
                 
-                if (getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) == 4 &&
-                        site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class) {
-                    // mismatch call site to target IRubyObject[] args; call back on DynamicMethod.call for now
+                if (!nativeCall.isJava()
+                        && getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) == 4
+                        && site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class) {
+                    // mismatch call site to target IRubyObject[] args; fall back on DynamicMethod.call for now
+                } else if (nativeCall.isJava()
+                        && !(nativeCall.getNativeSignature().length == 0 && site.type().parameterCount() == 4)) {
+                    // only no-arg Java methods are bound directly right now
                 } else {
                     if (entry.method instanceof CompiledMethod) {
                         return createRubyGWT(entry.token, nativeTarget, nativeCall, test, fallback, site, curryFallback);
                     } else {
-                        if (site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class
+                        // this path catches Java calls too...
+                        
+                        // add NULL_BLOCK if needed
+                        if (
+                                site.type().parameterCount() > 0
+                                && site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class
+                                && nativeTarget.type().parameterCount() > 0
                                 && nativeTarget.type().parameterArray()[nativeTarget.type().parameterCount() - 1] == Block.class) {
+                            
                             nativeTarget = MethodHandles.insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
                         }
+                        
                         return createNativeGWT(entry.token, nativeTarget, nativeCall, test, fallback, site, curryFallback);
                     }
                 }
@@ -508,16 +519,22 @@ public class InvokeDynamicSupport {
         } else {
             if (method.getNativeCall() != null) {
                 DynamicMethod.NativeCall nativeCall = method.getNativeCall();
-                Class[] nativeSig = nativeCall.getNativeSignature();
-                // use invokedynamic for ruby to ruby calls
-                if (nativeSig.length > 0 && AbstractScript.class.isAssignableFrom(nativeSig[0])) {
-                    if (method instanceof CompiledMethod) {
-                        return createRubyHandle(method);
+                
+                if (nativeCall.isJava() && RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
+                    // Ruby/Java integration call
+                    return createJavaHandle(method);
+                } else {
+                    Class[] nativeSig = nativeCall.getNativeSignature();
+                    // use invokedynamic for ruby to ruby calls
+                    if (nativeSig.length > 0 && AbstractScript.class.isAssignableFrom(nativeSig[0])) {
+                        if (method instanceof CompiledMethod) {
+                            return createRubyHandle(method);
+                        }
                     }
-                }
 
-                // use invokedynamic for ruby to native calls
-                nativeTarget = createNativeHandle(method);
+                    // use invokedynamic for ruby to native calls
+                    nativeTarget = createNativeHandle(method);
+                }
             }
         }
         
@@ -529,7 +546,7 @@ public class InvokeDynamicSupport {
         return myFail;
     }
     
-    private static final MethodType STANDARD_NATIVE_TYPE_0 = MethodType.methodType(
+    private static final MethodType STANDARD_NATIVE_TYPE_BLOCK = MethodType.methodType(
             IRubyObject.class, // return value
             ThreadContext.class, //context
             IRubyObject.class, // caller
@@ -537,7 +554,7 @@ public class InvokeDynamicSupport {
             String.class, // method name
             Block.class // block
             );
-    private static final MethodType STANDARD_NATIVE_TYPE_1 = MethodType.methodType(
+    private static final MethodType STANDARD_NATIVE_TYPE_1ARG_BLOCK = MethodType.methodType(
             IRubyObject.class, // return value
             ThreadContext.class, //context
             IRubyObject.class, // caller
@@ -546,7 +563,7 @@ public class InvokeDynamicSupport {
             IRubyObject.class, // arg0
             Block.class // block
             );
-    private static final MethodType STANDARD_NATIVE_TYPE_2 = MethodType.methodType(
+    private static final MethodType STANDARD_NATIVE_TYPE_2ARG_BLOCK = MethodType.methodType(
             IRubyObject.class, // return value
             ThreadContext.class, //context
             IRubyObject.class, // caller
@@ -556,7 +573,7 @@ public class InvokeDynamicSupport {
             IRubyObject.class, // arg1
             Block.class // block
             );
-    private static final MethodType STANDARD_NATIVE_TYPE_3 = MethodType.methodType(
+    private static final MethodType STANDARD_NATIVE_TYPE_3ARG_BLOCK = MethodType.methodType(
             IRubyObject.class, // return value
             ThreadContext.class, //context
             IRubyObject.class, // caller
@@ -567,7 +584,7 @@ public class InvokeDynamicSupport {
             IRubyObject.class, // arg2
             Block.class // block
             );
-    private static final MethodType STANDARD_NATIVE_TYPE_N = MethodType.methodType(
+    private static final MethodType STANDARD_NATIVE_TYPE_NARG_BLOCK = MethodType.methodType(
             IRubyObject.class, // return value
             ThreadContext.class, //context
             IRubyObject.class, // caller
@@ -576,12 +593,12 @@ public class InvokeDynamicSupport {
             IRubyObject[].class, // args
             Block.class // block
             );
-    private static final MethodType[] STANDARD_NATIVE_TYPES = {
-        STANDARD_NATIVE_TYPE_0,
-        STANDARD_NATIVE_TYPE_1,
-        STANDARD_NATIVE_TYPE_2,
-        STANDARD_NATIVE_TYPE_3,
-        STANDARD_NATIVE_TYPE_N,
+    private static final MethodType[] STANDARD_NATIVE_TYPES_BLOCK = {
+        STANDARD_NATIVE_TYPE_BLOCK,
+        STANDARD_NATIVE_TYPE_1ARG_BLOCK,
+        STANDARD_NATIVE_TYPE_2ARG_BLOCK,
+        STANDARD_NATIVE_TYPE_3ARG_BLOCK,
+        STANDARD_NATIVE_TYPE_NARG_BLOCK,
     };
     
     private static final MethodType TARGET_SELF_TC = MethodType.methodType(
@@ -902,6 +919,141 @@ public class InvokeDynamicSupport {
         TC_SELF_3ARG_BLOCK_PERMUTE,
         TC_SELF_NARG_BLOCK_PERMUTE,
     };
+    
+    private static MethodHandle createJavaHandle(DynamicMethod method) {
+        MethodHandle nativeTarget = null;
+        MethodHandle returnFilter = null;
+        
+        Ruby runtime = method.getImplementationClass().getRuntime();
+        DynamicMethod.NativeCall nativeCall = method.getNativeCall();
+        
+        if (nativeCall.isStatic()) {
+            nativeTarget = findStatic(nativeCall.getNativeTarget(), nativeCall.getNativeName(), MethodType.methodType(nativeCall.getNativeReturn(), nativeCall.getNativeSignature()));
+            
+            if (nativeCall.getNativeSignature().length == 0) {
+                // handle return value
+                if (nativeCall.getNativeReturn() == byte.class ||
+                        nativeCall.getNativeReturn() == short.class ||
+                        nativeCall.getNativeReturn() == char.class ||
+                        nativeCall.getNativeReturn() == int.class ||
+                        nativeCall.getNativeReturn() == long.class ||
+                        nativeCall.getNativeReturn() == Byte.class ||
+                        nativeCall.getNativeReturn() == Short.class ||
+                        nativeCall.getNativeReturn() == Character.class ||
+                        nativeCall.getNativeReturn() == Integer.class ||
+                        nativeCall.getNativeReturn() == Long.class) {
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, MethodType.methodType(long.class));
+                    returnFilter = MethodHandles.insertArguments(
+                            findStatic(RubyFixnum.class, "newFixnum", MethodType.methodType(RubyFixnum.class, Ruby.class, long.class)),
+                            0,
+                            runtime);
+                } else if (nativeCall.getNativeReturn() == float.class ||
+                        nativeCall.getNativeReturn() == double.class ||
+                        nativeCall.getNativeReturn() == Float.class ||
+                        nativeCall.getNativeReturn() == Double.class) {
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, MethodType.methodType(double.class));
+                    returnFilter = MethodHandles.insertArguments(
+                            findStatic(RubyFloat.class, "newFloat", MethodType.methodType(RubyFloat.class, Ruby.class, double.class)),
+                            0,
+                            runtime);
+                } else if (nativeCall.getNativeReturn() == boolean.class ||
+                        nativeCall.getNativeReturn() == Boolean.class) {
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, MethodType.methodType(boolean.class));
+                    returnFilter = MethodHandles.insertArguments(
+                            findStatic(RubyBoolean.class, "newBoolean", MethodType.methodType(RubyBoolean.class, Ruby.class, boolean.class)),
+                            0,
+                            runtime);
+                } else if (CharSequence.class.isAssignableFrom(nativeCall.getNativeReturn())) {
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, MethodType.methodType(CharSequence.class));
+                    returnFilter = MethodHandles.insertArguments(
+                            findStatic(RubyString.class, "newUnicodeString", MethodType.methodType(RubyString.class, Ruby.class, CharSequence.class)),
+                            0,
+                            runtime);
+                } else if (nativeCall.getNativeReturn() == void.class) {
+                    returnFilter = MethodHandles.constant(IRubyObject.class, runtime.getNil());
+                }
+
+                // we can handle this; do remaining transforms and return
+                if (returnFilter != null) {
+                    nativeTarget = MethodHandles.filterReturnValue(nativeTarget, returnFilter);
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, MethodType.methodType(IRubyObject.class));
+                    nativeTarget = MethodHandles.dropArguments(nativeTarget, 0, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class);
+                    
+                    method.setHandle(nativeTarget);
+                    return nativeTarget;
+                }
+            }
+        } else {
+            nativeTarget = findVirtual(nativeCall.getNativeTarget(), nativeCall.getNativeName(), MethodType.methodType(nativeCall.getNativeReturn(), nativeCall.getNativeSignature()));
+            
+            if (nativeCall.getNativeSignature().length == 0) {
+                // convert target
+                nativeTarget = MethodHandles.filterArguments(
+                        nativeTarget,
+                        0,
+                        MethodHandles.explicitCastArguments(
+                                findStatic(JavaUtil.class, "objectFromJavaProxy", MethodType.methodType(Object.class, IRubyObject.class)),
+                                MethodType.methodType(nativeCall.getNativeTarget(), IRubyObject.class)));
+                
+                // handle return value
+                if (nativeCall.getNativeReturn() == byte.class ||
+                        nativeCall.getNativeReturn() == short.class ||
+                        nativeCall.getNativeReturn() == char.class ||
+                        nativeCall.getNativeReturn() == int.class ||
+                        nativeCall.getNativeReturn() == long.class ||
+                        nativeCall.getNativeReturn() == Byte.class ||
+                        nativeCall.getNativeReturn() == Short.class ||
+                        nativeCall.getNativeReturn() == Character.class ||
+                        nativeCall.getNativeReturn() == Integer.class ||
+                        nativeCall.getNativeReturn() == Long.class) {
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, MethodType.methodType(long.class, IRubyObject.class));
+                    returnFilter = MethodHandles.insertArguments(
+                            findStatic(RubyFixnum.class, "newFixnum", MethodType.methodType(RubyFixnum.class, Ruby.class, long.class)),
+                            0,
+                            runtime);
+                } else if (nativeCall.getNativeReturn() == float.class ||
+                        nativeCall.getNativeReturn() == double.class ||
+                        nativeCall.getNativeReturn() == Float.class ||
+                        nativeCall.getNativeReturn() == Double.class) {
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, MethodType.methodType(double.class, IRubyObject.class));
+                    returnFilter = MethodHandles.insertArguments(
+                            findStatic(RubyFloat.class, "newFloat", MethodType.methodType(RubyFloat.class, Ruby.class, double.class)),
+                            0,
+                            runtime);
+                } else if (nativeCall.getNativeReturn() == boolean.class ||
+                        nativeCall.getNativeReturn() == Boolean.class) {
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, MethodType.methodType(boolean.class, IRubyObject.class));
+                    returnFilter = MethodHandles.insertArguments(
+                            findStatic(RubyBoolean.class, "newBoolean", MethodType.methodType(RubyBoolean.class, Ruby.class, boolean.class)),
+                            0,
+                            runtime);
+                } else if (CharSequence.class.isAssignableFrom(nativeCall.getNativeReturn())) {
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, MethodType.methodType(CharSequence.class, IRubyObject.class));
+                    returnFilter = MethodHandles.insertArguments(
+                            findStatic(RubyString.class, "newUnicodeString", MethodType.methodType(RubyString.class, Ruby.class, CharSequence.class)),
+                            0,
+                            runtime);
+                } else if (nativeCall.getNativeReturn() == void.class) {
+                    returnFilter = MethodHandles.constant(IRubyObject.class, runtime.getNil());
+                }
+
+                // we can handle this; do remaining transforms and return
+                if (returnFilter != null) {
+                    nativeTarget = MethodHandles.filterReturnValue(nativeTarget, returnFilter);
+                    nativeTarget = MethodHandles.explicitCastArguments(nativeTarget, MethodType.methodType(IRubyObject.class, IRubyObject.class));
+                    nativeTarget = MethodHandles.permuteArguments(
+                            nativeTarget,
+                            STANDARD_NATIVE_TYPE_BLOCK,
+                            SELF_PERMUTE);
+                    
+                    method.setHandle(nativeTarget);
+                    return nativeTarget;
+                }
+            }
+        }
+        
+        return null;
+    }
 
     private static MethodHandle createNativeHandle(DynamicMethod method) {
         MethodHandle nativeTarget = null;
@@ -931,7 +1083,7 @@ public class InvokeDynamicSupport {
             
             if (getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
                 int argCount = getArgCount(nativeCall.getNativeSignature(), isStatic);
-                MethodType inboundType = STANDARD_NATIVE_TYPES[argCount];
+                MethodType inboundType = STANDARD_NATIVE_TYPES_BLOCK[argCount];
                 
                 if (nativeSig.length > 0) {
                     int[] permute;
@@ -1171,6 +1323,7 @@ public class InvokeDynamicSupport {
             String name) {
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = selfClass.searchWithCache(name);
+        
         if (methodMissing(entry, site.callType(), name, caller)) {
             return callMethodMissing(entry, site.callType(), context, self, name);
         }

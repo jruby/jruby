@@ -866,6 +866,10 @@ public class JavaUtil {
         NUMERIC_CONVERTERS.put(Object.class, NUMERIC_TO_OBJECT);
         NUMERIC_CONVERTERS.put(void.class, NUMERIC_TO_VOID);
     }
+    
+    public static Object objectFromJavaProxy(IRubyObject self) {
+        return ((JavaProxy)self).getObject();
+    }
 
     @Deprecated
     public static Object convertRubyToJava(IRubyObject rubyObject) {

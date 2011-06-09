@@ -3,6 +3,8 @@ package org.jruby.java.invokers;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.proxies.ArrayJavaProxy;
@@ -30,7 +33,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
     private Member[] members;
     
     RubyToJavaInvoker(RubyModule host, Member[] members) {
-        super(host, Visibility.PUBLIC);
+        super(host, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
         this.members = members;
         // we set all Java methods to optional, since many/most have overloads
         setArity(Arity.OPTIONAL);
@@ -93,6 +96,12 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         this.javaCallables = callables;
         this.javaVarargsCallables = varargsCallables;
         this.minVarargsArity = varargsArity;
+        
+        // if it's not overloaded, set up a NativeCall
+        if (javaCallable != null && javaCallable instanceof org.jruby.javasupport.JavaMethod) {
+            Method method = (Method)((org.jruby.javasupport.JavaMethod)javaCallable).getValue();
+            setNativeCall(method.getDeclaringClass(), method.getName(), method.getReturnType(), method.getParameterTypes(), Modifier.isStatic(method.getModifiers()), true);
+        }
     }
 
     protected Member[] getMembers() {

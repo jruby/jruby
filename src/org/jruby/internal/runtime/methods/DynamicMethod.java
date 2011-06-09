@@ -455,13 +455,19 @@ public abstract class DynamicMethod {
         private final Class nativeReturn;
         private final Class[] nativeSignature;
         private final boolean statik;
+        private final boolean java;
 
         public NativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
+            this(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
+        }
+
+        public NativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik, boolean java) {
             this.nativeTarget = nativeTarget;
             this.nativeName = nativeName;
             this.nativeReturn = nativeReturn;
             this.nativeSignature = nativeSignature;
             this.statik = statik;
+            this.java = java;
         }
 
         public Class getNativeTarget() {
@@ -483,11 +489,19 @@ public abstract class DynamicMethod {
         public boolean isStatic() {
             return statik;
         }
+        
+        public boolean isJava() {
+            return java;
+        }
 
         @Override
         public String toString() {
             return "" + (statik?"static ":"") + nativeReturn.getName() + " " + nativeTarget.getName() + "." + nativeName + CodegenUtils.prettyParams(nativeSignature);
         }
+    }
+
+    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik, boolean java) {
+        this.nativeCall = new NativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, java);
     }
 
     public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
