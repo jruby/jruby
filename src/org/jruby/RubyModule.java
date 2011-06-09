@@ -2847,7 +2847,7 @@ public class RubyModule extends RubyObject {
                 if (p == objectClass && this != objectClass) {
                     String badCName = getName() + "::" + internedName;
                     runtime.getWarnings().warn(ID.CONSTANT_BAD_REFERENCE, "toplevel constant " +
-                            internedName + " referenced by " + badCName, badCName);
+                            internedName + " referenced by " + badCName);
                 }
 
                 return value;
@@ -2912,7 +2912,7 @@ public class RubyModule extends RubyObject {
                 runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
             } else {
                 if (warn) {
-                    runtime.getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name, name);
+                    runtime.getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
             }
         }

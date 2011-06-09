@@ -2089,7 +2089,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Old id version. This one is bound to the "id" name and will emit a deprecation warning.
      */
     public IRubyObject id_deprecated() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#id will be deprecated; use Object#object_id", "Object#id", "Object#object_id");
+        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#id will be deprecated; use Object#object_id");
         return id();
     }
 
@@ -2119,7 +2119,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * warning.
      */
     public RubyClass type_deprecated() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#type is deprecated; use Object#class", "Object#type", "Object#class");
+        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#type is deprecated; use Object#class");
         return type();
     }
 
@@ -2594,7 +2594,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  The default to_a method is deprecated.
      */
     public RubyArray to_a() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete", "to_a");
+        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete");
         return getRuntime().newArray(this);
     }
 

@@ -60,7 +60,7 @@ public class UndefinedAccessor implements IAccessor {
      */
     public IRubyObject getValue() {
         if (runtime.isVerbose()) {
-            runtime.getWarnings().warning(ID.ACCESSOR_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
+            runtime.getWarnings().warning(ID.ACCESSOR_NOT_INITIALIZED, "global variable `" + name + "' not initialized");
         }
         return runtime.getNil();
     }

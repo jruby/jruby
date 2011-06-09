@@ -121,6 +121,6 @@ public class RubyGC {
 
     private static void emptyImplementationWarning(Ruby runtime, String name) {
         runtime.getWarnings().warn(ID.EMPTY_IMPLEMENTATION,
-                name + " does nothing on JRuby", name);
+                name + " does nothing on JRuby");
     }
 }

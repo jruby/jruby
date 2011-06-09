@@ -117,7 +117,7 @@ public class RubyEtc {
             throw re;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwuid is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwuid is not supported by JRuby on this platform");
             }
             return runtime.getNil();
         }
@@ -138,7 +138,7 @@ public class RubyEtc {
             return setupPasswd(recv.getRuntime(), pwd);
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwnam is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwnam is not supported by JRuby on this platform");
             }
             return runtime.getNil();
         }
@@ -169,7 +169,7 @@ public class RubyEtc {
             }
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.passwd is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.passwd is not supported by JRuby on this platform");
             }
             return runtime.getNil();
         }
@@ -204,7 +204,7 @@ public class RubyEtc {
             runtime.getPosix().endpwent();
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.endpwent is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.endpwent is not supported by JRuby on this platform");
             }
         }
         return runtime.getNil();
@@ -217,7 +217,7 @@ public class RubyEtc {
             runtime.getPosix().setpwent();
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.setpwent is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.setpwent is not supported by JRuby on this platform");
             }
         }
         return runtime.getNil();
@@ -235,7 +235,7 @@ public class RubyEtc {
             }
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwent is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwent is not supported by JRuby on this platform");
             }
             return runtime.getNil();
         }
@@ -256,7 +256,7 @@ public class RubyEtc {
             return setupGroup(runtime, grp);
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrnam is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrnam is not supported by JRuby on this platform");
             }
             return runtime.getNil();
         }
@@ -281,7 +281,7 @@ public class RubyEtc {
             throw re;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrgid is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrgid is not supported by JRuby on this platform");
             }
             return runtime.getNil();
         }
@@ -294,7 +294,7 @@ public class RubyEtc {
             runtime.getPosix().endgrent();
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.engrent is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.engrent is not supported by JRuby on this platform");
             }
         }
         return runtime.getNil();
@@ -307,7 +307,7 @@ public class RubyEtc {
             runtime.getPosix().setgrent();
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.setgrent is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.setgrent is not supported by JRuby on this platform");
             }
         }
         return runtime.getNil();
@@ -338,7 +338,7 @@ public class RubyEtc {
             }
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.group is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.group is not supported by JRuby on this platform");
             }
             return runtime.getNil();
         }
@@ -356,7 +356,7 @@ public class RubyEtc {
             }
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrent is not supported by JRuby on this platform", e);
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrent is not supported by JRuby on this platform");
             }
             return runtime.getNil();
         }

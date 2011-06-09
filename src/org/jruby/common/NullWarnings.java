@@ -28,14 +28,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.common;
 
+import org.jruby.Ruby;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A Warnings implementation which silently ignores everything.
  */
 public class NullWarnings implements IRubyWarnings {
-    private org.jruby.Ruby runtime;
-    public NullWarnings(org.jruby.Ruby runtime) {
+    private Ruby runtime;
+    public NullWarnings(Ruby runtime) {
         this.runtime = runtime;
     }
 
@@ -47,10 +48,23 @@ public class NullWarnings implements IRubyWarnings {
         return runtime;
     }
 
+    public void warn(ID id, ISourcePosition position, String message) {}
+    public void warn(ID id, String fileName, int lineNumber, String message) {}
+    public void warn(ID id, String message) {}
+    public void warning(ID id, String message) {}
+    public void warning(ID id, ISourcePosition position, String message) {}
+    public void warning(ID id, String fileName, int lineNumber, String message) {}
+    
+    @Deprecated
     public void warn(ID id, String message, Object... data) {}
+    @Deprecated
     public void warning(ID id, String message, Object... data) {}
+    @Deprecated
     public void warn(ID id, ISourcePosition position, String message, Object... data) {}
+    @Deprecated
     public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {}
+    @Deprecated
     public void warning(ID id, ISourcePosition position, String message, Object... data) {}
+    @Deprecated
     public void warning(ID id, String fileName, int lineNumber, String message, Object...data) {}
 }

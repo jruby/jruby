@@ -44,7 +44,7 @@ public class JRubyPOSIXHandler implements POSIXHandler {
         } else {
             ourID = ID.MISCELLANEOUS;
         }
-        runtime.getWarnings().warn(ourID, message, data);
+        runtime.getWarnings().warn(ourID, message);
     }
     
     public boolean isVerbose() {

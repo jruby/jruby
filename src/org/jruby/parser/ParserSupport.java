@@ -634,7 +634,7 @@ public class ParserSupport {
     }
 
     private void handleUselessWarn(Node node, String useless) {
-        warnings.warn(ID.USELESS_EXPRESSION, node.getPosition(), "Useless use of " + useless + " in void context.", useless);
+        warnings.warn(ID.USELESS_EXPRESSION, node.getPosition(), "Useless use of " + useless + " in void context.");
     }
 
     /**
@@ -1467,12 +1467,12 @@ public class ParserSupport {
     }
 
     public void warn(ID id, ISourcePosition position, String message, Object... data) {
-        warnings.warn(id, position, message, data);
+        warnings.warn(id, position, message);
     }
 
     public void warning(ID id, ISourcePosition position, String message, Object... data) {
         if (warnings.isVerbose()) {
-            warnings.warning(id, position, message, data);
+            warnings.warning(id, position, message);
         }
     }
 

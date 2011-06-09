@@ -131,7 +131,7 @@ public class RubyYaccLexer {
         try {
             d = Double.parseDouble(number);
         } catch (NumberFormatException e) {
-            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.", number);
+            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
@@ -1249,7 +1249,7 @@ public class RubyYaccLexer {
         //a wrong position if the "inclusive" flag is not set.
         ISourcePosition tmpPosition = getPosition();
         if (isARG() && spaceSeen && !Character.isWhitespace(c)) {
-            if (warnings.isVerbose()) warnings.warning(ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix", "&");
+            if (warnings.isVerbose()) warnings.warning(ID.ARGUMENT_AS_PREFIX, tmpPosition, "`&' interpreted as argument prefix");
             c = Tokens.tAMPER;
         } else if (isBEG()) {
             c = Tokens.tAMPER;
@@ -2107,7 +2107,7 @@ public class RubyYaccLexer {
         default:
             src.unread(c);
             if (isARG() && spaceSeen && !Character.isWhitespace(c)) {
-                if (warnings.isVerbose()) warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix", "*");
+                if (warnings.isVerbose()) warnings.warning(ID.ARGUMENT_AS_PREFIX, getPosition(), "`*' interpreted as argument prefix");
                 c = Tokens.tSTAR;
             } else if (isBEG()) {
                 c = Tokens.tSTAR;

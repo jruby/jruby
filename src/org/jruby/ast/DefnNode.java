@@ -90,11 +90,11 @@ public class DefnNode extends MethodDefNode implements INameNode {
         String name = getName();
 
         if (containingClass == runtime.getObject() && name == "initialize") {
-            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop", "Object#initialize");
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
         }
 
         if (name == "__id__" || name == "__send__") {
-            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem", name); 
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem"); 
         }
 
         Visibility visibility = context.getCurrentVisibility();

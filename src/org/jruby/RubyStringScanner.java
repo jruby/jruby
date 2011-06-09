@@ -131,7 +131,7 @@ public class RubyStringScanner extends RubyObject {
         check();
         Ruby runtime = context.getRuntime();
         if (runtime.isVerbose()) {
-            runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#clear is obsolete; use #terminate instead", "StringScanner#clear", "#terminate");
+            runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#clear is obsolete; use #terminate instead");
         }
         return terminate();
     }
@@ -338,8 +338,7 @@ public class RubyStringScanner extends RubyObject {
         Ruby runtime = context.getRuntime();
         if (runtime.isVerbose()) { 
             runtime.getWarnings().warning(ID.DEPRECATED_METHOD,
-                    "StringScanner#getbyte is obsolete; use #get_byte instead",
-                    "StringScanner#getbyte", "#get_byte");
+                    "StringScanner#getbyte is obsolete; use #get_byte instead");
         }
         return get_byte(context);
     }
@@ -365,8 +364,7 @@ public class RubyStringScanner extends RubyObject {
         Ruby runtime = context.getRuntime();
         if (runtime.isVerbose()) {
             runtime.getWarnings().warning(
-                    ID.DEPRECATED_METHOD, "StringScanner#peep is obsolete; use #peek instead",
-                    "StringScanner#peep", "#peek");
+                    ID.DEPRECATED_METHOD, "StringScanner#peep is obsolete; use #peek instead");
         }
         return peek(context, length);
     }
@@ -405,7 +403,7 @@ public class RubyStringScanner extends RubyObject {
     public RubyBoolean empty_p(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (runtime.isVerbose()) {
-            runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#empty? is obsolete; use #eos? instead", "StringScanner#empty?", "#eos?");
+            runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#empty? is obsolete; use #eos? instead");
         }
         return eos_p(context);
     }
@@ -440,8 +438,7 @@ public class RubyStringScanner extends RubyObject {
     public IRubyObject matchedsize(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (runtime.isVerbose()) {
-            runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#matchedsize is obsolete; use #matched_size instead", 
-                    "StringScanner#matchedize", "#matched_size");
+            runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#matchedsize is obsolete; use #matched_size instead");
         }
         return matched_size();        
     }
@@ -500,7 +497,7 @@ public class RubyStringScanner extends RubyObject {
     public RubyFixnum restsize(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (runtime.isVerbose()) {
-            runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#restsize is obsolete; use #rest_size instead", "StringScanner#restsize", "#rest_size");
+            runtime.getWarnings().warning(ID.DEPRECATED_METHOD, "StringScanner#restsize is obsolete; use #rest_size instead");
         }
         return rest_size();
     }
