@@ -19,7 +19,13 @@ public class InterpretedIRMethod extends DynamicMethod {
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRMethod method, RubyModule implementationClass) {
         super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameNoneScopeNone);
+        this.temporaryVariableSize = method.getTemporaryVariableSize();
+        this.method = method;
+    }
 
+    // We can probably use IRMethod callArgs for something (at least arity)
+    public InterpretedIRMethod(IRMethod method, Visibility visibility, RubyModule implementationClass) {
+        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.temporaryVariableSize = method.getTemporaryVariableSize();
         this.method = method;
     }

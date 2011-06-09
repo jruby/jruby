@@ -10,6 +10,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
 // identical except for 1 bit in interpret -- or will they diverge?
@@ -43,7 +44,7 @@ public class DefineClassMethodInstr extends OneOperandInstr {
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
         RubyObject obj = (RubyObject) getArg().retrieve(interp);
-        obj.getMetaClass().addMethod(method.getName(), new InterpretedIRMethod(method, obj.getMetaClass()));
+        obj.getMetaClass().addMethod(method.getName(), new InterpretedIRMethod(method, Visibility.PUBLIC, obj.getMetaClass()));
         return null;
     }
 }
