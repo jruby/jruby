@@ -2,7 +2,7 @@ require 'benchmark'
 jrubyc = "jruby jrubyc"
 
 def jrubyc(file)
-    system "jrubyc -p 'ruby' #{file}"
+    system "jrubyc #{file}"
 end
 
 def bench_compiled_load(bm)
@@ -64,19 +64,19 @@ end
   end
 
   bm.report("10000 loads simple compiled") do
-    10000.times { load 'ruby/compiled_load_test_simple.class' }
+    10000.times { load 'compiled_load_test_simple.class' }
   end
   bm.report("10000 loads simple strings compiled") do
-    10000.times { load 'ruby/compiled_load_test_simple_strings.class' }
+    10000.times { load 'compiled_load_test_simple_strings.class' }
   end
   bm.report("100 loads complex flat compiled") do
-    100.times { load 'ruby/compiled_load_test_complex_flat.class' }
+    100.times { load 'compiled_load_test_complex_flat.class' }
   end
   bm.report("100 loads complex tree compiled") do
-    100.times { load 'ruby/compiled_load_test_complex_tree.class' }
+    100.times { load 'compiled_load_test_complex_tree.class' }
   end
   bm.report("1000 loads many defs compiled") do
-    1000.times { load 'ruby/compiled_load_test_many_defs.class' }
+    1000.times { load 'compiled_load_test_many_defs.class' }
   end
 end
 
@@ -87,9 +87,9 @@ if __FILE__ == $0
   File.delete("compiled_load_test_complex_flat.rb")
   File.delete("compiled_load_test_complex_tree.rb")
   File.delete("compiled_load_test_many_defs.rb")
-  File.delete("ruby/compiled_load_test_simple.class")
-  File.delete("ruby/compiled_load_test_simple_strings.class")
-  File.delete("ruby/compiled_load_test_complex_flat.class")
-  File.delete("ruby/compiled_load_test_complex_tree.class")
-  File.delete("ruby/compiled_load_test_many_defs.class")  
+  File.delete("compiled_load_test_simple.class")
+  File.delete("compiled_load_test_simple_strings.class")
+  File.delete("compiled_load_test_complex_flat.class")
+  File.delete("compiled_load_test_complex_tree.class")
+  File.delete("compiled_load_test_many_defs.class")  
 end
