@@ -886,7 +886,7 @@ public class RubyRational extends RubyNumeric {
         long e = ne - de;
 
         if (e > 1023 || e < -1022) {
-            runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range", getMetaClass());
+            runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
             return runtime.newFloat(e > 0 ? Double.MAX_VALUE : 0);
         }
 
@@ -897,7 +897,7 @@ public class RubyRational extends RubyNumeric {
         f = ldexp(f, e);
 
         if (Double.isInfinite(f) || Double.isNaN(f)) {
-            runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range", getMetaClass());
+            runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
         }
 
         return runtime.newFloat(f);

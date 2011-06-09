@@ -30,6 +30,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.common;
 
+import org.jruby.Ruby;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 // FIXME: Document difference between warn and warning (or rename one better)
@@ -101,12 +102,26 @@ public interface IRubyWarnings {
         }
     }
 
-    public abstract org.jruby.Ruby getRuntime();
-    public abstract void warn(ID id, ISourcePosition position, String message, Object... data);
-    public abstract void warn(ID id, String fileName, int lineNumber, String message, Object... data);
+    public abstract Ruby getRuntime();
     public abstract boolean isVerbose();
+    
+    public abstract void warn(ID id, ISourcePosition position, String message);
+    public abstract void warn(ID id, String fileName, int lineNumber, String message);
+    public abstract void warn(ID id, String message);
+    public abstract void warning(ID id, String message);
+    public abstract void warning(ID id, ISourcePosition position, String message);
+    public abstract void warning(ID id, String fileName, int lineNumber, String message);
+    
+    @Deprecated
     public abstract void warn(ID id, String message, Object... data);
+    @Deprecated
     public abstract void warning(ID id, String message, Object... data);
+    @Deprecated
+    public abstract void warn(ID id, ISourcePosition position, String message, Object... data);
+    @Deprecated
+    public abstract void warn(ID id, String fileName, int lineNumber, String message, Object... data);
+    @Deprecated
     public abstract void warning(ID id, ISourcePosition position, String message, Object... data);
-    public abstract void warning(ID id, String fileName, int lineNumber, String message, Object... data);
+    @Deprecated
+    public abstract void warning(ID id, String fileName, int lineNumber, String message, Object...data);
 }

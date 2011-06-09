@@ -888,7 +888,7 @@ public final class Ruby {
 
         if (superClass == null) {
             String className = parentIsObject ? name : parent.getName() + "::" + name;  
-            warnings.warn(ID.NO_SUPER_CLASS, "no super class for `" + className + "', Object assumed", className);
+            warnings.warn(ID.NO_SUPER_CLASS, "no super class for `" + className + "', Object assumed");
             
             superClass = objectClass;
         }

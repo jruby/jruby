@@ -868,8 +868,7 @@ public class RubyIO extends RubyObject {
             String className = klass.getName();
             context.getRuntime().getWarnings().warn(
                     ID.BLOCK_NOT_ACCEPTED,
-                    className + "::new() does not take block; use " + className + "::open() instead",
-                    className + "::open()");
+                    className + "::new() does not take block; use " + className + "::open() instead");
         }
         
         return klass.newInstance(context, args, block);

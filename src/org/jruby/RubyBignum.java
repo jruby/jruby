@@ -578,7 +578,7 @@ public class RubyBignum extends RubyInteger {
             return op_pow(context, fixValue);
         } else if (other instanceof RubyBignum) {
             d = ((RubyBignum) other).getDoubleValue();
-            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", d);
+            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
         } else if (other instanceof RubyFloat) {
             d = ((RubyFloat) other).getDoubleValue();
         } else {
@@ -591,7 +591,7 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject op_pow(ThreadContext context, long other) {
         // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
         if (((value.bitLength() + 7) / 8) * 4 * Math.abs(other) > 1024 * 1024) {
-            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", other);
+            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
         }
         if (other >= 0) {
             return bignorm(getRuntime(), value.pow((int) other)); // num2int is also implemented
@@ -617,7 +617,7 @@ public class RubyBignum extends RubyInteger {
             }
             // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
             if (((value.bitLength() + 7) / 8) * 4 * Math.abs(fixValue) > 1024 * 1024) {
-                getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", fixValue);
+                getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
             }
             if (fixValue >= 0) {
                 return bignorm(runtime, value.pow((int) fixValue)); // num2int is also implemented
@@ -626,7 +626,7 @@ public class RubyBignum extends RubyInteger {
             }
         } else if (other instanceof RubyBignum) {
             d = ((RubyBignum) other).getDoubleValue();
-            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big", d);
+            getRuntime().getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
         } else if (other instanceof RubyFloat) {
             d = ((RubyFloat) other).getDoubleValue();
             if (this.compareTo(RubyFixnum.zero(runtime)) == -1

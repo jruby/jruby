@@ -47,20 +47,74 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warn(ID.MISCELLANEOUS, message);
     }
 
-    public org.jruby.Ruby getRuntime() {
+    public Ruby getRuntime() {
         return runtime;
+    }
+
+    public boolean isVerbose() {
+        return runtime.isVerbose();
     }
 
     /**
      * Prints a warning, unless $VERBOSE is nil.
      */
+    public void warn(ID id, ISourcePosition position, String message) {
+        warn(id, position.getFile(), position.getStartLine(), message);
+    }
+
+    /**
+     * Prints a warning, unless $VERBOSE is nil.
+     */
+    public void warn(ID id, String fileName, int lineNumber, String message) {
+        if (!runtime.warningsEnabled()) return; // TODO make an assert here
+
+        StringBuilder buffer = new StringBuilder(100);
+
+        buffer.append(fileName).append(':').append(lineNumber + 1).append(' ');
+        buffer.append("warning: ").append(message).append('\n');
+        IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
+        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
+    }
+
+    public void warn(ID id, String message) {
+        ThreadContext context = runtime.getCurrentContext();
+        warn(id, context.getFile(), context.getLine(), message);
+    }
+
+    /**
+     * Verbose mode warning methods, their contract is that consumer must explicitly check for runtime.isVerbose()
+     * before calling them
+     */
+    public void warning(String message) {
+        warning(ID.MISCELLANEOUS, message);
+    }
+
+    public void warning(ID id, String message) {
+        ThreadContext context = runtime.getCurrentContext();
+        warning(id, context.getFile(), context.getLine(), message);
+    }
+
+    /**
+     * Prints a warning, only in verbose mode.
+     */
+    public void warning(ID id, ISourcePosition position, String message) {
+        warning(id, position.getFile(), position.getStartLine(), message);
+    }
+
+    /**
+     * Prints a warning, only in verbose mode.
+     */
+    public void warning(ID id, String fileName, int lineNumber, String message) {
+        assert isVerbose(); 
+        warn(id, fileName, lineNumber, message);
+    }
+
+    @Deprecated
     public void warn(ID id, ISourcePosition position, String message, Object... data) {
         warn(id, position.getFile(), position.getStartLine(), message, data);
     }
 
-    /**
-     * Prints a warning, unless $VERBOSE is nil.
-     */
+    @Deprecated
     public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {
         if (!runtime.warningsEnabled()) return; // TODO make an assert here
 
@@ -72,38 +126,29 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
     }
 
-    public boolean isVerbose() {
-        return runtime.isVerbose();
-    }
-
+    @Deprecated
     public void warn(ID id, String message, Object... data) {
         ThreadContext context = runtime.getCurrentContext();
         warn(id, context.getFile(), context.getLine(), message, data);
     }
 
-    /**
-     * Verbose mode warning methods, their contract is that consumer must explicitly check for runtime.isVerbose()
-     * before calling them
-     */
+    @Deprecated
     public void warning(String message, Object... data) {
         warning(ID.MISCELLANEOUS, message, data);
     }
 
+    @Deprecated
     public void warning(ID id, String message, Object... data) {
         ThreadContext context = runtime.getCurrentContext();
         warning(id, context.getFile(), context.getLine(), message, data);
     }
 
-    /**
-     * Prints a warning, only in verbose mode.
-     */
+    @Deprecated
     public void warning(ID id, ISourcePosition position, String message, Object... data) {
         warning(id, position.getFile(), position.getStartLine(), message, data);
     }
 
-    /**
-     * Prints a warning, only in verbose mode.
-     */
+    @Deprecated
     public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
         assert isVerbose(); 
         warn(id, fileName, lineNumber, message, data);

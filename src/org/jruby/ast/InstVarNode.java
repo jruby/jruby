@@ -115,7 +115,7 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     
     private void warnAboutUninitializedIvar(Ruby runtime) {
         runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, getPosition(), 
-                "instance variable " + name + " not initialized", name);
+                "instance variable " + name + " not initialized");
     }
     
     @Override

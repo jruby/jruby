@@ -111,7 +111,7 @@ public class GlobalVariables {
 	    if (variable != null) return variable.getAccessor().getValue();
 
 	    if (runtime.isVerbose()) {
-	        runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized", name);
+	        runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized");
 	    }
 		return runtime.getNil();
 	}
