@@ -467,9 +467,20 @@ public class InvokeDynamicSupport {
                 };
                 
                 if (!nativeCall.isJava()
+                        
+                        // incoming is IRubyObject[], outgoing is not; mismatch
                         && getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) == 4
-                        && site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class) {
-                    // mismatch call site to target IRubyObject[] args; fall back on DynamicMethod.call for now
+                        && site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class
+                        
+                        // outgoing is IRubyObject[], incoming is not; mismatch
+                        || getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) != 4
+                        && site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class
+                        
+                        // incoming and outgoing arg count mismatch
+                        || site.type().parameterCount() - 4 != getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic())) {
+                    
+                    // fall back on DynamicMethod.call for now
+                    
                 } else if (nativeCall.isJava()
                         && !(nativeCall.getNativeSignature().length == 0 && site.type().parameterCount() == 4)) {
                     // only no-arg Java methods are bound directly right now
@@ -1272,13 +1283,14 @@ public class InvokeDynamicSupport {
                 length--;
                 hasContext = true;
             }
+            
+            // remove self object
+            assert args.length >= 1;
+            length--;
 
             if (args.length > 1 && args[args.length - 1] == Block.class) {
                 length--;
             }
-
-            // all static bound methods receive self arg
-            length--;
             
             if (length == 1) {
                 if (hasContext && args[2] == IRubyObject[].class) {
