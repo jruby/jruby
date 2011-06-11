@@ -23,6 +23,16 @@ import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
 public class JRubyImplCallInstr extends CallInstr {
+    // SSS FIXME: This is a rather arbitrary set of methods 
+    //
+    // 1. Most of these are there to support defined?  I just did a dumb translation of the
+    //    bytecode instrs from the existing AST compiler.  This code needs cleanup!  Most of
+    //    the defined? inlined IR instructions in IRBuilder should be cleanly tucked away into a
+    //    defined? support runtime library with a relatively clean API.
+    //
+    // 2. Some of the other methods are a little arbitrary as well and come from the first pass
+    //    of trying to mimic behavior of the previous AST compiler.  This set of code can be
+    //    cleaned up in a later pass.
     public enum JRubyImplementationMethod {
        // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
        // and we are replicating it here ... Is this a bug there?
@@ -167,18 +177,19 @@ public class JRubyImplCallInstr extends CallInstr {
                 rVal = RuntimeHelpers.getBackref(rt, interp.getContext());
                 break;
             case SELF_METACLASS:
-                // SSS FIXME: Should we pass self in as a receiver and let this go to super.interpret?
-                rVal = self.getMetaClass();
+                rVal = ((IRubyObject)getReceiver().retrieve(interp)).getMetaClass();
                 break;
             case SELF_HAS_INSTANCE_VARIABLE:
-                // SSS FIXME: Should we pass self in as a receiver and let this go to super.interpret?
+            {
+                receiver = getReceiver().retrieve(interp);
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
-                rVal = rt.newBoolean(self.getInstanceVariables().fastHasInstanceVariable(name));
+                rVal = rt.newBoolean(((IRubyObject)receiver).getInstanceVariables().fastHasInstanceVariable(name));
                 break;
+            }
             case SELF_IS_METHOD_BOUND:
             {
-                receiver = getReceiver().retrieve(interp); // SSS: This should be identical to self. Add an assert?
+                receiver = getReceiver().retrieve(interp);
                 boolean bound = ((IRubyObject)receiver).getMetaClass().isMethodBound(((StringLiteral)getCallArgs()[0])._str_value, false); 
                 rVal = rt.newBoolean(bound);
                 break;
@@ -241,13 +252,14 @@ public class JRubyImplCallInstr extends CallInstr {
             }
             case FRAME_SUPER_METHOD_BOUND:
             {
+                receiver = getReceiver().retrieve(interp);
                 boolean flag = false;
                 ThreadContext tc = interp.getContext();
                 String        fn = tc.getFrameName();
                 if (fn != null) {
                     RubyModule fc = tc.getFrameKlazz();
                     if (fc != null) {
-                        flag = RuntimeHelpers.findImplementerIfNecessary(self.getMetaClass(), fc).getSuperClass().isMethodBound(fn, false);
+                        flag = RuntimeHelpers.findImplementerIfNecessary(((IRubyObject)receiver).getMetaClass(), fc).getSuperClass().isMethodBound(fn, false);
                     }
                 }
                 rVal = rt.newBoolean(flag);

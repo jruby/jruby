@@ -28,9 +28,10 @@ public class ReceiveSelfInstruction extends NoOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
-        Operand destination = getResult(); // result is a confusing name
+        // result is a confusing name
+
         // SSS FIXME: Anything else to do here?? 
-        destination.store(interp, self);
+        getResult().store(interp, interp.getSelf());
         return null;
     }
 }

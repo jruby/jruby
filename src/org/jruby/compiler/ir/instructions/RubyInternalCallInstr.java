@@ -54,8 +54,9 @@ public class RubyInternalCallInstr extends CallInstr {
         if (getMethodAddr() == MethAddr.DEFINE_ALIAS) {
             Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
 
-            RubyModule clazz = self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
-            clazz.defineAlias((String) args[0].retrieve(interp).toString(), (String) args[1].retrieve(interp).toString());
+            IRubyObject selfReceiver = (IRubyObject)args[0].retrieve(interp);
+            RubyModule clazz = selfReceiver instanceof RubyModule ? (RubyModule) selfReceiver : selfReceiver.getMetaClass();
+            clazz.defineAlias((String) args[1].retrieve(interp).toString(), (String) args[2].retrieve(interp).toString());
         } else {
             super.interpret(interp, self);
         }

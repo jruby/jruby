@@ -721,7 +721,7 @@ public class IRBuilder {
     public Operand buildAlias(final AliasNode alias, IRScope s) {
         Operand newName = build(alias.getNewName(), s);
         Operand oldName = build(alias.getOldName(), s);
-        Operand[] args = new Operand[] { newName, oldName };
+        Operand[] args = new Operand[] { getSelf(s), newName, oldName };
         s.addInstr(new RubyInternalCallInstr(null, MethAddr.DEFINE_ALIAS, MetaObject.create(s), args));
         return Nil.NIL;
     }
@@ -1333,7 +1333,7 @@ public class IRBuilder {
                 return buildDefinitionCheck(s, JRubyImplementationMethod.RT_IS_GLOBAL_DEFINED, null, ((GlobalVarNode) node).getName(), "global-variable");
             case INSTVARNODE:
                 // SSS FIXME: Can we get away without passing in self?
-                return buildDefinitionCheck(s, JRubyImplementationMethod.SELF_HAS_INSTANCE_VARIABLE, null, ((InstVarNode) node).getName(), "instance-variable");
+                return buildDefinitionCheck(s, JRubyImplementationMethod.SELF_HAS_INSTANCE_VARIABLE, getSelf(s), ((InstVarNode) node).getName(), "instance-variable");
             case YIELDNODE:
                 return buildDefinitionCheck(s, JRubyImplementationMethod.BLOCK_GIVEN, null, null, "yield");
             case BACKREFNODE:
@@ -1495,7 +1495,7 @@ public class IRBuilder {
                 Label        l = s.getNewLabel();
                 s.addInstr(new JRubyImplCallInstr(cm, JRubyImplementationMethod.TC_GET_CURRENT_MODULE, null, NO_ARGS));
                 s.addInstr(new BNEInstr(cm, Nil.NIL, l));
-                s.addInstr(new JRubyImplCallInstr(cm, JRubyImplementationMethod.SELF_METACLASS, null, NO_ARGS));
+                s.addInstr(new JRubyImplCallInstr(cm, JRubyImplementationMethod.SELF_METACLASS, getSelf(s), NO_ARGS));
                 s.addInstr(new LABEL_Instr(l));
                 return buildDefinitionCheck(s, JRubyImplementationMethod.CLASS_VAR_DEFINED, cm, iVisited.getName(), "class-variable");
             }
@@ -1547,12 +1547,12 @@ public class IRBuilder {
                 return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
             }
             case ZSUPERNODE:
-                return buildDefinitionCheck(s, JRubyImplementationMethod.FRAME_SUPER_METHOD_BOUND, null, null, "super");
+                return buildDefinitionCheck(s, JRubyImplementationMethod.FRAME_SUPER_METHOD_BOUND, getSelf(s), null, "super");
             case SUPERNODE:
             {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar  = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.FRAME_SUPER_METHOD_BOUND, null, NO_ARGS));
+                s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.FRAME_SUPER_METHOD_BOUND, getSelf(s), NO_ARGS));
                 s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
                 Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
                 return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);
