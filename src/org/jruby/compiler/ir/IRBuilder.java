@@ -953,7 +953,7 @@ public class IRBuilder {
 
         IRClass c = new IRClass(s, container, superClass, className, classNode.getScope());
         ClassMetaObject cmo = (ClassMetaObject) MetaObject.create(c);
-        s.getNearestModule().getRootMethod().addInstr(new DefineClassInstr(cmo, superClass));
+        s.addInstr(new DefineClassInstr(cmo, superClass));
         s.getNearestModule().addClass(c);
 
         build(classNode.getBodyNode(), c.getRootMethod());
@@ -973,12 +973,11 @@ public class IRBuilder {
         // Here, the class << self declaration is in Foo's root method.
         // Foo is the class in whose context this is being defined.
         Operand receiver = build(sclassNode.getReceiverNode(), s);
-        IRMethod nearestClassRootMethod = s.getNearestModule().getRootMethod();
 
         // Create a dummy meta class and record it as being lexically defined in scope s
         IRMetaClass mc = new IRMetaClass(s, sclassNode.getScope());
         s.getNearestModule().addClass(mc);
-        nearestClassRootMethod.addInstr(new DefineMetaClassInstr(receiver, mc));
+        s.addInstr(new DefineMetaClassInstr(receiver, mc));
         build(sclassNode.getBodyNode(), mc.getRootMethod());
 
         return Nil.NIL;
@@ -1038,9 +1037,7 @@ public class IRBuilder {
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            // SSS FIXME: Shouldn't we be adding a put const instr. here?
-            s.getNearestModule().setConstantValue(constDeclNode.getName(), val);
-            s.getNearestModule().getRootMethod().addInstr(new PutConstInstr(s.getNearestModule(), constDeclNode.getName(), val));
+            s.addInstr(new PutConstInstr(s.getNearestModule(), constDeclNode.getName(), val));
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
@@ -2229,7 +2226,7 @@ public class IRBuilder {
 
         // Build the new module
         IRModule m = new IRModule(s, container, moduleName, moduleNode.getScope());
-        s.getNearestModule().getRootMethod().addInstr(new DefineModuleInstr((ModuleMetaObject) MetaObject.create(m)));
+        s.addInstr(new DefineModuleInstr((ModuleMetaObject) MetaObject.create(m)));
         s.getNearestModule().addModule(m);
 
         build(moduleNode.getBodyNode(), m.getRootMethod());
