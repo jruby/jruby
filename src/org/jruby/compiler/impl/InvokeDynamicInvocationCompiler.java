@@ -49,14 +49,6 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
     }
 
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
-        if (name.endsWith("=") && argsCallback.getArity() == -1) {
-            // >3 args requires IRubyObject[] and gross value-saving logic below
-            // so we don't use invokedynamic here for now
-            super.invokeAttrAssign(name, receiverCallback, argsCallback);
-            return;
-        }
-        
-        // TODO: NORMAL versus VARIABLE call type test
         methodCompiler.loadThreadContext(); // [adapter, tc]
         
         // for visibility checking without requiring frame self
@@ -70,61 +62,26 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         }
 
         methodCompiler.method.ldc(name);
-
-        String invokeName = "fcall";
         String signature;
-        
-        // for foo.bar = 'baz or foo[x] = 'baz' forms, save RHS for return value
-        VariableCompiler variableCompiler = methodCompiler.getVariableCompiler();
-        int attrValueIndex = variableCompiler.grabTempLocal();
 
-        // args
         argsCallback.call(methodCompiler);
-        
         // with args, no block
         switch (argsCallback.getArity()) {
         case 1:
             signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
-            if (attrValueIndex != -1) {
-                method.dup();
-                variableCompiler.setTempLocal(attrValueIndex);
-            }
             break;
         case 2:
             signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
-            if (attrValueIndex != -1) {
-                method.dup();
-                variableCompiler.setTempLocal(attrValueIndex);
-            }
             break;
         case 3:
             signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-            if (attrValueIndex != -1) {
-                method.dup();
-                variableCompiler.setTempLocal(attrValueIndex);
-            }
             break;
         default:
             signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
-            if (attrValueIndex != -1) {
-                // FIXME...because this is gross, I fail over to superclass above
-                method.dup();
-                method.dup();
-                method.arraylength();
-                method.ldc(1);
-                method.isub();
-                method.aaload();
-                variableCompiler.setTempLocal(attrValueIndex);
-            }
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
-        method.invokedynamic(invokeName, signature, InvokeDynamicSupport.getInvocationHandle());
-        
-        // restore RHS
-        method.pop();
-        variableCompiler.getTempLocal(attrValueIndex);
-        variableCompiler.releaseTempLocal();
+        method.invokedynamic("attrAssign", signature, InvokeDynamicSupport.getInvocationHandle());
     }
 
     @Override

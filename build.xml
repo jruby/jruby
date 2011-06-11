@@ -278,10 +278,17 @@
       <classpath refid="jruby.execute.classpath"/>
       <src path="${src.dir}"/>
       <exclude name="org/jruby/runtime/Constants.java"/>
+      <exclude name="org/jruby/runtime/invokedynamic/InvokeDynamicSupport.java"/>
       <patternset refid="java.src.pattern"/>
       <compilerarg line="-XDignore.symbol.file=true"/>
       <compilerarg line="-J-Xmx${jruby.compile.memory}"/>
     </apt>
+    
+    <!-- use javac to compile invokedynamic stuff -->
+    <javac target="1.7" srcdir="${src.dir}" destdir="${jruby.classes.dir}" includes="org/jruby/runtime/invokedynamic/InvokeDynamicSupport.java">
+      <classpath refid="jruby.execute.classpath"/>
+      <classpath location="${jruby.classes.dir}"/>
+    </javac>
 
     <!-- Apply any instrumentation that is enabled (code coverage, etc) -->
     <antcall target="instrument"/>
