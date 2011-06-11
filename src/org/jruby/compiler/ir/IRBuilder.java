@@ -2701,16 +2701,29 @@ public class IRBuilder {
 
         // Compare and branch as necessary!
         Label uncaughtLabel = null;
+        Label caughtLabel = null;
         if (exceptionList != null) {
             uncaughtLabel = m.getNewLabel();
+            caughtLabel = m.getNewLabel();
             Variable eqqResult = m.getNewTemporaryVariable();
             for (Node excType : ((ListNode) exceptionList).childNodes()) {
                 m.addInstr(new EQQInstr(eqqResult, build(excType, m), exc));
-                m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
+                m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, caughtLabel));
+            }
+            // Uncaught exception -- build other rescue nodes or rethrow!
+            rescueBlockLabels.add(uncaughtLabel);
+            m.addInstr(new LABEL_Instr(uncaughtLabel));
+            if (rescueBodyNode.getOptRescueNode() != null) {
+                buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel, rescueBlockLabels);
+            } else {
+                m.addInstr(new THROW_EXCEPTION_Instr(exc));
             }
         }
 
         // Caught exception case -- build rescue body
+        if (caughtLabel != null) {
+            m.addInstr(new LABEL_Instr(caughtLabel));
+        }
         Node realBody = skipOverNewlines(m, rescueBodyNode.getBodyNode());
         Operand x = build(realBody, m);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
@@ -2723,17 +2736,6 @@ public class IRBuilder {
             }
             else {
                 m.addInstr(new JumpInstr(endLabel));
-            }
-        }
-
-        // Uncaught exception -- build other rescue nodes or rethrow!
-        if (uncaughtLabel != null) {
-            rescueBlockLabels.add(uncaughtLabel);
-            m.addInstr(new LABEL_Instr(uncaughtLabel));
-            if (rescueBodyNode.getOptRescueNode() != null) {
-                buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel, rescueBlockLabels);
-            } else {
-                m.addInstr(new THROW_EXCEPTION_Instr(exc));
             }
         }
     }
