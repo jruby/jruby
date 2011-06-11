@@ -1024,12 +1024,8 @@ public class IRBuilder {
      */
     public Variable containingClassVariableFor(IRScope s) {
         IRMethod containingMethod = s.getNearestMethod();
-
-        if (!containingMethod.isInstanceMethod) return getSelf(s); // %self
-        
         Variable tmp = s.getNewTemporaryVariable();
         s.addInstr(new ClassOf(tmp, getSelf(s)));   // %v_x = class_of %self
-
         return tmp;
     }
 
