@@ -339,12 +339,15 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return scope;
     }
 
+    /** ---------------------------------------
+     * SSS FIXME: What is this method for?
     @Interp
     public void calculateParameterCounts() {
         for (int i = instructions.size() - 1; i >= 0; i--) {
             Instr instr = instructions.get(i);
         }
     }
+     ------------------------------------------ **/
 
     /**
      * Closures and Methods have different static scopes.  This returns the

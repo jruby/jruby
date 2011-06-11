@@ -991,11 +991,27 @@ public class IRBuilder {
         return ret;
     }
 
-    // SSS FIXME: Where is this set up?  How is this diff from ClassVarDeclNode??
+    // ClassVarAsgn node is assignment within a method/closure scope
+    //
+    // def foo
+    //   @@c = 1
+    // end
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode, IRScope s) {
         Operand val = build(classVarAsgnNode.getValueNode(), s);
         Variable classFor = containingClassVariableFor(s);
         s.addInstr(new PutClassVariableInstr(classFor, classVarAsgnNode.getName(), val));
+        return val;
+    }
+
+    // ClassVarAsgn node is assignment outside method/closure scope (top-level, class, module)
+    //
+    // class C
+    //   @@c = 1
+    // end
+    public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode, IRScope s) {
+        Operand val = build(classVarDeclNode.getValueNode(), s);
+        Variable classFor = containingClassVariableFor(s);        
+        s.addInstr(new PutClassVariableInstr(classFor, classVarDeclNode.getName(), val));
         return val;
     }
     
@@ -1004,7 +1020,7 @@ public class IRBuilder {
      * This method determines this based on whether we are in an instance
      * variable scope or any other scope.  Note that for closures we just
      * walk out until we find a method (class/modules scopes have a special
-     * method type so we are guaranteed to find it.
+     * method type so we are guaranteed to find it).
      */
     public Variable containingClassVariableFor(IRScope s) {
         IRMethod containingMethod = s.getNearestMethod();
@@ -1015,13 +1031,6 @@ public class IRBuilder {
         s.addInstr(new ClassOf(tmp, getSelf(s)));   // %v_x = class_of %self
 
         return tmp;
-    }
-
-    public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode, IRScope s) {
-        Operand val = build(classVarDeclNode.getValueNode(), s);
-        Variable classFor = containingClassVariableFor(s);        
-        s.addInstr(new PutClassVariableInstr(classFor, classVarDeclNode.getName(), val));
-        return val;
     }
 
     public Operand buildConstDecl(ConstDeclNode node, IRScope s) {

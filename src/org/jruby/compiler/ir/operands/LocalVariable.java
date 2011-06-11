@@ -8,8 +8,10 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.interpreter.InterpreterContext;
 
 /**
- *
  * @author enebo
+ *
+ * SSS FIXME: Do we create a SelfVariable that extends LocalVariable?
+ * That we can trap writes to %self, special-case lookup for %self, and the isSelf method
  */
 public class LocalVariable extends Variable {
     final public String name;
