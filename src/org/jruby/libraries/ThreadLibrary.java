@@ -32,6 +32,7 @@ package org.jruby.libraries;
 
 import java.io.IOException;
 import java.util.LinkedList;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.CompatVersion.*;
 import org.jruby.Ruby;
@@ -79,7 +80,7 @@ public class ThreadLibrary implements Library {
 
     @JRubyClass(name="Mutex")
     public static class Mutex extends RubyObject {
-        private RubyThread owner = null;
+        ReentrantLock lock = new ReentrantLock();
 
         @JRubyMethod(name = "new", rest = true, meta = true)
         public static Mutex newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -104,50 +105,25 @@ public class ThreadLibrary implements Library {
 
         @JRubyMethod(name = "locked?")
         public synchronized RubyBoolean locked_p(ThreadContext context) {
-            return context.getRuntime().newBoolean(isLocked());
-        }
-
-        // should be called from properly synchronized context
-        private boolean isLocked() {
-            return owner != null && owner.isAlive();
+            return context.getRuntime().newBoolean(lock.isLocked());
         }
 
         @JRubyMethod
         public RubyBoolean try_lock(ThreadContext context) {
-            //if (Thread.interrupted()) {
-            //    throw new InterruptedException();
-            //}
-            synchronized (this) {
-                if (isLocked()) {
-                    return context.getRuntime().getFalse();
-                }
-                lock(context);
-            }
-            return context.getRuntime().getTrue();
+            if (lock.isHeldByCurrentThread()) return context.runtime.getFalse();
+            return context.runtime.newBoolean(context.getThread().tryLock(lock));
         }
 
         @JRubyMethod
         public IRubyObject lock(ThreadContext context) {
-            //if (Thread.interrupted()) {
-            //    throw new InterruptedException();
-            //}
             try {
                 context.getThread().enterSleep();
-                synchronized (this) {
-                    try {
-                        if (owner == context.getThread()) {
-                            throw context.getRuntime().newThreadError("Mutex relocking by same thread");
-                        }
-                        while (isLocked()) {
-                            wait();
-                        }
-                        owner = context.getThread();
-                    } catch (InterruptedException ex) {
-                        if (!isLocked()) {
-                            notify();
-                        }
-                        throw context.getRuntime().newConcurrencyError(ex.getLocalizedMessage());
-                    }
+                try {
+                    checkRelocking(context);
+                    context.getThread().lockInterruptibly(lock);
+                } catch (InterruptedException ex) {
+                    context.pollThreadEvents();
+                    throw context.getRuntime().newConcurrencyError(ex.getLocalizedMessage());
                 }
             } finally {
                 context.getThread().exitSleep();
@@ -159,16 +135,15 @@ public class ThreadLibrary implements Library {
         public synchronized IRubyObject unlock(ThreadContext context) {
             Ruby runtime = context.getRuntime();
 
-            if (!isLocked()) throw runtime.newThreadError("Mutex is not locked");
+            if (!lock.isLocked()) throw runtime.newThreadError("Mutex is not locked");
 
-            if (owner != context.getThread()) {
+            if (!lock.isHeldByCurrentThread()) {
                 throw runtime.newThreadError("Mutex is not owned by calling thread");
             }
 
             // FIXME: 1.8 throws nil when the unlock is not waking.  I don't
             // think we can know this?
-            owner = null;
-            notify();
+            context.getThread().unlock(lock);
             return this;
         }
 
@@ -176,16 +151,13 @@ public class ThreadLibrary implements Library {
         public synchronized IRubyObject unlock19(ThreadContext context) {
             Ruby runtime = context.getRuntime();
 
-            if (!isLocked()) {
-                throw runtime.newThreadError("Attempt to unlock a mutex which is not locked");
+            if (!lock.isLocked()) throw runtime.newThreadError("Mutex is not locked");
+
+            if (!lock.isHeldByCurrentThread()) {
+                throw runtime.newThreadError("Mutex is not owned by calling thread");
             }
 
-            if (owner != context.getThread()) {
-                throw runtime.newThreadError("Attempt to unlock a mutex which is locked by another thread");
-            }
-
-            owner = null;
-            notify();
+            lock.unlock();
             return this;
         }
 
@@ -224,6 +196,12 @@ public class ThreadLibrary implements Library {
                 return block.yield(context, null);
             } finally {
                 unlock(context);
+            }
+        }
+        
+        private void checkRelocking(ThreadContext context) {
+            if (lock.isHeldByCurrentThread()) {
+                throw context.getRuntime().newThreadError("Mutex relocking by same thread");
             }
         }
     }

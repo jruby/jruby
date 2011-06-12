@@ -40,6 +40,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.WeakHashMap;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 import java.util.Set;
@@ -58,6 +60,7 @@ import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.Lock;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.ClassIndex;
@@ -104,6 +107,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile ThreadService.Event mail;
     private volatile Status status = Status.RUN;
     private volatile BlockingTask currentBlockingTask;
+    
+    private final List<Lock> heldLocks = new ArrayList<Lock>();
 
     protected RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -1128,6 +1133,66 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public String toString() {
         return threadImpl.toString();
+    }
+    
+    /**
+     * Acquire the given lock, holding a reference to it for cleanup on thread
+     * termination.
+     * 
+     * @param lock the lock to acquire, released on thread termination
+     */
+    public void lock(Lock lock) {
+        lock.lock();
+        synchronized (this) {heldLocks.add(lock);}
+    }
+    
+    /**
+     * Acquire the given lock interruptibly, holding a reference to it for cleanup
+     * on thread termination.
+     * 
+     * @param lock the lock to acquire, released on thread termination
+     * @throws InterruptedException if the lock acquisition is interrupted
+     */
+    public void lockInterruptibly(Lock lock) throws InterruptedException {
+        lock.lockInterruptibly();
+        synchronized (this) {heldLocks.add(lock);}
+    }
+    
+    /**
+     * Try to acquire the given lock, adding it to a list of held locks for cleanup
+     * on thread termination if it is acquired. Return immediately if the lock
+     * cannot be acquired.
+     * 
+     * @param lock the lock to acquire, released on thread termination
+     */
+    public boolean tryLock(Lock lock) {
+        boolean locked = lock.tryLock();
+        if (locked) {
+            synchronized (this) {heldLocks.add(lock);}
+        }
+        return locked;
+    }
+    
+    /**
+     * Release the given lock and remove it from the list of locks to be released
+     * on thread termination.
+     * 
+     * @param lock the lock to release and dereferences
+     */
+    public void unlock(Lock lock) {
+        lock.unlock();
+        synchronized (this) {heldLocks.remove(lock);}
+    }
+    
+    /**
+     * Release all locks held.
+     */
+    public void unlockAll() {
+        synchronized (this) {
+            for (Lock lock : heldLocks) {
+                lock.unlock();
+            }
+        }
     }
 
     private String identityString() {

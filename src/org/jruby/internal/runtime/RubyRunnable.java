@@ -106,8 +106,10 @@ public class RubyRunnable implements Runnable {
                 // Someone called exit!, so we need to kill the main thread
                 runtime.getThreadService().getMainThread().kill();
             } finally {
-                rubyThread.beDead();
+                rubyThread.unlockAll();
                 runtime.getThreadService().setCritical(false);
+                rubyThread.beDead();
+                
                 runtime.getThreadService().unregisterThread(rubyThread);
 
                 ((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
