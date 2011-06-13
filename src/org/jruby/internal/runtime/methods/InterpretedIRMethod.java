@@ -60,6 +60,6 @@ public class InterpretedIRMethod extends DynamicMethod {
 
     @Override
     public DynamicMethod dup() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return new InterpretedIRMethod(method, visibility, implementationClass);
     }
 }
