@@ -285,7 +285,7 @@
     </apt>
     
     <!-- use javac to compile invokedynamic stuff -->
-    <javac target="1.7" srcdir="${src.dir}" destdir="${jruby.classes.dir}" includes="org/jruby/runtime/invokedynamic/InvokeDynamicSupport.java">
+    <javac target="1.7" debug="true" srcdir="${src.dir}" destdir="${jruby.classes.dir}" includes="org/jruby/runtime/invokedynamic/InvokeDynamicSupport.java">
       <classpath refid="jruby.execute.classpath"/>
       <classpath location="${jruby.classes.dir}"/>
     </javac>
