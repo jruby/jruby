@@ -69,7 +69,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         }
 
 		  RubyModule currentModule = closure.getStaticScope().getModule();
-        InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
+        InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, null, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
         interp.setDynamicScope(binding.getDynamicScope());
 		  context.getCurrentScope().getStaticScope().setModule(currentModule);
 
@@ -102,7 +102,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         }
 
 		  RubyModule currentModule = closure.getStaticScope().getModule();
-        InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
+        InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, null, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
         interp.setDynamicScope(binding.getDynamicScope());
 		  context.getCurrentScope().getStaticScope().setModule(currentModule);
 
