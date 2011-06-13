@@ -271,7 +271,14 @@
   </target>
 
   <target name="compile-jruby" depends="prepare, compile-annotation-binder" unless="compiled">
-    <!-- Generate binding logic ahead of time -->
+    <!-- use javac to compile invokedynamic stuff -->
+    <echo message="NOTE: Attempting Java 1.7 compile for invokedynamic; failure is not fatal here"/>
+    <javac target="1.7" debug="true" srcdir="${src.dir}" destdir="${jruby.classes.dir}"
+        includes="org/jruby/runtime/invokedynamic/InvokeDynamicSupport.java" failonerror="false">
+      <classpath refid="jruby.execute.classpath"/>
+      <classpath location="${jruby.classes.dir}"/>
+    </javac>
+    
     <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}"
         debug="true" source="${javac.version}" target="${javac.version}"
         deprecation="true" encoding="UTF-8" includeantruntime="true">
@@ -283,12 +290,6 @@
       <compilerarg line="-XDignore.symbol.file=true"/>
       <compilerarg line="-J-Xmx${jruby.compile.memory}"/>
     </apt>
-    
-    <!-- use javac to compile invokedynamic stuff -->
-    <javac target="1.7" debug="true" srcdir="${src.dir}" destdir="${jruby.classes.dir}" includes="org/jruby/runtime/invokedynamic/InvokeDynamicSupport.java">
-      <classpath refid="jruby.execute.classpath"/>
-      <classpath location="${jruby.classes.dir}"/>
-    </javac>
 
     <!-- Apply any instrumentation that is enabled (code coverage, etc) -->
     <antcall target="instrument"/>
