@@ -395,7 +395,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, name, entry, 0);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_0, site);
+            target = createFail(FAIL_0, site, name);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -420,7 +420,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, name, entry, 1);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_1, site);
+            target = createFail(FAIL_1, site, name);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -445,7 +445,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, name, entry, 2);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_2, site);
+            target = createFail(FAIL_2, site, name);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -470,7 +470,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, name, entry, 3);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_3, site);
+            target = createFail(FAIL_3, site, name);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -495,7 +495,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, name, entry, -1);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_N, site);
+            target = createFail(FAIL_N, site, name);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -529,7 +529,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, name, entry, 0);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_0_B, site);
+            target = createFail(FAIL_0_B, site, name);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -563,7 +563,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, name, entry, 1);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_1_B, site);
+            target = createFail(FAIL_1_B, site, name);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -597,7 +597,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, name, entry, 2);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_2_B, site);
+            target = createFail(FAIL_2_B, site, name);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -631,7 +631,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, name, entry, 3);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_3_B, site);
+            target = createFail(FAIL_3_B, site, name);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -665,7 +665,7 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, name, entry, -1);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_N_B, site);
+            target = createFail(FAIL_N_B, site, name);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -807,7 +807,9 @@ public class InvokeDynamicSupport {
     // INVOCATION SUPPORT METHODS
     ////////////////////////////////////////////////////////////////////////////
 
-    private static MethodHandle createFail(MethodHandle fail, JRubyCallSite site) {
+    private static MethodHandle createFail(MethodHandle fail, JRubyCallSite site, String name) {
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("inline caching '" + name + "' (failed to bind)");
+        
         MethodHandle myFail = insertArguments(fail, 0, site);
         myFail = postProcess(site, myFail);
         return myFail;
@@ -839,23 +841,14 @@ public class InvokeDynamicSupport {
                 // if non-Java, must:
                 // * exactly match arities
                 // * 3 or fewer arguments
-                        
-                // outgoing is IRubyObject[], incoming is not; mismatch
-                if (getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) == 4
-                        && site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class) {
-                    return false;
-                }
-
-                // outgoing is IRubyObject[], incoming is not; mismatch
-                if (getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) != 4
-                        && site.type().parameterArray()[site.type().parameterCount() - 1] == IRubyObject[].class) {
-                    return false;
-                }
-
-                // outgoing is IRubyObject[], incoming is not; mismatch
-                if (site.type().parameterCount() - 4 != getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic())) {
-                    return false;
-                }
+                
+                int nativeArgCount = (method instanceof CompiledMethod)
+                        ? getRubyArgCount(nativeCall.getNativeSignature())
+                        : getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
+                int siteArgCount = site.type().parameterCount() - 4;
+                
+                // match arity and arity is not 4 (IRubyObject[].class)
+                return nativeArgCount == siteArgCount && nativeArgCount != 4;
             }
         }
         
@@ -875,7 +868,7 @@ public class InvokeDynamicSupport {
         }
         
         // no direct native path, use DynamicMethod.call
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("binding " + name + " as DynamicMethod.call");
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("binding '" + name + "' as DynamicMethod.call");
         
         return insertArguments(getDynamicMethodTarget(site.type(), arity), 0, entry);
     }
