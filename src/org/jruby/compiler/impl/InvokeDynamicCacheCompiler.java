@@ -34,6 +34,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -357,5 +358,26 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 sig(BigInteger.class),
                 InvokeDynamicSupport.getBigIntegerHandle(),
                 asString);
+    }
+    
+    /**
+     * Cache the symbol for the given string using invokedynamic.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param symbol the string of the Symbol to cache
+     */
+    public void cacheSymbol(BaseBodyCompiler method, String symbol) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+            super.cacheSymbol(method, symbol);
+            return;
+        }
+        
+        method.loadThreadContext();
+        
+        method.method.invokedynamic(
+                "getSymbol",
+                sig(RubySymbol.class, ThreadContext.class),
+                InvokeDynamicSupport.getSymbolHandle(),
+                symbol);
     }
 }
