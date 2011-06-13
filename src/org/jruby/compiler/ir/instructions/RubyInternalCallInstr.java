@@ -12,8 +12,11 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import org.jruby.interpreter.InterpreterContext;
 
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 
 import org.jruby.javasupport.util.RuntimeHelpers;
 
@@ -65,7 +68,6 @@ public class RubyInternalCallInstr extends CallInstr {
             RubyModule clazz = self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
             clazz.defineAlias((String) args[1].retrieve(interp).toString(), (String) args[2].retrieve(interp).toString());
         } else if ((ma == MethAddr.SUPER) || (ma == MethAddr.ZSUPER)) {
-            // SSS FIXME: This doesn't handle method missing!
             IRubyObject   self    = (IRubyObject)getReceiver().retrieve(interp);
             ThreadContext context = interp.getContext();
             String        name    = context.getFrameName();
@@ -74,14 +76,23 @@ public class RubyInternalCallInstr extends CallInstr {
             checkSuperDisabledOrOutOfMethod(context, klazz, name);
             klazz = RuntimeHelpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
             // look up method
-            IRubyObject[] args    = prepareArguments(getCallArgs(), interp);
+            IRubyObject[] args = prepareArguments(getCallArgs(), interp);
+            Block         blk  = prepareBlock(interp);
             // call!
-            Object        rv      = klazz.searchWithCache(name).method.call(context, self, klazz, name, args, prepareBlock(interp));
+            DynamicMethod m = klazz.searchWithCache(name).method;
+            Object rv;
+            if (m.isUndefined()) {
+                rv = RuntimeHelpers.callMethodMissing(context, self, m.getVisibility(), name, CallType.SUPER, args, blk);
+            }
+            else {
+                rv = m.call(context, self, klazz, name, args, blk);
+            }
             getResult().store(interp, rv);
-        } else if (ma == MethAddr.FOR_EACH) {
-            throw new RuntimeException("FOR_EACH: Not implemented yet!");
         } else if (ma == MethAddr.GVAR_ALIAS) {
             throw new RuntimeException("GVAR_ALIAS: Not implemented yet!");
+        } else if (ma == MethAddr.FOR_EACH) {
+            // SSS FIXME: Correct?
+            super.interpret(interp, unusedSelfArg);
         } else {
             super.interpret(interp, unusedSelfArg);
         }
