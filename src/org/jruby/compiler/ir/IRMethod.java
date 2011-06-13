@@ -67,7 +67,7 @@ public class IRMethod extends IRExecutionScope {
     public void addInstr(Instr i) {
         // Accumulate call arguments
         // SSS FIXME: ReceiveSelf should inherit from ReceiveArg?
-        if ((i instanceof ReceiveArgumentInstruction) || (i instanceof ReceiveSelfInstruction)) callArgs.add(i.result);
+        if (i instanceof ReceiveArgumentInstruction) callArgs.add(i.result);
 
         super.addInstr(i);
     }

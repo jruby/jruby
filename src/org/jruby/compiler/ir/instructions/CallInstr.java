@@ -335,7 +335,7 @@ public class CallInstr extends MultiOperandInstr {
         return null;
     }
 
-    private Block prepareBlock(InterpreterContext interp) {
+    protected Block prepareBlock(InterpreterContext interp) {
         if (closure == null) return Block.NULL_BLOCK;
         Object value = closure.retrieve(interp);
         return value instanceof RubyProc ? ((RubyProc) value).getBlock() : (Block) value;
