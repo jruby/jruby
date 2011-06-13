@@ -46,6 +46,7 @@ public class LambdaNode extends IterNode {
         super(position, args, body, scope);
     }
 
+    @Override
     public NodeType getNodeType() {
         return NodeType.LAMBDANODE;
     }
@@ -60,7 +61,7 @@ public class LambdaNode extends IterNode {
 
     @Override
     public Object accept(NodeVisitor visitor) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return visitor.visitLambdaNode(this);
     }
 
     @Override

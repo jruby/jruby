@@ -82,6 +82,7 @@ import org.jruby.ast.IfNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.LambdaNode;
 import org.jruby.ast.LiteralNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
@@ -191,6 +192,7 @@ public interface NodeVisitor {
     public Object visitInstVarNode(InstVarNode iVisited);
     public Object visitIfNode(IfNode iVisited);
     public Object visitIterNode(IterNode iVisited);
+    public Object visitLambdaNode(LambdaNode iVisited);
     public Object visitLiteralNode(LiteralNode iVisited);
     public Object visitLocalAsgnNode(LocalAsgnNode iVisited);
     public Object visitLocalVarNode(LocalVarNode iVisited);
