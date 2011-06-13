@@ -791,16 +791,18 @@ public class InvokeDynamicSupport {
             if (nativeCall != null) {
                 if (!nativeCall.isJava()
 
-                        // incoming is IRubyObject[], outgoing is not; mismatch
-                        && getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) == 4
-                        && site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class
-
+                        && (
+                        
                         // outgoing is IRubyObject[], incoming is not; mismatch
-                        || getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) != 4
-                        && site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class
+                        (getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) == 4
+                            && site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class)
+
+                        // incoming is IRubyObject[], outgoing is not; mismatch
+                        || (getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) != 4
+                            && site.type().parameterArray()[site.type().parameterCount() - 1] == IRubyObject[].class)
 
                         // incoming and outgoing arg count mismatch
-                        || site.type().parameterCount() - 4 != getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic())) {
+                        || site.type().parameterCount() - 4 != getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()))) {
 
                     // fall back on DynamicMethod.call for now
 
@@ -849,16 +851,24 @@ public class InvokeDynamicSupport {
                     if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("binding native target: " + nativeCall);
                     nativeTarget = createNativeHandle(method);
                 }
+            }
+        }
                         
-                // add NULL_BLOCK if needed
-                if (nativeTarget != null
-                        && site.type().parameterCount() > 0
-                        && site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class
-                        && nativeTarget.type().parameterCount() > 0
-                        && nativeTarget.type().parameterArray()[nativeTarget.type().parameterCount() - 1] == Block.class) {
-
-                    nativeTarget = MethodHandles.insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
-                }
+        // add NULL_BLOCK if needed
+        if (nativeTarget != null) {
+            if (
+                    site.type().parameterCount() > 0
+                    && site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class
+                    && nativeTarget.type().parameterCount() > 0
+                    && nativeTarget.type().parameterType(nativeTarget.type().parameterCount() - 1) == Block.class) {
+                nativeTarget = MethodHandles.insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
+            } else if (
+                    site.type().parameterCount() > 0
+                    && site.type().parameterArray()[site.type().parameterCount() - 1] == Block.class
+                    && nativeTarget.type().parameterCount() > 0
+                    && nativeTarget.type().parameterType(nativeTarget.type().parameterCount() - 1) != Block.class) {
+                // drop block if not used
+                nativeTarget = MethodHandles.dropArguments(nativeTarget, nativeTarget.type().parameterCount(), Block.class);
             }
         }
         
