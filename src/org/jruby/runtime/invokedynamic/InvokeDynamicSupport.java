@@ -821,54 +821,60 @@ public class InvokeDynamicSupport {
         return guardWithTest;
     }
     
-    private static MethodHandle getTarget(JRubyCallSite site, String name, CacheEntry entry, int arity) {
-        // only direct invoke if no block passed (for now) and if no frame/scope are required
-        if (site.type().parameterArray()[site.type().parameterCount() - 1] != Block.class &&
-                entry.method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
-            if (entry.method instanceof AttrReaderMethod || entry.method instanceof AttrWriterMethod) {
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("binding attr target: " + name);
-                
-                return getAttrTarget(entry.method);
-            }
-
-            DynamicMethod.NativeCall nativeCall = entry.method.getNativeCall();
+    private static boolean canDispatchDirect(CallSite site, DynamicMethod method) {
+        DynamicMethod.NativeCall nativeCall = method.getNativeCall();
+        
+        // must have a native call path
+        if (nativeCall != null) {
             
-            if (nativeCall != null) {
-                if (!nativeCall.isJava()
-
-                        && (
+            // if frame/scope required, can't dispatch direct
+            if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
+                return false;
+            }
+            
+            if (nativeCall.isJava()) {
+                // if Java, must be no-arg invocation
+                return nativeCall.getNativeSignature().length == 0 && site.type().parameterCount() == 4;
+            } else {
+                // if non-Java, must:
+                // * exactly match arities
+                // * 3 or fewer arguments
                         
-                        // outgoing is IRubyObject[], incoming is not; mismatch
-                        (getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) == 4
-                            && site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class)
+                // outgoing is IRubyObject[], incoming is not; mismatch
+                if (getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) == 4
+                        && site.type().parameterArray()[site.type().parameterCount() - 1] != IRubyObject[].class) {
+                    return false;
+                }
 
-                        // incoming is IRubyObject[], outgoing is not; mismatch
-                        || (getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) != 4
-                            && site.type().parameterArray()[site.type().parameterCount() - 1] == IRubyObject[].class)
+                // outgoing is IRubyObject[], incoming is not; mismatch
+                if (getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()) != 4
+                        && site.type().parameterArray()[site.type().parameterCount() - 1] == IRubyObject[].class) {
+                    return false;
+                }
 
-                        // incoming and outgoing arg count mismatch
-                        || site.type().parameterCount() - 4 != getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic()))) {
-
-                    // fall back on DynamicMethod.call for now
-
-                } else if (nativeCall.isJava()
-                        && !(nativeCall.getNativeSignature().length == 0 && site.type().parameterCount() == 4)) {
-                    // only no-arg Java methods are bound directly right now
-
-                } else {
-                    MethodHandle nativeTarget = handleForMethod(site, entry.method);
-
-                    if (nativeTarget != null) return nativeTarget;
+                // outgoing is IRubyObject[], incoming is not; mismatch
+                if (site.type().parameterCount() - 4 != getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic())) {
+                    return false;
                 }
             }
         }
         
-        // if indirect indy-bound methods (via DynamicMethod.call) are disabled, fail permanently
+        return false;
+    }
+    
+    private static MethodHandle getTarget(JRubyCallSite site, String name, CacheEntry entry, int arity) {
+        if (canDispatchDirect(site, entry.method)) {
+            MethodHandle nativeTarget = handleForMethod(site, entry.method);
+
+            if (nativeTarget != null) return nativeTarget;
+        }
+        
+        // if indirect indy-bound methods (via DynamicMethod.call) are disabled, bail out
         if (!RubyInstanceConfig.INVOKEDYNAMIC_INDIRECT) {
             return null;
         }
         
-        // no direct native path, use DynamicMethod.call target provided
+        // no direct native path, use DynamicMethod.call
         if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("binding " + name + " as DynamicMethod.call");
         
         return insertArguments(getDynamicMethodTarget(site.type(), arity), 0, entry);
