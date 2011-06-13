@@ -106,7 +106,12 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
         methodCompiler.method.ldc(name);
 
-        String invokeName = callType == CallType.NORMAL ? "call" : "fcall";
+        String invokeName;
+        if (iterator) {
+            invokeName = callType == CallType.NORMAL ? "callIter" : "fcallIter";
+        } else {
+            invokeName = callType == CallType.NORMAL ? "call" : "fcall";
+        }
         String signature;
 
         // args

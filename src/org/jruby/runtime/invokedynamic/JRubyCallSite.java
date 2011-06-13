@@ -37,11 +37,13 @@ public class JRubyCallSite extends MutableCallSite {
     public CacheEntry entry = CacheEntry.NULL_CACHE;
     public volatile int failCount = 0;
     private final boolean attrAssign;
+    private final boolean iterator;
 
-    public JRubyCallSite(MethodType type, CallType callType, boolean attrAssign) {
+    public JRubyCallSite(MethodType type, CallType callType, boolean attrAssign, boolean iterator) {
         super(type);
         this.callType = callType;
         this.attrAssign = attrAssign;
+        this.iterator = iterator;
     }
 
     public CallType callType() {
@@ -50,6 +52,10 @@ public class JRubyCallSite extends MutableCallSite {
 
     public boolean isAttrAssign() {
         return attrAssign;
+    }
+    
+    public boolean isIterator() {
+        return iterator;
     }
     
 }
