@@ -277,6 +277,7 @@
         includes="org/jruby/runtime/invokedynamic/InvokeDynamicSupport.java" failonerror="false">
       <classpath refid="jruby.execute.classpath"/>
       <classpath location="${jruby.classes.dir}"/>
+      <compilerarg line="-XDignore.symbol.file=true"/>
     </javac>
     
     <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}"
