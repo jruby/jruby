@@ -31,6 +31,7 @@ package org.jruby.compiler.impl;
 import org.jruby.compiler.ArgumentsCallback;
 import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.CompilerCallback;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.VariableCompiler;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -181,5 +182,33 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 super.invokeEqq(receivers, argument);
             }
         }
+    }
+
+    @Override
+    public void yieldSpecific(ArgumentsCallback argsCallback) {
+        methodCompiler.loadBlock();
+        methodCompiler.loadThreadContext();
+
+        String signature;
+        if (argsCallback == null) {
+            signature = sig(IRubyObject.class, Block.class, ThreadContext.class);
+        } else {
+            argsCallback.call(methodCompiler);
+            switch (argsCallback.getArity()) {
+            case 1:
+                signature = sig(IRubyObject.class, Block.class, ThreadContext.class, IRubyObject.class);
+                break;
+            case 2:
+                signature = sig(IRubyObject.class, Block.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+                break;
+            case 3:
+                signature = sig(IRubyObject.class, Block.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class);
+                break;
+            default:
+                throw new NotCompilableException("Can't do specific-arity call for > 3 args yet");
+            }
+        }
+
+        method.invokedynamic("yieldSpecific", signature, InvokeDynamicSupport.getInvocationHandle());
     }
 }

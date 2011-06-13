@@ -152,9 +152,15 @@ public class InvokeDynamicSupport {
     ////////////////////////////////////////////////////////////////////////////
     
     public static CallSite invocationBootstrap(MethodHandles.Lookup lookup, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
-        JRubyCallSite site;
+        CallSite site;
 
-        if (name.equals("call")) {
+        if (name.equals("yieldSpecific")) {
+            site = new MutableCallSite(type);
+            MethodHandle target = lookup.findStatic(InvokeDynamicSupport.class, "yieldSpecificFallback", type.insertParameterTypes(0, MutableCallSite.class));
+            target = MethodHandles.insertArguments(target, 0, site);
+            site.setTarget(target);
+            return site;
+        } else if (name.equals("call")) {
             site = new JRubyCallSite(type, CallType.NORMAL, false);
         } else if (name.equals("fcall")) {
             site = new JRubyCallSite(type, CallType.FUNCTIONAL, false);
@@ -667,6 +673,40 @@ public class InvokeDynamicSupport {
         } finally {
             block.escape();
         }
+    }
+    
+    public static IRubyObject yieldSpecificFallback(
+            MutableCallSite site,
+            Block block,
+            ThreadContext context) throws Throwable {
+        return block.yieldSpecific(context);
+    }
+    
+    public static IRubyObject yieldSpecificFallback(
+            MutableCallSite site,
+            Block block,
+            ThreadContext context,
+            IRubyObject arg0) throws Throwable {
+        return block.yieldSpecific(context);
+    }
+    
+    public static IRubyObject yieldSpecificFallback(
+            MutableCallSite site,
+            Block block,
+            ThreadContext context,
+            IRubyObject arg0,
+            IRubyObject arg1) throws Throwable {
+        return block.yieldSpecific(context, arg0, arg1);
+    }
+    
+    public static IRubyObject yieldSpecificFallback(
+            MutableCallSite site,
+            Block block,
+            ThreadContext context,
+            IRubyObject arg0,
+            IRubyObject arg1,
+            IRubyObject arg2) throws Throwable {
+        return block.yieldSpecific(context, arg0, arg1, arg2);
     }
 
     public static IRubyObject constantFallback(RubyConstantCallSite site, 
