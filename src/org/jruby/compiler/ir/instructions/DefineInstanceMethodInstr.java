@@ -1,6 +1,8 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+
+import org.jruby.MetaClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRMetaClass;
 import org.jruby.compiler.ir.IRMethod;
@@ -9,9 +11,15 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+
 import org.jruby.interpreter.InterpreterContext;
+
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
@@ -48,13 +56,27 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
         MetaObject ma    = (MetaObject)getArg();
         RubyModule clazz = (RubyModule) ma.retrieve(interp);
 		  String     name  = method.getName();
+		  ThreadContext context = interp.getContext();
 
-		  // System.out.println("Adding method: " + method.getName() + " to " + clazz.getName() + "; arg is " + getArg());
-        Visibility visibility = interp.getContext().getCurrentVisibility();
+        Visibility visibility = context.getCurrentVisibility();
         if (name == "initialize" || name == "initialize_copy" || visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;
         }
-        clazz.addMethod(name, new InterpretedIRMethod(method, visibility, clazz));
+
+		  DynamicMethod newMethod = new InterpretedIRMethod(method, visibility, clazz);
+        clazz.addMethod(name, newMethod);
+
+        if (visibility == Visibility.MODULE_FUNCTION) {
+            clazz.getSingletonClass().addMethod(name, new WrapperMethod(clazz.getSingletonClass(), newMethod, Visibility.PUBLIC));
+            clazz.callMethod(context, "singleton_method_added", interp.getRuntime().fastNewSymbol(name));
+        }
+   
+        // 'class << state.self' and 'class << obj' uses defn as opposed to defs
+        if (clazz.isSingleton()) {
+            ((MetaClass) clazz).getAttached().callMethod(context, "singleton_method_added", interp.getRuntime().fastNewSymbol(name));
+        } else {
+            clazz.callMethod(context, "method_added", interp.getRuntime().fastNewSymbol(name));
+        }
         return null;
     }
 }

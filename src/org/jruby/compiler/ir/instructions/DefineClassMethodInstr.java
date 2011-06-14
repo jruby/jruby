@@ -1,7 +1,11 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+import org.jruby.Ruby;
 import org.jruby.RubyObject;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyClass;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
@@ -43,8 +47,27 @@ public class DefineClassMethodInstr extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, IRubyObject self) {
+		  String name = method.getName();
+		  Ruby runtime = interp.getRuntime();
         RubyObject obj = (RubyObject) getArg().retrieve(interp);
-        obj.getMetaClass().addMethod(method.getName(), new InterpretedIRMethod(method, Visibility.PUBLIC, obj.getMetaClass()));
+
+        if (runtime.getSafeLevel() >= 4 && !obj.isTaint()) {
+            throw runtime.newSecurityError("Insecure; can't define singleton method.");
+        }
+
+        if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
+            throw runtime.newTypeError("can't define singleton method \"" + name + "\" for " + obj.getMetaClass().getBaseName());
+        }
+
+        if (obj.isFrozen()) throw runtime.newFrozenError("object");
+
+        RubyClass rubyClass = obj.getSingletonClass();
+        if (runtime.getSafeLevel() >= 4 && rubyClass.getMethods().get(name) != null) {
+            throw runtime.newSecurityError("redefining method prohibited.");
+        }
+
+        obj.getMetaClass().addMethod(name, new InterpretedIRMethod(method, Visibility.PUBLIC, obj.getMetaClass()));
+        obj.callMethod(interp.getContext(), "singleton_method_added", runtime.fastNewSymbol(name));
         return null;
     }
 }
