@@ -31,6 +31,13 @@ public class DefineModuleInstr extends OneOperandInstr {
         RubyModule container = mmo.getContainer(interp, runtime);
         RubyModule module    = container.defineOrGetModuleUnder(scope.getName());
 
+		  // SSS FIXME: Hack/side-effect to get the meta-class instantiated for certain scenarios!
+		  // We need to find out why 'foo.extend(module)' is not creating the meta class automatically.
+		  // The correct fix is to find out who is implicitly calling getSingletonClass in the current
+		  // AST interpreter, remove side effect of getSingletonClass and make the build of this metaclass
+		  // explicit (probably in the extend methods?).
+		  module.getSingletonClass();
+
         mmo.interpretBody(interp, interp.getContext(), module);
         return null;
     }
