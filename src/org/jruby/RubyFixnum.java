@@ -341,6 +341,22 @@ public class RubyFixnum extends RubyInteger {
         return newFixnum(context.getRuntime(), result);
     }
     
+    public IRubyObject op_plus_one(ThreadContext context) {
+        long result = value + 1;
+        if (result == Long.MIN_VALUE) {
+            return addAsBignum(context, 1);
+        }
+        return newFixnum(context.getRuntime(), result);
+    }
+    
+    public IRubyObject op_plus_two(ThreadContext context) {
+        long result = value + 2;
+        if (result == Long.MIN_VALUE + 1) {
+            return addAsBignum(context, 2);
+        }
+        return newFixnum(context.getRuntime(), result);
+    }
+    
     private IRubyObject addFixnum(ThreadContext context, RubyFixnum other) {
         long otherValue = other.value;
         long result = value + otherValue;
@@ -391,6 +407,22 @@ public class RubyFixnum extends RubyInteger {
         long result = value - otherValue;
         if (subtractionOverflowed(value, otherValue, result)) {
             return subtractAsBignum(context, otherValue);
+        }
+        return newFixnum(context.getRuntime(), result);
+    }
+
+    public IRubyObject op_minus_one(ThreadContext context) {
+        long result = value - 1;
+        if (result == Long.MAX_VALUE) {
+            return subtractAsBignum(context, 1);
+        }
+        return newFixnum(context.getRuntime(), result);
+    }
+
+    public IRubyObject op_minus_two(ThreadContext context) {
+        long result = value - 2;
+        if (result == Long.MAX_VALUE - 1) {
+            return subtractAsBignum(context, 2);
         }
         return newFixnum(context.getRuntime(), result);
     }

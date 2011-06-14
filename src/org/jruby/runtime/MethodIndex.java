@@ -29,6 +29,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
@@ -81,21 +83,33 @@ public class MethodIndex {
         return new NormalCachingCallSite(name);
     }
     
+    private static final Map<String, String> FAST_OPS = new HashMap<String, String>();
+    private static final String[][] fastOps = {
+        {"+", "op_plus"},
+        {"-", "op_minus"},
+        {"*", "op_mul"},
+        {"<", "op_lt"},
+        {"<=", "op_le"},
+        {">", "op_gt"},
+        {">=", "op_ge"},
+        {"<=>", "op_cmp"},
+        {"&", "op_and"},
+        {"|", "op_or"},
+        {"^", "op_xor"},
+        {">>", "op_rshift"},
+        {"<<", "op_lshift"}
+    };
+    
+    static {
+        for (String[] fastOp : fastOps) FAST_OPS.put(fastOp[0], fastOp[1]);
+    }
+    
     public static boolean hasFastOps(String name) {
-        return name.equals("+")
-                || name.equals("-")
-                || name.equals("*")
-                || name.equals("<")
-                || name.equals("<=")
-                || name.equals(">")
-                || name.equals(">=")
-                || name.equals("==")
-                || name.equals("<=>")
-                || name.equals("&")
-                || name.equals("|")
-                || name.equals("^")
-                || name.equals(">>")
-                || name.equals("<<");
+        return FAST_OPS.containsKey(name);
+    }
+    
+    public static String getFastOpsMethod(String name) {
+        return FAST_OPS.get(name);
     }
 
     public static CallSite getFastOpsCallSite(String name) {

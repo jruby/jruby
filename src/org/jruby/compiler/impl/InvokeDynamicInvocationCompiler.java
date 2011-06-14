@@ -1,4 +1,3 @@
-
 /*
  ***** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
@@ -28,11 +27,11 @@
 
 package org.jruby.compiler.impl;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.compiler.ArgumentsCallback;
 import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.VariableCompiler;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -49,6 +48,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         super(methodCompiler, method);
     }
 
+    @Override
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
         methodCompiler.loadThreadContext(); // [adapter, tc]
         
@@ -215,5 +215,28 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         }
 
         method.invokedynamic("yieldSpecific", signature, InvokeDynamicSupport.getInvocationHandle());
+    }
+
+    public void invokeBinaryFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {
+            super.invokeBinaryFixnumRHS(name, receiverCallback, fixnum);
+            return;
+        }
+        
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
+        methodCompiler.loadSelf();
+
+        if (receiverCallback != null) {
+            receiverCallback.call(methodCompiler);
+        } else {
+            methodCompiler.loadSelf();
+        }
+
+        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+
+        method.invokedynamic("fixnumOperator", signature, InvokeDynamicSupport.getFixnumOperatorHandle(), name, fixnum);
     }
 }

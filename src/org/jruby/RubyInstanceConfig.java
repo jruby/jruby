@@ -362,6 +362,8 @@ public class RubyInstanceConfig {
             USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && SafePropertyAccessor.getBoolean("jruby.invokedynamic.indirect", false);
     public static final boolean INVOKEDYNAMIC_JAVA = INVOKEDYNAMIC_ALL ||
             USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && SafePropertyAccessor.getBoolean("jruby.invokedynamic.java", true);
+    public static final boolean INVOKEDYNAMIC_FASTOPS = INVOKEDYNAMIC_ALL ||
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && SafePropertyAccessor.getBoolean("jruby.invokedynamic.fastops", false);
     
     public static final boolean INVOKEDYNAMIC_CACHE = INVOKEDYNAMIC_ALL ||
             USE_INVOKEDYNAMIC && SafePropertyAccessor.getBoolean("jruby.invokedynamic.cache", true);
