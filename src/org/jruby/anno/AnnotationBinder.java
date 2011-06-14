@@ -377,12 +377,11 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
 
                     out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
                     out.println("        populateMethod(javaMethod, " +
-                            getArityValue(anno, actualRequired) + ", \"" +
-                            md.getSimpleName() + "\", " +
-                            isStatic + ", " +
-                            "CallConfiguration." + getCallConfigNameByAnno(anno) + ", " +
-                            anno.notImplemented() + ");");
-                    out.println("        javaMethod.setNativeCall("
+                            + getArityValue(anno, actualRequired) + ", \""
+                            + md.getSimpleName() + "\", "
+                            + isStatic + ", "
+                            + "CallConfiguration." + getCallConfigNameByAnno(anno) + ", "
+                            + anno.notImplemented() + ", "
                             + md.getDeclaringType().getQualifiedName() + ".class, "
                             + "\"" + md.getSimpleName() + "\", "
                             + md.getReturnType().toString() + ".class, "
