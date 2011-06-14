@@ -68,26 +68,9 @@ public class RubyInternalCallInstr extends CallInstr {
             RubyModule clazz = self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
             clazz.defineAlias((String) args[1].retrieve(interp).toString(), (String) args[2].retrieve(interp).toString());
         } else if ((ma == MethAddr.SUPER) || (ma == MethAddr.ZSUPER)) {
-            IRubyObject   self    = (IRubyObject)getReceiver().retrieve(interp);
-            ThreadContext context = interp.getContext();
-            String        name    = context.getFrameName();
-            RubyModule    klazz   = context.getFrameKlazz();
-            // Get super class
-            checkSuperDisabledOrOutOfMethod(context, klazz, name);
-            klazz = RuntimeHelpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-            // look up method
+            IRubyObject   self = (IRubyObject)getReceiver().retrieve(interp);
             IRubyObject[] args = prepareArguments(getCallArgs(), interp);
-            Block         blk  = prepareBlock(interp);
-            // call!
-            DynamicMethod m = klazz.searchWithCache(name).method;
-            Object rv;
-            if (m.isUndefined()) {
-                rv = RuntimeHelpers.callMethodMissing(context, self, m.getVisibility(), name, CallType.SUPER, args, blk);
-            }
-            else {
-                rv = m.call(context, self, klazz, name, args, blk);
-            }
-            getResult().store(interp, rv);
+            getResult().store(interp, RuntimeHelpers.invokeSuper(interp.getContext(), self, args, prepareBlock(interp)));
         } else if (ma == MethAddr.GVAR_ALIAS) {
             throw new RuntimeException("GVAR_ALIAS: Not implemented yet!");
         } else if (ma == MethAddr.FOR_EACH) {
