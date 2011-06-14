@@ -81,7 +81,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected int flags;
 
     // variable table, lazily allocated as needed (if needed)
-    private volatile Object[] varTable = NULL_OBJECT_ARRAY;
+    private volatile Object[] varTable;
 
     /**
      * The error message used when some one tries to modify an
@@ -1204,11 +1204,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     private Object[] getVariableTableForRead() {
-        return varTable;
+        Object[] table = varTable;
+        return table == null ? NULL_OBJECT_ARRAY : table;
     }
 
     private synchronized Object[] getVariableTableForWrite(int index) {
-        if (varTable == NULL_OBJECT_ARRAY) {
+        if (varTable == null) {
             if (DEBUG) System.out.println("resizing from " + varTable.length + " to " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
             varTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
         } else if (varTable.length <= index) {
@@ -1256,7 +1257,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public boolean hasVariables() {
         // we check both to exclude object_id
-        return getMetaClass().getRealClass().getVariableTableSize() > 0 && varTable.length > 0;
+        return getMetaClass().getRealClass().getVariableTableSize() > 0 && varTable != null && varTable.length > 0;
     }
 
     /**
@@ -1266,7 +1267,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Deprecated
     public int getVariableCount() {
         // we use min to exclude object_id
-        return Math.min(varTable.length, getMetaClass().getRealClass().getVariableTableSize());
+        return varTable == null ? 0 : Math.min(varTable.length, getMetaClass().getRealClass().getVariableTableSize());
     }
 
     /**
