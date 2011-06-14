@@ -72,7 +72,6 @@ import static org.jruby.runtime.MethodIndex.EQL;
  */
 public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Comparable<IRubyObject>, CoreObjectType, InstanceVariables, InternalVariables {
     private static final boolean DEBUG = false;
-    private static final Object[] NULL_OBJECT_ARRAY = new Object[0];
     
     // The class of this object
     protected transient RubyClass metaClass;
@@ -1215,24 +1214,27 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * resizes if necessary.
      */
     private Object[] getVariableTableForWrite(int index) {
-        if (varTable == null) {
-            if (DEBUG) System.out.println("resizing from " + varTable.length + " to " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
+        Object[] myVarTable = varTable;
+        if (myVarTable == null) {
             synchronized (this) {
-                if (varTable == null) {
-                    varTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
+                myVarTable = varTable;
+                if (myVarTable == null) {
+                    if (DEBUG) System.out.println("allocating varTable with size " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
+                    varTable = myVarTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
                 }
             }
-        } else if (varTable.length <= index) {
-            if (DEBUG) System.out.println("resizing from " + varTable.length + " to " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
+        } else if (myVarTable.length <= index) {
             synchronized (this) {
-                if (varTable.length <= index) {
+                myVarTable = varTable;
+                if (myVarTable.length <= index) {
+                    if (DEBUG) System.out.println("resizing from " + myVarTable.length + " to " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
                     Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
-                    System.arraycopy(varTable, 0, newTable, 0, varTable.length);
-                    varTable = newTable;
+                    System.arraycopy(myVarTable, 0, newTable, 0, myVarTable.length);
+                    varTable = myVarTable = newTable;
                 }
             }
         }
-        return varTable;
+        return myVarTable;
     }
 
     public Object getVariable(int index) {
