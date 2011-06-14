@@ -1203,27 +1203,41 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
     }
 
+    /**
+     * Get variable table for read purposes. May return null if uninitialized.
+     */
     private Object[] getVariableTableForRead() {
-        Object[] table = varTable;
-        return table == null ? NULL_OBJECT_ARRAY : table;
+        return varTable;
     }
 
-    private synchronized Object[] getVariableTableForWrite(int index) {
+    /**
+     * Get variable table for write purposes. Initializes if uninitialized, and
+     * resizes if necessary.
+     */
+    private Object[] getVariableTableForWrite(int index) {
         if (varTable == null) {
             if (DEBUG) System.out.println("resizing from " + varTable.length + " to " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
-            varTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
+            synchronized (this) {
+                if (varTable == null) {
+                    varTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
+                }
+            }
         } else if (varTable.length <= index) {
             if (DEBUG) System.out.println("resizing from " + varTable.length + " to " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
-            Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
-            System.arraycopy(varTable, 0, newTable, 0, varTable.length);
-            varTable = newTable;
+            synchronized (this) {
+                if (varTable.length <= index) {
+                    Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
+                    System.arraycopy(varTable, 0, newTable, 0, varTable.length);
+                    varTable = newTable;
+                }
+            }
         }
         return varTable;
     }
 
     public Object getVariable(int index) {
-        if (index < 0) return null;
-        Object[] ivarTable = getVariableTableForRead();
+		Object[] ivarTable;
+        if (index < 0 || (ivarTable = getVariableTableForRead()) == null) return null;
         if (ivarTable.length > index) return ivarTable[index];
         return null;
     }
