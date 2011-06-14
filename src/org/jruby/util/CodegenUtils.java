@@ -98,6 +98,10 @@ public class CodegenUtils {
         return n.getCanonicalName();
     }
     
+    public static String humanShort(Class n) {
+        return n.getSimpleName();
+    }
+    
     /**
      * Create a method signature from the given param types and return values
      */
@@ -150,6 +154,19 @@ public class CodegenUtils {
         
         for (int i = 0; i < params.length; i++) {
             signature.append(human(params[i]));
+            if (i < params.length - 1) signature.append(',');
+        }
+        
+        signature.append(")");
+        
+        return signature.toString();
+    }
+    
+    public static String prettyShortParams(Class... params) {
+        StringBuilder signature = new StringBuilder("(");
+        
+        for (int i = 0; i < params.length; i++) {
+            signature.append(humanShort(params[i]));
             if (i < params.length - 1) signature.append(',');
         }
         

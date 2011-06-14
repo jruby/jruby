@@ -496,7 +496,7 @@ public abstract class DynamicMethod {
 
         @Override
         public String toString() {
-            return "" + (statik?"static ":"") + nativeReturn.getName() + " " + nativeTarget.getName() + "." + nativeName + CodegenUtils.prettyParams(nativeSignature);
+            return "" + (statik?"static ":"") + nativeReturn.getSimpleName() + " " + nativeTarget.getSimpleName() + "." + nativeName + CodegenUtils.prettyShortParams(nativeSignature);
         }
     }
 

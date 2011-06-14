@@ -39,23 +39,25 @@ import org.jruby.runtime.builtin.IRubyObject;
  * A method type for attribute writers (as created by attr_writer or attr_accessor).
  */
 public class AttrReaderMethod extends JavaMethodZero {
-    private final String variableName;
     private RubyClass.VariableAccessor accessor = RubyClass.VariableAccessor.DUMMY_ACCESSOR;
 
     public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String variableName) {
-        super(implementationClass, visibility, callConfig);
-        this.variableName = variableName;
+        super(implementationClass, visibility, callConfig, variableName);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         IRubyObject variable = (IRubyObject) verifyAccessor(self.getMetaClass().getRealClass()).get(self);
         return variable == null ? context.nil : variable;
     }
+    
+    public String getVariableName() {
+        return name;
+    }
 
     private RubyClass.VariableAccessor verifyAccessor(RubyClass cls) {
         RubyClass.VariableAccessor localAccessor = accessor;
         if (localAccessor.getClassId() != cls.id) {
-            localAccessor = cls.getVariableAccessorForRead(variableName);
+            localAccessor = cls.getVariableAccessorForRead(name);
             accessor = localAccessor;
         }
         return localAccessor;

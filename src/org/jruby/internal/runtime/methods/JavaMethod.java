@@ -80,6 +80,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable {
         super(implementationClass, visibility, callConfig);
     }
     
+    public JavaMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
+        super(implementationClass, visibility, callConfig, name);
+    }
+    
     protected JavaMethod() {}
     
     public void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, CallConfiguration callConfig) {
@@ -231,6 +235,9 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable {
         }
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility, callConfig);
+        }
+        public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
+            super(implementationClass, visibility, callConfig, name);
         }
     }
 
@@ -613,6 +620,9 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable {
         public JavaMethodN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility, callConfig);
         }
+        public JavaMethodN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
+            super(implementationClass, visibility, callConfig, name);
+        }
 
         @Override
         public abstract IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args);
@@ -651,6 +661,9 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable {
         }
         public JavaMethodZeroOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility, callConfig);
+        }
+        public JavaMethodZeroOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
+            super(implementationClass, visibility, callConfig, name);
         }
 
         @Override
@@ -721,6 +734,9 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable {
         }
         public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility, callConfig);
+        }
+        public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
+            super(implementationClass, visibility, callConfig, name);
         }
         
         @Override
@@ -830,6 +846,9 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable {
         public JavaMethodZero(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility, callConfig);
         }
+        public JavaMethodZero(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
+            super(implementationClass, visibility, callConfig, name);
+        }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             if (args.length != 0) return raiseArgumentError(this, context, name, args.length, 0, 0);
@@ -917,6 +936,9 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable {
         }
         public JavaMethodOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility, callConfig);
+        }
+        public JavaMethodOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
+            super(implementationClass, visibility, callConfig, name);
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {

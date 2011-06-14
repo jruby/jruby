@@ -167,16 +167,16 @@ public class InvokeDynamicSupport {
             site.setTarget(target);
             return site;
         } else if (name.equals("call")) {
-            site = new JRubyCallSite(type, CallType.NORMAL, false, false);
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false);
         } else if (name.equals("fcall")) {
-            site = new JRubyCallSite(type, CallType.FUNCTIONAL, false, false);
+            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, false, false);
         } else if (name.equals("callIter")) {
-            site = new JRubyCallSite(type, CallType.NORMAL, false, true);
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, true);
         } else if (name.equals("fcallIter")) {
-            site = new JRubyCallSite(type, CallType.FUNCTIONAL, false, true);
+            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, false, true);
         } else if (name.equals("attrAssign")) {
             // This needs to change based on receiver, but it's not a big deal
-            site = new JRubyCallSite(type, CallType.VARIABLE, true, false);
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, true, false);
         } else {
             throw new RuntimeException("wrong invokedynamic target: " + name);
         }
@@ -192,7 +192,7 @@ public class InvokeDynamicSupport {
     }
     
     public static CallSite fixnumOperatorBootstrap(Lookup lookup, String name, MethodType type, String operator, long value) throws NoSuchMethodException, IllegalAccessException {
-        CallSite site = new JRubyCallSite(type, CallType.NORMAL, false, false);
+        CallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false);
         String opMethod = MethodIndex.getFastOpsMethod(operator);
         name = "fixnum_" + opMethod;
         type = type.insertParameterTypes(0, MutableCallSite.class);
@@ -425,10 +425,10 @@ public class InvokeDynamicSupport {
             return callMethodMissing(entry, site.callType(), context, self, name);
         }
         
-        MethodHandle target = getTarget(site, name, entry, 0);
+        MethodHandle target = getTarget(site, selfClass, name, entry, 0);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_0, site, name);
+            target = createFail(FAIL_0, site, name, entry.method);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -450,10 +450,10 @@ public class InvokeDynamicSupport {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0);
         }
         
-        MethodHandle target = getTarget(site, name, entry, 1);
+        MethodHandle target = getTarget(site, selfClass, name, entry, 1);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_1, site, name);
+            target = createFail(FAIL_1, site, name, entry.method);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -475,10 +475,10 @@ public class InvokeDynamicSupport {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1);
         }
         
-        MethodHandle target = getTarget(site, name, entry, 2);
+        MethodHandle target = getTarget(site, selfClass, name, entry, 2);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_2, site, name);
+            target = createFail(FAIL_2, site, name, entry.method);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -500,10 +500,10 @@ public class InvokeDynamicSupport {
             return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2);
         }
         
-        MethodHandle target = getTarget(site, name, entry, 3);
+        MethodHandle target = getTarget(site, selfClass, name, entry, 3);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_3, site, name);
+            target = createFail(FAIL_3, site, name, entry.method);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -525,10 +525,10 @@ public class InvokeDynamicSupport {
             return callMethodMissing(entry, site.callType(), context, self, name, args);
         }
         
-        MethodHandle target = getTarget(site, name, entry, -1);
+        MethodHandle target = getTarget(site, selfClass, name, entry, -1);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_N, site, name);
+            target = createFail(FAIL_N, site, name, entry.method);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -559,10 +559,10 @@ public class InvokeDynamicSupport {
             }
         }
 
-        MethodHandle target = getTarget(site, name, entry, 0);
+        MethodHandle target = getTarget(site, selfClass, name, entry, 0);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_0_B, site, name);
+            target = createFail(FAIL_0_B, site, name, entry.method);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -593,10 +593,10 @@ public class InvokeDynamicSupport {
             }
         }
 
-        MethodHandle target = getTarget(site, name, entry, 1);
+        MethodHandle target = getTarget(site, selfClass, name, entry, 1);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_1_B, site, name);
+            target = createFail(FAIL_1_B, site, name, entry.method);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -627,10 +627,10 @@ public class InvokeDynamicSupport {
             }
         }
 
-        MethodHandle target = getTarget(site, name, entry, 2);
+        MethodHandle target = getTarget(site, selfClass, name, entry, 2);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_2_B, site, name);
+            target = createFail(FAIL_2_B, site, name, entry.method);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -661,10 +661,10 @@ public class InvokeDynamicSupport {
             }
         }
 
-        MethodHandle target = getTarget(site, name, entry, 3);
+        MethodHandle target = getTarget(site, selfClass, name, entry, 3);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_3_B, site, name);
+            target = createFail(FAIL_3_B, site, name, entry.method);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -695,10 +695,10 @@ public class InvokeDynamicSupport {
             }
         }
 
-        MethodHandle target = getTarget(site, name, entry, -1);
+        MethodHandle target = getTarget(site, selfClass, name, entry, -1);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_N_B, site, name);
+            target = createFail(FAIL_N_B, site, name, entry.method);
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
@@ -820,7 +820,7 @@ public class InvokeDynamicSupport {
         IRubyObject value = context.getConstant(site.name());
         
         if (value != null) {
-            if (RubyInstanceConfig.LOG_INDY_CONSTANTS) System.out.println("binding constant " + site.name() + " with invokedynamic");
+            if (RubyInstanceConfig.LOG_INDY_CONSTANTS) System.out.println("constant " + site.name() + " bound directly");
             
             MethodHandle valueHandle = constant(IRubyObject.class, value);
             valueHandle = dropArguments(valueHandle, 0, ThreadContext.class);
@@ -908,8 +908,8 @@ public class InvokeDynamicSupport {
     // INVOCATION SUPPORT METHODS
     ////////////////////////////////////////////////////////////////////////////
 
-    private static MethodHandle createFail(MethodHandle fail, JRubyCallSite site, String name) {
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("inline caching '" + name + "' (failed to bind)");
+    private static MethodHandle createFail(MethodHandle fail, JRubyCallSite site, String name, DynamicMethod method) {
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound to inline cache (failed #" + method.getSerialNumber() + ")");
         
         MethodHandle myFail = insertArguments(fail, 0, site);
         myFail = postProcess(site, myFail);
@@ -924,20 +924,41 @@ public class InvokeDynamicSupport {
         return guardWithTest;
     }
     
-    private static boolean canDispatchDirect(CallSite site, DynamicMethod method) {
+    private static class IndirectBindingException extends RuntimeException {
+        public IndirectBindingException(String reason) {
+            super(reason);
+        }
+    }
+    
+    private static MethodHandle tryDispatchDirect(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
         DynamicMethod.NativeCall nativeCall = method.getNativeCall();
         
-        // must have a native call path
-        if (nativeCall != null) {
+        MethodType trimmed = site.type().dropParameterTypes(2, 4);
+        int siteArgCount = getArgCount(trimmed.parameterArray(), true);
+        
+        if (method instanceof AttrReaderMethod) {
+            // attr reader
+            if (siteArgCount != 0) {
+                throw new IndirectBindingException("attr reader with > 0 args");
+            }
+        } else if (method instanceof AttrWriterMethod) {
+            // attr writer
+            if (siteArgCount != 1) {
+                throw new IndirectBindingException("attr writer with > 1 args");
+            }
+        } else if (nativeCall != null) {
+            // has an explicit native call path
             
             // if frame/scope required, can't dispatch direct
             if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
-                return false;
+                throw new IndirectBindingException("frame or scope required");
             }
             
             if (nativeCall.isJava()) {
                 // if Java, must be no-arg invocation
-                return nativeCall.getNativeSignature().length == 0 && site.type().parameterCount() == 4;
+                if (nativeCall.getNativeSignature().length != 0 || siteArgCount != 0) {
+                    throw new IndirectBindingException("Java call or receiver with > 0 args");
+                }
             } else {
                 // if non-Java, must:
                 // * exactly match arities
@@ -946,55 +967,73 @@ public class InvokeDynamicSupport {
                 int nativeArgCount = (method instanceof CompiledMethod)
                         ? getRubyArgCount(nativeCall.getNativeSignature())
                         : getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
-                int siteArgCount = site.type().parameterCount() - 4;
                 
                 // match arity and arity is not 4 (IRubyObject[].class)
-                return nativeArgCount == siteArgCount && nativeArgCount != 4;
+                if (nativeArgCount == 4) {
+                    throw new IndirectBindingException("target args > 4 or rest/optional");
+                }
+                
+                if (nativeArgCount != siteArgCount) {
+                    throw new IndirectBindingException("arity mismatch at call site");
+                }
             }
+        } else {
+            throw new IndirectBindingException("no direct path available");
         }
         
-        return false;
+        return handleForMethod(site, name, cls, method);
     }
     
-    private static MethodHandle getTarget(JRubyCallSite site, String name, CacheEntry entry, int arity) {
-        if (canDispatchDirect(site, entry.method)) {
-            MethodHandle nativeTarget = handleForMethod(site, entry.method);
-
-            if (nativeTarget != null) return nativeTarget;
+    private static MethodHandle getTarget(JRubyCallSite site, RubyClass cls, String name, CacheEntry entry, int arity) {
+        IndirectBindingException ibe;
+        try {
+            return tryDispatchDirect(site, name, cls, entry.method);
+        } catch (IndirectBindingException _ibe) {
+            ibe = _ibe;
+            // proceed with indirect, if enabled
         }
         
         // if indirect indy-bound methods (via DynamicMethod.call) are disabled, bail out
         if (!RubyInstanceConfig.INVOKEDYNAMIC_INDIRECT) {
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tfailed to bind to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
             return null;
         }
         
         // no direct native path, use DynamicMethod.call
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("binding '" + name + "' as DynamicMethod.call");
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound indirectly to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
         
         return insertArguments(getDynamicMethodTarget(site.type(), arity), 0, entry);
     }
     
-    private static MethodHandle handleForMethod(JRubyCallSite site, DynamicMethod method) {
+    private static MethodHandle handleForMethod(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
         MethodHandle nativeTarget = null;
         
         if (method.getHandle() != null) {
             nativeTarget = (MethodHandle)method.getHandle();
         } else {
-            if (method.getNativeCall() != null) {
+            if (method instanceof AttrReaderMethod) {
+                // Ruby to attr reader
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound as attr reader #" + method.getSerialNumber() + ":" + ((AttrReaderMethod)method).getVariableName());
+                nativeTarget = createAttrReaderHandle(site, cls, method);
+            } else if (method instanceof AttrWriterMethod) {
+                // Ruby to attr writer
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound as attr writer #" + method.getSerialNumber() + ":" + ((AttrWriterMethod)method).getVariableName());
+                nativeTarget = createAttrWriterHandle(site, cls, method);
+            } else if (method.getNativeCall() != null) {
                 DynamicMethod.NativeCall nativeCall = method.getNativeCall();
                 
                 if (nativeCall.isJava() && RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
                     // Ruby to Java
-                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("binding java target: " + nativeCall);
+                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound to Java method #" + method.getSerialNumber() + ": " + nativeCall);
                     nativeTarget = createJavaHandle(method);
                 } else if (method instanceof CompiledMethod) {
                     // Ruby to Ruby
-                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("binding ruby target: " + nativeCall);
+                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound to Ruby method #" + method.getSerialNumber() + ": " + nativeCall);
                     nativeTarget = createRubyHandle(site, method);
                 } else {
                     // Ruby to Core
-                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("binding native target: " + nativeCall);
-                    nativeTarget = createNativeHandle(method);
+                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound to native method #" + method.getSerialNumber() + ": " + nativeCall);
+                    nativeTarget = createNativeHandle(site, method);
                 }
             }
         }
@@ -1101,10 +1140,6 @@ public class InvokeDynamicSupport {
         }
         
         return target;
-    }
-
-    private static int getRubyArgCount(Class[] args) {
-        return args.length - 4;
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -1561,7 +1596,7 @@ public class InvokeDynamicSupport {
     // Dispatch via direct handle to native core method
     ////////////////////////////////////////////////////////////////////////////
 
-    private static MethodHandle createNativeHandle(DynamicMethod method) {
+    private static MethodHandle createNativeHandle(JRubyCallSite site, DynamicMethod method) {
         MethodHandle nativeTarget = null;
         
         if (method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
@@ -1571,13 +1606,13 @@ public class InvokeDynamicSupport {
             
             try {
                 if (isStatic) {
-                    nativeTarget = lookup().findStatic(
+                    nativeTarget = site.lookup().findStatic(
                             nativeCall.getNativeTarget(),
                             nativeCall.getNativeName(),
                             methodType(nativeCall.getNativeReturn(),
                             nativeCall.getNativeSignature()));
                 } else {
-                    nativeTarget = lookup().findVirtual(
+                    nativeTarget = site.lookup().findVirtual(
                             nativeCall.getNativeTarget(),
                             nativeCall.getNativeName(),
                             methodType(nativeCall.getNativeReturn(),
@@ -1587,41 +1622,79 @@ public class InvokeDynamicSupport {
                 throw new RuntimeException(e);
             }
             
-            if (getArgCount(nativeSig, nativeCall.isStatic()) != -1) {
-                int argCount = getArgCount(nativeCall.getNativeSignature(), isStatic);
-                MethodType inboundType = STANDARD_NATIVE_TYPES_BLOCK[argCount];
-                
-                if (nativeSig.length > 0) {
-                    int[] permute;
-                    MethodType convert;
-                    if (nativeSig[0] == ThreadContext.class) {
-                        if (nativeSig[nativeSig.length - 1] == Block.class) {
-                            convert = isStatic ? TARGET_TC_SELF_ARGS_BLOCK[argCount] : TARGET_SELF_TC_ARGS_BLOCK[argCount];
-                            permute = isStatic ? TC_SELF_ARGS_BLOCK_PERMUTES[argCount] : SELF_TC_ARGS_BLOCK_PERMUTES[argCount];
-                        } else {
-                            convert = isStatic ? TARGET_TC_SELF_ARGS[argCount] : TARGET_SELF_TC_ARGS[argCount];
-                            permute = isStatic ? TC_SELF_ARGS_PERMUTES[argCount] : SELF_TC_ARGS_PERMUTES[argCount];
-                        }
-                    } else {
-                        if (nativeSig[nativeSig.length - 1] == Block.class) {
-                            convert = TARGET_SELF_ARGS_BLOCK[argCount];
-                            permute = SELF_ARGS_BLOCK_PERMUTES[argCount];
-                        } else {
-                            convert = TARGET_SELF_ARGS[argCount];
-                            permute = SELF_ARGS_PERMUTES[argCount];
-                        }
-                    }
+            int argCount = getArgCount(nativeCall.getNativeSignature(), isStatic);
+            MethodType inboundType = STANDARD_NATIVE_TYPES_BLOCK[argCount];
 
-                    nativeTarget = explicitCastArguments(nativeTarget, convert);
-                    nativeTarget = permuteArguments(nativeTarget, inboundType, permute);
-                    method.setHandle(nativeTarget);
-                    return nativeTarget;
+            int[] permute;
+            MethodType convert;
+            if (nativeSig.length > 0 && nativeSig[0] == ThreadContext.class) {
+                if (nativeSig[nativeSig.length - 1] == Block.class) {
+                    convert = isStatic ? TARGET_TC_SELF_ARGS_BLOCK[argCount] : TARGET_SELF_TC_ARGS_BLOCK[argCount];
+                    permute = isStatic ? TC_SELF_ARGS_BLOCK_PERMUTES[argCount] : SELF_TC_ARGS_BLOCK_PERMUTES[argCount];
+                } else {
+                    convert = isStatic ? TARGET_TC_SELF_ARGS[argCount] : TARGET_SELF_TC_ARGS[argCount];
+                    permute = isStatic ? TC_SELF_ARGS_PERMUTES[argCount] : SELF_TC_ARGS_PERMUTES[argCount];
+                }
+            } else {
+                if (nativeSig.length > 0 && nativeSig[nativeSig.length - 1] == Block.class) {
+                    convert = TARGET_SELF_ARGS_BLOCK[argCount];
+                    permute = SELF_ARGS_BLOCK_PERMUTES[argCount];
+                } else {
+                    convert = TARGET_SELF_ARGS[argCount];
+                    permute = SELF_ARGS_PERMUTES[argCount];
                 }
             }
+
+            nativeTarget = explicitCastArguments(nativeTarget, convert);
+            nativeTarget = permuteArguments(nativeTarget, inboundType, permute);
+            method.setHandle(nativeTarget);
+            return nativeTarget;
         }
         
         // can't build native handle for it
         return null;
+    }
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // Dispatch to attribute accessors
+    ////////////////////////////////////////////////////////////////////////////
+
+    private static MethodHandle createAttrReaderHandle(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+        MethodHandle nativeTarget = null;
+        AttrReaderMethod attrReader = (AttrReaderMethod)method;
+        String varName = attrReader.getVariableName();
+        
+        RubyClass.VariableAccessor accessor = cls.getRealClass().getVariableAccessorForRead(varName);
+        
+        MethodHandle target = findVirtual(IRubyObject.class, "getVariable", methodType(Object.class, int.class));
+        target = insertArguments(target, 1, accessor.getIndex());
+        target = explicitCastArguments(target, methodType(IRubyObject.class, IRubyObject.class));
+        MethodHandle filter = findStatic(InvokeDynamicSupport.class, "valueOrNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        filter = insertArguments(filter, 1, cls.getRuntime().getNil());
+        target = filterReturnValue(target, filter);
+        target = permuteArguments(target, site.type(), new int[] {2});
+        
+        return target;
+    }
+    
+    protected static IRubyObject valueOrNil(IRubyObject value, IRubyObject nil) {
+        return value == null ? nil : value;
+    }
+
+    private static MethodHandle createAttrWriterHandle(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
+        MethodHandle nativeTarget = null;
+        AttrWriterMethod attrWriter = (AttrWriterMethod)method;
+        String varName = attrWriter.getVariableName();
+        
+        RubyClass.VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
+        
+        MethodHandle target = findVirtual(IRubyObject.class, "setVariable", methodType(void.class, int.class, Object.class));
+        target = insertArguments(target, 1, accessor.getIndex());
+        target = explicitCastArguments(target, methodType(void.class, IRubyObject.class, IRubyObject.class));
+        target = filterReturnValue(target, constant(IRubyObject.class, cls.getRuntime().getNil()));
+        target = permuteArguments(target, site.type(), new int[] {2, 4});
+        
+        return target;
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -1633,30 +1706,29 @@ public class InvokeDynamicSupport {
         MethodHandle nativeTarget;
         
         try {
-            nativeTarget = lookup().findStatic(
+            nativeTarget = site.lookup().findStatic(
                     nativeCall.getNativeTarget(),
                     nativeCall.getNativeName(),
                     methodType(nativeCall.getNativeReturn(),
                     nativeCall.getNativeSignature()));
             CompiledMethod cm = (CompiledMethod)method;
             nativeTarget = insertArguments(nativeTarget, 0, cm.getScriptObject());
-            nativeTarget = insertArguments(nativeTarget, nativeTarget.type().parameterCount() - 1, Block.NULL_BLOCK);
             
             // juggle args into correct places
             int argCount = getRubyArgCount(nativeCall.getNativeSignature());
             switch (argCount) {
                 case 0:
-                    nativeTarget = permuteArguments(nativeTarget, site.type(), new int[] {0, 2});
+                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_BLOCK, new int[] {0, 2, 4});
                     break;
                 case -1:
                 case 1:
-                    nativeTarget = permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4});
+                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_1ARG_BLOCK, new int[] {0, 2, 4, 5});
                     break;
                 case 2:
-                    nativeTarget = permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4, 5});
+                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_2ARG_BLOCK, new int[] {0, 2, 4, 5, 6});
                     break;
                 case 3:
-                    nativeTarget = permuteArguments(nativeTarget, site.type(), new int[] {0, 2, 4, 5, 6});
+                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_3ARG_BLOCK, new int[] {0, 2, 4, 5, 6, 7});
                     break;
                 default:
                     throw new RuntimeException("unknown arg count: " + argCount);
@@ -1673,14 +1745,14 @@ public class InvokeDynamicSupport {
     // Dispatch via DynamicMethod.call to attribute access method
     ////////////////////////////////////////////////////////////////////////////
 
-    private static MethodHandle getAttrTarget(DynamicMethod method) {
+    private static MethodHandle getAttrTarget(JRubyCallSite site, DynamicMethod method) {
         MethodHandle target = (MethodHandle)method.getHandle();
         if (target != null) return target;
         
         try {
             if (method instanceof AttrReaderMethod) {
                 AttrReaderMethod reader = (AttrReaderMethod)method;
-                target = lookup().findVirtual(
+                target = site.lookup().findVirtual(
                         AttrReaderMethod.class,
                         "call",
                         methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
@@ -1696,7 +1768,7 @@ public class InvokeDynamicSupport {
                 // IRubyObject, ThreadContext, IRubyObject, IRubyObject, String
             } else {
                 AttrWriterMethod writer = (AttrWriterMethod)method;
-                target = lookup().findVirtual(
+                target = site.lookup().findVirtual(
                         AttrWriterMethod.class,
                         "call",
                         methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
@@ -1813,6 +1885,37 @@ public class InvokeDynamicSupport {
                 }
             }
         }
+        return length;
+    }
+
+    private static int getRubyArgCount(Class[] args) {
+        int length = args.length;
+        boolean hasContext = false;
+        
+        // remove script object
+        length--;
+        
+        if (args.length > 2 && args[1] == ThreadContext.class) {
+            length--;
+            hasContext = true;
+        }
+
+        // remove self object
+        assert args.length >= 2;
+        length--;
+
+        if (args.length > 2 && args[args.length - 1] == Block.class) {
+            length--;
+        }
+
+        if (length == 1) {
+            if (hasContext && args[3] == IRubyObject[].class) {
+                length = 4;
+            } else if (args[2] == IRubyObject[].class) {
+                length = 4;
+            }
+        }
+
         return length;
     }
 
