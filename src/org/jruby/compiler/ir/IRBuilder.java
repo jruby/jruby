@@ -721,8 +721,8 @@ public class IRBuilder {
     public Operand buildAlias(final AliasNode alias, IRScope s) {
         Operand newName = build(alias.getNewName(), s);
         Operand oldName = build(alias.getOldName(), s);
-        Operand[] args = new Operand[] { getSelf(s), newName, oldName };
-        s.addInstr(new RubyInternalCallInstr(null, MethAddr.DEFINE_ALIAS, MetaObject.create(s), args));
+        Operand[] args = new Operand[] { newName, oldName };
+        s.addInstr(new RubyInternalCallInstr(null, MethAddr.DEFINE_ALIAS, getSelf(s), args));
         return Nil.NIL;
     }
 

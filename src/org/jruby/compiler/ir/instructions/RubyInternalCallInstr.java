@@ -64,9 +64,9 @@ public class RubyInternalCallInstr extends CallInstr {
         if (ma == MethAddr.DEFINE_ALIAS) {
             Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
 
-            IRubyObject self = (IRubyObject)args[0].retrieve(interp);
+            IRubyObject self = (IRubyObject)getReceiver().retrieve(interp);
             RubyModule clazz = self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
-            clazz.defineAlias((String) args[1].retrieve(interp).toString(), (String) args[2].retrieve(interp).toString());
+            clazz.defineAlias((String) args[0].retrieve(interp).toString(), (String) args[1].retrieve(interp).toString());
         } else if ((ma == MethAddr.SUPER) || (ma == MethAddr.ZSUPER)) {
             IRubyObject   self = (IRubyObject)getReceiver().retrieve(interp);
             IRubyObject[] args = prepareArguments(getCallArgs(), interp);
