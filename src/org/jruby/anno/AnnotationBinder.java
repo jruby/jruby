@@ -385,8 +385,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             + md.getDeclaringType().getQualifiedName() + ".class, "
                             + "\"" + md.getSimpleName() + "\", "
                             + md.getReturnType().toString() + ".class, "
-                            + "new Class[] {" + buffer.toString() + "}, "
-                            + md.getModifiers().contains(Modifier.STATIC) + ");");
+                            + "new Class[] {" + buffer.toString() + "});");
                     generateMethodAddCalls(md, anno);
                 }
             }
