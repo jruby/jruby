@@ -20,7 +20,7 @@ public class PutClassVariableInstr extends PutInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         IRubyObject value = (IRubyObject) getValue().retrieve(interp);
         RubyModule module = (RubyModule) getTarget().retrieve(interp);
 

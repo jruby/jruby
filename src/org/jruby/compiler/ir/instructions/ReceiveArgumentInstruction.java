@@ -39,7 +39,7 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         Operand destination = getResult(); // result is a confusing name
 
         if (restOfArgArray) {

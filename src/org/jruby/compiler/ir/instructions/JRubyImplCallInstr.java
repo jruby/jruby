@@ -122,7 +122,7 @@ public class JRubyImplCallInstr extends CallInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         String   name;
         Object   receiver;
         Ruby     rt   = interp.getRuntime();

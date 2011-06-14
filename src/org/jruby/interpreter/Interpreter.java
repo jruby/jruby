@@ -66,7 +66,6 @@ public class Interpreter {
         try {
             interp.setMethodExitLabel(cfg.getExitBB().getLabel()); // used by return and break instructions!
 
-            IRubyObject self = (IRubyObject) interp.getSelf();
             Instr[] instrs = cfg.prepareForInterpretation();
             int n   = instrs.length;
             int ipc = 0;
@@ -78,7 +77,7 @@ public class Interpreter {
                 if (debug) System.out.println("EXEC'ing: " + lastInstr);
                 
                 try {
-                    Label jumpTarget = lastInstr.interpret(interp, self);
+                    Label jumpTarget = lastInstr.interpret(interp);
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
                 }
                 // SSS FIXME: This only catches Ruby exceptions

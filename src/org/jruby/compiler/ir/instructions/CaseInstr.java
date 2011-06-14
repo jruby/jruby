@@ -59,7 +59,7 @@ public class CaseInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
 		  /* Nothing to do .. this is just a marker instruction */
         return null;
     }

@@ -18,7 +18,7 @@ public class PutFieldInstr extends PutInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         IRubyObject object = (IRubyObject) getTarget().retrieve(interp);
 
         RubyClass clazz = object.getMetaClass().getRealClass();

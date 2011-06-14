@@ -32,7 +32,7 @@ public class NotInstr extends OneOperandInstr {
     public boolean canRaiseException() { return false; }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         boolean not = !((IRubyObject) getArg().retrieve(interp)).isTrue();
 
         getResult().store(interp, interp.getRuntime().newBoolean(not));

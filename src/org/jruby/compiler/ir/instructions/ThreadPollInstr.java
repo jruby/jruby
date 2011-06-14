@@ -20,7 +20,7 @@ public class ThreadPollInstr extends NoOperandInstr {
     public boolean canRaiseException() { return false; }
     
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         interp.getContext().callThreadPoll();
         return null;
     }

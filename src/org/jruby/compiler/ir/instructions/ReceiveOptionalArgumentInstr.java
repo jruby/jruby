@@ -28,7 +28,7 @@ public class ReceiveOptionalArgumentInstr extends NoOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         Object v = interp.getParameterCount() > argIndex ? interp.getParameter(argIndex) : Nil.NIL.retrieve(interp);
         getResult().store(interp, v);
         return null;

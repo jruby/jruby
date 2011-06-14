@@ -18,7 +18,7 @@ public class GetGlobalVariableInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         getResult().store(interp, getSource().retrieve(interp));
         return null;
     }

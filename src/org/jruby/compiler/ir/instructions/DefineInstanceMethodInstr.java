@@ -52,7 +52,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         MetaObject ma    = (MetaObject)getArg();
         RubyModule clazz = (RubyModule) ma.retrieve(interp);
 		  String     name  = method.getName();

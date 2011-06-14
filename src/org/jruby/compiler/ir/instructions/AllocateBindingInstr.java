@@ -50,7 +50,7 @@ public class AllocateBindingInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
 /**
  * SSS: This is going to be a NO-OP in the current implementation because of the existing JRuby runtime
  * is structure.  ThreadContext accesses static-scope via a DynamicScope!  This means it expects a

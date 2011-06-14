@@ -68,7 +68,7 @@ public class LoadFromBindingInstr extends Instr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         LocalVariable v = (LocalVariable)getResult();
         if (bindingSlot == -1)
             bindingSlot = sourceMethod.getBindingSlot(getSlotName());

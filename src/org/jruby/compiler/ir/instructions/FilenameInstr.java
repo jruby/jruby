@@ -24,7 +24,7 @@ public class FilenameInstr extends NoOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         interp.getContext().setFile(filename);
         return null;
     }

@@ -71,7 +71,7 @@ public class AttrAssignInstr extends MultiOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         IRubyObject receiver = (IRubyObject) obj.retrieve(interp);
         String      attrMeth = ((RubyString) attr.retrieve(interp)).asJavaString();
         IRubyObject[] callArgs = new IRubyObject[args.length + ((value == null) ? 0 : 1)];

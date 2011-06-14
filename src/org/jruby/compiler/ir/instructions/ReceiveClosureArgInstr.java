@@ -33,7 +33,7 @@ public class ReceiveClosureArgInstr extends NoOperandInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         getResult().store(interp, interp.getParameter(argIndex));
         return null;
     }

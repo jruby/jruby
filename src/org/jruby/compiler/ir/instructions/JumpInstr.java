@@ -28,7 +28,7 @@ public class JumpInstr extends NoOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         return target;
     }
 }

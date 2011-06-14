@@ -25,7 +25,7 @@ public class LineNumberInstr extends NoOperandInstr
     public Instr cloneForInlining(InlinerInfo ii) { return this; }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         interp.getContext().setLine(lineNumber);
         return null;
     }

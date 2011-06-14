@@ -43,7 +43,7 @@ public class GetArrayInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray array = (RubyArray) getArg().retrieve(interp);
 

@@ -24,7 +24,7 @@ public class DefineModuleInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         Ruby       runtime   = interp.getRuntime();
         ModuleMetaObject mmo = (ModuleMetaObject)getArg();
         IRScope    scope     = mmo.scope;

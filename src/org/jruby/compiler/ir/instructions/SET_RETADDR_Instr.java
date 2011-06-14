@@ -32,7 +32,7 @@ public class SET_RETADDR_Instr extends OneOperandInstr
     public boolean canRaiseException() { return false; }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         getResult().store(interp, ((Label)getArg()));
         return null;
     }

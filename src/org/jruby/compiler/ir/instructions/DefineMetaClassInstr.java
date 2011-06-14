@@ -28,7 +28,7 @@ public class DefineMetaClassInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         Ruby runtime = interp.getRuntime();
         IRubyObject obj = (IRubyObject)getArg().retrieve(interp);
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {

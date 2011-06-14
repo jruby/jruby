@@ -23,7 +23,7 @@ public class ClassOf extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
 		  IRubyObject arg = (IRubyObject) getArg().retrieve(interp);
         getResult().store(interp, (arg instanceof RubyClass) ? ((RubyClass)arg).getRealClass() : arg.getType());
 

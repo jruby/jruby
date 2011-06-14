@@ -28,7 +28,7 @@ public class DefineClassInstr extends TwoOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         Ruby       runtime   = interp.getRuntime();
         ClassMetaObject cmo  = (ClassMetaObject)getOperand1();
         IRScope    scope     = cmo.scope;

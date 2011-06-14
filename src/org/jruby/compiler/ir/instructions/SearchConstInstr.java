@@ -44,7 +44,7 @@ public class SearchConstInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         Object n = getSource();
 
         assert n instanceof MetaObject: "All sources should be a meta object";

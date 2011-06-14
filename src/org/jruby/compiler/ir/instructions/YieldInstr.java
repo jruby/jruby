@@ -25,7 +25,7 @@ public class YieldInstr extends Instr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         Object resultValue;
         if (yieldArg == null) {
             resultValue = interp.getBlock().call(interp.getContext());

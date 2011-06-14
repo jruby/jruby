@@ -16,7 +16,7 @@ public class RECV_EXCEPTION_Instr extends NoOperandInstr
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         getResult().store(interp, interp.getException());
         return null;
     }

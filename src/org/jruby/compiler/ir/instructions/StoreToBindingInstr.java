@@ -43,7 +43,7 @@ public class StoreToBindingInstr extends OneOperandInstr {
     public boolean canRaiseException() { return false; }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
 		  LocalVariable v = (LocalVariable) getArg();
         if (bindingSlot == -1)
             bindingSlot = targetMethod.getBindingSlot(v.getName());

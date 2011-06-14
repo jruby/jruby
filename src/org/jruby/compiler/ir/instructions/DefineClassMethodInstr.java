@@ -46,7 +46,7 @@ public class DefineClassMethodInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
 		  String name = method.getName();
 		  Ruby runtime = interp.getRuntime();
         RubyObject obj = (RubyObject) getArg().retrieve(interp);

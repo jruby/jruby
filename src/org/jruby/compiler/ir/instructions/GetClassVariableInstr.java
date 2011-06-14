@@ -20,7 +20,7 @@ public class GetClassVariableInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         getResult().store(interp, ((RubyModule) getSource().retrieve(interp)).getClassVar(getName()));
         return null;
     }

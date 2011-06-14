@@ -18,7 +18,7 @@ public class BNEInstr extends BranchInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         Operand op1 = getOperand1();
         Operand op2 = getOperand2();
         Object value1 = op1.retrieve(interp);

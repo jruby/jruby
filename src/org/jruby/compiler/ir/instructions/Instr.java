@@ -132,7 +132,7 @@ public abstract class Instr {
     }
 
     @Interp
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 }

@@ -251,7 +251,7 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         Object        ma    = methAddr.retrieve(interp);
         IRubyObject[] args  = prepareArguments(getCallArgs(), interp);
         Object resultValue;
@@ -289,7 +289,7 @@ public class CallInstr extends MultiOperandInstr {
         return null;
     }
 
-    public Label interpret_with_inline(InterpreterContext interp, IRubyObject self) {
+    public Label interpret_with_inline(InterpreterContext interp) {
         Object        ma    = methAddr.retrieve(interp);
         IRubyObject[] args  = prepareArguments(getCallArgs(), interp);
         Object resultValue;

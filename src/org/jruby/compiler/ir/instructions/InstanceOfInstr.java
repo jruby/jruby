@@ -23,7 +23,7 @@ public class InstanceOfInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         try {
             if (type == null) type = Class.forName(className);
         } catch (ClassNotFoundException e) {

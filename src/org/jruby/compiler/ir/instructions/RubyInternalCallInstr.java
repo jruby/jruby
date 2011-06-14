@@ -59,7 +59,7 @@ public class RubyInternalCallInstr extends CallInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject unusedSelfArg) {
+    public Label interpret(InterpreterContext interp) {
         MethAddr ma = getMethodAddr();
         if (ma == MethAddr.DEFINE_ALIAS) {
             Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
@@ -75,9 +75,9 @@ public class RubyInternalCallInstr extends CallInstr {
             throw new RuntimeException("GVAR_ALIAS: Not implemented yet!");
         } else if (ma == MethAddr.FOR_EACH) {
             // SSS FIXME: Correct?
-            super.interpret(interp, unusedSelfArg);
+            super.interpret(interp);
         } else {
-            super.interpret(interp, unusedSelfArg);
+            super.interpret(interp);
         }
         return null;
     }

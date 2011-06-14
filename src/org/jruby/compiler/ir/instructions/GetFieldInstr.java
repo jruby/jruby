@@ -21,7 +21,7 @@ public class GetFieldInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         IRubyObject object = (IRubyObject) getSource().retrieve(interp);
 
         RubyClass clazz = object.getMetaClass().getRealClass();

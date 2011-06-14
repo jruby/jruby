@@ -27,7 +27,7 @@ public class ReceiveSelfInstruction extends NoOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRubyObject self) {
+    public Label interpret(InterpreterContext interp) {
         // result is a confusing name
 
         // SSS FIXME: Anything else to do here?? 
