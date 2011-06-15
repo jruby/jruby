@@ -167,16 +167,21 @@ public class InvokeDynamicSupport {
             site.setTarget(target);
             return site;
         } else if (name.equals("call")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false);
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false, true);
         } else if (name.equals("fcall")) {
-            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, false, false);
+            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, false, false, true);
         } else if (name.equals("callIter")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, true);
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, true, true);
         } else if (name.equals("fcallIter")) {
-            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, false, true);
+            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, false, true, true);
         } else if (name.equals("attrAssign")) {
-            // This needs to change based on receiver, but it's not a big deal
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, true, false);
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, true, false, false);
+        } else if (name.equals("attrAssignSelf")) {
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, true, false, false);
+        } else if (name.equals("attrAssignExpr")) {
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, true, false, true);
+        } else if (name.equals("attrAssignSelfExpr")) {
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, true, false, true);
         } else {
             throw new RuntimeException("wrong invokedynamic target: " + name);
         }
@@ -192,7 +197,7 @@ public class InvokeDynamicSupport {
     }
     
     public static CallSite fixnumOperatorBootstrap(Lookup lookup, String name, MethodType type, String operator, long value) throws NoSuchMethodException, IllegalAccessException {
-        CallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false);
+        CallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false, true);
         String opMethod = MethodIndex.getFastOpsMethod(operator);
         name = "fixnum_" + opMethod;
         type = type.insertParameterTypes(0, MutableCallSite.class);
@@ -1114,8 +1119,8 @@ public class InvokeDynamicSupport {
                     target);
         }
         
-        // if it's an attr assignment, need to return n-1th argument
-        if (site.isAttrAssign()) {
+        // if it's an attr assignment as an expression, need to return n-1th argument
+        if (site.isAttrAssign() && site.isExpression()) {
             // return given argument
             MethodHandle newTarget = identity(IRubyObject.class);
             

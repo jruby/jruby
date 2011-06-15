@@ -2418,4 +2418,8 @@ public class RuntimeHelpers {
         if (metaclass.index >= ClassIndex.MAX_CLASSES) return metaclass.searchMethod(name);
         return context.runtimeCache.getMethod(context, metaclass, metaclass.index * (index + 1), name);
     }
+    
+    public static IRubyObject lastElement(IRubyObject[] ary) {
+        return ary[ary.length - 1];
+    }
 }

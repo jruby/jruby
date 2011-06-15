@@ -146,60 +146,63 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         methodCompiler.invokeUtilityMethod("doAttrAsgn", signature);
     }
 
-    public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
-        // receiver first, so we know which call site to use
-        receiverCallback.call(methodCompiler);
-        
-        // select appropriate call site
-        method.dup(); // dup receiver
-        methodCompiler.loadSelf(); // load self
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.NORMAL);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.VARIABLE);
-        methodCompiler.invokeUtilityMethod("selectAttrAsgnCallSite", sig(CallSite.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class));
-        
-        String signature = null;
-        switch (argsCallback.getArity()) {
-        case 1:
-            signature = sig(IRubyObject.class,
-                    IRubyObject.class, /*receiver*/
-                    CallSite.class,
-                    IRubyObject.class, /*value*/
-                    ThreadContext.class,
-                    IRubyObject.class /*self*/);
-            break;
-        case 2:
-            signature = sig(IRubyObject.class,
-                    IRubyObject.class, /*receiver*/
-                    CallSite.class,
-                    IRubyObject.class, /*arg0*/
-                    IRubyObject.class, /*value*/
-                    ThreadContext.class,
-                    IRubyObject.class /*self*/);
-            break;
-        case 3:
-            signature = sig(IRubyObject.class,
-                    IRubyObject.class, /*receiver*/
-                    CallSite.class,
-                    IRubyObject.class, /*arg0*/
-                    IRubyObject.class, /*arg1*/
-                    IRubyObject.class, /*value*/
-                    ThreadContext.class,
-                    IRubyObject.class /*self*/);
-            break;
-        default:
-            signature = sig(IRubyObject.class,
-                    IRubyObject.class, /*receiver*/
-                    CallSite.class,
-                    IRubyObject[].class, /*args*/
-                    ThreadContext.class,
-                    IRubyObject.class /*self*/);
-        }
-        
-        argsCallback.call(methodCompiler);
-        methodCompiler.loadThreadContext();
+    public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, boolean isSelf, boolean expr) {
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, isSelf ? CallType.VARIABLE : CallType.NORMAL);
+
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
         methodCompiler.loadSelf();
         
-        methodCompiler.invokeUtilityMethod("doAttrAsgn", signature);
+        if (receiverCallback != null) {
+            receiverCallback.call(methodCompiler);
+        } else {
+            methodCompiler.loadSelf();
+        }
+        
+        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        argsCallback.call(methodCompiler);
+        int tmp = methodCompiler.getVariableCompiler().grabTempLocal();
+        
+        switch (argsCallback.getArity()) {
+        case 1:
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            if (expr) {
+                method.dup();
+                method.astore(tmp);
+            }
+            break;
+        case 2:
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            if (expr) {
+                method.dup();
+                method.astore(tmp);
+            }
+            break;
+        case 3:
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            if (expr) {
+                method.dup();
+                method.astore(tmp);
+            }
+            break;
+        default:
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
+            if (expr) {
+                method.dup();
+                methodCompiler.invokeUtilityMethod("lastElement", sig(IRubyObject.class, IRubyObject[].class));
+                method.astore(tmp);
+            }
+        }
+        
+        // invoke
+        method.invokevirtual(p(CallSite.class), "call", signature);
+        
+        // restore incoming value if expression
+        method.pop();
+        if (expr) method.aload(tmp);
+        methodCompiler.getVariableCompiler().releaseTempLocal();
     }
     
     public void opElementAsgnWithOr(CompilerCallback receiver, ArgumentsCallback args, CompilerCallback valueCallback) {

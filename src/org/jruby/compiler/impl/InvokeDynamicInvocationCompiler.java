@@ -49,7 +49,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
     }
 
     @Override
-    public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+    public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, boolean selfCall, boolean expr) {
         methodCompiler.loadThreadContext(); // [adapter, tc]
         
         // for visibility checking without requiring frame self
@@ -82,7 +82,10 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
-        method.invokedynamic("attrAssign", signature, InvokeDynamicSupport.getInvocationHandle());
+        method.invokedynamic("attrAssign" + (selfCall ? "Self" : "") + (expr ? "Expr" : ""), signature, InvokeDynamicSupport.getInvocationHandle());
+        
+        // TODO: void invokedynamic to avoid pop
+        if (!expr) method.pop();
     }
 
     @Override
