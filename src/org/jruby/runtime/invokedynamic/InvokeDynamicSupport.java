@@ -433,19 +433,17 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, selfClass, name, entry, 0);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_0, site, name, entry.method);
+            site.setTarget(target = createFail(FAIL_0, site, name, entry.method));
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
-                target = createGWT(TEST_0, target, site.getTarget(), entry, site, false);
+                site.setTarget(createGWT(TEST_0, target, site.getTarget(), entry, site, false));
             } else {
-                target = createGWT(TEST_0, target, FALLBACK_0, entry, site);
+                site.setTarget(createGWT(TEST_0, target, FALLBACK_0, entry, site));
             }
         }
-        
-        site.setTarget(target);
 
-        return (IRubyObject)target.invokeExact(context, caller, self, name);
+        return (IRubyObject)target.invokeWithArguments(context, caller, self, name);
     }
 
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0) throws Throwable {
@@ -458,19 +456,17 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, selfClass, name, entry, 1);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_1, site, name, entry.method);
+            site.setTarget(target = createFail(FAIL_1, site, name, entry.method));
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
-                target = createGWT(TEST_1, target, site.getTarget(), entry, site, false);
+                site.setTarget(createGWT(TEST_1, target, site.getTarget(), entry, site, false));
             } else {
-                target = createGWT(TEST_1, target, FALLBACK_1, entry, site);
+                site.setTarget(createGWT(TEST_1, target, FALLBACK_1, entry, site));
             }
         }
-        
-        site.setTarget(target);
 
-        return (IRubyObject)target.invokeExact(context, caller, self, name, arg0);
+        return (IRubyObject)target.invokeWithArguments(context, caller, self, name, arg0);
     }
 
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1) throws Throwable {
@@ -483,19 +479,17 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, selfClass, name, entry, 2);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_2, site, name, entry.method);
+            site.setTarget(target = createFail(FAIL_2, site, name, entry.method));
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
-                target = createGWT(TEST_2, target, site.getTarget(), entry, site, false);
+                site.setTarget(createGWT(TEST_2, target, site.getTarget(), entry, site, false));
             } else {
-                target = createGWT(TEST_2, target, FALLBACK_2, entry, site);
+                site.setTarget(createGWT(TEST_2, target, FALLBACK_2, entry, site));
             }
         }
-        
-        site.setTarget(target);
 
-        return (IRubyObject)target.invokeExact(context, caller, self, name, arg0, arg1);
+        return (IRubyObject)target.invokeWithArguments(context, caller, self, name, arg0, arg1);
     }
 
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
@@ -508,19 +502,17 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, selfClass, name, entry, 3);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_3, site, name, entry.method);
+            site.setTarget(target = createFail(FAIL_3, site, name, entry.method));
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
-                target = createGWT(TEST_3, target, site.getTarget(), entry, site, false);
+                site.setTarget(createGWT(TEST_3, target, site.getTarget(), entry, site, false));
             } else {
-                target = createGWT(TEST_3, target, FALLBACK_3, entry, site);
+                site.setTarget(createGWT(TEST_3, target, FALLBACK_3, entry, site));
             }
         }
-        
-        site.setTarget(target);
 
-        return (IRubyObject)target.invokeExact(context, caller, self, name, arg0, arg1, arg2);
+        return (IRubyObject)target.invokeWithArguments(context, caller, self, name, arg0, arg1, arg2);
     }
 
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args) throws Throwable {
@@ -533,19 +525,17 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, selfClass, name, entry, -1);
         
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_N, site, name, entry.method);
+            site.setTarget(target = createFail(FAIL_N, site, name, entry.method));
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
-                target = createGWT(TEST_N, target, site.getTarget(), entry, site, false);
+                site.setTarget(createGWT(TEST_N, target, site.getTarget(), entry, site, false));
             } else {
-                target = createGWT(TEST_N, target, FALLBACK_N, entry, site);
+                site.setTarget(createGWT(TEST_N, target, FALLBACK_N, entry, site));
             }
         }
-        
-        site.setTarget(target);
 
-        return (IRubyObject)target.invokeExact(context, caller, self, name, args);
+        return (IRubyObject)target.invokeWithArguments(context, caller, self, name, args);
     }
 
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, Block block) throws Throwable {
@@ -567,19 +557,17 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, selfClass, name, entry, 0);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_0_B, site, name, entry.method);
+            site.setTarget(target = createFail(FAIL_0_B, site, name, entry.method));
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
-                target = createGWT(TEST_0_B, target, site.getTarget(), entry, site, false);
+                site.setTarget(createGWT(TEST_0_B, target, site.getTarget(), entry, site, false));
             } else {
-                target = createGWT(TEST_0_B, target, FALLBACK_0_B, entry, site);
+                site.setTarget(createGWT(TEST_0_B, target, FALLBACK_0_B, entry, site));
             }
         }
 
-        site.setTarget(target);
-
-        return (IRubyObject) target.invokeExact(context, caller, self, name, block);
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, name, block);
     }
 
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, Block block) throws Throwable {
@@ -601,19 +589,17 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, selfClass, name, entry, 1);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_1_B, site, name, entry.method);
+            site.setTarget(target = createFail(FAIL_1_B, site, name, entry.method));
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
-                target = createGWT(TEST_1_B, target, site.getTarget(), entry, site, false);
+                site.setTarget(createGWT(TEST_1_B, target, site.getTarget(), entry, site, false));
             } else {
-                target = createGWT(TEST_1_B, target, FALLBACK_1_B, entry, site);
+                site.setTarget(createGWT(TEST_1_B, target, FALLBACK_1_B, entry, site));
             }
         }
 
-        site.setTarget(target);
-
-        return (IRubyObject) target.invokeExact(context, caller, self, name, arg0, block);
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, name, arg0, block);
     }
 
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
@@ -635,19 +621,17 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, selfClass, name, entry, 2);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_2_B, site, name, entry.method);
+            site.setTarget(target = createFail(FAIL_2_B, site, name, entry.method));
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
-                target = createGWT(TEST_2_B, target, site.getTarget(), entry, site, false);
+                site.setTarget(createGWT(TEST_2_B, target, site.getTarget(), entry, site, false));
             } else {
-                target = createGWT(TEST_2_B, target, FALLBACK_2_B, entry, site);
+                site.setTarget(createGWT(TEST_2_B, target, FALLBACK_2_B, entry, site));
             }
         }
 
-        site.setTarget(target);
-
-        return (IRubyObject) target.invokeExact(context, caller, self, name, arg0, arg1, block);
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, name, arg0, arg1, block);
     }
 
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
@@ -669,19 +653,17 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, selfClass, name, entry, 3);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_3_B, site, name, entry.method);
+            site.setTarget(target = createFail(FAIL_3_B, site, name, entry.method));
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
-                target = createGWT(TEST_3_B, target, site.getTarget(), entry, site, false);
+                site.setTarget(createGWT(TEST_3_B, target, site.getTarget(), entry, site, false));
             } else {
-                target = createGWT(TEST_3_B, target, FALLBACK_3_B, entry, site);
+                site.setTarget(createGWT(TEST_3_B, target, FALLBACK_3_B, entry, site));
             }
         }
 
-        site.setTarget(target);
-
-        return (IRubyObject) target.invokeExact(context, caller, self, name, arg0, arg1, arg2, block);
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, name, arg0, arg1, arg2, block);
     }
 
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, Block block) throws Throwable {
@@ -703,19 +685,17 @@ public class InvokeDynamicSupport {
         MethodHandle target = getTarget(site, selfClass, name, entry, -1);
 
         if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            target = createFail(FAIL_N_B, site, name, entry.method);
+            site.setTarget(target = createFail(FAIL_N_B, site, name, entry.method));
         } else {
             target = postProcess(site, target);
             if (site.getTarget() != null) {
-                target = createGWT(TEST_N_B, target, site.getTarget(), entry, site, false);
+                site.setTarget(createGWT(TEST_N_B, target, site.getTarget(), entry, site, false));
             } else {
-                target = createGWT(TEST_N_B, target, FALLBACK_N_B, entry, site);
+                site.setTarget(createGWT(TEST_N_B, target, FALLBACK_N_B, entry, site));
             }
         }
 
-        site.setTarget(target);
-
-        return (IRubyObject) target.invokeExact(context, caller, self, name, args, block);
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, name, args, block);
     }
 
     public static IRubyObject fixnum_op_plus(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {

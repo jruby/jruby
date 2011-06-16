@@ -277,33 +277,15 @@
       <classpath refid="jruby.execute.classpath"/>
       <src path="${src.dir}"/>
       <exclude name="org/jruby/runtime/Constants.java"/>
-      <exclude name="org/jruby/runtime/invokedynamic/InvokeDynamicSupport.java"/>
       <patternset refid="java.src.pattern"/>
       <compilerarg line="-XDignore.symbol.file=true"/>
       <compilerarg line="-J-Xmx${jruby.compile.memory}"/>
     </apt>
-    
-    <condition property="java7" value="true">
-      <equals arg1="${java.specification.version}" arg2="1.7"/>
-    </condition>
-    <antcall target="-recompile-indy-support"/>
 
     <!-- Apply any instrumentation that is enabled (code coverage, etc) -->
     <antcall target="instrument"/>
 
     <property name="compiled" value="true"/>
-  </target>
-
-  <target name="-recompile-indy-support" if="java7">
-    <!-- use javac to compile invokedynamic stuff -->
-    <echo message="NOTE: Attempting Java 1.7 compile for invokedynamic; failure is not fatal here"/>
-    <delete file="${jruby.classes.dir}/org/jruby/runtime/invokedynamic/InvokeDynamicSupport.class"/>
-    <javac target="1.7" debug="true" srcdir="${src.dir}" destdir="${jruby.classes.dir}"
-        includes="org/jruby/runtime/invokedynamic/InvokeDynamicSupport.java" failonerror="false">
-      <classpath refid="jruby.execute.classpath"/>
-      <classpath location="${jruby.classes.dir}"/>
-      <compilerarg line="-XDignore.symbol.file=true"/>
-    </javac>
   </target>
 
   <target name="generate-method-classes">
