@@ -1,34 +1,34 @@
+#
+# Copyright (C) 2008-2010 Wayne Meissner
+#
+# Version: CPL 1.0/GPL 2.0/LGPL 2.1
+#
+# The contents of this file are subject to the Common Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy of
+# the License at http://www.eclipse.org/legal/cpl-v10.html
+#
+# Software distributed under the License is distributed on an "AS
+# IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+# implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# Alternatively, the contents of this file may be used under the terms of
+# either of the GNU General Public License Version 2 or later (the "GPL"),
+# or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+# in which case the provisions of the GPL or the LGPL are applicable instead
+# of those above. If you wish to allow use of your version of this file only
+# under the terms of either the GPL or the LGPL, and not to allow others to
+# use your version of this file under the terms of the CPL, indicate your
+# decision by deleting the provisions above and replace them with the notice
+# and other provisions required by the GPL or the LGPL. If you do not delete
+# the provisions above, a recipient may use your version of this file under
+# the terms of any one of the CPL, the GPL or the LGPL.
+
 module FFI
   class AutoPointer < Pointer
     extend DataConverter
 
-    # call-seq:
-    #   AutoPointer.new(pointer, method)     => the passed Method will be invoked at GC time
-    #   AutoPointer.new(pointer, proc)       => the passed Proc will be invoked at GC time (SEE WARNING BELOW!)
-    #   AutoPointer.new(pointer) { |p| ... } => the passed block will be invoked at GC time (SEE WARNING BELOW!)
-    #   AutoPointer.new(pointer)             => the pointer's release() class method will be invoked at GC time
-    #
-    # WARNING: passing a proc _may_ cause your pointer to never be GC'd, unless you're careful to avoid trapping a reference to the pointer in the proc. See the test specs for examples.
-    # WARNING: passing a block will cause your pointer to never be GC'd. This is bad.
-    #
-    # Please note that the safest, and therefore preferred, calling
-    # idiom is to pass a Method as the second parameter. Example usage:
-    #
-    #   class PointerHelper
-    #     def self.release(pointer)
-    #       ...
-    #     end
-    #   end
-    #
-    #   p = AutoPointer.new(other_pointer, PointerHelper.method(:release))
-    #
-    # The above code will cause PointerHelper#release to be invoked at GC time.
-    #
-    # The last calling idiom (only one parameter) is generally only
-    # going to be useful if you subclass AutoPointer, and override
-    # release(), which by default does nothing.
-    #
-    
     def self.native_type
       raise RuntimeError.new("no release method defined for #{self.inspect}") unless self.respond_to?(:release)
       Type::POINTER
