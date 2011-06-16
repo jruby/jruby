@@ -1691,11 +1691,30 @@ public class RuntimeHelpers {
         return arrayValue(value);
     }
     
-    public static IRubyObject[] splatToArgs(IRubyObject value) {
+    public static IRubyObject[] splatToArguments(IRubyObject value) {
         Ruby runtime = value.getRuntime();
         
         if (value.isNil()) {
-            return value.getRuntime().getSingleNilArray();
+            return runtime.getSingleNilArray();
+        }
+        
+        return splatToArgumentsCommon(runtime, value);
+    }
+    
+    public static IRubyObject[] splatToArguments19(IRubyObject value) {
+        Ruby runtime = value.getRuntime();
+        
+        if (value.isNil()) {
+            return IRubyObject.NULL_ARRAY;
+        }
+        
+        return splatToArgumentsCommon(runtime, value);
+    }
+    
+    private static IRubyObject[] splatToArgumentsCommon(Ruby runtime, IRubyObject value) {
+        
+        if (value.isNil()) {
+            return runtime.getSingleNilArray();
         }
         
         IRubyObject tmp = value.checkArrayType();
@@ -1728,8 +1747,16 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject[] argsCatToArguments(IRubyObject[] args, IRubyObject cat) {
-        IRubyObject[] ary = splatToArgs(cat);
-        
+        IRubyObject[] ary = splatToArguments(cat);
+        return argsCatToArgumentsCommon(args, ary, cat);
+    }
+    
+    public static IRubyObject[] argsCatToArguments19(IRubyObject[] args, IRubyObject cat) {
+        IRubyObject[] ary = splatToArguments19(cat);
+        return argsCatToArgumentsCommon(args, ary, cat);
+    }
+    
+    private static IRubyObject[] argsCatToArgumentsCommon(IRubyObject[] args, IRubyObject[] ary, IRubyObject cat) {
         if (ary.length > 0) {
             IRubyObject[] newArgs = new IRubyObject[args.length + ary.length];
             System.arraycopy(args, 0, newArgs, 0, args.length);

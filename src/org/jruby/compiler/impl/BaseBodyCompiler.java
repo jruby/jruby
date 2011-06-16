@@ -2191,11 +2191,19 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void splatToArguments() {
-        invokeUtilityMethod("splatToArgs", sig(IRubyObject[].class, IRubyObject.class));
+        invokeUtilityMethod("splatToArguments", sig(IRubyObject[].class, IRubyObject.class));
+    }
+
+    public void splatToArguments19() {
+        invokeUtilityMethod("splatToArguments19", sig(IRubyObject[].class, IRubyObject.class));
     }
     
     public void argsCatToArguments() {
         invokeUtilityMethod("argsCatToArguments", sig(IRubyObject[].class, IRubyObject[].class, IRubyObject.class));
+    }
+    
+    public void argsCatToArguments19() {
+        invokeUtilityMethod("argsCatToArguments19", sig(IRubyObject[].class, IRubyObject[].class, IRubyObject.class));
     }
 
     public void convertToJavaArray() {

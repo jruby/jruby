@@ -32,6 +32,7 @@ package org.jruby.compiler;
 import org.joni.ast.BackRefNode;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
+import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArgumentNode;
@@ -51,6 +52,7 @@ import org.jruby.ast.NodeType;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.SValue19Node;
+import org.jruby.ast.SplatNode;
 import org.jruby.ast.StarNode;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
@@ -480,5 +482,28 @@ public class ASTCompiler19 extends ASTCompiler {
     @Override
     protected void splatCurrentValue(BodyCompiler context) {
         context.splatCurrentValue("splatValue19");
+    }
+
+    public void compileArgsCatArguments(Node node, BodyCompiler context, boolean expr) {
+        ArgsCatNode argsCatNode = (ArgsCatNode) node;
+
+        // arguments compilers always create IRubyObject[], but since we then combine
+        // with another IRubyObject[] from coercing second node to array, this can
+        // be inefficient. Escape analysis may help, though.
+        compileArguments(argsCatNode.getFirstNode(), context);
+        compile(argsCatNode.getSecondNode(), context,true);
+        context.argsCatToArguments19();
+        
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
+    }
+
+    public void compileSplatArguments(Node node, BodyCompiler context, boolean expr) {
+        SplatNode splatNode = (SplatNode) node;
+
+        compile(splatNode.getValue(), context,true);
+        context.splatToArguments19();
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 }
