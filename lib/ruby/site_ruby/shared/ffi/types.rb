@@ -30,111 +30,106 @@
 module FFI
   TypeDefs = Hash.new
 
-  def self.add_typedef(current, add)
-    TypeDefs[add] = self.find_type(current)
+  def self.typedef(old, add)
+    TypeDefs[add] = self.find_type(old)
   end
-  
-  
+
+  def self.add_typedef(old, add)
+    typedef old, add
+  end
+
+
   def self.find_type(name, type_map = nil)
-    type = if name.is_a?(FFI::Type)
+    if name.is_a?(Type)
       name
+
+    elsif type_map && type_map.has_key?(name)
+      type_map[name]
+
+    elsif TypeDefs.has_key?(name)
+      TypeDefs[name]
 
     elsif name.is_a?(DataConverter)
       (type_map || TypeDefs)[name] = Type::Mapped.new(name)
 
-    elsif name.respond_to?("native_type") && name.respond_to?("to_native") && name.respond_to?("from_native")
-      FFI::Type::Mapped.new(name)
-
-    elsif type_map
-      type_map[name]
-    
-    end || TypeDefs[name]
-
-    raise TypeError, "Unable to resolve type '#{name}'" unless type
-
-    return type
+    else
+      raise TypeError, "unable to resolve type '#{name}'"
+    end
   end
 
-  # Converts a char
-  add_typedef(Type::CHAR, :char)
+  TypeDefs.merge!({
+      # The C void type; only useful for function return types
+      :void => Type::VOID,
 
-  # Converts an unsigned char
-  add_typedef(Type::UCHAR, :uchar)
+      # C boolean type
+      :bool => Type::BOOL,
 
-  # Converts an 8 bit int
-  add_typedef(Type::INT8, :int8)
+      # C nul-terminated string
+      :string => Type::STRING,
 
-  # Converts an unsigned char
-  add_typedef(Type::UINT8, :uint8)
+      # C signed char
+      :char => Type::CHAR,
+      # C unsigned char
+      :uchar => Type::UCHAR,
 
-  # Converts a short
-  add_typedef(Type::SHORT, :short)
+      # C signed short
+      :short => Type::SHORT,
+      # C unsigned short
+      :ushort => Type::USHORT,
 
-  # Converts an unsigned short
-  add_typedef(Type::USHORT, :ushort)
+      # C signed int
+      :int => Type::INT,
+      # C unsigned int
+      :uint => Type::UINT,
 
-  # Converts a 16bit int
-  add_typedef(Type::INT16, :int16)
+      # C signed long
+      :long => Type::LONG,
 
-  # Converts an unsigned 16 bit int
-  add_typedef(Type::UINT16, :uint16)
+      # C unsigned long
+      :ulong => Type::ULONG,
 
-  # Converts an int
-  add_typedef(Type::INT, :int)
+      # C signed long long integer
+      :long_long => Type::LONG_LONG,
 
-  # Converts an unsigned int
-  add_typedef(Type::UINT, :uint)
+      # C unsigned long long integer
+      :ulong_long => Type::ULONG_LONG,
 
-  # Converts a 32 bit int
-  add_typedef(Type::INT32, :int32)
+      # C single precision float
+      :float => Type::FLOAT,
 
-  # Converts an unsigned 16 bit int
-  add_typedef(Type::UINT32, :uint32)
+      # C double precision float
+      :double => Type::DOUBLE,
 
-  # Converts a long
-  add_typedef(Type::LONG, :long)
+      # Native memory address
+      :pointer => Type::POINTER,
 
-  # Converts an unsigned long
-  add_typedef(Type::ULONG, :ulong)
+      # 8 bit signed integer
+      :int8 => Type::INT8,
+      # 8 bit unsigned integer
+      :uint8 => Type::UINT8,
 
-  # Converts a 64 bit int
-  add_typedef(Type::INT64, :int64)
+      # 16 bit signed integer
+      :int16 => Type::INT16,
+      # 16 bit unsigned integer
+      :uint16 => Type::UINT16,
 
-  # Converts an unsigned 64 bit int
-  add_typedef(Type::UINT64, :uint64)
+      # 32 bit signed integer
+      :int32 => Type::INT32,
+      # 32 bit unsigned integer
+      :uint32 => Type::UINT32,
 
-  # Converts a long long
-  add_typedef(Type::LONG_LONG, :long_long)
+      # 64 bit signed integer
+      :int64 => Type::INT64,
+      # 64 bit unsigned integer
+      :uint64 => Type::UINT64,
 
-  # Converts an unsigned long long
-  add_typedef(Type::ULONG_LONG, :ulong_long)
+      :buffer_in => Type::BUFFER_IN,
+      :buffer_out => Type::BUFFER_OUT,
+      :buffer_inout => Type::BUFFER_INOUT,
 
-  # Converts a float
-  add_typedef(Type::FLOAT, :float)
-
-  # Converts a double
-  add_typedef(Type::DOUBLE, :double)
-
-  # Converts a pointer to opaque data
-  add_typedef(Type::POINTER, :pointer)
-
-  # For when a function has no return value
-  add_typedef(Type::VOID, :void)
-
-  # Native boolean type
-  add_typedef(Type::BOOL, :bool)
-
-  # Converts NUL-terminated C strings
-  add_typedef(Type::STRING, :string)
-
-  # Converts FFI::Buffer objects
-  add_typedef(Type::BUFFER_IN, :buffer_in)
-  add_typedef(Type::BUFFER_OUT, :buffer_out)
-  add_typedef(Type::BUFFER_INOUT, :buffer_inout)
-
-  add_typedef(Type::VARARGS, :varargs)
-
-  add_typedef(Type::BOOL, :bool)
+      # Used in function prototypes to indicate the arguments are variadic
+      :varargs => Type::VARARGS,
+  })
 
   # Returns a [ String, Pointer ] tuple so the C memory for the string can be freed
   class StrPtrConverter
@@ -142,44 +137,29 @@ module FFI
     native_type Type::POINTER
 
     def self.from_native(val, ctx)
-      [ val.null? ? Qnil : val.get_string(0), val ]
+      [ val.null? ? nil : val.get_string(0), val ]
     end
 
   end
 
-  add_typedef(StrPtrConverter, :strptr)
-  
-  TypeSizes = {
-    1 => :char,
-    2 => :short,
-    4 => :int,
-    8 => :long_long,
-  }
-
-  def self.size_to_type(size)
-    if sz = TypeSizes[size]
-      return sz
-    end
-
-    # Be like C, use int as the default type size.
-    return :int
-  end
+  typedef(StrPtrConverter, :strptr)
 
   def self.type_size(type)
     find_type(type).size
-    end
+  end
 
   # Load all the platform dependent types
   begin
-    File.open(File.join(FFI::Platform::CONF_DIR, 'types.conf'), "r") do |f|
+    File.open(File.join(Platform::CONF_DIR, 'types.conf'), "r") do |f|
       prefix = "rbx.platform.typedef."
       f.each_line { |line|
         if line.index(prefix) == 0
           new_type, orig_type = line.chomp.slice(prefix.length..-1).split(/\s*=\s*/)
-          add_typedef(orig_type.to_sym, new_type.to_sym)
+          typedef(orig_type.to_sym, new_type.to_sym)
         end
       }
     end
+    typedef :pointer, :caddr_t
   rescue Errno::ENOENT
   end
 end
