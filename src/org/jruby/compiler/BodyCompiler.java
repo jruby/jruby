@@ -573,6 +573,10 @@ public interface BodyCompiler {
     public void isCaptured(int number, BranchCallback trueBranch, BranchCallback falseBranch);
     public void concatArrays();
     public void appendToArray();
+    public void argsCatToArguments();
+    public void argsCatToArguments19();
+    public void splatToArguments();
+    public void splatToArguments19();
     public void convertToJavaArray();
     public void aryToAry();
     public void toJavaString();
