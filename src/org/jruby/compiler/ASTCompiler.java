@@ -3943,10 +3943,13 @@ public class ASTCompiler {
 
     public void compileArgsPushArguments(Node node, BodyCompiler context, boolean expr) {
         ArgsPushNode argsPushNode = (ArgsPushNode) node;
-        compile(argsPushNode.getFirstNode(), context,true);
+        // This constructs one or more intermediate IRubyObject[] because that's what
+        // arguments compilation produces, so it may be inefficient. Escape
+        // analysis may help.
+        compileArguments(argsPushNode.getFirstNode(), context);
         compile(argsPushNode.getSecondNode(), context,true);
-        context.appendToArray();
-        context.convertToJavaArray();
+        context.appendToObjectArray();
+        
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

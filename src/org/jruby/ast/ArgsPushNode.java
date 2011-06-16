@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.jruby.Ruby;
@@ -69,7 +70,7 @@ public class ArgsPushNode extends Node {
     }
 
     public List<Node> childNodes() {
-        return EMPTY_LIST;
+        return Arrays.asList(firstNode, secondNode);
     }
     
     @Override
