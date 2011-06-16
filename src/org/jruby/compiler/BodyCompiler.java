@@ -564,6 +564,7 @@ public interface BodyCompiler {
     public void isCaptured(int number, BranchCallback trueBranch, BranchCallback falseBranch);
     public void concatArrays();
     public void appendToArray();
+    public void argsCatToArguments();
     public void splatToArguments();
     public void convertToJavaArray();
     public void aryToAry();

@@ -4038,6 +4038,15 @@ public class RubyArray extends RubyObject implements List {
     public Class getJavaClass() {
         return List.class;
     }
+    
+    /**
+     * Copy the values contained in this array into the target array at the specified offset.
+     * It is expected that the target array is large enough to hold all necessary values.
+     */
+    public void copyInto(IRubyObject[] target, int start) {
+        assert target.length - start >= realLength;
+        safeArrayCopy(values, begin, target, start, realLength);
+    }
 
     // Satisfy java.util.List interface (for Java integration)
     public int size() {

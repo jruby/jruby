@@ -3930,14 +3930,13 @@ public class ASTCompiler {
     public void compileArgsCatArguments(Node node, BodyCompiler context, boolean expr) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
+        // arguments compilers always create IRubyObject[], but since we then combine
+        // with another IRubyObject[] from coercing second node to array, this can
+        // be inefficient. Escape analysis may help, though.
         compileArguments(argsCatNode.getFirstNode(), context);
-        // arguments compilers always create IRubyObject[], but we want to use RubyArray.concat here;
-        // FIXME: as a result, this is NOT efficient, since it creates and then later unwraps an array
-        context.createNewArray(true);
         compile(argsCatNode.getSecondNode(), context,true);
-        splatCurrentValue(context);
-        context.concatArrays();
-        context.convertToJavaArray();
+        context.argsCatToArguments();
+        
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

@@ -1726,6 +1726,19 @@ public class RuntimeHelpers {
         }
         return ((RubyArray)avalue).toJavaArray();
     }
+    
+    public static IRubyObject[] argsCatToArguments(IRubyObject[] args, IRubyObject cat) {
+        IRubyObject[] ary = splatToArgs(cat);
+        
+        if (ary.length > 0) {
+            IRubyObject[] newArgs = new IRubyObject[args.length + ary.length];
+            System.arraycopy(args, 0, newArgs, 0, args.length);
+            System.arraycopy(ary, 0, newArgs, args.length, ary.length);
+            args = newArgs;
+        }
+        
+        return args;
+    }
 
     public static void addInstanceMethod(RubyModule containingClass, String name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
         containingClass.addMethod(name, method);
