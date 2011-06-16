@@ -145,15 +145,6 @@ public interface BodyCompiler {
     public void createObjectArray(Object[] elementArray, ArrayCallback callback);
 
     /**
-     * Combine the top <pre>elementCount</pre> elements into a single element, generally
-     * an array or similar construct. The specified number of elements are consumed and
-     * an aggregate element remains.
-     * 
-     * @param elementCount The number of elements to consume
-     */
-    public void createObjectArray(int elementCount);
-
-    /**
      * Given an aggregated set of objects (likely created through a call to createObjectArray)
      * create a Ruby array object.
      */

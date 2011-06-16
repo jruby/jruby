@@ -492,18 +492,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         buildObjectArray(StandardASMCompiler.IRUBYOBJECT, sourceArray, callback);
     }
 
-    public void createObjectArray(int elementCount) {
-        // if element count is less than 6, use helper methods
-        if (elementCount < 6) {
-            Class[] params = new Class[elementCount];
-            Arrays.fill(params, IRubyObject.class);
-            invokeUtilityMethod("constructObjectArray", sig(IRubyObject[].class, params));
-        } else {
-            // This is pretty inefficient for building an array, so just raise an error if someone's using it for a lot of elements
-            throw new NotCompilableException("Don't use createObjectArray(int) for more than 5 elements");
-        }
-    }
-
     private void buildObjectArray(String type, Object[] sourceArray, ArrayCallback callback) {
         if (sourceArray.length == 0) {
             method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
