@@ -1690,6 +1690,42 @@ public class RuntimeHelpers {
 
         return arrayValue(value);
     }
+    
+    public static IRubyObject[] splatToArgs(IRubyObject value) {
+        Ruby runtime = value.getRuntime();
+        
+        if (value.isNil()) {
+            return value.getRuntime().getSingleNilArray();
+        }
+        
+        IRubyObject tmp = value.checkArrayType();
+
+        if (tmp.isNil()) {
+            return convertSplatToJavaArray(runtime, value);
+        }
+        return ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
+    }
+    
+    private static IRubyObject[] convertSplatToJavaArray(Ruby runtime, IRubyObject value) {
+        // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can
+        // remove this hack too.
+
+        RubyClass metaClass = value.getMetaClass();
+        DynamicMethod method = metaClass.searchMethod("to_a");
+        if (method.isUndefined() || method.getImplementationClass() == runtime.getKernel()) {
+            return new IRubyObject[] {value};
+        }
+
+        IRubyObject avalue = method.call(runtime.getCurrentContext(), value, metaClass, "to_a");
+        if (!(avalue instanceof RubyArray)) {
+            if (runtime.is1_9() && avalue.isNil()) {
+                return new IRubyObject[] {value};
+            } else {
+                throw runtime.newTypeError("`to_a' did not return Array");
+            }
+        }
+        return ((RubyArray)avalue).toJavaArray();
+    }
 
     public static void addInstanceMethod(RubyModule containingClass, String name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
         containingClass.addMethod(name, method);

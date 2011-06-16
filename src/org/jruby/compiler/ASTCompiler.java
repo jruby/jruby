@@ -3974,8 +3974,7 @@ public class ASTCompiler {
         SplatNode splatNode = (SplatNode) node;
 
         compile(splatNode.getValue(), context,true);
-        splatCurrentValue(context);
-        context.convertToJavaArray();
+        context.splatToArguments();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
