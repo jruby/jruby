@@ -68,82 +68,23 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         this.method = sma;
     }
 
-    public void invokeAttrAssignMasgn(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+    public void invokeAttrAssignMasgn(String name, CompilerCallback receiverCallback, final ArgumentsCallback argsCallback, boolean selfCall) {
         // value is already on stack, save it for later
-        int temp = methodCompiler.getVariableCompiler().grabTempLocal();
+        final int temp = methodCompiler.getVariableCompiler().grabTempLocal();
         methodCompiler.getVariableCompiler().setTempLocal(temp);
         
-        // receiver first, so we know which call site to use
-        receiverCallback.call(methodCompiler);
-
-        // select appropriate call site
-        method.dup(); // dup receiver
-        methodCompiler.loadSelf(); // load self
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.NORMAL);
-        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.VARIABLE);
-        methodCompiler.invokeUtilityMethod("selectAttrAsgnCallSite", sig(CallSite.class, IRubyObject.class, IRubyObject.class, CallSite.class, CallSite.class));
-
-        String signature = null;
-        if (argsCallback == null) {
-            signature = sig(IRubyObject.class,
-                    IRubyObject.class /*receiver*/,
-                    CallSite.class,
-                    IRubyObject.class /*value*/,
-                    ThreadContext.class,
-                    IRubyObject.class /*self*/);
-        } else {
-            switch (argsCallback.getArity()) {
-            case 1:
-                argsCallback.call(methodCompiler);
-                signature = sig(IRubyObject.class,
-                        IRubyObject.class, /*receiver*/
-                        CallSite.class,
-                        IRubyObject.class, /*arg0*/
-                        IRubyObject.class, /*value*/
-                        ThreadContext.class,
-                        IRubyObject.class /*self*/);
-                break;
-            case 2:
-                argsCallback.call(methodCompiler);
-                signature = sig(IRubyObject.class,
-                        IRubyObject.class, /*receiver*/
-                        CallSite.class,
-                        IRubyObject.class, /*arg0*/
-                        IRubyObject.class, /*arg1*/
-                        IRubyObject.class, /*value*/
-                        ThreadContext.class,
-                        IRubyObject.class /*self*/);
-                break;
-            case 3:
-                argsCallback.call(methodCompiler);
-                signature = sig(IRubyObject.class,
-                        IRubyObject.class, /*receiver*/
-                        CallSite.class,
-                        IRubyObject.class, /*arg0*/
-                        IRubyObject.class, /*arg1*/
-                        IRubyObject.class, /*arg2*/
-                        IRubyObject.class, /*value*/
-                        ThreadContext.class,
-                        IRubyObject.class /*self*/);
-                break;
-            default:
-                argsCallback.call(methodCompiler);
-                signature = sig(IRubyObject.class,
-                        IRubyObject.class, /*receiver*/
-                        CallSite.class,
-                        IRubyObject[].class, /*args*/
-                        IRubyObject.class, /*value*/
-                        ThreadContext.class,
-                        IRubyObject.class /*self*/);
+        ArgumentsCallback newArgumentsCallback = new ArgumentsCallback() {
+            public int getArity() {
+                return (argsCallback == null) ? 1 : argsCallback.getArity() + 1;
             }
-        }
 
-        methodCompiler.getVariableCompiler().getTempLocal(temp);
-        methodCompiler.getVariableCompiler().releaseTempLocal();
-        methodCompiler.loadThreadContext();
-        methodCompiler.loadSelf();
-
-        methodCompiler.invokeUtilityMethod("doAttrAsgn", signature);
+            public void call(BodyCompiler context) {
+                if (argsCallback != null) argsCallback.call(context);
+                methodCompiler.getVariableCompiler().getTempLocal(temp);
+            }
+        };
+        
+        invokeAttrAssign(name, receiverCallback, newArgumentsCallback, selfCall, true);
     }
 
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, boolean isSelf, boolean expr) {

@@ -737,7 +737,10 @@ public class ASTCompiler {
         };
         ArgumentsCallback argsCallback = getArgsCallback(attrAssignNode.getArgsNode());
 
-        context.getInvocationCompiler().invokeAttrAssignMasgn(attrAssignNode.getName(), receiverCallback, argsCallback);
+        // Ruby 1.8 and 1.9 only bypass visibility check when receiver is statically
+        // determined to be self.
+        boolean isSelf = attrAssignNode.getReceiverNode() instanceof SelfNode;
+        context.getInvocationCompiler().invokeAttrAssignMasgn(attrAssignNode.getName(), receiverCallback, argsCallback, isSelf);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

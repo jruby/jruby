@@ -62,7 +62,7 @@ public interface InvocationCompiler {
      * @param receiverCallback
      * @param argsCallback
      */
-    public void invokeAttrAssignMasgn(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback);
+    public void invokeAttrAssignMasgn(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, boolean selfCall);
     public void invokeAttrAssign(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, boolean selfCall, boolean expr);
     
     public void opElementAsgnWithOr(CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CompilerCallback valueCallback);
