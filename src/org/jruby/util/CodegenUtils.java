@@ -182,6 +182,14 @@ public class CodegenUtils {
         classes[1] = cls2;
         return classes;
     }
+
+    public static Class[] params(Class cls1, Class clsFill, int times, Class clsTail) {
+        Class[] classes = new Class[times + 2];
+        Arrays.fill(classes, clsFill);
+        classes[0] = cls1;
+        classes[times + 1] = clsTail;
+        return classes;
+    }
     
     public static String getAnnotatedBindingClassName(String javaMethodName, String typeName, boolean isStatic, int required, int optional, boolean multi, boolean framed) {
         String commonClassSuffix;

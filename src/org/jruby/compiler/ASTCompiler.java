@@ -649,9 +649,13 @@ public class ASTCompiler {
                 context.createNewArray(childNodes.toArray(), callback, arrayNode.isLightweight());
             }
         } else {
-            for (Iterator<Node> iter = arrayNode.childNodes().iterator(); iter.hasNext();) {
-                Node nextNode = iter.next();
-                compile(nextNode, context, false);
+            if (isListAllLiterals(arrayNode)) {
+                // do nothing, no observable effect
+            } else {
+                for (Iterator<Node> iter = arrayNode.childNodes().iterator(); iter.hasNext();) {
+                    Node nextNode = iter.next();
+                    compile(nextNode, context, false);
+                }
             }
         }
     }

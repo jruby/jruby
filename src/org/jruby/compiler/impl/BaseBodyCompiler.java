@@ -551,19 +551,31 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             }
             invokeUtilityMethod("constructRubyArray", sig(RubyArray.class, params(Ruby.class, IRubyObject.class, sourceArray.length)));
         } else {
-            // brute force construction inline
+            // brute force construction
+            
+            // construct array all at once
             method.pushInt(sourceArray.length);
-            method.anewarray(p(IRubyObject.class));
+            invokeUtilityMethod("anewarrayIRubyObjects", sig(IRubyObject[].class, int.class));
 
-            for (int i = 0; i < sourceArray.length; i++) {
-                method.dup();
-                method.pushInt(i);
-
+            // iterate over elements, stuffing every ten into array in batches
+            int i = 0;
+            for (; i < sourceArray.length; i++) {
                 callback.nextValue(this, sourceArray, i);
 
-                method.arraystore();
+                if ((i + 1) % 10 == 0) {
+                    method.pushInt(i - 9);
+                    invokeUtilityMethod("aastoreIRubyObjects", sig(IRubyObject[].class, params(IRubyObject[].class, IRubyObject.class, 10, int.class)));
+                }
             }
             
+            // stuff remaining into array
+            int remain = i % 10;
+            if (remain != 0) {
+                method.pushInt(i - remain);
+                invokeUtilityMethod("aastoreIRubyObjects", sig(IRubyObject[].class, params(IRubyObject[].class, IRubyObject.class, remain, int.class)));
+            }
+            
+            // construct RubyArray wrapper
             if (light) {
                 method.invokestatic(p(RubyArray.class), "newArrayNoCopyLight", sig(RubyArray.class, Ruby.class, IRubyObject[].class));
             } else {
