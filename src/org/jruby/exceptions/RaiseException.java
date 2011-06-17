@@ -44,11 +44,13 @@ import org.jruby.NativeException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RaiseException extends JumpException {
@@ -197,13 +199,16 @@ public class RaiseException extends JumpException {
         context.runtime.incrementExceptionCount();
         doSetLastError(context);
         doCallEventHook(context);
-
+        
         if (backtrace == null) {
             context.runtime.incrementBacktraceCount();
             exception.prepareBacktrace(context, nativeException);
+            if (RubyInstanceConfig.LOG_BACKTRACES) TraceType.dumpBacktrace(exception);
         } else {
             exception.forceBacktrace(backtrace);
         }
+
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
     }
 
     private void doCallEventHook(ThreadContext context) {

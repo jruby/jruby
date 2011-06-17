@@ -318,6 +318,11 @@ public class RubyInstanceConfig {
 
     public static final boolean CAN_SET_ACCESSIBLE = SafePropertyAccessor.getBoolean("jruby.ji.setAccessible", true);
 
+    // properties for logging exceptions, backtraces, and caller invocations
+    public static final boolean LOG_EXCEPTIONS = SafePropertyAccessor.getBoolean("jruby.log.exceptions");
+    public static final boolean LOG_BACKTRACES = SafePropertyAccessor.getBoolean("jruby.log.backtraces");
+    public static final boolean LOG_CALLERS = SafePropertyAccessor.getBoolean("jruby.log.callers");
+
     private TraceType traceType =
             TraceType.traceTypeFor(SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed"));
     

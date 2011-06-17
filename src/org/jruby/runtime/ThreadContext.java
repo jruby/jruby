@@ -49,6 +49,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyContinuation.Continuation;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
@@ -61,6 +62,7 @@ import org.jruby.libraries.FiberLibrary.Fiber;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
@@ -684,12 +686,15 @@ public final class ThreadContext {
      */
     public IRubyObject createCallerBacktrace(Ruby runtime, int level) {
         runtime.incrementCallerCount();
+        
         RubyStackTraceElement[] trace = gatherCallerBacktrace(level);
         RubyArray backtrace = runtime.newArray(trace.length - level);
 
         for (int i = level; i < trace.length; i++) {
             addBackTraceElement(runtime, backtrace, trace[i]);
         }
+        
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.dumpCaller(backtrace);
         
         return backtrace;
     }
