@@ -1264,6 +1264,105 @@ public class RuntimeHelpers {
     
     public static final int MAX_SPECIFIC_ARITY_OBJECT_ARRAY = 10;
     
+    public static IRubyObject[] anewarrayIRubyObjects(int size) {
+        return new IRubyObject[size];
+    }
+    
+    public static IRubyObject[] aastoreIRubyObjects(IRubyObject[] ary, IRubyObject one, int start) {
+        ary[start] = one;
+        return ary;
+    }
+    
+    public static IRubyObject[] aastoreIRubyObjects(IRubyObject[] ary, IRubyObject one, IRubyObject two, int start) {
+        ary[start] = one;
+        ary[start+1] = two;
+        return ary;
+    }
+    
+    public static IRubyObject[] aastoreIRubyObjects(IRubyObject[] ary, IRubyObject one, IRubyObject two, IRubyObject three, int start) {
+        ary[start] = one;
+        ary[start+1] = two;
+        ary[start+2] = three;
+        return ary;
+    }
+    
+    public static IRubyObject[] aastoreIRubyObjects(IRubyObject[] ary, IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, int start) {
+        ary[start] = one;
+        ary[start+1] = two;
+        ary[start+2] = three;
+        ary[start+3] = four;
+        return ary;
+    }
+    
+    public static IRubyObject[] aastoreIRubyObjects(IRubyObject[] ary, IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, IRubyObject five, int start) {
+        ary[start] = one;
+        ary[start+1] = two;
+        ary[start+2] = three;
+        ary[start+3] = four;
+        ary[start+4] = five;
+        return ary;
+    }
+    
+    public static IRubyObject[] aastoreIRubyObjects(IRubyObject[] ary, IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, IRubyObject five, IRubyObject six, int start) {
+        ary[start] = one;
+        ary[start+1] = two;
+        ary[start+2] = three;
+        ary[start+3] = four;
+        ary[start+4] = five;
+        ary[start+5] = six;
+        return ary;
+    }
+    
+    public static IRubyObject[] aastoreIRubyObjects(IRubyObject[] ary, IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, IRubyObject five, IRubyObject six, IRubyObject seven, int start) {
+        ary[start] = one;
+        ary[start+1] = two;
+        ary[start+2] = three;
+        ary[start+3] = four;
+        ary[start+4] = five;
+        ary[start+5] = six;
+        ary[start+6] = seven;
+        return ary;
+    }
+    
+    public static IRubyObject[] aastoreIRubyObjects(IRubyObject[] ary, IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, IRubyObject five, IRubyObject six, IRubyObject seven, IRubyObject eight, int start) {
+        ary[start] = one;
+        ary[start+1] = two;
+        ary[start+2] = three;
+        ary[start+3] = four;
+        ary[start+4] = five;
+        ary[start+5] = six;
+        ary[start+6] = seven;
+        ary[start+7] = eight;
+        return ary;
+    }
+    
+    public static IRubyObject[] aastoreIRubyObjects(IRubyObject[] ary, IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, IRubyObject five, IRubyObject six, IRubyObject seven, IRubyObject eight, IRubyObject nine, int start) {
+        ary[start] = one;
+        ary[start+1] = two;
+        ary[start+2] = three;
+        ary[start+3] = four;
+        ary[start+4] = five;
+        ary[start+5] = six;
+        ary[start+6] = seven;
+        ary[start+7] = eight;
+        ary[start+8] = nine;
+        return ary;
+    }
+    
+    public static IRubyObject[] aastoreIRubyObjects(IRubyObject[] ary, IRubyObject one, IRubyObject two, IRubyObject three, IRubyObject four, IRubyObject five, IRubyObject six, IRubyObject seven, IRubyObject eight, IRubyObject nine, IRubyObject ten, int start) {
+        ary[start] = one;
+        ary[start+1] = two;
+        ary[start+2] = three;
+        ary[start+3] = four;
+        ary[start+4] = five;
+        ary[start+5] = six;
+        ary[start+6] = seven;
+        ary[start+7] = eight;
+        ary[start+8] = nine;
+        ary[start+9] = ten;
+        return ary;
+    }
+    
     public static IRubyObject[] constructObjectArray(IRubyObject one) {
         return new IRubyObject[] {one};
     }
