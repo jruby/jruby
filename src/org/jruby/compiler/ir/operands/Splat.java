@@ -19,7 +19,7 @@ public class Splat extends Operand
 
     public Splat(Operand a) { _array = a; }
 
-    public boolean isConstant() { return _array.isConstant(); }
+    public boolean isConstant() { return false; /*_array.isConstant();*/ }
 
     public String toString() { return "*" + _array; }
 
@@ -27,10 +27,14 @@ public class Splat extends Operand
 
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
+/*
+ * SSS FIXME:  Cannot convert this to an Array operand!
+ *
         _array = _array.getSimplifiedOperand(valueMap);
         if (_array instanceof Variable) {
             _array = ((Variable)_array).getValue(valueMap);
         }
+*/
         return this;
     }
 

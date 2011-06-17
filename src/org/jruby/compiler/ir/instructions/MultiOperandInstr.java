@@ -45,6 +45,7 @@ public abstract class MultiOperandInstr extends Instr {
     protected IRubyObject[] prepareArguments(Operand[] args, InterpreterContext interp) {
          if (preparedArgs == null) {
              preparedArgs = new IRubyObject[args.length];
+/**
              constArgs = true;
              for (int i = 0; i < args.length; i++) {
                  if (args[i].isConstant()) {
@@ -54,6 +55,7 @@ public abstract class MultiOperandInstr extends Instr {
                      break;
                  }
              }
+**/
          }
 
          // SSS FIXME: This encoding of arguments as an array penalizes splats, but keeps other argument arrays fast

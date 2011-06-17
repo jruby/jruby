@@ -20,12 +20,15 @@ public class CompoundArray extends Operand
 
     public CompoundArray(Operand a1, Operand a2) { _a1 = a1; _a2 = a2; }
 
-    public boolean isConstant() { return _a1.isConstant() && _a2.isConstant(); }
+    public boolean isConstant() { return false; /*return _a1.isConstant() && _a2.isConstant();*/ }
 
     public String toString() { return _a1 + ", *" + _a2; }
 
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
+/*
+ * SSS FIXME:  Cannot convert this to an Array operand!
+ *
         _a1 = _a1.getSimplifiedOperand(valueMap);
         _a2 = _a2.getSimplifiedOperand(valueMap);
 
@@ -52,6 +55,8 @@ public class CompoundArray extends Operand
         else {
             return this;
         }
+*/
+        return this;
     }
 
     public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
