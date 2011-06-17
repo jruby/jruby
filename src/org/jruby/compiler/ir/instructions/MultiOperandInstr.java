@@ -9,6 +9,7 @@ import org.jruby.RubyArray;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
+import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -59,11 +60,11 @@ public abstract class MultiOperandInstr extends Instr {
          // since there is no array list --> array transformation
          if (!constArgs) {
              for (int i = 0; i < args.length; i++) {
-                 if (!(args[i] instanceof Splat)) {
+                 if (!(args[i] instanceof Splat) && !(args[i] instanceof CompoundArray)) {
                      preparedArgs[i] = (IRubyObject) args[i].retrieve(interp);
                  }
                  else {
-                     // We got a splat -- discard the array, and rebuild as a list
+                     // We got a splat or a compound array -- discard the args array, and rebuild as a list
                      // If we had an 'Array.flatten' in Java, this would be trivial code!
                      List<IRubyObject> argList = new ArrayList<IRubyObject>();
                      for (int j = 0; j < i; j++) {
@@ -71,7 +72,7 @@ public abstract class MultiOperandInstr extends Instr {
                      }
                      for (int j = i; j < args.length; j++) {
                          IRubyObject rArg = (IRubyObject)args[j].retrieve(interp);
-                         if (args[j] instanceof Splat) { // append the contents of the splatted array
+                         if ((args[j] instanceof Splat) || (args[j] instanceof CompoundArray)) { // append the contents of the splatted array
                              for (IRubyObject v: ((RubyArray)rArg).toJavaArray())
                                  argList.add(v);
                          }

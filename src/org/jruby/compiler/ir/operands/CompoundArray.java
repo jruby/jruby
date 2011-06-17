@@ -4,6 +4,10 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import java.util.List;
 import java.util.Map;
 
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
 // This represents a concatenation of an array and a splat
 // Ex: a = 1,2,3,*[5,6,7]
 //
@@ -68,5 +72,10 @@ public class CompoundArray extends Operand
 
     public Operand cloneForInlining(InlinerInfo ii) { 
         return isConstant() ? this : new CompoundArray(_a1.cloneForInlining(ii), _a2.cloneForInlining(ii));
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        return RuntimeHelpers.argsCat((IRubyObject)_a1.retrieve(interp), (IRubyObject)_a2.retrieve(interp));
     }
 }
