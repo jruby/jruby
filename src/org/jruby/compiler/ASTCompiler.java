@@ -2956,8 +2956,14 @@ public class ASTCompiler {
         MultipleAsgnNode multipleAsgnNode = (MultipleAsgnNode) node;
 
         if (expr) {
-            // need the array, use unoptz version
-            compileUnoptimizedMultipleAsgn(multipleAsgnNode, context, expr);
+            if (RubyInstanceConfig.FAST_MULTIPLE_ASSIGNMENT) {
+                // optimized version, but expr so return true
+                compileOptimizedMultipleAsgn(multipleAsgnNode, context, false);
+                context.loadTrue();
+            } else {
+                // need the array, use unoptz version
+                compileUnoptimizedMultipleAsgn(multipleAsgnNode, context, expr);
+            }
         } else {
             // try optz version
             compileOptimizedMultipleAsgn(multipleAsgnNode, context, expr);

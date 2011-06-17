@@ -278,6 +278,9 @@ public class RubyInstanceConfig {
     public static boolean INLINE_DYNCALL_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.inlineDyncalls");
+    public static boolean FAST_MULTIPLE_ASSIGNMENT
+            = SafePropertyAccessor.getBoolean("jruby.compile.fastMasgn", false);
+    
     public static final boolean POOLING_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.thread.pool.enabled");
     public static final int POOL_MAX
