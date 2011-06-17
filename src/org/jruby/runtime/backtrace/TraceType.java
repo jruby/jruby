@@ -29,6 +29,18 @@ public class TraceType {
     public String printBacktrace(RubyException exception) {
         return format.printBacktrace(exception);
     }
+    
+    public static void dumpException(RubyException exception) {
+        System.err.println("Exception raised: " + exception.getMetaClass() + ": " + exception);
+    }
+    
+    public static void dumpBacktrace(RubyException exception) {
+        System.err.println("Backtrace generated:\n" + Format.JRUBY.printBacktrace(exception));
+    }
+    
+    public static void dumpCaller(RubyArray trace) {
+        System.err.println("Caller backtrace generated:\n" + trace);
+    }
 
     public static TraceType traceTypeFor(String style) {
         if (style.equalsIgnoreCase("raw")) return new TraceType(Gather.RAW, Format.JRUBY);
