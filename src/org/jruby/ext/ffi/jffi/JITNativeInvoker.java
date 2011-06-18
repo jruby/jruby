@@ -1,6 +1,6 @@
 package org.jruby.ext.ffi.jffi;
 
-import com.kenai.jffi.Invoker;
+import com.kenai.jffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -9,10 +9,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 abstract public class JITNativeInvoker extends NativeInvoker {
     protected static final Invoker invoker = Invoker.getInstance();
+    protected final NativeInvoker fallbackInvoker;
+    protected final com.kenai.jffi.Function function;
     protected final int arity;
 
-    public JITNativeInvoker(int arity) {
+    public JITNativeInvoker(int arity, com.kenai.jffi.Function function, NativeInvoker fallbackInvoker) {
         this.arity = arity;
+        this.function = function;
+        this.fallbackInvoker = fallbackInvoker;
     }
     
     abstract public IRubyObject invoke(ThreadContext context, IRubyObject arg1, 

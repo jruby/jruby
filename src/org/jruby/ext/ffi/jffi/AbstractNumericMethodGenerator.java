@@ -42,9 +42,9 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
         
         mv.aload(1); // load ThreadContext arg for result boxing
 
-        mv.getstatic(builder.getClassName(), "invoker", ci(com.kenai.jffi.Invoker.class));
+        mv.getstatic(p(JITNativeInvoker.class), "invoker", ci(com.kenai.jffi.Invoker.class));
         mv.aload(0);
-        mv.getfield(builder.getClassName(), builder.getFunctionFieldName(), ci(com.kenai.jffi.Function.class));
+        mv.getfield(p(JITNativeInvoker.class), "function", ci(com.kenai.jffi.Function.class));
         // [ stack now contains: Invoker, Function ]
         final int firstParam = 2;
         
