@@ -3,6 +3,9 @@
  */
 package org.jruby.ext.ffi.jffi;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.ext.ffi.Type;
@@ -16,9 +19,11 @@ final class JITHandle {
     private final JITSignature jitSignature;
     private volatile boolean compilationFailed = false;
     private final AtomicInteger counter = new AtomicInteger(0);
-    private volatile Class<? extends NativeInvoker> compiledClass = null;
+    private final JITCompiler compiler;
+    private Reference<Class<? extends NativeInvoker>> compiledClassRef = null;
 
-    JITHandle(JITSignature signature, boolean compilationFailed) {
+    JITHandle(JITCompiler compiler, JITSignature signature, boolean compilationFailed) {
+        this.compiler = compiler;
         this.jitSignature = signature;
         this.compilationFailed = compilationFailed;
     }
@@ -32,13 +37,16 @@ final class JITHandle {
             return null;
         }
 
+        Class<? extends NativeInvoker> compiledClass;
         synchronized (this) {
-            if (compiledClass == null) {
+            if (compiledClassRef == null || (compiledClass = compiledClassRef.get()) == null) {
                 compiledClass = newInvokerClass(jitSignature);
                 if (compiledClass == null) {
                     compilationFailed = true;
                     return null;
                 }
+                compiler.registerClass(this, compiledClass);
+                compiledClassRef = new WeakReference<Class<? extends NativeInvoker>>(compiledClass);
             }
         }
 
