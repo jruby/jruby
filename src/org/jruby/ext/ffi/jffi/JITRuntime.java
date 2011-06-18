@@ -218,28 +218,58 @@ public final class JITRuntime {
         return ptr;
     }
     
-    public static IRubyObject newSigned8(ThreadContext context, byte value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), value);
+    public static IRubyObject newSigned8(ThreadContext context, int value) {
+        return RubyFixnum.newFixnum(context.getRuntime(), (byte) value);
     }
 
-    public static IRubyObject newUnsigned8(ThreadContext context, byte value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), value < 0 ? (long)((value & 0x7FL) + 0x80L) : value);
+    public static IRubyObject newSigned8(ThreadContext context, long value) {
+        return RubyFixnum.newFixnum(context.getRuntime(), (byte) value);
     }
 
-    public static IRubyObject newSigned16(ThreadContext context, short value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), value);
+    public static IRubyObject newUnsigned8(ThreadContext context, int value) {
+        int n = (byte) value; // sign-extend the low 8 bits to 32
+        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7F) + 0x80) : n);
     }
 
-    public static IRubyObject newUnsigned16(ThreadContext context, short value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), value < 0 ? (long)((value & 0x7FFFL) + 0x8000L) : value);
+    public static IRubyObject newUnsigned8(ThreadContext context, long value) {
+        int n = (byte) value; // sign-extend the low 8 bits to 32
+        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7F) + 0x80) : n);
+    }
+
+    public static IRubyObject newSigned16(ThreadContext context, int value) {
+        return RubyFixnum.newFixnum(context.getRuntime(), (short) value);
+    }
+
+    public static IRubyObject newSigned16(ThreadContext context, long value) {
+        return RubyFixnum.newFixnum(context.getRuntime(), (short) value);
+    }
+
+    public static IRubyObject newUnsigned16(ThreadContext context, int value) {
+        int n = (short) value; // sign-extend the low 16 bits to 32
+        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
+    }
+
+    public static IRubyObject newUnsigned16(ThreadContext context, long value) {
+        int n = (short) value; // sign-extend the low 16 bits to 32
+        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
     }
 
     public static IRubyObject newSigned32(ThreadContext context, int value) {
         return RubyFixnum.newFixnum(context.getRuntime(), value);
     }
 
+    public static IRubyObject newSigned32(ThreadContext context, long value) {
+        return RubyFixnum.newFixnum(context.getRuntime(), (int) value);
+    }
+
     public static IRubyObject newUnsigned32(ThreadContext context, int value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
+        long n = value;
+        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
+    }
+
+    public static IRubyObject newUnsigned32(ThreadContext context, long value) {
+        long n = (int) value; // only keep the low 32 bits
+        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
     }
 
     public static IRubyObject newSigned64(ThreadContext context, long value) {
