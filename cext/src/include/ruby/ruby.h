@@ -581,6 +581,10 @@ ULL2NUM(unsigned long long v)
     return __builtin_expect(POSFIXABLE(v), 1) ? ULONG2FIX(v) : rb_ull2inum(v);
 }
 
+/** Convert time_t to a Ruby Integer. */
+#define TIMET2NUM(x) jruby_timet2num(x)
+RUBY_DLLSPEC VALUE jruby_timet2num(time_t v);
+
 /** Convert a VALUE into a chr */
 #define NUM2CHR(x) rb_num2chr(x)
 /** Convert a VALUE into a long long */
