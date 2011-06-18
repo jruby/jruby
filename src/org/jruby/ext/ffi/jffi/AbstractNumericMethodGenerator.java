@@ -67,64 +67,55 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
             mv.aload(paramVar);
             switch (parameterType) {
                 case BOOL:
-                    mv.invokestatic(p(JITRuntime.class), "boolValue", sig(boolean.class, IRubyObject.class));
-                    widen(mv, int.class, nativeIntType);
+                    unbox(mv, "boolValue");
                     break;
 
                 case CHAR:
-                    mv.invokestatic(p(JITRuntime.class), "s8Value", sig(int.class, IRubyObject.class));
-                    widen(mv, int.class, nativeIntType);
+                    unbox(mv, "s8Value");
                     break;
                 
                 case UCHAR:
-                    mv.invokestatic(p(JITRuntime.class), "u8Value", sig(int.class, IRubyObject.class));
-                    widen(mv, int.class, nativeIntType);
+                    unbox(mv, "u8Value");
                     break;
                 
                 case SHORT:
-                    mv.invokestatic(p(JITRuntime.class), "s16Value", sig(int.class, IRubyObject.class));
-                    widen(mv, int.class, nativeIntType);
+                    unbox(mv, "s16Value");
                     break;
                 
                 case USHORT:
-                    mv.invokestatic(p(JITRuntime.class), "u16Value", sig(int.class, IRubyObject.class));
-                    widen(mv, int.class, nativeIntType);
+                    unbox(mv, "u16Value");
                     break;
                 
                 case INT:
-                    mv.invokestatic(p(JITRuntime.class), "s32Value", sig(int.class, IRubyObject.class));
-                    widen(mv, int.class, nativeIntType);
+                    unbox(mv, "s32Value");
                     break;
                 
                 case UINT:
-                    mv.invokestatic(p(JITRuntime.class), "u32Value", sig(long.class, IRubyObject.class));
-                    narrow(mv, long.class, nativeIntType);
+                    unbox(mv, "u32Value");
                     break;
                     
                 case LONG:
                     if (Platform.getPlatform().longSize() == 32) {
-                        mv.invokestatic(p(JITRuntime.class), "s32Value", sig(int.class, IRubyObject.class));
-                        widen(mv, int.class, nativeIntType);
+                        unbox(mv, "s32Value");
                     } else {
-                        mv.invokestatic(p(JITRuntime.class), "s64Value", sig(long.class, IRubyObject.class));
+                        unbox(mv, "s64Value");
                     }
                     break;
                 
                 case ULONG:
                     if (Platform.getPlatform().longSize() == 32) {
-                        mv.invokestatic(p(JITRuntime.class), "u32Value", sig(long.class, IRubyObject.class));
-                        narrow(mv, long.class, nativeIntType);
+                        unbox(mv, "u32Value");
                     } else {
-                        mv.invokestatic(p(JITRuntime.class), "u64Value", sig(long.class, IRubyObject.class));
+                        unbox(mv, "u64Value");
                     }
                     break;
                 
                 case LONG_LONG:
-                    mv.invokestatic(p(JITRuntime.class), "s64Value", sig(long.class, IRubyObject.class));
+                    unbox(mv, "s64Value");
                     break;
                 
                 case ULONG_LONG:
-                    mv.invokestatic(p(JITRuntime.class), "u64Value", sig(long.class, IRubyObject.class));
+                    unbox(mv, "u64Value");
                     break;
                 
                 case POINTER:
@@ -189,15 +180,11 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                     break;
 
                 case FLOAT:
-                    if (int.class == nativeIntType) {
-                        mv.invokestatic(p(JITRuntime.class), "float2int", sig(int.class, IRubyObject.class));
-                    } else {
-                        mv.invokestatic(p(JITRuntime.class), "float2long", sig(long.class, IRubyObject.class));
-                    }
+                    unbox(mv, "f32Value");
                     break;
 
                 case DOUBLE:
-                    mv.invokestatic(p(JITRuntime.class), "double2long", sig(long.class, IRubyObject.class));
+                    unbox(mv, "f64Value");
                     break;
 
                 default:
@@ -258,6 +245,15 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
             mv.invokevirtual(p(NativeDataConverter.class), "fromNative", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
         }
     }
+
+    private void unbox(SkinnyMethodAdapter mv, String method) {
+        mv.invokestatic(p(JITRuntime.class), getRuntimeMethod(method), sig(getInvokerIntType(), IRubyObject.class));
+    }
+
+    private String getRuntimeMethod(String method) {
+        return method + (int.class == getInvokerIntType() ? "32" : "64");
+    }
+
     
     private void boxResult(SkinnyMethodAdapter mv, NativeType type,
             String boxMethodName, Class primitiveType) {

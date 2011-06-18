@@ -41,92 +41,128 @@ public final class JITRuntime {
                 + " cannot be converted to integer");
     }
     
-    public static int s8Value(IRubyObject parameter) {
+    public static int s8Value32(IRubyObject parameter) {
         return (byte) (parameter instanceof RubyFixnum
                 ? ((RubyFixnum) parameter).getLongValue()
                 : other2long(parameter));
     }
-    
-    public static int u8Value(IRubyObject parameter) {
+
+    public static long s8Value64(IRubyObject parameter) {
+        return (byte) (parameter instanceof RubyFixnum
+                ? ((RubyFixnum) parameter).getLongValue()
+                : other2long(parameter));
+    }
+
+    public static int u8Value32(IRubyObject parameter) {
         return (int) ((parameter instanceof RubyFixnum
                 ? ((RubyFixnum) parameter).getLongValue()
                 : other2long(parameter)) & 0xff);
     }
-    
-    public static int s16Value(IRubyObject parameter) {
+
+    public static long u8Value64(IRubyObject parameter) {
+        return (int) ((parameter instanceof RubyFixnum
+                ? ((RubyFixnum) parameter).getLongValue()
+                : other2long(parameter)) & 0xff);
+    }
+
+    public static int s16Value32(IRubyObject parameter) {
         return (short) (parameter instanceof RubyFixnum
                 ? ((RubyFixnum) parameter).getLongValue()
                 : other2long(parameter));
     }
-    
-    public static int u16Value(IRubyObject parameter) {
+
+    public static long s16Value64(IRubyObject parameter) {
+        return (short) (parameter instanceof RubyFixnum
+                ? ((RubyFixnum) parameter).getLongValue()
+                : other2long(parameter));
+    }
+
+    public static int u16Value32(IRubyObject parameter) {
         return (int) (((parameter instanceof RubyFixnum)
                 ? ((RubyFixnum) parameter).getLongValue()
                 : other2long(parameter)) & 0xffffL);
     }
-    
-    public static int s32Value(IRubyObject parameter) {
+
+    public static long u16Value64(IRubyObject parameter) {
+        return (short) (((parameter instanceof RubyFixnum)
+                ? ((RubyFixnum) parameter).getLongValue()
+                : other2long(parameter)) & 0xffffL);
+    }
+
+    public static int s32Value32(IRubyObject parameter) {
         return (int) (parameter instanceof RubyFixnum
                 ? ((RubyFixnum) parameter).getLongValue()
                 : other2long(parameter));
     }
-    
-    public static long u32Value(IRubyObject parameter) {
+
+    public static long s32Value64(IRubyObject parameter) {
+        return (int) (parameter instanceof RubyFixnum
+                ? ((RubyFixnum) parameter).getLongValue()
+                : other2long(parameter));
+    }
+
+    public static int u32Value32(IRubyObject parameter) {
+        return (int) ((parameter instanceof RubyFixnum
+                ? ((RubyFixnum) parameter).getLongValue()
+                : other2long(parameter)) & 0xffffffffL);
+    }
+
+    public static long u32Value64(IRubyObject parameter) {
         return (parameter instanceof RubyFixnum
                 ? ((RubyFixnum) parameter).getLongValue()
                 : other2long(parameter)) & 0xffffffffL;
     }
-    
-    public static long s64Value(IRubyObject parameter) {
+
+    public static long s64Value64(IRubyObject parameter) {
         return parameter instanceof RubyFixnum
                 ? ((RubyFixnum) parameter).getLongValue()
                 : other2long(parameter);
     }
-    
+
     public static long other2u64(IRubyObject parameter) {
         if (parameter instanceof RubyBignum) {
-            return RubyBignum.big2ulong((RubyBignum) parameter);
+            return ((RubyBignum) parameter).getValue().longValue();
 
         } else {
             return other2long(parameter);
         }
     }
 
-    public static long u64Value(IRubyObject parameter) {
-        return ((parameter instanceof RubyFixnum
+    public static long u64Value64(IRubyObject parameter) {
+        return parameter instanceof RubyFixnum
                 ? ((RubyFixnum) parameter).getLongValue()
-                : other2u64(parameter)) & 0xffffffffffffffffL);
+                : other2u64(parameter);
     }
-    
+
     public static long chr2long(IRubyObject parameter) {
         CharSequence cs = parameter.asJavaString();
         if (cs.length() == 1) {
             return cs.charAt(0);
         }
-        
+
         throw parameter.getRuntime().newRangeError("value "
                     + parameter + " is not an integer");
     }
-    
-    public static int float2int(IRubyObject parameter) {
+
+    public static int f32Value32(IRubyObject parameter) {
         if (parameter instanceof RubyFloat) {
             return Float.floatToRawIntBits((float) ((RubyFloat) parameter).getDoubleValue());
-        
+
         } else {
-            return s32Value(parameter);
+            return s32Value32(parameter);
+        }
+    }
+
+    public static long f32Value64(IRubyObject parameter) {
+        if (parameter instanceof RubyFloat) {
+            return Float.floatToRawIntBits((float) ((RubyFloat) parameter).getDoubleValue());
+
+        } else {
+            return s32Value32(parameter);
         }
     }
     
-    public static long float2long(IRubyObject parameter) {
-        if (parameter instanceof RubyFloat) {
-            return Float.floatToRawIntBits((float) ((RubyFloat) parameter).getDoubleValue());
-        
-        } else {
-            return other2long(parameter);
-        }
-    }
-    
-    public static long double2long(IRubyObject parameter) {
+    public static long f64Value64(IRubyObject parameter) {
         if (parameter instanceof RubyFloat) {
             return Double.doubleToRawLongBits(((RubyFloat) parameter).getDoubleValue());
         
@@ -134,7 +170,15 @@ public final class JITRuntime {
             return other2long(parameter);
         }
     }
-    
+
+    public static int boolValue32(IRubyObject parameter) {
+        return boolValue(parameter) ? 1 : 0;
+    }
+
+    public static long boolValue64(IRubyObject parameter) {
+        return boolValue(parameter) ? 1L : 0L;
+    }
+
     private static boolean other2bool(IRubyObject parameter) {
         if (parameter instanceof RubyNumeric) {
             return ((RubyNumeric) parameter).getLongValue() != 0;
