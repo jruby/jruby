@@ -581,6 +581,33 @@ ULL2NUM(unsigned long long v)
     return __builtin_expect(POSFIXABLE(v), 1) ? ULONG2FIX(v) : rb_ull2inum(v);
 }
 
+static inline VALUE
+TIMET2NUM(time_t v)
+{
+    if ((time_t)-1 < 0) {
+        if (sizeof(int) == sizeof(time_t)) {
+            return INT2NUM(v);
+        }
+        else if (sizeof(long) == sizeof(time_t)) {
+            return LONG2NUM(v);
+        }
+        else if (sizeof(LONG_LONG) == sizeof(time_t)) {
+            return LL2NUM(v);
+        }
+    }
+    else {
+        if (sizeof(int) == sizeof(time_t)) {
+            return UINT2NUM(v);
+        }
+        else if (sizeof(long) == sizeof(time_t)) {
+            return ULONG2NUM(v);
+        }
+        else if (sizeof(LONG_LONG) == sizeof(time_t)) {
+            return ULL2NUM(v);
+        }
+    }
+}
+
 /** Convert a VALUE into a chr */
 #define NUM2CHR(x) rb_num2chr(x)
 /** Convert a VALUE into a long long */
