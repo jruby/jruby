@@ -16,9 +16,9 @@
   </issueManagement>
 
   <scm>
-    <connection>scm:git:git://kenai.com/jruby~main</connection>
-    <developerConnection>scm:git:ssh://git.kenai.com/jruby~main</developerConnection>
-    <url>http://kenai.com/projects/jruby/sources</url>
+    <connection>scm:git:git://github.com/jruby/jruby.git</connection>
+    <developerConnection>scm:git:git://github.com/jruby/jruby.git</developerConnection>
+    <url>http://github.com/jruby/jruby</url>
   </scm>
 
   <licenses>
