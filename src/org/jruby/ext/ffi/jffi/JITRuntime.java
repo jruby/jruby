@@ -335,4 +335,24 @@ public final class JITRuntime {
     public static IRubyObject newFloat64(ThreadContext context, long value) {
         return RubyFloat.newFloat(context.getRuntime(), Double.longBitsToDouble(value));
     }
+
+    private static final PointerParameterStrategy DIRECT_POINTER = new DirectPointerParameterStrategy();
+    private static final PointerParameterStrategy DIRECT_STRUCT = new DirectStructParameterStrategy();
+    private static final PointerParameterStrategy NIL_POINTER_STRATEGY = new NilPointerParameterStrategy();
+    private static final PointerParameterStrategy HEAP_POINTER_STRATEGY = new HeapPointerParameterStrategy();
+
+    public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
+        if (parameter instanceof Pointer) {
+            return DIRECT_POINTER;
+
+        } else if (parameter instanceof Struct && ((Struct) parameter).getMemory() instanceof Pointer) {
+            return DIRECT_STRUCT;
+
+        } else if (parameter.isNil()) {
+            return NIL_POINTER_STRATEGY;
+
+        } else {
+            return HEAP_POINTER_STRATEGY;
+        }
+    }
 }

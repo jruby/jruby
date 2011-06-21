@@ -47,6 +47,9 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
         mv.getfield(p(JITNativeInvoker.class), "function", ci(com.kenai.jffi.Function.class));
         // [ stack now contains: Invoker, Function ]
         final int firstParam = 2;
+        final int firstLocalVar = firstParam + signature.getParameterCount();
+        final int tmpLocalVar = firstLocalVar;
+        int nextStrategyVar = firstLocalVar + 1;
         
         // Perform any generic data conversions on the parameters
         for (int i = 0; i < signature.getParameterCount(); ++i) {
@@ -123,60 +126,19 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                 case BUFFER_OUT:
                 case BUFFER_INOUT:
                     maxPointerIndex = i;
-                    Label direct = new Label();
-                    Label done = new Label();
-                    Label nilTest = new Label();
-                    Label stringTest = new Label();
-                    Label converted = new Label();
-                    
-                    // If a direct pointer is passed in, jump straight to conversion
-                    mv.instance_of(p(Pointer.class));
-                    mv.iftrue(direct);
-                    
-                    // If the parameter is a struct, fetch its memory pointer
-                    mv.aload(paramVar);
-                    mv.instance_of(p(Struct.class));
-                    mv.iffalse(nilTest);
-                    
-                    mv.aload(paramVar);
-                    mv.checkcast(p(Struct.class));
-                    mv.invokevirtual(p(Struct.class), "getMemory", sig(AbstractMemory.class));
-                    mv.go_to(converted);
-                    
-                    // Convert nil -> 0
-                    mv.label(nilTest);
-                    mv.aload(paramVar);
-                    mv.invokeinterface(p(IRubyObject.class), "isNil", sig(boolean.class));
-                    mv.iffalse(stringTest);
-                    if (int.class == nativeIntType) mv.iconst_0(); else mv.lconst_0();
-                    mv.go_to(done);
-                    
-                    // If it is a String or Buffer, it can only be handled via the fallback route
-                    mv.label(stringTest);
-                    mv.aload(paramVar);
-                    mv.instance_of(p(RubyString.class));
-                    mv.iftrue(fallback[i]);
-                    
-                    mv.aload(paramVar);
-                    mv.instance_of(p(Buffer.class));
-                    mv.iftrue(fallback[i]);
-                    
-                    mv.aload(1);
-                    mv.aload(paramVar);
-                    mv.invokestatic(p(JITRuntime.class), "other2ptr", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
-                    mv.label(converted);
+                    mv.invokestatic(p(JITRuntime.class), "pointerParameterStrategy",
+                            sig(PointerParameterStrategy.class, IRubyObject.class));
                     mv.dup();
-                    mv.astore(paramVar);
-                    mv.instance_of(p(Pointer.class));
+                    mv.astore(nextStrategyVar);
+                    mv.invokevirtual(p(PointerParameterStrategy.class), "isDirect", sig(boolean.class));
                     mv.iffalse(fallback[i]);
-                    
-                    mv.label(direct);
-                    // The parameter is guaranteed to be a direct pointer now
+
+                    // It is now direct, get the address, and convert to the native int type
+                    mv.aload(nextStrategyVar);
                     mv.aload(paramVar);
-                    mv.checkcast(p(Pointer.class));
-                    mv.invokevirtual(p(Pointer.class), "getAddress", sig(long.class));
+                    mv.invokevirtual(p(PointerParameterStrategy.class), "getAddress", sig(long.class, IRubyObject.class));
                     narrow(mv, long.class, nativeIntType);
-                    mv.label(done);
+                    nextStrategyVar++;
                     break;
 
                 case FLOAT:
@@ -225,7 +187,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
             mv.aload(1);
             
             for (int i = 0; i < signature.getParameterCount(); i++) {
-                mv.aload(2 + i);
+                mv.aload(firstParam + i);
             }
             
             mv.invokevirtual(p(NativeInvoker.class), "invoke", 
