@@ -3,8 +3,6 @@
 <project basedir="." default="jar" name="JRuby">
   <description>JRuby is a pure Java implementation of a Ruby interpreter.</description>
 
-  <property name="base.dir" location="${basedir}"/>
-
   <property name="jruby.gem.home.1.8" location="${basedir}/lib/ruby/gems/1.8"/>
 
   <!-- First try to load machine-specific properties. -->
@@ -380,7 +378,7 @@
         <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
-        <metainf dir="${base.dir}/spi">
+        <metainf dir="spi">
           <include name="services/**"/>
         </metainf>
         <manifest>
@@ -421,7 +419,7 @@
         <zipfileset src="${asm.jar}"/>
         <zipfileset src="${asm-util.jar}"/>
         <zipfileset src="${build.lib.dir}/yecht.jar"/>
-        <metainf dir="${base.dir}/spi">
+        <metainf dir="spi">
           <include name="services/**"/>
         </metainf>
         <manifest>
@@ -480,7 +478,7 @@
         <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
-        <metainf dir="${base.dir}/spi">
+        <metainf dir="spi">
           <include name="services/**"/>
         </metainf>
         <manifest>
@@ -545,7 +543,7 @@
       <fileset dir="${build.dir}/jar-stdlib">
         <exclude name="META-INF/jruby.home/lib/ruby/site_ruby/shared/builtin/**"/>
       </fileset>
-      <metainf dir="${base.dir}/spi">
+      <metainf dir="spi">
         <include name="services/**"/>
       </metainf>
       <manifest>
@@ -638,7 +636,7 @@
       <zipfileset src="${build.lib.dir}/yecht.jar"/>
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
-      <metainf dir="${base.dir}/spi">
+      <metainf dir="spi">
         <include name="services/**"/>
       </metainf>
       <manifest>
@@ -1054,7 +1052,7 @@
       <junit jvm="${jruby.test.jvm}" fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="1800000">
         <classpath refid="test.class.path"/>
         <syspropertyset refid="test.sysproperties"/>
-        <sysproperty key="jruby.home" value="${base.dir}"/>
+        <sysproperty key="jruby.home" value="${basedir}"/>
         <formatter type="xml"/>
         <formatter type="brief" usefile="false" />
         <batchtest fork="yes" todir="${test.results.dir}">
@@ -1092,7 +1090,7 @@
     <attribute name="inproc" default="true"/>
     <attribute name="jruby.args" default=""/>
     <attribute name="task"/>
-    <attribute name="dir" default="${base.dir}"/>
+    <attribute name="dir" default="${basedir}"/>
     <attribute name="jvm.args" default="-ea"/>
 
     <sequential>
@@ -1440,7 +1438,7 @@
       <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
           <include name="tool/nailgun/configure"/>
       </tarfileset>
-      <tarfileset dir="${base.dir}" prefix="jruby-${version.jruby}">
+      <tarfileset dir="${basedir}" prefix="jruby-${version.jruby}">
           <include name="spi/**"/>
       </tarfileset>
       <tarfileset dir="${basedir}" mode="755" prefix="jruby-${version.jruby}">
@@ -1465,7 +1463,7 @@
       <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
         <include name="tool/nailgun/configure"/>
       </zipfileset>
-      <zipfileset dir="${base.dir}" prefix="jruby-${version.jruby}">
+      <zipfileset dir="${basedir}" prefix="jruby-${version.jruby}">
 	<include name="spi/**"/>
       </zipfileset>
       <zipfileset dir="${basedir}" filemode="755" prefix="jruby-${version.jruby}">
@@ -1545,8 +1543,8 @@
   </target>
 
   <target name="clean-all" depends="clean, dist-clean, clear-specs" description="Cleans everything, including dist files and specs">
-      <delete dir="${base.dir}/build.eclipse"/>
-      <delete dir="${base.dir}/lib/native"/>
+      <delete dir="build.eclipse"/>
+      <delete dir="lib/native"/>
   </target>
 
   <property name="nailgun.home" value="${basedir}/tool/nailgun"/>
