@@ -1,24 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <project basedir="." default="jar" name="JRuby">
-  <description>JRuby is a pure Java implementation of a Ruby interpreter.</description>
-
-  <property name="jruby.gem.home.1.8" location="${basedir}/lib/ruby/gems/1.8"/>
+  <description>JRuby is a Java implementation of a Ruby runtime.</description>
 
   <!-- First try to load machine-specific properties. -->
   <property file="build.properties"/>
 
-  <!-- And then load the defaults. It seems backwards to set defaults AFTER
-       setting local overrides, but that's how Ant works. -->
+  <!-- Then set defaults for any values not set by build.properties -->
   <property file="default.build.properties"/>
-
-  <property name="shared.lib.dir" value="lib/ruby/site_ruby/shared"/>
-  
-  <property name="asm.jar" value="${build.lib.dir}/asm-${asm.version}.jar"/>
-  <property name="asm-commons.jar" value="${build.lib.dir}/asm-commons-${asm.version}.jar"/>
-  <property name="asm-util.jar" value="${build.lib.dir}/asm-util-${asm.version}.jar"/>
-  <property name="asm-analysis.jar" value="${build.lib.dir}/asm-analysis-${asm.version}.jar"/>
-  <property name="asm-tree.jar" value="${build.lib.dir}/asm-tree-${asm.version}.jar"/>
 
   <path id="build.classpath">
     <fileset dir="${build.lib.dir}" includes="*.jar"/>
@@ -343,10 +332,10 @@
       <jar destfile="${lib.dir}/jruby.jar" compress="true" index="true" update="true">
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${asm.jar}"/>
-        <zipfileset src="${asm-commons.jar}"/>
-        <zipfileset src="${asm-util.jar}"/>
-        <zipfileset src="${asm-analysis.jar}"/>
-        <zipfileset src="${asm-tree.jar}"/>
+        <zipfileset src="${asm.commons.jar}"/>
+        <zipfileset src="${asm.util.jar}"/>
+        <zipfileset src="${asm.analysis.jar}"/>
+        <zipfileset src="${asm.tree.jar}"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/jline-${jline.version}.jar"/>
@@ -417,7 +406,7 @@
       <jarjar destfile="${lib.dir}/jruby-core.jar" compress="true" index="true">
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${asm.jar}"/>
-        <zipfileset src="${asm-util.jar}"/>
+        <zipfileset src="${asm.util.jar}"/>
         <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <metainf dir="spi">
           <include name="services/**"/>
@@ -443,10 +432,10 @@
       <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
         <fileset dir="${jruby.classes.dir}"/>
         <zipfileset src="${asm.jar}"/>
-        <zipfileset src="${asm-commons.jar}"/>
-        <zipfileset src="${asm-util.jar}"/>
-        <zipfileset src="${asm-analysis.jar}"/>
-        <zipfileset src="${asm-tree.jar}"/>
+        <zipfileset src="${asm.commons.jar}"/>
+        <zipfileset src="${asm.util.jar}"/>
+        <zipfileset src="${asm.analysis.jar}"/>
+        <zipfileset src="${asm.tree.jar}"/>
         <zipfileset src="${build.lib.dir}/constantine.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/jline-${jline.version}.jar"/>
@@ -601,10 +590,10 @@
         <exclude name="META-INF/jruby.home/lib/ruby/site_ruby/shared/builtin/**"/>
       </fileset>
       <zipfileset src="${asm.jar}"/>
-      <zipfileset src="${asm-commons.jar}"/>
-      <zipfileset src="${asm-util.jar}"/>
-      <zipfileset src="${asm-analysis.jar}"/>
-      <zipfileset src="${asm-tree.jar}"/>
+      <zipfileset src="${asm.commons.jar}"/>
+      <zipfileset src="${asm.util.jar}"/>
+      <zipfileset src="${asm.analysis.jar}"/>
+      <zipfileset src="${asm.tree.jar}"/>
       <zipfileset src="${build.lib.dir}/bytelist.jar"/>
       <zipfileset src="${build.lib.dir}/constantine.jar"/>
       <zipfileset src="${build.lib.dir}/jline-${jline.version}.jar"/>
