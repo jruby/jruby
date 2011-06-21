@@ -18,25 +18,14 @@
     <pathelement path="${jruby.classes.dir}"/>
   </path>
 
-  <!-- directory that contains emma.jar and emma_ant.jar: -->
-  <property name="emma.dir" value="${build.lib.dir}" />
-
   <path id="emma.classpath">
-    <pathelement location="${emma.dir}/emma.jar" />
-    <pathelement location="${emma.dir}/emma_ant.jar" />
+    <pathelement location="${build.lib.dir}/emma.jar" />
+    <pathelement location="${build.lib.dir}/emma_ant.jar" />
   </path>
 
   <patternset id="java.src.pattern">
     <include name="**/*.java"/>
     <exclude unless="sun-misc-signal" name="**/SunSignalFacade.java"/>
-  </patternset>
-
-  <patternset id="ruby.src.pattern">
-    <include name="**/*.rb"/>
-  </patternset>
-
-  <patternset id="other.src.pattern">
-    <include name="**/*.properties"/>
   </patternset>
 
   <import file="netbeans-ant.xml" optional="true"/>
