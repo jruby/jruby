@@ -533,6 +533,12 @@ public class IRBuilder {
         }
     }
 
+    public Operand copyAndReturnValue(IRScope s, Operand val) {
+        Variable v = s.getNewTemporaryVariable();
+        s.addInstr(new CopyInstr(v, val));
+        return v;
+    }
+
     public void buildArguments(List<Operand> args, Node node, IRScope s) {
         switch (node.getNodeType()) {
             case ARGSCATNODE: buildArgsCatArguments(args, (ArgsCatNode) node, s); break;
@@ -764,7 +770,7 @@ public class IRBuilder {
         for (Node e: node.childNodes())
             elts.add(build(e, m));
 
-        return new Array(elts);
+        return copyAndReturnValue(m, new Array(elts));
     }
 
     public Operand buildArgsCat(final ArgsCatNode argsCatNode, IRScope s) {
@@ -793,7 +799,8 @@ public class IRBuilder {
     }
 
     public Operand buildBackref(BackRefNode node, IRScope m) {
-        return new Backref(node.getType());
+        // SSS FIXME: Required? Verify with Tom/Charlie
+        return copyAndReturnValue(m, new Backref(node.getType()));
     }
 
     public Operand buildBegin(BeginNode beginNode, IRScope s) {
@@ -801,6 +808,8 @@ public class IRBuilder {
     }
 
     public Operand buildBignum(BignumNode node, IRScope s) {
+        // SSS: Since fixnum literals are effectively interned objects, no need to copyAndReturnValue(...)
+        // Or is this a premature optimization?
         return new Fixnum(node.getValue());
     }
 
@@ -1702,7 +1711,7 @@ public class IRBuilder {
     }
 
     public Operand buildDot(final DotNode dotNode, IRScope s) {
-        return new Range(build(dotNode.getBeginNode(), s), build(dotNode.getEndNode(), s), dotNode.isExclusive());
+        return copyAndReturnValue(s, new Range(build(dotNode.getBeginNode(), s), build(dotNode.getEndNode(), s), dotNode.isExclusive()));
     }
 
     public Operand buildDRegexp(DRegexpNode dregexpNode, IRScope s) {
@@ -1710,7 +1719,7 @@ public class IRBuilder {
         for (Node n : dregexpNode.childNodes())
             strPieces.add(build(n, s));
 
-        return new Regexp(new CompoundString(strPieces), dregexpNode.getOptions());
+        return copyAndReturnValue(s, new Regexp(new CompoundString(strPieces), dregexpNode.getOptions()));
     }
 
     public Operand buildDStr(DStrNode dstrNode, IRScope s) {
@@ -1718,7 +1727,7 @@ public class IRBuilder {
         for (Node n : dstrNode.childNodes())
             strPieces.add(build(n, s));
 
-        return new CompoundString(strPieces);
+        return copyAndReturnValue(s, new CompoundString(strPieces));
     }
 
     public Operand buildDSymbol(Node node, IRScope s) {
@@ -1726,7 +1735,7 @@ public class IRBuilder {
         for (Node n : node.childNodes())
             strPieces.add(build(n, s));
 
-        return new DynamicSymbol(new CompoundString(strPieces));
+        return copyAndReturnValue(s, new DynamicSymbol(new CompoundString(strPieces)));
     }
 
     public Operand buildDVar(DVarNode node, IRScope m) {
@@ -1738,7 +1747,7 @@ public class IRBuilder {
         for (Node nextNode : dstrNode.childNodes())
             strPieces.add(build(nextNode, m));
 
-        return new BacktickString(strPieces);
+        return copyAndReturnValue(m, new BacktickString(strPieces));
     }
 
     /* ****************************************************************
@@ -1992,6 +2001,8 @@ public class IRBuilder {
 **/
 
     public Operand buildFloat(FloatNode node, IRScope m) {
+        // SSS: Since flaot literals are effectively interned objects, no need to copyAndReturnValue(...)
+        // Or is this a premature optimization?
         return new Float(node.getValue());
     }
 
@@ -2039,7 +2050,7 @@ public class IRBuilder {
 
     public Operand buildHash(HashNode hashNode, IRScope m) {
         if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
-            return new Hash(new ArrayList<KeyValuePair>());
+            return copyAndReturnValue(m, new Hash(new ArrayList<KeyValuePair>()));
         }
         else {
             int     i     = 0;
@@ -2056,7 +2067,7 @@ public class IRBuilder {
                     key = null; 
                 }
             }
-            return new Hash(args);
+            return copyAndReturnValue(m, new Hash(args));
         }
     }
 
@@ -2170,7 +2181,7 @@ public class IRBuilder {
     }
 
     public Operand buildLiteral(LiteralNode literalNode, IRScope s) {
-        return new StringLiteral(literalNode.getName());
+        return copyAndReturnValue(s, new StringLiteral(literalNode.getName()));
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode, IRScope s) {
@@ -2292,7 +2303,7 @@ public class IRBuilder {
     }
 
     public Operand buildNthRef(NthRefNode nthRefNode, IRScope m) {
-        return new NthRef(nthRefNode.getMatchNumber());
+        return copyAndReturnValue(m, new NthRef(nthRefNode.getMatchNumber()));
     }
 
     public Operand buildNil(Node node, IRScope m) {
@@ -2604,7 +2615,7 @@ public class IRBuilder {
     }
 
     public Operand buildRegexp(RegexpNode reNode, IRScope m) {
-        return new Regexp(new StringLiteral(reNode.getValue()), reNode.getOptions());
+        return copyAndReturnValue(m, new Regexp(new StringLiteral(reNode.getValue()), reNode.getOptions()));
     }
 
     public Operand buildRescue(Node node, IRScope m) {
@@ -2800,11 +2811,11 @@ public class IRBuilder {
     }
 
     public Operand buildSplat(SplatNode splatNode, IRScope s) {
-        return new Splat(build(splatNode.getValue(), s));
+        return copyAndReturnValue(s, new Splat(build(splatNode.getValue(), s)));
     }
 
     public Operand buildStr(StrNode strNode, IRScope s) {
-        return new StringLiteral(strNode.getValue());
+        return copyAndReturnValue(s, new StringLiteral(strNode.getValue()));
     }
 
     public Operand buildSuper(SuperNode superNode, IRScope s) {
@@ -2817,10 +2828,12 @@ public class IRBuilder {
     }
 
     public Operand buildSValue(SValueNode node, IRScope s) {
-        return new SValue(build(node.getValue(), s));
+        // SSS FIXME: Required? Verify with Tom/Charlie
+        return copyAndReturnValue(s, new SValue(build(node.getValue(), s)));
     }
 
     public Operand buildSymbol(SymbolNode node, IRScope s) {
+        // SSS: Since symbols are interned objects, no need to copyAndReturnValue(...)
         return new Symbol(node.getName());
     }    
 
@@ -2923,7 +2936,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node, IRScope m) {
-        return new BacktickString(new StringLiteral(node.getValue()));
+        return copyAndReturnValue(m, new BacktickString(new StringLiteral(node.getValue())));
     }
 
 /*
@@ -2946,7 +2959,7 @@ public class IRBuilder {
     }
 
     public Operand buildZArray(Node node, IRScope m) {
-       return new Array();
+       return copyAndReturnValue(m, new Array());
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
