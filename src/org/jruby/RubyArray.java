@@ -2480,16 +2480,17 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_delete_at
      *
      */
-    private final IRubyObject delete_at(int pos) {
+    public final IRubyObject delete_at(int pos) {
         int len = realLength;
         if (pos >= len || (pos < 0 && (pos += len) < 0)) return getRuntime().getNil();
 
         modify();
 
         IRubyObject nil = getRuntime().getNil();
-        IRubyObject obj = values[begin + pos];
+        IRubyObject obj = null; // should never return null below
 
         try {
+            obj = values[begin + pos];
             // fast paths for head and tail
             if (pos == 0) {
                 values[begin] = nil;
