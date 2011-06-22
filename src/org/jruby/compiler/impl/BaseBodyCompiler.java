@@ -1379,7 +1379,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             loadRuntime();
             createStringCallback.call(this);
             method.pushInt(options);
-            method.invokestatic(p(RubyRegexp.class), "newDRegexp", sig(RubyRegexp.class, params(Ruby.class, RubyString.class, int.class))); //[reg]
+            method.invokestatic(p(RubyRegexp.class), "newDRegexpEmbedded", sig(RubyRegexp.class, params(Ruby.class, RubyString.class, int.class))); //[reg]
         }
     }
 

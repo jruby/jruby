@@ -610,3 +610,11 @@ end
 if is19 # chained argscat and argspush
   test_equal([1,2,3,1,2,4,5], compile_and_run("a=[1,2];b=[4,5];[*a,3,*a,*b]"))
 end
+
+# JRUBY-5840
+test = '
+nonascii = (0x80..0xff).collect{|c| c.chr }.join
+/([#{Regexp.escape(nonascii)}])/n
+'
+$KCODE = 'UTF-8'
+test_equal eval(test), compile_and_run(test)
