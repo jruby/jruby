@@ -45,6 +45,7 @@ package org.jruby;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -1714,30 +1715,72 @@ public class RubyKernel {
         return (int)tuple[0];
     }
     
-    @JRubyMethod(name = {"exec"}, required = 1, rest = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = {"exec"}, required = 1, rest = true, module = true, compat = RUBY1_8, visibility = PRIVATE)
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
+        
+        return execCommon(runtime, null, null, null, args);
+    }
+    
+    @JRubyMethod(required = 4, module = true, compat = RUBY1_9, visibility = PRIVATE)
+    public static IRubyObject _exec_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        
+        IRubyObject env = args[0];
+        IRubyObject prog = args[1];
+        IRubyObject options = args[2];
+        RubyArray cmdArgs = (RubyArray)args[3];
 
+        return execCommon(runtime, env, prog, options, cmdArgs.toJavaArray());
+    }
+    
+    private static IRubyObject execCommon(Ruby runtime, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject[] args) {
         // This is a fairly specific hack for empty string, but it does the job
         if (args.length == 1 && args[0].convertToString().isEmpty()) {
             throw runtime.newErrnoENOENTError(args[0].convertToString().toString());
         }
         
+        Map<String, String> envMap = null;
+        if (env != null) {
+            envMap = (RubyHash)env.convertToHash();
+        }
+        
+        if (prog != null && prog.isNil()) prog = null;
+        
         int resultCode;
         boolean nativeFailed = false;
         try {
             try {
+                // args to strings
                 String[] argv = new String[args.length];
                 for (int i = 0; i < args.length; i++) {
                     argv[i] = args[i].asJavaString();
                 }
-                resultCode = runtime.getPosix().exec(null, argv);
+                
+                if (envMap != null) {
+                    // env to name=value strings
+                    String[] envAry = new String[envMap.size()];
+
+                    int i = 0;
+                    for (Map.Entry<String, String> entry : envMap.entrySet()) {
+                        envAry[i++] = entry.getKey() + "=" + entry.getValue();
+                    }
+                    
+                    resultCode = runtime.getPosix().exec(prog == null ? null : prog.asJavaString(), argv, envAry);
+                } else {
+                    resultCode = runtime.getPosix().exec(prog == null ? null : prog.asJavaString(), argv);
+                }
+                
                 // Only here because native exec could not exec (always -1)
                 nativeFailed = true;
             } catch (RaiseException e) {  // Not implemented error
                 // Fall back onto our existing code if native not available
                 // FIXME: Make jnr-posix Pure-Java backend do this as well
-                resultCode = ShellLauncher.execAndWait(runtime, args);
+                if (envMap != null) {
+                    resultCode = ShellLauncher.execAndWait(runtime, args, envMap);
+                } else {
+                    resultCode = ShellLauncher.execAndWait(runtime, args);
+                }
             }
         } catch (RaiseException e) {
             throw e; // no need to wrap this exception

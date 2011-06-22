@@ -46,6 +46,7 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -375,11 +376,100 @@ public class ShellLauncher {
         return runWithoutWait(runtime, rawArgs, runtime.getOutputStream());
     }
 
+    public static int runExternalAndWait(Ruby runtime, IRubyObject[] rawArgs, Map mergeEnv) {
+        OutputStream output = runtime.getOutputStream();
+        OutputStream error = runtime.getErrorStream();
+        InputStream input = runtime.getInputStream();
+        Process aProcess = null;
+        File pwd = new File(runtime.getCurrentDirectory());
+        LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, true);
+
+        try {
+            try {
+                if (cfg.shouldRunInShell()) {
+                    log(runtime, "Launching with shell");
+                    // execute command with sh -c
+                    // this does shell expansion of wildcards
+                    cfg.verifyExecutableForShell();
+                    aProcess = Runtime.getRuntime().exec(cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd);
+                } else {
+                    log(runtime, "Launching directly (no shell)");
+                    cfg.verifyExecutableForDirect();
+                    aProcess = Runtime.getRuntime().exec(cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd);
+                }
+            } catch (SecurityException se) {
+                throw runtime.newSecurityError(se.getLocalizedMessage());
+            }
+            handleStreams(runtime, aProcess, input, output, error);
+            return aProcess.waitFor();
+        } catch (IOException e) {
+            throw runtime.newIOErrorFromException(e);
+        } catch (InterruptedException e) {
+            throw runtime.newThreadError("unexpected interrupt");
+        }
+    }
+
+    public static long runExternalWithoutWait(Ruby runtime, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject args) {
+        return runExternal(runtime, env, prog, options, args, false);
+    }
+
+    public static long runExternal(Ruby runtime, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject args, boolean wait) {
+        if (env.isNil() || !(env instanceof Map)) {
+            env = null;
+        }
+        
+        IRubyObject[] rawArgs = args.convertToArray().toJavaArray();
+        
+        OutputStream output = runtime.getOutputStream();
+        OutputStream error = runtime.getErrorStream();
+        InputStream input = runtime.getInputStream();
+        
+        try {
+            Process aProcess = null;
+            File pwd = new File(runtime.getCurrentDirectory());
+            LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, true);
+
+            try {
+                if (cfg.shouldRunInShell()) {
+                    log(runtime, "Launching with shell");
+                    // execute command with sh -c
+                    // this does shell expansion of wildcards
+                    cfg.verifyExecutableForShell();
+                    aProcess = Runtime.getRuntime().exec(cfg.getExecArgs(), getCurrentEnv(runtime, (Map)env), pwd);
+                } else {
+                    log(runtime, "Launching directly (no shell)");
+                    cfg.verifyExecutableForDirect();
+                    aProcess = Runtime.getRuntime().exec(cfg.getExecArgs(), getCurrentEnv(runtime, (Map)env), pwd);
+                }
+            } catch (SecurityException se) {
+                throw runtime.newSecurityError(se.getLocalizedMessage());
+            }
+            
+            if (wait) {
+                handleStreams(runtime, aProcess, input, output, error);
+                try {
+                    return aProcess.waitFor();
+                } catch (InterruptedException e) {
+                    throw runtime.newThreadError("unexpected interrupt");
+                }
+            } else {
+                handleStreamsNonblocking(runtime, aProcess, runtime.getOutputStream(), error);
+                return getPidFromProcess(aProcess);
+            }
+        } catch (IOException e) {
+            throw runtime.newIOErrorFromException(e);
+        }
+    }
+
     public static long runExternalWithoutWait(Ruby runtime, IRubyObject[] rawArgs) {
         return runWithoutWait(runtime, rawArgs, runtime.getOutputStream());
     }
 
     public static int execAndWait(Ruby runtime, IRubyObject[] rawArgs) {
+        return execAndWait(runtime, rawArgs, Collections.EMPTY_MAP);
+    }
+
+    public static int execAndWait(Ruby runtime, IRubyObject[] rawArgs, Map mergeEnv) {
         File pwd = new File(runtime.getCurrentDirectory());
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, true);
 
@@ -391,7 +481,7 @@ public class ShellLauncher {
                 // in-process, we allow it to use the default streams and not use
                 // pumpers at all. See JRUBY-2156 and JRUBY-2154.
                 ScriptThreadProcess ipScript = new ScriptThreadProcess(
-                        runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd, false);
+                        runtime, cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd, false);
                 ipScript.start();
                 return ipScript.waitFor();
             } catch (IOException e) {
@@ -400,7 +490,7 @@ public class ShellLauncher {
                 throw runtime.newThreadError("unexpected interrupt");
             }
         } else {
-            return runAndWait(runtime, rawArgs);
+            return runExternalAndWait(runtime, rawArgs, mergeEnv);
         }
     }
 

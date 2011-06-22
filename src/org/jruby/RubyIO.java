@@ -3542,53 +3542,82 @@ public class RubyIO extends RubyObject {
             throw runtime.newThreadError("unexpected interrupt");
         }
     }
+    
+    private static class Ruby19POpen {
+        public final RubyString cmd;
+        public final IRubyObject[] cmdPlusArgs;
+        public final RubyHash env;
+        
+        public Ruby19POpen(Ruby runtime, IRubyObject[] args) {
+            IRubyObject[] _cmdPlusArgs = null;
+            RubyHash _env = null;
+            IRubyObject _cmd = null;
+            IRubyObject arg0 = args[0].checkArrayType();
+
+            if (args[0] instanceof RubyHash) {
+                // use leading hash as env
+                if (args.length > 1) {
+                    _env = (RubyHash)args[0];
+                } else {
+                    Arity.raiseArgumentError(runtime, 0, 1, 2);
+                }
+
+                if (Platform.IS_WINDOWS) {
+                    String[] tokens = args[1].convertToString().toString().split(" ", 2);
+                    String commandString = tokens[0].replace('/', '\\') +
+                            (tokens.length > 1 ? ' ' + tokens[1] : "");
+                    _cmd = runtime.newString(commandString);
+                } else {
+                    _cmd = args[1].convertToString();
+                }
+            } else if (args[0] instanceof RubyArray) {
+                RubyArray arg0Ary = (RubyArray)arg0;
+                if (arg0Ary.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
+                if (arg0Ary.eltOk(0) instanceof RubyHash) {
+                    // leading hash, use for env
+                    _env = (RubyHash)arg0Ary.delete_at(0);
+                }
+                if (arg0Ary.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
+                if (arg0Ary.size() > 1 && arg0Ary.eltOk(arg0Ary.size() - 1) instanceof RubyHash) {
+                    // trailing hash, use for opts
+                    _env = (RubyHash)arg0Ary.eltOk(arg0Ary.size() - 1);
+                }
+                _cmdPlusArgs = (IRubyObject[])arg0Ary.toJavaArray();
+
+                if (Platform.IS_WINDOWS) {
+                    String commandString = _cmdPlusArgs[0].convertToString().toString().replace('/', '\\');
+                    _cmdPlusArgs[0] = runtime.newString(commandString);
+                } else {
+                    _cmdPlusArgs[0] = _cmdPlusArgs[0].convertToString();
+                }
+                _cmd = _cmdPlusArgs[0];
+            } else {
+                if (Platform.IS_WINDOWS) {
+                    String[] tokens = args[0].convertToString().toString().split(" ", 2);
+                    String commandString = tokens[0].replace('/', '\\') +
+                            (tokens.length > 1 ? ' ' + tokens[1] : "");
+                    _cmd = runtime.newString(commandString);
+                } else {
+                    _cmd = args[0].convertToString();
+                }
+            }
+
+            runtime.checkSafeString(_cmd);
+
+            this.cmd = (RubyString)_cmd;
+            this.cmdPlusArgs = _cmdPlusArgs;
+            this.env = _env;
+        }
+    }
 
     @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true, compat = RUBY1_9)
     public static IRubyObject popen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         int mode;
 
-        IRubyObject[] cmdPlusArgs = null;
-        RubyHash env = null;
-        RubyHash opts = null;
-        IRubyObject cmdObj = null;
-        IRubyObject arg0 = args[0].checkArrayType();
-        
-        if (!arg0.isNil()) {
-            List argList = new ArrayList(Arrays.asList(((RubyArray)arg0).toJavaArray()));
-            if (argList.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
-            if (argList.get(0) instanceof RubyHash) {
-                // leading hash, use for env
-                env = (RubyHash)argList.remove(0);
-            }
-            if (argList.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
-            if (argList.size() > 1 && argList.get(argList.size() - 1) instanceof RubyHash) {
-                // trailing hash, use for opts
-                env = (RubyHash)argList.get(argList.size() - 1);
-            }
-            cmdPlusArgs = (IRubyObject[])argList.toArray(new IRubyObject[argList.size()]);
+        Ruby19POpen r19Popen = new Ruby19POpen(runtime, args);
 
-            if (Platform.IS_WINDOWS) {
-                String commandString = cmdPlusArgs[0].convertToString().toString().replace('/', '\\');
-                cmdPlusArgs[0] = runtime.newString(commandString);
-            } else {
-                cmdPlusArgs[0] = cmdPlusArgs[0].convertToString();
-            }
-            cmdObj = cmdPlusArgs[0];
-        } else {
-            if (Platform.IS_WINDOWS) {
-                String[] tokens = args[0].convertToString().toString().split(" ", 2);
-                String commandString = tokens[0].replace('/', '\\') +
-                        (tokens.length > 1 ? ' ' + tokens[1] : "");
-                cmdObj = runtime.newString(commandString);
-            } else {
-                cmdObj = args[0].convertToString();
-            }
-        }
-        
-        runtime.checkSafeString(cmdObj);
-
-        if ("-".equals(cmdObj.toString())) {
+        if ("-".equals(r19Popen.cmd.toString())) {
             throw runtime.newNotImplementedError("popen(\"-\") is unimplemented");
         }
 
@@ -3604,10 +3633,10 @@ public class RubyIO extends RubyObject {
             ModeFlags modes = new ModeFlags(mode);
 
             ShellLauncher.POpenProcess process;
-            if (cmdPlusArgs == null) {
-                process = ShellLauncher.popen(runtime, cmdObj, modes);
+            if (r19Popen.cmdPlusArgs == null) {
+                process = ShellLauncher.popen(runtime, r19Popen.cmd, modes);
             } else {
-                process = ShellLauncher.popen(runtime, cmdPlusArgs, env, modes);
+                process = ShellLauncher.popen(runtime, r19Popen.cmdPlusArgs, r19Popen.env, modes);
             }
 
             // Yes, this is gross. java.lang.Process does not appear to be guaranteed
