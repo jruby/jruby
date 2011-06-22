@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 
 import org.jruby.ast.executable.Script;
 import org.jruby.compiler.ASTCompiler;
@@ -735,7 +736,7 @@ public class RubyInstanceConfig {
             // if it wasn't found on the first line and the -x option
             // was specified
             if (isxFlag()) {
-                while (firstLine != null && !isShebangLine(firstLine)) {
+                while (firstLine != null && !isRubyShebangLine(firstLine)) {
                     firstLine = reader.readLine();
                 }
             }
@@ -778,9 +779,11 @@ public class RubyInstanceConfig {
         }
         return result;
     }
+    
+    private static final Pattern RUBY_SHEBANG = Pattern.compile("#!.*ruby.*");
 
-    protected static boolean isShebangLine(String line) {
-        return (line.length() > 2 && line.charAt(0) == '#' && line.charAt(1) == '!');
+    protected static boolean isRubyShebangLine(String line) {
+        return RUBY_SHEBANG.matcher(line).matches();
     }
 
     public CompileMode getCompileMode() {
@@ -1555,7 +1558,7 @@ public class RubyInstanceConfig {
         StringBuffer buf = new StringBuffer();
         BufferedReader br = new BufferedReader(new FileReader(file));
         String currentLine = br.readLine();
-        while (currentLine != null && !(currentLine.length() > 2 && currentLine.charAt(0) == '#' && currentLine.charAt(1) == '!')) {
+        while (currentLine != null && !isRubyShebangLine(currentLine)) {
             currentLine = br.readLine();
         }
 
