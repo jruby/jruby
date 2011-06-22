@@ -2262,7 +2262,7 @@ public class IRBuilder {
             ListNode headNode = (ListNode) sourceArray;
             for (Node an: headNode.childNodes()) {
                 if (values == null) {
-                    buildBlockArgsAssignment(an, s, i, false); // SSS FIXME: Changed this from i+1 to i// Add 1 since 0 is self for argument processing
+                    buildBlockArgsAssignment(an, s, i, false);
                 } else {
                     buildAssignment(an, s, values, i, false);
                 }
@@ -2811,7 +2811,9 @@ public class IRBuilder {
     }
 
     public Operand buildSplat(SplatNode splatNode, IRScope s) {
-        return copyAndReturnValue(s, new Splat(build(splatNode.getValue(), s)));
+        // SSS: Since splats can only occur in call argument lists, no need to copyAndReturnValue(...)
+		  // Verify with Tom / Charlie
+        return new Splat(build(splatNode.getValue(), s));
     }
 
     public Operand buildStr(StrNode strNode, IRScope s) {
