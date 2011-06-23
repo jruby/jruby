@@ -1671,7 +1671,7 @@ public class RubyKernel {
         }
         
         Map<String, String> envMap = null;
-        if (env != null) {
+        if (env != null && !env.isNil()) {
             envMap = (RubyHash)env.convertToHash();
         }
         
