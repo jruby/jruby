@@ -34,12 +34,6 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         this.hasMultipleArgsHead = false;
     }
 
-    @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-        // FIXME: auto wrapping not quite right
-        return call(context, new IRubyObject[] { value }, binding, type);
-    }
-
     private IRubyObject prepareSelf(Binding binding) {
         IRubyObject self = binding.getSelf();
         binding.getFrame().setSelf(self);
@@ -47,66 +41,95 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         return self;
     }
 
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        IRubyObject self = context.getFrameSelf(); // Should not need this and this should probably come from elsewhere
+    public IRubyObject commonCallPath(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type, Block block) {
+        // FIXME: null self?!?!?!
+        // FIXME: null klass!?!?!?!
+        // aValue is not used??
 
-        // SSS FIXME: Is this correct?
-        int numBlockArgs = arity().required();
-        if (numBlockArgs > 1 && args.length == 1 && args[0] instanceof RubyArray) {
-            RubyArray array = (RubyArray) args[0];
-            int size = array.getLength();
-            args = new IRubyObject[numBlockArgs];
-            
-            int i = 0;
-            for (; i < numBlockArgs && i < size; i++) {
-                args[i] = array.eltInternal(i);
-            }
+        RubyModule currentModule = closure.getStaticScope().getModule();
+        context.getCurrentScope().getStaticScope().setModule(currentModule);
 
-            for (; i < size; i++) {
-                args[i] = context.getRuntime().getNil();
-            }
-        }
-
-		  RubyModule currentModule = closure.getStaticScope().getModule();
-        InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, null, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
+        InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, null, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, block);
         interp.setDynamicScope(binding.getDynamicScope());
-		  context.getCurrentScope().getStaticScope().setModule(currentModule);
 
         return Interpreter.interpret(context, closure.getCFG(), interp);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
+        // SSS FIXME: Is this correct?
+        IRubyObject self = context.getFrameSelf(); // ENEBO: Should not need this and this should probably come from elsewhere
+        args = prepareArgumentsForCall(context, args, type);
+
+        // SSS FIXME: aValue is false here -- rest of them below are true
+        return commonCallPath(context, args, self, null, false, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
+        // SSS FIXME: Is this correct? null self unlike the fixed up one above
+        args = prepareArgumentsForCall(context, args, type);
+        return commonCallPath(context, args, null, null, true, binding, type, block);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, Binding binding, Block.Type type) {
+        // SSS FIXME: Is this correct? null self unlike the fixed up one above
+        IRubyObject[] args = prepareArgumentsForCall(context, IRubyObject.NULL_ARRAY, type);
+        return commonCallPath(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
+        // SSS FIXME: Is this correct? null self unlike the fixed up one above
+        IRubyObject[] args = new IRubyObject[] {arg0};
+        args = prepareArgumentsForCall(context, args, type);
+        return commonCallPath(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
+        // SSS FIXME: Is this correct? null self unlike the fixed up one above
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1};
+        args = prepareArgumentsForCall(context, args, type);
+        return commonCallPath(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
+        // SSS FIXME: Is this correct? null self
+        IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
+        args = prepareArgumentsForCall(context, args, type);
+        return commonCallPath(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
+        // SSS FIXME: Is this correct? null self
+        return commonCallPath(context, new IRubyObject[] {arg0, arg1}, null, null, true, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
+        // SSS FIXME: Is this correct? null self
+        return commonCallPath(context, new IRubyObject[] {arg0, arg1, arg2}, null, null, true, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+        // SSS FIXME: Is this correct?
+        IRubyObject self = context.getFrameSelf(); // ENEBO: Should not need this and this should probably come from elsewhere
+        IRubyObject[] args = prepareArgumentsForCall(context, new IRubyObject[] { value }, type);
+        return commonCallPath(context, args, self, null, false, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
         // FIXME: null self?!?!?!
         // FIXME: null klass!?!?!?!
-        if (self == null) self = value;
-        IRubyObject[] args = new IRubyObject[] { value };
-        // SSS FIXME: Is this correct?
-        int numBlockArgs = arity().required();
-        if (numBlockArgs > 1 && value instanceof RubyArray) {
-            // System.out.println("yield: ARRAY to multi");
-            RubyArray array = (RubyArray) value;
-            int size = array.getLength();
-            // System.out.println("yield: Creating n variables: " + scope.getNumberOfVariables());
-            args = new IRubyObject[numBlockArgs];
-            
-            int i = 0;
-            for (; i < numBlockArgs && i < size; i++) {
-                args[i] = array.eltInternal(i);
-            }
-
-            for (; i < size; i++) {
-                args[i] = context.getRuntime().getNil();
-            }
-        }
-
-		  RubyModule currentModule = closure.getStaticScope().getModule();
-        InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, null, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), closure.getRenamedVariableSize(), args, Block.NULL_BLOCK);
-        interp.setDynamicScope(binding.getDynamicScope());
-		  context.getCurrentScope().getStaticScope().setModule(currentModule);
-
-        return Interpreter.interpret(context, closure.getCFG(), interp);
+        if (self == null) self = value; // SSS FIXME: Correct?
+        IRubyObject[] args = prepareArgumentsForCall(context, new IRubyObject[] { value }, type);
+        return commonCallPath(context, args, self, null, true, binding, type, Block.NULL_BLOCK);
     }
 
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
