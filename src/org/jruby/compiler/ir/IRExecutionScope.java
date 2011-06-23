@@ -364,6 +364,10 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return getLocalVariable("%self");
     }
 
+    public Variable getImplicitBlockArg() {
+        return getLocalVariable("%block");
+    }
+
     public LocalVariable getLocalVariable(String name) {
         return getClosestMethodAncestor().getLocalVariable(name);
     }

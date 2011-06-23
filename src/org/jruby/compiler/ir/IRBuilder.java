@@ -712,7 +712,7 @@ public class IRBuilder {
                 break;
             }
             case MULTIPLEASGNNODE:
-                // SSS FIXME: Are we guaranteed that we splats dont head to multiple-assignment nodes!  i.e. |*(a,b)|?
+                // SSS FIXME: Are we guaranteed that splats dont head to multiple-assignment nodes!  i.e. |*(a,b)|?
                 buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, null);
                 break;
             case ZEROARGNODE:
@@ -1676,6 +1676,10 @@ public class IRBuilder {
             // won't work if the block argument hasn't been received yet!
         if (argsNode.getBlock() != null)
             s.addInstr(new ReceiveClosureInstr(s.getLocalVariable(argsNode.getBlock().getName())));
+
+		  // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
+		  // In addition, store the block argument in an implicit block variable
+        s.addInstr(new ReceiveClosureInstr(((IRExecutionScope)s).getImplicitBlockArg()));
 
             // Now for the rest
         if (opt > 0) {
@@ -2956,7 +2960,7 @@ public class IRBuilder {
 
     public Operand buildYield(YieldNode node, IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new YieldInstr(ret, build(node.getArgsNode(), s)));
+        s.addInstr(new YieldInstr(ret, ((IRExecutionScope)s).getImplicitBlockArg(), build(node.getArgsNode(), s)));
         return ret;
     }
 
