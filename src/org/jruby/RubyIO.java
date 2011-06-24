@@ -85,7 +85,6 @@ import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
 
-import java.util.Arrays;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -2373,6 +2372,16 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "getbyte", compat = RUBY1_9)
     public IRubyObject getbyte19(ThreadContext context) {
         return getc(); // Yes 1.8 getc is 1.9 getbyte
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject readbyte(ThreadContext context) {
+        int c = getcCommon();
+        if (c == -1) {
+            throw getRuntime().newEOFError();
+        }
+        
+        return context.runtime.newFixnum(c);
     }
 
     @JRubyMethod(name = "getc", compat = RUBY1_9)
