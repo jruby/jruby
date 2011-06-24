@@ -45,7 +45,6 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -53,14 +52,8 @@ import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.jcodings.Encoding;
 import org.jruby.anno.FrameField;
@@ -92,9 +85,6 @@ import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
 
-import org.jruby.util.io.SelectorFactory;
-import java.nio.channels.spi.SelectorProvider;
-import java.util.Arrays;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -2382,6 +2372,16 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "getbyte", compat = RUBY1_9)
     public IRubyObject getbyte19(ThreadContext context) {
         return getc(); // Yes 1.8 getc is 1.9 getbyte
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject readbyte(ThreadContext context) {
+        int c = getcCommon();
+        if (c == -1) {
+            throw getRuntime().newEOFError();
+        }
+        
+        return context.runtime.newFixnum(c);
     }
 
     @JRubyMethod(name = "getc", compat = RUBY1_9)
