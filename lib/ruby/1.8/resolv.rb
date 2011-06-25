@@ -595,12 +595,7 @@ class Resolv
     end
 
     def self.bind_random_port(udpsock, bind_host="0.0.0.0") # :nodoc:
-      begin
-        port = rangerand(1024..65535)
-        udpsock.bind(bind_host, port)
-      rescue Errno::EADDRINUSE
-        retry
-      end
+      udpsock.bind(bind_host, 0)
     end
 
     class Requester # :nodoc:
