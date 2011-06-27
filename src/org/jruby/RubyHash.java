@@ -58,6 +58,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
@@ -930,7 +931,7 @@ public class RubyHash extends RubyObject implements Map {
         return internalGet(key);
     }
 
-    public RubyBoolean compare(final ThreadContext context, final String method, IRubyObject other, final Set<RecursiveComparator.Pair> seen) {
+    public RubyBoolean compare(final ThreadContext context, final int method, IRubyObject other) {
 
         Ruby runtime = context.getRuntime();
 
@@ -958,7 +959,7 @@ public class RubyHash extends RubyObject implements Map {
                         throw new Mismatch();
                     }
 
-                    if (!RecursiveComparator.compare(context, method, value, value2, seen).isTrue()) {
+                    if (!invokedynamic(context, value, method, value2).isTrue()) {
                         throw new Mismatch();
                     }
                 }
@@ -975,7 +976,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, "==", this, other, null);
+        return RecursiveComparator.compare(context, MethodIndex.OP_EQUAL, this, other);
     }
 
     /** rb_hash_eql
@@ -983,7 +984,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql19(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, "eql?", this, other, null);
+        return RecursiveComparator.compare(context, MethodIndex.EQL, this, other);
     }
 
     /** rb_hash_aref

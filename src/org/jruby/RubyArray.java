@@ -62,6 +62,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
@@ -1942,11 +1943,10 @@ public class RubyArray extends RubyObject implements List {
             }
             return RuntimeHelpers.rbEqual(context, obj, this);
         }
-        return RecursiveComparator.compare(context, "==", this, obj, null);
+        return RecursiveComparator.compare(context, MethodIndex.OP_EQUAL, this, obj);
     }
 
-    public RubyBoolean compare(ThreadContext context, String method,
-            IRubyObject other, Set<RecursiveComparator.Pair> seen) {
+    public RubyBoolean compare(ThreadContext context, int method, IRubyObject other) {
 
         Ruby runtime = context.getRuntime();
 
@@ -1965,7 +1965,7 @@ public class RubyArray extends RubyObject implements List {
         }
 
         for (int i = 0; i < realLength; i++) {
-            if (!RecursiveComparator.compare(context, method, elt(i), ary.elt(i), seen).isTrue()) {
+            if (!invokedynamic(context, elt(i), method, ary.elt(i)).isTrue()) {
                 return runtime.getFalse();
             }
         }
@@ -1978,7 +1978,7 @@ public class RubyArray extends RubyObject implements List {
      */
     @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql(ThreadContext context, IRubyObject obj) {
-        return RecursiveComparator.compare(context, "eql?", this, obj, null);
+        return RecursiveComparator.compare(context, MethodIndex.EQL, this, obj);
     }
 
     /** rb_ary_compact_bang

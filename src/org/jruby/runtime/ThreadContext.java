@@ -40,9 +40,8 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.profile.IProfileData;
 import java.util.ArrayList;
 import org.jruby.runtime.profile.ProfileData;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import org.jruby.Ruby;
@@ -54,8 +53,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
-import org.jruby.compiler.JITCompiler;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.libraries.FiberLibrary.Fiber;
@@ -65,7 +62,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.JavaNameMangler;
+import org.jruby.util.RecursiveComparator;
 
 public final class ThreadContext {
     public static ThreadContext newContext(Ruby runtime) {
@@ -1284,4 +1281,14 @@ public final class ThreadContext {
     public boolean isProfiling() {
         return isProfiling;
     }
+    
+    public Set<RecursiveComparator.Pair> getRecursiveSet() {
+        return recursiveSet;
+    }
+    
+    public void setRecursiveSet(Set<RecursiveComparator.Pair> recursiveSet) {
+        this.recursiveSet = recursiveSet;
+    }
+    
+    private Set<RecursiveComparator.Pair> recursiveSet;
 }
