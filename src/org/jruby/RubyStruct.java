@@ -678,8 +678,15 @@ public class RubyStruct extends RubyObject {
         }
 
         // FIXME: This could all be more efficient, but it's how struct works
-        RubyStruct result = newStruct(rbClass, values, Block.NULL_BLOCK);
+        RubyStruct result;
+        if (runtime.is1_9()) {
+            // 1.9 does not appear to call initialize (JRUBY-5875)
+            result = new RubyStruct(runtime, rbClass);
+        } else {
+            result = newStruct(rbClass, values, Block.NULL_BLOCK);
+        }
         input.registerLinkTarget(result);
+        
         for(int i = 0; i < len; i++) {
             IRubyObject slot = input.unmarshalObject(false);
             if(!mem.eltInternal(i).toString().equals(slot.toString())) {
