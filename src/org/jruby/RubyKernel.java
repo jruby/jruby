@@ -43,10 +43,7 @@
 package org.jruby;
 
 import java.io.ByteArrayOutputStream;
-import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.Random;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.*;
@@ -1669,10 +1666,13 @@ public class RubyKernel {
         if (args.length == 1 && args[0].convertToString().isEmpty()) {
             throw runtime.newErrnoENOENTError(args[0].convertToString().toString());
         }
-        
-        Map<String, String> envMap = null;
+
+        ThreadContext context = runtime.getCurrentContext();
         if (env != null && !env.isNil()) {
-            envMap = (RubyHash)env.convertToHash();
+            RubyHash envMap = (RubyHash) env.convertToHash();
+            if (envMap != null) {
+                runtime.getENV().merge_bang(context, envMap, Block.NULL_BLOCK);
+            }
         }
         
         if (prog != null && prog.isNil()) prog = null;
@@ -1687,30 +1687,14 @@ public class RubyKernel {
                     argv[i] = args[i].asJavaString();
                 }
                 
-                if (envMap != null) {
-                    // env to name=value strings
-                    String[] envAry = new String[envMap.size()];
-
-                    int i = 0;
-                    for (Map.Entry<String, String> entry : envMap.entrySet()) {
-                        envAry[i++] = entry.getKey() + "=" + entry.getValue();
-                    }
-                    
-                    resultCode = runtime.getPosix().exec(prog == null ? null : prog.asJavaString(), argv, envAry);
-                } else {
-                    resultCode = runtime.getPosix().exec(prog == null ? null : prog.asJavaString(), argv);
-                }
+                resultCode = runtime.getPosix().exec(prog == null ? null : prog.asJavaString(), argv);
                 
                 // Only here because native exec could not exec (always -1)
                 nativeFailed = true;
             } catch (RaiseException e) {  // Not implemented error
                 // Fall back onto our existing code if native not available
                 // FIXME: Make jnr-posix Pure-Java backend do this as well
-                if (envMap != null) {
-                    resultCode = ShellLauncher.execAndWait(runtime, args, envMap);
-                } else {
-                    resultCode = ShellLauncher.execAndWait(runtime, args);
-                }
+                resultCode = ShellLauncher.execAndWait(runtime, args);
             }
         } catch (RaiseException e) {
             throw e; // no need to wrap this exception
