@@ -41,6 +41,7 @@ import org.jruby.runtime.profile.IProfileData;
 import java.util.ArrayList;
 import org.jruby.runtime.profile.ProfileData;
 import java.util.List;
+import java.util.Set;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import org.jruby.Ruby;
@@ -61,6 +62,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.RecursiveComparator;
 
 public final class ThreadContext {
     public static ThreadContext newContext(Ruby runtime) {
@@ -1281,4 +1283,14 @@ public final class ThreadContext {
     public boolean isProfiling() {
         return isProfiling;
     }
+    
+    public Set<RecursiveComparator.Pair> getRecursiveSet() {
+        return recursiveSet;
+    }
+    
+    public void setRecursiveSet(Set<RecursiveComparator.Pair> recursiveSet) {
+        this.recursiveSet = recursiveSet;
+    }
+    
+    private Set<RecursiveComparator.Pair> recursiveSet;
 }
