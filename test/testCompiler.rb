@@ -612,12 +612,16 @@ if is19 # chained argscat and argspush
 end
 
 # JRUBY-5840
-test = '
-nonascii = (0x80..0xff).collect{|c| c.chr }.join
-/([#{Regexp.escape(nonascii)}])/n
-'
-$KCODE = 'UTF-8'
-test_equal eval(test), compile_and_run(test)
+if !is19
+  test = '
+  nonascii = (0x80..0xff).collect{|c| c.chr }.join
+  /([#{Regexp.escape(nonascii)}])/n
+  '
+  old_kcode = $KCODE
+  $KCODE = 'UTF-8'
+  test_equal eval(test), compile_and_run(test)
+  $KCODE = old_kcode
+end
 
 # JRUBY-5871: test that "special" args dispatch along specific-arity path
 test = '
