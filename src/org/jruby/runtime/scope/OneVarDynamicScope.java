@@ -136,7 +136,12 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
      */
     @Override
     public void setEndArgValues(IRubyObject[] values, int index, int size) {
-        variableValueZero = values[0];
+        assert index == 0;
+        assert size <= 1;
+        
+        if (size == 1) {
+            variableValueZero = values[values.length - 1];
+        }
     }
 
     @Override

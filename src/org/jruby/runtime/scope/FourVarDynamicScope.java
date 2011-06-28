@@ -186,17 +186,60 @@ public class FourVarDynamicScope extends ThreeVarDynamicScope {
 
     @Override
     public void setEndArgValues(IRubyObject[] values, int index, int size) {
-        assert size <= 2 : "FourVarDynamicScope only supports scopes with four variables, not " + size;
+        assert size <= 3 : "FourVarDynamicScope only supports scopes with four variables, not " + size;
+        assert index + size <= 4 : "FourVarDynamicScope only supports scopes with four variables, not " + (index + size);
+        
+        int start = values.length - size;
 
-        switch (size) {
-        case 4:
-            variableValueZero = values[values.length - 4];
-        case 3:
-            variableValueOne = values[values.length - 3];
-        case 2:
-            variableValueTwo = values[values.length - 2];
-        case 1:
-            variableValueThree = values[values.length - 1];
+        switch (index) {
+            case 0:
+                switch (size) {
+                    case 4:
+                        variableValueThree = values[start + 3];
+                    case 3:
+                        variableValueTwo = values[start + 2];
+                    case 2:
+                        variableValueOne = values[start + 1];
+                    case 1:
+                        variableValueZero = values[start];
+                }
+                break;
+            case 1:
+                switch (size) {
+                    case 4:
+                        // should never happen
+                    case 3:
+                        variableValueThree = values[start + 2];
+                    case 2:
+                        variableValueTwo = values[start + 1];
+                    case 1:
+                        variableValueOne = values[start];
+                        break;
+                }
+                break;
+            case 2:
+                switch (size) {
+                    case 4:
+                    case 3:
+                        // should never happen
+                    case 2:
+                        variableValueThree = values[start + 1];
+                    case 1:
+                        variableValueTwo = values[start];
+                        break;
+                }
+                break;
+            case 3:
+                switch (size) {
+                    case 4:
+                    case 3:
+                    case 2:
+                        // should never happen
+                    case 1:
+                        variableValueThree = values[start];
+                        break;
+                }
+                break;
         }
     }
 
