@@ -746,6 +746,50 @@ public class StandardInvocationCompiler implements InvocationCompiler {
 
         method.invokevirtual(p(CallSite.class), callSiteMethod, signature);
     }
+    
+    public void invokeDynamicVarargs(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
+        assert argsCallback.getArity() == -1;
+        
+        methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, callType);
+
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
+        methodCompiler.loadSelf();
+        
+        if (receiverCallback != null) {
+            receiverCallback.call(methodCompiler);
+        } else {
+            methodCompiler.loadSelf();
+        }
+
+        // super uses current block if none given
+        if (callType == CallType.SUPER && closureArg == null) {
+            closureArg = new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    methodCompiler.loadBlock();
+                }
+            };
+        }
+        
+        String signature;
+        String callSiteMethod = "callVarargs";
+        
+        argsCallback.call(methodCompiler);
+        
+        // block
+        if (closureArg == null) {
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
+        } else {
+            if (iterator) callSiteMethod = "callVarargsIter";
+            closureArg.call(methodCompiler);
+
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
+        }
+
+        method.invokevirtual(p(CallSite.class), callSiteMethod, signature);
+    }
 
     public void invokeDynamicSelfNoBlockZero(String name) {
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheMethod(methodCompiler, name);

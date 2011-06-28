@@ -121,6 +121,7 @@ import org.jruby.ast.RootNode;
 import org.jruby.ast.SClassNode;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.SelfNode;
+import org.jruby.ast.SpecialArgs;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
@@ -867,9 +868,15 @@ public class ASTCompiler {
             }
         }
         
-        context.getInvocationCompiler().invokeDynamic(
-                name, receiverCallback, argsCallback,
-                callType, closureArg, callNode.getIterNode() instanceof IterNode);
+        if (callNode instanceof SpecialArgs) {
+            context.getInvocationCompiler().invokeDynamicVarargs(
+                    name, receiverCallback, argsCallback,
+                    callType, closureArg, callNode.getIterNode() instanceof IterNode);
+        } else {
+            context.getInvocationCompiler().invokeDynamic(
+                    name, receiverCallback, argsCallback,
+                    callType, closureArg, callNode.getIterNode() instanceof IterNode);
+        }
         
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
@@ -2396,7 +2403,12 @@ public class ASTCompiler {
             }
         }
 
-        context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
+        if (fcallNode instanceof SpecialArgs) {
+            context.getInvocationCompiler().invokeDynamicVarargs(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
+        } else {
+            context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
+        }
+        
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -3726,7 +3738,13 @@ public class ASTCompiler {
 
         CompilerCallback closureArg = getBlock(superNode.getIterNode());
 
-        context.getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
+        // this is a hacky check; would prefer arity-split Super nodes like Call and FCall
+        if (superNode.getArgsNode() instanceof ArgsCatNode) {
+            context.getInvocationCompiler().invokeDynamicVarargs(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
+        } else {
+            context.getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closureArg, superNode.getIterNode() instanceof IterNode);
+        }
+        
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

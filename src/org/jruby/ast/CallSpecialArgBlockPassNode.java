@@ -43,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * A method or operator call.
  */
-public final class CallSpecialArgBlockPassNode extends CallNode {
+public final class CallSpecialArgBlockPassNode extends CallNode implements SpecialArgs {
     public CallSpecialArgBlockPassNode(ISourcePosition position, Node receiverNode, String name, Node args, BlockPassNode iter) {
         super(position, receiverNode, name, args, iter);
     }

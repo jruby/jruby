@@ -98,7 +98,8 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
         Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
         if (block == null || !block.isGiven()) block = context.getFrameBlock();
 
-        return callSite.call(context, self, self, context.getCurrentScope().getArgValues(), block);
+        // dispatch as varargs, so incoming args are used to decide arity path
+        return callSite.callVarargs(context, self, self, context.getCurrentScope().getArgValues(), block);
     }
     
     @Override

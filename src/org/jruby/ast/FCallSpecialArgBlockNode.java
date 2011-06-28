@@ -16,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * For SplatNode and ArgsCatNode calls.
  */
-public class FCallSpecialArgBlockNode extends FCallNode {
+public class FCallSpecialArgBlockNode extends FCallNode implements SpecialArgs {
     public FCallSpecialArgBlockNode(ISourcePosition position, String name, Node args, IterNode iter) {
         super(position, name, args, iter);
     }

@@ -17,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class FCallSpecialArgBlockPassNode extends FCallNode {
+public class FCallSpecialArgBlockPassNode extends FCallNode implements SpecialArgs {
     // For 'foo()'.  Args are only significant in maintaining backwards compatible AST structure
     public FCallSpecialArgBlockPassNode(ISourcePosition position, String name, Node args, BlockPassNode iter) {
         super(position, name, args, iter);

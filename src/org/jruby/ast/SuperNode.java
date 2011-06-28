@@ -110,7 +110,8 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         // If no explicit block passed to super, then use the one passed in, unless it's explicitly cleared with nil
         if (iterNode == null && !block.isGiven()) block = aBlock;
 
-        return callSite.call(context, self, self, args, block);
+        // dispatch as varargs, so incoming args are used to decide arity path
+        return callSite.callVarargs(context, self, self, args, block);
     }
     
     @Override
