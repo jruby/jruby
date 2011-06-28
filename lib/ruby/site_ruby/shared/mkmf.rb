@@ -247,9 +247,14 @@ module Logging
   @postpone = 0
   @quiet = $extmk
 
-  def self::open
-    @log ||= File::open(@logfile, 'w')
+  def self::log_open
+    @log = nil if !@log.nil? && @log.closed? # HACK
+    @log ||= File::open(@logfile, 'ab')      # @log ends up with .closed?==true all the time
     @log.sync = true
+  end
+
+  def self::open
+    log_open
     $stderr.reopen(@log)
     $stdout.reopen(@log)
     yield
@@ -259,8 +264,7 @@ module Logging
   end
 
   def self::message(*s)
-    @log ||= File::open(@logfile, 'w')
-    @log.sync = true
+    log_open
     @log.printf(*s)
   end
 
@@ -272,7 +276,7 @@ module Logging
       @log = nil
     end
   end
-  
+
   def self::postpone
     tmplog = "mkmftmp#{@postpone += 1}.log"
     open do
@@ -280,9 +284,9 @@ module Logging
       @log, @logfile, @orgout, @orgerr = nil, tmplog, log, log
       begin
         log.print(open {yield})
+      ensure
         @log.close
         File::open(tmplog) {|t| FileUtils.copy_stream(t, log)}
-      ensure
         @log, @logfile, @orgout, @orgerr = log, *save
         @postpone -= 1
         rm_f tmplog
@@ -1078,9 +1082,14 @@ end
 
 # :stopdoc:
 
-def arg_config(config, *defaults, &block)
-  $arg_config << [config, *defaults]
-  defaults << nil if !block and defaults.empty?
+def arg_config(config, default=nil, &block)
+  $arg_config << [config, default]
+  defaults = []
+  if default
+    defaults << default
+  elsif !block
+    defaults << nil
+  end
   $configure_args.fetch(config.tr('_', '-'), *defaults, &block)
 end
 
@@ -1098,15 +1107,15 @@ end
 #       $defs.push("-DOSSL_DEBUG") unless $defs.include? "-DOSSL_DEBUG"
 #    end
 #
-def with_config(config, *defaults)
+def with_config(config, default=nil)
   config = config.sub(/^--with[-_]/, '')
   val = arg_config("--with-"+config) do
     if arg_config("--without-"+config)
       false
     elsif block_given?
-      yield(config, *defaults)
+      yield(config, default)
     else
-      break *defaults
+      break default
     end
   end
   case val
@@ -1131,15 +1140,15 @@ end
 #       $defs.push("-DOSSL_DEBUG") unless $defs.include? "-DOSSL_DEBUG"
 #    end
 #
-def enable_config(config, *defaults)
+def enable_config(config, default=nil)
   if arg_config("--enable-"+config)
     true
   elsif arg_config("--disable-"+config)
     false
   elsif block_given?
-    yield(config, *defaults)
+    yield(config, default)
   else
-    return *defaults
+    return default
   end
 end
 
@@ -1343,7 +1352,8 @@ VPATH = #{vpath.join(CONFIG['PATH_SEPARATOR'])}
   end
   CONFIG.each do |key, var|
     next if /^abs_/ =~ key
-    next unless /^(?:src|top|hdr|(.*))dir$/ =~ key and $1
+    next if /^(?:src|top|hdr)dir$/ =~ key
+    next unless /dir$/ =~ key
     mk << "#{key} = #{with_destdir(var)}\n"
   end
   if !$extmk and !$configure_args.has_key?('--ruby') and
@@ -1530,7 +1540,9 @@ def create_makefile(target, srcprefix = nil)
   dllib = target ? "$(TARGET).#{CONFIG['DLEXT']}" : ""
   staticlib = target ? "$(TARGET).#$LIBEXT" : ""
   mfile = open("Makefile", "wb")
-  mfile.print configuration(srcprefix)
+  conf = configuration(srcprefix)
+  conf = yield(conf) if block_given?
+  mfile.puts(conf)
   mfile.print "
 libpath = #{($DEFLIBPATH|$LIBPATH).join(" ")}
 LIBPATH = #{libpath}
