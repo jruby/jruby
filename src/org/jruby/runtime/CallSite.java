@@ -134,6 +134,21 @@ public abstract class CallSite {
      */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args);
 
+    /**
+     * Call the site's method against the target object passing arguments.
+     * 
+     * As a "varargs" method, this will use the length of the args array to
+     * dispatch to the correct arity call, rather than dispatching unconditionally
+     * to the IRubyObject[] path.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param args the arguments to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject callVarargs(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args);
+
     // with block pass
     /**
      * Call the site's method against the target object passing no arguments and
@@ -201,6 +216,23 @@ public abstract class CallSite {
      * @return the result of the call
      */
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
+
+    /**
+     * Call the site's method against the target object passing one argument and
+     * a non-literal (block pass, &) block.
+     * 
+     * As a "varargs" method, this will use the length of the args array to
+     * dispatch to the correct arity call, rather than dispatching unconditionally
+     * to the IRubyObject[] path.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param args the arguments to pass
+     * @param block the block argument to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject callVarargs(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
 
     // with block literal (iter)
     /**
@@ -274,4 +306,22 @@ public abstract class CallSite {
      * @return the result of the call
      */
     public abstract IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
+
+    /**
+     * Call the site's method against the target object passing arguments and
+     * a literal block. This version handles break jumps by returning their
+     * value if this is the appropriate place in the call stack to do so.
+     * 
+     * As a "varargs" method, this will use the length of the args array to
+     * dispatch to the correct arity call, rather than dispatching unconditionally
+     * to the IRubyObject[] path.
+     *
+     * @param context the ThreadContext for the current thread
+     * @param caller the caller, for visibility checks
+     * @param self the target object to call against
+     * @param args the arguments to pass
+     * @param block the literal block to pass
+     * @return the result of the call
+     */
+    public abstract IRubyObject callVarargsIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
 }

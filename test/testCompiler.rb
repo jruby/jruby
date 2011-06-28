@@ -618,3 +618,35 @@ nonascii = (0x80..0xff).collect{|c| c.chr }.join
 '
 $KCODE = 'UTF-8'
 test_equal eval(test), compile_and_run(test)
+
+# JRUBY-5871: test that "special" args dispatch along specific-arity path
+test = '
+"foo".__send__ :to_enum, *[], &nil
+'
+test_no_exception {compile_and_run(test)}
+
+# These two cases triggered ArgumentError when Enumerator was fixed to enforce
+# 3 required along its varargs path. Testing both here to ensure super/zsuper
+# also dispatch along arity-specific paths as appropriate
+compile_and_run '
+class JRuby5871A < Enumerable::Enumerator
+  def initialize(x, y, *z)
+    super
+  end
+end
+'
+
+test_no_exception {
+  JRuby5871A.new("foo", :each_byte)
+}
+compile_and_run '
+class JRuby5871B < Enumerable::Enumerator
+  def initialize(x, y, *z)
+    super(x, y, *z)
+  end
+end
+'
+
+test_no_exception {
+  JRuby5871B.new("foo", :each_byte)
+}

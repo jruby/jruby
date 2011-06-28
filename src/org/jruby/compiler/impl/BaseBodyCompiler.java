@@ -2489,7 +2489,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 invokeUtilityMethod("getArgValues", sig(IRubyObject[].class, ThreadContext.class));
             }
         };
-        getInvocationCompiler().invokeDynamic(null, null, argsCallback, CallType.SUPER, closure, false);
+        getInvocationCompiler().invokeDynamicVarargs(null, null, argsCallback, CallType.SUPER, closure, false);
     }
 
     public void checkIsExceptionHandled(ArgumentsCallback rescueArgs) {

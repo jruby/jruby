@@ -92,6 +92,36 @@ public class SuperCallSite extends CallSite {
         }
     }
 
+    public IRubyObject callVarargs(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {
+        switch (args.length) {
+            case 0: return call(context, caller, self);
+            case 1: return call(context, caller, self, args[0]);
+            case 2: return call(context, caller, self, args[0], args[1]);
+            case 3: return call(context, caller, self, args[0], args[1], args[2]);
+            default: return call(context, caller, self, args);
+        }
+    }
+
+    public IRubyObject callVarargs(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 0: return call(context, caller, self, block);
+            case 1: return call(context, caller, self, args[0], block);
+            case 2: return call(context, caller, self, args[0], args[1], block);
+            case 3: return call(context, caller, self, args[0], args[1], args[2], block);
+            default: return call(context, caller, self, args, block);
+        }
+    }
+
+    public IRubyObject callVarargsIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 0: return callIter(context, caller, self, block);
+            case 1: return callIter(context, caller, self, args[0], block);
+            case 2: return callIter(context, caller, self, args[0], args[1], block);
+            case 3: return callIter(context, caller, self, args[0], args[1], args[2], block);
+            default: return callIter(context, caller, self, args, block);
+        }
+    }
+
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self) {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
