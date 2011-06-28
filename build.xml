@@ -750,7 +750,7 @@
       <srcfiles dir="${basedir}" includes="${dev.gems}"/>
       <chainedmapper>
         <flattenmapper/>
-        <globmapper from="*.gem" to="${jruby.gem.home.1.8}/specifications/*.gems
+        <globmapper from="*.gem" to="${jruby.gem.home.1.8}/specifications/*.gemspec"/>
       </chainedmapper>
     </uptodate>
   </condition>
@@ -789,7 +789,7 @@
         <srcfiles dir="${basedir}" includes="${jruby.launcher.gem}"/>
         <chainedmapper>
           <flattenmapper/>
-          <globmapper from="*.gem" to="${jruby.gem.home.1.8}/specifications/*.ge
+          <globmapper from="*.gem" to="${jruby.gem.home.1.8}/specifications/*.gemspec"/>
         </chainedmapper>
       </uptodate>
     </or>
