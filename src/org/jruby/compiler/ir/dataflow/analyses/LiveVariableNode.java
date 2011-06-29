@@ -117,10 +117,9 @@ public class LiveVariableNode extends FlowGraphNode
                     if (c.isLVADataflowBarrier()) {
                         processClosure(cl, lvp.getAllVars());
 
-                        // Mark all variables live if 'c' is a dataflow barrier!
 //                        System.out.println(".. call is a data flow barrier ..");
-                        for (int j = 0; j < _setSize; j++)
-                            _tmp.set(j);
+                        // Mark all non-self local variables live if 'c' is a dataflow barrier!
+                        for (Variable x: lvp.getNonSelfLocalVars()) _tmp.set(lvp.getDFVar(x)._id);
                     }
                     else {
                         // Propagate current LVA state through the closure
@@ -154,10 +153,9 @@ public class LiveVariableNode extends FlowGraphNode
                     }
                 }
                 else if (c.isLVADataflowBarrier()) {
-                    // Mark all variables live if 'c' is a dataflow barrier!
 //                    System.out.println(".. call is a data flow barrier ..");
-                    for (int j = 0; j < _setSize; j++)
-                        _tmp.set(j);
+                     // Mark all non-self local variables live if 'c' is a dataflow barrier!
+                    for (Variable x: lvp.getNonSelfLocalVars()) _tmp.set(lvp.getDFVar(x)._id);
                 }
             }
 
@@ -224,15 +222,15 @@ public class LiveVariableNode extends FlowGraphNode
 //        System.out.println("dead processing for " + _bb.getID());
         LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
 
-		  if (_out == null) {
-			  // _out cannot be null for reachable bbs! 
-			  // This bb is unreachable! (or we have a mighty bug!)
-			  // Mark everything dead in here!
-			  for (Instr i: _bb.getInstrs())
-				  i.markDead();
+        if (_out == null) {
+           // _out cannot be null for reachable bbs! 
+           // This bb is unreachable! (or we have a mighty bug!)
+           // Mark everything dead in here!
+           for (Instr i: _bb.getInstrs())
+               i.markDead();
 
-			  return;
-		  }
+           return;
+        }
 
         _tmp = (BitSet)_out.clone();
 
@@ -267,9 +265,8 @@ public class LiveVariableNode extends FlowGraphNode
             if (i instanceof CallInstr) {
                 CallInstr c = (CallInstr) i;
                 if (c.isLVADataflowBarrier()) {
-                    // Mark all variables live if 'c' is a dataflow barrier!
-                    for (int j = 0; j < _setSize; j++)
-                        _tmp.set(j);
+                    // Mark all non-self local variables live if 'c' is a dataflow barrier!
+                    for (Variable x: lvp.getNonSelfLocalVars()) _tmp.set(lvp.getDFVar(x)._id);
                 }
                 else {
                     Operand o = c.getClosureArg();

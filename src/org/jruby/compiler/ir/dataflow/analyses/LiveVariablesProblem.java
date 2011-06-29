@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.dataflow.DataFlowVar;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 
@@ -30,8 +31,8 @@ public class LiveVariablesProblem extends DataFlowProblem
         DataFlowVar dfv = new DataFlowVar(this); 
         _dfVarMap.put(v, dfv); 
         _varDfVarMap.put(dfv._id, v);
-        if (recordVar)
-            _udVars.add(v);
+        if ((v instanceof LocalVariable) && !((LocalVariable)v).isSelf()) _localVars.add((LocalVariable)v);
+        if (recordVar) _udVars.add(v);
     }
 
     public void addDFVar(Variable v) { addDFVar(v, true); }
@@ -158,9 +159,14 @@ public class LiveVariablesProblem extends DataFlowProblem
         return _dfVarMap.keySet();
     }
 
+    public Set<LocalVariable> getNonSelfLocalVars() {
+        return _localVars;
+    }
+
 /* ----------- Private Interface ------------ */
     private HashMap<Variable, DataFlowVar> _dfVarMap    = new HashMap<Variable, DataFlowVar>();
     private HashMap<Integer, Variable> _varDfVarMap = new HashMap<Integer, Variable>();
+    private HashSet<LocalVariable> _localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
     private Collection<Variable> _varsLiveOnExit;
     private Set<Variable> _udVars;
 }
