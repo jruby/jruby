@@ -169,15 +169,25 @@
   <macrodef name="update-constants">
     <attribute name="tzdata-version" default="${tzdata.distributed.version}"/>
     <sequential>
-      <echo message="Updating constants with tzdata version @{tzdata-version}"/>
-        <exec osfamily="unix" executable="git" outputproperty="jruby.revision" failonerror="false" failifexecutionfails="false">
-          <arg line="log -1 --format=format:%h"/>
+      <echo message="Updating Constants.java"/>
+
+		<!-- gross bit of property-juggling here to handle error case when git can't be executed -->
+        <exec osfamily="unix" executable="/bin/sh" outputproperty="jruby.revision.output" failonerror="false" failifexecutionfails="false" errorproperty="jruby.revision.error">
+          <arg line="-c 'git log -1 --format=format:%h'"/>
         </exec>
-        <exec osfamily="windows" executable="cmd" outputproperty="jruby.revision" failonerror="false" failifexecutionfails="false">
+        <exec osfamily="windows" executable="cmd" outputproperty="jruby.revision.output" failonerror="false" failifexecutionfails="false" errorproperty="jruby.revision.error">
           <arg line="/c git log -1 --format=format:%h"/>
         </exec>
+        <condition property="jruby.revision" value="fffffff">
+	      <equals arg1="${jruby.revision.output}" arg2=""/>
+	    </condition>
+        <condition property="jruby.revision" value="${jruby.revision.output}">
+	      <not><equals arg1="${jruby.revision.output}" arg2=""/></not>
+	    </condition>
+	
+		<echo message="...using git revision = ${jruby.revision}, tzdata = @{tzdata-version}"/>
     
-    <!-- avoid overwriting if it hasn't changed, to avoid recompiles -->
+        <!-- avoid overwriting if it hasn't changed, to avoid recompiles -->
         <copy file="src_gen/org/jruby/runtime/Constants.java"
         tofile="src_gen/org/jruby/runtime/Constants.java.old"
         preservelastmodified="true" failonerror="false"/>
