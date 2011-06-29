@@ -112,7 +112,8 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
             Variable v = i.getResult();
 
-            if ((v != null) && (v instanceof LocalVariable)) dirtyVars.add(v);
+            // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
+            if ((v != null) && (v instanceof LocalVariable) && !((LocalVariable)v).isSelf()) dirtyVars.add(v);
             if (i.operation.isReturn()) dirtyVars.clear();
         }
 
@@ -262,7 +263,8 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             }
 
             Variable v = i.getResult();
-            if ((v != null) && (v instanceof LocalVariable)) dirtyVars.add(v);
+            // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
+            if ((v != null) && (v instanceof LocalVariable) && !((LocalVariable)v).isSelf()) dirtyVars.add(v);
         }
 
         // If this is the exit BB, add binding stores for all vars that are still dirty

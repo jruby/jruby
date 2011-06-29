@@ -96,8 +96,9 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             }
 
             // The variables used as arguments will need to be loaded
+            // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
             for (Variable x : i.getUsedVariables()) {
-                if (x instanceof LocalVariable) {
+                if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
                     reqdLoads.add(x);
                 }
             }
@@ -177,9 +178,11 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             }
 
             // The variables used as arguments will need to be loaded
+            // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
             for (Variable x : i.getUsedVariables()) {
-                if (x instanceof LocalVariable)
+                if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
                     reqdLoads.add(x);
+                }
             }
         }
 

@@ -2024,6 +2024,9 @@ public class IRBuilder {
         IRClosure closure = new IRClosure(s, forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
         s.addClosure(closure);
 
+            // Receive self
+        closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
+
             // Build args
         NodeType argsNodeId = null;
         if (forNode.getVarNode() != null) {
@@ -2170,6 +2173,9 @@ public class IRBuilder {
     public Operand buildIter(final IterNode iterNode, IRExecutionScope s) {
         IRClosure closure = new IRClosure(s, iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
         s.addClosure(closure);
+
+            // Receive self
+        closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
 
             // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
