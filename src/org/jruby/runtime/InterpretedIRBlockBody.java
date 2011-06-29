@@ -42,9 +42,11 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     }
 
     public IRubyObject commonCallPath(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type, Block block) {
-        // FIXME: null self?!?!?!
-        // FIXME: null klass!?!?!?!
+        // SSS FIXME: Is this correct?
         // aValue is not used??
+        if (klass == null) {
+            self = prepareSelf(binding);
+        }
 
         RubyModule currentModule = closure.getStaticScope().getModule();
         context.getCurrentScope().getStaticScope().setModule(currentModule);
@@ -58,7 +60,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         // SSS FIXME: Is this correct?
-        IRubyObject self = context.getFrameSelf(); // ENEBO: Should not need this and this should probably come from elsewhere
+        IRubyObject self = prepareSelf(binding);
         args = prepareArgumentsForCall(context, args, type);
 
         // SSS FIXME: aValue is false here -- rest of them below are true
@@ -67,21 +69,18 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        // SSS FIXME: Is this correct? null self unlike the fixed up one above
         args = prepareArgumentsForCall(context, args, type);
         return commonCallPath(context, args, null, null, true, binding, type, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, Binding binding, Block.Type type) {
-        // SSS FIXME: Is this correct? null self unlike the fixed up one above
         IRubyObject[] args = prepareArgumentsForCall(context, IRubyObject.NULL_ARRAY, type);
         return commonCallPath(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-        // SSS FIXME: Is this correct? null self unlike the fixed up one above
         IRubyObject[] args = new IRubyObject[] {arg0};
         args = prepareArgumentsForCall(context, args, type);
         return commonCallPath(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
@@ -89,7 +88,6 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        // SSS FIXME: Is this correct? null self unlike the fixed up one above
         IRubyObject[] args = new IRubyObject[] {arg0, arg1};
         args = prepareArgumentsForCall(context, args, type);
         return commonCallPath(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
@@ -97,7 +95,6 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        // SSS FIXME: Is this correct? null self
         IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
         args = prepareArgumentsForCall(context, args, type);
         return commonCallPath(context, args, null, null, true, binding, type, Block.NULL_BLOCK);
@@ -105,31 +102,26 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        // SSS FIXME: Is this correct? null self
         return commonCallPath(context, new IRubyObject[] {arg0, arg1}, null, null, true, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        // SSS FIXME: Is this correct? null self
         return commonCallPath(context, new IRubyObject[] {arg0, arg1, arg2}, null, null, true, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
         // SSS FIXME: Is this correct?
-        IRubyObject self = context.getFrameSelf(); // ENEBO: Should not need this and this should probably come from elsewhere
+        IRubyObject self = prepareSelf(binding);
         IRubyObject[] args = prepareArgumentsForCall(context, new IRubyObject[] { value }, type);
         return commonCallPath(context, args, self, null, false, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
-        // FIXME: null self?!?!?!
-        // FIXME: null klass!?!?!?!
-        if (self == null) self = value; // SSS FIXME: Correct?
         IRubyObject[] args = prepareArgumentsForCall(context, new IRubyObject[] { value }, type);
-        return commonCallPath(context, args, self, null, true, binding, type, Block.NULL_BLOCK);
+        return commonCallPath(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
     }
 
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
