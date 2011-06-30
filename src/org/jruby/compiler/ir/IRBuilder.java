@@ -1625,7 +1625,8 @@ public class IRBuilder {
         Operand container;
         IRMethod method;
 
-        // static determination where possible?
+        // statically determine container where possible?
+		  // DefineIstanceMethod IR interpretation currently relies on this static determination for handling top-level methods
         if ((s instanceof IRMethod) && ((IRMethod)s).isAClassRootMethod()) {
             container =  MetaObject.create(s.getNearestModule());
             method = defineNewMethod(node, s, container, true);
