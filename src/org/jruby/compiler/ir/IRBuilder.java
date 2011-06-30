@@ -1622,9 +1622,19 @@ public class IRBuilder {
     }
 
     public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method
-        Operand container = MetaObject.create(s.getNearestModule());
-        IRMethod method = defineNewMethod(node, s, container, true);
-        s.getNearestModule().addMethod(method);
+        Operand container;
+        IRMethod method;
+
+        // static determination where possible?
+        if ((s instanceof IRMethod) && ((IRMethod)s).isAClassRootMethod()) {
+            container =  MetaObject.create(s.getNearestModule());
+            method = defineNewMethod(node, s, container, true);
+            s.getNearestModule().addMethod(method);
+        }
+        else {
+            container = getSelf(s);
+            method = defineNewMethod(node, s, container, true);
+        }
         s.addInstr(new DefineInstanceMethodInstr(container, method));
         return Nil.NIL;
     }
@@ -1677,8 +1687,8 @@ public class IRBuilder {
         if (argsNode.getBlock() != null)
             s.addInstr(new ReceiveClosureInstr(s.getLocalVariable(argsNode.getBlock().getName())));
 
-		  // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
-		  // In addition, store the block argument in an implicit block variable
+        // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
+        // In addition, store the block argument in an implicit block variable
         s.addInstr(new ReceiveClosureInstr(((IRExecutionScope)s).getImplicitBlockArg()));
 
             // Now for the rest
@@ -2822,7 +2832,7 @@ public class IRBuilder {
 
     public Operand buildSplat(SplatNode splatNode, IRScope s) {
         // SSS: Since splats can only occur in call argument lists, no need to copyAndReturnValue(...)
-		  // Verify with Tom / Charlie
+        // Verify with Tom / Charlie
         return new Splat(build(splatNode.getValue(), s));
     }
 

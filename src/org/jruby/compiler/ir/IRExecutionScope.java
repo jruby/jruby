@@ -270,6 +270,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return sb.toString();
     }
 
+	 // SSS: Not used -- this was something headius wrote way-back
     @Interp
     public Iterator<LocalVariable> getLiveLocalVariables() {
         Map<LocalVariable, Integer> ends = new HashMap<LocalVariable, Integer>();
