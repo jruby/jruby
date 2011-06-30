@@ -158,6 +158,7 @@ import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Backref;
 import org.jruby.compiler.ir.operands.BacktickString;
+import org.jruby.compiler.ir.operands.Bignum;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.BreakResult;
 import org.jruby.compiler.ir.operands.ClassMetaObject;
@@ -808,9 +809,9 @@ public class IRBuilder {
     }
 
     public Operand buildBignum(BignumNode node, IRScope s) {
-        // SSS: Since fixnum literals are effectively interned objects, no need to copyAndReturnValue(...)
+        // SSS: Since bignum literals are effectively interned objects, no need to copyAndReturnValue(...)
         // Or is this a premature optimization?
-        return new Fixnum(node.getValue());
+        return new Bignum(node.getValue());
     }
 
     public Operand buildBlock(BlockNode node, IRScope s) {
