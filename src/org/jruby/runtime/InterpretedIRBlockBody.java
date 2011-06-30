@@ -41,9 +41,9 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         return self;
     }
 
-    public IRubyObject commonCallPath(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type, Block block) {
+    public IRubyObject commonCallPath(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type, Block block) {
         // SSS FIXME: Is this correct?
-        // aValue is not used??
+        // isArray is not used??
         if (klass == null) {
             self = prepareSelf(binding);
         }
@@ -62,8 +62,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         // SSS FIXME: Is this correct?
         IRubyObject self = prepareSelf(binding);
         args = prepareArgumentsForCall(context, args, type);
-
-        // SSS FIXME: aValue is false here -- rest of them below are true
+        // SSS FIXME: isArray is false here -- rest of them below are true
         return commonCallPath(context, args, self, null, false, binding, type, Block.NULL_BLOCK);
     }
 
@@ -119,9 +118,10 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
-        IRubyObject[] args = prepareArgumentsForCall(context, new IRubyObject[] { value }, type);
-        return commonCallPath(context, args, self, klass, aValue, binding, type, Block.NULL_BLOCK);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
+		  // SSS FIXME: if we already have an array, I think we dont need to call prepareArgumentsForCall
+        IRubyObject[] args = prepareArgumentsForCall(context, isArray ? ((RubyArray) value).toJavaArray(): new IRubyObject[] { value }, type);
+        return commonCallPath(context, args, self, klass, isArray, binding, type, Block.NULL_BLOCK);
     }
 
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
@@ -173,6 +173,37 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         default:
             return defaultArgLogic(ruby, value);
         }
+    }
+
+	 @Override
+    public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
+        switch (type) {
+		  // SSS FIXME: this is different from how regular interpreter does it .. it treats PROC & NORMAL blocks differently
+		  // But, without this fix, {:a=>:b}.each { |*x| puts a.inspect } outputs [:a,:b] instead of [[:a, :b]]
+        case PROC:
+        case NORMAL: {
+            if (args.length == 1 && args[0] instanceof RubyArray) {
+                if (argumentType == MULTIPLE_ASSIGNMENT) {
+                    args = ((RubyArray) args[0]).toJavaArray();
+                }
+                break;
+            }
+        }
+        case LAMBDA:
+            if (argumentType == ARRAY && args.length != 1) {
+                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + arity().getValue() + ")");
+                if (args.length == 0) {
+                    args = context.getRuntime().getSingleNilArray();
+                } else {
+                    args = new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
+                }
+            } else {
+                arity().checkArity(context.getRuntime(), args);
+            }
+            break;
+        }
+
+        return args;
     }
 
     private IRubyObject defaultArgLogic(Ruby ruby, IRubyObject value) {
