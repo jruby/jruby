@@ -34,7 +34,6 @@ public class InterpretedIRMethod extends DynamicMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         InterpreterContext interp = new NaiveInterpreterContext(context, getImplementationClass(), self, name, method.getLocalVariablesCount(),
                 temporaryVariableSize, method.getRenamedVariableSize(), args, block);
-		  interp.allocateSharedBindingScope(method);
 		  context.getCurrentScope().getStaticScope().setModule(clazz);
 //        Arity.checkArgumentCount(context.getRuntime(), args.length, requiredArgsCount, method.get???);
         if (Interpreter.isDebug()) {
@@ -49,6 +48,8 @@ public class InterpretedIRMethod extends DynamicMethod {
             method.prepareForInterpretation();
             c = method.getCFG();
         }
+		  // Do this *after* the method has been prepared!
+		  interp.allocateSharedBindingScope(method);
         if (Interpreter.isDebug() && displayedCFG == false) {
             System.out.println("CFG:\n" + c.getGraph());
             System.out.println("\nInstructions:\n" + c.toStringInstrs());
