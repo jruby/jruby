@@ -736,8 +736,18 @@ public class RubyEnumerable {
 
             callEach19(runtime, context, self, block.arity(), new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg = checkArgs(runtime, largs);
-                    IRubyObject value = block.yield(ctx, larg);
+                    IRubyObject larg;
+                    boolean newAry = false;
+                    if (largs.length == 0) {
+                        larg = ctx.nil;
+                    } else if (largs.length == 1) {
+                        larg = largs[0];
+                    } else {
+                        newAry = true;
+                        larg = RubyArray.newArrayNoCopy(ctx.runtime, largs);
+                    }
+                    
+                    IRubyObject value = newAry ? block.yieldArray(ctx, larg, null, null) : block.yield(ctx, larg);
                     synchronized (result) {
                         result.append(value);
                     }
