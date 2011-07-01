@@ -1,0 +1,111 @@
+#!/bin/sh
+
+JRUBYVER="<%= VERSION_JRUBY %>"
+JRUBY_ROOT="<%= JRUBY_DEST %>/Versions"
+
+JRUBY_VERSION_PATH="$JRUBY_ROOT/$JRUBYVER"
+JRUBY_CURRENT_PATH="$JRUBY_ROOT/Current"
+
+JRUBY_INSTALLER_LOG="$TMPDIR/jruby.uninstaller.log"
+JRUBY_INSTALLER_ERR="$TMPDIR/jruby.uninstaller.err"
+
+if [ ! -d $JRUBY_VERSION_PATH ]
+then
+    echo "seems JRuby version $JRUBYVER is not installed in $JRUBY_VERSION_PATH"
+    exit
+fi
+
+#
+# creates a backup of the installed version
+#
+BACKUP="$TMPDIR/jruby_unistaller_backup_$(date +%s)" 
+mkdir $BACKUP
+cp -r $JRUBY_VERSION_PATH $BACKUP
+
+#
+# gets the previously installed version
+#
+previous_version='1.5.0' # First version of the Mac installer
+declare -a versions
+count=0
+for i in `ls $JRUBY_ROOT`
+do
+    versions[$count]=$i
+    count=$count+1
+done
+
+exchange()
+{
+  local temp=${versions[$1]}
+  versions[$1]=${versions[$2]}
+  versions[$2]=$temp
+}
+
+# sorts versions to get something like 1.5.0.RC1 1.5.0.RC2 1.5.0 1.5.1 ...
+for (( last = ${#versions[@]} - 1 ; last > 0 ; last-- ))
+ do
+     for (( i = 0 ; i < last ; i++ ))
+     do
+        IFS="." 
+        declare -a e=(${versions[$i]})
+        declare -a e1=(${versions[$((i+1))]})
+        IFS=" "
+
+        [[ e[0] -gt e1[0] ]] || [[ e[0] -eq e1[0] && e[1] -gt e1[1] ]] || \
+        [[ e[0] -eq e1[0] && e[1] -eq e1[1] && e[2] -gt e1[2] ]] || \
+        [[ e[0] -eq e1[0] && e[1] -eq e1[1] && e[2] -eq e1[2] && "${#e[@]}" -lt "${#e1[@]}" ]] \
+            && exchange $i $((i+1))
+     done
+ done
+
+for version in ${versions[@]}
+do
+    if [ "$version" = "$JRUBYVER" ]
+    then
+        break
+    fi
+
+    IFS="."
+    declare -a version_1=($previous_version)
+    declare -a version_2=($version)
+    IFS=" "
+
+    major_1=${version_1[0]}
+    minor_1=${version_1[1]}
+    patch_1=${version_1[2]}
+ 
+    major_2=${version_2[0]}
+    minor_2=${version_2[1]}
+    patch_2=${version_2[2]}
+
+    if [[ "$major_2" -gt "$major_1" ]] || \
+        [[ "$major_2" -eq "$major_1" && "$minor_2" -gt "$minor_1" ]] || \
+        [[ "$major_2" -eq "$major_1" && "$minor_2" -eq "$minor_1" && "$patch_2" -gt "$patch_1" ]]
+    then
+        previous_version=$version
+    fi
+done
+
+#
+# removes the installed version
+#
+echo "removing $JRUBY_VERSION_PATH"
+rm -r "$JRUBY_VERSION_PATH"
+rm "$JRUBY_CURRENT_PATH"
+
+if [ -d "$JRUBY_ROOT/$previous_version" ]
+then
+#
+# links to the prevously installed version 
+#
+    ln -s "$JRUBY_ROOT/$previous_version" "$JRUBY_CURRENT_PATH"
+else
+#
+# removes Jruby from the path if there isn't a previous version
+#
+    dirname=`dirname $0`
+    . "$dirname/patch_profile"
+    try_revert_patch
+fi
+
+echo "JRuby uninstalled succesfully!"

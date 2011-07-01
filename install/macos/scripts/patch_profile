@@ -1,0 +1,81 @@
+#!/bin/sh
+
+check_previous_patch() {
+    if grep -q 'Setting PATH for JRuby' "$1"
+        then return 1
+    fi
+    return 0
+}
+
+declare -x PR
+
+# add current directory to the user's profile
+if [ `id -ur` = 0 ]; then
+    # Run from the installer, do some trickery to fetch the information
+    # we need.
+    theShell="`finger $USER | grep Shell: | head  -1 | awk '{ print $NF }'`"
+else
+    theShell="${SHELL}"
+fi
+
+BSH="`basename "${theShell}"`"
+case "${BSH}" in
+*csh)
+    if [ -f "${HOME}/.tcshrc" ]; then
+        PR="${HOME}/.tcshrc"
+    else
+        PR="${HOME}/.cshrc"
+    fi
+    ;;
+bash)
+    if [ -e "${HOME}/.bash_profile" ]; then
+        PR="${HOME}/.bash_profile"
+    elif [ -e "${HOME}/.bash_login" ]; then
+        PR="${HOME}/.bash_login"
+    elif [ -e "${HOME}/.profile" ]; then
+        PR="${HOME}/.profile"
+    else
+        PR="${HOME}/.bash_profile"
+    fi
+    ;;
+*sh)
+    PR="${HOME}/.profile"
+    ;;
+esac
+
+# Create backup copy before patching
+patch_profile() {
+    if [ -f "${PR}" ]; then
+        cp -fp "${PR}" "${PR}.jrubysave"
+    fi
+    echo "" >> "${PR}"
+    echo "# Setting PATH for JRuby ${JRUBYVER}" >> "${PR}"
+    echo "# The orginal version is saved in `basename ${PR}`.jrubysave" >> "${PR}"
+    echo 'PATH="${PATH}:'"${JRUBY_CURRENT_PATH}/bin"'"' >> "${PR}"
+    echo 'export PATH' >> "${PR}"
+    if [ `id -ur` = 0 ]; then
+        chown "${USER}" "${PR}"
+    fi
+}
+
+try_patch_profile() {
+    check_previous_patch $PR
+    if [ $? -eq 0 ]
+    then
+        patch_profile
+    fi
+}
+
+try_revert_patch() {
+    check_previous_patch $PR
+    patched=$?
+    if [ $patched -eq 1 ]
+    then
+        if [ -f "${PR}.jrubysave" ]
+        then
+            cp -fp "${PR}.jrubysave" "${PR}"
+        else
+            sed -iE '/JRuby/,/export/d' ${PR}
+        fi
+    fi
+}
