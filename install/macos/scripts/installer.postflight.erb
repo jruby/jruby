@@ -1,0 +1,39 @@
+#!/bin/sh
+
+echo "This script will update your shell profile when the 'bin' directory"
+echo "of jruby is not early enough of the PATH of your shell."
+echo "These changes will be effective only in shell windows that you open"
+echo "after running this script."
+
+JRUBYVER="<%= VERSION_JRUBY %>"
+JRUBY_ROOT="<%= JRUBY_DEST %>/Versions"
+
+JRUBY_VERSION_PATH="$JRUBY_ROOT/$JRUBYVER"
+JRUBY_CURRENT_PATH="$JRUBY_ROOT/Current"
+
+JRUBY_INSTALLER_LOG="$TMPDIR/jruby.installer.log"
+JRUBY_INSTALLER_ERR="$TMPDIR/jruby.installer.err"
+
+if [ -d $JRUBY_CURRENT_PATH ]
+then
+    rm -rf $JRUBY_CURRENT_PATH
+fi
+
+# create symlink to the current directory
+ln -s $JRUBY_VERSION_PATH $JRUBY_CURRENT_PATH
+
+# install native launcher
+$JRUBY_VERSION_PATH/bin/jruby -S gem install jruby-launcher --no-ri --no-rdoc > $JRUBY_INSTALLER_LOG 2> $JRUBY_INSTALLER_ERR
+
+# check if a previous verison of JRuby exists. Perhaps it's less safe but
+# it's also less hacky and if the user changes his path we keep his choice
+INSTALLED_VERSIONS=`ls $JRUBY_ROOT | wc -l`
+if [ $INSTALLED_VERSIONS -gt 2 ]
+then
+    echo "Seems JRuby was previously installed, skipping path modification" >> $JRUBY_INSTALLER_LOG
+    exit 0
+fi
+
+dirname=`dirname $0`
+. "$dirname/patch_profile"
+try_patch_profile
