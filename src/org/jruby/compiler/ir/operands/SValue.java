@@ -1,9 +1,11 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.compiler.ir.representations.InlinerInfo;
-
 import java.util.List;
 import java.util.Map;
+
+import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.interpreter.InterpreterContext;
+import org.jruby.RubyArray;
 
 // Represents a svalue node in Ruby code
 //
@@ -54,5 +56,22 @@ public class SValue extends Operand
  
     public Operand cloneForInlining(InlinerInfo ii) { 
         return isConstant() ? this : new SValue(_array.cloneForInlining(ii));
+    }
+
+    @Override
+    public Object retrieve(InterpreterContext interp) {
+        Object val = _array.retrieve(interp);
+        if (val instanceof RubyArray) {
+            int n = ((RubyArray)val).getLength();
+            if (n == 0)
+                return Nil.NIL;
+            else if (n == 1)
+                return ((RubyArray)val).entry(0);
+            else
+                return val;
+        }
+        else {
+            return Nil.NIL;
+        }
     }
 }
