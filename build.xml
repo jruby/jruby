@@ -1273,10 +1273,10 @@
             <include name="jffi-*.jar"/>
         </fileset>
         <patternset>
-            <include name="**/libjffi-*.so"/>
-            <include name="**/libjffi-*.a"/>
-            <include name="**/libjffi-*.jnilib"/>
-            <include name="**/jffi-*.dll"/>
+          <include name="**/libjffi-*.so"/>
+          <include name="**/libjffi-*.a"/>
+          <include name="**/libjffi-*.jnilib"/>
+          <include name="**/jffi-*.dll"/>
         </patternset>
         <mapper>
             <filtermapper>
@@ -1409,6 +1409,10 @@
     <mkdir dir="${dist.stage.bin.dir}/lib/native"/>
     <copy todir="${dist.stage.bin.dir}">
       <fileset dir="${basedir}">
+        <!-- So repeated ant dists won't include extra cext copies -->
+        <exclude name="dist/**"/> 
+        <exclude name="build/**"/> 
+        <exclude name="gem/**"/> 
         <patternset refid="dist.jruby-cext-native.files"/>
       </fileset>
     </copy>
