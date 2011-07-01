@@ -1,0 +1,11 @@
+#!/bin/sh
+
+#jruby --server -J-Xdebug -J-Xrunjdwp:transport=dt_socket,address=8001,server=y,suspend=y -J-Djava.library.path=lib -Ilib samples/$1.rb
+#jruby --server -J-Dcom.jacob.debug=true -J-Djava.library.path=lib -Ilib samples/$1.rb
+#jruby --server -J-agentlib:hprof=heap=dump -J-Djava.library.path=lib -Ilib samples/$1.rb
+#jruby --server -J-verbose:gc -J-Djava.library.path=lib -Ilib samples/$1.rb
+#jruby --server -J-agentpath:"C:\Program Files\NetBeans 6.8\profiler3\lib\deployed\jdk15\windows\profilerinterface.dll=\"C:\Program Files\NetBeans 6.8\profiler3\lib\"",5140 -J-Djava.library.path=lib -Ilib samples/$1.rb
+
+jruby -J-verbose:gc -J-Dcom.jacob.autogc=true -J-Dcom.jacob.gc_count=50000 -J-Dcom.jacob.debug=true -J-Djruby.backtrace.style=raw --server -J-Djava.library.path=lib -Ilib samples/$1.rb $2 $3
+
+#jruby -J-Dcom.jacob.autogc=false -J-Dcom.jacob.debug=true -J-Djruby.backtrace.style=raw -J-Dcom.jacob.autogc=true -J-Djruby.ji.objectProxyCache=false --server -J-Djava.library.path=. -Idist samples/$1.rb $2 $3
