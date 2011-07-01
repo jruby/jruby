@@ -47,7 +47,6 @@ public class StringLiteral extends Constant
     public Object retrieve(InterpreterContext interp) {
         // FIXME SSS: Looks like newString just points to _bl_value rather than cloning it?
         // ENEBO: This is not only used for full RubyStrings, but also for bytelist retrieval....extra wrapping
-        // return interp.getRuntime().newString(_bl_value); 
-        return interp.getRuntime().newString(_str_value);
+        return interp.getRuntime().newString(_bl_value); 
     }
 }
