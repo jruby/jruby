@@ -101,7 +101,7 @@
           <entry location="lib/ruby" fileType="regular" />
         </exclude>
       </dirEntry>
-      <dirEntry mountPoint="203" file="../dist/${compiler:jruby.version}" overwrite="4" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
+      <dirEntry mountPoint="203" file="../dist/jruby-bin-${compiler:jruby.version}" overwrite="4" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
         <exclude>
           <entry location="bin" fileType="regular" />
           <entry location="lib/native/i386-FreeBSD" fileType="regular" />
