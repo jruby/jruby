@@ -663,13 +663,10 @@ public class IRBuilder {
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 buildAttrAssignAssignment(node, s, v);
                 break;
-// SSS FIXME:
-//
-// There are also differences in variable scoping between 1.8 and 1.9 
-// Ruby 1.8 is the buggy semantics if I understand correctly.
-//
-// The semantics of how this shadows other variables outside the block needs
-// to be figured out during live var analysis.
+				// SSS FIXME:
+				//
+				// There are also differences in variable scoping between 1.8 and 1.9 
+				// Ruby 1.8 is the buggy semantics if I understand correctly.
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
                 // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
@@ -2275,6 +2272,10 @@ public class IRBuilder {
         return ret;
     }
 
+	 // SSS: This method is called both for regular multiple assignment as well as argument passing
+	 //
+	 // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
+	 // Ex: { |a,b,*c| ..} is the argment passing case
     public void buildMultipleAsgnAssignment(final MultipleAsgnNode multipleAsgnNode, IRScope s, Operand values) {
         final ListNode sourceArray = multipleAsgnNode.getHeadNode();
 
