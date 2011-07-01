@@ -4,7 +4,7 @@ require 'rbconfig'
 
 include FileUtils
 
-DIST_BIN_DIR = File.join(BASE_DIR, DIST_DIR, "jruby-bin-#{VERSION_JRUBY}")
+DIST_ZIP = File.join(BASE_DIR, DIST_DIR, "jruby-bin-#{VERSION_JRUBY}.zip")
 BUILD_DIR = File.join BASE_DIR, 'build'
 MACDIST = File.join BUILD_DIR, "jruby-#{VERSION_JRUBY}"
 PKG_DIR = File.join BUILD_DIR, 'pkg'
@@ -30,8 +30,8 @@ task :macos_installer do
 
   cleanup
 
-  raise "JRuby #{VERSION_JRUBY} dist not found!" if !File.exist?(DIST_BIN_DIR) || !File.directory?(DIST_BIN_DIR)
-  cp_r DIST_BIN_DIR, MACDIST
+  raise "JRuby #{VERSION_JRUBY} dist ZIP not found!" if !File.exist?(DIST_ZIP)
+  sh "unzip #{DIST_ZIP} -d #{BUILD_DIR}"
 
   Dir.chdir "#{BASE_DIR}/install/macos" do
     prepare_rubygems
@@ -50,12 +50,9 @@ task :macos_installer do
     sh "time /Developer/Applications/Utilities/PackageMaker.app/Contents/MacOS/PackageMaker -v --doc JRuby-installer.pmdoc --out #{PKG_DIR}/JRuby-#{VERSION_JRUBY}.pkg --version #{VERSION_JRUBY}"
     sh "time /Developer/Applications/Utilities/PackageMaker.app/Contents/MacOS/PackageMaker -v --doc JRuby-uninstaller.pmdoc --out #{PKG_DIR}/JRuby-uninstaller-#{VERSION_JRUBY}.pkg --version #{VERSION_JRUBY}"
 
-    if File.exist? DMG = File.join(BASE_DIR, DIST_DIR, "JRuby-#{VERSION_JRUBY}.dmg")
-      rm DMG
-    end
+    rm DMG if File.exist? DMG = File.join(BASE_DIR, DIST_DIR, "JRuby-#{VERSION_JRUBY}.dmg")
     sh "time hdiutil create #{DMG} -volname JRuby-#{VERSION_JRUBY} -fs HFS+ -srcfolder #{PKG_DIR}"
 
-    puts "- Cleaning directories"
     cleanup
   end
 end
@@ -97,6 +94,7 @@ def prepare_rubygems
 end
 
 def cleanup
+  puts "- Cleaning directories"
   [MACDIST, GEMSDIST, PKG_DIR ].each do |f|
     rm_r f if File.exist? f
   end
