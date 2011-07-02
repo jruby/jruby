@@ -1,6 +1,8 @@
 package org.jruby.ext.ffi.jffi;
 
 import java.math.BigInteger;
+
+import com.kenai.jffi.HeapInvocationBuffer;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -338,21 +340,41 @@ public final class JITRuntime {
 
     private static final PointerParameterStrategy DIRECT_POINTER = new DirectPointerParameterStrategy();
     private static final PointerParameterStrategy DIRECT_STRUCT = new DirectStructParameterStrategy();
+    private static final PointerParameterStrategy HEAP_STRUCT = new HeapStructParameterStrategy();
     private static final PointerParameterStrategy NIL_POINTER_STRATEGY = new NilPointerParameterStrategy();
     private static final PointerParameterStrategy HEAP_POINTER_STRATEGY = new HeapPointerParameterStrategy();
+    private static final PointerParameterStrategy STRING_POINTER_STRATEGY = new StringPointerParameterStrategy();
 
     public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
         if (parameter instanceof Pointer) {
             return DIRECT_POINTER;
 
-        } else if (parameter instanceof Struct && ((Struct) parameter).getMemory() instanceof Pointer) {
-            return DIRECT_STRUCT;
+        } else if (parameter instanceof Buffer) {
+            return HEAP_POINTER_STRATEGY;
+
+        } else if (parameter instanceof Struct) {
+            return ((Struct) parameter).getMemory() instanceof Pointer ? DIRECT_STRUCT : HEAP_STRUCT;
 
         } else if (parameter.isNil()) {
             return NIL_POINTER_STRATEGY;
 
+        } else if (parameter instanceof RubyString) {
+            return STRING_POINTER_STRATEGY;
+
+        } else if (parameter.respondsTo("to_ptr")) {
+            IRubyObject ptr = parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr");
+
+            return new DelegatingPointerParameterStrategy(ptr, pointerParameterStrategy(ptr));
+
         } else {
-            return HEAP_POINTER_STRATEGY;
+            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
         }
+    }
+
+    public static long invokeN6O2(com.kenai.jffi.Function f, long n1, long n2, long n3, long n4, long n5, long n6,
+                                  IRubyObject o1, PointerParameterStrategy s1,
+                                  IRubyObject o2, PointerParameterStrategy s2) {
+        HeapInvocationBuffer buffer = new HeapInvocationBuffer(f);
+        return 0L;
     }
 }

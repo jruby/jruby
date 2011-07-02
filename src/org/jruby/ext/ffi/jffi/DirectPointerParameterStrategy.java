@@ -15,4 +15,19 @@ public final class DirectPointerParameterStrategy extends PointerParameterStrate
     public final long getAddress(IRubyObject parameter) {
         return ((Pointer) parameter).getAddress();
     }
+
+    @Override
+    public Object array(IRubyObject parameter) {
+        return null;
+    }
+
+    @Override
+    public int arrayOffset(IRubyObject parameter) {
+        return 0;
+    }
+
+    @Override
+    public int arrayLength(IRubyObject parameter) {
+        return 0;
+    }
 }

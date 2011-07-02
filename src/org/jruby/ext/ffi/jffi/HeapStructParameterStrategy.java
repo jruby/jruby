@@ -2,14 +2,13 @@ package org.jruby.ext.ffi.jffi;
 
 import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.ArrayMemoryIO;
-import org.jruby.ext.ffi.Buffer;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
  */
-public final class HeapPointerParameterStrategy extends PointerParameterStrategy {
-    public HeapPointerParameterStrategy() {
+public final class HeapStructParameterStrategy extends PointerParameterStrategy {
+    public HeapStructParameterStrategy() {
         super(false);
     }
 

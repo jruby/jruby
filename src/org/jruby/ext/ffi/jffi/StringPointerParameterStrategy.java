@@ -1,15 +1,15 @@
 package org.jruby.ext.ffi.jffi;
 
+import org.jruby.RubyString;
 import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.ArrayMemoryIO;
-import org.jruby.ext.ffi.Buffer;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
  */
-public final class HeapPointerParameterStrategy extends PointerParameterStrategy {
-    public HeapPointerParameterStrategy() {
+public class StringPointerParameterStrategy extends PointerParameterStrategy {
+    public StringPointerParameterStrategy() {
         super(false);
     }
 
@@ -20,16 +20,16 @@ public final class HeapPointerParameterStrategy extends PointerParameterStrategy
 
     @Override
     public Object array(IRubyObject parameter) {
-        return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).array();
+        return ((RubyString) parameter).getByteList().unsafeBytes();
     }
 
     @Override
     public int arrayOffset(IRubyObject parameter) {
-        return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).arrayLength();
+        return ((RubyString) parameter).getByteList().begin();
     }
 
     @Override
     public int arrayLength(IRubyObject parameter) {
-        return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).arrayOffset();
+        return ((RubyString) parameter).getByteList().length();
     }
 }

@@ -17,4 +17,8 @@ abstract public class PointerParameterStrategy {
     }
 
     abstract public long getAddress(IRubyObject parameter);
+
+    abstract public Object array(IRubyObject parameter);
+    abstract public int arrayOffset(IRubyObject parameter);
+    abstract public int arrayLength(IRubyObject parameter);
 }
