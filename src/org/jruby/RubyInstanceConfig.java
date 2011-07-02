@@ -389,6 +389,10 @@ public class RubyInstanceConfig {
     
     public static final boolean ERRNO_BACKTRACE
             = SafePropertyAccessor.getBoolean("jruby.errno.backtrace", false);
+    
+    public static final boolean IR_DEBUG = SafePropertyAccessor.getBoolean("jruby.ir.debug");
+    public static final boolean IR_LIVE_VARIABLE = SafePropertyAccessor.getBoolean("jruby.ir.pass.live_variable");
+    public static final boolean IR_DEAD_CODE = SafePropertyAccessor.getBoolean("jruby.ir.pass.dead_code");
 
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);

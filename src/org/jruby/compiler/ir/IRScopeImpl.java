@@ -3,6 +3,8 @@ package org.jruby.compiler.ir;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
@@ -245,8 +247,8 @@ public abstract class IRScopeImpl implements IRScope {
         // if this scope is held in multiple locations how do we update all references?
         runCompilerPass(new LocalOptimizationPass());
         runCompilerPass(new CFG_Builder());
-        runCompilerPass(new LiveVariableAnalysis());
-        runCompilerPass(new DeadCodeElimination());
+        if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
+        if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
         runCompilerPass(new AddBindingInstructions());
     }
 

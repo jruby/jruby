@@ -1,6 +1,7 @@
 package org.jruby.interpreter;
 
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
@@ -23,8 +24,6 @@ import org.jruby.runtime.RubyEvent;
 
 
 public class Interpreter {
-    private static boolean debug = Boolean.parseBoolean(System.getProperty("jruby.ir.debug", "false"));
-    
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
         IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
         scope.prepareForInterpretation();
@@ -36,7 +35,7 @@ public class Interpreter {
     private static int interpInstrsCount = 0;
 
     public static boolean isDebug() {
-        return debug;
+        return RubyInstanceConfig.IR_DEBUG;
     }
 
     public static IRubyObject interpretTop(Ruby runtime, IRScope scope, IRubyObject self) {
@@ -56,7 +55,7 @@ public class Interpreter {
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
-        if (debug) System.out.println("-- Interpreted " + interpInstrsCount + " instructions");
+        if (isDebug()) System.out.println("-- Interpreted " + interpInstrsCount + " instructions");
 
         return rv;
     }
@@ -76,7 +75,7 @@ public class Interpreter {
                 interpInstrsCount++;
                 lastInstr = instrs[ipc];
                 
-                if (debug) System.out.println("I: " + lastInstr);
+                if (isDebug()) System.out.println("I: " + lastInstr);
                 
                 try {
                     Label jumpTarget = lastInstr.interpret(interp);
