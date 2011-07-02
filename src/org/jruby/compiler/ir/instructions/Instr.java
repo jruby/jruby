@@ -47,7 +47,7 @@ public abstract class Instr {
 
     @Override
     public String toString() {
-        return "\t" + (isDead() ? "[DEAD]" : "") + (result == null ? "" : result + " = ") + operation;
+        return "" + (isDead() ? "[DEAD]" : "") + (result == null ? "" : result + " = ") + operation;
     }
 
     @Interp

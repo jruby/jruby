@@ -1,6 +1,7 @@
 package org.jruby.interpreter;
 
 import org.jruby.Ruby;
+import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
@@ -44,25 +45,26 @@ public class Interpreter {
         IRScript root = (IRScript) scope;
 
         // We get the live object ball rolling here.  This give a valid value for the top
-        // of this lexical tree.  All new scope can then retrieve and set based on lexical
-        // parent.
+        // of this lexical tree.  All new scope can then retrieve and set based on lexical parent.
         if (root.getStaticScope().getModule() == null) { // If an eval this may already be setup.
             root.getStaticScope().setModule(runtime.getObject());
         }
 
-		  RubyModule currModule = root.getStaticScope().getModule();
+        RubyModule currModule = root.getStaticScope().getModule();
         IRMethod rootMethod = root.getRootClass().getRootMethod();
         InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule);
+        ThreadContext context = runtime.getCurrentContext();
 
-        IRubyObject rv =  method.call(runtime.getCurrentContext(), self, currModule, "", new IRubyObject[]{});
-        if (debug) {
-            System.out.println("-- Interpreted " + interpInstrsCount + " instructions");
-        }
+        IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
+        if (debug) System.out.println("-- Interpreted " + interpInstrsCount + " instructions");
+
         return rv;
     }
 
     public static IRubyObject interpret(ThreadContext context, CFG cfg, InterpreterContext interp) {
+        Ruby runtime = context.getRuntime();
         boolean inClosure = (cfg.getScope() instanceof IRClosure);
+        
         try {
             interp.setMethodExitLabel(cfg.getExitBB().getLabel()); // used by return and break instructions!
 
@@ -74,7 +76,7 @@ public class Interpreter {
                 interpInstrsCount++;
                 lastInstr = instrs[ipc];
                 
-                if (debug) System.out.println("EXEC'ing: " + lastInstr);
+                if (debug) System.out.println("I: " + lastInstr);
                 
                 try {
                     Label jumpTarget = lastInstr.interpret(interp);
@@ -84,41 +86,37 @@ public class Interpreter {
                 // What about Java exceptions?
                 catch (org.jruby.exceptions.RaiseException re) {
                     ipc = cfg.getRescuerPC(lastInstr);
-                    // If no one rescues this exception, pass it along!
-                    if (ipc == -1)
-                        throw re;
-                    else
-                        interp.setException(re.getException());
+
+                    if (ipc == -1) throw re; // No one rescued exception, pass it on!
+
+                    interp.setException(re.getException());
                 }
             }
 
-            // If I am in a closure, and lastInstr was a return, have to return from the nearest method!
+            // If a closure, and lastInstr was a return, have to return from the nearest method!
             IRubyObject rv = (IRubyObject) interp.getReturnValue();
-            if (lastInstr instanceof ReturnInstr) {
-                if (inClosure)
-                    throw RuntimeHelpers.returnJump(rv, context);
-            }
-            // If I am in a closure, and lastInstr was a break, have to return from the nearest closure!
+            
+            if (lastInstr instanceof ReturnInstr && inClosure) throw RuntimeHelpers.returnJump(rv, context);
+
+            // If a closure, and lastInstr was a break, have to return from the nearest closure!
             else if (lastInstr instanceof BREAK_Instr) {
-                if (inClosure)
-                    RuntimeHelpers.breakJump(context, rv);
-                else
-                    throw context.getRuntime().newLocalJumpError(org.jruby.RubyLocalJumpError.Reason.BREAK, rv, "unexpected break");
+                if (!inClosure) throw runtime.newLocalJumpError(Reason.BREAK, rv, "unexpected break");
+
+                RuntimeHelpers.breakJump(context, rv);
             }
 
             return rv;
         } catch (org.jruby.exceptions.JumpException.ReturnJump rj) {
-            if (inClosure) // pass it along!
-                throw rj;
-            else
-                return (IRubyObject)rj.getValue();
+            if (inClosure) throw rj; // pass it along!
+
+            return (IRubyObject) rj.getValue();
         } finally {
             if (interp.getFrame() != null) {
                 context.popFrame();
                 interp.setFrame(null);
             }
-            if (interp.hasAllocatedDynamicScope()) 
-                context.postMethodScopeOnly();
+            
+            if (interp.hasAllocatedDynamicScope()) context.postMethodScopeOnly();
         }
     }
 
@@ -126,6 +124,7 @@ public class Interpreter {
             InterpreterContext interp, String name, RubyModule implClass, boolean isTraceable) {
         Ruby runtime = interp.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");
+        
         try {
             String className = implClass.getName();
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, className, name, context.getFile(), context.getLine());

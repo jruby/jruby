@@ -14,10 +14,7 @@ import org.jruby.compiler.ir.operands.MethodHandle;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.IRClass;
-import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -217,7 +214,7 @@ public class CallInstr extends MultiOperandInstr {
 
     @Override
     public String toString() {
-        return "\t"
+        return ""
                 + (result == null ? "" : result + " = ")
                 + operation + "(" + methAddr + ", " + receiver + ", " +
                 java.util.Arrays.toString(getCallArgs())

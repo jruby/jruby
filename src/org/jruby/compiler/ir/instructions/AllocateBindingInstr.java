@@ -14,9 +14,7 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.Map;
-import org.jruby.RubyModule;
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class AllocateBindingInstr extends Instr {
     IRMethod scope;   // Scope for which frame is needed
@@ -46,7 +44,7 @@ public class AllocateBindingInstr extends Instr {
 
     @Override
     public String toString() {
-        return "\t" + operation + "(" + scope + ")";
+        return "" + operation + "(" + scope + ")";
     }
 
     @Override

@@ -1,14 +1,10 @@
 package org.jruby.compiler.ir.instructions;
 
-import java.util.Map;
-
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 // This is of the form:
 //    v = LBL_..
@@ -21,7 +17,7 @@ public class SET_RETADDR_Instr extends OneOperandInstr
 
     public Label getReturnAddr() { return (Label)argument; }
 
-    public String toString() { return "\t" + result + " = " + argument; }
+    public String toString() { return "" + result + " = " + argument; }
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new SET_RETADDR_Instr(ii.getRenamedVariable(result), ii.getRenamedLabel((Label)argument));

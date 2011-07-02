@@ -4,17 +4,14 @@ import java.util.Map;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /*
  * All variables are allocated in the binding of the nearest method ancestor.  Additionally, all variables 
@@ -55,7 +52,7 @@ public class LoadFromBindingInstr extends Instr {
 
     @Override
     public String toString() {
-        return "\t" + result + " = BINDING(" + sourceMethod + ")." + getSlotName();
+        return "" + result + " = BINDING(" + sourceMethod + ")." + getSlotName();
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {

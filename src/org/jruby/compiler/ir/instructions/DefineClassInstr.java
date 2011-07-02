@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.instructions;
 
-import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyClass;
@@ -12,9 +11,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineClassInstr extends TwoOperandInstr {
     public DefineClassInstr(ClassMetaObject cmo, Operand superClass) {
@@ -48,6 +45,6 @@ public class DefineClassInstr extends TwoOperandInstr {
 
     @Override
     public String toString() {
-        return "\t" + operation + "(" + getOperand1() + ", " + getOperand2() + ")";
+        return "" + operation + "(" + getOperand1() + ", " + getOperand2() + ")";
     }
 }

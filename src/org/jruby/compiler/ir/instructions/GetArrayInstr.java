@@ -31,7 +31,7 @@ public class GetArrayInstr extends OneOperandInstr {
 
     @Override
     public String toString() {
-        return "\t" + result + " = " + argument + "[" + index + (all ? ":END" : "") + "] (GET_ARRAY)";
+        return "" + result + " = " + argument + "[" + index + (all ? ":END" : "") + "] (GET_ARRAY)";
     }
 
     @Override

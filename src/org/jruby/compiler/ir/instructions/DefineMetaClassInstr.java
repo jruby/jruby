@@ -7,7 +7,6 @@ import org.jruby.RubySymbol;
 import org.jruby.compiler.ir.IRMetaClass;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -48,6 +47,6 @@ public class DefineMetaClassInstr extends OneOperandInstr {
 
     @Override
     public String toString() {
-        return "\t" + operation + "(" + getArg() + ", " + dummyMetaClass + ")";
+        return "" + operation + "(" + getArg() + ", " + dummyMetaClass + ")";
     }
 }
