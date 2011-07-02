@@ -2240,7 +2240,7 @@ public class IRBuilder {
             if (leftNode != null) { // Foo::Bar
                 container = build(leftNode, s);
             } else { // Only name with no left-side Bar <- Note no :: on left
-                container = MetaObject.create(s);
+                container = MetaObject.create(s.getNearestModule());
             }
         } else { //::Bar
             container = MetaObject.create(IRClass.getCoreClass("Object"));
