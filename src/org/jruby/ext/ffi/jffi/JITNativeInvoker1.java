@@ -8,8 +8,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 abstract public class JITNativeInvoker1 extends JITNativeInvoker {
 
-    public JITNativeInvoker1(com.kenai.jffi.Function function, NativeInvoker fallbackInvoker) {
-        super(1, function, fallbackInvoker);
+    public JITNativeInvoker1(com.kenai.jffi.Function function, Signature signature, NativeInvoker fallbackInvoker) {
+        super(function, signature, fallbackInvoker);
     }
     
     public final IRubyObject invoke(ThreadContext context) {

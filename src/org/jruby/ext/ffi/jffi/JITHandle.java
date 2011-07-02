@@ -59,11 +59,10 @@ final class JITHandle {
         }
 
         try {
-            Constructor<? extends NativeInvoker> cons = compiledClass.getDeclaredConstructor(com.kenai.jffi.Function.class, NativeDataConverter.class, NativeDataConverter[].class, NativeInvoker.class);
-            return cons.newInstance(function, resultConverter, parameterConverters,
-                    createFallbackInvoker(function, jitSignature));
+            Constructor<? extends NativeInvoker> cons = compiledClass.getDeclaredConstructor(com.kenai.jffi.Function.class, Signature.class, NativeInvoker.class);
+            return cons.newInstance(function, signature, createFallbackInvoker(function, jitSignature));
         } catch (Throwable t) {
-            return null;
+            throw new RuntimeException(t);
         }
     }
 

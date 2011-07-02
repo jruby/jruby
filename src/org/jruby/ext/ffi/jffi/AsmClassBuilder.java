@@ -67,8 +67,7 @@ final class AsmClassBuilder {
     Class<? extends NativeInvoker> build() {
         // Create the constructor to set the 'library' & functions fields
         SkinnyMethodAdapter init = new SkinnyMethodAdapter(classVisitor, ACC_PUBLIC, "<init>",
-                sig(void.class, com.kenai.jffi.Function.class, NativeDataConverter.class, 
-                    NativeDataConverter[].class, NativeInvoker.class),
+                sig(void.class, com.kenai.jffi.Function.class, Signature.class, NativeInvoker.class),
                 null, null);
         
         init.start();
@@ -76,32 +75,10 @@ final class AsmClassBuilder {
         // Invoker the superclass's constructor
         init.aload(0); // this
         init.aload(1); // jffi function
-        init.aload(4); // fallback invoker
-        init.invokespecial(p(parentClass), "<init>", sig(void.class, com.kenai.jffi.Function.class, NativeInvoker.class));
-        
-
-        if (signature.hasResultConverter()) {
-            // Save the result converter argument in a field
-            classVisitor.visitField(ACC_PRIVATE | ACC_FINAL, getResultConverterFieldName(),
-                    ci(NativeDataConverter.class), null, null);
-            init.aload(0);
-            init.aload(2);
-            init.putfield(className, getResultConverterFieldName(), ci(NativeDataConverter.class));
-        }
-        
-        // Now load & store the parameter converter array
-        for (int i = 0; i < signature.getParameterCount(); i++) {
-            if (signature.hasParameterConverter(i)) {
-                classVisitor.visitField(ACC_PRIVATE | ACC_FINAL, getParameterConverterFieldName(i),
-                        ci(NativeDataConverter.class), null, null);
-                init.aload(0);
-                init.aload(3);
-                init.pushInt(i);
-                init.aaload();
-                init.putfield(className, getParameterConverterFieldName(i), ci(NativeDataConverter.class));
-            }
-        }
-        
+        init.aload(2); // signature
+        init.aload(3); // fallback invoker
+        init.invokespecial(p(parentClass), "<init>",
+                sig(void.class, com.kenai.jffi.Function.class, Signature.class, NativeInvoker.class));
         init.voidreturn();
         init.visitMaxs(10, 10);
         init.visitEnd();
