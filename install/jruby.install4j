@@ -78,6 +78,7 @@
       </dirEntry>
       <dirEntry mountPoint="102" file="../dist/jruby-bin-${compiler:jruby.version}" overwrite="2" shared="false" mode="644" uninstallMode="0" excludeSuffixes="" dirMode="755">
         <exclude>
+          <entry location="bin/jruby" fileType="regular" />
           <entry location="lib/native" fileType="regular" />
         </exclude>
       </dirEntry>
