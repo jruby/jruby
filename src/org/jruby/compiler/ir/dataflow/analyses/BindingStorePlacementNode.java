@@ -157,11 +157,16 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             System.out.println("\t--> Vars live on exit : " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
 **/
             LiveVariablesProblem lvp = (LiveVariablesProblem)cfg.getDataFlowSolution(DataFlowConstants.LVP_NAME);
-            java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnExit();
-            if (liveVars != null)
-                dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
-            else
+            if (lvp != null) {
+                java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnExit();
+                if (liveVars != null) {
+                    dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
+                } else {
+                    dirtyVars.clear();
+                }
+            } else {
                 dirtyVars.clear();
+            }
         }
 
         while (instrs.hasNext()) {
