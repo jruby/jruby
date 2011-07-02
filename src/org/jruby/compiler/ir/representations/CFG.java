@@ -77,8 +77,8 @@ public class CFG {
     List<ExceptionRegion>               _outermostERs;  // Outermost exception regions
 
     private Instr[]       _instrs;
-    private Set<Variable> _definedLocalVars;  // Local variables defined in this scope
-    private Set<Variable> _usedLocalVars;     // Local variables used in this scope
+    private Set<Variable> _definedLocalVars = new java.util.HashSet<Variable>();  // Local variables defined in this scope
+    private Set<Variable> _usedLocalVars = new java.util.HashSet<Variable>();     // Local variables used in this scope
 
     public CFG(IRExecutionScope s) {
         _nextBBId = 0; // Init before building basic blocks below!
@@ -1122,8 +1122,6 @@ public class CFG {
     }
 
     public void setUpUseDefLocalVarMaps() {
-        _definedLocalVars = new java.util.HashSet<Variable>();
-        _usedLocalVars = new java.util.HashSet<Variable>();
         for (BasicBlock bb: getNodes()) {
             for (Instr i: bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
