@@ -25,11 +25,11 @@ public final class HeapPointerParameterStrategy extends PointerParameterStrategy
 
     @Override
     public int arrayOffset(IRubyObject parameter) {
-        return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).arrayLength();
+        return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).arrayOffset();
     }
 
     @Override
     public int arrayLength(IRubyObject parameter) {
-        return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).arrayOffset();
+        return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).arrayLength();
     }
 }

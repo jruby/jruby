@@ -3,6 +3,8 @@ package org.jruby.ext.ffi.jffi;
 import java.math.BigInteger;
 
 import com.kenai.jffi.HeapInvocationBuffer;
+import com.kenai.jffi.ObjectParameterInfo;
+import com.kenai.jffi.ObjectParameterInvoker;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -371,10 +373,199 @@ public final class JITRuntime {
         }
     }
 
-    public static long invokeN6O2(com.kenai.jffi.Function f, long n1, long n2, long n3, long n4, long n5, long n6,
-                                  IRubyObject o1, PointerParameterStrategy s1,
-                                  IRubyObject o2, PointerParameterStrategy s2) {
-        HeapInvocationBuffer buffer = new HeapInvocationBuffer(f);
-        return 0L;
+    public static long invokeN1O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info) {
+
+        return ObjectParameterInvoker.getInstance().invokeN1O1rN(function, n1,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+    }
+
+    public static long invokeN2O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info) {
+
+        return ObjectParameterInvoker.getInstance().invokeN2O1rN(function, n1, n2,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+    }
+
+    public static long invokeN2O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
+        if (!s1.isDirect()) {
+            // do nothing, use the first param as-is
+        } else {
+            // move second into first place
+            o1 = o2; s1 = s2; o1info = o2info;
+        }
+
+        return ObjectParameterInvoker.getInstance().invokeN2O1rN(function, n1, n2,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+    }
+
+    public static long invokeN2O2rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
+
+        return ObjectParameterInvoker.getInstance().invokeN2O2rN(function, n1, n2,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+    }
+
+    public static long invokeN3O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info) {
+
+        return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+    }
+
+    public static long invokeN3O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
+        if (!s1.isDirect()) {
+            // do nothing, use the first param as-is
+        } else {
+            // move second into first place
+            o1 = o2; s1 = s2; o1info = o2info;
+        }
+
+        return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+    }
+
+    public static long invokeN3O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
+                                  IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
+        if (!s1.isDirect()) {
+            // do nothing, use the first param as-is
+        } else if (!s2.isDirect()) {
+            // move second into first place
+            o1 = o2; s1 = s2; o1info = o2info;
+        } else {
+            // move third into first place
+            o1 = o3; s1 = s3; o1info = o3info;
+        }
+
+        return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+    }
+
+
+    public static long invokeN3O2rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
+
+        return ObjectParameterInvoker.getInstance().invokeN3O2rN(function, n1, n2, n3,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+    }
+    
+
+    public static long invokeN3O2rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
+                                  IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
+        if (!s1.isDirect()) {
+            // do nothing, use the first param as-is
+        } else if (!s2.isDirect()) {
+            // move second into first place
+            o1 = o2; s1 = s2; o1info = o2info;
+        } else {
+            // move third into first place
+            o1 = o3; s1 = s3; o1info = o3info;
+        }
+
+        if (s2.isDirect()) {
+            // move third param into second  place
+            o2 = o3; s2 = s3; o2info = o3info;
+        }
+
+        return ObjectParameterInvoker.getInstance().invokeN3O2rN(function, n1, n2, n3,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+    }
+
+    public static long invokeN4O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, long n4,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info) {
+
+        return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+    }
+
+    public static long invokeN4O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, long n4,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
+        if (!s1.isDirect()) {
+            // do nothing, use the first param as-is
+        } else {
+            // move second into first place
+            o1 = o2; s1 = s2; o1info = o2info;
+        }
+
+        return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+    }
+
+    public static long invokeN4O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, long n4,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
+                                  IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
+        if (!s1.isDirect()) {
+            // do nothing, use the first param as-is
+        } else if (!s2.isDirect()) {
+            // move second into first place
+            o1 = o2; s1 = s2; o1info = o2info;
+        } else {
+            // move third into first place
+            o1 = o3; s1 = s3; o1info = o3info;
+        }
+
+        return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+    }
+
+
+    public static long invokeN4O2rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, long n4,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
+
+        return ObjectParameterInvoker.getInstance().invokeN4O2rN(function, n1, n2, n3, n4,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+    }
+
+    public static long invokeN4O2rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, long n4,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
+                                  IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
+        if (!s1.isDirect()) {
+            // do nothing, use the first param as-is
+        } else if (!s2.isDirect()) {
+            // move second into first place
+            o1 = o2; s1 = s2; o1info = o2info;
+        } else {
+            // move third into first place
+            o1 = o3; s1 = s3; o1info = o3info;
+        }
+
+        if (s2.isDirect()) {
+            // move third param into second  place
+            o2 = o3; s2 = s3; o2info = o3info;
+        }
+
+        return ObjectParameterInvoker.getInstance().invokeN4O2rN(function, n1, n2, n3, n4,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
     }
 }

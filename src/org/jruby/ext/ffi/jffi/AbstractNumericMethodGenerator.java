@@ -1,5 +1,6 @@
 package org.jruby.ext.ffi.jffi;
 
+import com.kenai.jffi.ObjectParameterInfo;
 import com.kenai.jffi.Platform;
 import org.jruby.ext.ffi.Buffer;
 import org.jruby.RubyString;
@@ -28,31 +29,28 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
 
         mv.start();
         generate(builder, mv, signature);
-        mv.visitMaxs(10, 10);
+        mv.visitMaxs(30, 30);
         mv.visitEnd();
     }
 
     public void generate(AsmClassBuilder builder, SkinnyMethodAdapter mv, JITSignature signature) {
         final Class nativeIntType = getInvokerIntType();
-        int maxPointerIndex = -1;
-        Label[] fallback = new Label[signature.getParameterCount()];
-        for (int i = 0; i < signature.getParameterCount(); i++) {
-            fallback[i] = new Label();
-        }
-        
-        mv.aload(1); // load ThreadContext arg for result boxing
+        int pointerCount = 0;
 
+        mv.aload(1); // load ThreadContext arg for result boxing
         mv.getstatic(p(JITNativeInvoker.class), "invoker", ci(com.kenai.jffi.Invoker.class));
         mv.aload(0);
         mv.getfield(p(JITNativeInvoker.class), "function", ci(com.kenai.jffi.Function.class));
         // [ stack now contains: Invoker, Function ]
+
         final int firstParam = 2;
-        final int firstLocalVar = firstParam + signature.getParameterCount();
-        final int tmpLocalVar = firstLocalVar;
-        int nextStrategyVar = firstLocalVar + 1;
+        int nextLocalVar = firstParam + signature.getParameterCount();
+        final int heapPointerCountVar = nextLocalVar++;
+        final int firstStrategyVar = nextLocalVar; nextLocalVar += signature.getParameterCount();
+        int nextStrategyVar = firstStrategyVar;
         
         // Perform any generic data conversions on the parameters
-        for (int i = 0; i < signature.getParameterCount(); ++i) {
+        for (int i = 0; i < signature.getParameterCount(); i++) {
             if (signature.hasParameterConverter(i)) {
                 mv.aload(0);
                 mv.getfield(builder.getClassName(), builder.getParameterConverterFieldName(i), ci(NativeDataConverter.class));
@@ -64,7 +62,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
         }
 
         // Load and un-box parameters
-        for (int i = 0; i < signature.getParameterCount(); ++i) {
+        for (int i = 0; i < signature.getParameterCount(); i++) {
             final NativeType parameterType = signature.getParameterType(i);
             final int paramVar = i + firstParam;
             mv.aload(paramVar);
@@ -125,20 +123,30 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                 case BUFFER_IN:
                 case BUFFER_OUT:
                 case BUFFER_INOUT:
-                    maxPointerIndex = i;
+                case STRING:
+                    Label address = new Label();
+                    Label next = new Label();
+                    if (pointerCount++ < 1) {
+                        mv.pushInt(0);
+                        mv.istore(heapPointerCountVar);
+                    }
+
                     mv.invokestatic(p(JITRuntime.class), "pointerParameterStrategy",
                             sig(PointerParameterStrategy.class, IRubyObject.class));
-                    mv.dup();
                     mv.astore(nextStrategyVar);
+                    mv.aload(nextStrategyVar);
                     mv.invokevirtual(p(PointerParameterStrategy.class), "isDirect", sig(boolean.class));
-                    mv.iffalse(fallback[i]);
+                    mv.iftrue(address);
+                    mv.iinc(heapPointerCountVar, 1);
 
+                    mv.label(address);
                     // It is now direct, get the address, and convert to the native int type
                     mv.aload(nextStrategyVar);
                     mv.aload(paramVar);
                     mv.invokevirtual(p(PointerParameterStrategy.class), "getAddress", sig(long.class, IRubyObject.class));
                     narrow(mv, long.class, nativeIntType);
                     nextStrategyVar++;
+                    mv.label(next);
                     break;
 
                 case FLOAT:
@@ -154,22 +162,82 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
             }
         }
 
+        Label indirect = new Label();
+        if (pointerCount > 0) {
+            mv.iload(heapPointerCountVar);
+            mv.ifne(indirect);
+        }
+
         // stack now contains [ Invoker, Function, int/long args ]
         mv.invokevirtual(p(com.kenai.jffi.Invoker.class),
                 getInvokerMethodName(signature),
                 getInvokerSignature(signature.getParameterCount()));
 
 
+        Label boxResult = new Label();
+        if (pointerCount > 0) mv.label(boxResult);
+
         // box up the raw int/long result
         boxResult(mv, signature.getResultType());
-        emitResultConversion(mv, builder, signature);;
+        Label resultConversion = new Label();
+        if (pointerCount > 0) mv.label(resultConversion);
+        emitResultConversion(mv, builder, signature);
         mv.areturn();
-        
-        // Generate code to pop all the converted arguments off the stack 
-        // when falling back to buffer-invocation
-        if (maxPointerIndex >= 0) {
-            for (int i = maxPointerIndex; i > 0; i--) {
-                mv.label(fallback[i]);
+
+        // Handle non-direct pointer parameters
+        if (pointerCount > 0) {
+            mv.label(indirect);
+            if (long.class == nativeIntType && signature.getParameterCount() <= 4 && pointerCount <= 3) {
+                Label fallback = new Label();
+                mv.iload(heapPointerCountVar);
+                mv.iconst_2();
+                mv.if_icmpgt(fallback);
+
+                // Just load all the pointer parameters, conversion strategies and parameter info onto
+                // the operand stack, so the helper functions can sort them out.
+                for (int i = 0, ptrIdx = 0; i < signature.getParameterCount(); i++) {
+                    switch (signature.getParameterType(i)) {
+                        case POINTER:
+                        case BUFFER_IN:
+                        case BUFFER_OUT:
+                        case BUFFER_INOUT:
+                        case STRING:
+                            mv.aload(firstParam + i);
+                            mv.aload(firstStrategyVar + ptrIdx);
+                            mv.aload(0);
+                            mv.getfield(p(JITNativeInvoker.class), "parameterInfo" + i, ci(ObjectParameterInfo.class));
+                            ptrIdx++;
+                            break;
+                    }
+                }
+
+
+                Label o2 = new Label();
+                if (pointerCount > 1) {
+                    mv.iload(heapPointerCountVar);
+                    mv.iconst_1();
+                    mv.if_icmpgt(o2);
+                }
+
+                Class[] paramTypes = makeObjectParamSignature(signature, pointerCount);
+                mv.invokestatic(p(JITRuntime.class), "invokeN" + signature.getParameterCount() + "O1rN",
+                        sig(long.class, paramTypes));
+                narrow(mv, long.class, nativeIntType);
+                mv.go_to(boxResult);
+
+                if (pointerCount > 1) {
+                    mv.label(o2);
+                    mv.invokestatic(p(JITRuntime.class), "invokeN" + signature.getParameterCount() + "O2rN",
+                            sig(long.class, paramTypes));
+                    narrow(mv, long.class, nativeIntType);
+                    mv.go_to(boxResult);
+                }
+                mv.label(fallback);
+            }
+
+            // Emit the fallback code to call the generic invoker path
+            // pop all the converted arguments off the stack
+            for (int i = 0; i < signature.getParameterCount(); i++) {
                 if (int.class == nativeIntType) {
                     mv.pop();
                 } else {
@@ -177,7 +245,6 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                 }
             }
 
-            mv.label(fallback[0]);
             // Pop ThreadContext, Invoker and Function
             mv.pop(); mv.pop(); mv.pop();
             
@@ -192,8 +259,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
             
             mv.invokevirtual(p(NativeInvoker.class), "invoke", 
                     sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, signature.getParameterCount())));
-            emitResultConversion(mv, builder, signature);
-            mv.areturn();
+            mv.go_to(resultConversion);
         }
     }
 
@@ -206,6 +272,30 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
             mv.swap();   // [ converter, thread context, result ]
             mv.invokevirtual(p(NativeDataConverter.class), "fromNative", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
         }
+    }
+    
+    private static Class[] makeObjectParamSignature(JITSignature signature, int pointerCount) {
+        Class[] paramTypes = new Class[2 + signature.getParameterCount() + (pointerCount * 3)];
+        int idx = 0;
+
+        paramTypes[idx++] = com.kenai.jffi.Invoker.class;
+        paramTypes[idx++] = com.kenai.jffi.Function.class;
+
+        for (int i = 0; i < signature.getParameterCount(); i++) {
+            paramTypes[idx++] = long.class;
+        }
+
+        for (int i = 0; i < pointerCount; i++) {
+            paramTypes[idx++] = IRubyObject.class;
+            paramTypes[idx++] = PointerParameterStrategy.class;
+            paramTypes[idx++] = ObjectParameterInfo.class;
+        }
+
+        return paramTypes;
+    }
+
+    private void emitHeapPointerLoad(SkinnyMethodAdapter mv, Signature signature, int lvar) {
+
     }
 
     private void unbox(SkinnyMethodAdapter mv, String method) {

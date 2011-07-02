@@ -122,6 +122,7 @@ final class FastLongMethodGenerator extends AbstractNumericMethodGenerator {
             case BUFFER_IN:
             case BUFFER_OUT:
             case BUFFER_INOUT:
+            case STRING:
                 return platform.addressSize() == 64;
             
             default:

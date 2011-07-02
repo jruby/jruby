@@ -121,6 +121,7 @@ final class FastNumericMethodGenerator extends AbstractNumericMethodGenerator {
             case BUFFER_IN:
             case BUFFER_OUT:
             case BUFFER_INOUT:
+            case STRING:
                 return true;
             
             default:

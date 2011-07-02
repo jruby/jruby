@@ -2,6 +2,8 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.*;
 import org.jruby.ext.ffi.*;
+import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.Type;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -21,6 +23,12 @@ abstract public class JITNativeInvoker extends NativeInvoker {
     protected final NativeDataConverter parameterConverter3;
     protected final NativeDataConverter parameterConverter4;
     protected final NativeDataConverter parameterConverter5;
+    protected final ObjectParameterInfo parameterInfo0;
+    protected final ObjectParameterInfo parameterInfo1;
+    protected final ObjectParameterInfo parameterInfo2;
+    protected final ObjectParameterInfo parameterInfo3;
+    protected final ObjectParameterInfo parameterInfo4;
+    protected final ObjectParameterInfo parameterInfo5;
 
     public JITNativeInvoker(com.kenai.jffi.Function function, Signature signature, NativeInvoker fallbackInvoker) {
         this.arity = signature.getParameterCount();
@@ -28,7 +36,6 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         this.signature = signature;
         this.fallbackInvoker = fallbackInvoker;
 
-        System.out.println("resolving result converters");
         // Get any result and parameter converters needed
         resultConverter = DataConverters.getResultConverter(signature.getResultType());
         parameterConverter0 = getParameterConverter(signature, 0);
@@ -37,11 +44,49 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         parameterConverter3 = getParameterConverter(signature, 3);
         parameterConverter4 = getParameterConverter(signature, 4);
         parameterConverter5 = getParameterConverter(signature, 5);
+        parameterInfo0 = getParameterInfo(signature, 0);
+        parameterInfo1 = getParameterInfo(signature, 1);
+        parameterInfo2 = getParameterInfo(signature, 2);
+        parameterInfo3 = getParameterInfo(signature, 3);
+        parameterInfo4 = getParameterInfo(signature, 4);
+        parameterInfo5 = getParameterInfo(signature, 5);
     }
 
     private static NativeDataConverter getParameterConverter(Signature signature, int i) {
         return signature.getParameterCount() > i
             ? DataConverters.getParameterConverter(signature.getParameterType(i), signature.getEnums()) : null;
+    }
+
+    private static ObjectParameterInfo getParameterInfo(Signature signature, int i) {
+        if (signature.getParameterCount() <= i) {
+            return null;
+        }
+
+        Type type = signature.getParameterType(i);
+        int flags = 0;
+        NativeType nativeType  = type instanceof MappedType
+                ? ((MappedType) type).getRealType().getNativeType() : type.getNativeType();
+
+        switch (nativeType) {
+            case BUFFER_IN:
+            case STRING:
+                flags |= ObjectParameterInfo.IN | ObjectParameterInfo.NULTERMINATE;
+                break;
+
+            case BUFFER_OUT:
+                flags |= ObjectParameterInfo.OUT | ObjectParameterInfo.CLEAR;
+                break;
+
+            case POINTER:
+            case BUFFER_INOUT:
+                flags |= ObjectParameterInfo.IN | ObjectParameterInfo.OUT | ObjectParameterInfo.CLEAR | ObjectParameterInfo.NULTERMINATE;
+                break;
+
+            default:
+                return null;
+        }
+
+        return ObjectParameterInfo.create(i, ObjectParameterInfo.ARRAY, ObjectParameterInfo.BYTE, flags);
     }
     
     abstract public IRubyObject invoke(ThreadContext context, IRubyObject arg1, 
@@ -79,6 +124,7 @@ abstract public class JITNativeInvoker extends NativeInvoker {
                 throw context.getRuntime().newArgumentError("too many arguments: " + args.length);
         }
     }
-    
+
+
     
 }

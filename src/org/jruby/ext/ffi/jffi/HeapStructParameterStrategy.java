@@ -2,6 +2,7 @@ package org.jruby.ext.ffi.jffi;
 
 import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.ArrayMemoryIO;
+import org.jruby.ext.ffi.Struct;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -19,16 +20,16 @@ public final class HeapStructParameterStrategy extends PointerParameterStrategy 
 
     @Override
     public Object array(IRubyObject parameter) {
-        return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).array();
+        return ((ArrayMemoryIO) ((Struct) parameter).getMemory().getMemoryIO()).array();
     }
 
     @Override
     public int arrayOffset(IRubyObject parameter) {
-        return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).arrayLength();
+        return ((ArrayMemoryIO) ((Struct) parameter).getMemory().getMemoryIO()).arrayOffset();
     }
 
     @Override
     public int arrayLength(IRubyObject parameter) {
-        return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).arrayOffset();
+        return ((ArrayMemoryIO) ((Struct) parameter).getMemory().getMemoryIO()).arrayLength();
     }
 }
