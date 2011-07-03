@@ -15,7 +15,7 @@ import org.jruby.ext.ffi.Type;
  */
 final class JITHandle {
 
-    private static final int THRESHOLD = Integer.getInteger("jruby.ffi.compile.threshold", 10);
+    private static final int THRESHOLD = Integer.getInteger("jruby.ffi.compile.threshold", 100);
     private final JITSignature jitSignature;
     private volatile boolean compilationFailed = false;
     private final AtomicInteger counter = new AtomicInteger(0);
