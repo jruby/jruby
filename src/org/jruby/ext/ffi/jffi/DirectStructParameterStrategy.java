@@ -19,16 +19,16 @@ public final class DirectStructParameterStrategy extends PointerParameterStrateg
 
     @Override
     public Object array(IRubyObject parameter) {
-        return null;
+        throw new RuntimeException("no array");
     }
 
     @Override
     public int arrayOffset(IRubyObject parameter) {
-        return 0;
+        throw new RuntimeException("no array");
     }
 
     @Override
     public int arrayLength(IRubyObject parameter) {
-        return 0;
+        throw new RuntimeException("no array");
     }
 }
