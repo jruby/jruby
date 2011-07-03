@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.util.ByteList;
 import org.jruby.compiler.ir.IRClass;
+import org.jruby.RubyString;
 
 public class StringLiteral extends Constant
 {
@@ -45,8 +46,9 @@ public class StringLiteral extends Constant
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        // FIXME SSS: Looks like newString just points to _bl_value rather than cloning it?
         // ENEBO: This is not only used for full RubyStrings, but also for bytelist retrieval....extra wrapping
-        return interp.getRuntime().newString(_bl_value); 
+        // return interp.getRuntime().newString(_bl_value); 
+        // SSS FIXME: AST interpreter passes in a coderange argument.
+        return RubyString.newStringShared(interp.getRuntime(), _bl_value);
     }
 }
