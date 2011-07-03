@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
+
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRClass;
@@ -56,6 +58,13 @@ public class MetaObject extends Operand {
 
     public IRScope getScope() {
         return scope;
+    }
+
+    @Override
+    public void addUsedVariables(List<Variable> l) {
+        // SSS: IRScopeImpl has an operand that records the container for the scope
+        Operand c = scope.getContainer();
+		  if (c != null) c.addUsedVariables(l);
     }
 
     /**
