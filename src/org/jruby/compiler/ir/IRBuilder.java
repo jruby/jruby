@@ -2402,6 +2402,10 @@ public class IRBuilder {
         return result;
     }
 
+    // FIXME: This logic is not quite right....marked extra branch checks
+    // to make sure the value is not defined but nil.  Nil will trigger ||=
+    // rhs expression.
+    //
     // Translate "x ||= y" --> "x = (is_defined(x) && is_true(x) ? x : y)" -->
     // 
     //    v = -- build(x) should return a variable! --
@@ -2424,6 +2428,7 @@ public class IRBuilder {
         Variable result = s.getNewTemporaryVariable();
         v1 = build(orNode.getFirstNode(), s); // build of 'x'
         s.addInstr(new CopyInstr(result, v1));
+        s.addInstr(new BEQInstr(v1, Nil.NIL, l2));  // FIXME: I added this this isTrue() is not quite right see note above
         s.addInstr(new IsTrueInstr(flag, v1));
         s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         if (needsDefnCheck) {
