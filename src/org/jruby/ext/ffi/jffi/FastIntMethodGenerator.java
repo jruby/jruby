@@ -134,6 +134,7 @@ final class FastIntMethodGenerator extends AbstractNumericMethodGenerator {
             case BUFFER_IN:
             case BUFFER_OUT:
             case BUFFER_INOUT:
+            case STRING:
                 return platform.addressSize() == 32;
             default:
                 return isFastIntType(platform, type);

@@ -187,11 +187,31 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
         // Handle non-direct pointer parameters
         if (pointerCount > 0) {
             mv.label(indirect);
-            if (long.class == nativeIntType && signature.getParameterCount() <= 4 && pointerCount <= 3) {
+
+            // For functions with only a few pointer args, we can possibly use the jffi object fast-path
+            if (signature.getParameterCount() <= 4 && pointerCount <= 3) {
                 Label fallback = new Label();
                 mv.iload(heapPointerCountVar);
                 mv.iconst_2();
                 mv.if_icmpgt(fallback);
+
+                if (int.class == nativeIntType) {
+                    // For i386, need to convert the int params to long to pass to the invokeNrN helpers
+                    final int firstIntParam = nextLocalVar;
+                    for (int i = 0; i < signature.getParameterCount() - 1; i++) {
+                        mv.istore(firstIntParam + i);
+                    }
+
+                    // first param is still on operand stack, just convert in-place
+                    mv.i2l();
+
+                    // now convert the rest
+                    for (int i = signature.getParameterCount() - 2; i >= 0; i--) {
+                        mv.iload(firstIntParam + i);
+                        mv.i2l();
+                    }
+                }
+
 
                 // Just load all the pointer parameters, conversion strategies and parameter info onto
                 // the operand stack, so the helper functions can sort them out.
