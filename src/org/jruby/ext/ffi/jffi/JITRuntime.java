@@ -18,6 +18,7 @@ import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.StringSupport;
 
 /**
  *
@@ -361,6 +362,7 @@ public final class JITRuntime {
             return NIL_POINTER_STRATEGY;
 
         } else if (parameter instanceof RubyString) {
+            StringSupport.checkStringSafety(parameter.getRuntime(), parameter);
             return STRING_POINTER_STRATEGY;
 
         } else if (parameter.respondsTo("to_ptr")) {
