@@ -77,8 +77,8 @@ public class CFG {
     List<ExceptionRegion>               _outermostERs;  // Outermost exception regions
 
     private Instr[]       _instrs;
-    private Set<Variable> _definedLocalVars = new java.util.HashSet<Variable>();  // Local variables defined in this scope
-    private Set<Variable> _usedLocalVars = new java.util.HashSet<Variable>();     // Local variables used in this scope
+    private Set<Variable> _definedLocalVars;   // Local variables defined in this scope
+    private Set<Variable> _usedLocalVars;      // Local variables used in this scope
 
     public CFG(IRExecutionScope s) {
         _nextBBId = 0; // Init before building basic blocks below!
@@ -1122,6 +1122,8 @@ public class CFG {
     }
 
     public void setUpUseDefLocalVarMaps() {
+		  _definedLocalVars = new java.util.HashSet<Variable>();
+		  _usedLocalVars = new java.util.HashSet<Variable>();
         for (BasicBlock bb: getNodes()) {
             for (Instr i: bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
@@ -1139,6 +1141,7 @@ public class CFG {
     }
 
     public Set<Variable> usedLocalVarsFromClosures() {
+		  if (_usedLocalVars == null) setUpUseDefLocalVarMaps();
         HashSet vs = new HashSet();
         for (IRClosure cl: getScope().getClosures()) {
             CFG c = cl.getCFG();
@@ -1150,6 +1153,7 @@ public class CFG {
     }
 
     public Set<Variable> definedLocalVarsFromClosures() {
+		  if (_definedLocalVars == null) setUpUseDefLocalVarMaps();
         HashSet vs = new HashSet();
         for (IRClosure cl: getScope().getClosures()) {
             CFG c = cl.getCFG();
@@ -1161,6 +1165,7 @@ public class CFG {
     }
 
     public boolean usesLocalVariable(Variable v) {
+		  if (_usedLocalVars == null) setUpUseDefLocalVarMaps();
         if (_usedLocalVars.contains(v)) {
             return true;
         }
@@ -1175,6 +1180,7 @@ public class CFG {
     }
 
     public boolean definesLocalVariable(Variable v) {
+		  if (_definedLocalVars == null) setUpUseDefLocalVarMaps();
         if (_definedLocalVars.contains(v)) {
             return true;
         }

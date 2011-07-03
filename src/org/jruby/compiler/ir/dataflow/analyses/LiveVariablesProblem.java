@@ -103,7 +103,6 @@ public class LiveVariablesProblem extends DataFlowProblem
 		  // SSS FIXME: For now, we are going to pick all used and defined variables across all closures as a proxy.
 
         if (c.getScope() instanceof IRMethod) {
-            c.setUpUseDefLocalVarMaps();
             for (Variable v: c.usedLocalVarsFromClosures()) {
                 addDFVar(v, true);
             }

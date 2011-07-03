@@ -164,8 +164,6 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 } else {
                     dirtyVars.clear();
                 }
-            } else {
-                dirtyVars.clear();
             }
         }
 
@@ -257,8 +255,6 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                         } else {
                             dirtyVars.clear();
                         }
-                    } else {
-                        dirtyVars.clear();
                     }
                 }
 
