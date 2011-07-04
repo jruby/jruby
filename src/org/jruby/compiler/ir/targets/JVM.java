@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.targets;
 
-import com.kenai.constantine.Constant;
+import jnr.constants.Constant;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;

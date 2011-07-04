@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import com.kenai.constantine.platform.Signal;
+import jnr.constants.platform.Signal;
 import java.util.EnumSet;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -82,9 +82,9 @@ public class RubyProcess {
         process_gid.defineAnnotatedMethods(GroupID.class);
         process_sys.defineAnnotatedMethods(Sys.class);
 
-        runtime.loadConstantSet(process, com.kenai.constantine.platform.PRIO.class);
-        runtime.loadConstantSet(process, com.kenai.constantine.platform.RLIM.class);
-        runtime.loadConstantSet(process, com.kenai.constantine.platform.RLIMIT.class);
+        runtime.loadConstantSet(process, jnr.constants.platform.PRIO.class);
+        runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
+        runtime.loadConstantSet(process, jnr.constants.platform.RLIMIT.class);
         
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
         process.defineConstant("WUNTRACED", runtime.newFixnum(2));
@@ -841,7 +841,7 @@ public class RubyProcess {
                 : "SIG" + value.substring(startIndex);
         
         try {
-            int signalValue = Signal.valueOf(signalName).value();
+            int signalValue = Signal.valueOf(signalName).intValue();
             return negative ? -signalValue : signalValue;
 
         } catch (IllegalArgumentException ex) {

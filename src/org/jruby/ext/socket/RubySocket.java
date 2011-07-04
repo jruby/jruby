@@ -27,16 +27,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import static com.kenai.constantine.platform.AddressFamily.AF_INET;
-import static com.kenai.constantine.platform.AddressFamily.AF_INET6;
-import static com.kenai.constantine.platform.IPProto.IPPROTO_TCP;
-import static com.kenai.constantine.platform.IPProto.IPPROTO_UDP;
-import static com.kenai.constantine.platform.NameInfo.NI_NUMERICHOST;
-import static com.kenai.constantine.platform.NameInfo.NI_NUMERICSERV;
-import static com.kenai.constantine.platform.ProtocolFamily.PF_INET;
-import static com.kenai.constantine.platform.ProtocolFamily.PF_INET6;
-import static com.kenai.constantine.platform.Sock.SOCK_DGRAM;
-import static com.kenai.constantine.platform.Sock.SOCK_STREAM;
+import static jnr.constants.platform.AddressFamily.AF_INET;
+import static jnr.constants.platform.AddressFamily.AF_INET6;
+import static jnr.constants.platform.IPProto.IPPROTO_TCP;
+import static jnr.constants.platform.IPProto.IPPROTO_UDP;
+import static jnr.constants.platform.NameInfo.NI_NUMERICHOST;
+import static jnr.constants.platform.NameInfo.NI_NUMERICSERV;
+import static jnr.constants.platform.ProtocolFamily.PF_INET;
+import static jnr.constants.platform.ProtocolFamily.PF_INET6;
+import static jnr.constants.platform.Sock.SOCK_DGRAM;
+import static jnr.constants.platform.Sock.SOCK_STREAM;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -76,8 +76,8 @@ import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 
-import com.kenai.constantine.platform.AddressFamily;
-import com.kenai.constantine.platform.Sock;
+import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.Sock;
 import java.net.Inet6Address;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
@@ -112,16 +112,16 @@ public class RubySocket extends RubyBasicSocket {
         RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
         // we don't have to define any that we don't support; see socket.c
 
-        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.Sock.class);
-        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.SocketOption.class);
-        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.SocketLevel.class);
-        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.ProtocolFamily.class);
-        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.AddressFamily.class);
-        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.INAddr.class);
-        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.IPProto.class);
-        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.Shutdown.class);
-        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.TCP.class);
-        runtime.loadConstantSet(rb_mConstants, com.kenai.constantine.platform.NameInfo.class);
+        runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.Sock.class);
+        runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.SocketOption.class);
+        runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.SocketLevel.class);
+        runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.ProtocolFamily.class);
+        runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.AddressFamily.class);
+        runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.INAddr.class);
+        runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.IPProto.class);
+        runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.Shutdown.class);
+        runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.TCP.class);
+        runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.NameInfo.class);
 
         // mandatory constants we haven't implemented
         rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
@@ -178,14 +178,14 @@ public class RubySocket extends RubyBasicSocket {
             if (mainChannel instanceof SocketChannel) {
                 // ok, it's a socket...set values accordingly
                 // just using AF_INET since we can't tell from SocketChannel...
-                socket.soDomain = AddressFamily.AF_INET.value();
-                socket.soType = Sock.SOCK_STREAM.value();
+                socket.soDomain = AddressFamily.AF_INET.intValue();
+                socket.soType = Sock.SOCK_STREAM.intValue();
                 socket.soProtocol = 0;
             } else if (mainChannel instanceof DatagramChannel) {
                 // datagram, set accordingly
                 // again, AF_INET
-                socket.soDomain = AddressFamily.AF_INET.value();
-                socket.soType = Sock.SOCK_DGRAM.value();
+                socket.soDomain = AddressFamily.AF_INET.intValue();
+                socket.soType = Sock.SOCK_DGRAM.intValue();
                 socket.soProtocol = 0;
             } else {
                 throw context.getRuntime().newErrnoENOTSOCKError("can't Socket.new/for_fd against a non-socket");
@@ -205,9 +205,9 @@ public class RubySocket extends RubyBasicSocket {
             if(domain instanceof RubyString) {
                 String domainString = domain.toString();
                 if(domainString.equals("AF_INET")) {
-                    soDomain = AF_INET.value();
+                    soDomain = AF_INET.intValue();
                 } else if(domainString.equals("PF_INET")) {
-                    soDomain = PF_INET.value();
+                    soDomain = PF_INET.intValue();
                 } else {
                     throw sockerr(context.getRuntime(), "unknown socket domain " + domainString);
                 }
@@ -218,9 +218,9 @@ public class RubySocket extends RubyBasicSocket {
             if(type instanceof RubyString) {
                 String typeString = type.toString();
                 if(typeString.equals("SOCK_STREAM")) {
-                    soType = SOCK_STREAM.value();
+                    soType = SOCK_STREAM.intValue();
                 } else if(typeString.equals("SOCK_DGRAM")) {
-                    soType = SOCK_DGRAM.value();
+                    soType = SOCK_DGRAM.intValue();
                 } else {
                     throw sockerr(context.getRuntime(), "unknown socket type " + typeString);
                 }
@@ -231,9 +231,9 @@ public class RubySocket extends RubyBasicSocket {
             soProtocol = RubyNumeric.fix2int(protocol);
 
             Channel channel = null;
-            if(soType == Sock.SOCK_STREAM.value()) {
+            if(soType == Sock.SOCK_STREAM.intValue()) {
                 channel = SocketChannel.open();
-            } else if(soType == Sock.SOCK_DGRAM.value()) {
+            } else if(soType == Sock.SOCK_DGRAM.intValue()) {
                 channel = DatagramChannel.open();
             }
 
@@ -651,14 +651,14 @@ public class RubySocket extends RubyBasicSocket {
             //IRubyObject protocol = args[4];
             IRubyObject flags = args[5];
 
-            boolean is_ipv6 = (! family.isNil()) && (RubyNumeric.fix2int(family) & AF_INET6.value()) == AF_INET6.value();
+            boolean is_ipv6 = (! family.isNil()) && (RubyNumeric.fix2int(family) & AF_INET6.intValue()) == AF_INET6.intValue();
             boolean sock_stream = true;
             boolean sock_dgram = true;
             if(!socktype.isNil()) {
                 int val = RubyNumeric.fix2int(socktype);
-                if(val == SOCK_STREAM.value()) {
+                if(val == SOCK_STREAM.intValue()) {
                     sock_dgram = false;
-                } else if(val == SOCK_DGRAM.value()) {
+                } else if(val == SOCK_DGRAM.intValue()) {
                     sock_stream = false;
                 }
             }
@@ -773,14 +773,14 @@ public class RubySocket extends RubyBasicSocket {
         } catch (UnknownHostException e) {
             throw sockerr(runtime, "unknown host: "+ host);
         }
-        if ((flags & NI_NUMERICHOST.value()) == 0) {
+        if ((flags & NI_NUMERICHOST.intValue()) == 0) {
             host = addr.getCanonicalHostName();
         } else {
             host = addr.getHostAddress();
         }
         jnr.netdb.Service serv = jnr.netdb.Service.getServiceByPort(Integer.parseInt(port), null);
         if (serv != null) {
-            if ((flags & NI_NUMERICSERV.value()) == 0) {
+            if ((flags & NI_NUMERICSERV.intValue()) == 0) {
                 port = serv.getName();
             } else {
                 port = Integer.toString(serv.getPort());

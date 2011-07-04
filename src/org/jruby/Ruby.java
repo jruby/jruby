@@ -119,9 +119,9 @@ import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.io.ChannelDescriptor;
 
-import com.kenai.constantine.Constant;
-import com.kenai.constantine.ConstantSet;
-import com.kenai.constantine.platform.Errno;
+import jnr.constants.Constant;
+import jnr.constants.ConstantSet;
+import jnr.constants.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.channels.ClosedChannelException;
@@ -1381,12 +1381,12 @@ public final class Ruby {
             try {
                 // define EAGAIN now, so that future EWOULDBLOCK will alias to it
                 // see MRI's error.c and its explicit ordering of Errno definitions.
-                createSysErr(Errno.EAGAIN.value(), Errno.EAGAIN.name());
+                createSysErr(Errno.EAGAIN.intValue(), Errno.EAGAIN.name());
                 
                 for (Errno e : Errno.values()) {
                     Constant c = (Constant) e;
                     if (Character.isUpperCase(c.name().charAt(0))) {
-                        createSysErr(c.value(), c.name());
+                        createSysErr(c.intValue(), c.name());
                     }
                 }
             } catch (Exception e) {
@@ -2879,7 +2879,7 @@ public final class Ruby {
     }
 
     public RubyFixnum newFixnum(Constant value) {
-        return RubyFixnum.newFixnum(this, value.value());
+        return RubyFixnum.newFixnum(this, value.intValue());
     }
 
     public RubyFloat newFloat(double value) {
@@ -3720,14 +3720,14 @@ public final class Ruby {
         for (E e : EnumSet.allOf(enumClass)) {
             Constant c = (Constant) e;
             if (Character.isUpperCase(c.name().charAt(0))) {
-                module.fastSetConstant(c.name(), newFixnum(c.value()));
+                module.fastSetConstant(c.name(), newFixnum(c.intValue()));
             }
         }
     }
     public void loadConstantSet(RubyModule module, String constantSetName) {
         for (Constant c : ConstantSet.getConstantSet(constantSetName)) {
             if (Character.isUpperCase(c.name().charAt(0))) {
-                module.fastSetConstant(c.name(), newFixnum(c.value()));
+                module.fastSetConstant(c.name(), newFixnum(c.intValue()));
             }
         }
     }

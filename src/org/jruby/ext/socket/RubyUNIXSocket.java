@@ -27,11 +27,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import com.kenai.constantine.platform.Fcntl;
-import com.kenai.constantine.platform.Shutdown;
-import com.kenai.constantine.platform.OpenFlags;
-import com.kenai.constantine.platform.SocketLevel;
-import com.kenai.constantine.platform.SocketOption;
+import jnr.constants.platform.Fcntl;
+import jnr.constants.platform.Shutdown;
+import jnr.constants.platform.OpenFlags;
+import jnr.constants.platform.SocketLevel;
+import jnr.constants.platform.SocketOption;
 import com.kenai.jaffl.LastError;
 import com.kenai.jaffl.annotations.In;
 import com.kenai.jaffl.annotations.Out;
@@ -43,9 +43,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-import static com.kenai.constantine.platform.AddressFamily.*;
-import static com.kenai.constantine.platform.ProtocolFamily.*;
-import static com.kenai.constantine.platform.Sock.*;
+import static jnr.constants.platform.AddressFamily.*;
+import static jnr.constants.platform.ProtocolFamily.*;
+import static jnr.constants.platform.Sock.*;
 
 
 import org.jruby.Ruby;
@@ -83,8 +83,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
      */
     private static class UnixDomainSocketChannel implements ReadableByteChannel, WritableByteChannel,
                                                             Shutdownable {
-        private final static int SHUT_RD = Shutdown.SHUT_RD.value();
-        private final static int SHUT_WR = Shutdown.SHUT_WR.value();
+        private final static int SHUT_RD = Shutdown.SHUT_RD.intValue();
+        private final static int SHUT_WR = Shutdown.SHUT_WR.intValue();
         
         private final Ruby runtime;
         private final int fd;
@@ -275,10 +275,10 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
     }
 
-    protected final static int F_GETFL = Fcntl.F_GETFL.value();
-    protected final static int F_SETFL = Fcntl.F_SETFL.value();
+    protected final static int F_GETFL = Fcntl.F_GETFL.intValue();
+    protected final static int F_SETFL = Fcntl.F_SETFL.intValue();
 
-    protected final static int O_NONBLOCK = OpenFlags.O_NONBLOCK.value();
+    protected final static int O_NONBLOCK = OpenFlags.O_NONBLOCK.intValue();
 
     protected void init_unixsock(Ruby runtime, IRubyObject _path, boolean server) {
         int status;
@@ -288,14 +288,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         fpath = path.toString();
         
         try {
-            fd = INSTANCE.socket(AF_UNIX.value(), SOCK_STREAM.value(), 0);
+            fd = INSTANCE.socket(AF_UNIX.intValue(), SOCK_STREAM.intValue(), 0);
         } catch (UnsatisfiedLinkError ule) { }
         if (fd < 0) {
             rb_sys_fail(runtime, "socket(2)");
         }
 
         LibCSocket.sockaddr_un sockaddr = LibCSocket.sockaddr_un.newInstance();
-        sockaddr.setFamily(AF_UNIX.value());
+        sockaddr.setFamily(AF_UNIX.intValue());
 
         if(sockaddr.path().length() <= path.getRealSize()) {
             throw runtime.newArgumentError("too long unix socket path (max: " + (sockaddr.path().length()-1) + "bytes)");
@@ -509,11 +509,11 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         if(tp instanceof RubyString) {
             String str = tp.toString();
             if("SOCK_STREAM".equals(str)) {
-                return SOCK_STREAM.value();
+                return SOCK_STREAM.intValue();
             } else if("SOCK_DGRAM".equals(str)) {
-                return SOCK_DGRAM.value();
+                return SOCK_DGRAM.intValue();
             } else if("SOCK_RAW".equals(str)) {
-                return SOCK_RAW.value();
+                return SOCK_RAW.intValue();
             } else {
                 return -1;
             }
@@ -526,14 +526,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        int domain = PF_UNIX.value();
+        int domain = PF_UNIX.intValue();
         Ruby runtime = context.getRuntime();
         Arity.checkArgumentCount(runtime, args, 0, 2);
         
         int type;
 
         if(args.length == 0) { 
-            type = SOCK_STREAM.value();
+            type = SOCK_STREAM.intValue();
         } else {
             type = getSocketType(args[0]);
         }

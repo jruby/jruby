@@ -27,11 +27,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import static com.kenai.constantine.platform.IPProto.IPPROTO_TCP;
-import static com.kenai.constantine.platform.IPProto.IPPROTO_IP;
-import static com.kenai.constantine.platform.Sock.SOCK_DGRAM;
-import static com.kenai.constantine.platform.Sock.SOCK_STREAM;
-import static com.kenai.constantine.platform.TCP.TCP_NODELAY;
+import static jnr.constants.platform.IPProto.IPPROTO_TCP;
+import static jnr.constants.platform.IPProto.IPPROTO_IP;
+import static jnr.constants.platform.Sock.SOCK_DGRAM;
+import static jnr.constants.platform.Sock.SOCK_STREAM;
+import static jnr.constants.platform.TCP.TCP_NODELAY;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -67,8 +67,8 @@ import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 
-import com.kenai.constantine.platform.SocketLevel;
-import com.kenai.constantine.platform.SocketOption;
+import jnr.constants.platform.SocketLevel;
+import jnr.constants.platform.SocketOption;
 
 
 /**
@@ -462,9 +462,9 @@ public class RubyBasicSocket extends RubyIO {
     }
     private int getChannelSoType(Channel channel) {
         if (channel instanceof SocketChannel || channel instanceof ServerSocketChannel) {
-            return SOCK_STREAM.value();
+            return SOCK_STREAM.intValue();
         } else if (channel instanceof DatagramChannel) {
-            return SOCK_DGRAM.value();
+            return SOCK_DGRAM.intValue();
         } else {
             return getSoTypeDefault();
         }
@@ -593,10 +593,10 @@ public class RubyBasicSocket extends RubyIO {
                 case SO_TIMESTAMP:
                     break;
                 default:
-                    if (IPPROTO_TCP.value() == level && TCP_NODELAY.value() == opt) {
+                    if (IPPROTO_TCP.intValue() == level && TCP_NODELAY.intValue() == opt) {
                         setTcpNoDelay(val);
                     }
-                    else if (IPPROTO_IP.value() == level) {
+                    else if (IPPROTO_IP.intValue() == level) {
                         if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt) {
                             joinMulticastGroup(val);
                         }
@@ -606,10 +606,10 @@ public class RubyBasicSocket extends RubyIO {
                 }
                 break;
             default:
-                if (IPPROTO_TCP.value() == level && TCP_NODELAY.value() == opt) {
+                if (IPPROTO_TCP.intValue() == level && TCP_NODELAY.intValue() == opt) {
                     setTcpNoDelay(val);
                 }
-                else if (IPPROTO_IP.value() == level) {
+                else if (IPPROTO_IP.intValue() == level) {
                     if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt) {
                         joinMulticastGroup(val);
                     }

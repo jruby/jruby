@@ -29,7 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import static com.kenai.constantine.platform.AddressFamily.*;
+import static jnr.constants.platform.AddressFamily.*;
 
 import java.io.IOException;
 
