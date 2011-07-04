@@ -81,7 +81,7 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.8</version>
+      <version>0.8.1</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
