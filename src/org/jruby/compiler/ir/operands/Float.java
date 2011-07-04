@@ -43,8 +43,11 @@ public class Float extends Constant {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
+/*
 		  if (cachedValue == null)
             cachedValue = interp.getRuntime().newFloat(value);
 		  return cachedValue;
+*/
+        return interp.getRuntime().newFloat(value);
     }
 }

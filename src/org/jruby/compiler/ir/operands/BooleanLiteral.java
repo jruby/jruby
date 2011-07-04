@@ -27,8 +27,11 @@ public class BooleanLiteral extends Constant {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
+/*
 		  if (cachedValue == null)
             cachedValue = interp.getRuntime().newBoolean(isTrue());
 		  return cachedValue;
+*/
+        return interp.getRuntime().newBoolean(isTrue());
     }
 }

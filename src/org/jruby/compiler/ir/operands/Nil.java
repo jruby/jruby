@@ -22,8 +22,11 @@ public class Nil extends Constant {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
+/*
 		  if (cachedValue == null)
             cachedValue = interp.getRuntime().getNil();
 		  return cachedValue;
+*/
+		  return interp.getRuntime().getNil();
     }
 }

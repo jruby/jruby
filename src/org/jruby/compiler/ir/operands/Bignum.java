@@ -26,8 +26,10 @@ public class Bignum extends Constant {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
+/*
         if (cachedValue == null) cachedValue = RubyBignum.newBignum(interp.getRuntime(), value);
-
         return cachedValue;
+*/
+        return RubyBignum.newBignum(interp.getRuntime(), value);
     }
 }
