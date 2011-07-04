@@ -663,10 +663,10 @@ public class IRBuilder {
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 buildAttrAssignAssignment(node, s, v);
                 break;
-				// SSS FIXME:
-				//
-				// There are also differences in variable scoping between 1.8 and 1.9 
-				// Ruby 1.8 is the buggy semantics if I understand correctly.
+            // SSS FIXME:
+            //
+            // There are also differences in variable scoping between 1.8 and 1.9 
+            // Ruby 1.8 is the buggy semantics if I understand correctly.
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
                 // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
@@ -1624,7 +1624,7 @@ public class IRBuilder {
         IRMethod method;
 
         // statically determine container where possible?
-		  // DefineIstanceMethod IR interpretation currently relies on this static determination for handling top-level methods
+        // DefineIstanceMethod IR interpretation currently relies on this static determination for handling top-level methods
         if ((s instanceof IRMethod) && ((IRMethod)s).isAClassRootMethod()) {
             container =  MetaObject.create(s.getNearestModule());
             method = defineNewMethod(node, s, container, true);
@@ -2272,10 +2272,10 @@ public class IRBuilder {
         return ret;
     }
 
-	 // SSS: This method is called both for regular multiple assignment as well as argument passing
-	 //
-	 // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
-	 // Ex: { |a,b,*c| ..} is the argment passing case
+    // SSS: This method is called both for regular multiple assignment as well as argument passing
+    //
+    // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
+    // Ex: { |a,b,*c| ..} is the argment passing case
     public void buildMultipleAsgnAssignment(final MultipleAsgnNode multipleAsgnNode, IRScope s, Operand values) {
         final ListNode sourceArray = multipleAsgnNode.getHeadNode();
 
@@ -2421,19 +2421,19 @@ public class IRBuilder {
         Operand  v1;
         boolean  needsDefnCheck = needsDefinitionCheck(orNode.getFirstNode());
         if (needsDefnCheck) {
-            l2 = s.getNewLabel();
+		      l2 = s.getNewLabel();
             v1 = buildGetDefinitionBase(orNode.getFirstNode(), s);
-            s.addInstr(new BEQInstr(v1, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
+            s.addInstr(new CopyInstr(flag, v1));
+            s.addInstr(new BEQInstr(flag, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
         }
         Variable result = s.getNewTemporaryVariable();
         v1 = build(orNode.getFirstNode(), s); // build of 'x'
         s.addInstr(new CopyInstr(result, v1));
-        s.addInstr(new BEQInstr(v1, Nil.NIL, l2));  // FIXME: I added this this isTrue() is not quite right see note above
         s.addInstr(new IsTrueInstr(flag, v1));
-        s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
-        if (needsDefnCheck) {
+		  if (needsDefnCheck) {
             s.addInstr(new LABEL_Instr(l2));
-        }
+		  }
+        s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         Operand v2 = build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
         s.addInstr(new CopyInstr(result, v2));
         s.addInstr(new LABEL_Instr(l1));
@@ -2821,10 +2821,7 @@ public class IRBuilder {
         // Debug info: record file name
         rootMethod.addInstr(new FilenameInstr(file));
 
-        // add a "self" recv here
-        // TODO: is this right?
-        rootMethod.addInstr(new ReceiveSelfInstruction(getSelf(rootMethod)));
-
+        // Get going!
         build(rootNode.getBodyNode(), rootMethod);
 
         return script;
