@@ -336,7 +336,7 @@
         <zipfileset src="${asm.analysis.jar}"/>
         <zipfileset src="${asm.tree.jar}"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
-        <zipfileset src="${build.lib.dir}/constantine.jar"/>
+        <zipfileset src="${build.lib.dir}/jnr-constants.jar"/>
         <zipfileset src="${build.lib.dir}/jline-${jline.version}.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
         <zipfileset src="${build.lib.dir}/joni.jar"/>
@@ -435,7 +435,7 @@
         <zipfileset src="${asm.util.jar}"/>
         <zipfileset src="${asm.analysis.jar}"/>
         <zipfileset src="${asm.tree.jar}"/>
-        <zipfileset src="${build.lib.dir}/constantine.jar"/>
+        <zipfileset src="${build.lib.dir}/jnr-constants.jar"/>
         <zipfileset src="${build.lib.dir}/bytelist.jar"/>
         <zipfileset src="${build.lib.dir}/jline-${jline.version}.jar"/>
         <zipfileset src="${build.lib.dir}/jcodings.jar"/>
@@ -594,7 +594,7 @@
       <zipfileset src="${asm.analysis.jar}"/>
       <zipfileset src="${asm.tree.jar}"/>
       <zipfileset src="${build.lib.dir}/bytelist.jar"/>
-      <zipfileset src="${build.lib.dir}/constantine.jar"/>
+      <zipfileset src="${build.lib.dir}/jnr-constants.jar"/>
       <zipfileset src="${build.lib.dir}/jline-${jline.version}.jar"/>
       <zipfileset src="${build.lib.dir}/jcodings.jar"/>
       <zipfileset src="${build.lib.dir}/joni.jar"/>

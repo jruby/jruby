@@ -41,7 +41,7 @@
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
-      <artifactId>constantine</artifactId>
+      <artifactId>jnr-constants</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
