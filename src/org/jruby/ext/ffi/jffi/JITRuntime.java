@@ -375,6 +375,341 @@ public final class JITRuntime {
         }
     }
 
+    private static RuntimeException newObjectCountError(int objCount) {
+        return new RuntimeException("invalid object count: " + objCount);
+    }
+
+    private static RuntimeException newHeapObjectCountError(int objCount) {
+        return new RuntimeException("insufficient number of heap objects supplied (" + objCount + " required)");
+    }
+
+    public static long invokeN1OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, int objCount, IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info) {
+
+        if (objCount == 1) {
+            return ObjectParameterInvoker.getInstance().invokeN1O1rN(function, n1,
+                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+
+        } else {
+            throw newObjectCountError(objCount);
+        }
+    }
+
+    public static long invokeN2OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, int objCount,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info) {
+        if (objCount == 1) {
+            return ObjectParameterInvoker.getInstance().invokeN2O1rN(function, n1, n2,
+                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+
+        } else {
+            throw newObjectCountError(objCount);
+        }
+    }
+
+    public static long invokeN2OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, int objCount,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
+        if (objCount == 1) {
+            // only one object is to be passed down as a a heap object - figure out which one
+            if (!s1.isDirect()) {
+                // do nothing, use the first param as-is
+
+            } else {
+                // move second into first place
+                o1 = o2; s1 = s2; o1info = o2info;
+            }
+
+            return ObjectParameterInvoker.getInstance().invokeN2O1rN(function, n1, n2,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+
+        } else if (objCount == 2) {
+            // Two objects to be passed as heap objects, just use both arguments as-is
+            return ObjectParameterInvoker.getInstance().invokeN2O2rN(function, n1, n2,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+
+        } else {
+            throw newObjectCountError(objCount);
+        }
+    }
+
+    public static long invokeN3OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                      long n1, long n2, long n3, int objCount,
+                                      IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info) {
+        if (objCount == 1) {
+
+            return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
+                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+
+        } else {
+            throw newObjectCountError(objCount);
+        }
+    }
+
+
+    public static long invokeN3OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                      long n1, long n2, long n3, int objCount,
+                                      IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                      IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
+        if (objCount == 1) {
+            // only one object is to be passed down as a a heap object - figure out which one
+            if (!s1.isDirect()) {
+                // do nothing, use the first param as-is
+
+            } else {
+                // move second into first place
+                o1 = o2; s1 = s2; o1info = o2info;
+            }
+
+            return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+
+        } else if (objCount == 2) {
+            return ObjectParameterInvoker.getInstance().invokeN3O2rN(function, n1, n2, n3,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+
+        } else {
+            throw newObjectCountError(objCount);
+        }
+    }
+
+    public static long invokeN3OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, int objCount,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
+                                  IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
+
+        if (objCount < 3) {
+            int next;
+            // Sort out which is the first non-direct object
+            if (!s1.isDirect()) {
+                // do nothing, use the first param as-is
+                next = 2;
+
+            } else if (!s2.isDirect()) {
+                // move second into first place
+                o1 = o2; s1 = s2; o1info = o2info;
+                next = 3;
+
+            } else {
+                // move third into first place
+                o1 = o3; s1 = s3; o1info = o3info;
+                next = 4;
+            }
+
+            if (objCount == 1) {
+
+                return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
+                        s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+
+            } else if (objCount == 2) {
+                // Sort out which is the second non-direct object
+                if (next <= 2 && !s2.isDirect()) {
+                    // do nothing, use the second param as-is
+
+                } else if (next <= 3) {
+                    // move third param into second  place
+                    o2 = o3; s2 = s3; o2info = o3info;
+
+                } else {
+                    throw newHeapObjectCountError(objCount);
+                }
+
+                return ObjectParameterInvoker.getInstance().invokeN3O2rN(function, n1, n2, n3,
+                        s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                        s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+            } else {
+                throw newObjectCountError(objCount);
+            }
+        }
+
+        // Three objects to be passed as heap objects, just use all arguments as-is
+        return ObjectParameterInvoker.getInstance().invokeN3O3rN(function, n1, n2, n3,
+            s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+            s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info,
+            s3.array(o3), s3.arrayOffset(o3), s3.arrayLength(o3), o3info);
+    }
+
+    public static long invokeN4OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, long n4, int objCount,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info) {
+
+        if (objCount == 1) {
+            return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
+                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+        } else {
+            throw newObjectCountError(objCount);
+        }
+    }
+
+    public static long invokeN4OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, long n4, int objCount,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
+        if (objCount == 1) {
+            // only one object is to be passed down as a a heap object - figure out which one
+            if (!s1.isDirect()) {
+                // do nothing, use the first param as-is
+
+            } else {
+                // move second into first place
+                o1 = o2; s1 = s2; o1info = o2info;
+            }
+
+            return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+
+        } else if (objCount == 2) {
+            // Two objects to be passed as heap objects, just use both arguments as-is
+            return ObjectParameterInvoker.getInstance().invokeN4O2rN(function, n1, n2, n3, n4,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+
+        } else {
+            throw newObjectCountError(objCount);
+        }
+    }
+    
+    public static long invokeN4OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, long n4, int objCount,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
+                                  IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
+        if (objCount < 3) {
+            int next;
+            // Sort out which is the first non-direct object
+            if (!s1.isDirect()) {
+                // do nothing, use the first param as-is
+                next = 2;
+
+            } else if (!s2.isDirect()) {
+                // move second into first place
+                o1 = o2; s1 = s2; o1info = o2info;
+                next = 3;
+
+            } else {
+                // move third into first place
+                o1 = o3; s1 = s3; o1info = o3info;
+                next = 4;
+            }
+
+
+            if (objCount == 1) {
+
+                return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
+                        s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+
+            } else if (objCount == 2) {
+                // Sort out which is the second non-direct object
+
+                if (next <= 2 && !s2.isDirect()) {
+                    // do nothing, use the second param as-is
+
+                } else if (next <= 3 && !s3.isDirect()) {
+                    // move third param into second  place
+                    o2 = o3; s2 = s3; o2info = o3info;
+
+                } else {
+                    throw newHeapObjectCountError(objCount);
+                }
+
+                return ObjectParameterInvoker.getInstance().invokeN4O2rN(function, n1, n2, n3, n4,
+                        s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                        s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+            } else {
+                throw newObjectCountError(objCount);
+            }
+        }
+
+        // Three objects to be passed as heap objects, just use all arguments as-is
+        return ObjectParameterInvoker.getInstance().invokeN4O3rN(function, n1, n2, n3, n4,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info,
+                s3.array(o3), s3.arrayOffset(o3), s3.arrayLength(o3), o3info);
+    }
+
+    public static long invokeN4OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, long n4, int objCount,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
+                                  IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info,
+                                  IRubyObject o4, PointerParameterStrategy s4, ObjectParameterInfo o4info) {
+        int next;
+        // Sort out which is the first non-direct object
+        if (!s1.isDirect()) {
+            // do nothing, use the first param as-is
+            next = 2;
+
+        } else if (!s2.isDirect()) {
+            // move second into first place
+            o1 = o2; s1 = s2; o1info = o2info;
+            next = 3;
+
+        } else if (!s3.isDirect()) {
+            // move third into first place
+            o1 = o3; s1 = s3; o1info = o3info;
+            next = 4;
+
+        } else {
+            // move fourth into first place
+            o1 = o4; s1 = s4; o1info = o4info;
+            next = 5;
+        }
+
+        if (objCount == 1) {
+            return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
+                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+        }
+
+        // Sort out which is the second non-direct object
+        if (next <= 2 && !s2.isDirect()) {
+            // do nothing, use the second param as-is
+            next = 3;
+
+        } else if (next <= 3 && !s3.isDirect()) {
+            // move third param into second  place
+            o2 = o3; s2 = s3; o2info = o3info;
+            next = 4;
+
+        } else if (next <= 4) {
+            // move fourth param into second  place
+            o2 = o4; s2 = s4; o2info = o4info;
+            next = 5;
+        }
+        
+        if (objCount == 2) {
+            return ObjectParameterInvoker.getInstance().invokeN4O2rN(function, n1, n2, n3, n4,
+                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                    s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+        }
+        
+        // Sort out third parameter
+        if (next <= 3 && !s3.isDirect()) {
+            // do nothing, use the third param as-is
+
+        } else if (next <= 4) {
+            // move fourth param into third place
+            o3 = o4; s3 = s4; o3info = o4info;
+
+        } else {
+            throw newHeapObjectCountError(objCount);
+        }
+
+        if (objCount == 3) {
+            return ObjectParameterInvoker.getInstance().invokeN4O3rN(function, n1, n2, n3, n4,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info,
+                s3.array(o3), s3.arrayOffset(o3), s3.arrayLength(o3), o3info);
+
+        } else {
+            throw newObjectCountError(objCount);
+        }
+    }
+
+
     public static long invokeN1O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
                                   long n1, IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info) {
 
@@ -428,9 +763,13 @@ public final class JITRuntime {
                                   IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
         if (!s1.isDirect()) {
             // do nothing, use the first param as-is
-        } else {
+
+        } else if (!s2.isDirect()) {
             // move second into first place
             o1 = o2; s1 = s2; o1info = o2info;
+
+        } else {
+            throw newHeapObjectCountError(1);
         }
 
         return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
@@ -444,12 +783,17 @@ public final class JITRuntime {
                                   IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
         if (!s1.isDirect()) {
             // do nothing, use the first param as-is
+
         } else if (!s2.isDirect()) {
             // move second into first place
             o1 = o2; s1 = s2; o1info = o2info;
-        } else {
+
+        } else if (!s3.isDirect()) {
             // move third into first place
             o1 = o3; s1 = s3; o1info = o3info;
+
+        } else {
+            throw newHeapObjectCountError(1);
         }
 
         return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
@@ -473,24 +817,46 @@ public final class JITRuntime {
                                   IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
                                   IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
                                   IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
+        int next;
         if (!s1.isDirect()) {
             // do nothing, use the first param as-is
+            next = 2;
         } else if (!s2.isDirect()) {
             // move second into first place
             o1 = o2; s1 = s2; o1info = o2info;
+            next = 3;
         } else {
             // move third into first place
             o1 = o3; s1 = s3; o1info = o3info;
+            next = 4;
         }
 
-        if (s2.isDirect()) {
+        if (next <= 2 && !s2.isDirect()) {
+            // do nothing, use the second param as-is
+
+        } else if (next <= 3 && !s3.isDirect()) {
             // move third param into second  place
             o2 = o3; s2 = s3; o2info = o3info;
-        }
 
+        } else {
+            throw newHeapObjectCountError(2);
+        }
+        
         return ObjectParameterInvoker.getInstance().invokeN3O2rN(function, n1, n2, n3,
                 s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
                 s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+    }
+
+    public static long invokeN3O3rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
+                                  IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
+
+        return ObjectParameterInvoker.getInstance().invokeN3O3rN(function, n1, n2, n3,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info,
+                s3.array(o3), s3.arrayOffset(o3), s3.arrayLength(o3), o3info);
     }
 
     public static long invokeN4O1rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
@@ -507,9 +873,13 @@ public final class JITRuntime {
                                   IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info) {
         if (!s1.isDirect()) {
             // do nothing, use the first param as-is
-        } else {
+
+        } else if (!s2.isDirect()) {
             // move second into first place
             o1 = o2; s1 = s2; o1info = o2info;
+
+        } else {
+            throw newHeapObjectCountError(1);
         }
 
         return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
@@ -523,12 +893,17 @@ public final class JITRuntime {
                                   IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
         if (!s1.isDirect()) {
             // do nothing, use the first param as-is
+
         } else if (!s2.isDirect()) {
             // move second into first place
             o1 = o2; s1 = s2; o1info = o2info;
-        } else {
+
+        } else if (!s3.isDirect()) {
             // move third into first place
             o1 = o3; s1 = s3; o1info = o3info;
+
+        } else {
+            throw newHeapObjectCountError(1);
         }
 
         return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
@@ -551,23 +926,50 @@ public final class JITRuntime {
                                   IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
                                   IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
                                   IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
+        int next;
         if (!s1.isDirect()) {
             // do nothing, use the first param as-is
+            next = 2;
+
         } else if (!s2.isDirect()) {
             // move second into first place
             o1 = o2; s1 = s2; o1info = o2info;
-        } else {
+            next = 3;
+
+        } else if (!s3.isDirect()) {
             // move third into first place
             o1 = o3; s1 = s3; o1info = o3info;
+            next = 4;
+
+        } else {
+            throw newHeapObjectCountError(2);
         }
 
-        if (s2.isDirect()) {
+        if (next <= 2 && !s2.isDirect()) {
+            // do nothing, use the second param as-is
+
+        } else if (next <= 3 && !s3.isDirect()) {
             // move third param into second  place
             o2 = o3; s2 = s3; o2info = o3info;
+
+        } else {
+            throw newHeapObjectCountError(2);
         }
 
         return ObjectParameterInvoker.getInstance().invokeN4O2rN(function, n1, n2, n3, n4,
                 s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
                 s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+    }
+
+    public static long invokeN4O3rN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
+                                  long n1, long n2, long n3, long n4,
+                                  IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info,
+                                  IRubyObject o2, PointerParameterStrategy s2, ObjectParameterInfo o2info,
+                                  IRubyObject o3, PointerParameterStrategy s3, ObjectParameterInfo o3info) {
+
+        return ObjectParameterInvoker.getInstance().invokeN4O3rN(function, n1, n2, n3, n4,
+                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
+                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info,
+                s3.array(o3), s3.arrayOffset(o3), s3.arrayLength(o3), o3info);
     }
 }

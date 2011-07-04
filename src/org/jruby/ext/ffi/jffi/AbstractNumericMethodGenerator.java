@@ -192,7 +192,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
             if (signature.getParameterCount() <= 4 && pointerCount <= 3) {
                 Label fallback = new Label();
                 mv.iload(heapPointerCountVar);
-                mv.iconst_2();
+                mv.iconst_3();
                 mv.if_icmpgt(fallback);
 
                 if (int.class == nativeIntType) {
@@ -247,10 +247,25 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
 
                 if (pointerCount > 1) {
                     mv.label(o2);
+                    Label o3 = new Label();
+                    if (pointerCount > 2) {
+                        mv.iload(heapPointerCountVar);
+                        mv.iconst_2();
+                        mv.if_icmpgt(o3);
+                    }
+
                     mv.invokestatic(p(JITRuntime.class), "invokeN" + signature.getParameterCount() + "O2rN",
                             sig(long.class, paramTypes));
                     narrow(mv, long.class, nativeIntType);
                     mv.go_to(boxResult);
+
+                    if (pointerCount > 2) {
+                        mv.label(o3);
+                        mv.invokestatic(p(JITRuntime.class), "invokeN" + signature.getParameterCount() + "O3rN",
+                                sig(long.class, paramTypes));
+                        narrow(mv, long.class, nativeIntType);
+                        mv.go_to(boxResult);
+                    }
                 }
                 mv.label(fallback);
             }
