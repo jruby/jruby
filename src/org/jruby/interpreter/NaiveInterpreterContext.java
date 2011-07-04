@@ -23,6 +23,7 @@ import org.jruby.compiler.ir.operands.Label;
  */
 public class NaiveInterpreterContext implements InterpreterContext {
     private final Ruby runtime;
+	 private final Object NIL;
     private final ThreadContext context;
     protected Object returnValue;
     protected Object self;
@@ -48,6 +49,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
         this.context = context;
         this.runtime = context.getRuntime();
+		  this.NIL = runtime.getNil();
         this.self = self;
         this.parameters = parameters;
         this.localVariables = localVariablesSize > 0 ? new Object[localVariablesSize] : null;
@@ -89,7 +91,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
     public Object getReturnValue() {
         // FIXME: Maybe returnValue is a sure thing and we don't need this check.  Should be this way.
-        return returnValue == null ? context.getRuntime().getNil() : returnValue;
+        return returnValue == null ? NIL : returnValue;
     }
 
     public void setReturnValue(Object returnValue) {
@@ -145,7 +147,8 @@ public class NaiveInterpreterContext implements InterpreterContext {
     }
 
     public Object getLocalVariable(int offset) {
-        return localVariables[offset];
+        Object o = localVariables[offset];
+		  return (o == null) ? getRuntime().getNil() : o;
     }
 
     public Object setLocalVariable(int offset, Object value) {
