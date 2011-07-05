@@ -7,6 +7,7 @@ import org.jruby.RubySymbol;
 import org.jruby.compiler.ir.IRMetaClass;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -16,14 +17,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineMetaClassInstr extends OneOperandInstr {
     IRMetaClass dummyMetaClass;
-    public DefineMetaClassInstr(Operand object, IRMetaClass dummyMetaClass) {
-        super(Operation.DEF_META_CLASS, null, object);
+    public DefineMetaClassInstr(Variable dest, Operand object, IRMetaClass dummyMetaClass) {
+        super(Operation.DEF_META_CLASS, dest, object);
         this.dummyMetaClass = dummyMetaClass;
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineMetaClassInstr(getArg().cloneForInlining(ii), dummyMetaClass);
+        return new DefineMetaClassInstr(ii.getRenamedVariable(result), getArg().cloneForInlining(ii), dummyMetaClass);
     }
 
     @Override
@@ -40,13 +41,9 @@ public class DefineMetaClassInstr extends OneOperandInstr {
             RubyClass singletonClass = obj.getSingletonClass();
             dummyMetaClass.getStaticScope().setModule(singletonClass);
             DynamicMethod method = new InterpretedIRMethod(dummyMetaClass.getRootMethod(), singletonClass);
-            method.call(interp.getContext(), singletonClass, singletonClass, "", new IRubyObject[]{});
+            Object v = method.call(interp.getContext(), singletonClass, singletonClass, "", new IRubyObject[]{});
+		      getResult().store(interp, v);
             return null;
         }
-    }
-
-    @Override
-    public String toString() {
-        return "" + operation + "(" + getArg() + ", " + dummyMetaClass + ")";
     }
 }

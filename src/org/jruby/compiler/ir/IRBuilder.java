@@ -960,12 +960,15 @@ public class IRBuilder {
 
         IRClass c = new IRClass(s, container, superClass, className, classNode.getScope());
         ClassMetaObject cmo = (ClassMetaObject) MetaObject.create(c);
-        s.addInstr(new DefineClassInstr(cmo, superClass));
+        Variable ret = s.getNewTemporaryVariable();
+        s.addInstr(new DefineClassInstr(ret, cmo, superClass));
         s.getNearestModule().addClass(c);
 
-        build(classNode.getBodyNode(), c.getRootMethod());
+		  IRMethod rootMethod = c.getRootMethod();
+        Operand rv = build(classNode.getBodyNode(), rootMethod);
+        if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
-        return Nil.NIL;
+        return ret;
     }
 
     public Operand buildSClass(SClassNode sclassNode, IRScope s) {
@@ -984,10 +987,14 @@ public class IRBuilder {
         // Create a dummy meta class and record it as being lexically defined in scope s
         IRMetaClass mc = new IRMetaClass(s, sclassNode.getScope());
         s.getNearestModule().addClass(mc);
-        s.addInstr(new DefineMetaClassInstr(receiver, mc));
-        build(sclassNode.getBodyNode(), mc.getRootMethod());
+        Variable ret = s.getNewTemporaryVariable();
+        s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
-        return Nil.NIL;
+		  IRMethod rootMethod = mc.getRootMethod();
+        Operand rv = build(sclassNode.getBodyNode(), rootMethod);
+        if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
+
+        return ret;
     }
 
     public Operand buildClassVar(ClassVarNode node, IRScope s) {
@@ -2256,12 +2263,15 @@ public class IRBuilder {
 
         // Build the new module
         IRModule m = new IRModule(s, container, moduleName, moduleNode.getScope());
-        s.addInstr(new DefineModuleInstr((ModuleMetaObject) MetaObject.create(m)));
+        Variable ret = s.getNewTemporaryVariable();
+        s.addInstr(new DefineModuleInstr(ret, (ModuleMetaObject) MetaObject.create(m)));
         s.getNearestModule().addModule(m);
 
-        build(moduleNode.getBodyNode(), m.getRootMethod());
+		  IRMethod rootMethod = m.getRootMethod();
+        Operand rv = build(moduleNode.getBodyNode(), rootMethod);
+        if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
-        return Nil.NIL;
+        return ret;
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {

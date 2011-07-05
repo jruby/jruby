@@ -5,23 +5,24 @@ import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMetaClass;
+import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.ClassMetaObject;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 
 public class DefineClassInstr extends TwoOperandInstr {
-    public DefineClassInstr(ClassMetaObject cmo, Operand superClass) {
+    public DefineClassInstr(Variable dest, ClassMetaObject cmo, Operand superClass) {
 		  // Get rid of null scenario
-        super(Operation.DEF_CLASS, null, cmo, superClass == null ? Nil.NIL : superClass);
+        super(Operation.DEF_CLASS, dest, cmo, superClass == null ? Nil.NIL : superClass);
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineClassInstr((ClassMetaObject)getOperand1(), getOperand2().cloneForInlining(ii));
+        return new DefineClassInstr(ii.getRenamedVariable(result), (ClassMetaObject)getOperand1(), getOperand2().cloneForInlining(ii));
     }
 
     @Override
@@ -39,12 +40,8 @@ public class DefineClassInstr extends TwoOperandInstr {
             module = container.defineOrGetClassUnder(scope.getName(), sc);
         }
 
-        cmo.interpretBody(interp, interp.getContext(), module);
+        Object v = cmo.interpretBody(interp, interp.getContext(), module);
+		  getResult().store(interp, v);
         return null;
-    }
-
-    @Override
-    public String toString() {
-        return "" + operation + "(" + getOperand1() + ", " + getOperand2() + ")";
     }
 }

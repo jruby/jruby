@@ -5,18 +5,19 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.ModuleMetaObject;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 
 public class DefineModuleInstr extends OneOperandInstr {
-    public DefineModuleInstr(ModuleMetaObject m) {
-        super(Operation.DEF_MODULE, null, m);
+    public DefineModuleInstr(Variable dest, ModuleMetaObject m) {
+        super(Operation.DEF_MODULE, dest, m);
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return this;
+        return new DefineModuleInstr(ii.getRenamedVariable(result), (ModuleMetaObject)getArg());
     }
 
     @Override
@@ -34,12 +35,8 @@ public class DefineModuleInstr extends OneOperandInstr {
 		  // explicit (probably in the extend methods?).
 		  module.getSingletonClass();
 
-        mmo.interpretBody(interp, interp.getContext(), module);
+        Object v = mmo.interpretBody(interp, interp.getContext(), module);
+		  getResult().store(interp, v);
         return null;
-    }
- 
-    @Override
-    public String toString() {
-        return "" + operation + "(" + getArg() + ")";
     }
 }
