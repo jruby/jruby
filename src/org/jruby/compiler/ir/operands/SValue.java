@@ -64,14 +64,14 @@ public class SValue extends Operand
         if (val instanceof RubyArray) {
             int n = ((RubyArray)val).getLength();
             if (n == 0)
-                return Nil.NIL;
+                return Nil.NIL.retrieve(interp); // SSS FIXME: interp.getRuntime().getNil();
             else if (n == 1)
                 return ((RubyArray)val).entry(0);
             else
                 return val;
         }
         else {
-            return Nil.NIL;
+            return Nil.NIL.retrieve(interp); // SSS FIXME: interp.getRuntime().getNil();
         }
     }
 }
