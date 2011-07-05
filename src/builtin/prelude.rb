@@ -142,6 +142,13 @@ module Process
     _spawn_internal(*JRuby::ProcessUtil.exec_args(args))
   end
 end
+
+module Kernel
+  module_function
+  def spawn(*args)
+    Process.spawn(*args)
+  end
+end
   
 module JRuby
   module ProcessUtil

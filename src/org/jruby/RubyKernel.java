@@ -1594,7 +1594,11 @@ public class RubyKernel {
         return RubyRandom.randCommon19(context, recv, arg);
     }
 
-    @JRubyMethod(name = "spawn", required = 1, rest = true, module = true, visibility = PRIVATE, compat = RUBY1_9)
+    /**
+     * Now implemented in Ruby code. See Process::spawn in src/builtin/prelude.rb
+     * 
+     * @deprecated 
+     */
     public static RubyFixnum spawn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         long pid = ShellLauncher.runExternalWithoutWait(runtime, args);
