@@ -905,6 +905,33 @@ public class RubyEnumerable {
         }
     }
 
+    private static class EachWithObject implements BlockCallback {
+        private int index = 0;
+        private final Block block;
+        private final IRubyObject arg;
+        private final Ruby runtime;
+
+        public EachWithObject(ThreadContext ctx, Block block, IRubyObject arg) {
+            this.block = block;
+            this.arg = arg;
+            this.runtime = ctx.getRuntime();
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
+            switch (iargs.length) {
+            case 0:
+                // FIXME: Does this ever happen?
+            case 1:
+                this.block.call(context, checkArgs(runtime, iargs), arg);
+                break;
+            case 2:
+                this.block.call(context, runtime.newArrayNoCopy(iargs), arg);
+                break;
+            }
+            return runtime.getNil();            
+        }
+    }
+
     public static IRubyObject each_with_indexCommon(ThreadContext context, IRubyObject self, Block block) {
         callEach(context.getRuntime(), context, self, Arity.TWO_ARGUMENTS, new EachWithIndex(context, block));
         return self;
@@ -912,6 +939,11 @@ public class RubyEnumerable {
 
     public static IRubyObject each_with_indexCommon19(ThreadContext context, IRubyObject self, Block block, IRubyObject[] args) {
         callEach(context.getRuntime(), context, self, args, Arity.TWO_ARGUMENTS, new EachWithIndex(context, block));
+        return self;
+    }
+
+    public static IRubyObject each_with_objectCommon19(ThreadContext context, IRubyObject self, Block block, IRubyObject arg) {
+        callEach(context.getRuntime(), context, self, Arity.TWO_ARGUMENTS, new EachWithObject(context, block, arg));
         return self;
     }
 
@@ -928,6 +960,11 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject enum_with_index(ThreadContext context, IRubyObject self, Block block) {
         return block.isGiven() ? each_with_indexCommon(context, self, block) : enumeratorize(context.getRuntime(), self, "enum_with_index");
+    }
+
+    @JRubyMethod(name = "each_with_object", required = 1, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject each_with(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
+        return block.isGiven() ? each_with_objectCommon19(context, self, block, arg) : enumeratorize(context.getRuntime(), self, "each_with_index", arg);
     }
 
     @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
