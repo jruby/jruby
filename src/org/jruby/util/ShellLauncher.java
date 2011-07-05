@@ -1034,6 +1034,11 @@ public class ShellLauncher {
             if (!inProc) {
                 return false;
             } else {
+                if (args.length > 1) {
+                    for (int i = 1; i < args.length; i++) {
+                        checkGlobChar(args[i]);
+                    }
+                }
                 // snip off ruby or jruby command from list of arguments
                 // leave alone if the command is the name of a script
                 int startIndex = command.endsWith(".rb") ? 0 : 1;
@@ -1226,6 +1231,16 @@ public class ShellLauncher {
                 return false;
             }
             return verifyPathExecutable;
+        }
+        
+        private void checkGlobChar(String word) {
+            if (word.contains("*")
+                    || word.contains("?")
+                    || word.contains("[")
+                    || word.contains("{")) {
+                runtime.getErr().println("Warning: treating '" + word + "' literally."
+                        + " Consider passing -J-Djruby.launch.inproc=false.");
+            }
         }
 
         private Ruby runtime;
