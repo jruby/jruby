@@ -5,7 +5,7 @@ require 'ffi'
 include Java
 import java.nio.ByteBuffer
 
-iter = 10_000
+iter = 100_000
 
 module Posix
   extend FFI::Library
