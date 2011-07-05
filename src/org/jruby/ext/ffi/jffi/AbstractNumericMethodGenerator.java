@@ -189,11 +189,13 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
             mv.label(indirect);
 
             // For functions with only a few pointer args, we can possibly use the jffi object fast-path
-            if (signature.getParameterCount() <= 4 && pointerCount <= 3) {
+            if (signature.getParameterCount() <= 4 && pointerCount <= 4) {
                 Label fallback = new Label();
-                mv.iload(heapPointerCountVar);
-                mv.iconst_3();
-                mv.if_icmpgt(fallback);
+                if (pointerCount > 3) {
+                    mv.iload(heapPointerCountVar);
+                    mv.iconst_3();
+                    mv.if_icmpgt(fallback);
+                }
 
                 if (int.class == nativeIntType) {
                     // For i386, need to convert the int params to long to pass to the invokeNrN helpers
@@ -212,6 +214,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                     }
                 }
 
+                mv.iload(heapPointerCountVar);
 
                 // Just load all the pointer parameters, conversion strategies and parameter info onto
                 // the operand stack, so the helper functions can sort them out.
@@ -231,70 +234,44 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                     }
                 }
 
-
-                Label o2 = new Label();
-                if (pointerCount > 1) {
-                    mv.iload(heapPointerCountVar);
-                    mv.iconst_1();
-                    mv.if_icmpgt(o2);
-                }
-
+                
                 Class[] paramTypes = makeObjectParamSignature(signature, pointerCount);
-                mv.invokestatic(p(JITRuntime.class), "invokeN" + signature.getParameterCount() + "O1rN",
+                mv.invokestatic(p(JITRuntime.class), "invokeN" + signature.getParameterCount() + "OrN",
                         sig(long.class, paramTypes));
                 narrow(mv, long.class, nativeIntType);
                 mv.go_to(boxResult);
-
-                if (pointerCount > 1) {
-                    mv.label(o2);
-                    Label o3 = new Label();
-                    if (pointerCount > 2) {
-                        mv.iload(heapPointerCountVar);
-                        mv.iconst_2();
-                        mv.if_icmpgt(o3);
-                    }
-
-                    mv.invokestatic(p(JITRuntime.class), "invokeN" + signature.getParameterCount() + "O2rN",
-                            sig(long.class, paramTypes));
-                    narrow(mv, long.class, nativeIntType);
-                    mv.go_to(boxResult);
-
-                    if (pointerCount > 2) {
-                        mv.label(o3);
-                        mv.invokestatic(p(JITRuntime.class), "invokeN" + signature.getParameterCount() + "O3rN",
-                                sig(long.class, paramTypes));
-                        narrow(mv, long.class, nativeIntType);
-                        mv.go_to(boxResult);
-                    }
-                }
                 mv.label(fallback);
             }
+            
+            // Emit the fallback code to call the generic invoker path, if 
+            // more than 3 pointer parameters are present.
+            if (pointerCount > 3) {
 
-            // Emit the fallback code to call the generic invoker path
-            // pop all the converted arguments off the stack
-            for (int i = 0; i < signature.getParameterCount(); i++) {
-                if (int.class == nativeIntType) {
-                    mv.pop();
-                } else {
-                    mv.pop2();
+                // pop all the converted arguments off the stack
+                for (int i = 0; i < signature.getParameterCount(); i++) {
+                    if (int.class == nativeIntType) {
+                        mv.pop();
+                    } else {
+                        mv.pop2();
+                    }
                 }
-            }
 
-            // Pop ThreadContext, Invoker and Function
-            mv.pop(); mv.pop(); mv.pop();
-            
-            // Call the fallback invoker
-            mv.aload(0);
-            mv.getfield(builder.getClassName(), builder.getFallbackInvokerFieldName(), ci(NativeInvoker.class));
-            mv.aload(1);
-            
-            for (int i = 0; i < signature.getParameterCount(); i++) {
-                mv.aload(firstParam + i);
+                // Pop ThreadContext, Invoker and Function
+                mv.pop(); mv.pop(); mv.pop();
+
+                // Call the fallback invoker
+                mv.aload(0);
+                mv.getfield(builder.getClassName(), builder.getFallbackInvokerFieldName(), ci(NativeInvoker.class));
+                mv.aload(1);
+
+                for (int i = 0; i < signature.getParameterCount(); i++) {
+                    mv.aload(firstParam + i);
+                }
+
+                mv.invokevirtual(p(NativeInvoker.class), "invoke", 
+                        sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, signature.getParameterCount())));
+                mv.go_to(resultConversion);
             }
-            
-            mv.invokevirtual(p(NativeInvoker.class), "invoke", 
-                    sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, signature.getParameterCount())));
-            mv.go_to(resultConversion);
         }
     }
 
@@ -310,7 +287,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
     }
     
     private static Class[] makeObjectParamSignature(JITSignature signature, int pointerCount) {
-        Class[] paramTypes = new Class[2 + signature.getParameterCount() + (pointerCount * 3)];
+        Class[] paramTypes = new Class[3 + signature.getParameterCount() + (pointerCount * 3)];
         int idx = 0;
 
         paramTypes[idx++] = com.kenai.jffi.Invoker.class;
@@ -319,6 +296,8 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
         for (int i = 0; i < signature.getParameterCount(); i++) {
             paramTypes[idx++] = long.class;
         }
+        
+        paramTypes[idx++] = int.class;
 
         for (int i = 0; i < pointerCount; i++) {
             paramTypes[idx++] = IRubyObject.class;
