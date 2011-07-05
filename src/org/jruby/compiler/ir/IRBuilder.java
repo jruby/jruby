@@ -735,7 +735,7 @@ public class IRBuilder {
     //    v1 = -- build(a) --
     //       OPT: ret can be set to v1, but effectively v1 is false if we take the branch to L.
     //            while this info can be inferred by using attributes, why bother if we can do this?
-    //    ret = false   
+    //    ret = v1   
     //    beq(v1, false, L)
     //    v2 = -- build(b) --
     //    ret = v2
@@ -747,14 +747,13 @@ public class IRBuilder {
             build(andNode.getFirstNode(), m);
             return build(andNode.getSecondNode(), m);
         } else if (andNode.getFirstNode().getNodeType().alwaysFalse()) {
-            // build first node only and return false
-            build(andNode.getFirstNode(), m);
-            return BooleanLiteral.FALSE;
+            // build first node only and return its value
+            return build(andNode.getFirstNode(), m);
         } else {
             Variable ret = m.getNewTemporaryVariable();
             Label    l   = m.getNewLabel();
             Operand  v1  = build(andNode.getFirstNode(), m);
-            m.addInstr(new CopyInstr(ret, BooleanLiteral.FALSE));
+            m.addInstr(new CopyInstr(ret, v1));
             m.addInstr(new BEQInstr(v1, BooleanLiteral.FALSE, l));
             Operand  v2  = build(andNode.getSecondNode(), m);
             m.addInstr(new CopyInstr(ret, v2));
