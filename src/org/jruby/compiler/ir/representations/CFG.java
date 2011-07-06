@@ -1122,8 +1122,8 @@ public class CFG {
     }
 
     public void setUpUseDefLocalVarMaps() {
-		  _definedLocalVars = new java.util.HashSet<Variable>();
-		  _usedLocalVars = new java.util.HashSet<Variable>();
+        _definedLocalVars = new java.util.HashSet<Variable>();
+        _usedLocalVars = new java.util.HashSet<Variable>();
         for (BasicBlock bb: getNodes()) {
             for (Instr i: bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
@@ -1140,32 +1140,8 @@ public class CFG {
         }
     }
 
-    public Set<Variable> usedLocalVarsFromClosures() {
-		  if (_usedLocalVars == null) setUpUseDefLocalVarMaps();
-        HashSet vs = new HashSet();
-        for (IRClosure cl: getScope().getClosures()) {
-            CFG c = cl.getCFG();
-            vs.addAll(c._usedLocalVars);
-            vs.addAll(c.usedLocalVarsFromClosures());
-        }
-
-        return vs;
-    }
-
-    public Set<Variable> definedLocalVarsFromClosures() {
-		  if (_definedLocalVars == null) setUpUseDefLocalVarMaps();
-        HashSet vs = new HashSet();
-        for (IRClosure cl: getScope().getClosures()) {
-            CFG c = cl.getCFG();
-            vs.addAll(c._definedLocalVars);
-            vs.addAll(c.definedLocalVarsFromClosures());
-        }
-
-        return vs;
-    }
-
     public boolean usesLocalVariable(Variable v) {
-		  if (_usedLocalVars == null) setUpUseDefLocalVarMaps();
+        if (_usedLocalVars == null) setUpUseDefLocalVarMaps();
         if (_usedLocalVars.contains(v)) {
             return true;
         }
@@ -1180,7 +1156,7 @@ public class CFG {
     }
 
     public boolean definesLocalVariable(Variable v) {
-		  if (_definedLocalVars == null) setUpUseDefLocalVarMaps();
+        if (_definedLocalVars == null) setUpUseDefLocalVarMaps();
         if (_definedLocalVars.contains(v)) {
             return true;
         }

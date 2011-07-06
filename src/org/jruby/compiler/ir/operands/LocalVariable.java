@@ -22,10 +22,13 @@ public class LocalVariable extends Variable {
         this.name = name;
         this.location = location;
     }
-    
+
+/**
+ * SSS FIXME: Unused code
     public void setLocation(int slot) {
         this.location = slot;
     }
+**/
 
     public int getLocation() {
         return location;
@@ -66,7 +69,7 @@ public class LocalVariable extends Variable {
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-		  // SSS FIXME: Should we have a special case for self?
+        // SSS FIXME: Should we have a special case for self?
         //return interp.getLocalVariable(getName());
         return interp.getLocalVariable(location);
     }
