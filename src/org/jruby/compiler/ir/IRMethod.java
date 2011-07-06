@@ -8,6 +8,7 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
@@ -121,16 +122,85 @@ public class IRMethod extends IRExecutionScope {
         return newScope;
     }
 
-    @Override
-    public LocalVariable getLocalVariable(String name) {
-        LocalVariable variable = localVariables.get(name);
-        if (variable == null) {
-            variable = new LocalVariable(name, nextLocalVariableSlot);
-            localVariables.put(name, variable);
+    public LocalVariable getLocalVariable(String name, IRExecutionScope currScope) {
+        LocalVariable lvar = localVariables.get(name);
+        if (lvar == null) {
+            if (currScope instanceof IRClosure) {
+                // Variable is local to the closure.  If not, it would have been found in the localVariables.get call above!
+                lvar = new ClosureLocalVariable((IRClosure)currScope, name, nextLocalVariableSlot);
+            }
+            else {
+                lvar = new LocalVariable(name, nextLocalVariableSlot);
+            }
+            localVariables.put(name, lvar);
             nextLocalVariableSlot++;
         }
 
-        return variable;
+        /* --------------------------------------------------------------------------------
+         * If 'lvar' was previously a closure-local-variable, one of 3 things can happen:
+         * (1) We are now in a method scope ==> reset 'lvar' to be a normal variable
+         * (2) We are now in the same closure scope in which 'lvar' was defined -- nothing to do
+         *     this use of 'lvar' is still closure-local.
+         * (3) We are now in a closure scope which is nested in the scope that defined 'lvar'.
+         *     So, 'lvar' use in 'currScope' is still "local" to a closure.
+         * (4) We are now in a closure scope which is not nested in the scope that defined 'lvar'
+         *     So, we are just reusing the variable name, but this is a new variable.
+         *     Reset defining scope for 'lvar' to be 'currScope'
+         * -------------------------------------------------------------------------------- */
+        if (lvar instanceof ClosureLocalVariable) {
+            if (currScope instanceof IRMethod) {
+                /* ---------------------------------------------------------------------------------------------
+                 * SCENARIO 1 ABOVE
+                 *
+                 * If we are now in a method scope and the variable name was previously used locally in a closure,
+                 * going forward, that is no longer the case!  Switch it out to use a local variable that is local to
+                 * the method and is also shared with all closures here onwards.  So, yes, this behavior is a little odd
+                 * as per the following example
+                 *
+                 *      % cat /tmp/a.rb
+                 *      def foo1
+                 *        if (false)
+                 *          v = 5
+                 *        else
+                 *          [1,2].each { |i| v = i }
+                 *        end
+                 *        puts v
+                 *      end
+                 *       
+                 *      def foo2
+                 *        if (true)
+                 *          [1,2].each { |i| v = i }
+                 *        else
+                 *          v = 5
+                 *        end
+                 *        puts v
+                 *      end
+                 *       
+                 *      foo1
+                 *      foo2
+                 *       
+                 *      % ruby /tmp/a.rb
+                 *      2
+                 *      nil
+                 * --------------------------------------------------------------------------------------- */
+                lvar = new LocalVariable(name, lvar.getLocation());
+                localVariables.put(name, lvar);
+            }
+            else {
+                IRClosure definingScope = ((ClosureLocalVariable)lvar).definingScope;
+                if ((currScope == definingScope) || currScope.nestedInClosure(definingScope)) {
+                    // SCENARIO 2 & 3 ABOVE.  Nothing to do
+                    ;
+                }
+                else {
+                    // SCENARIO 4 ABOVE
+                    lvar = new ClosureLocalVariable((IRClosure)currScope, name, lvar.getLocation());
+                    localVariables.put(name, lvar);
+                }
+            }
+        }
+
+        return lvar;
     }
 
     public int assignBindingSlot(String varName) {

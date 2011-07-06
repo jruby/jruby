@@ -10,6 +10,8 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.LoadFromBindingInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.ClosureLocalVariable;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
@@ -19,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
-import org.jruby.compiler.ir.operands.LocalVariable;
 
 public class BindingLoadPlacementNode extends FlowGraphNode {
     /* ---------- Public fields, methods --------- */
@@ -29,12 +30,13 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
     @Override
     public void init() {
-        _inReqdLoads = new HashSet<Variable>();
-        _outReqdLoads = new HashSet<Variable>();
+        _inReqdLoads = new HashSet<LocalVariable>();
+        _outReqdLoads = new HashSet<LocalVariable>();
     }
 
     public void buildDataFlowVars(Instr i) {
-        // Nothing to do -- because we are going to use LocalVariables as our data flow variables
+        // Nothing to do -- because we are going to simply use non-closure, non-self, non-block LocalVariables as our data flow variables
+        // rather than build a new data flow type for it
     }
 
     public void initSolnForNode() {
@@ -50,7 +52,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
     public boolean applyTransferFunction() {
         BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) _prob;
-        Set<Variable> reqdLoads = new HashSet<Variable>(_inReqdLoads);
+        Set<LocalVariable> reqdLoads = new HashSet<LocalVariable>(_inReqdLoads);
 
         List<Instr> instrs = _bb.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
@@ -81,10 +83,10 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
                     // Variables defined in the closure do not need to be loaded anymore at
                     // program points before the call.
-                    Set<Variable> newReqdLoads = new HashSet<Variable>(reqdLoads);
-                    for (Variable v : reqdLoads) {
+                    Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
+                    for (LocalVariable v : reqdLoads) {
                         if (cl_blp.scopeDefinesVariable(v)) {
-                           newReqdLoads.remove(v);
+                           newReqdLoads.remove((LocalVariable)v);
                         }
                     }
                     reqdLoads = newReqdLoads;
@@ -99,7 +101,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
             for (Variable x : i.getUsedVariables()) {
                 if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
-                    reqdLoads.add(x);
+                    reqdLoads.add((LocalVariable)x);
                 }
             }
             //System.out.println("After: " + java.util.Arrays.toString(reqdLoads.toArray()));
@@ -129,7 +131,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         IRExecutionScope s = blp.getCFG().getScope();
         List<Instr> instrs = _bb.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
-        Set<Variable> reqdLoads = new HashSet<Variable>(_inReqdLoads);
+        Set<LocalVariable> reqdLoads = new HashSet<LocalVariable>(_inReqdLoads);
         while (it.hasPrevious()) {
             Instr i = it.previous();
 
@@ -149,9 +151,9 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
                     // Only those variables that are defined in the closure, and are in the required loads set 
                     // will need to be loaded from the binding after the call!  Rest can wait ..
-                    Set<Variable> newReqdLoads = new HashSet<Variable>(reqdLoads);
+                    Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
                     it.next();
-                    for (Variable v : reqdLoads) {
+                    for (LocalVariable v : reqdLoads) {
                         if (cl_blp.scopeDefinesVariable(v)) {
                             it.add(new LoadFromBindingInstr(v, s, v.getName()));
                             it.previous();
@@ -168,7 +170,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                 // In this case, we are going to blindly load everything
                 if (call.targetRequiresCallersBinding()) {
                     it.next();
-                    for (Variable v : reqdLoads) {
+                    for (LocalVariable v : reqdLoads) {
                         it.add(new LoadFromBindingInstr(v, s, v.getName()));
                         it.previous();
                     }
@@ -181,7 +183,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
             for (Variable x : i.getUsedVariables()) {
                 if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
-                    reqdLoads.add(x);
+                    reqdLoads.add((LocalVariable)x);
                 }
             }
         }
@@ -190,15 +192,22 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         if ((s instanceof IRClosure) && (_bb == _prob.getCFG().getEntryBB())) {
             // System.out.println("\n[In Entry BB] For CFG " + _prob.getCFG() + ":");
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
-            for (Variable v : reqdLoads) {
+            for (LocalVariable v : reqdLoads) {
                 if (blp.scopeUsesVariable(v)) {
-                    it.add(new LoadFromBindingInstr(v, s, v.getName()));
+                    if (v instanceof ClosureLocalVariable) {
+                        IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
+                        if ((s != definingScope) && s.nestedInClosure(definingScope))
+                            it.add(new LoadFromBindingInstr(v, s, v.getName()));
+                    }
+                    else {
+                        it.add(new LoadFromBindingInstr(v, s, v.getName()));
+                    }
                 }
             }
         }
     }
 
     /* ---------- Private fields, methods --------- */
-    Set<Variable> _inReqdLoads;     // On entry to flow graph node:  Variables that need to be loaded from the heap binding
-    Set<Variable> _outReqdLoads;    // On exit from flow graph node: Variables that need to be loaded from the heap binding
+    Set<LocalVariable> _inReqdLoads;     // On entry to flow graph node:  Variables that need to be loaded from the heap binding
+    Set<LocalVariable> _outReqdLoads;    // On exit from flow graph node: Variables that need to be loaded from the heap binding
 }

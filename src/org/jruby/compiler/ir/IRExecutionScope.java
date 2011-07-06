@@ -146,6 +146,14 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return (IRMethod) s;
     }
 
+    public boolean nestedInClosure(IRClosure closure) {
+        IRExecutionScope s = this;
+        do {
+            s = (IRExecutionScope)s.getLexicalParent();
+        } while (!(s instanceof IRMethod) && (s != closure));
+        return (s == closure);
+    }
+
     public void setCodeModificationFlag(boolean f) { 
         canModifyCode = f;
     }
@@ -270,7 +278,9 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return sb.toString();
     }
 
-	 // SSS: Not used -- this was something headius wrote way-back
+	 /******
+	  * SSS: Not used -- this was something headius wrote way-back
+	  *
     @Interp
     public Iterator<LocalVariable> getLiveLocalVariables() {
         Map<LocalVariable, Integer> ends = new HashMap<LocalVariable, Integer>();
@@ -305,7 +315,9 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
         return variables.iterator();
     }
+	 **/
 
+	 // SSS FIXME: This is unused code.
     /**
      * Create and (re)assign a static scope.  In general local variables should
      * never change even if we optimize more, but I was not positive so I am
@@ -321,7 +333,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
      * changing.
      *
      * @param parent scope should be non-null for all closures and null for methods
-     */
     @Interp
     public StaticScope allocateStaticScope(StaticScope parent) {
         Iterator<LocalVariable> variables = getLiveLocalVariables();
@@ -339,6 +350,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
         return scope;
     }
+     */
 
     /** ---------------------------------------
      * SSS FIXME: What is this method for?
@@ -370,7 +382,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     }
 
     public LocalVariable getLocalVariable(String name) {
-        return getClosestMethodAncestor().getLocalVariable(name);
+        return getClosestMethodAncestor().getLocalVariable(name, this);
     }
 
     public int getLocalVariablesCount() {
