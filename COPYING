@@ -43,11 +43,11 @@ lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
  BSF and ant are distributed under the Apache Software License,
  Version 1.1 (license file inside the jars).
 
- build_lib/constantine.jar (http://kenai.com/projects/constantine),
  build_lib/jcodings.jar (http://github.com/jruby/jcodings) and
  build_lib/joni.jar (http://github.com/jruby/joni) are distributed
  under the MIT license.
 
+ build_lib/jnr-constants.jar (http://github.com/jnr/jnr-constants),
  build_lib/jarjar-1.0rc8.jar (http://code.google.com/p/jarjar),
  build_lib/joda-time-1.6.2.jar (http://joda-time.sourceforge.net),
  build_lib/jffi*jar (https://github.com/wmeissner/jffi),
