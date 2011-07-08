@@ -4,16 +4,10 @@ require 'rbconfig'
 
 include FileUtils
 
-DIST_ZIP = File.join(BASE_DIR, DIST_DIR, "jruby-bin-#{VERSION_JRUBY}.zip")
-BUILD_DIR = File.join BASE_DIR, 'build'
-MACDIST = File.join BUILD_DIR, "jruby-#{VERSION_JRUBY}"
-PKG_DIR = File.join BUILD_DIR, 'pkg'
 POSTFLIGHT = 'scripts/installer.postflight'
 PMDOC = 'JRuby-installer.pmdoc/01jruby.xml'
 GEMSPMDOC = 'JRuby-installer.pmdoc/02gems.xml'
 GEMSMAC = 'rubygems/jruby_mac.rb'
-GEMSDIST = File.join BUILD_DIR, 'gems_dist'
-GEMSDEFAULTS = File.join MACDIST, "/lib/ruby/site_ruby/1.8/rubygems/defaults"
 JRUBY_DEST = '/Library/Frameworks/JRuby.framework'
 
 UNINSTALLER_INDEX = 'JRuby-uninstaller.pmdoc/index.xml'
@@ -84,18 +78,18 @@ end
 
 def prepare_rubygems
   replace_variables_in GEMSMAC
-  cp GEMSMAC, GEMSDEFAULTS
+  cp GEMSMAC, GEMS_DEFAULTS_DIR
 
-  File.open("#{GEMSDEFAULTS}/jruby.rb", "a+") do |file|
+  File.open("#{GEMS_DEFAULTS_DIR}/jruby.rb", "a+") do |file|
     file.write("require 'rubygems/defaults/jruby_mac'")
   end
 
-  mv "#{MACDIST}/lib/ruby/gems", GEMSDIST
+  mv "#{MAC_DIST}/lib/ruby/gems", GEMS_DIST_DIR
 end
 
 def cleanup
   puts "- Cleaning directories"
-  [MACDIST, GEMSDIST, PKG_DIR ].each do |f|
+  [MAC_DIST, GEMS_DIST_DIR, PKG_DIR ].each do |f|
     rm_r f if File.exist? f
   end
 end
