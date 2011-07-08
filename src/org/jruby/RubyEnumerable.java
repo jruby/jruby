@@ -1409,9 +1409,21 @@ public class RubyEnumerable {
 
     public static IRubyObject[] zipCommonConvert(Ruby runtime, IRubyObject[] args, String method) {
         RubyClass array = runtime.getArray();
-
-        for (int i = 0; i < args.length; i++) {
-            args[i] = TypeConverter.convertToType(args[i], array, method);
+        ThreadContext context = runtime.getCurrentContext();
+        
+        // 1.9 tries to convert, and failing that tries to "each" elements into a new array
+        if (runtime.is1_9()) {
+            for (int i = 0; i < args.length; i++) {
+                IRubyObject result = TypeConverter.convertToTypeWithCheck19(args[i], array, method);
+                if (result.isNil()) {
+                    result = takeItems(context, args[i]);
+                }
+                args[i] = result;
+            }
+        } else {
+            for (int i = 0; i < args.length; i++) {
+                args[i] = TypeConverter.convertToType(args[i], array, method);
+            }
         }
 
         return args;
@@ -1548,6 +1560,30 @@ public class RubyEnumerable {
             });
             return zip;
         }
+    }
+    
+    /**
+     * Take all items from the given enumerable and insert them into a new array.
+     * 
+     * See take_items() in array.c.
+     * 
+     * @param context current context
+     * @param enumerable object from which to take
+     * @return an array of the object's elements
+     */
+    public static IRubyObject takeItems(ThreadContext context, IRubyObject enumerable) {
+        final RubyArray array = context.runtime.newArray();
+        synchronized (array) {
+            callEach(context.runtime, context, enumerable, Arity.ONE_ARGUMENT, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    IRubyObject larg = checkArgs(ctx.runtime, largs);
+                    array.append(larg);
+                    return larg;
+                }
+            });
+        }
+        
+        return array;
     }
     
     private static IRubyObject zipEnumNext(ThreadContext context, IRubyObject arg) {
