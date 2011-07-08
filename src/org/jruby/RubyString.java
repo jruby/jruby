@@ -2258,12 +2258,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc;
         if (is1_9) {
             enc = value.getEncoding();
-            if (enc != runtime.getKCode().getEncoding()) {
-                enc = runtime.getKCode().getEncoding();
-            }
-            if (!enc.isAsciiCompatible()) {
-                enc = USASCIIEncoding.INSTANCE;
-            }
+            
             result.associateEncoding(enc);
         } else {
             enc = runtime.getKCode().getEncoding();
