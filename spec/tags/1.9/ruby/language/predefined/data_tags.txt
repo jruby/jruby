@@ -1,0 +1,1 @@
+fails:The DATA constant succeeds in locking the file DATA came from
