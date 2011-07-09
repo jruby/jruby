@@ -113,6 +113,48 @@ class Generator
       end
     end
   end
+  
+  class Cursor < Generator
+    ENDED = Object.new
+    def initialize(start, succ_method, _end)
+      @start = start
+      @cur = start
+      @end = _end
+      @succ_method = succ_method
+    end
+    
+    def end?
+      @cur == ENDED
+    end
+    
+    def next
+      if @cur == ENDED
+        raise StopIteration.new
+      elsif @cur == @end
+        obj, @cur = @cur, ENDED
+      else
+        obj, @cur = @cur, @cur.succ
+      end
+      obj
+    end
+    
+    def current
+      raise EOFError, "no more elements available" if end?
+      @cur
+    end
+    
+    def rewind
+      @cur = @start
+    end
+
+    def each
+      return enum_for(:each) unless block_given?
+
+      until end?
+        yield self.next
+      end
+    end
+  end
 
   class Threaded < Generator
     # marks the end of enumeration
@@ -167,6 +209,7 @@ class Generator
     # In the latter, the given block is called with the generator
     # itself, and expected to call the +yield+ method for each element.
     def initialize(enum = nil, &block)
+      warning "Using inefficient threaded enumerator for #{enum.inspect}, consider writing a iterator" if $DEBUG
       @queue_finalizer = QueueFinalizer.new
       ObjectSpace.define_finalizer self, &@queue_finalizer
       _setup(enum, block)
@@ -276,6 +319,14 @@ class Generator
           Generator::Indexed.new(self, &block)
         end
       end
+      
+      def cursor_iter(start_method, succ_method, end_method, method, &block)
+        ext_iter_method = :"iter_for_#{method}"
+        
+        define_method ext_iter_method do
+          Generator::Cursor.new(self.__send__(start_method), succ_method, self.__send__(end_method), &block)
+        end
+      end
     end
     def self.included(cls)
       cls.extend ClassMethods
@@ -295,6 +346,11 @@ class Generator
     # these are inefficient and need a place to store 'keys'
     indexed_iter(:each) {|h,i| keys = h.keys; [ keys[i], h[keys[i]] ]}
     indexed_iter(:each_with_index) {|h,i| keys = h.keys; [ [ keys[i], h[keys[i]] ], i]}
+  end
+
+  class ::Range
+    include Iterators
+    cursor_iter(:first, :succ, :last, :each)
   end
 
   class Enumerator
