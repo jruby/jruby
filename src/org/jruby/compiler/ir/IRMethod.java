@@ -149,40 +149,7 @@ public class IRMethod extends IRExecutionScope {
          * -------------------------------------------------------------------------------- */
         if (lvar instanceof ClosureLocalVariable) {
             if (currScope instanceof IRMethod) {
-                /* ---------------------------------------------------------------------------------------------
-                 * SCENARIO 1 ABOVE
-                 *
-                 * If we are now in a method scope and the variable name was previously used locally in a closure,
-                 * going forward, that is no longer the case!  Switch it out to use a local variable that is local to
-                 * the method and is also shared with all closures here onwards.  So, yes, this behavior is a little odd
-                 * as per the following example
-                 *
-                 *      % cat /tmp/a.rb
-                 *      def foo1
-                 *        if (false)
-                 *          v = 5
-                 *        else
-                 *          [1,2].each { |i| v = i }
-                 *        end
-                 *        puts v
-                 *      end
-                 *       
-                 *      def foo2
-                 *        if (true)
-                 *          [1,2].each { |i| v = i }
-                 *        else
-                 *          v = 5
-                 *        end
-                 *        puts v
-                 *      end
-                 *       
-                 *      foo1
-                 *      foo2
-                 *       
-                 *      % ruby /tmp/a.rb
-                 *      2
-                 *      nil
-                 * --------------------------------------------------------------------------------------- */
+                // SCENARIO 1 ABOVE
                 lvar = new LocalVariable(name, lvar.getLocation());
                 localVariables.put(name, lvar);
             }
