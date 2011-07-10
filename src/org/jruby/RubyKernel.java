@@ -189,10 +189,10 @@ public class RubyKernel {
         final RubyModule module = getModuleForAutoload(runtime, recv);
         String nm = module.getName() + "::" + baseName;
         
-        IRubyObject existingValue = module.fastFetchConstant(baseName); 
+        IRubyObject existingValue = module.fetchConstant(baseName); 
         if (existingValue != null && existingValue != RubyObject.UNDEF) return runtime.getNil();
 
-        module.fastStoreConstant(baseName, RubyObject.UNDEF);
+        module.storeConstant(baseName, RubyObject.UNDEF);
 
         loadService.addAutoload(nm, new IAutoloadMethod() {
             public String file() {
@@ -208,7 +208,7 @@ public class RubyKernel {
                 // File to be loaded by autoload has already been or is being loaded.
                 if (!required) return null;
                 
-                return module.fastGetConstant(baseName);
+                return module.getConstant(baseName);
             }
         });
         return runtime.getNil();

@@ -268,7 +268,7 @@ public class TextAreaReadline implements KeyListener {
         this.runtime = runtime;
         /* Hack in to replace usual readline with this */
         runtime.getLoadService().require("readline");
-        RubyModule readlineM = runtime.fastGetModule("Readline");
+        RubyModule readlineM = runtime.getModule("Readline");
 
         readlineM.defineModuleFunction("readline", new Callback() {
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {

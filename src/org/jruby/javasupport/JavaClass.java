@@ -1147,9 +1147,9 @@ public class JavaClass extends JavaObject {
         // you be able to?
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
-        RubyClass result = javaModule.defineClassUnder("JavaClass", javaModule.fastGetClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR); 
+        RubyClass result = javaModule.defineClassUnder("JavaClass", javaModule.getClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR); 
         
-        result.includeModule(runtime.fastGetModule("Comparable"));
+        result.includeModule(runtime.getModule("Comparable"));
         
         result.defineAnnotatedMethods(JavaClass.class);
 

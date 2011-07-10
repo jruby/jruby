@@ -53,8 +53,8 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     };
 
     static void createUNIXServer(Ruby runtime) {
-        RubyClass rb_cUNIXServer = runtime.defineClass("UNIXServer", runtime.fastGetClass("UNIXSocket"), UNIXSERVER_ALLOCATOR);
-        runtime.getObject().fastSetConstant("UNIXserver", rb_cUNIXServer);
+        RubyClass rb_cUNIXServer = runtime.defineClass("UNIXServer", runtime.getClass("UNIXSocket"), UNIXSERVER_ALLOCATOR);
+        runtime.getObject().setConstant("UNIXserver", rb_cUNIXServer);
         
         rb_cUNIXServer.defineAnnotatedMethods(RubyUNIXServer.class);
     }
@@ -82,7 +82,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
         }
 
         Ruby runtime = context.getRuntime();
-        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.fastGetClass("UNIXSocket"), "allocate"));
+        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
         
         sock.fd = fd2;
         sock.fpath = from.path().toString();
@@ -109,7 +109,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
         }
 
         Ruby runtime = context.getRuntime();
-        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.fastGetClass("UNIXSocket"), "allocate"));
+        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
         
         sock.fd = fd2;
         sock.fpath = from.path().toString();

@@ -55,12 +55,12 @@ public final class Buffer extends AbstractMemory {
     }
     
     public Buffer(Ruby runtime, int size, int flags) {
-        this(runtime, runtime.fastGetModule("FFI").fastGetClass("Buffer"),
+        this(runtime, runtime.getModule("FFI").getClass("Buffer"),
             new ArrayMemoryIO(runtime, size), size, 1, flags);
     }
     
     public Buffer(Ruby runtime, byte[] data, int offset, int size) {
-        this(runtime, runtime.fastGetModule("FFI").fastGetClass("Buffer"),
+        this(runtime, runtime.getModule("FFI").getClass("Buffer"),
             new ArrayMemoryIO(runtime, data, offset, size), size, 1, IN | OUT);
     }
 

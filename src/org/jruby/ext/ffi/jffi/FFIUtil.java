@@ -161,8 +161,8 @@ public final class FFIUtil {
             return (Type) obj;
         }
 
-        final RubyModule ffi = context.getRuntime().fastGetModule("FFI");
-        final IRubyObject typeDefs = ffi.fastFetchConstant("TypeDefs");
+        final RubyModule ffi = context.getRuntime().getModule("FFI");
+        final IRubyObject typeDefs = ffi.fetchConstant("TypeDefs");
 
         if (!(typeDefs instanceof RubyHash)) {
             throw context.getRuntime().newRuntimeError("invalid or corrupted FFI::TypeDefs");

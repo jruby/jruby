@@ -78,7 +78,7 @@ public class RubyStringIO extends RubyObject {
 
     public static RubyClass createStringIOClass(final Ruby runtime) {
         RubyClass stringIOClass = runtime.defineClass(
-                "StringIO", runtime.fastGetClass("Data"), STRINGIO_ALLOCATOR);
+                "StringIO", runtime.getClass("Data"), STRINGIO_ALLOCATOR);
 
         stringIOClass.defineAnnotatedMethods(RubyStringIO.class);
         stringIOClass.includeModule(runtime.getEnumerable());
@@ -166,7 +166,7 @@ public class RubyStringIO extends RubyObject {
     public IRubyObject initialize_copy(IRubyObject other) {
 
         RubyStringIO otherIO = (RubyStringIO) TypeConverter.convertToType(
-                other, getRuntime().fastGetClass("StringIO"), "to_strio");
+                other, getRuntime().getClass("StringIO"), "to_strio");
 
         if (this == otherIO) {
             return this;

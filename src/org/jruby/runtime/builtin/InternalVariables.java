@@ -20,17 +20,10 @@ public interface InternalVariables {
      * @return true if object has the named internal variable.
      */
     boolean hasInternalVariable(String name);
-    
-    /**
-     * Returns true if object has the named internal variable.  Use only
-     * for internal variables (not ivar/cvar/constant). The supplied
-     * name <em>must</em> have been previously interned.
-     * 
-     * @param internedName the interned name of an internal variable
-     * @return true if object has the named internal variable, else false
-     */
-    boolean fastHasInternalVariable(String internedName);
 
+    @Deprecated
+    boolean fastHasInternalVariable(String internedName);
+    
     /**
      * Returns the named internal variable if present, else null.  Use only
      * for internal variables (not ivar/cvar/constant).
@@ -39,17 +32,10 @@ public interface InternalVariables {
      * @return the named internal variable if present, else null
      */
     Object getInternalVariable(String name);
-    
-    /**
-     * Returns the named internal variable if present, else null.  Use only
-     * for internal variables (not ivar/cvar/constant). The supplied
-     * name <em>must</em> have been previously interned.
-     * 
-     * @param internedName the interned name of an internal variable
-     * @return he named internal variable if present, else null
-     */
-    Object fastGetInternalVariable(String internedName);
 
+    @Deprecated
+    Object fastGetInternalVariable(String internedNaem);
+    
     /**
      * Sets the named internal variable to the specified value.  Use only
      * for internal variables (not ivar/cvar/constant).
@@ -58,17 +44,10 @@ public interface InternalVariables {
      * @param value the value to be set
      */
     void setInternalVariable(String name, Object value);
-    
-    /**
-     * Sets the named internal variable to the specified value.  Use only
-     * for internal variables (not ivar/cvar/constant). The supplied
-     * name <em>must</em> have been previously interned.
-     * 
-     * @param internedName the interned name of an internal variable
-     * @param value the value to be set
-     */
-    void fastSetInternalVariable(String internedName, Object value);
 
+    @Deprecated
+    void fastSetInternalVariable(String internedName, Object value);
+    
     /**
      * Removes the named internal variable, if present, returning its
      * value.  Use only for internal variables (not ivar/cvar/constant).

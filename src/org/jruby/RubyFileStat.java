@@ -74,7 +74,7 @@ public class RubyFileStat extends RubyObject {
         final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), ALLOCATOR);
         runtime.setFileStat(fileStatClass);
 
-        fileStatClass.includeModule(runtime.fastGetModule("Comparable"));
+        fileStatClass.includeModule(runtime.getModule("Comparable"));
         fileStatClass.defineAnnotatedMethods(RubyFileStat.class);
 
         return fileStatClass;

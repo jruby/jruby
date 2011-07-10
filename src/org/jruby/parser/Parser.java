@@ -161,7 +161,7 @@ public class Parser {
 
     private RubyArray getLines(ParserConfiguration configuration, Ruby runtime, String file) {
         RubyArray list = null;
-        IRubyObject scriptLines = runtime.getObject().fastGetConstantAt("SCRIPT_LINES__");
+        IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
         if (!configuration.isEvalParse() && scriptLines != null) {
             if (scriptLines instanceof RubyHash) {
                 RubyString filename = runtime.newString(file);

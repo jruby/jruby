@@ -63,7 +63,7 @@ public abstract class AbstractInvoker extends Pointer {
     
     public static RubyClass createAbstractInvokerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
-                module.fastGetClass("Pointer"),
+                module.getClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(AbstractInvoker.class);
         result.defineAnnotatedConstants(AbstractInvoker.class);

@@ -60,7 +60,7 @@ public class FileDescriptorIO extends RubyIO {
         super(runtime, klass);
     }
     public FileDescriptorIO(Ruby runtime, IRubyObject fd) {
-        super(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME));
+        super(runtime, runtime.getModule("FFI").getClass(CLASS_NAME));
         ModeFlags modes;
         try {
             modes = new ModeFlags(ModeFlags.RDWR);
@@ -77,7 +77,7 @@ public class FileDescriptorIO extends RubyIO {
         }
     }
     public static RubyClass createFileDescriptorIOClass(Ruby runtime, RubyModule module) {
-        RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.fastGetClass("IO"),
+        RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getClass("IO"),
                 Allocator.INSTANCE, module);
         result.defineAnnotatedMethods(FileDescriptorIO.class);
         result.defineAnnotatedConstants(FileDescriptorIO.class);

@@ -184,7 +184,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 receiver = getReceiver().retrieve(interp);
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
-                rVal = rt.newBoolean(((IRubyObject)receiver).getInstanceVariables().fastHasInstanceVariable(name));
+                rVal = rt.newBoolean(((IRubyObject)receiver).getInstanceVariables().hasInstanceVariable(name));
                 break;
             }
             case SELF_IS_METHOD_BOUND:

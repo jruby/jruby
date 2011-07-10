@@ -35,7 +35,7 @@ public class Pointer extends AbstractMemory {
                 runtime.getRuntimeError().getAllocator());
 
         // Add Pointer::NULL as a constant
-        result.fastSetConstant("NULL", new Pointer(runtime, result, new NullMemoryIO(runtime)));
+        result.setConstant("NULL", new Pointer(runtime, result, new NullMemoryIO(runtime)));
 
         return result;
     }
@@ -49,7 +49,7 @@ public class Pointer extends AbstractMemory {
     }
 
     public static final Pointer getNull(Ruby runtime) {
-        return (Pointer) runtime.fastGetModule("FFI").fastGetClass("Pointer").fastGetConstant("NULL");
+        return (Pointer) runtime.getModule("FFI").getClass("Pointer").getConstant("NULL");
     }
 
     Pointer(Ruby runtime, RubyClass klazz) {
@@ -73,7 +73,7 @@ public class Pointer extends AbstractMemory {
     }
 
     public static final RubyClass getPointerClass(Ruby runtime) {
-        return runtime.fastGetModule("FFI").fastGetClass("Pointer");
+        return runtime.getModule("FFI").getClass("Pointer");
     }
 
     public final AbstractMemory order(Ruby runtime, ByteOrder order) {

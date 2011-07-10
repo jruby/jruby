@@ -61,7 +61,7 @@ public class JRubyPOSIXHandler implements POSIXHandler {
 
     @SuppressWarnings("unchecked")
     public String[] getEnv() {
-        RubyHash hash = (RubyHash) runtime.getObject().fastGetConstant("ENV");
+        RubyHash hash = (RubyHash) runtime.getObject().getConstant("ENV");
         int i=0;
 
         String[] env = new String[hash.size()];

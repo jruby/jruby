@@ -163,7 +163,7 @@ public class DataConverters {
                 return context.getRuntime().getNil();
             }
             return new org.jruby.ext.ffi.jffi.Function(context.getRuntime(),
-                    context.getRuntime().fastGetModule("FFI").fastGetClass("Function"),
+                    context.getRuntime().getModule("FFI").getClass("Function"),
                     new CodeMemoryIO(context.getRuntime(), ptr), functionInfo, null);
         }
 

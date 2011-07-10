@@ -128,7 +128,7 @@ public class RubyTime extends RubyObject {
     
     private static IRubyObject getEnvTimeZone(Ruby runtime) {
         RubyString tzVar = runtime.newString(TZ_STRING);
-        RubyHash h = ((RubyHash)runtime.getObject().fastGetConstant("ENV"));
+        RubyHash h = ((RubyHash)runtime.getObject().getConstant("ENV"));
         IRubyObject tz = h.op_aref(runtime.getCurrentContext(), tzVar);
         return tz;
     }

@@ -303,9 +303,9 @@ public class RubyIO extends RubyObject {
         ioClass.defineAnnotatedMethods(RubyIO.class);
 
         // Constants for seek
-        ioClass.fastSetConstant("SEEK_SET", runtime.newFixnum(Stream.SEEK_SET));
-        ioClass.fastSetConstant("SEEK_CUR", runtime.newFixnum(Stream.SEEK_CUR));
-        ioClass.fastSetConstant("SEEK_END", runtime.newFixnum(Stream.SEEK_END));
+        ioClass.setConstant("SEEK_SET", runtime.newFixnum(Stream.SEEK_SET));
+        ioClass.setConstant("SEEK_CUR", runtime.newFixnum(Stream.SEEK_CUR));
+        ioClass.setConstant("SEEK_END", runtime.newFixnum(Stream.SEEK_END));
 
         if (runtime.is1_9()) {
             ioClass.defineModuleUnder("WaitReadable");

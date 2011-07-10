@@ -258,7 +258,7 @@ public class RbConfigLibrary implements Library {
     private static void setupMakefileConfig(RubyModule configModule, RubyHash mkmfHash) {
         Ruby ruby = configModule.getRuntime();
 
-        RubyHash envHash = (RubyHash) ruby.getObject().fastFetchConstant("ENV".intern());
+        RubyHash envHash = (RubyHash) ruby.getObject().fetchConstant("ENV".intern());
         String cc = getRubyEnv(envHash, "CC", "cc");
         String cpp = getRubyEnv(envHash, "CPP", "cc -E");
         String cxx = getRubyEnv(envHash, "CXX", "c++");

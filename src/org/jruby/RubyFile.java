@@ -247,11 +247,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // File::Constants below? File::Constants is included in IO.
 
         // TODO: These were missing, so we're not handling them elsewhere?
-        fileClass.fastSetConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
-        fileClass.fastSetConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
-        fileClass.fastSetConstant("FNM_SYSCASE", runtime.newFixnum(FNM_SYSCASE));
-        fileClass.fastSetConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
-        fileClass.fastSetConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
+        fileClass.setConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
+        fileClass.setConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
+        fileClass.setConstant("FNM_SYSCASE", runtime.newFixnum(FNM_SYSCASE));
+        fileClass.setConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
+        fileClass.setConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
         
         // Create constants for open flags
         for (OpenFlags f : OpenFlags.values()) {
@@ -264,28 +264,28 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 final RubyFixnum cvalue = f == OpenFlags.O_ACCMODE
                         ? runtime.newFixnum(ModeFlags.ACCMODE)
                         : runtime.newFixnum(f.intValue());
-                fileClass.fastSetConstant(cname, cvalue);
-                constants.fastSetConstant(cname, cvalue);
+                fileClass.setConstant(cname, cvalue);
+                constants.setConstant(cname, cvalue);
             }
         }
         
         // Create constants for flock
-        fileClass.fastSetConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
-        fileClass.fastSetConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
-        fileClass.fastSetConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
-        fileClass.fastSetConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
+        fileClass.setConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
+        fileClass.setConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
+        fileClass.setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
+        fileClass.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
         
-        constants.fastSetConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
-        constants.fastSetConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
-        constants.fastSetConstant("FNM_SYSCASE", runtime.newFixnum(FNM_SYSCASE));
-        constants.fastSetConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
-        constants.fastSetConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
+        constants.setConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
+        constants.setConstant("FNM_CASEFOLD", runtime.newFixnum(FNM_CASEFOLD));
+        constants.setConstant("FNM_SYSCASE", runtime.newFixnum(FNM_SYSCASE));
+        constants.setConstant("FNM_DOTMATCH", runtime.newFixnum(FNM_DOTMATCH));
+        constants.setConstant("FNM_PATHNAME", runtime.newFixnum(FNM_PATHNAME));
         
         // Create constants for flock
-        constants.fastSetConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
-        constants.fastSetConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
-        constants.fastSetConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
-        constants.fastSetConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
+        constants.setConstant("LOCK_SH", runtime.newFixnum(RubyFile.LOCK_SH));
+        constants.setConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
+        constants.setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
+        constants.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
         
         // File::Constants module is included in IO.
         runtime.getIO().includeModule(constants);

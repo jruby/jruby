@@ -964,14 +964,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.IRubyObject#dataGetStruct()
      */
     public synchronized Object dataGetStruct() {
-        return fastGetInternalVariable("__wrap_struct__");
+        return getInternalVariable("__wrap_struct__");
     }
 
     // Equivalent of Data_Get_Struct
     // This will first check that the object in question is actually a T_DATA equivalent.
     public synchronized Object dataGetStructChecked() {
         TypeConverter.checkData(this);
-        return this.fastGetInternalVariable("__wrap_struct__");
+        return getInternalVariable("__wrap_struct__");
     }
 
     /** rb_obj_id
@@ -1322,6 +1322,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * specified name, where the precondition is that the name must be
      * an interned Java String.
      */
+    @Deprecated
     protected boolean variableTableFastContains(String internedName) {
         return variableTableContains(internedName);
     }
@@ -1341,6 +1342,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @return the object or null if not found
      */
+    @Deprecated
     protected Object variableTableFastFetch(String internedName) {
         return variableTableFetch(internedName);
     }
@@ -1357,6 +1359,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Will store the value under the specified name, where the name
      * needs to be an interned Java String.
      */
+    @Deprecated
     protected Object variableTableFastStore(String internedName, Object value) {
         return variableTableStore(internedName, value);
     }
@@ -1409,9 +1412,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InternalVariables#fastHasInternalVariable
      */
+    @Deprecated
     public boolean fastHasInternalVariable(String internedName) {
-        assert !IdUtil.isRubyVariable(internedName);
-        return variableTableFastContains(internedName);
+        return hasInternalVariable(internedName);
     }
 
     /**
@@ -1425,9 +1428,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InternalVariables#fastGetInternalVariable
      */
+    @Deprecated
     public Object fastGetInternalVariable(String internedName) {
-        assert !IdUtil.isRubyVariable(internedName);
-        return variableTableFastFetch(internedName);
+        return getInternalVariable(internedName);
     }
 
     /**
@@ -1441,9 +1444,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InternalVariables#fastSetInternalVariable
      */
+    @Deprecated
     public void fastSetInternalVariable(String internedName, Object value) {
-        assert !IdUtil.isRubyVariable(internedName);
-        variableTableFastStore(internedName, value);
+        setInternalVariable(internedName, value);
     }
 
     /**
@@ -1511,9 +1514,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InstanceVariables#fastHasInstanceVariable
      */
+    @Deprecated
     public boolean fastHasInstanceVariable(String internedName) {
-        assert IdUtil.isInstanceVariable(internedName);
-        return variableTableFastContains(internedName);
+        return hasInstanceVariable(internedName);
     }
 
     /**
@@ -1527,9 +1530,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InstanceVariables#fastGetInstanceVariable
      */
+    @Deprecated
     public IRubyObject fastGetInstanceVariable(String internedName) {
-        assert IdUtil.isInstanceVariable(internedName);
-        return (IRubyObject)variableTableFastFetch(internedName);
+        return getInstanceVariable(internedName);
     }
 
     /** rb_iv_set / rb_ivar_set
@@ -1545,10 +1548,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * @see org.jruby.runtime.builtin.InstanceVariables#fastSetInstanceVariable
      */
+    @Deprecated
     public IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value) {
-        assert IdUtil.isInstanceVariable(internedName) && value != null;
-        ensureInstanceVariablesSettable();
-        return (IRubyObject)variableTableFastStore(internedName, value);
+        return setInstanceVariable(internedName, value);
      }
 
     /**

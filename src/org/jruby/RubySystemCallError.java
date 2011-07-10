@@ -207,7 +207,7 @@ public class RubySystemCallError extends RubyException {
                 msg = args[0];
             }
             // try to get errno value out of the class
-            err = klass.fastGetConstant("Errno");
+            err = klass.getConstant("Errno");
         }
 
         String val = null;

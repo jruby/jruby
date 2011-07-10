@@ -35,7 +35,7 @@ public class Colon2ConstNode extends Colon2Node {
         RubyModule target = RuntimeHelpers.checkIsModule(leftNode.interpret(runtime, context, self, aBlock));
         IRubyObject value = getValue(context, target);
 
-        return value != null ? value : target.fastGetConstantFromConstMissing(name);
+        return value != null ? value : target.getConstantFromConstMissing(name);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class Colon2ConstNode extends Colon2Node {
 
     public IRubyObject reCache(ThreadContext context, RubyModule target) {
         Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
-        IRubyObject value = target.fastGetConstantFromNoConstMissing(name);
+        IRubyObject value = target.getConstantFromNoConstMissing(name);
 
         cachedValue = value;
 

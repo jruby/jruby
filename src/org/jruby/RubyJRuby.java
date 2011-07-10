@@ -235,7 +235,7 @@ public class RubyJRuby {
         compiler.compileRoot(node, asmCompiler, inspector);
         byte[] bts = asmCompiler.getClassByteArray();
 
-        IRubyObject compiledScript = ((RubyModule)recv).fastGetConstant("CompiledScript").callMethod(recv.getRuntime().getCurrentContext(),"new");
+        IRubyObject compiledScript = ((RubyModule)recv).getConstant("CompiledScript").callMethod(recv.getRuntime().getCurrentContext(),"new");
         compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "name=", recv.getRuntime().newString(filename));
         compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "class_name=", recv.getRuntime().newString(classname));
         compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "original_script=", content);
@@ -274,18 +274,18 @@ public class RubyJRuby {
     public static class JRubyCompiledScript {
         @JRubyMethod(name = "to_s")
         public static IRubyObject compiled_script_to_s(IRubyObject recv) {
-            return recv.getInstanceVariables().fastGetInstanceVariable("@original_script");
+            return recv.getInstanceVariables().getInstanceVariable("@original_script");
         }
 
         @JRubyMethod(name = "inspect")
         public static IRubyObject compiled_script_inspect(IRubyObject recv) {
-            return recv.getRuntime().newString("#<JRuby::CompiledScript " + recv.getInstanceVariables().fastGetInstanceVariable("@name") + ">");
+            return recv.getRuntime().newString("#<JRuby::CompiledScript " + recv.getInstanceVariables().getInstanceVariable("@name") + ">");
         }
 
         @JRubyMethod(name = "inspect_bytecode")
         public static IRubyObject compiled_script_inspect_bytecode(IRubyObject recv) {
             StringWriter sw = new StringWriter();
-            ClassReader cr = new ClassReader((byte[])recv.getInstanceVariables().fastGetInstanceVariable("@code").toJava(byte[].class));
+            ClassReader cr = new ClassReader((byte[])recv.getInstanceVariables().getInstanceVariable("@code").toJava(byte[].class));
             TraceClassVisitor cv = new TraceClassVisitor(new PrintWriter(sw));
             cr.accept(cv, ClassReader.SKIP_DEBUG);
             return recv.getRuntime().newString(sw.toString());
@@ -477,7 +477,7 @@ public class RubyJRuby {
                 if (args[0] instanceof RubyBoolean) {
                     recursive = args[0].isTrue();
                 } else {
-                    context.getRuntime().newTypeError(args[0], context.getRuntime().fastGetClass("Boolean"));
+                    context.getRuntime().newTypeError(args[0], context.getRuntime().getClass("Boolean"));
                 }
             }
 

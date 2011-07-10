@@ -156,12 +156,12 @@ public class Readline {
 
         mReadline.defineAnnotatedMethods(Readline.class);
         IRubyObject hist = runtime.getObject().callMethod(runtime.getCurrentContext(), "new");
-        mReadline.fastSetConstant("HISTORY", hist);
+        mReadline.setConstant("HISTORY", hist);
         hist.getSingletonClass().includeModule(runtime.getEnumerable());
         hist.getSingletonClass().defineAnnotatedMethods(HistoryMethods.class);
 
         // MRI does similar thing on MacOS X with 'EditLine wrapper'.
-        mReadline.fastSetConstant("VERSION", runtime.newString("JLine wrapper"));
+        mReadline.setConstant("VERSION", runtime.newString("JLine wrapper"));
     }
 
     // We lazily initialize this in case Readline.readline has been overridden in ruby (s_readline)
@@ -200,7 +200,7 @@ public class Readline {
     }
 
     public static ConsoleHolder getHolder(Ruby runtime) {
-        return (ConsoleHolder) (runtime.fastGetModule("Readline").dataGetStruct());
+        return (ConsoleHolder) (runtime.getModule("Readline").dataGetStruct());
     }
 
     public static void setCompletor(ConsoleHolder holder, Completor completor) {

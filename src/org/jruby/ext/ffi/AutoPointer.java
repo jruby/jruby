@@ -50,7 +50,7 @@ public final class AutoPointer extends Pointer {
     
     private static final void checkPointer(Ruby runtime, IRubyObject ptr) {
         if (!(ptr instanceof Pointer)) {
-            throw runtime.newTypeError(ptr, runtime.fastGetModule("FFI").fastGetClass("Pointer"));
+            throw runtime.newTypeError(ptr, runtime.getModule("FFI").getClass("Pointer"));
         }
         if (ptr instanceof MemoryPointer || ptr instanceof AutoPointer) {
             throw runtime.newTypeError("Cannot use AutoPointer with MemoryPointer or AutoPointer instances");

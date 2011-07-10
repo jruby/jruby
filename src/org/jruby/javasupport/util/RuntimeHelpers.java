@@ -1020,7 +1020,7 @@ public class RuntimeHelpers {
         }
         if (catchable instanceof RubyClass && catchable.getInstanceVariables().hasInstanceVariable("@java_class")) {
             RubyClass rubyClass = (RubyClass)catchable;
-            JavaClass javaClass = (JavaClass)rubyClass.fastGetInstanceVariable("@java_class");
+            JavaClass javaClass = (JavaClass)rubyClass.getInstanceVariable("@java_class");
             if (javaClass != null) {
                 Class cls = javaClass.javaClass();
                 if (cls.isInstance(throwable)) {
@@ -2162,7 +2162,7 @@ public class RuntimeHelpers {
     }
 
     public static IRubyObject getInstanceVariable(IRubyObject self, Ruby runtime, String internedName) {
-        IRubyObject result = self.getInstanceVariables().fastGetInstanceVariable(internedName);
+        IRubyObject result = self.getInstanceVariables().getInstanceVariable(internedName);
         if (result != null) return result;
         if (runtime.isVerbose()) warnAboutUninitializedIvar(runtime, internedName);
         return runtime.getNil();
@@ -2173,7 +2173,7 @@ public class RuntimeHelpers {
     }
 
     public static IRubyObject setInstanceVariable(IRubyObject value, IRubyObject self, String name) {
-        return self.getInstanceVariables().fastSetInstanceVariable(name, value);
+        return self.getInstanceVariables().setInstanceVariable(name, value);
     }
 
     public static RubyProc newLiteralLambda(ThreadContext context, Block block, IRubyObject self) {
@@ -2336,7 +2336,7 @@ public class RuntimeHelpers {
     }
 
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
-        return left instanceof RubyModule && ((RubyModule) left).fastGetConstantFromNoConstMissing(name) != null;
+        return left instanceof RubyModule && ((RubyModule) left).getConstantFromNoConstMissing(name) != null;
     }
 
     public static ByteList getDefinedConstantOrBoundMethod(IRubyObject left, String name) {

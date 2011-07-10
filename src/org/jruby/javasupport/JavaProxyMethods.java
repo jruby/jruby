@@ -23,7 +23,7 @@ public class JavaProxyMethods {
     
     @JRubyMethod
     public static IRubyObject java_class(ThreadContext context, IRubyObject recv) {
-        return recv.getMetaClass().getRealClass().fastGetInstanceVariable("@java_class");
+        return recv.getMetaClass().getRealClass().getInstanceVariable("@java_class");
     }
 
     @JRubyMethod

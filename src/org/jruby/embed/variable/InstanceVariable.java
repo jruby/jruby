@@ -93,7 +93,7 @@ public class InstanceVariable extends AbstractVariable {
         InstanceVariables ivars = receiver.getInstanceVariables();
         List<String> keys = ivars.getInstanceVariableNameList();
         for (String key : keys) {
-            IRubyObject value = ivars.fastGetInstanceVariable(key);
+            IRubyObject value = ivars.getInstanceVariable(key);
             BiVariable var = vars.getVariable(receiver, key);
             if (var != null) {
                 var.setRubyObject(value);
@@ -120,7 +120,7 @@ public class InstanceVariable extends AbstractVariable {
         if (!ivars.getInstanceVariableNameList().contains(key)) return;
 
         // the specified key is found, so let's update
-        IRubyObject value = ivars.fastGetInstanceVariable(key);
+        IRubyObject value = ivars.getInstanceVariable(key);
         BiVariable var = vars.getVariable(receiver, key);
         if (var != null) {
             var.setRubyObject(value);
@@ -159,7 +159,7 @@ public class InstanceVariable extends AbstractVariable {
      * @param receiver is the instance that will have variable injection.
      */
     public void inject() {
-        ((RubyObject)receiver).fastSetInstanceVariable(name.intern(), getRubyObject());
+        ((RubyObject)receiver).setInstanceVariable(name.intern(), getRubyObject());
     }
 
     /**

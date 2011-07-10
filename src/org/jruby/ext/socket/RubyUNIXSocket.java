@@ -248,8 +248,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     };
 
     static void createUNIXSocket(Ruby runtime) {
-        RubyClass rb_cUNIXSocket = runtime.defineClass("UNIXSocket", runtime.fastGetClass("BasicSocket"), UNIXSOCKET_ALLOCATOR);
-        runtime.getObject().fastSetConstant("UNIXsocket", rb_cUNIXSocket);
+        RubyClass rb_cUNIXSocket = runtime.defineClass("UNIXSocket", runtime.getClass("BasicSocket"), UNIXSOCKET_ALLOCATOR);
+        runtime.getObject().setConstant("UNIXsocket", rb_cUNIXSocket);
         
         rb_cUNIXSocket.defineAnnotatedMethods(RubyUNIXSocket.class);
     }
@@ -555,10 +555,10 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             rb_sys_fail(runtime, "socketpair(2)");
         }
 
-        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.fastGetClass("UNIXSocket"), "allocate"));
+        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
         sock.fd = sp[0];
         sock.init_sock(runtime);
-        RubyUNIXSocket sock2 = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.fastGetClass("UNIXSocket"), "allocate"));
+        RubyUNIXSocket sock2 = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
         sock2.fd = sp[1];
         sock2.init_sock(runtime);
 

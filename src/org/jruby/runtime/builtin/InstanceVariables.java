@@ -26,13 +26,7 @@ public interface InstanceVariables {
      */
     boolean hasInstanceVariable(String name);
 
-    /**
-     * Returns true if object has the named instance variable. The
-     * supplied name <em>must</em> have been previously interned.
-     * 
-     * @param internedName the interned name of an instance variable
-     * @return true if object has the named instance variable, else false
-     */
+    @Deprecated
     boolean fastHasInstanceVariable(String internedName);
     
     /**
@@ -43,13 +37,7 @@ public interface InstanceVariables {
      */
     IRubyObject getInstanceVariable(String name);
 
-    /**
-     * Returns the named instance variable if present, else null. The
-     * supplied name <em>must</em> have been previously interned.
-     * 
-     * @param internedName the interned name of an instance variable
-     * @return he named instance variable if present, else null
-     */
+    @Deprecated
     IRubyObject fastGetInstanceVariable(String internedName);
 
     /**
@@ -60,13 +48,7 @@ public interface InstanceVariables {
      */    
     IRubyObject setInstanceVariable(String name, IRubyObject value);
 
-    /**
-     * Sets the named instance variable to the specified value. The
-     * supplied name <em>must</em> have been previously interned.
-     * 
-     * @param internedName the interned name of an instance variable
-     * @param value the value to be set
-     */
+    @Deprecated
     IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value);
 
     /**

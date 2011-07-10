@@ -66,11 +66,11 @@ import java.nio.channels.spi.SelectorProvider;
 public class RubyTCPServer extends RubyTCPSocket {
     static void createTCPServer(Ruby runtime) {
         RubyClass rb_cTCPServer = runtime.defineClass(
-                "TCPServer", runtime.fastGetClass("TCPSocket"), TCPSERVER_ALLOCATOR);
+                "TCPServer", runtime.getClass("TCPSocket"), TCPSERVER_ALLOCATOR);
 
         rb_cTCPServer.defineAnnotatedMethods(RubyTCPServer.class);
 
-        runtime.getObject().fastSetConstant("TCPserver",rb_cTCPServer);
+        runtime.getObject().setConstant("TCPserver",rb_cTCPServer);
     }
 
     private static ObjectAllocator TCPSERVER_ALLOCATOR = new ObjectAllocator() {
@@ -166,7 +166,7 @@ public class RubyTCPServer extends RubyTCPSocket {
     }
     @JRubyMethod(name = "accept")
     public IRubyObject accept(ThreadContext context) {
-        RubyTCPSocket socket = new RubyTCPSocket(context.getRuntime(), context.getRuntime().fastGetClass("TCPSocket"));
+        RubyTCPSocket socket = new RubyTCPSocket(context.getRuntime(), context.getRuntime().getClass("TCPSocket"));
 
         try {
             while (true) {
@@ -205,7 +205,7 @@ public class RubyTCPServer extends RubyTCPSocket {
     }
     @JRubyMethod(name = "accept_nonblock")
     public IRubyObject accept_nonblock(ThreadContext context) {
-        RubyTCPSocket socket = new RubyTCPSocket(context.getRuntime(), context.getRuntime().fastGetClass("TCPSocket"));
+        RubyTCPSocket socket = new RubyTCPSocket(context.getRuntime(), context.getRuntime().getClass("TCPSocket"));
         Selector selector = null;
         synchronized (ssc.blockingLock()) {
             boolean oldBlocking = ssc.isBlocking();

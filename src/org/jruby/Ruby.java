@@ -778,16 +778,9 @@ public final class Ruby {
         return (RubyModule) objectClass.getConstantAt(name);
     }
 
-    /**
-     * Retrieve the module with the given name from the Object namespace. The
-     * module name must be an interned string, but this method will be faster
-     * than the non-interned version.
-     * 
-     * @param internedName The name of the module; <em>must</em> be an interned String
-     * @return The module or null if not found
-     */
+    @Deprecated
     public RubyModule fastGetModule(String internedName) {
-        return (RubyModule) objectClass.fastGetConstantAt(internedName);
+        return getModule(internedName);
     }
 
     /** 
@@ -808,8 +801,9 @@ public final class Ruby {
      * @param internedName the name of the class; <em>must</em> be an interned String!
      * @return
      */
+    @Deprecated
     public RubyClass fastGetClass(String internedName) {
-        return objectClass.fastGetClass(internedName);
+        return getClass(internedName);
     }
 
     /** 
@@ -2972,72 +2966,72 @@ public final class Ruby {
     }
 
     public RaiseException newErrnoEBADFError() {
-        return newRaiseException(getErrno().fastGetClass("EBADF"), "Bad file descriptor");
+        return newRaiseException(getErrno().getClass("EBADF"), "Bad file descriptor");
     }
 
     public RaiseException newErrnoEISCONNError() {
-        return newRaiseException(getErrno().fastGetClass("EISCONN"), "Socket is already connected");
+        return newRaiseException(getErrno().getClass("EISCONN"), "Socket is already connected");
     }
 
     public RaiseException newErrnoEINPROGRESSError() {
-        return newRaiseException(getErrno().fastGetClass("EINPROGRESS"), "Operation now in progress");
+        return newRaiseException(getErrno().getClass("EINPROGRESS"), "Operation now in progress");
     }
 
     public RaiseException newErrnoENOPROTOOPTError() {
-        return newRaiseException(getErrno().fastGetClass("ENOPROTOOPT"), "Protocol not available");
+        return newRaiseException(getErrno().getClass("ENOPROTOOPT"), "Protocol not available");
     }
 
     public RaiseException newErrnoEPIPEError() {
-        return newRaiseException(getErrno().fastGetClass("EPIPE"), "Broken pipe");
+        return newRaiseException(getErrno().getClass("EPIPE"), "Broken pipe");
     }
 
     public RaiseException newErrnoECONNABORTEDError() {
-        return newRaiseException(getErrno().fastGetClass("ECONNABORTED"),
+        return newRaiseException(getErrno().getClass("ECONNABORTED"),
                 "An established connection was aborted by the software in your host machine");
     }
 
     public RaiseException newErrnoECONNREFUSEDError() {
-        return newRaiseException(getErrno().fastGetClass("ECONNREFUSED"), "Connection refused");
+        return newRaiseException(getErrno().getClass("ECONNREFUSED"), "Connection refused");
     }
 
     public RaiseException newErrnoECONNRESETError() {
-        return newRaiseException(getErrno().fastGetClass("ECONNRESET"), "Connection reset by peer");
+        return newRaiseException(getErrno().getClass("ECONNRESET"), "Connection reset by peer");
     }
 
     public RaiseException newErrnoEADDRINUSEError() {
-        return newRaiseException(getErrno().fastGetClass("EADDRINUSE"), "Address in use");
+        return newRaiseException(getErrno().getClass("EADDRINUSE"), "Address in use");
     }
 
     public RaiseException newErrnoEADDRINUSEError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EADDRINUSE"), message);
+        return newRaiseException(getErrno().getClass("EADDRINUSE"), message);
     }
 
     public RaiseException newErrnoEHOSTUNREACHError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EHOSTUNREACH"), message);
+        return newRaiseException(getErrno().getClass("EHOSTUNREACH"), message);
     }
 
     public RaiseException newErrnoEINVALError() {
-        return newRaiseException(getErrno().fastGetClass("EINVAL"), "Invalid file");
+        return newRaiseException(getErrno().getClass("EINVAL"), "Invalid file");
     }
 
     public RaiseException newErrnoENOENTError() {
-        return newRaiseException(getErrno().fastGetClass("ENOENT"), "File not found");
+        return newRaiseException(getErrno().getClass("ENOENT"), "File not found");
     }
 
     public RaiseException newErrnoEACCESError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EACCES"), message);
+        return newRaiseException(getErrno().getClass("EACCES"), message);
     }
 
     public RaiseException newErrnoEAGAINError(String message) {
-        return newErrnoException(getErrno().fastGetClass("EAGAIN"), message);
+        return newErrnoException(getErrno().getClass("EAGAIN"), message);
     }
 
     public RaiseException newErrnoEISDirError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EISDIR"), message);
+        return newRaiseException(getErrno().getClass("EISDIR"), message);
     }
 
     public RaiseException newErrnoEPERMError(String name) {
-        return newRaiseException(getErrno().fastGetClass("EPERM"), "Operation not permitted - " + name);
+        return newRaiseException(getErrno().getClass("EPERM"), "Operation not permitted - " + name);
     }
 
     public RaiseException newErrnoEISDirError() {
@@ -3045,67 +3039,67 @@ public final class Ruby {
     }
 
     public RaiseException newErrnoESPIPEError() {
-        return newRaiseException(getErrno().fastGetClass("ESPIPE"), "Illegal seek");
+        return newRaiseException(getErrno().getClass("ESPIPE"), "Illegal seek");
     }
 
     public RaiseException newErrnoEBADFError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EBADF"), message);
+        return newRaiseException(getErrno().getClass("EBADF"), message);
     }
 
     public RaiseException newErrnoEINPROGRESSError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EINPROGRESS"), message);
+        return newRaiseException(getErrno().getClass("EINPROGRESS"), message);
     }
 
     public RaiseException newErrnoEISCONNError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EISCONN"), message);
+        return newRaiseException(getErrno().getClass("EISCONN"), message);
     }
 
     public RaiseException newErrnoEINVALError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EINVAL"), message);
+        return newRaiseException(getErrno().getClass("EINVAL"), message);
     }
 
     public RaiseException newErrnoENOTDIRError(String message) {
-        return newRaiseException(getErrno().fastGetClass("ENOTDIR"), message);
+        return newRaiseException(getErrno().getClass("ENOTDIR"), message);
     }
 
     public RaiseException newErrnoENOTSOCKError(String message) {
-        return newRaiseException(getErrno().fastGetClass("ENOTSOCK"), message);
+        return newRaiseException(getErrno().getClass("ENOTSOCK"), message);
     }
 
     public RaiseException newErrnoENOTCONNError(String message) {
-        return newRaiseException(getErrno().fastGetClass("ENOTCONN"), message);
+        return newRaiseException(getErrno().getClass("ENOTCONN"), message);
     }
 
     public RaiseException newErrnoENOTCONNError() {
-        return newRaiseException(getErrno().fastGetClass("ENOTCONN"), "Socket is not connected");
+        return newRaiseException(getErrno().getClass("ENOTCONN"), "Socket is not connected");
     }
 
     public RaiseException newErrnoENOENTError(String message) {
-        return newRaiseException(getErrno().fastGetClass("ENOENT"), message);
+        return newRaiseException(getErrno().getClass("ENOENT"), message);
     }
 
     public RaiseException newErrnoESPIPEError(String message) {
-        return newRaiseException(getErrno().fastGetClass("ESPIPE"), message);
+        return newRaiseException(getErrno().getClass("ESPIPE"), message);
     }
 
     public RaiseException newErrnoEEXISTError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EEXIST"), message);
+        return newRaiseException(getErrno().getClass("EEXIST"), message);
     }
     
     public RaiseException newErrnoEDOMError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EDOM"), "Domain error - " + message);
+        return newRaiseException(getErrno().getClass("EDOM"), "Domain error - " + message);
     }   
     
     public RaiseException newErrnoECHILDError() {
-        return newRaiseException(getErrno().fastGetClass("ECHILD"), "No child processes");
+        return newRaiseException(getErrno().getClass("ECHILD"), "No child processes");
     }    
 
     public RaiseException newErrnoEADDRNOTAVAILError(String message) {
-        return newRaiseException(getErrno().fastGetClass("EADDRNOTAVAIL"), message);
+        return newRaiseException(getErrno().getClass("EADDRNOTAVAIL"), message);
     }
 
     public RaiseException newErrnoESRCHError() {
-        return newRaiseException(getErrno().fastGetClass("ESRCH"), null);
+        return newRaiseException(getErrno().getClass("ESRCH"), null);
     }
 
     public RaiseException newIndexError(String message) {
@@ -3171,11 +3165,11 @@ public final class Ruby {
     }
     
     public RaiseException newInvalidEncoding(String message) {
-        return newRaiseException(fastGetClass("Iconv").fastGetClass("InvalidEncoding"), message);
+        return newRaiseException(fastGetClass("Iconv").getClass("InvalidEncoding"), message);
     }
     
     public RaiseException newIllegalSequence(String message) {
-        return newRaiseException(fastGetClass("Iconv").fastGetClass("IllegalSequence"), message);
+        return newRaiseException(fastGetClass("Iconv").getClass("IllegalSequence"), message);
     }
 
     public RaiseException newNoMethodError(String message, String name, IRubyObject args) {
@@ -3720,14 +3714,14 @@ public final class Ruby {
         for (E e : EnumSet.allOf(enumClass)) {
             Constant c = (Constant) e;
             if (Character.isUpperCase(c.name().charAt(0))) {
-                module.fastSetConstant(c.name(), newFixnum(c.intValue()));
+                module.setConstant(c.name(), newFixnum(c.intValue()));
             }
         }
     }
     public void loadConstantSet(RubyModule module, String constantSetName) {
         for (Constant c : ConstantSet.getConstantSet(constantSetName)) {
             if (Character.isUpperCase(c.name().charAt(0))) {
-                module.fastSetConstant(c.name(), newFixnum(c.intValue()));
+                module.setConstant(c.name(), newFixnum(c.intValue()));
             }
         }
     }

@@ -104,7 +104,7 @@ public class RubyStruct extends RubyObject {
         IRubyObject variable;
 
         while (type != null && type != structClass) {
-            if ((variable = (IRubyObject)type.fastGetInternalVariable(internedName)) != null) {
+            if ((variable = (IRubyObject)type.getInternalVariable(internedName)) != null) {
                 return variable;
             }
 
@@ -223,8 +223,8 @@ public class RubyStruct extends RubyObject {
         newStruct.setReifiedClass(RubyStruct.class);
         newStruct.index = ClassIndex.STRUCT;
         
-        newStruct.fastSetInternalVariable("__size__", member.length());
-        newStruct.fastSetInternalVariable("__member__", member);
+        newStruct.setInternalVariable("__size__", member.length());
+        newStruct.setInternalVariable("__member__", member);
 
         newStruct.getSingletonClass().defineAnnotatedMethods(StructMethods.class);
 

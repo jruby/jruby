@@ -107,7 +107,7 @@ public class RubySocket extends RubyBasicSocket {
     public static class Constants {}
 
     static void createSocket(Ruby runtime) {
-        RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.fastGetClass("BasicSocket"), SOCKET_ALLOCATOR);
+        RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.getClass("BasicSocket"), SOCKET_ALLOCATOR);
 
         RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
         // we don't have to define any that we don't support; see socket.c
@@ -124,20 +124,20 @@ public class RubySocket extends RubyBasicSocket {
         runtime.loadConstantSet(rb_mConstants, jnr.constants.platform.NameInfo.class);
 
         // mandatory constants we haven't implemented
-        rb_mConstants.fastSetConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
-        rb_mConstants.fastSetConstant("MSG_PEEK", runtime.newFixnum(MSG_PEEK));
-        rb_mConstants.fastSetConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
+        rb_mConstants.setConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
+        rb_mConstants.setConstant("MSG_PEEK", runtime.newFixnum(MSG_PEEK));
+        rb_mConstants.setConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
 
         // constants webrick crashes without
-        rb_mConstants.fastSetConstant("AI_PASSIVE", runtime.newFixnum(1));
+        rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(1));
 
         // More constants needed by specs
-        rb_mConstants.fastSetConstant("IP_MULTICAST_TTL", runtime.newFixnum(10));
-        rb_mConstants.fastSetConstant("IP_MULTICAST_LOOP", runtime.newFixnum(11));
-        rb_mConstants.fastSetConstant("IP_ADD_MEMBERSHIP", runtime.newFixnum(12));
-        rb_mConstants.fastSetConstant("IP_MAX_MEMBERSHIPS", runtime.newFixnum(20));
-        rb_mConstants.fastSetConstant("IP_DEFAULT_MULTICAST_LOOP", runtime.newFixnum(1));
-        rb_mConstants.fastSetConstant("IP_DEFAULT_MULTICAST_TTL", runtime.newFixnum(1));
+        rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(10));
+        rb_mConstants.setConstant("IP_MULTICAST_LOOP", runtime.newFixnum(11));
+        rb_mConstants.setConstant("IP_ADD_MEMBERSHIP", runtime.newFixnum(12));
+        rb_mConstants.setConstant("IP_MAX_MEMBERSHIPS", runtime.newFixnum(20));
+        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_LOOP", runtime.newFixnum(1));
+        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_TTL", runtime.newFixnum(1));
 
         rb_cSocket.includeModule(rb_mConstants);
 
@@ -248,7 +248,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private static RuntimeException sockerr(Ruby runtime, String msg) {
-        return new RaiseException(runtime, runtime.fastGetClass("SocketError"), msg, true);
+        return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
     }
 
     @Deprecated

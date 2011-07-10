@@ -48,11 +48,11 @@ import org.jruby.util.io.BadDescriptorException;
 @JRubyClass(name="IPSocket", parent="BasicSocket")
 public class RubyIPSocket extends RubyBasicSocket {
     static void createIPSocket(Ruby runtime) {
-        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.fastGetClass("BasicSocket"), IPSOCKET_ALLOCATOR);
+        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.getClass("BasicSocket"), IPSOCKET_ALLOCATOR);
         
         rb_cIPSocket.defineAnnotatedMethods(RubyIPSocket.class);
 
-        runtime.getObject().fastSetConstant("IPsocket",rb_cIPSocket);
+        runtime.getObject().setConstant("IPsocket",rb_cIPSocket);
     }
     
     private static ObjectAllocator IPSOCKET_ALLOCATOR = new ObjectAllocator() {
@@ -66,7 +66,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     }
     
     protected static RuntimeException sockerr(Ruby runtime, String msg) {
-        return new RaiseException(runtime, runtime.fastGetClass("SocketError"), msg, true);
+        return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
     }
 
     public IRubyObject packSockaddrFromAddress(InetSocketAddress sock, ThreadContext context) {

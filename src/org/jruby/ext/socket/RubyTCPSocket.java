@@ -63,13 +63,13 @@ import org.jruby.util.io.InvalidValueException;
 
 public class RubyTCPSocket extends RubyIPSocket {
     static void createTCPSocket(Ruby runtime) {
-        RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.fastGetClass("IPSocket"), TCPSOCKET_ALLOCATOR);
+        RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.getClass("IPSocket"), TCPSOCKET_ALLOCATOR);
 
-        rb_cTCPSocket.includeModule(runtime.fastGetClass("Socket").fastGetConstant("Constants"));
+        rb_cTCPSocket.includeModule(runtime.getClass("Socket").getConstant("Constants"));
         
         rb_cTCPSocket.defineAnnotatedMethods(RubyTCPSocket.class);
 
-        runtime.getObject().fastSetConstant("TCPsocket",rb_cTCPSocket);
+        runtime.getObject().setConstant("TCPsocket",rb_cTCPSocket);
     }
 
     private static ObjectAllocator TCPSOCKET_ALLOCATOR = new ObjectAllocator() {

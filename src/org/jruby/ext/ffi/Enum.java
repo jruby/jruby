@@ -55,7 +55,7 @@ public final class Enum extends RubyObject {
                 Allocator.INSTANCE);
         enumClass.defineAnnotatedMethods(Enum.class);
         enumClass.defineAnnotatedConstants(Enum.class);
-        enumClass.includeModule(ffiModule.fastGetConstant("DataConverter"));
+        enumClass.includeModule(ffiModule.getConstant("DataConverter"));
         
         return enumClass;
     }
@@ -70,7 +70,7 @@ public final class Enum extends RubyObject {
 
     private Enum(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
-        nativeType = runtime.fastGetModule("FFI").fastGetClass("Type").fastGetConstant("INT");
+        nativeType = runtime.getModule("FFI").getClass("Type").getConstant("INT");
         kv_map = RubyHash.newHash(runtime);
         tag = runtime.getNil();
     }

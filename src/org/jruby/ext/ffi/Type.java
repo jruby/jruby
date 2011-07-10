@@ -99,7 +99,7 @@ public abstract class Type extends RubyObject {
         }
     }
     public static final RubyClass getTypeClass(Ruby runtime) {
-        return runtime.fastGetModule("FFI").fastGetClass("Type");
+        return runtime.getModule("FFI").getClass("Type");
     }
 
     /**
@@ -249,7 +249,7 @@ public abstract class Type extends RubyObject {
          * Initializes a new <tt>Type.Array</tt> instance.
          */
         public Array(Ruby runtime, Type componentType, int length) {
-            this(runtime, getTypeClass(runtime).fastGetClass("Array"), componentType, length);
+            this(runtime, getTypeClass(runtime).getClass("Array"), componentType, length);
         }
 
 
