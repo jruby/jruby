@@ -694,13 +694,10 @@ public class RuntimeHelpers {
         return rubyClass.getClassVar(name);
     }
     
+    @Deprecated
     public static IRubyObject fastFetchClassVariable(ThreadContext context, Ruby runtime, 
             IRubyObject self, String internedName) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
-   
-        if (rubyClass == null) rubyClass = self.getMetaClass();
-
-        return rubyClass.fastGetClassVar(internedName);
+        return fetchClassVariable(context, runtime, self, internedName);
     }
     
     public static IRubyObject getConstant(ThreadContext context, String internedName) {
@@ -745,15 +742,10 @@ public class RuntimeHelpers {
         return value;
     }
     
+    @Deprecated
     public static IRubyObject fastSetClassVariable(ThreadContext context, Ruby runtime, 
             IRubyObject self, String internedName, IRubyObject value) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
-   
-        if (rubyClass == null) rubyClass = self.getMetaClass();
-
-        rubyClass.fastSetClassVar(internedName, value);
-   
-        return value;
+        return setClassVariable(context, runtime, self, internedName, value);
     }
     
     public static IRubyObject declareClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String name, IRubyObject value) {
@@ -767,15 +759,9 @@ public class RuntimeHelpers {
         return value;
     }
     
+    @Deprecated
     public static IRubyObject fastDeclareClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String internedName, IRubyObject value) {
-        // FIXME: This isn't quite right; it shouldn't evaluate the value if it's going to throw the error
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
-   
-        if (rubyClass == null) throw runtime.newTypeError("no class/module to define class variable");
-        
-        rubyClass.fastSetClassVar(internedName, value);
-   
-        return value;
+        return declareClassVariable(context, runtime, self, internedName, value);
     }
     
     public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {

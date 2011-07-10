@@ -2371,7 +2371,7 @@ public class RubyModule extends RubyObject {
         String internedName = validateClassVariable(var.asJavaString().intern());
         RubyModule module = this;
         do {
-            if (module.fastHasClassVariable(internedName)) {
+            if (module.hasClassVariable(internedName)) {
                 return context.getRuntime().getTrue();
             }
         } while ((module = module.getSuperClass()) != null);
@@ -2384,7 +2384,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "class_variable_get", required = 1, visibility = PRIVATE)
     public IRubyObject class_variable_get(IRubyObject var) {
-        return fastGetClassVar(validateClassVariable(var.asJavaString()).intern());
+        return getClassVar(validateClassVariable(var.asJavaString()).intern());
     }
 
     /** rb_mod_cvar_set
@@ -2392,7 +2392,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "class_variable_set", required = 2, visibility = PRIVATE)
     public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
-        return fastSetClassVar(validateClassVariable(var.asJavaString()).intern(), value);
+        return setClassVar(validateClassVariable(var.asJavaString()).intern(), value);
     }
 
     /** rb_mod_remove_cvar
@@ -2622,16 +2622,9 @@ public class RubyModule extends RubyObject {
         return storeClassVariable(name, value);
     }
 
+    @Deprecated
     public IRubyObject fastSetClassVar(final String internedName, final IRubyObject value) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        RubyModule module = this;
-        do {
-            if (module.fastHasClassVariable(internedName)) {
-                return module.fastStoreClassVariable(internedName, value);
-            }
-        } while ((module = module.getSuperClass()) != null);
-        
-        return fastStoreClassVariable(internedName, value);
+        return setClassVar(internedName, value);
     }
 
     /**
@@ -2654,17 +2647,9 @@ public class RubyModule extends RubyObject {
         throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName(), name);
     }
 
+    @Deprecated
     public IRubyObject fastGetClassVar(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        assert IdUtil.isClassVariable(internedName);
-        IRubyObject value;
-        RubyModule module = this;
-        
-        do {
-            if ((value = module.fetchClassVariable(internedName)) != null) return value;
-        } while ((module = module.getSuperClass()) != null);
-
-        throw getRuntime().newNameError("uninitialized class variable " + internedName + " in " + getName(), internedName);
+        return getClassVar(internedName);
     }
 
     /**
@@ -2684,16 +2669,10 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
+    @Deprecated
     public boolean fastIsClassVarDefined(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        RubyModule module = this;
-        do {
-            if (module.fastHasClassVariable(internedName)) return true;
-        } while ((module = module.getSuperClass()) != null);
-
-        return false;
+        return isClassVarDefined(internedName);
     }
-
     
     /** rb_mod_remove_cvar
      *
@@ -2712,7 +2691,7 @@ public class RubyModule extends RubyObject {
             return value;
         }
 
-        if (fastIsClassVarDefined(javaName)) {
+        if (isClassVarDefined(javaName)) {
             throw cannotRemoveError(javaName);
         }
 
@@ -3111,6 +3090,7 @@ public class RubyModule extends RubyObject {
         return getClassVariablesForRead().containsKey(name);
     }
 
+    @Deprecated
     public boolean fastHasClassVariable(String internedName) {
         return hasClassVariable(internedName);
     }
@@ -3120,6 +3100,7 @@ public class RubyModule extends RubyObject {
         return getClassVariablesForRead().get(name);
     }
 
+    @Deprecated
     public IRubyObject fastFetchClassVariable(String internedName) {
         return fetchClassVariable(internedName);
     }
@@ -3131,6 +3112,7 @@ public class RubyModule extends RubyObject {
         return value;
     }
 
+    @Deprecated
     public IRubyObject fastStoreClassVariable(String internedName, IRubyObject value) {
         return storeClassVariable(internedName, value);
     }

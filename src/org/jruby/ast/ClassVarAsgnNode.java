@@ -89,12 +89,12 @@ public class ClassVarAsgnNode extends AssignableNode implements INameNode {
    
         if (rubyClass == null) rubyClass = self.getMetaClass();
 
-        return rubyClass.fastSetClassVar(name, getValueNode().interpret(runtime, context, self, aBlock));
+        return rubyClass.setClassVar(name, getValueNode().interpret(runtime, context, self, aBlock));
     }
     
     @Override
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        ASTInterpreter.getClassVariableBase(context, runtime).fastSetClassVar(name, value);
+        ASTInterpreter.getClassVariableBase(context, runtime).setClassVar(name, value);
         
         return runtime.getNil();
     }

@@ -129,8 +129,8 @@ public class ClassVariable extends AbstractVariable {
             value = receiver.getMetaClass().getClassVar(key);
         } else {
             RubyClass klazz = receiver.getMetaClass();
-            if (klazz.fastHasClassVariable(key.intern())) {
-                value = klazz.fastGetClassVar(key.intern());
+            if (klazz.hasClassVariable(key.intern())) {
+                value = klazz.getClassVar(key.intern());
             }
         }
         if (value == null) return;

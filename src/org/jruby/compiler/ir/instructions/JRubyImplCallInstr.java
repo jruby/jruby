@@ -240,11 +240,11 @@ public class JRubyImplCallInstr extends CallInstr {
                 boolean flag;
                 RubyModule cm = (RubyModule)getReceiver().retrieve(interp);
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
-                flag = cm.fastIsClassVarDefined(name);
+                flag = cm.isClassVarDefined(name);
                 if (!flag) {
                     if (cm.isSingleton()) {
                         IRubyObject ao = ((MetaClass)cm).getAttached();
-                        if (ao instanceof RubyModule) flag = ((RubyModule)ao).fastIsClassVarDefined(name);
+                        if (ao instanceof RubyModule) flag = ((RubyModule)ao).isClassVarDefined(name);
                     }
                 }
                 rVal = rt.newBoolean(flag);
