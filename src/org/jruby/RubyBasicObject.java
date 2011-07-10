@@ -170,32 +170,33 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return objectClass;
     }
 
+    @Deprecated
     public IRubyObject initialize() {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19() {
+    public IRubyObject initialize19(ThreadContext context) {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19(IRubyObject arg0) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0) {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19(IRubyObject arg0, IRubyObject arg1) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true, compat = RUBY1_9)
-    public IRubyObject initialize19(IRubyObject[] args) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args) {
         return getRuntime().getNil();
     }
 
