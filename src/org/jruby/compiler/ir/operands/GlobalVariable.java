@@ -40,4 +40,9 @@ public class GlobalVariable extends Variable {
     public Object store(InterpreterContext interp, Object value) {
         return interp.getRuntime().getGlobalVariables().set(getName(), (IRubyObject) value);
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }
