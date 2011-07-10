@@ -482,9 +482,17 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         // root method of a script is always in __file__ method
         String methodName = "__file__";
         
+        String loadSig = sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, boolean.class);
+        
         if (generateLoad || generateMain) {
             // the load method is used for loading as a top-level script, and prepares appropriate scoping around the code
-            SkinnyMethodAdapter method = new SkinnyMethodAdapter(getClassVisitor(), ACC_PUBLIC, "load", getMethodSignature(4), null, null);
+            SkinnyMethodAdapter method = new SkinnyMethodAdapter(
+                    getClassVisitor(),
+                    ACC_PUBLIC,
+                    "load",
+                    loadSig,
+                    null,
+                    null);
             method.start();
 
             // invoke __file__ with threadcontext, self, args (null), and block (null)
@@ -495,14 +503,14 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.aload(THREADCONTEXT_INDEX);
             String scopeNames = RuntimeHelpers.encodeScope(topLevelScope);
             method.ldc(scopeNames);
-            method.invokestatic(p(RuntimeHelpers.class), "preLoad", sig(void.class, ThreadContext.class, String.class));
+            method.iload(SELF_INDEX + 1);
+            method.invokestatic(p(RuntimeHelpers.class), "preLoad", sig(void.class, ThreadContext.class, String.class, boolean.class));
 
             method.aload(THIS);
             method.aload(THREADCONTEXT_INDEX);
             method.aload(SELF_INDEX);
-            method.aload(ARGS_INDEX);
-            // load always uses IRubyObject[], so simple closure offset calculation here
-            method.aload(ARGS_INDEX + 1 + CLOSURE_OFFSET);
+            method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+            method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
             method.invokestatic(getClassname(),methodName, getStaticMethodSignature(getClassname(), 4));
             method.aload(THREADCONTEXT_INDEX);
@@ -563,10 +571,9 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.invokevirtual(RUBY, "getCurrentContext", sig(ThreadContext.class));
             method.swap();
             method.invokevirtual(RUBY, "getTopSelf", sig(IRubyObject.class));
-            method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-            method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+            method.ldc(false);
 
-            method.invokevirtual(getClassname(), "load", getMethodSignature(4));
+            method.invokevirtual(getClassname(), "load", loadSig);
             method.voidreturn();
             method.end();
         }

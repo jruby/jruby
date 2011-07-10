@@ -665,10 +665,14 @@ public final class Ruby {
     }
     
     public IRubyObject runScript(Script script) {
+        return runScript(script, false);
+    }
+    
+    public IRubyObject runScript(Script script, boolean wrap) {
         ThreadContext context = getCurrentContext();
         
         try {
-            return script.load(context, getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            return script.load(context, getTopSelf(), wrap);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
@@ -2431,7 +2435,12 @@ public final class Ruby {
             context.setFile(scriptName);
             context.preNodeEval(objectClass, self, scriptName);
 
-            runInterpreter(context, parseFile(in, scriptName, null), self);
+            Node node = parseFile(in, scriptName, null);
+            if (wrap) {
+                // toss an anonymous module into the search path
+                ((RootNode)node).getStaticScope().setModule(RubyModule.newModule(this));
+            }
+            runInterpreter(context, node, self);
         } catch (JumpException.ReturnJump rj) {
             return;
         } finally {
@@ -2502,7 +2511,7 @@ public final class Ruby {
 
                 runInterpreter(scriptNode);
             } else {
-                runScript(script);
+                runScript(script, wrap);
             }
         } catch (JumpException.ReturnJump rj) {
             return;
