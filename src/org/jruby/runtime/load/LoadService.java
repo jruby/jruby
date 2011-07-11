@@ -636,7 +636,7 @@ public class LoadService {
             }
 
             public void load(Ruby runtime, boolean wrap) {
-                runtime.loadScript(script);
+                runtime.loadScript(script, wrap);
             }
         }
         

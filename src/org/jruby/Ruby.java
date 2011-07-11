@@ -2512,13 +2512,17 @@ public final class Ruby {
     }
 
     public void loadScript(Script script) {
+        loadScript(script, false);
+    }
+
+    public void loadScript(Script script, boolean wrap) {
         IRubyObject self = getTopSelf();
         ThreadContext context = getCurrentContext();
 
         try {
             secure(4); /* should alter global state */
             
-            script.load(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            script.load(context, self, wrap);
         } catch (JumpException.ReturnJump rj) {
             return;
         }
