@@ -30,7 +30,6 @@ package org.jruby.runtime.invokedynamic;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
@@ -2365,7 +2364,7 @@ public class InvokeDynamicSupport {
     
     private static MethodHandle findStatic(Class target, String name, MethodType type) {
         try {
-            return lookup.findStatic(target, name, type);
+            return lookup().findStatic(target, name, type);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         } catch (IllegalAccessException nae) {
@@ -2374,15 +2373,13 @@ public class InvokeDynamicSupport {
     }
     private static MethodHandle findVirtual(Class target, String name, MethodType type) {
         try {
-            return lookup.findVirtual(target, name, type);
+            return lookup().findVirtual(target, name, type);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         } catch (IllegalAccessException nae) {
             throw new RuntimeException(nae);
         }
     }
-    
-    private static final Lookup lookup = MethodHandles.lookup();
     
     ////////////////////////////////////////////////////////////////////////////
     // Support method types and permutations
