@@ -66,6 +66,18 @@ end
   }
 }
 
+puts "Measure ArrayList.set(fixnum, string), String leaving Ruby"
+5.times {
+  puts Benchmark.measure {
+    str = "foo"
+    alist = java.util.ArrayList.new(1)
+    alist << str
+    1000000.times {
+      alist.set(0, str)
+    }
+  }
+}
+
 puts "Measure Fixnum#to_s, String being constructed"
 5.times {
   puts Benchmark.measure {
