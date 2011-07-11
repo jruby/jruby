@@ -193,6 +193,14 @@ public class RubyModule extends RubyObject {
         return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<String, IRubyObject>(4, 0.9f, 1) : constants;
     }
     
+    public Map<String, Autoloading> getAutoloadingMap() {
+        return autoloadings;
+    }
+    
+    public synchronized Map<String, Autoloading> getAutoloadingMapForWrite() {
+        return autoloadings == Collections.EMPTY_MAP ? autoloadings = new ConcurrentHashMap<String, Autoloading>(4, 0.9f, 1) : autoloadings;
+    }
+    
     public void addIncludingHierarchy(IncludedModuleWrapper hierarchy) {
         synchronized (getRuntime().getHierarchyLock()) {
             Set<RubyClass> oldIncludingHierarchies = includingHierarchies;
@@ -2775,22 +2783,12 @@ public class RubyModule extends RubyObject {
 
     private IRubyObject iterateConstantNoConstMissing(String name, RubyModule init, boolean inherit) {
         for (RubyModule p = init; p != null; p = p.getSuperClass()) {
-            IRubyObject value = p.getConstantInner(name);
+            IRubyObject value = p.getConstantAt(name);
 
             if (value != null) return value == UNDEF ? null : value;
             if (!inherit) break;
         }
         return null;
-    }
-    
-    protected IRubyObject getConstantInner(String name) {
-        IRubyObject value = constantTableFetch(name);
-
-        for (; value == UNDEF; value = constantTableFetch(name)) {
-            if (resolveUndefConstant(getRuntime(), name) == null) return UNDEF;
-        }
-        
-        return value;
     }
 
     // not actually called anywhere (all known uses call the fast version)
@@ -2850,8 +2848,15 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject resolveUndefConstant(Ruby runtime, String name) {
-        if (!runtime.is1_9()) deleteConstant(name);
-        
+        Autoloading autoloading = autoloadingTableFetch(runtime.getCurrentContext(), name);
+        if (autoloading == null) {
+            //if (!runtime.is1_9()) deleteConstant(name);
+            autoloadingTableStore(runtime.getCurrentContext(), name, null);
+        } else {
+            if (autoloading.isSelf(runtime.getCurrentContext())) {
+                return autoloading.getValue();
+            }
+        }
         return runtime.getLoadService().autoload(getName() + "::" + name);
     }
 
@@ -2893,17 +2898,27 @@ public class RubyModule extends RubyObject {
         if (oldValue != null) {
             Ruby runtime = getRuntime();
             if (oldValue == UNDEF) {
-                runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
+                Autoloading autoloading = autoloadingTableFetch(runtime.getCurrentContext(), name);
+                if (autoloading != null && autoloading.isSelf(runtime.getCurrentContext())) {
+                    autoloading.setValue(value);
+                } else {
+                    // Overrides autoloading constant.
+                    runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
+                    autoloadingTableRemove(name);
+                    storeConstant(name, value);
+                }
             } else {
                 if (warn) {
                     runtime.getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
+                storeConstant(name, value);
             }
+        } else {
+            storeConstant(name, value);
         }
 
-        storeConstant(name, value);
         invalidateConstantCache();
-
+        
         // if adding a module under a constant name, set that module's basename to the constant name
         if (value instanceof RubyModule) {
             RubyModule module = (RubyModule)value;
@@ -3251,9 +3266,26 @@ public class RubyModule extends RubyObject {
         getConstantMapForWrite().put(name, value);
         return value;
     }
-        
+    
     protected IRubyObject constantTableRemove(String name) {
         return getConstantMapForWrite().remove(name);
+    }
+        
+    protected Autoloading autoloadingTableFetch(ThreadContext ctx, String name) {
+        return getAutoloadingMap().get(name);
+    }
+    
+    protected IRubyObject autoloadingTableStore(ThreadContext ctx, String name, IRubyObject value) {
+        getAutoloadingMapForWrite().put(name, new Autoloading(ctx, value));
+        return value;
+    }
+    
+    protected IRubyObject autoloadingTableRemove(String name) {
+        Autoloading autoloading = getAutoloadingMapForWrite().remove(name);
+        if (autoloading != null) {
+            return autoloading.value;
+        }
+        return null;
     }
 
     private static void define(RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {
@@ -3343,6 +3375,32 @@ public class RubyModule extends RubyObject {
     protected String classId;
 
     private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
+    private class Autoloading {
+        private RubyThread thread;
+        private IRubyObject value;
+
+        Autoloading(ThreadContext ctx, IRubyObject value) {
+            this.thread = ctx.getThread();
+            this.value = value;
+        }
+        
+        boolean isSelf(ThreadContext ctx) {
+            return thread == ctx.getThread();
+        }
+        
+        IRubyObject getValue() {
+            return value;
+        }
+        
+        void setValue(IRubyObject value) {
+            this.value = value;
+        }
+        
+        public String toString() {
+            return thread.toString() + " - " + value.toString();
+        }
+    }
+    private volatile Map<String, Autoloading> autoloadings = Collections.EMPTY_MAP;
     private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
     private Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
     protected int generation;
