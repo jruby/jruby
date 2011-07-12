@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project basedir="." default="jar" name="JRuby" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project basedir="." default="jar" name="JRuby">
   <description>JRuby is a Java implementation of a Ruby runtime.</description>
 
   <!-- First try to load machine-specific properties. -->
@@ -127,7 +127,7 @@
   </target>
 
   <!-- Creates the directories needed for building -->
-  <target name="prepare" depends="init, create-dirs, copy-resources, extract-rdocs, update-constants, download-deps">
+  <target name="prepare" depends="init, create-dirs, copy-resources, extract-rdocs, update-constants">
   </target>
   
   <target name="create-dirs" unless="create-dirs.hasrun">
@@ -251,15 +251,9 @@
       <include name="org/jruby/util/CodegenUtils.java"/>
     </javac>
   </target>
-  
-  <target name="download-deps" depends="install-ivy">
-    <ivy:resolve conf="default" />
-    <ivy:cachepath pathid="jruby.libs.classpath" conf="default" />
-  </target>
 
   <target name="compile" depends="compile-jruby, generate-method-classes, generate-unsafe"
           description="Compile the source files for the project.">
-          
   </target>
 
   <target name="compile-jruby" depends="prepare, compile-annotation-binder" unless="compiled">    
@@ -267,7 +261,6 @@
         debug="true" source="${javac.version}" target="${javac.version}"
         deprecation="true" encoding="UTF-8" includeantruntime="true">
       <classpath refid="jruby.execute.classpath"/>
-      <classpath refid="jruby.libs.classpath"/>
       <src path="${src.dir}"/>
       <exclude name="org/jruby/runtime/Constants.java"/>
       <patternset refid="java.src.pattern"/>
@@ -373,6 +366,8 @@
         <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+        <zipfileset src="${build.lib.dir}/slf4j-api-1.6.1.jar"/>
+        <zipfileset src="${build.lib.dir}/slf4j-jdk14-1.6.1.jar"/>
         <metainf dir="spi">
           <include name="services/**"/>
         </metainf>
@@ -473,6 +468,8 @@
         <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+        <zipfileset src="${build.lib.dir}/slf4j-api-1.6.1.jar"/>
+        <zipfileset src="${build.lib.dir}/slf4j-jdk14-1.6.1.jar"/>
         <metainf dir="spi">
           <include name="services/**"/>
         </metainf>
@@ -631,6 +628,8 @@
       <zipfileset src="${build.lib.dir}/yecht.jar"/>
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+      <zipfileset src="${build.lib.dir}/slf4j-api-1.6.1.jar"/>
+      <zipfileset src="${build.lib.dir}/slf4j-jdk14-1.6.1.jar"/>
       <metainf dir="spi">
         <include name="services/**"/>
       </metainf>
