@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
  * objects. Implementers of this class provide that functionality.
  */
 public abstract class MethodFactory {
-    private static final Logger LOG = LoggerFactory.getLogger(MethodFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger("MethodFactory");
     
     /**
      * A Class[] representing the signature of compiled Ruby method.

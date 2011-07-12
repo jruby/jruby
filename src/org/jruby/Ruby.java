@@ -168,7 +168,7 @@ public final class Ruby {
     /**
      * The logger used to log relevant bits.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(Ruby.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger("Ruby");
     
     /**
      * Returns a new instance of the JRuby runtime configured with defaults.

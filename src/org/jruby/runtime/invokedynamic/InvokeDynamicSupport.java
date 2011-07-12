@@ -71,11 +71,15 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import static org.jruby.util.CodegenUtils.*;
 import org.objectweb.asm.Opcodes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 
 @SuppressWarnings("deprecation")
 public class InvokeDynamicSupport {
+    private static final Logger LOG = LoggerFactory.getLogger("InvokeDynamicSupport");
+    
     ////////////////////////////////////////////////////////////////////////////
     // BOOTSTRAP HANDLES
     ////////////////////////////////////////////////////////////////////////////
@@ -805,7 +809,7 @@ public class InvokeDynamicSupport {
         IRubyObject value = context.getConstant(site.name());
         
         if (value != null) {
-            if (RubyInstanceConfig.LOG_INDY_CONSTANTS) System.out.println("constant " + site.name() + " bound directly");
+            if (RubyInstanceConfig.LOG_INDY_CONSTANTS) LOG.info("constant " + site.name() + " bound directly");
             
             MethodHandle valueHandle = constant(IRubyObject.class, value);
             valueHandle = dropArguments(valueHandle, 0, ThreadContext.class);
@@ -894,7 +898,7 @@ public class InvokeDynamicSupport {
     ////////////////////////////////////////////////////////////////////////////
 
     private static MethodHandle createFail(MethodHandle fail, JRubyCallSite site, String name, DynamicMethod method) {
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound to inline cache (failed #" + method.getSerialNumber() + ")");
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to inline cache (failed #" + method.getSerialNumber() + ")");
         
         MethodHandle myFail = insertArguments(fail, 0, site);
         myFail = postProcess(site, myFail);
@@ -980,12 +984,12 @@ public class InvokeDynamicSupport {
         
         // if indirect indy-bound methods (via DynamicMethod.call) are disabled, bail out
         if (!RubyInstanceConfig.INVOKEDYNAMIC_INDIRECT) {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tfailed to bind to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tfailed to bind to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
             return null;
         }
         
         // no direct native path, use DynamicMethod.call
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound indirectly to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound indirectly to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
         
         return insertArguments(getDynamicMethodTarget(site.type(), arity), 0, entry);
     }
@@ -998,26 +1002,26 @@ public class InvokeDynamicSupport {
         } else {
             if (method instanceof AttrReaderMethod) {
                 // Ruby to attr reader
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound as attr reader #" + method.getSerialNumber() + ":" + ((AttrReaderMethod)method).getVariableName());
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr reader #" + method.getSerialNumber() + ":" + ((AttrReaderMethod)method).getVariableName());
                 nativeTarget = createAttrReaderHandle(site, cls, method);
             } else if (method instanceof AttrWriterMethod) {
                 // Ruby to attr writer
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound as attr writer #" + method.getSerialNumber() + ":" + ((AttrWriterMethod)method).getVariableName());
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr writer #" + method.getSerialNumber() + ":" + ((AttrWriterMethod)method).getVariableName());
                 nativeTarget = createAttrWriterHandle(site, cls, method);
             } else if (method.getNativeCall() != null) {
                 DynamicMethod.NativeCall nativeCall = method.getNativeCall();
                 
                 if (nativeCall.isJava() && RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
                     // Ruby to Java
-                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound to Java method #" + method.getSerialNumber() + ": " + nativeCall);
+                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Java method #" + method.getSerialNumber() + ": " + nativeCall);
                     nativeTarget = createJavaHandle(method);
                 } else if (method instanceof CompiledMethod) {
                     // Ruby to Ruby
-                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound to Ruby method #" + method.getSerialNumber() + ": " + nativeCall);
+                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Ruby method #" + method.getSerialNumber() + ": " + nativeCall);
                     nativeTarget = createRubyHandle(site, method);
                 } else {
                     // Ruby to Core
-                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) System.out.println("[invoke] " + name + "\tbound to native method #" + method.getSerialNumber() + ": " + nativeCall);
+                    if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to native method #" + method.getSerialNumber() + ": " + nativeCall);
                     nativeTarget = createNativeHandle(site, method);
                 }
             }
