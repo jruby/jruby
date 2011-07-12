@@ -20,6 +20,7 @@ task :update => 'pkg/jruby-complete-#{JRUBY_SRC_VERSION}.jar' do
   Dir.chdir("pkg/jruby-core") do
     sh "jar xf ../jruby-complete-#{JRUBY_SRC_VERSION}.jar"
     mv "META-INF/jruby.home", "../jruby-stdlib/META-INF"
+    rm_rf "cext"
   end
   sh "jar cfm pkg/jruby-core-#{JRUBY_SRC_VERSION}.jar pkg/jruby-core/META-INF/MANIFEST.MF -C pkg/jruby-core ."
   sh "jar cf pkg/jruby-stdlib-#{JRUBY_SRC_VERSION}.jar -C pkg/jruby-stdlib ."
