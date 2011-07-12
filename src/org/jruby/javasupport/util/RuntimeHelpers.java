@@ -1230,7 +1230,7 @@ public class RuntimeHelpers {
         return context.getRuntime().getFalse();
     }
     
-    public static IRubyObject setConstantInModule(IRubyObject module, IRubyObject value, String name, ThreadContext context) {
+    public static IRubyObject setConstantInModule(IRubyObject value, IRubyObject module, String name, ThreadContext context) {
         return context.setConstantInModule(name, module, value);
     }
 
