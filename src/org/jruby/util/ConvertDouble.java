@@ -127,7 +127,7 @@ public class ConvertDouble {
                 strictError(); // We know it is not whitespace at this point
             }
 
-            return Double.parseDouble(new String(chars));
+            return SafeDoubleParser.parseDouble(new String(chars));
         }
         
         private void strictError() {
