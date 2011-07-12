@@ -1382,8 +1382,8 @@ public class ASTCompiler {
 
             context.assignConstantInCurrent(constDeclNode.getName());
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
-            compile(((Colon2Node) constNode).getLeftNode(), context,true);
             compile(constDeclNode.getValueNode(), context,true);
+            compile(((Colon2Node) constNode).getLeftNode(), context,true);
 
             context.assignConstantInModule(constDeclNode.getName());
         } else {// colon3, assign in Object
