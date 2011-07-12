@@ -2501,6 +2501,7 @@ public class RubyModule extends RubyObject {
             if (value != UNDEF) {
                 return value;
             }
+            autoloadingTableRemove(name);
             context.getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
             // FIXME: I'm not sure this is right, but the old code returned
             // the undef, which definitely isn't right...
@@ -2849,7 +2850,8 @@ public class RubyModule extends RubyObject {
     public IRubyObject resolveUndefConstant(Ruby runtime, String name) {
         Autoloading autoloading = autoloadingTableFetch(runtime.getCurrentContext(), name);
         if (autoloading == null) {
-            //if (!runtime.is1_9()) deleteConstant(name);
+            // Do not remove UNDEF entry for thread-safety.
+            // if (!runtime.is1_9()) deleteConstant(name);
             autoloadingTableStore(runtime.getCurrentContext(), name, null);
         } else {
             if (autoloading.isSelf(runtime.getCurrentContext())) {
@@ -2902,9 +2904,9 @@ public class RubyModule extends RubyObject {
                     autoloading.setValue(value);
                 } else {
                     // Overrides autoloading constant.
-                    runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
                     autoloadingTableRemove(name);
                     storeConstant(name, value);
+                    runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
                 }
             } else {
                 if (warn) {
@@ -3220,8 +3222,7 @@ public class RubyModule extends RubyObject {
         ensureConstantsSettable();
         return constantTableRemove(name);
     }
-
-
+    
     @Deprecated
     public List<Variable<IRubyObject>> getStoredConstantList() {
         return null;
