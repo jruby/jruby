@@ -168,7 +168,7 @@ public final class Ruby {
     /**
      * The logger used to log relevant bits.
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger("Ruby");
+    private static final Logger LOG = LoggerFactory.getLogger("Ruby");
     
     /**
      * Returns a new instance of the JRuby runtime configured with defaults.
@@ -627,8 +627,8 @@ public final class Ruby {
 
     private void handeCompileError(Node node, Throwable t) {
         if (config.isJitLoggingVerbose() || config.isDebug()) {
-            LOGGER.debug("warning: could not compile: {}; full trace follows", node.getPosition().getFile());
-            LOGGER.debug(t.getMessage(), t);
+            LOG.debug("warning: could not compile: {}; full trace follows", node.getPosition().getFile());
+            LOG.debug(t.getMessage(), t);
         }
     }
 
@@ -667,7 +667,7 @@ public final class Ruby {
             script = (Script)asmCompiler.loadClass(classLoader).newInstance();
 
             if (config.isJitLogging()) {
-                System.err.println("compiled: " + node.getPosition().getFile());
+                LOG.info("compiled: " + node.getPosition().getFile());
             }
         } catch (Throwable t) {
             handeCompileError(node, t);
@@ -1406,7 +1406,7 @@ public final class Ruby {
                 // this is currently only here for Android, which seems to have
                 // bugs in its enumeration logic
                 // http://code.google.com/p/android/issues/detail?id=2812
-                LOGGER.error(e.getMessage(), e);
+                LOG.error(e.getMessage(), e);
             }
         }
     }
@@ -2509,21 +2509,21 @@ public final class Ruby {
                 try {
                     contents = jrubyClassLoader.loadClass(className);
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("found jitted code for " + filename + " at class: " + className);
+                        LOG.info("found jitted code for " + filename + " at class: " + className);
                     }
                     script = (Script)contents.newInstance();
                     readStream = new ByteArrayInputStream(buffer);
                 } catch (ClassNotFoundException cnfe) {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("no jitted code in classloader for file " + filename + " at class: " + className);
+                        LOG.info("no jitted code in classloader for file " + filename + " at class: " + className);
                     }
                 } catch (InstantiationException ie) {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("jitted code could not be instantiated for file " + filename + " at class: " + className);
+                        LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
                     }
                 } catch (IllegalAccessException iae) {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("jitted code could not be instantiated for file " + filename + " at class: " + className);
+                        LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
                     }
                 }
             } catch (IOException ioe) {
@@ -2827,6 +2827,7 @@ public final class Ruby {
         }
 
         if (config.isProfilingEntireRun()) {
+            // not using logging because it's formatted
             System.err.println("\nmain thread profile results:");
             IProfileData profileData = (IProfileData) threadService.getMainThread().getContext().getProfileData();
             config.makeDefaultProfilePrinter(profileData).printProfile(System.err);
@@ -3213,9 +3214,9 @@ public final class Ruby {
 
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
         if (printWhenVerbose && origException != null && this.isVerbose()) {
-            LOGGER.error(origException.getMessage(), origException);
+            LOG.error(origException.getMessage(), origException);
         } else {
-            LOGGER.debug(origException.getMessage(), origException);
+            LOG.debug(origException.getMessage(), origException);
         }
         
         return new RaiseException(new RubyNameError(
@@ -3253,7 +3254,7 @@ public final class Ruby {
 
     public RaiseException newSystemStackError(String message, StackOverflowError soe) {
         if (getDebug().isTrue()) {
-            LOGGER.debug(soe.getMessage(), soe);
+            LOG.debug(soe.getMessage(), soe);
         }
         return newRaiseException(getSystemStackError(), message);
     }
