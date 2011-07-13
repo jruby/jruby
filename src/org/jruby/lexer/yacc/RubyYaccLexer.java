@@ -804,9 +804,11 @@ public class RubyYaccLexer {
             }
 
             commentLine = src.readUntil('\n');
-            handledMagicComment = parseMagicComment(commentLine);
-            if (!handledMagicComment) {
-                handleFileEncodingComment(commentLine);
+            if (commentLine != null) {
+                handledMagicComment = parseMagicComment(commentLine);
+                if (!handledMagicComment) {
+                    handleFileEncodingComment(commentLine);
+                }
             }
             return 0;
         }
