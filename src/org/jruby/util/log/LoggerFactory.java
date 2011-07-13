@@ -35,11 +35,21 @@ public class LoggerFactory {
 
     private static final String LOGGER_CLASS = SafePropertyAccessor.getProperty("jruby.logger.class", "org.jruby.util.log.StandardErrorLogger");
 
-    public static Logger getLogger(String loggerName) {
+    private static final Constructor<?> CTOR;
+    static {
+        Constructor<?> ctor;
         try {
             final Class<?> cls = Class.forName(LOGGER_CLASS);
-            final Constructor<?> ctor = cls.getDeclaredConstructor(String.class);
-            Logger logger = (Logger) ctor.newInstance(loggerName);
+            ctor = cls.getDeclaredConstructor(String.class);
+        } catch (Exception e) {
+            throw new IllegalStateException("unable to instantiate logger", e);
+        }
+        CTOR = ctor;
+    }
+
+    public static Logger getLogger(String loggerName) {
+        try {
+            Logger logger = (Logger) CTOR.newInstance(loggerName);
             return logger;
         } catch (SecurityException e) {
             return new StandardErrorLogger(loggerName);
@@ -47,5 +57,4 @@ public class LoggerFactory {
             throw new IllegalStateException("unable to instantiate logger", e);
         }
     }
-
 }

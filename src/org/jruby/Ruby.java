@@ -3215,7 +3215,7 @@ public final class Ruby {
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
         if (printWhenVerbose && origException != null && this.isVerbose()) {
             LOG.error(origException.getMessage(), origException);
-        } else {
+        } else if (isDebug()) {
             LOG.debug(origException.getMessage(), origException);
         }
         
