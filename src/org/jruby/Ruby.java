@@ -147,8 +147,8 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.io.SelectorPool;
 import org.objectweb.asm.Opcodes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.

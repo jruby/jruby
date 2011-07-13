@@ -45,8 +45,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.SafePropertyAccessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * MethodFactory is used to generate "invokers" or "method handles" given a target

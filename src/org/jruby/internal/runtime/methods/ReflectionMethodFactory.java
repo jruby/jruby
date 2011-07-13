@@ -49,6 +49,8 @@ import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * This MethodFactory uses reflection to provide method handles. Reflection is
@@ -58,6 +60,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @see org.jruby.internal.runtime.methods.MethodFactory
  */
 public class ReflectionMethodFactory extends MethodFactory {
+    private static final Logger LOG = LoggerFactory.getLogger("ReflectionMethodFactory");
+
     /**
      * Use reflection to provide a method handle for a compiled Ruby method.
      * 
@@ -116,7 +120,7 @@ public class ReflectionMethodFactory extends MethodFactory {
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         try {
             if (!Modifier.isPublic(desc.getDeclaringClass().getModifiers())) {
-                System.err.println("warning: binding non-public class" + desc.declaringClassName + "; reflected handles won't work");
+                LOG.warn("warning: binding non-public class {}; reflected handles won't work", desc.declaringClassName);
             }
 
             Method method = desc.getDeclaringClass().getDeclaredMethod(desc.name, desc.getParameterClasses());
@@ -145,7 +149,7 @@ public class ReflectionMethodFactory extends MethodFactory {
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
         try {
             if (!Modifier.isPublic(descs.get(0).getDeclaringClass().getModifiers())) {
-                System.err.println("warning: binding non-public class" + descs.get(0).declaringClassName + "; reflected handles won't work");
+                LOG.warn("warning: binding non-public class {}; reflected handles won't work", descs.get(0).declaringClassName);
             }
             
             List<Method> methods = new ArrayList();

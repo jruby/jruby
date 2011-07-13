@@ -1,5 +1,8 @@
 package org.jruby.javasupport.util;
 
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
+
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
@@ -27,6 +30,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * 
  */
 public abstract class ObjectProxyCache<T,A> {
+
+    private static final Logger LOG = LoggerFactory.getLogger("ObjectProxyCache");
     
     public static enum ReferenceType { WEAK, SOFT }
     
@@ -108,8 +113,8 @@ public abstract class ObjectProxyCache<T,A> {
                             } catch (InterruptedException e) {}
                             boolean dump = size() > 200;
                             if (dump) {
-                                System.err.println("***Vulture "+id+" waking, stats:");
-                                System.err.println(stats());
+                                LOG.debug("***Vulture {} waking, stats:", id);
+                                LOG.debug(stats());
                             }
                             for (int i = segments.length; --i >= 0; ) {
                                 Segment<T,A> seg = segments[i];
@@ -122,8 +127,8 @@ public abstract class ObjectProxyCache<T,A> {
                                 yield();
                             }
                             if (dump) {
-                                System.err.println("***Vulture "+id+" sleeping, stats:");
-                                System.err.println(stats());
+                                LOG.debug("***Vulture {} sleeping, stats:", id);
+                                LOG.debug(stats());
                             }
                         }
                     }

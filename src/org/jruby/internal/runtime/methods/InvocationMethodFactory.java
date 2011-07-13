@@ -63,6 +63,8 @@ import org.jruby.util.JRubyClassLoader;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.util.CheckClassAdapter;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * In order to avoid the overhead with reflection-based method handles, this
@@ -78,6 +80,9 @@ import org.objectweb.asm.util.CheckClassAdapter;
  * @see org.jruby.internal.runtime.methods.MethodFactory
  */
 public class InvocationMethodFactory extends MethodFactory implements Opcodes {
+
+    private static final Logger LOG = LoggerFactory.getLogger("InvocationMethodFactory");
+
     private static final boolean DEBUG = false;
     
     /** The pathname of the super class for compiled Ruby method handles. */ 
@@ -248,7 +253,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             try {
                 if (generatedClass == null) {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("no generated handle in classloader for: " + invokerPath);
+                        LOG.debug("no generated handle in classloader for: {}", invokerPath);
                     }
                     byte[] invokerBytes = getCompiledMethodOffline(
                             method,
@@ -261,7 +266,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                             position.getStartLine());
                     generatedClass = endCallWithBytes(invokerBytes, invokerPath);
                 } else if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    System.err.println("found generated handle in classloader: " + invokerPath);
+                    LOG.debug("found generated handle in classloader: {}", invokerPath);
                 }
 
                 CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
@@ -731,7 +736,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         JavaMethodDescriptor desc1 = descs.get(0);
 
         if (!Modifier.isPublic(desc1.getDeclaringClass().getModifiers())) {
-            System.err.println("warning: binding non-public class" + desc1.declaringClassName + "; reflected handles won't work");
+            LOG.warn("warning: binding non-public class {}; reflected handles won't work", desc1.declaringClassName);
         }
         
         String javaMethodName = desc1.name;
@@ -845,13 +850,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     c = tryBlockCallbackClass(mname);
                     if (c == null) {
                         if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                            System.err.println("no generated handle in classloader for: " + mname);
+                            LOG.debug("no generated handle in classloader for: {}", mname);
                         }
                         byte[] bytes = getBlockCallbackOffline(method, file, line, typePathString);
                         c = endClassWithBytes(bytes, mname);
                     } else {
                         if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                            System.err.println("found generated handle in classloader for: " + mname);
+                            LOG.debug("found generated handle in classloader for: {}", mname);
                         }
                     }
                 }
@@ -907,13 +912,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     c = tryBlockCallback19Class(mname);
                     if (c == null) {
                         if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                            System.err.println("no generated handle in classloader for: " + mname);
+                            LOG.debug("no generated handle in classloader for: {}", mname);
                         }
                         byte[] bytes = getBlockCallback19Offline(method, file, line, typePathString);
                         c = endClassWithBytes(bytes, mname);
                     } else {
                         if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                            System.err.println("found generated handle in classloader for: " + mname);
+                            LOG.debug("found generated handle in classloader for: {}", mname);
                         }
                     }
                 }
