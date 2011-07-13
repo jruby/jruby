@@ -82,6 +82,8 @@ import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.collections.WeakHashSet;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
 
@@ -91,6 +93,9 @@ import org.objectweb.asm.ClassWriter;
  */
 @JRubyClass(name="Class", parent="Module")
 public class RubyClass extends RubyModule {
+
+    private static final Logger LOG = LoggerFactory.getLogger("RubyClass");
+
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
         classClass.index = ClassIndex.CLASS;
         classClass.setReifiedClass(RubyClass.class);
@@ -1418,8 +1423,8 @@ public class RubyClass extends RubyModule {
             clinit.invoke(null, runtime, this);
         } catch (Exception e) {
             if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
-                System.err.println("failed to reify class " + getName() + " due to:\n");
-                e.printStackTrace(System.err);
+                LOG.error("failed to reify class " + getName() + " due to:\n");
+                LOG.error(e);
             }
         }
 

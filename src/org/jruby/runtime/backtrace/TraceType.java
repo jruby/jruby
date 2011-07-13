@@ -12,8 +12,13 @@ import org.jruby.RubyException;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class TraceType {
+
+    private static final Logger LOG = LoggerFactory.getLogger("TraceType");
+
     private final Gather gather;
     private final Format format;
 
@@ -31,7 +36,7 @@ public class TraceType {
     }
     
     public static void dumpException(RubyException exception) {
-        System.err.println("Exception raised: " + exception.getMetaClass() + ": " + exception);
+        LOG.info("Exception raised: {} : {}", exception.getMetaClass(), exception);
     }
     
     public static void dumpBacktrace(RubyException exception) {
@@ -39,7 +44,7 @@ public class TraceType {
     }
     
     public static void dumpCaller(RubyArray trace) {
-        System.err.println("Caller backtrace generated:\n" + trace);
+        LOG.info("Caller backtrace generated:\n" + trace);
     }
 
     public static TraceType traceTypeFor(String style) {
