@@ -3,7 +3,6 @@ package org.jruby.runtime.backtrace;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -61,9 +60,9 @@ public class TraceType {
          * Full raw backtraces with all Java frames included.
          */
         RAW {
-            public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
+            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
                 return new BacktraceData(
-                        Thread.currentThread().getStackTrace(),
+                        thread.getStackTrace(),
                         new BacktraceElement[0],
                         true,
                         false,
@@ -75,13 +74,13 @@ public class TraceType {
          * A backtrace with interpreted frames intact, but don't remove Java frames.
          */
         FULL {
-            public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
+            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
         return new BacktraceData(
-                Thread.currentThread().getStackTrace(),
-                context.createBacktrace2(0, nativeException),
-                true,
-                false,
-                this);
+                        thread.getStackTrace(),
+                        context.createBacktrace2(0, nativeException),
+                        true,
+                        false,
+                        this);
             }
         },
 
@@ -89,16 +88,13 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         NORMAL {
-            public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
-        BacktraceData bd = new BacktraceData(
-                Thread.currentThread().getStackTrace(),
-                context.createBacktrace2(0, nativeException),
-                false,
-                false,
-                this);
-        
-//        System.out.println(Arrays.toString(bd.getBacktrace(context.runtime)));
-        return bd;
+            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
+                return new BacktraceData(
+                        thread.getStackTrace(),
+                        context.createBacktrace2(0, nativeException),
+                        false,
+                        false,
+                        this);
             }
         },
 
@@ -106,17 +102,20 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         CALLER {
-            public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
-        return new BacktraceData(
-                Thread.currentThread().getStackTrace(),
-                context.createBacktrace2(0, nativeException),
-                false,
-                true,
-                this);
+            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
+                return new BacktraceData(
+                        thread.getStackTrace(),
+                        context.createBacktrace2(0, nativeException),
+                        false,
+                        true,
+                        this);
             }
         };
 
-        public abstract BacktraceData getBacktraceData(ThreadContext context, boolean nativeException);
+        public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
+            return getBacktraceData(context, Thread.currentThread(), nativeException);
+        }
+        public abstract BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException);
     }
     
     public enum Format {

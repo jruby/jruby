@@ -1,16 +1,14 @@
 package org.jruby.runtime.backtrace;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.compiler.JITCompiler;
-import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.util.JavaNameMangler;
 
-public class BacktraceData {
+public class BacktraceData implements Serializable {
     private RubyStackTraceElement[] backtraceElements;
     private final StackTraceElement[] javaTrace;
     private final BacktraceElement[] rubyTrace;
