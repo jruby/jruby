@@ -65,8 +65,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.util.URLUtil.getPath;
 
