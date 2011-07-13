@@ -28,13 +28,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.management;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.ref.SoftReference;
 
 import org.jruby.Ruby;
+import org.jruby.RubyException;
+import org.jruby.RubyThread;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.TraceType.Format;
+import org.jruby.runtime.backtrace.TraceType.Gather;
 
 public class Runtime implements RuntimeMBean {
     private final SoftReference<Ruby> ruby;
-    
+
     public Runtime(Ruby ruby) {
         this.ruby = new SoftReference<Ruby>(ruby);
     }
@@ -49,5 +57,75 @@ public class Runtime implements RuntimeMBean {
 
     public int getCallerCount() {
         return ruby.get().getCallerCount();
+    }
+
+    public String threadDump() {
+        return dumpThreads(Gather.NORMAL);
+    }
+    
+    public String rawThreadDump() {
+        return dumpThreads(Gather.RAW);
+    }
+    
+    public String fullThreadDump() {
+        return dumpThreads(Gather.FULL);
+    }
+    
+    public String dumpThreads(Gather gather) {
+        Ruby ruby = this.ruby.get();
+        RubyThread[] thrs = ruby.getThreadService().getActiveRubyThreads();
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        
+        pw.println("All threads known to Ruby instance " + ruby.hashCode());
+        pw.println();
+        
+        for (RubyThread th : thrs) {
+            dumpThread(ruby, th, gather, pw);
+        }
+        
+        return sw.toString();
+    }
+    
+    private static void dumpThread(Ruby ruby, RubyThread th, Gather gather, PrintWriter pw) {
+        pw.println("Thread: " + th.getNativeThread().getName());
+        pw.println("Stack:");
+        RubyException exc = new RubyException(ruby, ruby.getRuntimeError(), "thread dump");
+        ThreadContext tc = th.getContext();
+        if (tc != null) {
+            exc.setBacktraceData(gather.getBacktraceData(tc, th.getNativeThread(), true));
+            pw.println(Format.MRI.printBacktrace(exc));
+        } else {
+            pw.println("    [no longer alive]");
+        }
+        pw.println();
+    }
+
+    public String executeRuby(final String code) {
+        final String[] result = new String[1];
+
+        Thread t = new Thread() {
+
+            @Override
+            public void run() {
+                try {
+                    result[0] = ruby.get().evalScriptlet(code).toString();
+                } catch (RaiseException re) {
+                    result[0] = ruby.get().getInstanceConfig().getTraceType().printBacktrace(re.getException());
+                } catch (Throwable t) {
+                    StringWriter sw = new StringWriter();
+                    t.printStackTrace(new PrintWriter(sw));
+                    result[0] = sw.toString();
+                }
+            }
+        };
+        t.start();
+        try {
+            t.join();
+        } catch (InterruptedException ie) {
+            // ignore
+        }
+
+        return result[0];
     }
 }
