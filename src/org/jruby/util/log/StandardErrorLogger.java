@@ -30,6 +30,7 @@ package org.jruby.util.log;
 public class StandardErrorLogger implements Logger {
 
     private final String loggerName;
+    private boolean debug = false;
 
     public StandardErrorLogger(String loggerName) {
         this.loggerName = loggerName;
@@ -76,15 +77,29 @@ public class StandardErrorLogger implements Logger {
     }
 
     public void debug(String message, Object... args) {
-        write(message, args);
+        if (debug) {
+            write(message, args);
+        }
     }
 
     public void debug(Throwable throwable) {
-        writeStackTrace(throwable);
+        if (debug) {
+            writeStackTrace(throwable);
+        }
     }
 
     public void debug(String message, Throwable throwable) {
-        write(message, throwable);
+        if (debug) {
+            write(message, throwable);
+        }
+    }
+
+    public boolean isDebugEnabled() {
+        return debug;
+    }
+
+    public void setDebugEnable(boolean debug) {
+        this.debug = debug;
     }
 
     private void write(String message, Object[] args) {

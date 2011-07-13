@@ -55,4 +55,8 @@ public interface Logger {
 
     public void debug(String message, Throwable throwable);
 
+    public boolean isDebugEnabled();
+
+    public void setDebugEnable(boolean debug);
+
 }
