@@ -30,7 +30,7 @@ package org.jruby.util.log;
 public class StandardErrorLogger implements Logger {
 
     private final String loggerName;
-    private boolean debug = false;
+    private boolean debug = true;
 
     public StandardErrorLogger(String loggerName) {
         this.loggerName = loggerName;
