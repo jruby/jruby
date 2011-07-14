@@ -1030,7 +1030,7 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
         
         if (superClazz == null) {
-            if (metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
+            if (runtime.is1_9() && metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
             throw runtime.newTypeError("uninitialized class");
         }
 
