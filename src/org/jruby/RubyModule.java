@@ -317,7 +317,7 @@ public class RubyModule extends RubyObject {
         return superClass;
     }
 
-    protected void setSuperClass(RubyClass superClass) {
+    public void setSuperClass(RubyClass superClass) {
         // update superclass reference
         this.superClass = superClass;
         if (superClass != null && superClass.isSynchronized()) becomeSynchronized();
