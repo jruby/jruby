@@ -8,8 +8,13 @@ import java.util.Map;
 import org.jruby.RubyModule.MethodClumper;
 import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class InvokerGenerator {
+
+    private static final Logger LOG = LoggerFactory.getLogger("InvokerGenerator");
+
     public static final boolean DEBUG = false;
     
     public static void main(String[] args) throws Exception {
@@ -32,7 +37,7 @@ public class InvokerGenerator {
             MethodClumper clumper = new MethodClumper();
             
             try {
-                if (DEBUG) System.out.println("generating for class " + name);
+                if (DEBUG) LOG.debug("generating for class {}", name);
                 Class cls = Class.forName(name, false, InvokerGenerator.class.getClassLoader());
 
                 clumper.clump(cls);
