@@ -1,5 +1,4 @@
 mri/sample/test.rb
-testReadline.rb
 testClasses.rb
 testCompiler.rb
 testConstant.rb
