@@ -722,7 +722,9 @@ public class Sprintf {
                         break;
                     }
 
-                    String str = NumberFormat.getNumberInstance(args.locale).format(dval);
+                    NumberFormat nf = NumberFormat.getNumberInstance(args.locale);
+                    nf.setMaximumFractionDigits(Integer.MAX_VALUE);
+                    String str = nf.format(dval);
                     
                     // grrr, arghh, want to subclass sun.misc.FloatingDecimal, but can't,
                     // so we must do all this (the next 70 lines of code), which has already
