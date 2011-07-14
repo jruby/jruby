@@ -67,9 +67,15 @@ public class SelectBlob {
             boolean has_timeout = args.length > 3 && !args[3].isNil();
             long timeout = !has_timeout ? 0 : getTimeoutFromArg(args[3], runtime);
             
+            if (timeout < 0) {
+                throw runtime.newArgumentError("time interval must be positive");
+            }
+            
             // If all streams are nil, just sleep the specified time (JRUBY-4699)
             if (args[0].isNil() && args[1].isNil() && args[2].isNil()) {
-                context.getThread().sleep(timeout);
+                if (timeout > 0) {
+                    context.getThread().sleep(timeout);
+                }
             } else {
                 doSelect(has_timeout, timeout);
                 processSelectedKeys(runtime);
