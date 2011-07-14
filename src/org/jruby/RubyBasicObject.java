@@ -60,6 +60,8 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
 import static org.jruby.runtime.MethodIndex.OP_EQUAL;
@@ -94,6 +96,9 @@ import static org.jruby.runtime.MethodIndex.EQL;
  * conflicting method names in rare cases. See JRUBY-5906 for an example.
  */
 public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Comparable<IRubyObject>, CoreObjectType, InstanceVariables, InternalVariables {
+
+    private static final Logger LOG = LoggerFactory.getLogger("RubyBasicObject");
+
     private static final boolean DEBUG = false;
     
     // The class of this object
@@ -1236,7 +1241,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             synchronized (this) {
                 myVarTable = varTable;
                 if (myVarTable == null) {
-                    if (DEBUG) System.out.println("allocating varTable with size " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
+                    if (DEBUG) LOG.debug("allocating varTable with size {}", getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
                     varTable = myVarTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
                 }
             }
@@ -1244,7 +1249,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             synchronized (this) {
                 myVarTable = varTable;
                 if (myVarTable.length <= index) {
-                    if (DEBUG) System.out.println("resizing from " + myVarTable.length + " to " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
+                    if (DEBUG) LOG.debug("resizing from {} to {}", myVarTable.length, getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
                     Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
                     System.arraycopy(myVarTable, 0, newTable, 0, myVarTable.length);
                     varTable = myVarTable = newTable;
