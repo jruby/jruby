@@ -207,7 +207,6 @@ public class TestUnitTestSuite extends TestSuite {
 
             // there might be more test classes in a single file, so we iterate over them
             for (String testClass : testClassNames) {
-                System.out.println(testClass);
                 try {
                     synchronized(interpreter) {
                         RubyArray faults = (RubyArray) interpreter.runtime.executeScript(generateTestScript(scriptName(), testClass), scriptName() + "_generated_test.rb");
