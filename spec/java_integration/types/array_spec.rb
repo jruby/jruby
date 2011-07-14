@@ -859,3 +859,9 @@ describe "A Java byte array" do
   end
 end
 
+# JRUBY-928
+describe "ArrayJavaProxy" do
+  it "descends from java.lang.Object" do
+    ArrayJavaProxy.superclass.should == java.lang.Object
+  end
+end
