@@ -666,13 +666,13 @@ public class RubyIO extends RubyObject {
                 } else {
                     return RubyString.newEmptyString(runtime);
                 }
-            } else if (separator.length() == 1 && limit < 0) {
+            } else if (separator != null && separator.length() == 1 && limit < 0) {
                 return getlineFast(runtime, separator.get(0) & 0xFF, cache);
             } else {
                 Stream readStream = myOpenFile.getMainStreamSafe();
                 int c = -1;
                 int n = -1;
-                int newline = separator.get(separator.length() - 1) & 0xFF;
+                int newline = (separator != null) ? (separator.get(separator.length() - 1) & 0xFF) : -1;
 
                 ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
                 try {
@@ -722,7 +722,7 @@ public class RubyIO extends RubyObject {
                         // if we've found the last char of the separator,
                         // and we've found at least as many characters as separator length,
                         // and the last n characters of our buffer match the separator, we're done
-                        if (c == newline && buf.length() >= separator.length() &&
+                        if (c == newline && separator != null && buf.length() >= separator.length() &&
                                 0 == ByteList.memcmp(buf.getUnsafeBytes(), buf.getBegin() + buf.getRealSize() - separator.length(), separator.getUnsafeBytes(), separator.getBegin(), separator.getRealSize())) {
                             break;
                         }

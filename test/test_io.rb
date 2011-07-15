@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'rbconfig'
+require 'stringio'
 require 'java'
 
 class TestIO < Test::Unit::TestCase
@@ -14,6 +15,7 @@ class TestIO < Test::Unit::TestCase
     else
       @devnull = '/dev/null'
     end
+    @stringio = StringIO.new 'abcde'
   end
 
   def teardown
@@ -513,5 +515,29 @@ class TestIO < Test::Unit::TestCase
     assert !io2.closed?
     
     assert channel.open?
+  end
+
+  def test_gets_no_args
+    File.open(@file, 'w') { |f| f.write 'abcde' }
+
+    File.open(@file) do |f|
+      assert_equal 'abcde', f.gets
+    end
+  end
+
+  def test_gets_separator
+    File.open(@file, 'w') { |f| f.write 'abcde' }
+
+    File.open(@file) do |f|
+      assert_equal 'abc', f.gets('c')
+    end
+  end
+
+  def test_stringio_gets_no_args
+    assert_equal 'abcde', @stringio.gets
+  end
+
+  def test_stringio_gets_separator
+    assert_equal 'abc', @stringio.gets('c')
   end
 end
