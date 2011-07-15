@@ -197,6 +197,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.util.ByteList;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -247,6 +249,9 @@ import org.jruby.util.ByteList;
 // this is not a big deal.  Think this through!
 
 public class IRBuilder {
+
+    private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
+
     private static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
     private static final Operand[] NO_ARGS = new Operand[]{};
 
@@ -270,13 +275,13 @@ public class IRBuilder {
             IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
             long t3 = new Date().getTime();
             if (isDebug) {
-                System.out.println("################## Before local optimization pass ##################");
+                LOG.debug("################## Before local optimization pass ##################");
                 scope.runCompilerPass(new IR_Printer());
             }
             scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
             long t4 = new Date().getTime();
             if (isDebug) {
-                System.out.println("################## After local optimization pass ##################");
+                LOG.debug("################## After local optimization pass ##################");
                 scope.runCompilerPass(new IR_Printer());
             }
             scope.runCompilerPass(new CFG_Builder());
@@ -285,15 +290,15 @@ public class IRBuilder {
             long t6 = new Date().getTime();
            
             if (methName != null) {
-                System.out.println("################## After inline pass ##################");
-                System.out.println("Asked to inline " + methName);
+                LOG.debug("################## After inline pass ##################");
+                LOG.debug("Asked to inline " + methName);
                 scope.runCompilerPass(new InlineTest(methName));
                 scope.runCompilerPass(new LocalOptimizationPass());
                 scope.runCompilerPass(new IR_Printer());
             }
            
             if (isDebug) {
-                System.out.println("################## After dead code elimination pass ##################");
+                LOG.debug("################## After dead code elimination pass ##################");
             }
             scope.runCompilerPass(new LiveVariableAnalysis());
             long t7 = new Date().getTime();
@@ -306,18 +311,18 @@ public class IRBuilder {
             }
             scope.runCompilerPass(new LinearizeCFG());
             if (isDebug) {
-                System.out.println("################## After cfg linearization pass ##################");
+                LOG.debug("################## After cfg linearization pass ##################");
                 scope.runCompilerPass(new IR_Printer());
             }
            
-            System.out.println("Time to build AST         : " + (t2 - t1));
-            System.out.println("Time to build IR          : " + (t3 - t2));
-            System.out.println("Time to run local opts    : " + (t4 - t3));
-            System.out.println("Time to run build cfg     : " + (t5 - t4));
-            System.out.println("Time to run build domtree : " + (t6 - t5));
-            System.out.println("Time to run lva           : " + (t7 - t6));
-            System.out.println("Time to run dead code elim: " + (t8 - t7));
-            System.out.println("Time to add frame instrs  : " + (t9 - t8));
+            LOG.debug("Time to build AST         : {}", (t2 - t1));
+            LOG.debug("Time to build IR          : {}", (t3 - t2));
+            LOG.debug("Time to run local opts    : {}", (t4 - t3));
+            LOG.debug("Time to run build cfg     : {}", (t5 - t4));
+            LOG.debug("Time to run build domtree : {}", (t6 - t5));
+            LOG.debug("Time to run lva           : {}", (t7 - t6));
+            LOG.debug("Time to run dead code elim: {}", (t8 - t7));
+            LOG.debug("Time to add frame instrs  : {}", (t9 - t8));
             i++;
         }
     }

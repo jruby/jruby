@@ -9,8 +9,13 @@ import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.MethAddr;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class InlineTest implements CompilerPass {
+
+    private static final Logger LOG = LoggerFactory.getLogger("InlineTest");
+
     public final String methodToInline;
 
     public InlineTest(String methodToInline) {
@@ -47,7 +52,7 @@ public class InlineTest implements CompilerPass {
                     CallInstr call = (CallInstr) i;
                     MethAddr addr = call.getMethodAddr();
                     if (methodToInline.equals(((MethAddr) addr).getName())) {
-                        System.out.println("Will be inlining method " + methodToInline + " at callsite: " + call);
+                        LOG.debug("Will be inlining method {} at callsite: {}", methodToInline, call);
                         c.inlineMethod(mi, b, call);
                         // Just inline once per scope -- this is a test after all!
                         // Because, the surrounding iterators will break with a concurrent modification exception if we proceed!
