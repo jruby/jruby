@@ -375,22 +375,41 @@ public class RubyStringIO extends RubyObject {
 
         if (data.pos < data.internal.getByteList().getRealSize() && !data.eof) {
             boolean isParagraph = false;
+            ByteList sep = ((RubyString)runtime.getGlobalVariables().get("$/")).getByteList();
+            IRubyObject sepArg = null;
+            int limit = -1;
 
-            ByteList sep;
-            if (args.length > 0) {
-                if (args[0].isNil()) {
+            if (context.getRuntime().is1_9()) {
+                IRubyObject limitArg = (args.length > 1 ? args[1] :
+                                        (args.length > 0 && args[0] instanceof RubyFixnum ? args[0] :
+                                         null));
+                if (limitArg != null) {
+                    limit = RubyNumeric.fix2int(limitArg);
+                }
+
+                sepArg = (args.length > 0 && !(args[0] instanceof RubyFixnum) ? args[0] :
+                          null);
+            }
+            else {
+                sepArg = (args.length > 0 ? args[0] : null);
+            }
+
+
+            if (sepArg != null) {
+                if (sepArg.isNil()) {
+                    int bytesAvailable = data.internal.getByteList().getRealSize() - (int)data.pos;
+                    int bytesToUse = (limit < 0 || limit >= bytesAvailable ? bytesAvailable : limit);
                     ByteList buf = data.internal.getByteList().makeShared(
-                            (int)data.pos, data.internal.getByteList().getRealSize() - (int)data.pos);
+                        (int)data.pos, bytesToUse);
                     data.pos += buf.getRealSize();
                     return RubyString.newString(runtime, buf);
                 }
-                sep = args[0].convertToString().getByteList();
+
+                sep = sepArg.convertToString().getByteList();
                 if (sep.getRealSize() == 0) {
                     isParagraph = true;
                     sep = Stream.PARAGRAPH_SEPARATOR;
                 }
-            } else {
-                sep = ((RubyString)runtime.getGlobalVariables().get("$/")).getByteList();
             }
 
             ByteList ss = data.internal.getByteList();
@@ -412,11 +431,23 @@ public class RubyStringIO extends RubyObject {
                 add = sep;
             }
 
-            ByteList line = new ByteList(ix - (int)data.pos + add.length());
-            line.append(data.internal.getByteList(), (int)data.pos, ix - (int)data.pos);
-            line.append(add);
-            data.pos = ix + add.getRealSize();
-            data.lineno++;
+            int bytes = ix - (int)data.pos;
+            int bytesToUse = (limit < 0 || limit >= bytes ? bytes : limit);
+
+            int bytesWithSep = ix - (int)data.pos + add.getRealSize();
+            int bytesToUseWithSep = (limit < 0 || limit >= bytesWithSep ? bytesWithSep : limit);
+
+            ByteList line = new ByteList(bytesToUseWithSep);
+            line.append(data.internal.getByteList(), (int)data.pos, bytesToUse);
+            data.pos += bytesToUse;
+
+            int sepBytesToUse = bytesToUseWithSep - bytesToUse;
+            line.append(add, 0, sepBytesToUse);
+            data.pos += sepBytesToUse;
+
+            if (sepBytesToUse >= add.getRealSize()) {
+                data.lineno++;
+            }
 
             return RubyString.newString(runtime,line);
         }
@@ -433,8 +464,16 @@ public class RubyStringIO extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
+    @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE, compat = CompatVersion.RUBY1_8)
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
+        IRubyObject result = getsOnly(context, args);
+        context.getCurrentScope().setLastLine(result);
+
+        return result;
+    }
+
+    @JRubyMethod(name = "gets", optional = 2, writes = FrameField.LASTLINE, compat = CompatVersion.RUBY1_9)
+    public IRubyObject gets19(ThreadContext context, IRubyObject[] args) {
         IRubyObject result = getsOnly(context, args);
         context.getCurrentScope().setLastLine(result);
 
