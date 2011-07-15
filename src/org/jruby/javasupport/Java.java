@@ -360,7 +360,7 @@ public class Java implements Library {
      * @param runtime
      * @param rawJavaObject
      * @return the new or cached proxy for the specified Java object
-     * @see JavaUtil.convertJavaToUsableRubyObject
+     * @see JavaUtil#convertJavaToUsableRubyObject
      */
     public static IRubyObject getInstance(Ruby runtime, Object rawJavaObject) {
         if (rawJavaObject != null) {
