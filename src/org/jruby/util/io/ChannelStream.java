@@ -33,7 +33,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
-import static java.util.logging.Logger.getLogger;
 
 import java.io.EOFException;
 import java.io.FileNotFoundException;
@@ -53,6 +52,8 @@ import org.jruby.Ruby;
 import org.jruby.platform.Platform;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import java.nio.channels.spi.SelectorProvider;
 
@@ -60,6 +61,9 @@ import java.nio.channels.spi.SelectorProvider;
  * This file implements a seekable IO file.
  */
 public class ChannelStream implements Stream, Finalizable {
+
+    private static final Logger LOG = LoggerFactory.getLogger("ChannelStream");
+
     private final static boolean DEBUG = false;
 
     /**
@@ -594,8 +598,7 @@ public class ChannelStream implements Stream, Finalizable {
         try {
             flushWrite();
 
-            if (DEBUG) getLogger("ChannelStream").info("Descriptor for fileno "
-                    + descriptor.getFileno() + " closed by stream");
+            if (DEBUG) LOG.info("Descriptor for fileno {} closed by stream", descriptor.getFileno());
         } finally {
             buffer = EMPTY_BUFFER;
 
@@ -1155,7 +1158,7 @@ public class ChannelStream implements Stream, Finalizable {
         if (closedExplicitly) return;
 
         if (DEBUG) {
-            getLogger("ChannelStream").info("finalize() for not explicitly closed stream");
+            LOG.info("finalize() for not explicitly closed stream");
         }
 
         // FIXME: I got a bunch of NPEs when I didn't check for nulls here...HOW?!
