@@ -101,12 +101,13 @@ public class PsychEmitter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject start_document(ThreadContext context, IRubyObject version, IRubyObject tags, IRubyObject implicit) {
-        Integer[] versionInts = new Integer[] {1, 1};
+        Integer[] versionInts = null;
         boolean implicitBool = implicit.isTrue();
         Map<String, String> tagsMap = Collections.EMPTY_MAP;
 
         RubyArray versionAry = version.convertToArray();
         if (versionAry.size() == 2) {
+            versionInts = new Integer[] {1, 1};
             versionInts[0] = (int)versionAry.eltInternal(0).convertToInteger().getLongValue();
             versionInts[1] = (int)versionAry.eltInternal(1).convertToInteger().getLongValue();
         }
@@ -155,7 +156,8 @@ public class PsychEmitter extends RubyObject {
                 quoted.isTrue()),
                 value.asJavaString(),
                 NULL_MARK,
-                NULL_MARK, (char)style.convertToInteger().getLongValue());
+                NULL_MARK,
+                SCALAR_STYLES[(int)style.convertToInteger().getLongValue()]);
         emit(context, event);
         return this;
     }
@@ -167,13 +169,15 @@ public class PsychEmitter extends RubyObject {
         IRubyObject implicit = args[2];
         IRubyObject style = args[3];
 
+        final int SEQUENCE_BLOCK = 1; // see psych/nodes/sequence.rb
+
         SequenceStartEvent event = new SequenceStartEvent(
                 anchor.isNil() ? null : anchor.asJavaString(),
                 tag.isNil() ? null : tag.asJavaString(),
                 implicit.isTrue(),
                 NULL_MARK,
                 NULL_MARK,
-                style.convertToInteger().getLongValue() == 0);
+                SEQUENCE_BLOCK != style.convertToInteger().getLongValue());
         emit(context, event);
         return this;
     }
@@ -192,13 +196,15 @@ public class PsychEmitter extends RubyObject {
         IRubyObject implicit = args[2];
         IRubyObject style = args[3];
 
+        final int MAPPING_BLOCK = 1; // see psych/nodes/mapping.rb
+
         MappingStartEvent event = new MappingStartEvent(
                 anchor.isNil() ? null : anchor.asJavaString(),
                 tag.isNil() ? null : tag.asJavaString(),
                 implicit.isTrue(),
                 NULL_MARK,
                 NULL_MARK,
-                style.convertToInteger().getLongValue() == 0);
+                MAPPING_BLOCK != style.convertToInteger().getLongValue());
         emit(context, event);
         return this;
     }
@@ -218,10 +224,10 @@ public class PsychEmitter extends RubyObject {
     }
 
     @JRubyMethod(name = "canonical=")
-    public IRubyObject canonical_set(ThreadContext context, IRubyObject style) {
+    public IRubyObject canonical_set(ThreadContext context, IRubyObject canonical) {
         // TODO: unclear if this affects a running emitter
-        options.setCanonical(style.isTrue());
-        return style;
+        options.setCanonical(canonical.isTrue());
+        return canonical;
     }
 
     @JRubyMethod
@@ -257,4 +263,15 @@ public class PsychEmitter extends RubyObject {
     DumperOptions options = new DumperOptions();
 
     private static final Mark NULL_MARK = new Mark(null, 0, 0, 0, null, 0);
+
+    // Map style constants from Psych values (ANY = 0 ... FOLDED = 5)
+    // to SnakeYaml values; see psych/nodes/scalar.rb.
+    private static final Character[] SCALAR_STYLES = new Character[] {
+        null, // ANY; we'll choose plain
+        null, // PLAIN
+        '\'', // SINGLE_QUOTED
+        '"',  // DOUBLE_QUOTED
+        '|',  // LITERAL
+        '>',  // FOLDED
+    };
 }
