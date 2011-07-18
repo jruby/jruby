@@ -1772,24 +1772,8 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "initialize", frame = true, visibility = PRIVATE)
-    public IRubyObject initialize(Block block) {
+    public IRubyObject initialize(ThreadContext context, Block block) {
         if (block.isGiven()) {
-            // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
-            block.getBinding().setVisibility(PUBLIC);
-            block.yieldNonArray(getRuntime().getCurrentContext(), this, this, this);
-        }
-
-        return getRuntime().getNil();
-    }
-
-    /** rb_mod_initialize
-     *
-     */
-    @JRubyMethod(name = "initialize", frame = true, compat = RUBY1_9, visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, Block block) {
-        if (block.isGiven()) {
-            // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
-            block.getBinding().setVisibility(PUBLIC);
             module_exec(context, block);
         }
 
@@ -3356,6 +3340,11 @@ public class RubyModule extends RubyObject {
                 }
             }
         }
+    }
+    
+    @Deprecated
+    public IRubyObject initialize(Block block) {
+        return initialize(getRuntime().getCurrentContext());
     }
 
     public KindOf kindOf = KindOf.DEFAULT_KIND_OF;

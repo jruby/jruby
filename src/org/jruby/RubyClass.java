@@ -830,6 +830,7 @@ public class RubyClass extends RubyModule {
      * 
      */
     @JRubyMethod(compat = RUBY1_8, visibility = PRIVATE)
+    @Override
     public IRubyObject initialize(ThreadContext context, Block block) {
         checkNotInitialized();
         return initializeCommon(context, runtime.getObject(), block, false);
@@ -866,9 +867,9 @@ public class RubyClass extends RubyModule {
 
         if (ruby1_9) {
             inherit(superClazz);
-            super.initialize19(context, block);
+            super.initialize(context, block);
         } else {
-            super.initialize(block);
+            super.initialize(context, block);
             inherit(superClazz);
         }
 
