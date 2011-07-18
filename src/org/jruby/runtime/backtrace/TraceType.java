@@ -3,7 +3,6 @@ package org.jruby.runtime.backtrace;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -12,8 +11,13 @@ import org.jruby.RubyException;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class TraceType {
+
+    private static final Logger LOG = LoggerFactory.getLogger("TraceType");
+
     private final Gather gather;
     private final Format format;
 
@@ -31,7 +35,7 @@ public class TraceType {
     }
     
     public static void dumpException(RubyException exception) {
-        System.err.println("Exception raised: " + exception.getMetaClass() + ": " + exception);
+        LOG.info("Exception raised: {} : {}", exception.getMetaClass(), exception);
     }
     
     public static void dumpBacktrace(RubyException exception) {
@@ -39,7 +43,7 @@ public class TraceType {
     }
     
     public static void dumpCaller(RubyArray trace) {
-        System.err.println("Caller backtrace generated:\n" + trace);
+        LOG.info("Caller backtrace generated:\n" + trace);
     }
 
     public static TraceType traceTypeFor(String style) {
@@ -56,9 +60,9 @@ public class TraceType {
          * Full raw backtraces with all Java frames included.
          */
         RAW {
-            public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
+            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
                 return new BacktraceData(
-                        Thread.currentThread().getStackTrace(),
+                        thread.getStackTrace(),
                         new BacktraceElement[0],
                         true,
                         false,
@@ -70,13 +74,13 @@ public class TraceType {
          * A backtrace with interpreted frames intact, but don't remove Java frames.
          */
         FULL {
-            public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
+            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
         return new BacktraceData(
-                Thread.currentThread().getStackTrace(),
-                context.createBacktrace2(0, nativeException),
-                true,
-                false,
-                this);
+                        thread.getStackTrace(),
+                        context.createBacktrace2(0, nativeException),
+                        true,
+                        false,
+                        this);
             }
         },
 
@@ -84,16 +88,13 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         NORMAL {
-            public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
-        BacktraceData bd = new BacktraceData(
-                Thread.currentThread().getStackTrace(),
-                context.createBacktrace2(0, nativeException),
-                false,
-                false,
-                this);
-        
-//        System.out.println(Arrays.toString(bd.getBacktrace(context.runtime)));
-        return bd;
+            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
+                return new BacktraceData(
+                        thread.getStackTrace(),
+                        context.createBacktrace2(0, nativeException),
+                        false,
+                        false,
+                        this);
             }
         },
 
@@ -101,17 +102,20 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         CALLER {
-            public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
-        return new BacktraceData(
-                Thread.currentThread().getStackTrace(),
-                context.createBacktrace2(0, nativeException),
-                false,
-                true,
-                this);
+            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
+                return new BacktraceData(
+                        thread.getStackTrace(),
+                        context.createBacktrace2(0, nativeException),
+                        false,
+                        true,
+                        this);
             }
         };
 
-        public abstract BacktraceData getBacktraceData(ThreadContext context, boolean nativeException);
+        public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
+            return getBacktraceData(context, Thread.currentThread(), nativeException);
+        }
+        public abstract BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException);
     }
     
     public enum Format {

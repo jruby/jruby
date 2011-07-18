@@ -47,7 +47,7 @@ public class JavaCompiledScript implements Library {
                 return;
             }
             script.setFilename(resource.getName());
-            runtime.loadScript(script);
+            runtime.loadScript(script, wrap);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }

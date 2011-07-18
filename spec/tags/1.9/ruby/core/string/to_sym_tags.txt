@@ -1,0 +1,1 @@
+fails:String#to_sym special cases +(binary) and -(binary)

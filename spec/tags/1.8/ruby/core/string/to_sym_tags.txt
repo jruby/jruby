@@ -1,0 +1,4 @@
+fails:String#to_sym special cases +(binary) and -(binary)
+fails:String#to_sym special cases !@ and ~@
+fails:String#to_sym special cases !(unary) and ~(unary)
+fails:String#to_sym special cases +(unary) and -(unary)

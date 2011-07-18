@@ -489,7 +489,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
     
     public static RubyString newUnicodeString(Ruby runtime, String str) {
-        return newUnicodeString(runtime, (CharSequence)str);
+        ByteList byteList = new ByteList(RubyEncoding.encodeUTF8(str), UTF8Encoding.INSTANCE, false);
+        return new RubyString(runtime, runtime.getString(), byteList);
     }
     
     public static RubyString newUnicodeString(Ruby runtime, CharSequence str) {
@@ -1497,13 +1498,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     @Override
-    public IRubyObject initialize19() {
+    public IRubyObject initialize19(ThreadContext context) {
         return this;
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     @Override
-    public IRubyObject initialize19(IRubyObject arg0) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0) {
         replace19(arg0);
         return this;
     }
@@ -2258,12 +2259,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc;
         if (is1_9) {
             enc = value.getEncoding();
-            if (enc != runtime.getKCode().getEncoding()) {
-                enc = runtime.getKCode().getEncoding();
-            }
-            if (!enc.isAsciiCompatible()) {
-                enc = USASCIIEncoding.INSTANCE;
-            }
+            
             result.associateEncoding(enc);
         } else {
             enc = runtime.getKCode().getEncoding();

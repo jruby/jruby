@@ -1,0 +1,2 @@
+fails:Thread.fork Thread.start raises a ArgumentError if not passed a block
+fails:Thread.fork Thread.start does not call #initialize

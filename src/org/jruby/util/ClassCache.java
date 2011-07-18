@@ -1,5 +1,7 @@
 package org.jruby.util;
 
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.security.ProtectionDomain;
@@ -13,6 +15,9 @@ import org.jruby.RubyInstanceConfig;
  * multiple runtimes (or whole JVM).
  */
 public class ClassCache<T> {
+
+    private static final Logger LOG = LoggerFactory.getLogger("ClassCache");
+
     private final AtomicInteger classLoadCount = new AtomicInteger(0);
     private final AtomicInteger classReuseCount = new AtomicInteger(0);
     private final ReferenceQueue referenceQueue = new ReferenceQueue();
@@ -110,11 +115,11 @@ public class ClassCache<T> {
         try {
             contents = getClassLoader().loadClass(className);
             if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                System.err.println("found jitted code in classloader: " + className);
+                LOG.debug("found jitted code in classloader: {}", className);
             }
         } catch (ClassNotFoundException cnfe) {
             if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                System.err.println("no jitted code in classloader for method " + classGenerator + " at class: " + className);
+                LOG.debug("no jitted code in classloader for method {} at class: {}", classGenerator, className);
             }
             // proceed to define in-memory
         }

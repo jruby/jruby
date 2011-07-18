@@ -1,7 +1,7 @@
 require 'benchmark'
 
 str = "abc"*10
-arr = [str, str,str,str,str,str,str,str,str,str,str,str,str,str,str,str]
+arr = [str,str,str,str,str,str,str,str,str,str,str,str,str,str,str,str]
 outstr = arr.to_s
 
 (ARGV[0] || 10).to_i.times do

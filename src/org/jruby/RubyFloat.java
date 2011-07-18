@@ -885,17 +885,14 @@ public class RubyFloat extends RubyNumeric {
         return getRuntime().getTrue();
     }
 
-    private static ByteList formatDouble(RubyFloat x) {
-        ByteList byteList = new ByteList();
-        Sprintf.sprintf(byteList, "%.17g", RubyArray.newArray(x.getRuntime(), x, x));
-        return byteList;
-    }
-
     private ByteList marshalDump() {
         if (Double.isInfinite(value)) return value < 0 ? NEGATIVE_INFINITY_BYTELIST : INFINITY_BYTELIST;
         if (Double.isNaN(value)) return NAN_BYTELIST;
 
-        return formatDouble(this);
+        ByteList byteList = new ByteList();
+        // Always use US locale, to ensure "." separator. JRUBY-5918
+        Sprintf.sprintf(byteList, Locale.US, "%.17g", RubyArray.newArray(getRuntime(), this, this));
+        return byteList;
     }
 
     public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {

@@ -36,6 +36,7 @@ import static org.jruby.util.io.ModeFlags.WRONLY;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
@@ -119,6 +120,27 @@ public class ChannelDescriptor {
     private boolean canBeSeekable = true;
     
     /**
+     * If the incoming channel is already in append mode (i.e. it will do the
+     * requisite seeking), we don't want to do our own additional seeks.
+     */
+    private boolean isInAppendMode = false;
+    
+    /**
+     * Whether the current channe is writable or not.
+     */
+    private boolean readableChannel;
+    
+    /**
+     * Whether the current channel is readable or not.
+     */
+    private boolean writableChannel;
+    
+    /**
+     * Whether the current channel is seekable or not.
+     */
+    private boolean seekableChannel;
+    
+    /**
      * Construct a new ChannelDescriptor with the specified channel, file number,
      * mode flags, file descriptor object and reference counter. This constructor
      * is only used when constructing a new copy of an existing ChannelDescriptor
@@ -130,20 +152,27 @@ public class ChannelDescriptor {
      * @param originalModes The mode flags to use as the "origina" set for this descriptor
      * @param fileDescriptor The java.io.FileDescriptor object to associate with this ChannelDescriptor
      * @param refCounter The reference counter from another ChannelDescriptor being duped.
+     * @param canBeSeekable If the underlying channel can be considered seekable.
+     * @param isInAppendMode If the underlying channel is already in append mode.
      */
-    private ChannelDescriptor(Channel channel, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor, AtomicInteger refCounter, boolean canBeSeekable) {
+    private ChannelDescriptor(Channel channel, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor, AtomicInteger refCounter, boolean canBeSeekable, boolean isInAppendMode) {
         this.refCounter = refCounter;
         this.channel = channel;
         this.internalFileno = fileno;
         this.originalModes = originalModes;
         this.fileDescriptor = fileDescriptor;
         this.canBeSeekable = canBeSeekable;
+        this.isInAppendMode = isInAppendMode;
+        
+        this.readableChannel = channel instanceof ReadableByteChannel;
+        this.writableChannel = channel instanceof WritableByteChannel;
+        this.seekableChannel = channel instanceof FileChannel;
 
         registerDescriptor(this);
     }
 
     private ChannelDescriptor(Channel channel, int fileno, ModeFlags originalModes, FileDescriptor fileDescriptor) {
-        this(channel, fileno, originalModes, fileDescriptor, new AtomicInteger(1), true);
+        this(channel, fileno, originalModes, fileDescriptor, new AtomicInteger(1), true, false);
     }
 
     /**
@@ -157,7 +186,21 @@ public class ChannelDescriptor {
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
     public ChannelDescriptor(Channel channel, ModeFlags originalModes, FileDescriptor fileDescriptor) {
-        this(channel, getNewFileno(), originalModes, fileDescriptor, new AtomicInteger(1), true);
+        this(channel, getNewFileno(), originalModes, fileDescriptor, new AtomicInteger(1), true, false);
+    }
+
+    /**
+     * Construct a new ChannelDescriptor with the given channel, file number, mode flags,
+     * and file descriptor object. The channel will be kept open until all ChannelDescriptor
+     * references to it have been closed.
+     * 
+     * @param channel The channel for the new descriptor
+     * @param fileno The file number for the new descriptor
+     * @param originalModes The mode flags for the new descriptor
+     * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
+     */
+    public ChannelDescriptor(Channel channel, ModeFlags originalModes, FileDescriptor fileDescriptor, boolean isInAppendMode) {
+        this(channel, getNewFileno(), originalModes, fileDescriptor, new AtomicInteger(1), true, isInAppendMode);
     }
 
     /**
@@ -170,7 +213,7 @@ public class ChannelDescriptor {
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
     public ChannelDescriptor(Channel channel, ModeFlags originalModes) {
-        this(channel, getNewFileno(), originalModes, new FileDescriptor(), new AtomicInteger(1), true);
+        this(channel, getNewFileno(), originalModes, new FileDescriptor(), new AtomicInteger(1), true, false);
     }
 
     /**
@@ -191,7 +234,7 @@ public class ChannelDescriptor {
         // on such stream might lead to thread being blocked without *any* way to unblock it.
         // That's where available() comes it, so at least we could check whether
         // anything is available to be read without blocking.
-        this(Channels.newChannel(baseInputStream), getNewFileno(), originalModes, fileDescriptor, new AtomicInteger(1), true);
+        this(Channels.newChannel(baseInputStream), getNewFileno(), originalModes, fileDescriptor, new AtomicInteger(1), true, false);
         this.baseInputStream = baseInputStream;
     }
 
@@ -212,7 +255,7 @@ public class ChannelDescriptor {
         // on such stream might lead to thread being blocked without *any* way to unblock it.
         // That's where available() comes it, so at least we could check whether
         // anything is available to be read without blocking.
-        this(Channels.newChannel(baseInputStream), getNewFileno(), originalModes, new FileDescriptor(), new AtomicInteger(1), true);
+        this(Channels.newChannel(baseInputStream), getNewFileno(), originalModes, new FileDescriptor(), new AtomicInteger(1), true, false);
         this.baseInputStream = baseInputStream;
     }
 
@@ -299,7 +342,7 @@ public class ChannelDescriptor {
      * @return true if the associated channel is seekable, false otherwise
      */
     public boolean isSeekable() {
-        return canBeSeekable && channel instanceof FileChannel;
+        return canBeSeekable && seekableChannel;
     }
     
     /**
@@ -327,7 +370,17 @@ public class ChannelDescriptor {
      * @return true if the associated channel is writable, false otherwise
      */
     public boolean isWritable() {
-        return channel instanceof WritableByteChannel;
+        return writableChannel;
+    }
+
+    /**
+     * Whether the channel associated with this descriptor is readable (i.e.
+     * whether it is instanceof ReadableByteChannel).
+     * 
+     * @return true if the associated channel is readable, false otherwise
+     */
+    public boolean isReadable() {
+        return readableChannel;
     }
     
     /**
@@ -387,7 +440,7 @@ public class ChannelDescriptor {
             
             if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + newFileno + ", refs now: " + refCounter.get());
 
-            return new ChannelDescriptor(channel, newFileno, originalModes, fileDescriptor, refCounter, canBeSeekable);
+            return new ChannelDescriptor(channel, newFileno, originalModes, fileDescriptor, refCounter, canBeSeekable, isInAppendMode);
         }
     }
     
@@ -404,7 +457,7 @@ public class ChannelDescriptor {
 
             if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + fileno + ", refs now: " + refCounter.get());
 
-            return new ChannelDescriptor(channel, fileno, originalModes, fileDescriptor, refCounter, canBeSeekable);
+            return new ChannelDescriptor(channel, fileno, originalModes, fileDescriptor, refCounter, canBeSeekable, isInAppendMode);
         }
     }
     
@@ -460,7 +513,7 @@ public class ChannelDescriptor {
      * @return the new offset into the FileChannel.
      */
     public long lseek(long offset, int whence) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
-        if (channel instanceof FileChannel) {
+        if (seekableChannel) {
             checkOpen();
             
             FileChannel fileChannel = (FileChannel)channel;
@@ -534,7 +587,7 @@ public class ChannelDescriptor {
         checkOpen();
 
         // TODO: It would be nice to throw a better error for this
-        if (!(channel instanceof ReadableByteChannel)) {
+        if (!isReadable()) {
             throw new BadDescriptorException();
         }
         ReadableByteChannel readChannel = (ReadableByteChannel) channel;
@@ -557,15 +610,19 @@ public class ChannelDescriptor {
         checkOpen();
 
         // TODO: It would be nice to throw a better error for this
-        if (!(channel instanceof WritableByteChannel)) {
+        if (!isWritable()) {
             throw new BadDescriptorException();
         }
         
         WritableByteChannel writeChannel = (WritableByteChannel)channel;
         
+        // if appendable, we always seek to the end before writing
         if (isSeekable() && originalModes.isAppendable()) {
-            FileChannel fileChannel = (FileChannel)channel;
-            fileChannel.position(fileChannel.size());
+            // if already in append mode, we don't do our own seeking
+            if (!isInAppendMode) {
+                FileChannel fileChannel = (FileChannel)channel;
+                fileChannel.position(fileChannel.size());
+            }
         }
         
         return writeChannel.write(buffer);
@@ -600,6 +657,8 @@ public class ChannelDescriptor {
         
         return internalWrite(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
     }
+    
+    private final ByteBuffer directBuffer = ByteBuffer.allocateDirect(8192);
 
     /**
      * Write the bytes in the specified byte list to the associated channel.
@@ -800,8 +859,20 @@ public class ChannelDescriptor {
                 }
             }
 
-            // We always open this rw since we can only open it r or rw.
-            RandomAccessFile file = new RandomAccessFile(theFile, flags.toJavaModeString());
+            FileDescriptor fileDescriptor;
+            FileChannel fileChannel;
+            boolean isInAppendMode;
+            if (flags.isWritable() && !flags.isReadable()) {
+                FileOutputStream fos = new FileOutputStream(theFile, flags.isAppendable());
+                fileChannel = fos.getChannel();
+                fileDescriptor = fos.getFD();
+                isInAppendMode = true;
+            } else {
+                RandomAccessFile raf = new RandomAccessFile(theFile, flags.toJavaModeString());
+                fileChannel = raf.getChannel();
+                fileDescriptor = raf.getFD();
+                isInAppendMode = false;
+            }
 
             // call chmod after we created the RandomAccesFile
             // because otherwise, the file could be read-only
@@ -813,12 +884,12 @@ public class ChannelDescriptor {
                 }
             }
 
-            if (flags.isTruncate()) file.setLength(0L);
+            if (flags.isTruncate()) fileChannel.truncate(0);
 
             // TODO: append should set the FD to end, no? But there is no seek(int) in libc!
             //if (modes.isAppendable()) seek(0, Stream.SEEK_END);
 
-            return new ChannelDescriptor(file.getChannel(), flags, file.getFD());
+            return new ChannelDescriptor(fileChannel, flags, fileDescriptor, isInAppendMode);
         }
     }
     

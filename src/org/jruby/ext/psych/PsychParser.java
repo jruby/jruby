@@ -47,6 +47,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOInputStream;
+import org.jruby.util.unsafe.UnsafeFactory;
 import org.yaml.snakeyaml.events.AliasEvent;
 import org.yaml.snakeyaml.events.DocumentEndEvent;
 import org.yaml.snakeyaml.events.DocumentStartEvent;
@@ -58,6 +59,7 @@ import org.yaml.snakeyaml.events.SequenceStartEvent;
 import org.yaml.snakeyaml.parser.Parser;
 import org.yaml.snakeyaml.parser.ParserException;
 import org.yaml.snakeyaml.parser.ParserImpl;
+import org.yaml.snakeyaml.reader.ReaderException;
 import org.yaml.snakeyaml.reader.StreamReader;
 import org.yaml.snakeyaml.scanner.ScannerException;
 import static org.jruby.javasupport.util.RuntimeHelpers.invoke;
@@ -250,6 +252,16 @@ public class PsychParser extends RubyObject {
                     message.append(se.getProblemMark().toString());
                 }
                 throw runtime.newArgumentError(message.toString());
+            } catch (ReaderException re) {
+                parser = null;
+                RubyKernel.raise(context, runtime.getKernel(),
+                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(re.getLocalizedMessage())},
+                    Block.NULL_BLOCK);
+            } catch (Throwable t) {
+                System.out.println(t.getClass());
+                t.printStackTrace();
+                UnsafeFactory.getUnsafe().throwException(t);
+                return this;
             }
         }
 
