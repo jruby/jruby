@@ -17,6 +17,7 @@ end
 
 describe Ant, "Rake #ant_task" do
   include Ant::RSpec::AntExampleGroup
+  include Rake::DSL
 
   before :each do
     @app = Rake.application
