@@ -2,7 +2,6 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -10,7 +9,6 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.Ruby;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Block.Type;
-import org.jruby.runtime.builtin.IRubyObject;
 
 // This instruction receives the last argument from the argument array and removes it from the argument array.
 // It is important to remove the block from the argument array so that a splat (*x) can receive the "rest" of the args

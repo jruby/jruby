@@ -17,6 +17,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
@@ -80,7 +81,8 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public Operand getClosureArg() {
-        return closure;
+        // ENEBO: We should not be passing nulls 
+        return closure == null ? Nil.NIL : closure;
     }
 
     public Operand getReceiver() {
