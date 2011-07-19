@@ -479,14 +479,6 @@ public class LoadService {
         autoloadMap.remove(name);
     }
 
-    public IRubyObject autoload(String name) {
-        IAutoloadMethod loadMethod = autoloadMap.get(name);
-        if (loadMethod != null) {
-            return loadMethod.load(runtime, name);
-        }
-        return null;
-    }
-
     public void addAutoload(String name, IAutoloadMethod loadMethod) {
         autoloadMap.put(name, loadMethod);
     }

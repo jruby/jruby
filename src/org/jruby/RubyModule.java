@@ -94,6 +94,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
@@ -2848,7 +2849,13 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject resolveUndefConstant(Ruby runtime, String name) {
-        Autoloading autoloading = autoloadingTableFetch(runtime.getCurrentContext(), name);
+        Autoloading autoloading = null;
+        IAutoloadMethod loadMethod = null;
+        String qname = getName() + "::" + name;
+        synchronized(this) {
+            autoloading = autoloadingTableFetch(runtime.getCurrentContext(), name);
+            loadMethod = runtime.getLoadService().autoloadFor(qname);
+        }
         if (autoloading == null) {
             // Do not remove UNDEF entry for thread-safety.
             // if (!runtime.is1_9()) deleteConstant(name);
@@ -2858,7 +2865,10 @@ public class RubyModule extends RubyObject {
                 return autoloading.getValue();
             }
         }
-        return runtime.getLoadService().autoload(getName() + "::" + name);
+        if (loadMethod == null) {
+            return null;
+        }
+        return loadMethod.load(runtime, qname);
     }
 
     /**
