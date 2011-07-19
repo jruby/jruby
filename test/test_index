@@ -1,5 +1,4 @@
 mri/sample/test.rb
-testCompiler.rb
 testEnv.rb
 testEval.rb
 testException.rb
