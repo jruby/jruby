@@ -24,11 +24,8 @@ public class ReceiveClosureInstr extends NoOperandInstr {
     @Interp
     @Override
     public Label interpret(InterpreterContext interp) {
-		  Block blk = interp.getBlock();
-		  Ruby  runtime = interp.getRuntime();
-		  Frame f = interp.getContext().getCurrentFrame();
-		  // SSS FIXME: All this drama just to update the block!
-		  f.updateFrame(f.getKlazz(), (IRubyObject)interp.getSelf(), f.getName(), blk, f.getJumpTarget());
+        Block blk = interp.getBlock();
+        Ruby  runtime = interp.getRuntime();
         getResult().store(interp, blk == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, blk));
         return null;
     }
