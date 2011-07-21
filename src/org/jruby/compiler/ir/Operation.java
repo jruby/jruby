@@ -24,6 +24,7 @@ public enum Operation {
     RECV_ARG(OpType.recv_arg_op), RECV_SELF(OpType.recv_arg_op), RECV_CLOSURE(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
     RECV_EXCEPTION(OpType.recv_arg_op),
     CALL(OpType.call_op), JRUBY_IMPL(OpType.call_op), RUBY_INTERNALS(OpType.call_op),
+	 RECORD_CLOSURE(OpType.recv_arg_op),
     METHOD_LOOKUP(OpType.dont_care),
 
 // closure instructions

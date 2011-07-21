@@ -154,6 +154,7 @@ import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
+import org.jruby.compiler.ir.instructions.RecordImplicitClosureArgInstr;
 import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -255,69 +256,69 @@ public class IRBuilder {
 
         String methName = null;
         if (args.length > i && args[i].equals("-inline")) {
-           methName = args[i+1];
-           i += 2;
+            methName = args[i+1];
+            i += 2;
         }
 
         boolean isCommandLineScript = args.length > i && args[i].equals("-e");
         i += (isCommandLineScript ? 1 : 0);
 
         while (i < args.length) {
-           long t1 = new Date().getTime();
-           Node ast = buildAST(isCommandLineScript, args[i]);
-           long t2 = new Date().getTime();
-           IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
-           long t3 = new Date().getTime();
-           if (isDebug) {
-               System.out.println("################## Before local optimization pass ##################");
-               scope.runCompilerPass(new IR_Printer());
-           }
-           scope.runCompilerPass(new LocalOptimizationPass());
-           long t4 = new Date().getTime();
-           if (isDebug) {
-               System.out.println("################## After local optimization pass ##################");
-               scope.runCompilerPass(new IR_Printer());
-           }
-           scope.runCompilerPass(new CFG_Builder());
-           long t5 = new Date().getTime();
-//           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
-           long t6 = new Date().getTime();
-
-           if (methName != null) {
-              System.out.println("################## After inline pass ##################");
-              System.out.println("Asked to inline " + methName);
-              scope.runCompilerPass(new InlineTest(methName));
-              scope.runCompilerPass(new LocalOptimizationPass());
-              scope.runCompilerPass(new IR_Printer());
-           }
-
-           if (isDebug) {
-               System.out.println("################## After dead code elimination pass ##################");
-           }
-           scope.runCompilerPass(new LiveVariableAnalysis());
-           long t7 = new Date().getTime();
-           scope.runCompilerPass(new DeadCodeElimination());
-           long t8 = new Date().getTime();
-           scope.runCompilerPass(new AddBindingInstructions());
-           long t9 = new Date().getTime();
-           if (isDebug) {
-               scope.runCompilerPass(new IR_Printer());
-           }
-           scope.runCompilerPass(new LinearizeCFG());
-           if (isDebug) {
-               System.out.println("################## After cfg linearization pass ##################");
-               scope.runCompilerPass(new IR_Printer());
-           }
-
-           System.out.println("Time to build AST         : " + (t2 - t1));
-           System.out.println("Time to build IR          : " + (t3 - t2));
-           System.out.println("Time to run local opts    : " + (t4 - t3));
-           System.out.println("Time to run build cfg     : " + (t5 - t4));
-           System.out.println("Time to run build domtree : " + (t6 - t5));
-           System.out.println("Time to run lva           : " + (t7 - t6));
-           System.out.println("Time to run dead code elim: " + (t8 - t7));
-           System.out.println("Time to add frame instrs  : " + (t9 - t8));
-           i++;
+            long t1 = new Date().getTime();
+            Node ast = buildAST(isCommandLineScript, args[i]);
+            long t2 = new Date().getTime();
+            IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
+            long t3 = new Date().getTime();
+            if (isDebug) {
+                System.out.println("################## Before local optimization pass ##################");
+                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+            }
+            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
+            long t4 = new Date().getTime();
+            if (isDebug) {
+                System.out.println("################## After local optimization pass ##################");
+                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+            }
+            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
+            long t5 = new Date().getTime();
+//            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
+            long t6 = new Date().getTime();
+           
+            if (methName != null) {
+                System.out.println("################## After inline pass ##################");
+                System.out.println("Asked to inline " + methName);
+                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.InlineTest(methName));
+                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
+                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+            }
+           
+            if (isDebug) {
+                System.out.println("################## After dead code elimination pass ##################");
+            }
+            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis());
+            long t7 = new Date().getTime();
+            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination());
+            long t8 = new Date().getTime();
+            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.AddBindingInstructions());
+            long t9 = new Date().getTime();
+            if (isDebug) {
+                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+            }
+            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LinearizeCFG());
+            if (isDebug) {
+                System.out.println("################## After cfg linearization pass ##################");
+                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+            }
+           
+            System.out.println("Time to build AST         : " + (t2 - t1));
+            System.out.println("Time to build IR          : " + (t3 - t2));
+            System.out.println("Time to run local opts    : " + (t4 - t3));
+            System.out.println("Time to run build cfg     : " + (t5 - t4));
+            System.out.println("Time to run build domtree : " + (t6 - t5));
+            System.out.println("Time to run lva           : " + (t7 - t6));
+            System.out.println("Time to run dead code elim: " + (t8 - t7));
+            System.out.println("Time to add frame instrs  : " + (t9 - t8));
+            i++;
         }
     }
 
@@ -2055,8 +2056,11 @@ public class IRBuilder {
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
             if (argsNodeId != null)
-                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, false); // SSS: Changed this from 1 to 0
+                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, false);
         }
+
+            // Record implicit closure/block arg (passed into lexical method)
+        closure.addInstr(new RecordImplicitClosureArgInstr(((IRExecutionScope)s).getImplicitBlockArg()));
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
@@ -2204,6 +2208,9 @@ public class IRBuilder {
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
             buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, false);  // SSS: Changed this from 1 to 0
+
+            // Record implicit closure/block arg (passed into lexical method)
+        closure.addInstr(new RecordImplicitClosureArgInstr(((IRExecutionScope)s).getImplicitBlockArg()));
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
