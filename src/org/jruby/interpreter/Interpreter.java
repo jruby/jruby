@@ -94,7 +94,7 @@ public class Interpreter {
 
             // If a closure, and lastInstr was a return, have to return from the nearest method!
             IRubyObject rv = (IRubyObject) interp.getReturnValue();
-            
+
             if (lastInstr instanceof ReturnInstr && inClosure && !interp.inLambda()) {
                 throw new IRReturnJump(((ReturnInstr)lastInstr).methodToReturnFrom, rv);
             }
@@ -107,8 +107,12 @@ public class Interpreter {
 
             return rv;
         } catch (IRReturnJump rj) {
-            if (inClosure) throw rj; // pass it along
-            else if (rj.methodToReturnFrom != cfg.getScope()) throw rj; // pass it along
+				// - If we are in a lambda, stop propagating
+				// - If not in a lambda
+				//   - if in a closure, pass it along
+				//   - if not in a closure, we got this return jump from a closure further up the call stack.
+				//     So, continue popping the call stack till we get to the right method
+				if (!interp.inLambda() && (inClosure || (rj.methodToReturnFrom != cfg.getScope()))) throw rj; // pass it along
 
             return (IRubyObject) rj.returnValue;
         } finally {
