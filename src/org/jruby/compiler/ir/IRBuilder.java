@@ -1698,12 +1698,19 @@ public class IRBuilder {
             // IMPORTANT: Receive the block argument before the opt and splat args
             // This is so that the *arg can be encoded as 'rest of the array'.  This
             // won't work if the block argument hasn't been received yet!
-        if (argsNode.getBlock() != null)
-            s.addInstr(new ReceiveClosureInstr(s.getLocalVariable(argsNode.getBlock().getName())));
+        Variable blockVar = null;
+        if (argsNode.getBlock() != null) {
+            blockVar = s.getLocalVariable(argsNode.getBlock().getName());
+            s.addInstr(new ReceiveClosureInstr(blockVar));
+        }
 
         // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
         // In addition, store the block argument in an implicit block variable
-        s.addInstr(new ReceiveClosureInstr(((IRExecutionScope)s).getImplicitBlockArg()));
+        Variable implicitBlockArg = ((IRExecutionScope)s).getImplicitBlockArg();
+        if (blockVar == null)
+            s.addInstr(new ReceiveClosureInstr(implicitBlockArg));
+        else
+            s.addInstr(new CopyInstr(implicitBlockArg, blockVar));
 
             // Now for the rest
         if (opt > 0) {
