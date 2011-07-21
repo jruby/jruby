@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyProc;
+import org.jruby.RubyMethod;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
@@ -337,9 +338,15 @@ public class CallInstr extends MultiOperandInstr {
     protected Block prepareBlock(InterpreterContext interp) {
         if (closure == null) return Block.NULL_BLOCK;
         Object value = closure.retrieve(interp);
+        if (value instanceof Block)
+            return (Block)value;
         if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil())
             return Block.NULL_BLOCK;
+        else if (value instanceof RubyMethod)
+            return ((RubyProc)((RubyMethod)value).to_proc(interp.getContext(), null)).getBlock();
+        else if (value instanceof RubyProc)
+            return ((RubyProc) value).getBlock();
         else
-            return value instanceof RubyProc ? ((RubyProc) value).getBlock() : (Block) value;
+            return null;
     }
 }
