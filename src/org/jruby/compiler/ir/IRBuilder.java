@@ -2834,8 +2834,12 @@ public class IRBuilder {
         if (!_ensureBlockStack.empty())
             EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
 
-        // Return from the closest enclosing method (except if we are in a lambda -- but the interpreter takes care of that!)
-        m.addInstr(new ReturnInstr(retVal, ((IRExecutionScope) m).getClosestMethodAncestor()));
+        // If 'm' is a block scope, a return returns from the closest enclosing method.
+        // The runtime takes care of lambdas
+        if (m instanceof IRClosure)
+            m.addInstr(new ReturnInstr(retVal, ((IRExecutionScope) m).getClosestMethodAncestor()));
+        else
+            m.addInstr(new ReturnInstr(retVal));
 
         // The value of the return itself in the containing expression can never be used because of control-flow reasons.
         // The expression that uses this result can never be executed beyond this point and hence the value itself is just

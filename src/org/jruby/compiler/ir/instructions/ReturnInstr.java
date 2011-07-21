@@ -18,6 +18,11 @@ public class ReturnInstr extends OneOperandInstr {
         assert returnValue != null : "RETURN must have argument operand";
     }
 
+    @Override
+    public String toString() { 
+        return operation + "(" + argument + (methodToReturnFrom == null ? "" : ", <" + methodToReturnFrom.getName() + ">") + ")";
+    }
+
     public ReturnInstr(Operand returnValue, IRMethod m) {
         super(Operation.RETURN, null, returnValue);
         this.methodToReturnFrom = m;
