@@ -38,17 +38,18 @@ public class DefineClassMethodInstr extends OneOperandInstr {
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
-		  super.simplifyOperands(valueMap);
+        super.simplifyOperands(valueMap);
         Operand v = valueMap.get(getArg());
         // SSS FIXME: Dumb design leaking operand into IRScopeImpl -- hence this setting going on here.  Fix it!
         if (v != null)
             method.setContainer(v);
     }
 
+    // SSS FIXME: Go through this and DefineClassmethodInstr.interpret, clean up, extract common code
     @Override
     public Label interpret(InterpreterContext interp) {
-		  String name = method.getName();
-		  Ruby runtime = interp.getRuntime();
+        String name = method.getName();
+        Ruby runtime = interp.getRuntime();
         RubyObject obj = (RubyObject) getArg().retrieve(interp);
 
         if (runtime.getSafeLevel() >= 4 && !obj.isTaint()) {
