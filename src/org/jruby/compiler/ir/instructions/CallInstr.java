@@ -4,8 +4,10 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.jruby.RubyClass;
-import org.jruby.RubyProc;
 import org.jruby.RubyMethod;
+import org.jruby.RubyObject;
+import org.jruby.RubyProc;
+import org.jruby.util.TypeConverter;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
@@ -340,13 +342,15 @@ public class CallInstr extends MultiOperandInstr {
         Object value = closure.retrieve(interp);
         if (value instanceof Block)
             return (Block)value;
-        if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil())
-            return Block.NULL_BLOCK;
-        else if (value instanceof RubyMethod)
-            return ((RubyProc)((RubyMethod)value).to_proc(interp.getContext(), null)).getBlock();
         else if (value instanceof RubyProc)
             return ((RubyProc) value).getBlock();
+        else if (value instanceof RubyMethod)
+            return ((RubyProc)((RubyMethod)value).to_proc(interp.getContext(), null)).getBlock();
+        else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil())
+            return Block.NULL_BLOCK;
+        else if (value instanceof IRubyObject)
+            return ((RubyProc)TypeConverter.convertToType((IRubyObject)value, interp.getRuntime().getProc(), "to_proc", true)).getBlock();
         else
-            return null;
+            throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
     }
 }
