@@ -271,15 +271,15 @@ public class IRBuilder {
             long t3 = new Date().getTime();
             if (isDebug) {
                 System.out.println("################## Before local optimization pass ##################");
-                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+                scope.runCompilerPass(new IR_Printer());
             }
             scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
             long t4 = new Date().getTime();
             if (isDebug) {
                 System.out.println("################## After local optimization pass ##################");
-                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+                scope.runCompilerPass(new IR_Printer());
             }
-            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
+            scope.runCompilerPass(new CFG_Builder());
             long t5 = new Date().getTime();
 //            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
             long t6 = new Date().getTime();
@@ -287,27 +287,27 @@ public class IRBuilder {
             if (methName != null) {
                 System.out.println("################## After inline pass ##################");
                 System.out.println("Asked to inline " + methName);
-                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.InlineTest(methName));
-                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
-                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+                scope.runCompilerPass(new InlineTest(methName));
+                scope.runCompilerPass(new LocalOptimizationPass());
+                scope.runCompilerPass(new IR_Printer());
             }
            
             if (isDebug) {
                 System.out.println("################## After dead code elimination pass ##################");
             }
-            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis());
+            scope.runCompilerPass(new LiveVariableAnalysis());
             long t7 = new Date().getTime();
-            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination());
+            scope.runCompilerPass(new DeadCodeElimination());
             long t8 = new Date().getTime();
-            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.AddBindingInstructions());
+            scope.runCompilerPass(new AddBindingInstructions());
             long t9 = new Date().getTime();
             if (isDebug) {
-                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+                scope.runCompilerPass(new IR_Printer());
             }
-            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LinearizeCFG());
+            scope.runCompilerPass(new LinearizeCFG());
             if (isDebug) {
                 System.out.println("################## After cfg linearization pass ##################");
-                scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
+                scope.runCompilerPass(new IR_Printer());
             }
            
             System.out.println("Time to build AST         : " + (t2 - t1));
