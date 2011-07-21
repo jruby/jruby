@@ -971,7 +971,7 @@ public class IRBuilder {
         s.addInstr(new DefineClassInstr(ret, cmo, superClass));
         s.getNearestModule().addClass(c);
 
-		  IRMethod rootMethod = c.getRootMethod();
+        IRMethod rootMethod = c.getRootMethod();
         Operand rv = build(classNode.getBodyNode(), rootMethod);
         if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
@@ -997,7 +997,7 @@ public class IRBuilder {
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
-		  IRMethod rootMethod = mc.getRootMethod();
+        IRMethod rootMethod = mc.getRootMethod();
         Operand rv = build(sclassNode.getBodyNode(), rootMethod);
         if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
@@ -2274,7 +2274,7 @@ public class IRBuilder {
         s.addInstr(new DefineModuleInstr(ret, (ModuleMetaObject) MetaObject.create(m)));
         s.getNearestModule().addModule(m);
 
-		  IRMethod rootMethod = m.getRootMethod();
+        IRMethod rootMethod = m.getRootMethod();
         Operand rv = build(moduleNode.getBodyNode(), rootMethod);
         if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
@@ -2438,7 +2438,7 @@ public class IRBuilder {
         Operand  v1;
         boolean  needsDefnCheck = needsDefinitionCheck(orNode.getFirstNode());
         if (needsDefnCheck) {
-		      l2 = s.getNewLabel();
+            l2 = s.getNewLabel();
             v1 = buildGetDefinitionBase(orNode.getFirstNode(), s);
             s.addInstr(new CopyInstr(flag, v1));
             s.addInstr(new BEQInstr(flag, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
@@ -2447,9 +2447,9 @@ public class IRBuilder {
         v1 = build(orNode.getFirstNode(), s); // build of 'x'
         s.addInstr(new CopyInstr(result, v1));
         s.addInstr(new IsTrueInstr(flag, v1));
-		  if (needsDefnCheck) {
+        if (needsDefnCheck) {
             s.addInstr(new LABEL_Instr(l2));
-		  }
+        }
         s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         Operand v2 = build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
         s.addInstr(new CopyInstr(result, v2));
@@ -2815,10 +2815,13 @@ public class IRBuilder {
 
     public Operand buildReturn(ReturnNode returnNode, IRScope m) {
         Operand retVal = (returnNode.getValueNode() == null) ? Nil.NIL : build(returnNode.getValueNode(), m);
+
         // Before we return, have to go execute all the ensure blocks
         if (!_ensureBlockStack.empty())
             EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
-        m.addInstr(new ReturnInstr(retVal));
+
+        // Return from the closest enclosing method (except if we are in a lambda -- but the interpreter takes care of that!)
+        m.addInstr(new ReturnInstr(retVal, ((IRExecutionScope) m).getClosestMethodAncestor()));
 
         // The value of the return itself in the containing expression can never be used because of control-flow reasons.
         // The expression that uses this result can never be executed beyond this point and hence the value itself is just

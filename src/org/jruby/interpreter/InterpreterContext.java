@@ -78,4 +78,7 @@ public interface InterpreterContext {
 
     // Get the most recently raised exception
     public RubyException getException();
+
+    // Are we in a lambda context?
+    public boolean inLambda();
 }
