@@ -73,8 +73,8 @@ public class RubyGlobal {
      */
     public static class CaseInsensitiveStringOnlyRubyHash extends StringOnlyRubyHash {
         
-        public CaseInsensitiveStringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
-            super(runtime, valueMap, defaultValue, true);
+        public CaseInsensitiveStringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue, boolean updateRealENV) {
+            super(runtime, valueMap, defaultValue, updateRealENV);
         }
 
         @Override
@@ -382,11 +382,14 @@ public class RubyGlobal {
     		environmentVariableMap = new HashMap();
     	}
 
-        CaseInsensitiveStringOnlyRubyHash h1 = new CaseInsensitiveStringOnlyRubyHash(runtime,
-                                                       environmentVariableMap, runtime.getNil());
-        h1.getSingletonClass().defineAnnotatedMethods(CaseInsensitiveStringOnlyRubyHash.class);
-        runtime.defineGlobalConstant("ENV", h1);
-        runtime.setENV(h1);
+    	CaseInsensitiveStringOnlyRubyHash env = new CaseInsensitiveStringOnlyRubyHash(runtime,
+                                                       environmentVariableMap, 
+                                                       runtime.getNil(),
+                                                       RubyInstanceConfig.nativeEnabled && 
+                                                           runtime.getInstanceConfig().isUpdateNativeENVEnabled() );
+        env.getSingletonClass().defineAnnotatedMethods(CaseInsensitiveStringOnlyRubyHash.class);
+        runtime.defineGlobalConstant("ENV", env);
+        runtime.setENV(env);
 
         // Define System.getProperties() in ENV_JAVA
         Map systemProps = environment.getSystemPropertiesMap(runtime);
