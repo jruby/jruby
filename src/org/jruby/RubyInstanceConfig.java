@@ -251,7 +251,8 @@ public class RubyInstanceConfig {
     private String threadDumpSignal = null;
     private boolean hardExit = false;
     private boolean disableGems = false;
-
+    private boolean updateNativeENVEnabled = true;
+    
     private int safeLevel = 0;
 
     private String jrubyHome;
@@ -427,6 +428,7 @@ public class RubyInstanceConfig {
         runRubyInProcess = parentConfig.runRubyInProcess;
         excludedMethods = parentConfig.excludedMethods;
         threadDumpSignal = parentConfig.threadDumpSignal;
+        updateNativeENVEnabled = parentConfig.updateNativeENVEnabled;
         
         classCache = new ClassCache<Script>(loader, jitMax);
 
@@ -1028,6 +1030,16 @@ public class RubyInstanceConfig {
         }
         return home;
     }
+
+    
+    public boolean isUpdateNativeENVEnabled() {
+        return updateNativeENVEnabled;
+    }
+
+    public void setUpdateNativeENVEnabled(boolean updateNativeENVEnabled) {
+        this.updateNativeENVEnabled = updateNativeENVEnabled;
+    }
+
 
     private final class Argument {
         public final String originalValue;
