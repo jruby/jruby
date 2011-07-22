@@ -48,7 +48,6 @@ test_ivar_table_integrity
 test_io
 test_line_endings
 test_load
-test_math
 test_method
 test_method_cache
 test_method_override_and_caching
