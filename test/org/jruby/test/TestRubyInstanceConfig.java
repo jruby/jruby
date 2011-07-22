@@ -56,6 +56,7 @@ public class TestRubyInstanceConfig extends TestRubyBase {
         assertNull(config.getScriptFileName());
         assertTrue(config.loadPaths().isEmpty());
         assertTrue(config.requiredLibraries().isEmpty());
+        assertTrue(config.isUpdateNativeENVEnabled());
     }
 
     protected final static class NullLoadService extends LoadService {
