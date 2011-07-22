@@ -194,12 +194,12 @@ public class RubyModule extends RubyObject {
         return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<String, IRubyObject>(4, 0.9f, 1) : constants;
     }
     
-    public Map<String, Autoloading> getAutoloadingMap() {
-        return autoloadings;
+    private Map<String, Autoload> getAutoloadMap() {
+        return autoloads;
     }
     
-    public synchronized Map<String, Autoloading> getAutoloadingMapForWrite() {
-        return autoloadings == Collections.EMPTY_MAP ? autoloadings = new ConcurrentHashMap<String, Autoloading>(4, 0.9f, 1) : autoloadings;
+    private synchronized Map<String, Autoload> getAutoloadMapForWrite() {
+        return autoloads == Collections.EMPTY_MAP ? autoloads = new ConcurrentHashMap<String, Autoload>(4, 0.9f, 1) : autoloads;
     }
     
     public void addIncludingHierarchy(IncludedModuleWrapper hierarchy) {
@@ -2502,8 +2502,7 @@ public class RubyModule extends RubyObject {
             if (value != UNDEF) {
                 return value;
             }
-            autoloadingTableRemove(name);
-            context.getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
+            removeAutoload(name);
             // FIXME: I'm not sure this is right, but the old code returned
             // the undef, which definitely isn't right...
             return context.getRuntime().getNil();
@@ -2849,26 +2848,13 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject resolveUndefConstant(Ruby runtime, String name) {
-        Autoloading autoloading = null;
-        IAutoloadMethod loadMethod = null;
-        String qname = getName() + "::" + name;
-        synchronized(this) {
-            autoloading = autoloadingTableFetch(runtime.getCurrentContext(), name);
-            loadMethod = runtime.getLoadService().autoloadFor(qname);
-        }
-        if (autoloading == null) {
-            // Do not remove UNDEF entry for thread-safety.
-            // if (!runtime.is1_9()) deleteConstant(name);
-            autoloadingTableStore(runtime.getCurrentContext(), name, null);
-        } else {
-            if (autoloading.isSelf(runtime.getCurrentContext())) {
-                return autoloading.getValue();
-            }
-        }
-        if (loadMethod == null) {
+        Autoload autoload = getAutoloadMap().get(name);
+        if (autoload == null) {
             return null;
         }
-        return loadMethod.load(runtime, qname);
+        IRubyObject value = autoload.getConstant(runtime.getCurrentContext());
+        if (value != null) return value;
+        return autoload.getLoadMethod().load(runtime);
     }
 
     /**
@@ -2909,14 +2895,12 @@ public class RubyModule extends RubyObject {
         if (oldValue != null) {
             Ruby runtime = getRuntime();
             if (oldValue == UNDEF) {
-                Autoloading autoloading = autoloadingTableFetch(runtime.getCurrentContext(), name);
-                if (autoloading != null && autoloading.isSelf(runtime.getCurrentContext())) {
-                    autoloading.setValue(value);
-                } else {
-                    // Overrides autoloading constant.
-                    autoloadingTableRemove(name);
-                    storeConstant(name, value);
-                    runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
+                Autoload autoload = getAutoloadMap().get(name);
+                if (autoload != null) {
+                    if (!autoload.setConstant(runtime.getCurrentContext(), value)) {
+                        removeAutoload(name);
+                        storeConstant(name, value);
+                    }
                 }
             } else {
                 if (warn) {
@@ -2977,8 +2961,7 @@ public class RubyModule extends RubyObject {
             Object value;
             if ((value = module.constantTableFetch(name)) != null) {
                 if (value != UNDEF) return true;
-                return getRuntime().getLoadService().autoloadFor(
-                        module.getName() + "::" + name) != null;
+                return getAutoloadMap().get(name) != null;
             }
 
         } while (isObject && (module = module.getSuperClass()) != null );
@@ -2997,8 +2980,7 @@ public class RubyModule extends RubyObject {
             Object value;
             if ((value = module.constantTableFetch(internedName)) != null) {
                 if (value != UNDEF) return true;
-                return getRuntime().getLoadService().autoloadFor(
-                        module.getName() + "::" + internedName) != null;
+                return getAutoloadMap().get(internedName) != null;
             }
 
         } while (isObject && (module = module.getSuperClass()) != null );
@@ -3018,8 +3000,7 @@ public class RubyModule extends RubyObject {
             Object value;
             if ((value = module.constantTableFetch(internedName)) != null) {
                 if (value != UNDEF) return true;
-                return getRuntime().getLoadService().autoloadFor(
-                        module.getName() + "::" + internedName) != null;
+                return getAutoloadMap().get(internedName) != null;
             }
             if (!inherit) {
                 break;
@@ -3280,20 +3261,23 @@ public class RubyModule extends RubyObject {
     protected IRubyObject constantTableRemove(String name) {
         return getConstantMapForWrite().remove(name);
     }
-        
-    protected Autoloading autoloadingTableFetch(ThreadContext ctx, String name) {
-        return getAutoloadingMap().get(name);
+    
+    protected void addAutoload(String name, IAutoloadMethod loadMethod) {
+        getAutoloadMapForWrite().put(name, new Autoload(loadMethod));
+    }
+
+    protected IRubyObject removeAutoload(String name) {
+        Autoload autoload = getAutoloadMapForWrite().remove(name);
+        if (autoload != null) {
+            return autoload.getValue();
+        }
+        return null;
     }
     
-    protected IRubyObject autoloadingTableStore(ThreadContext ctx, String name, IRubyObject value) {
-        getAutoloadingMapForWrite().put(name, new Autoloading(ctx, value));
-        return value;
-    }
-    
-    protected IRubyObject autoloadingTableRemove(String name) {
-        Autoloading autoloading = getAutoloadingMapForWrite().remove(name);
-        if (autoloading != null) {
-            return autoloading.value;
+    protected String getAutoloadFile(String name) {
+        Autoload autoload = getAutoloadMap().get(name);
+        if (autoload != null) {
+            return autoload.getLoadMethod().file();
         }
         return null;
     }
@@ -3385,32 +3369,47 @@ public class RubyModule extends RubyObject {
     protected String classId;
 
     private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
-    private class Autoloading {
-        private RubyThread thread;
-        private IRubyObject value;
+    private class Autoload {
+        private volatile ThreadContext ctx;
+        private volatile IRubyObject value;
+        private IAutoloadMethod loadMethod;
 
-        Autoloading(ThreadContext ctx, IRubyObject value) {
-            this.thread = ctx.getThread();
-            this.value = value;
+        Autoload(IAutoloadMethod loadMethod) {
+            this.ctx = null;
+            this.value = null;
+            this.loadMethod = loadMethod;
+        }
+
+        synchronized IRubyObject getConstant(ThreadContext ctx) {
+            if (this.ctx == null) {
+                this.ctx = ctx;
+            } else if (isSelf(ctx)) {
+                return getValue();
+            }
+            return null;
         }
         
-        boolean isSelf(ThreadContext ctx) {
-            return thread == ctx.getThread();
+        synchronized boolean setConstant(ThreadContext ctx, IRubyObject value) {
+            if (isSelf(ctx)) {
+                this.value = value;
+                return true;
+            }
+            return false;
         }
         
         IRubyObject getValue() {
             return value;
         }
         
-        void setValue(IRubyObject value) {
-            this.value = value;
+        IAutoloadMethod getLoadMethod() {
+            return loadMethod;
         }
-        
-        public String toString() {
-            return thread.toString() + " - " + value.toString();
+
+        private boolean isSelf(ThreadContext rhs) {
+            return ctx != null && ctx.getThread() == rhs.getThread();
         }
     }
-    private volatile Map<String, Autoloading> autoloadings = Collections.EMPTY_MAP;
+    private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;
     private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
     private Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
     protected int generation;
