@@ -61,7 +61,7 @@ public enum PropertyName {
      * System property, org.jruby.embed.laziness. The assigned value
      * must be true or false. When true is given, ScriptingContainer retrieve
      * variables/constants from Ruby runtime lazily. When a variable or constant is
-     * requested from user program, ScriptingConainer actually attemps to get it.
+     * requested from user program, ScriptingContainer actually attemps to get it.
      * However, on JSR223, retrieval is done at the end of evaluation based on
      * keys listed in Bindings.
      */
@@ -98,7 +98,7 @@ public enum PropertyName {
     /**
      * Creates an PropertyName Enum type instance.
      *
-     * @param fqan a fully qualified property name
+     * @param fqpn a fully qualified property name
      */
     PropertyName(String fqpn) {
         this.fqpn = fqpn;
@@ -118,7 +118,7 @@ public enum PropertyName {
      * Returns a fully qualified property name that corresponds to a given
      * enumerated type identifier.
      *
-     * @param fqan fully qualified property name
+     * @param fqpn fully qualified property name
      * @return a matched enumerated type identifier
      */
     public static PropertyName getType(String fqpn) {
