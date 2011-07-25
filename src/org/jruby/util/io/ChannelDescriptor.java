@@ -28,7 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
-import static java.util.logging.Logger.getLogger;
 import static org.jruby.util.io.ModeFlags.RDONLY;
 import static org.jruby.util.io.ModeFlags.RDWR;
 import static org.jruby.util.io.ModeFlags.WRONLY;
@@ -57,6 +56,8 @@ import org.jruby.RubyFile;
 import org.jruby.ext.posix.POSIX;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * ChannelDescriptor provides an abstraction similar to the concept of a
@@ -77,6 +78,9 @@ import org.jruby.util.JRubyFile;
  * POSIX dup also allows independent positioning information.
  */
 public class ChannelDescriptor {
+
+    private static final Logger LOG = LoggerFactory.getLogger("ChannelDescriptor");
+
     /** Whether to log debugging information */
     private static final boolean DEBUG = false;
     
@@ -438,7 +442,7 @@ public class ChannelDescriptor {
 
             int newFileno = getNewFileno();
             
-            if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + newFileno + ", refs now: " + refCounter.get());
+            if (DEBUG) LOG.info("Reopen fileno {}, refs now: {}", newFileno, refCounter.get());
 
             return new ChannelDescriptor(channel, newFileno, originalModes, fileDescriptor, refCounter, canBeSeekable, isInAppendMode);
         }
@@ -455,7 +459,7 @@ public class ChannelDescriptor {
         synchronized (refCounter) {
             refCounter.incrementAndGet();
 
-            if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + fileno + ", refs now: " + refCounter.get());
+            if (DEBUG) LOG.info("Reopen fileno {}, refs now: {}", fileno, refCounter.get());
 
             return new ChannelDescriptor(channel, fileno, originalModes, fileDescriptor, refCounter, canBeSeekable, isInAppendMode);
         }
@@ -475,7 +479,7 @@ public class ChannelDescriptor {
         synchronized (refCounter) {
             refCounter.incrementAndGet();
 
-            if (DEBUG) getLogger("ChannelDescriptor").info("Reopen fileno " + internalFileno + ", refs now: " + refCounter.get());
+            if (DEBUG) LOG.info("Reopen fileno {}, refs now: {}", internalFileno, refCounter.get());
 
             other.close();
             
@@ -922,7 +926,7 @@ public class ChannelDescriptor {
             // otherwise decrement and possibly close as normal
             int count = refCounter.decrementAndGet();
 
-            if (DEBUG) getLogger("ChannelDescriptor").info("Descriptor for fileno " + internalFileno + " refs: " + count);
+            if (DEBUG) LOG.info("Descriptor for fileno {} refs: {}", internalFileno, count);
 
             if (count <= 0) {
                 // if we're the last referrer, close the channel

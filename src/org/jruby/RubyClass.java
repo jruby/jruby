@@ -1333,7 +1333,7 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
             }
 
-            if (DEBUG_REIFY) System.out.println("defining " + getName() + "#" + methodName + " as " + javaName + "#" + javaMethodName + signature);
+            if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), methodName, javaName, javaMethodName + signature);
 
             instanceMethods.add(javaMethodName + signature);
 
@@ -1408,7 +1408,7 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
             }
 
-            if (DEBUG_REIFY) System.out.println("defining " + getName() + "." + methodName + " as " + javaName + "." + javaMethodName + signature);
+            if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), methodName, javaName, javaMethodName + signature);
 
             m.end();
         }

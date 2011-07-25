@@ -2,8 +2,6 @@ package org.jruby.management;
 
 import java.lang.management.ManagementFactory;
 import java.security.AccessControlException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
@@ -13,8 +11,13 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import org.jruby.Ruby;
 import org.jruby.compiler.JITCompilerMBean;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class BeanManagerImpl implements BeanManager {
+
+    private static final Logger LOG = LoggerFactory.getLogger("BeanManagerImpl");
+
     public final String base;
     
     private final boolean managementEnabled;
@@ -74,15 +77,15 @@ public class BeanManagerImpl implements BeanManager {
             ObjectName beanName = new ObjectName(name);
             mbs.registerMBean(bean, beanName);
         } catch (InstanceAlreadyExistsException ex) {
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.WARNING, "mbean already registered: " + name);
+            LOG.warn("mbean already registered: {}", name);
         } catch (MBeanRegistrationException ex) {
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex);
         } catch (NotCompliantMBeanException ex) {
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex);
         } catch (MalformedObjectNameException ex) {
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex);
         } catch (NullPointerException ex) {
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex);
         } catch (AccessControlException ex) {
             // ignore...bean doesn't get registered
             // TODO: Why does that bother me?
@@ -92,7 +95,7 @@ public class BeanManagerImpl implements BeanManager {
         } catch (Error e) {
             // all errors, just info; do not prevent loading
             // IKVM does not support JMX, and throws an error
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.FINE, null, e);
+            LOG.debug(e);
         }
     }
 
@@ -104,11 +107,11 @@ public class BeanManagerImpl implements BeanManager {
             mbs.unregisterMBean(beanName);
         } catch (InstanceNotFoundException ex) {
         } catch (MBeanRegistrationException ex) {
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex);
         } catch (MalformedObjectNameException ex) {
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex);
         } catch (NullPointerException ex) {
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex);
         } catch (AccessControlException ex) {
             // ignore...bean doesn't get registered
             // TODO: Why does that bother me?
@@ -118,7 +121,7 @@ public class BeanManagerImpl implements BeanManager {
         } catch (Error e) {
             // all errors, just info; do not prevent unloading
             // IKVM does not support JMX, and throws an error
-            Logger.getLogger(BeanManagerImpl.class.getName()).log(Level.FINE, null, e);
+            LOG.debug(e);
         }
     }
 }
