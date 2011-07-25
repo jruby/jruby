@@ -101,12 +101,17 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  *
  * @author headius
  */
 public class ASTInspector {
+
+    private static final Logger LOG = LoggerFactory.getLogger("ASTInspector");
+
     private final boolean dump;
     private final String name;
     public ASTInspector() {
@@ -159,12 +164,12 @@ public class ASTInspector {
     public static final Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
 
     public static void addFrameAwareMethods(String... methods) {
-        if (DEBUG) System.out.println("Adding frame-aware method names: " + Arrays.toString(methods));
+        if (DEBUG) LOG.debug("Adding frame-aware method names: {}", Arrays.toString(methods));
         FRAME_AWARE_METHODS.addAll(Arrays.asList(methods));
     }
     
     public static void addScopeAwareMethods(String... methods) {
-        if (DEBUG) System.out.println("Adding scope-aware method names: " + Arrays.toString(methods));
+        if (DEBUG) LOG.debug("Adding scope-aware method names: {}", Arrays.toString(methods));
         SCOPE_AWARE_METHODS.addAll(Arrays.asList(methods));
     }
 
@@ -189,7 +194,7 @@ public class ASTInspector {
     }
     
     public void disable() {
-        if (dump) System.out.println("[ASTInspector] " + name + " DISABLED");
+        if (dump) LOG.debug("[ASTInspector] {} DISABLED", name);
         flags = 0xFFFFFFFF;
     }
 
@@ -246,14 +251,14 @@ public class ASTInspector {
 
     public void setFlag(int modifier) {
         if (dump) {
-            System.out.println("[ASTInspector] " + name + "\n\tset flag " + Integer.toHexString(modifier));
+            LOG.debug("[ASTInspector] {}\n\tset flag {}", name, Integer.toHexString(modifier));
         }
         flags |= modifier;
     }
     
     public void setFlag(Node node, int modifier) {
         if (dump) {
-            System.out.println("[ASTInspector] " + name + "\n\tset flag " + Integer.toHexString(modifier) + "\n\tbecause of " + node.getNodeType() + " at " + node.getPosition());
+            LOG.debug("[ASTInspector] {}\n\tset flag {} because of {} at {}", name, Integer.toHexString(modifier), node.getNodeType(), node.getPosition());
         }
         flags |= modifier;
     }

@@ -21,9 +21,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.RubyEvent;
-
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter {
+
+    private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
+
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
         IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
         scope.prepareForInterpretation();
@@ -55,7 +59,7 @@ public class Interpreter {
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
-        if (isDebug()) System.out.println("-- Interpreted " + interpInstrsCount + " instructions");
+        if (isDebug()) LOG.debug("-- Interpreted {} instructions", interpInstrsCount);
 
         return rv;
     }
@@ -75,7 +79,7 @@ public class Interpreter {
                 interpInstrsCount++;
                 lastInstr = instrs[ipc];
                 
-                if (isDebug()) System.out.println("I: " + lastInstr);
+                if (isDebug()) LOG.debug("I: {}", lastInstr);
                 
                 try {
                     Label jumpTarget = lastInstr.interpret(interp);

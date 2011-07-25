@@ -7,9 +7,14 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class LiveVariableAnalysis implements CompilerPass
 {
+
+    private static final Logger LOG = LoggerFactory.getLogger("LiveVariableAnalysis");
+
     public LiveVariableAnalysis() { }
 
     public boolean isPreOrder() { return false; }
@@ -31,7 +36,7 @@ public class LiveVariableAnalysis implements CompilerPass
 			  if (xc != null)
 				  lvp = (LiveVariablesProblem)xc.getDataFlowSolution(lvpName);
            else
-				  System.out.println("Null cfg for: " + x);
+				  LOG.debug("Null cfg for: " + x);
 /*
            System.out.println("LVP for closure: " + x + " is: " + lvp);
            System.out.println("Live on entry:");

@@ -47,6 +47,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOInputStream;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeFactory;
 import org.yaml.snakeyaml.events.AliasEvent;
 import org.yaml.snakeyaml.events.DocumentEndEvent;
@@ -65,6 +67,9 @@ import org.yaml.snakeyaml.scanner.ScannerException;
 import static org.jruby.javasupport.util.RuntimeHelpers.invoke;
 
 public class PsychParser extends RubyObject {
+
+    private static final Logger LOG = LoggerFactory.getLogger("PsychParser");
+
     public static final int YAML_ANY_ENCODING = 0;
     public static final int YAML_UTF8_ENCODING = UTF8Encoding.INSTANCE.getIndex();
     public static final int YAML_UTF16LE_ENCODING = UTF16LEEncoding.INSTANCE.getIndex();
@@ -258,8 +263,7 @@ public class PsychParser extends RubyObject {
                     new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(re.getLocalizedMessage())},
                     Block.NULL_BLOCK);
             } catch (Throwable t) {
-                System.out.println(t.getClass());
-                t.printStackTrace();
+                LOG.error(t);
                 UnsafeFactory.getUnsafe().throwException(t);
                 return this;
             }

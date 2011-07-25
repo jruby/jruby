@@ -63,8 +63,13 @@ import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RecursiveComparator;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public final class ThreadContext {
+
+    private static final Logger LOG = LoggerFactory.getLogger("ThreadContext");
+
     public static ThreadContext newContext(Ruby runtime) {
         ThreadContext context = new ThreadContext(runtime);
         return context;
@@ -213,9 +218,9 @@ public final class ThreadContext {
     }
 
     public void printScope() {
-        System.out.println("SCOPE STACK:");
+        LOG.debug("SCOPE STACK:");
         for (int i = 0; i <= scopeIndex; i++) {
-            System.out.println(scopeStack[i]);
+            LOG.debug("{}", scopeStack[i]);
         }
     }
 

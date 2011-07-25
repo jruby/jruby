@@ -99,6 +99,8 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.collections.WeakHashSet;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  *
@@ -106,6 +108,9 @@ import org.jruby.util.collections.WeakHashSet;
  */
 @JRubyClass(name="Module")
 public class RubyModule extends RubyObject {
+
+    private static final Logger LOG = LoggerFactory.getLogger("RubyModule");
+
     private static final boolean DEBUG = false;
     protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
     protected static final String ERR_FROZEN_CONST_TYPE = "class/module ";
@@ -635,18 +640,18 @@ public class RubyModule extends RubyObject {
         
         if (RubyInstanceConfig.FULL_TRACE_ENABLED || RubyInstanceConfig.REFLECTED_HANDLES) {
             // we want reflected invokers or need full traces, use default (slow) populator
-            if (DEBUG) System.out.println("trace mode, using default populator");
+            if (DEBUG) LOG.debug("trace mode, using default populator");
             populator = TypePopulator.DEFAULT;
         } else {
             try {
                 String qualifiedName = "org.jruby.gen." + clazz.getCanonicalName().replace('.', '$');
 
-                if (DEBUG) System.out.println("looking for " + qualifiedName + "$Populator");
+                if (DEBUG) LOG.debug("looking for {}$Populator", qualifiedName);
 
                 Class populatorClass = Class.forName(qualifiedName + "$Populator");
                 populator = (TypePopulator)populatorClass.newInstance();
             } catch (Throwable t) {
-                if (DEBUG) System.out.println("Could not find it, using default populator");
+                if (DEBUG) LOG.debug("Could not find it, using default populator");
                 populator = TypePopulator.DEFAULT;
             }
         }
@@ -1013,7 +1018,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void invalidateCacheDescendants() {
-        if (DEBUG) System.out.println("invalidating descendants: " + classId);
+        if (DEBUG) LOG.debug("invalidating descendants: {}", classId);
         invalidateCacheDescendantsInner();
         // update all hierarchies into which this module has been included
         synchronized (getRuntime().getHierarchyLock()) {

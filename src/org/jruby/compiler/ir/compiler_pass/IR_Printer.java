@@ -4,8 +4,13 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class IR_Printer implements CompilerPass {
+
+    private static final Logger LOG = LoggerFactory.getLogger("IR_Printer");
+
     // Should we run this pass on the current scope before running it on nested scopes?
     public boolean isPreOrder()  { return true; }
 
@@ -19,12 +24,12 @@ public class IR_Printer implements CompilerPass {
             c = ((IRExecutionScope)s).getCFG();
 
         if (c != null) {
-            System.out.println("\nGraph:\n" + c.getGraph().toString());
-            System.out.println("\nInstructions:\n" + c.toStringInstrs());
+            LOG.debug("\nGraph:\n" + c.getGraph().toString());
+            LOG.debug("\nInstructions:\n" + c.toStringInstrs());
         } else if (s instanceof IRMethod) {
             IRMethod m = (IRMethod)s;
-            System.out.println("\n  instrs:\n" + m.toStringInstrs());
-            System.out.println("\n  live variables:\n" + m.toStringVariables());
+            LOG.debug("\n  instrs:\n" + m.toStringInstrs());
+            LOG.debug("\n  live variables:\n" + m.toStringVariables());
         }
     }
 }

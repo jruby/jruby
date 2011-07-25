@@ -159,7 +159,6 @@ public class RubyNKF {
         }
         Charset charset = decoder.detectedCharset();
         String name = charset.name();
-//        System.out.println("detect: " + name + "\n");
         if ("Shift_JIS".equals(name)) {
             return runtime.newFixnum(SJIS.getValue());
         }

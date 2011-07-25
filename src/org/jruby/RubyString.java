@@ -98,7 +98,10 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.string.JavaCrypt;
+import sun.rmi.runtime.Log;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
 import static org.jruby.runtime.MethodIndex.OP_EQUAL;
@@ -113,6 +116,9 @@ import static org.jruby.runtime.MethodIndex.OP_CMP;
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
 public class RubyString extends RubyObject implements EncodingCapable {
+
+    private static final Logger LOG = LoggerFactory.getLogger("RubyString");
+
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
@@ -2227,7 +2233,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         try {
             return inspectCommon(false);
         } catch (ArrayIndexOutOfBoundsException x) {
-            System.out.println("" + start + ", " + len + ", " + Arrays.toString(bytes));
+            LOG.error("{}, {}, {}", start, len, Arrays.toString(bytes));
             throw x;
         }
     }
@@ -2289,9 +2295,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 try {
                     result.cat(bytes, p - 1, n);
                 } catch (ArrayIndexOutOfBoundsException x) {
-                    System.out.println("begin = " + (p - 1));
-                    System.out.println("len = " + n);
-                    System.out.println("bytes = " + Arrays.toString(bytes));
+                    LOG.error("begin = " + (p - 1));
+                    LOG.error("len = " + n);
+                    LOG.error("bytes = " + Arrays.toString(bytes));
                     throw x;
                 }
                 p += n - 1;
