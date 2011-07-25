@@ -47,6 +47,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -83,12 +84,18 @@ public class TestRuby extends TestRubyBase {
     }
     
     public void testNativeENVSetting() throws Exception {
+        if (Platform.IS_WINDOWS) {
+            return;             // posix.getenv() not currently implemented
+        }
         runtime = Ruby.newInstance();
         runtime.evalScriptlet("ENV['ham'] = 'biscuit'");
         assertEquals("biscuit", runtime.getPosix().getenv("ham"));
     }
     
     public void testNativeENVSettingWhenItIsDisabledOnTheRuntime() throws Exception {
+        if (Platform.IS_WINDOWS) {
+            return;             // posix.getenv() not currently implemented
+        }
         RubyInstanceConfig cfg = new RubyInstanceConfig();
         cfg.setUpdateNativeENVEnabled(false);
         runtime = Ruby.newInstance(cfg);
