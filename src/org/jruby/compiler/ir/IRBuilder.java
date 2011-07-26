@@ -1193,7 +1193,8 @@ public class IRBuilder {
         m.addInstr(new RECV_EXCEPTION_Instr(exc));
         // Verify that the exception is of type 'JumpException'.
         // Since this is JRuby implementation Java code, we dont need EQQ here.
-        m.addInstr(new InstanceOfInstr(eqqResult, exc, "JumpException")); 
+        // SSS FIXME: Hardcoded exception class name!
+        m.addInstr(new InstanceOfInstr(eqqResult, exc, "org.jruby.exceptions.JumpException")); 
         m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
         Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
         if (v2 != null) m.addInstr(new CopyInstr(rv, (Operand)v1));
