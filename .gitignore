@@ -63,3 +63,4 @@ dev_null
 .idea/workspace.xml
 shared.iml
 build_graph.png
+/.idea/
