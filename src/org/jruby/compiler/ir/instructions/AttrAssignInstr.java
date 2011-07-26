@@ -76,7 +76,7 @@ public class AttrAssignInstr extends MultiOperandInstr {
         String      attrMeth = ((RubyString) attr.retrieve(interp)).asJavaString();
         IRubyObject[] callArgs = new IRubyObject[args.length + ((value == null) ? 0 : 1)];
 
-        int i = 0;
+        int i = 0, j = 0;
 
         // SSS FIXME: Is this correct?  Is value the 1st arg (or the last arg??)
         if (value != null) {
@@ -84,8 +84,8 @@ public class AttrAssignInstr extends MultiOperandInstr {
             i++;
         }
 
-        for ( ; i < callArgs.length; i++)
-            callArgs[i] = (IRubyObject) args[i].retrieve(interp);
+        for ( ; i < callArgs.length; i++, j++)
+            callArgs[i] = (IRubyObject) args[j].retrieve(interp);
 
         receiver.callMethod(interp.getContext(), attrMeth, callArgs);
         return null;
