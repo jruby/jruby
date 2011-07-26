@@ -34,7 +34,6 @@ public class InterpretedIRMethod extends DynamicMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         InterpreterContext interp = new NaiveInterpreterContext(context, getImplementationClass(), self, name, method.getLocalVariablesCount(),
                 temporaryVariableSize, method.getRenamedVariableSize(), args, block, null);
-		  context.getCurrentScope().getStaticScope().setModule(clazz);
 //        Arity.checkArgumentCount(context.getRuntime(), args.length, requiredArgsCount, method.get???);
         if (Interpreter.isDebug()) {
             // FIXME: name should probably not be "" ever.
@@ -56,6 +55,7 @@ public class InterpretedIRMethod extends DynamicMethod {
             displayedCFG = true;
         }
 
+        context.getCurrentScope().getStaticScope().setModule(clazz);
         return Interpreter.INTERPRET_METHOD(context, c, interp, name, getImplementationClass(), false);
     }
 
