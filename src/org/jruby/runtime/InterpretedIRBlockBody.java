@@ -123,7 +123,13 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
         // SSS FIXME: if we already have an array, I think we dont need to call prepareArgumentsForCall
-        IRubyObject[] args = prepareArgumentsForCall(context, isArray ? ((RubyArray) value).toJavaArray(): new IRubyObject[] { value }, type);
+        IRubyObject[] raw;
+        if (value == null) {
+            raw = new IRubyObject[] {}; // FIXME: Use preallocd one
+        } else {
+            raw = isArray ? ((RubyArray) value).toJavaArray(): new IRubyObject[] { value };
+        }
+        IRubyObject[] args = prepareArgumentsForCall(context, raw, type);
         return commonCallPath(context, args, self, klass, isArray, binding, type, Block.NULL_BLOCK);
     }
 
