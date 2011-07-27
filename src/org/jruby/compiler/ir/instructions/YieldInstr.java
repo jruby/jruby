@@ -35,7 +35,7 @@ public class YieldInstr extends Instr {
         Object blk = (Object)block.retrieve(interp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (yieldArg == null) {
-            resultValue = ((Block)blk).call(interp.getContext());
+            resultValue = ((Block)blk).yieldSpecific(interp.getContext());
         } else {
             resultValue = ((Block)blk).yield(interp.getContext(), (IRubyObject)yieldArg.retrieve(interp));
         }
