@@ -189,8 +189,8 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                 if (argumentType == MULTIPLE_ASSIGNMENT) {
                     args = ((RubyArray) args[0]).toJavaArray();
                 }
-                break;
             }
+            break;
         }
         case LAMBDA:
             if (argumentType == ARRAY && args.length != 1) {
