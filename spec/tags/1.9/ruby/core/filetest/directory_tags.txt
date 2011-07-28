@@ -1,0 +1,3 @@
+fails:FileTest.directory? returns false if the argument is an IO that's not a directory
+fails:FileTest.directory? return true if the argument is an IO that is a directory
+fails:FileTest.directory? calls #to_io to convert a non-IO object

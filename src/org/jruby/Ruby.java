@@ -147,6 +147,8 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.io.SelectorPool;
 import org.objectweb.asm.Opcodes;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -162,6 +164,12 @@ import org.objectweb.asm.Opcodes;
  * accessing global runtime structures.
  */
 public final class Ruby {
+    
+    /**
+     * The logger used to log relevant bits.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger("Ruby");
+    
     /**
      * Returns a new instance of the JRuby runtime configured with defaults.
      *
@@ -619,8 +627,8 @@ public final class Ruby {
 
     private void handeCompileError(Node node, Throwable t) {
         if (config.isJitLoggingVerbose() || config.isDebug()) {
-            System.err.println("warning: could not compile: " + node.getPosition().getFile() + "; full trace follows");
-            t.printStackTrace();
+            LOG.debug("warning: could not compile: {}; full trace follows", node.getPosition().getFile());
+            LOG.debug(t.getMessage(), t);
         }
     }
 
@@ -659,7 +667,7 @@ public final class Ruby {
             script = (Script)asmCompiler.loadClass(classLoader).newInstance();
 
             if (config.isJitLogging()) {
-                System.err.println("compiled: " + node.getPosition().getFile());
+                LOG.info("compiled: " + node.getPosition().getFile());
             }
         } catch (Throwable t) {
             handeCompileError(node, t);
@@ -669,10 +677,14 @@ public final class Ruby {
     }
     
     public IRubyObject runScript(Script script) {
+        return runScript(script, false);
+    }
+    
+    public IRubyObject runScript(Script script, boolean wrap) {
         ThreadContext context = getCurrentContext();
         
         try {
-            return script.load(context, getTopSelf(), IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            return script.load(context, getTopSelf(), wrap);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }
@@ -1388,7 +1400,7 @@ public final class Ruby {
                 // this is currently only here for Android, which seems to have
                 // bugs in its enumeration logic
                 // http://code.google.com/p/android/issues/detail?id=2812
-                e.printStackTrace();
+                LOG.error(e.getMessage(), e);
             }
         }
     }
@@ -2447,7 +2459,12 @@ public final class Ruby {
             context.setFile(scriptName);
             context.preNodeEval(objectClass, self, scriptName);
 
-            runInterpreter(context, parseFile(in, scriptName, null), self);
+            Node node = parseFile(in, scriptName, null);
+            if (wrap) {
+                // toss an anonymous module into the search path
+                ((RootNode)node).getStaticScope().setModule(RubyModule.newModule(this));
+            }
+            runInterpreter(context, node, self);
         } catch (JumpException.ReturnJump rj) {
             return;
         } finally {
@@ -2486,21 +2503,21 @@ public final class Ruby {
                 try {
                     contents = jrubyClassLoader.loadClass(className);
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("found jitted code for " + filename + " at class: " + className);
+                        LOG.info("found jitted code for " + filename + " at class: " + className);
                     }
                     script = (Script)contents.newInstance();
                     readStream = new ByteArrayInputStream(buffer);
                 } catch (ClassNotFoundException cnfe) {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("no jitted code in classloader for file " + filename + " at class: " + className);
+                        LOG.info("no jitted code in classloader for file " + filename + " at class: " + className);
                     }
                 } catch (InstantiationException ie) {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("jitted code could not be instantiated for file " + filename + " at class: " + className);
+                        LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
                     }
                 } catch (IllegalAccessException iae) {
                     if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        System.err.println("jitted code could not be instantiated for file " + filename + " at class: " + className);
+                        LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
                     }
                 }
             } catch (IOException ioe) {
@@ -2518,7 +2535,7 @@ public final class Ruby {
 
                 runInterpreter(scriptNode);
             } else {
-                runScript(script);
+                runScript(script, wrap);
             }
         } catch (JumpException.ReturnJump rj) {
             return;
@@ -2528,13 +2545,17 @@ public final class Ruby {
     }
 
     public void loadScript(Script script) {
+        loadScript(script, false);
+    }
+
+    public void loadScript(Script script, boolean wrap) {
         IRubyObject self = getTopSelf();
         ThreadContext context = getCurrentContext();
 
         try {
             secure(4); /* should alter global state */
             
-            script.load(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            script.load(context, self, wrap);
         } catch (JumpException.ReturnJump rj) {
             return;
         }
@@ -2800,6 +2821,7 @@ public final class Ruby {
         }
 
         if (config.isProfilingEntireRun()) {
+            // not using logging because it's formatted
             System.err.println("\nmain thread profile results:");
             IProfileData profileData = (IProfileData) threadService.getMainThread().getContext().getProfileData();
             config.makeDefaultProfilePrinter(profileData).printProfile(System.err);
@@ -3186,7 +3208,9 @@ public final class Ruby {
 
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
         if (printWhenVerbose && origException != null && this.isVerbose()) {
-            origException.printStackTrace(getErrorStream());
+            LOG.error(origException.getMessage(), origException);
+        } else if (isDebug()) {
+            LOG.debug(origException.getMessage(), origException);
         }
         
         return new RaiseException(new RubyNameError(
@@ -3224,7 +3248,7 @@ public final class Ruby {
 
     public RaiseException newSystemStackError(String message, StackOverflowError soe) {
         if (getDebug().isTrue()) {
-            soe.printStackTrace(getInstanceConfig().getError());
+            LOG.debug(soe.getMessage(), soe);
         }
         return newRaiseException(getSystemStackError(), message);
     }

@@ -93,7 +93,6 @@ public class CallableSelector {
                 warnMultipleMatches(args, newFinds);
             }
             method = newFinds.get(0);
-            return method;
         }
 
         // fall back on old ways
@@ -109,7 +108,10 @@ public class CallableSelector {
         if (method == null) {
             method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
         }
+        
+        // cache found result
         if (method != null) cache.put(signatureCode, method);
+        
         return method;
     }
 

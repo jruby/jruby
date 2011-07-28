@@ -1,0 +1,1 @@
+fails:Hash#update checks frozen status before coercing an object with #to_hash

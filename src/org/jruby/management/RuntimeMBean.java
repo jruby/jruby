@@ -32,4 +32,8 @@ public interface RuntimeMBean {
     public int getExceptionCount();
     public int getBacktraceCount();
     public int getCallerCount();
+    public String threadDump();
+    public String rawThreadDump();
+    public String fullThreadDump();
+    public String executeRuby(String code);
 }

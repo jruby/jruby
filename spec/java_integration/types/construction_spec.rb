@@ -1,12 +1,12 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java_integration.fixtures.ArrayReceiver"
-import "java_integration.fixtures.ArrayReturningInterface"
-import "java_integration.fixtures.ArrayReturningInterfaceConsumer"
-import "java_integration.fixtures.PublicConstructor"
-import "java_integration.fixtures.ProtectedConstructor"
-import "java_integration.fixtures.PackageConstructor"
-import "java_integration.fixtures.PrivateConstructor"
+java_import "java_integration.fixtures.ArrayReceiver"
+java_import "java_integration.fixtures.ArrayReturningInterface"
+java_import "java_integration.fixtures.ArrayReturningInterfaceConsumer"
+java_import "java_integration.fixtures.PublicConstructor"
+java_import "java_integration.fixtures.ProtectedConstructor"
+java_import "java_integration.fixtures.PackageConstructor"
+java_import "java_integration.fixtures.PrivateConstructor"
 
 describe "A Java primitive Array of type" do
   describe "boolean" do 

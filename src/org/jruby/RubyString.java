@@ -98,7 +98,10 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.string.JavaCrypt;
+import sun.rmi.runtime.Log;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
 import static org.jruby.runtime.MethodIndex.OP_EQUAL;
@@ -113,6 +116,9 @@ import static org.jruby.runtime.MethodIndex.OP_CMP;
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
 public class RubyString extends RubyObject implements EncodingCapable {
+
+    private static final Logger LOG = LoggerFactory.getLogger("RubyString");
+
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
@@ -489,7 +495,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
     
     public static RubyString newUnicodeString(Ruby runtime, String str) {
-        return newUnicodeString(runtime, (CharSequence)str);
+        ByteList byteList = new ByteList(RubyEncoding.encodeUTF8(str), UTF8Encoding.INSTANCE, false);
+        return new RubyString(runtime, runtime.getString(), byteList);
     }
     
     public static RubyString newUnicodeString(Ruby runtime, CharSequence str) {
@@ -1497,13 +1504,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     @Override
-    public IRubyObject initialize19() {
+    public IRubyObject initialize19(ThreadContext context) {
         return this;
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     @Override
-    public IRubyObject initialize19(IRubyObject arg0) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0) {
         replace19(arg0);
         return this;
     }
@@ -2226,7 +2233,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         try {
             return inspectCommon(false);
         } catch (ArrayIndexOutOfBoundsException x) {
-            System.out.println("" + start + ", " + len + ", " + Arrays.toString(bytes));
+            LOG.error("{}, {}, {}", start, len, Arrays.toString(bytes));
             throw x;
         }
     }
@@ -2258,12 +2265,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc;
         if (is1_9) {
             enc = value.getEncoding();
-            if (enc != runtime.getKCode().getEncoding()) {
-                enc = runtime.getKCode().getEncoding();
-            }
-            if (!enc.isAsciiCompatible()) {
-                enc = USASCIIEncoding.INSTANCE;
-            }
+            
             result.associateEncoding(enc);
         } else {
             enc = runtime.getKCode().getEncoding();
@@ -2293,9 +2295,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 try {
                     result.cat(bytes, p - 1, n);
                 } catch (ArrayIndexOutOfBoundsException x) {
-                    System.out.println("begin = " + (p - 1));
-                    System.out.println("len = " + n);
-                    System.out.println("bytes = " + Arrays.toString(bytes));
+                    LOG.error("begin = " + (p - 1));
+                    LOG.error("len = " + n);
+                    LOG.error("bytes = " + Arrays.toString(bytes));
                     throw x;
                 }
                 p += n - 1;

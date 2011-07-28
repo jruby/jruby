@@ -45,6 +45,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * MethodFactory is used to generate "invokers" or "method handles" given a target
@@ -53,6 +55,8 @@ import org.jruby.util.SafePropertyAccessor;
  * objects. Implementers of this class provide that functionality.
  */
 public abstract class MethodFactory {
+    private static final Logger LOG = LoggerFactory.getLogger("MethodFactory");
+    
     /**
      * A Class[] representing the signature of compiled Ruby method.
      */
@@ -79,7 +83,7 @@ public abstract class MethodFactory {
             unloaderClass.newInstance();
             can = true;
         } catch (Throwable t) {
-            System.err.println("MethodFactory: failed to load bytecode at runtime, falling back on reflection");
+            LOG.debug("MethodFactory: failed to load bytecode at runtime, falling back on reflection", t);
         }
         CAN_LOAD_BYTECODE = can;
     }

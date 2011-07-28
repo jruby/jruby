@@ -5,9 +5,14 @@ import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class DominatorTreeBuilder implements CompilerPass
 {
+
+    private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
+
     public DominatorTreeBuilder() { }
 
     public boolean isPreOrder() { return false; }
@@ -20,8 +25,8 @@ public class DominatorTreeBuilder implements CompilerPass
             try {
                 c.buildDominatorTree();
             } catch (Exception e) {
-                System.out.println("Caught exception building dom tree for " + c.getGraph());
-                System.out.println("\nInstructions:\n" + c.toStringInstrs());
+                LOG.debug("Caught exception building dom tree for {}", c.getGraph());
+                LOG.debug("\nInstructions:\n {}", c.toStringInstrs());
             }
         }
     }

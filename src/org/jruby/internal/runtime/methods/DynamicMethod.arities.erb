@@ -1,8 +1,0 @@
-    /** Arity <%= arity %>, no block */
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name<%= n_args_in(arity) %>) {
-        return call(context, self, klazz, name<%= n_args_out(arity) %>, Block.NULL_BLOCK);
-    }
-    /** Arity <%= arity %>, with block; calls through IRubyObject[] path */
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name<%= n_args_in(arity) %>, Block block) {
-        return call(context, self, klazz, name<%= n_args_ary(arity) %>, block);
-    }

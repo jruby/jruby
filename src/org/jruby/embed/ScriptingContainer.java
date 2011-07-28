@@ -66,7 +66,7 @@ import org.jruby.util.ClassCache;
 import org.jruby.util.KCode;
 
 /**
- * ScipritngContainer provides various methods and resources that are useful
+ * ScriptingContainer provides various methods and resources that are useful
  * for embedding Ruby in Java. Using this class, users can run Ruby scripts from
  * Java programs easily. Also, users can use methods defined or implemented by Ruby.
  *
@@ -76,7 +76,7 @@ import org.jruby.util.KCode;
  * per-container properties. Please see {@link PropertyName} and {@link AttributeName}
  * for more details. Be aware that the per-container properties should be set prior to
  * get Ruby runtime be instantiated; otherwise, default values are applied to. 
- * SCriptingContainer delays Ruby runtime initialization as much as possible to
+ * ScriptingContainer delays Ruby runtime initialization as much as possible to
  * improve startup time. When values are put into the ScriptingContainer, or runScriptlet
  * method gets run Ruby runtime is created internally. However, the default, singleton
  * local context scope behave slightly different. If Ruby runtime has been already instantiated
@@ -115,7 +115,7 @@ import org.jruby.util.KCode;
  * The third examples shows how to keep local variables across multiple evaluations.
  * This feature simulates BSF engine for JRuby. In terms of Ruby semantics,
  * local variables should not survive after the evaluation has completed. Thus,
- * this behavior is optional, and users need to specify LocalVariableBehvior.PERSISTENT
+ * this behavior is optional, and users need to specify LocalVariableBehavior.PERSISTENT
  * when the container is instantiated.
  *
  * <pre>Example 3:
@@ -190,7 +190,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * Constructs a ScriptingCOntainer with a specified local variable behavior.
+     * Constructs a ScriptingContainer with a specified local variable behavior.
      *
      * @param behavior a local variable behavior
      */
@@ -202,7 +202,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Constructs a ScriptingContainer with a specified local context type and
      * variable behavior.
      *
-     * @param scopea a local context type
+     * @param scope a local context type
      * @param behavior a local variable behavior
      */
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior) {
@@ -215,7 +215,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @param scope is one of a local context scope defined by {@link LocalContextScope}
      * @param behavior is one of a local variable behavior defined by {@link LocalVariableBehavior}
-     * @param lazy is a switch to do lazy retrieval of variabes/constants from
+     * @param lazy is a switch to do lazy retrieval of variables/constants from
      *        Ruby runtime. Default is true. When this value is true, ScriptingContainer tries to
      *        get as many variables/constants as possible from Ruby runtime.
      */
@@ -430,7 +430,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Returns a compile mode currently chosen, which is one of CompileMode.JIT,
      * CompileMode.FORCE, CompileMode.OFF. The default mode is CompileMode.OFF
      * if CompatVersion.RUBY1_9 is chosen, otherwise, CompileMode.JIT. Also,
-     * ComileMode.OFF is chosen when a security restriction is set.
+     * CompileMode.OFF is chosen when a security restriction is set.
      *
      * @since JRuby 1.5.0.
      *
@@ -1099,7 +1099,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * If the map previously contained a mapping for the key,
      * the old value is replaced. The key must be a valid Ruby variable or 
      * constant name. A given receiver limits the scope of a variable or constant.
-     * However, a global variable is accecible globally always.
+     * However, a global variable is accessible globally always.
      *
      * @param receiver a receiver to put the value in
      * @param key is a key that the specified value is to be associated with
@@ -1329,7 +1329,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @param receiver is an instance that will receive this method call
      * @param methodName is a method name to be called
-     * @param returnType is the type we want it to convert to
+     * @param args is an array of method arguments
      * @return an instance of requested Java type
      */
     public Object callMethod(Object receiver, String methodName, Object... args) {
@@ -1342,7 +1342,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @param receiver is an instance that will receive this method call
      * @param methodName is a method name to be called
-     * @param returnType is the type we want it to convert to
+     * @param block is a block to be executed in this method
+     * @param args is an array of method arguments
      * @return an instance of requested Java type
      */
     public Object callMethod(Object receiver, String methodName, Block block, Object... args) {
@@ -1504,7 +1505,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *     end
      *
      * Usage
-     *     ScriptingcContainer container = new ScriptingContaier();
+     *     ScriptingContainer container = new ScriptingContainer();
      *     String filename = "ruby/quadratic_formula_class.rb";
      *     Object receiver = container.runScriptlet(PathType.CLASSPATH, filename);
      *     QuadraticFormula qf = container.getInstance(receiver, QuadraticFormula.class);

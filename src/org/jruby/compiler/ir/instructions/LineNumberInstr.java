@@ -5,11 +5,8 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
-public class LineNumberInstr extends NoOperandInstr
-{
+public class LineNumberInstr extends NoOperandInstr {
     public final int lineNumber;
     public final IRScope scope; // We need to keep scope info here so that line number is meaningful across inlinings.
 
@@ -20,9 +17,13 @@ public class LineNumberInstr extends NoOperandInstr
     }
 
     @Override
-    public String toString() { return super.toString() + "(" + lineNumber + ")"; }
+    public String toString() {
+        return super.toString() + "(" + lineNumber + ")";
+    }
 
-    public Instr cloneForInlining(InlinerInfo ii) { return this; }
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return this;
+    }
 
     @Override
     public Label interpret(InterpreterContext interp) {

@@ -60,6 +60,8 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
 import static org.jruby.runtime.MethodIndex.OP_EQUAL;
@@ -67,10 +69,36 @@ import static org.jruby.runtime.MethodIndex.OP_CMP;
 import static org.jruby.runtime.MethodIndex.EQL;
 
 /**
+ * RubyBasicObject is the only implementation of the
+ * {@link org.jruby.runtime.builtin.IRubyObject}. Every Ruby object in JRuby
+ * is represented by something that is an instance of RubyBasicObject. In
+ * the core class implementations, this means doing a subclass
+ * that extends RubyBasicObject. In other cases it means using a simple
+ * RubyBasicObject instance and its data fields to store specific
+ * information about the Ruby object.
  *
- * @author enebo
+ * Some care has been taken to make the implementation be as
+ * monomorphic as possible, so that the Java Hotspot engine can
+ * improve performance of it. That is the reason for several patterns
+ * that might seem odd in this class.
+ *
+ * The IRubyObject interface used to have lots of methods for
+ * different things, but these have now mostly been refactored into
+ * several interfaces that gives access to that specific part of the
+ * object. This gives us the possibility to switch out that subsystem
+ * without changing interfaces again. For example, instance variable
+ * and internal variables are handled this way, but the implementation
+ * in RubyObject only returns "this" in {@link #getInstanceVariables()} and
+ * {@link #getInternalVariables()}.
+ * 
+ * Methods that are implemented here, such as "initialize" should be implemented
+ * with care; reification of Ruby classes into Java classes can produce
+ * conflicting method names in rare cases. See JRUBY-5906 for an example.
  */
 public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Comparable<IRubyObject>, CoreObjectType, InstanceVariables, InternalVariables {
+
+    private static final Logger LOG = LoggerFactory.getLogger("RubyBasicObject");
+
     private static final boolean DEBUG = false;
     
     // The class of this object
@@ -170,32 +198,33 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return objectClass;
     }
 
+    @Deprecated
     public IRubyObject initialize() {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19() {
+    public IRubyObject initialize19(ThreadContext context) {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19(IRubyObject arg0) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0) {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19(IRubyObject arg0, IRubyObject arg1) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true, compat = RUBY1_9)
-    public IRubyObject initialize19(IRubyObject[] args) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args) {
         return getRuntime().getNil();
     }
 
@@ -1212,7 +1241,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             synchronized (this) {
                 myVarTable = varTable;
                 if (myVarTable == null) {
-                    if (DEBUG) System.out.println("allocating varTable with size " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
+                    if (DEBUG) LOG.debug("allocating varTable with size {}", getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
                     varTable = myVarTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
                 }
             }
@@ -1220,7 +1249,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             synchronized (this) {
                 myVarTable = varTable;
                 if (myVarTable.length <= index) {
-                    if (DEBUG) System.out.println("resizing from " + myVarTable.length + " to " + getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
+                    if (DEBUG) LOG.debug("resizing from {} to {}", myVarTable.length, getMetaClass().getRealClass().getVariableTableSizeWithObjectId());
                     Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithObjectId()];
                     System.arraycopy(myVarTable, 0, newTable, 0, myVarTable.length);
                     varTable = myVarTable = newTable;

@@ -82,6 +82,8 @@ import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.collections.WeakHashSet;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
 
@@ -91,6 +93,9 @@ import org.objectweb.asm.ClassWriter;
  */
 @JRubyClass(name="Class", parent="Module")
 public class RubyClass extends RubyModule {
+
+    private static final Logger LOG = LoggerFactory.getLogger("RubyClass");
+
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
         classClass.index = ClassIndex.CLASS;
         classClass.setReifiedClass(RubyClass.class);
@@ -825,6 +830,7 @@ public class RubyClass extends RubyModule {
      * 
      */
     @JRubyMethod(compat = RUBY1_8, visibility = PRIVATE)
+    @Override
     public IRubyObject initialize(ThreadContext context, Block block) {
         checkNotInitialized();
         return initializeCommon(context, runtime.getObject(), block, false);
@@ -861,9 +867,9 @@ public class RubyClass extends RubyModule {
 
         if (ruby1_9) {
             inherit(superClazz);
-            super.initialize19(context, block);
+            super.initialize(context, block);
         } else {
-            super.initialize(block);
+            super.initialize(context, block);
             inherit(superClazz);
         }
 
@@ -1025,7 +1031,7 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
         
         if (superClazz == null) {
-            if (metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
+            if (runtime.is1_9() && metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
             throw runtime.newTypeError("uninitialized class");
         }
 
@@ -1327,7 +1333,7 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
             }
 
-            if (DEBUG_REIFY) System.out.println("defining " + getName() + "#" + methodName + " as " + javaName + "#" + javaMethodName + signature);
+            if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), methodName, javaName, javaMethodName + signature);
 
             instanceMethods.add(javaMethodName + signature);
 
@@ -1402,7 +1408,7 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
             }
 
-            if (DEBUG_REIFY) System.out.println("defining " + getName() + "." + methodName + " as " + javaName + "." + javaMethodName + signature);
+            if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), methodName, javaName, javaMethodName + signature);
 
             m.end();
         }
@@ -1418,8 +1424,8 @@ public class RubyClass extends RubyModule {
             clinit.invoke(null, runtime, this);
         } catch (Exception e) {
             if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
-                System.err.println("failed to reify class " + getName() + " due to:\n");
-                e.printStackTrace(System.err);
+                LOG.error("failed to reify class " + getName() + " due to:\n");
+                LOG.error(e);
             }
         }
 

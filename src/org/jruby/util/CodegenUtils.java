@@ -209,11 +209,11 @@ public class CodegenUtils {
     }
     
     public static String getAnnotatedBindingClassName(String javaMethodName, String typeName, boolean isStatic, int required, int optional, boolean multi, boolean framed) {
-        String commonClassSuffix;
+        String commonClassSuffix = "$INVOKER" + (isStatic ? "$s$" : "$i$" );
         if (multi) {
-            commonClassSuffix = (isStatic ? "$s$" : "$i$" ) + javaMethodName;
+            commonClassSuffix += javaMethodName;
         } else {
-            commonClassSuffix = (isStatic ? "$s$" : "$i$" ) + required + "$" + optional + "$" + javaMethodName;
+            commonClassSuffix += required + "$" + optional + "$" + javaMethodName;
         }
         return typeName + commonClassSuffix;
     }

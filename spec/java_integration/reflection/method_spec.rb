@@ -1,11 +1,11 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import 'java_integration.fixtures.PrivateInstanceMethod'
-import 'java_integration.fixtures.PrivateStaticMethod'
-import 'java_integration.fixtures.ProtectedInstanceMethod'
-import 'java_integration.fixtures.ProtectedStaticMethod'
-import 'java_integration.fixtures.PackageInstanceMethod'
-import 'java_integration.fixtures.PackageStaticMethod'
+java_import 'java_integration.fixtures.PrivateInstanceMethod'
+java_import 'java_integration.fixtures.PrivateStaticMethod'
+java_import 'java_integration.fixtures.ProtectedInstanceMethod'
+java_import 'java_integration.fixtures.ProtectedStaticMethod'
+java_import 'java_integration.fixtures.PackageInstanceMethod'
+java_import 'java_integration.fixtures.PackageStaticMethod'
 
 describe "A JavaMethod" do
   describe "given a private Java class method" do

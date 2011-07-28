@@ -6,6 +6,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.MetaClass;
+import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Label;
@@ -139,10 +140,18 @@ public class JRubyImplCallInstr extends CallInstr {
                 receiver = getReceiver().retrieve(interp);
                 rVal = ((RubyRegexp) receiver).op_match(interp.getContext(), (IRubyObject) getCallArgs()[0].retrieve(interp));
                 break;
-            case MATCH3: // ENEBO: Only for rubystring?
+            case MATCH3: {// ENEBO: Only for rubystring?
                 receiver = getReceiver().retrieve(interp);
-                rVal = ((RubyRegexp) receiver).op_match(interp.getContext(), (IRubyObject) getCallArgs()[0].retrieve(interp));
+                IRubyObject value = (IRubyObject) getCallArgs()[0].retrieve(interp);
+                        
+                if (value instanceof RubyString) {
+                    rVal = ((RubyRegexp) receiver).op_match(interp.getContext(), value);
+                } else {
+                    rVal = value.callMethod(interp.getContext(), "=~", (IRubyObject) receiver);
+                }
                 break;
+            }
+            
             case UNDEF_METHOD:
                 rVal = RuntimeHelpers.undefMethod(interp.getContext(), getReceiver().retrieve(interp));
                 break;

@@ -26,7 +26,10 @@
 package org.jruby;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
@@ -35,7 +38,6 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -161,11 +163,11 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static byte[] encodeUTF8(CharSequence cs) {
-        return encode(cs, UTF8);
+        return UTF8_CODER.get().encode(cs);
     }
 
     public static byte[] encodeUTF8(String str) {
-        return encode(str, UTF8);
+        return UTF8_CODER.get().encode(str);
     }
 
     public static byte[] encode(CharSequence cs, Charset charset) {
@@ -183,11 +185,11 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static String decodeUTF8(byte[] bytes, int start, int length) {
-        return decode(bytes, start, length, UTF8);
+        return UTF8_CODER.get().decode(bytes, start, length);
     }
 
     public static String decodeUTF8(byte[] bytes) {
-        return decode(bytes, UTF8);
+        return UTF8_CODER.get().decode(bytes);
     }
 
     public static String decode(byte[] bytes, int start, int length, Charset charset) {
@@ -197,6 +199,62 @@ public class RubyEncoding extends RubyObject {
     public static String decode(byte[] bytes, Charset charset) {
         return charset.decode(ByteBuffer.wrap(bytes)).toString();
     }
+    
+    private static class UTF8Coder {
+        private final CharsetEncoder encoder = UTF8.newEncoder();
+        private final CharsetDecoder decoder = UTF8.newDecoder();
+        private final ByteBuffer byteBuffer = ByteBuffer.allocate(4096);
+        private final CharBuffer charBuffer = CharBuffer.allocate(1024);
+        
+        public byte[] encode(CharSequence cs) {
+            ByteBuffer buffer;
+            if (cs.length() > 1024) {
+                buffer = UTF8.encode(cs.toString());
+            } else {
+                buffer = byteBuffer;
+                CharBuffer cbuffer = charBuffer;
+                buffer.clear();
+                cbuffer.clear();
+                cbuffer.put(cs.toString());
+                cbuffer.flip();
+                encoder.encode(cbuffer, buffer, true);
+                buffer.flip();
+            }
+            
+            byte[] bytes = new byte[buffer.limit()];
+            buffer.get(bytes);
+            return bytes;
+        }
+        
+        public String decode(byte[] bytes, int start, int length) {
+            CharBuffer cbuffer;
+            if (length > 4096) {
+                cbuffer = UTF8.decode(ByteBuffer.wrap(bytes, start, length));
+            } else {
+                cbuffer = charBuffer;
+                ByteBuffer buffer = byteBuffer;
+                cbuffer.clear();
+                buffer.clear();
+                buffer.put(bytes, start, length);
+                buffer.flip();
+                decoder.decode(buffer, cbuffer, true);
+                cbuffer.flip();
+            }
+            
+            return cbuffer.toString();
+        }
+        
+        public String decode(byte[] bytes) {
+            return decode(bytes, 0, bytes.length);
+        }
+    }
+    
+    private static final ThreadLocal<UTF8Coder> UTF8_CODER = new ThreadLocal<UTF8Coder>() {
+        @Override
+        protected UTF8Coder initialValue() {
+            return new UTF8Coder();
+        }
+    };
 
     @JRubyMethod(name = "list", meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
@@ -398,4 +456,4 @@ public class RubyEncoding extends RubyObject {
     public static Encoding getEncodingFromObject(Ruby runtime, IRubyObject arg) {
         return runtime.getEncodingService().getEncodingFromObject(arg);
     }
-}
+    }

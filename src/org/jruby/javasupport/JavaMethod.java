@@ -60,9 +60,14 @@ import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
+
+    private static final Logger LOG = LoggerFactory.getLogger("JavaMethod");
+
     private final static boolean USE_HANDLES = RubyInstanceConfig.USE_GENERATED_HANDLES;
     private final static boolean HANDLE_DEBUG = false;
     private final Method method;
@@ -104,14 +109,14 @@ public class JavaMethod extends JavaCallable {
 
         // try to find a "totally" public version of the method using superclasses and interfaces
         if (methodIsPublic && !classIsPublic) {
-            if (HANDLE_DEBUG) System.out.println("Method " + method + " is not on a public class, searching for a better one");
+            if (HANDLE_DEBUG) LOG.debug("Method {} is not on a public class, searching for a better one", method);
             Method newMethod = method;
             Class newClass = method.getDeclaringClass();
 
             OUTER: while (newClass != null) {
                 // try class
                 try {
-                    if (HANDLE_DEBUG) System.out.println("Trying to find " + method + " on " + newClass);
+                    if (HANDLE_DEBUG) LOG.debug("Trying to find {} on {}", method, newClass);
                     newMethod = newClass.getMethod(method.getName(), method.getParameterTypes());
 
                     // got it; break if this class is public
@@ -124,7 +129,7 @@ public class JavaMethod extends JavaCallable {
                 // try interfaces
                 for (Class ifc : newClass.getInterfaces()) {
                     try {
-                        if (HANDLE_DEBUG) System.out.println("Trying to find " + method + " on " + ifc);
+                        if (HANDLE_DEBUG) LOG.debug("Trying to find {} on {}", method, ifc);
                         newMethod = ifc.getMethod(method.getName(), method.getParameterTypes());
                         break OUTER;
                     } catch (NoSuchMethodException nsme) {
@@ -137,7 +142,7 @@ public class JavaMethod extends JavaCallable {
             }
             
             if (newMethod != null) {
-                if (HANDLE_DEBUG) System.out.println("Found a better method target: " + newMethod);
+                if (HANDLE_DEBUG) LOG.debug("Found a better method target: {}", newMethod);
                 method = newMethod;
                 methodIsPublic = Modifier.isPublic(method.getModifiers());
                 classIsPublic = Modifier.isPublic(method.getDeclaringClass().getModifiers());
@@ -163,7 +168,7 @@ public class JavaMethod extends JavaCallable {
         }
 
         if (tmpHandle == null) {
-            if (HANDLE_DEBUG) System.out.println("did not use handle for " + method);
+            if (HANDLE_DEBUG) LOG.debug("did not use handle for {}", method);
         }
         
         handle = tmpHandle;

@@ -21,9 +21,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.RubyEvent;
-
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter {
+
+    private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
+
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
         IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
         scope.prepareForInterpretation();
@@ -55,7 +59,7 @@ public class Interpreter {
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
-        if (isDebug()) System.out.println("-- Interpreted " + interpInstrsCount + " instructions");
+        if (isDebug()) LOG.debug("-- Interpreted {} instructions", interpInstrsCount);
 
         return rv;
     }
@@ -75,7 +79,7 @@ public class Interpreter {
                 interpInstrsCount++;
                 lastInstr = instrs[ipc];
                 
-                if (isDebug()) System.out.println("I: " + lastInstr);
+                if (isDebug()) LOG.debug("I: {}", lastInstr);
                 
                 try {
                     Label jumpTarget = lastInstr.interpret(interp);
@@ -94,9 +98,10 @@ public class Interpreter {
 
             // If a closure, and lastInstr was a return, have to return from the nearest method!
             IRubyObject rv = (IRubyObject) interp.getReturnValue();
-            
-            if (lastInstr instanceof ReturnInstr && inClosure) throw RuntimeHelpers.returnJump(rv, context);
 
+            if (lastInstr instanceof ReturnInstr && inClosure && !interp.inLambda()) {
+                throw new IRReturnJump(((ReturnInstr)lastInstr).methodToReturnFrom, rv);
+            }
             // If a closure, and lastInstr was a break, have to return from the nearest closure!
             else if (lastInstr instanceof BREAK_Instr) {
                 if (!inClosure) throw runtime.newLocalJumpError(Reason.BREAK, rv, "unexpected break");
@@ -105,10 +110,15 @@ public class Interpreter {
             }
 
             return rv;
-        } catch (org.jruby.exceptions.JumpException.ReturnJump rj) {
-            if (inClosure) throw rj; // pass it along!
+        } catch (IRReturnJump rj) {
+				// - If we are in a lambda, stop propagating
+				// - If not in a lambda
+				//   - if in a closure, pass it along
+				//   - if not in a closure, we got this return jump from a closure further up the call stack.
+				//     So, continue popping the call stack till we get to the right method
+				if (!interp.inLambda() && (inClosure || (rj.methodToReturnFrom != cfg.getScope()))) throw rj; // pass it along
 
-            return (IRubyObject) rj.getValue();
+            return (IRubyObject) rj.returnValue;
         } finally {
             if (interp.getFrame() != null) {
                 context.popFrame();

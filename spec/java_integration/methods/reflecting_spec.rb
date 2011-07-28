@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java_integration.fixtures.MethodNames"
+java_import "java_integration.fixtures.MethodNames"
 
 describe "The Ruby methods representing Java static methods" do
   it "should be accessible through Ruby's Module#method method" do

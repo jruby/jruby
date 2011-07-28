@@ -66,10 +66,23 @@ public class SelectBlob {
             }
             boolean has_timeout = args.length > 3 && !args[3].isNil();
             long timeout = !has_timeout ? 0 : getTimeoutFromArg(args[3], runtime);
-            doSelect(has_timeout, timeout);
-            processSelectedKeys(runtime);
-            processPendingAndUnselectable();
-            tidyUp();
+            
+            if (timeout < 0) {
+                throw runtime.newArgumentError("time interval must be positive");
+            }
+            
+            // If all streams are nil, just sleep the specified time (JRUBY-4699)
+            if (args[0].isNil() && args[1].isNil() && args[2].isNil()) {
+                if (timeout > 0) {
+                    context.getThread().sleep(timeout);
+                }
+            } else {
+                doSelect(has_timeout, timeout);
+                processSelectedKeys(runtime);
+                processPendingAndUnselectable();
+                tidyUp();
+            }
+            
             if (readResults == null && writeResults == null && errorResults == null) {
                 return runtime.getNil();
             }
@@ -78,6 +91,8 @@ public class SelectBlob {
             throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
+        } catch (InterruptedException ie) {
+            throw runtime.newThreadError("select interrupted");
         } finally {
             if (selector != null) {
                 try {
@@ -381,7 +396,11 @@ public class SelectBlob {
     }
 
     private IRubyObject constructResults(Ruby runtime) {
-        return RubyArray.newArrayLight(runtime, readResults == null ? RubyArray.newEmptyArray(runtime) : readResults, writeResults == null ? RubyArray.newEmptyArray(runtime) : writeResults, errorResults == null ? RubyArray.newEmptyArray(runtime) : errorResults);
+        return RubyArray.newArrayLight(
+                runtime,
+                readResults == null ? RubyArray.newEmptyArray(runtime) : readResults,
+                writeResults == null ? RubyArray.newEmptyArray(runtime) : writeResults,
+                errorResults == null ? RubyArray.newEmptyArray(runtime) : errorResults);
     }
 
     private int fastSearch(Object[] ary, Object obj) {

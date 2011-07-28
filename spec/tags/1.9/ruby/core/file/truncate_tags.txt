@@ -1,0 +1,1 @@
+fails:File#truncate does not move the file write pointer to the specified byte offset

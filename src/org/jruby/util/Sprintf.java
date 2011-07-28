@@ -29,6 +29,7 @@ package org.jruby.util;
 
 import java.math.BigInteger;
 import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.Locale;
 
 import org.jruby.Ruby;
@@ -673,6 +674,7 @@ public class Sprintf {
                     boolean nan = dval != dval;
                     boolean inf = dval == Double.POSITIVE_INFINITY || dval == Double.NEGATIVE_INFINITY;
                     boolean negative = dval < 0.0d || (dval == 0.0d && (new Float(dval)).equals(new Float(-0.0)));
+                    
                     byte[] digits;
                     int nDigits = 0;
                     int exponent = 0;
@@ -720,8 +722,9 @@ public class Sprintf {
                         break;
                     }
 
-                    
-                    String str = Double.toString(dval);
+                    NumberFormat nf = NumberFormat.getNumberInstance(args.locale);
+                    nf.setMaximumFractionDigits(Integer.MAX_VALUE);
+                    String str = nf.format(dval);
                     
                     // grrr, arghh, want to subclass sun.misc.FloatingDecimal, but can't,
                     // so we must do all this (the next 70 lines of code), which has already

@@ -58,8 +58,12 @@ import org.jruby.util.ClassCache;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class JITCompiler implements JITCompilerMBean {
+    private static final Logger LOG = LoggerFactory.getLogger("JITCompiler");
+    
     public static final boolean USE_CACHE = true;
     public static final String RUBY_JIT_PREFIX = "rubyjit";
 
@@ -210,7 +214,7 @@ public class JITCompiler implements JITCompilerMBean {
             // write to code cache
             FileOutputStream fos = null;
             try {
-                if (RubyInstanceConfig.JIT_LOADING_DEBUG) System.err.println("writing jitted code to to " + cachedClassFile);
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.info("writing jitted code to to " + cachedClassFile);
                 fos = new FileOutputStream(cachedClassFile);
                 fos.write(bytecode);
             } catch (Exception e) {
@@ -250,7 +254,7 @@ public class JITCompiler implements JITCompilerMBean {
                     cachedClassFile.exists()) {
                 FileInputStream fis = null;
                 try {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) System.err.println("loading cached code from: " + cachedClassFile);
+                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.info("loading cached code from: " + cachedClassFile);
                     fis = new FileInputStream(cachedClassFile);
                     bytecode = new byte[(int)fis.getChannel().size()];
                     fis.read(bytecode);
@@ -390,17 +394,17 @@ public class JITCompiler implements JITCompilerMBean {
         
         if (className == null) className = "<anon class>";
 
-        System.err.print(message + ":" + className + "." + name + " at " + method.getPosition());
+        StringBuilder builder = new StringBuilder(message + ":" + className + "." + name + " at " + method.getPosition());
         
         if (reason.length > 0) {
-            System.err.print(" because of: \"");
+            builder.append(" because of: \"");
             for (int i = 0; i < reason.length; i++) {
-                System.err.print(reason[i]);
+                builder.append(reason[i]);
             }
-            System.err.print('"');
+            builder.append('"');
         }
         
-        System.err.println("");
+        LOG.info(builder.toString());
     }
 
     public long getSuccessCount() {

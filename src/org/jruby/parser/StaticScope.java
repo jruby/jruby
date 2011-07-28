@@ -423,6 +423,7 @@ public abstract class StaticScope implements Serializable {
             buf.append(variableNames[variableNames.length - 1]);
         }
         buf.append("]");
+        buf.append(", cref = ").append(cref);
             
         return buf.toString();
     }

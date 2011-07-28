@@ -4,6 +4,8 @@ import java.util.Map;
 
 import org.jruby.MetaClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
+
 import org.jruby.compiler.ir.IRMetaClass;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.Label;
@@ -51,18 +53,20 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
             method.setContainer(v);
     }
 
+    // SSS FIXME: Go through this and DefineClassmethodInstr.interpret, clean up, extract common code
     @Override
     public Label interpret(InterpreterContext interp) {
-        RubyModule clazz = (RubyModule) getArg().retrieve(interp);
-		  String     name  = method.getName();
-		  ThreadContext context = interp.getContext();
+        RubyObject arg   = (RubyObject)getArg().retrieve(interp);
+        RubyModule clazz = (arg instanceof RubyModule) ? (RubyModule)arg : arg.getMetaClass();
+        String     name  = method.getName();
+        ThreadContext context = interp.getContext();
 
         Visibility visibility = context.getCurrentVisibility();
         if (name == "initialize" || name == "initialize_copy" || visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;
         }
 
-		  DynamicMethod newMethod = new InterpretedIRMethod(method, visibility, clazz);
+        DynamicMethod newMethod = new InterpretedIRMethod(method, visibility, clazz);
         clazz.addMethod(name, newMethod);
 
         if (visibility == Visibility.MODULE_FUNCTION) {

@@ -1,0 +1,2 @@
+fails:OpenStruct#method_missing when called with method name '[]' raises a NoMethodError
+fails:OpenStruct#method_missing when called with method name '[]=' raises a NoMethodError

@@ -249,6 +249,8 @@
       <include name="org/jruby/CompatVersion.java"/>
       <include name="org/jruby/runtime/Visibility.java"/>
       <include name="org/jruby/util/CodegenUtils.java"/>
+      <include name="org/jruby/util/log/*.java"/>
+      <include name="org/jruby/util/SafePropertyAccessor.java"/>
     </javac>
   </target>
 

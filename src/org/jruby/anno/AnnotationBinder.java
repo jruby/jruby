@@ -21,6 +21,9 @@ import java.util.Map;
 
 import org.jruby.CompatVersion;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
+
 import static java.util.Collections.*;
 import static com.sun.mirror.util.DeclarationVisitors.*;
 
@@ -30,6 +33,9 @@ import static com.sun.mirror.util.DeclarationVisitors.*;
  * ListClass doclet in the Doclet Overview.
  */
 public class AnnotationBinder implements AnnotationProcessorFactory {
+
+    private static final Logger LOG = LoggerFactory.getLogger("AnnotationBinder");
+
     // Process any set of annotations
     private static final Collection<String> supportedAnnotations = unmodifiableCollection(Arrays.asList("org.jruby.anno.JRubyMethod", "org.jruby.anno.JRubyClass"));    // No supported options
     private static final Collection<String> supportedOptions = emptySet();
@@ -199,18 +205,18 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         boolean frame = false;
                         boolean scope = false;
                         if (anno.frame()) {
-                            if (DEBUG) System.out.println("Method has frame = true: " + methodDescs.get(0).getDeclaringType() + ": " + methodDescs);
+                            if (DEBUG) LOG.debug("Method has frame = true: {}:{}", methodDescs.get(0).getDeclaringType(), methodDescs);
                             frame = true;
                         }
                         if (anno.reads() != null) for (FrameField read : anno.reads()) {
                             switch (read) {
                             case BACKREF:
                             case LASTLINE:
-                                if (DEBUG) System.out.println("Method reads scope field " + read + ": " + methodDescs.get(0).getDeclaringType() + ": " + methodDescs);
+                                if (DEBUG) LOG.debug("Method reads scope field {}: {}: {}", read, methodDescs.get(0).getDeclaringType(), methodDescs);
                                 scope = true;
                                 break;
                             default:
-                                if (DEBUG) System.out.println("Method reads frame field " + read + ": " + methodDescs.get(0).getDeclaringType() + ": " + methodDescs);
+                                if (DEBUG) LOG.debug("Method reads frame field {}: {}: {}", read, methodDescs.get(0).getDeclaringType(), methodDescs);;
                                 frame = true;
                             }
                         }
@@ -218,11 +224,11 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             switch (write) {
                             case BACKREF:
                             case LASTLINE:
-                                if (DEBUG) System.out.println("Method writes scope field " + write + ": " + methodDescs.get(0).getDeclaringType() + ": " + methodDescs);
+                                if (DEBUG) LOG.debug("Method writes scope field {}: {}: {}", write, methodDescs.get(0).getDeclaringType(), methodDescs);
                                 scope = true;
                                 break;
                             default:
-                                if (DEBUG) System.out.println("Method writes frame field " + write + ": " + methodDescs.get(0).getDeclaringType() + ": " + methodDescs);
+                                if (DEBUG) LOG.debug("Method writes frame field {}: {}: {}", write, methodDescs.get(0).getDeclaringType(), methodDescs);
                                 frame = true;
                             }
                         }
@@ -323,8 +329,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     fos.write(bytes.toByteArray());
                     fos.close();
                 } catch (IOException ioe) {
-                    System.err.println("FAILED TO GENERATE:");
-                    ioe.printStackTrace();
+                    LOG.error("FAILED TO GENERATE:", ioe);
                     System.exit(1);
                 }
             }

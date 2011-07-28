@@ -4,7 +4,10 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.jruby.RubyClass;
+import org.jruby.RubyMethod;
+import org.jruby.RubyObject;
 import org.jruby.RubyProc;
+import org.jruby.util.TypeConverter;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
@@ -17,6 +20,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
@@ -80,7 +84,8 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public Operand getClosureArg() {
-        return closure;
+        // ENEBO: We should not be passing nulls 
+        return closure == null ? Nil.NIL : closure;
     }
 
     public Operand getReceiver() {
@@ -335,9 +340,17 @@ public class CallInstr extends MultiOperandInstr {
     protected Block prepareBlock(InterpreterContext interp) {
         if (closure == null) return Block.NULL_BLOCK;
         Object value = closure.retrieve(interp);
-        if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil())
+        if (value instanceof Block)
+            return (Block)value;
+        else if (value instanceof RubyProc)
+            return ((RubyProc) value).getBlock();
+        else if (value instanceof RubyMethod)
+            return ((RubyProc)((RubyMethod)value).to_proc(interp.getContext(), null)).getBlock();
+        else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil())
             return Block.NULL_BLOCK;
+        else if (value instanceof IRubyObject)
+            return ((RubyProc)TypeConverter.convertToType((IRubyObject)value, interp.getRuntime().getProc(), "to_proc", true)).getBlock();
         else
-            return value instanceof RubyProc ? ((RubyProc) value).getBlock() : (Block) value;
+            throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
     }
 }

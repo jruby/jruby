@@ -1,8 +1,8 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java_integration.fixtures.ArrayReceiver"
-import "java_integration.fixtures.ArrayReturningInterface"
-import "java_integration.fixtures.ArrayReturningInterfaceConsumer"
+java_import "java_integration.fixtures.ArrayReceiver"
+java_import "java_integration.fixtures.ArrayReturningInterface"
+java_import "java_integration.fixtures.ArrayReturningInterfaceConsumer"
 
 describe "A Java primitive Array of type" do
   describe "boolean" do 
@@ -859,3 +859,9 @@ describe "A Java byte array" do
   end
 end
 
+# JRUBY-928
+describe "ArrayJavaProxy" do
+  it "descends from java.lang.Object" do
+    ArrayJavaProxy.superclass.should == java.lang.Object
+  end
+end

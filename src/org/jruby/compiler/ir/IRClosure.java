@@ -5,7 +5,6 @@ package org.jruby.compiler.ir;
 // Their parents are always execution scopes.
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
-import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;

@@ -100,6 +100,8 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.collections.WeakHashSet;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  *
@@ -107,6 +109,9 @@ import org.jruby.util.collections.WeakHashSet;
  */
 @JRubyClass(name="Module")
 public class RubyModule extends RubyObject {
+
+    private static final Logger LOG = LoggerFactory.getLogger("RubyModule");
+
     private static final boolean DEBUG = false;
     protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
     protected static final String ERR_FROZEN_CONST_TYPE = "class/module ";
@@ -312,7 +317,7 @@ public class RubyModule extends RubyObject {
         return superClass;
     }
 
-    protected void setSuperClass(RubyClass superClass) {
+    public void setSuperClass(RubyClass superClass) {
         // update superclass reference
         this.superClass = superClass;
         if (superClass != null && superClass.isSynchronized()) becomeSynchronized();
@@ -641,18 +646,18 @@ public class RubyModule extends RubyObject {
         
         if (RubyInstanceConfig.FULL_TRACE_ENABLED || RubyInstanceConfig.REFLECTED_HANDLES) {
             // we want reflected invokers or need full traces, use default (slow) populator
-            if (DEBUG) System.out.println("trace mode, using default populator");
+            if (DEBUG) LOG.debug("trace mode, using default populator");
             populator = TypePopulator.DEFAULT;
         } else {
             try {
                 String qualifiedName = "org.jruby.gen." + clazz.getCanonicalName().replace('.', '$');
 
-                if (DEBUG) System.out.println("looking for " + qualifiedName + "$Populator");
+                if (DEBUG) LOG.debug("looking for {}$Populator", qualifiedName);
 
                 Class populatorClass = Class.forName(qualifiedName + "$Populator");
                 populator = (TypePopulator)populatorClass.newInstance();
             } catch (Throwable t) {
-                if (DEBUG) System.out.println("Could not find it, using default populator");
+                if (DEBUG) LOG.debug("Could not find it, using default populator");
                 populator = TypePopulator.DEFAULT;
             }
         }
@@ -1019,7 +1024,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void invalidateCacheDescendants() {
-        if (DEBUG) System.out.println("invalidating descendants: " + classId);
+        if (DEBUG) LOG.debug("invalidating descendants: {}", classId);
         invalidateCacheDescendantsInner();
         // update all hierarchies into which this module has been included
         synchronized (getRuntime().getHierarchyLock()) {
@@ -1778,24 +1783,8 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "initialize", frame = true, visibility = PRIVATE)
-    public IRubyObject initialize(Block block) {
+    public IRubyObject initialize(ThreadContext context, Block block) {
         if (block.isGiven()) {
-            // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
-            block.getBinding().setVisibility(PUBLIC);
-            block.yieldNonArray(getRuntime().getCurrentContext(), this, this, this);
-        }
-
-        return getRuntime().getNil();
-    }
-
-    /** rb_mod_initialize
-     *
-     */
-    @JRubyMethod(name = "initialize", frame = true, compat = RUBY1_9, visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, Block block) {
-        if (block.isGiven()) {
-            // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
-            block.getBinding().setVisibility(PUBLIC);
             module_exec(context, block);
         }
 
@@ -3355,6 +3344,11 @@ public class RubyModule extends RubyObject {
                 }
             }
         }
+    }
+    
+    @Deprecated
+    public IRubyObject initialize(Block block) {
+        return initialize(getRuntime().getCurrentContext());
     }
 
     public KindOf kindOf = KindOf.DEFAULT_KIND_OF;

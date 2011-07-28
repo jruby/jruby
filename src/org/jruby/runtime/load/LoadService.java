@@ -65,6 +65,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.util.URLUtil.getPath;
 
@@ -128,6 +130,8 @@ import static org.jruby.util.URLUtil.getPath;
  * @author jpetersen
  */
 public class LoadService {
+    private static final Logger LOG = LoggerFactory.getLogger("LoadService");
+    
     private final LoadTimer loadTimer;
 
     public enum SuffixType {
@@ -416,12 +420,12 @@ public class LoadService {
         @Override
         public long startLoad(String file) {
             indent.incrementAndGet();
-            System.err.println(getIndentString() + "-> " + file);
+            LOG.info(getIndentString() + "-> " + file);
             return System.currentTimeMillis();
         }
         @Override
         public void endLoad(String file, long startTime) {
-            System.err.println(getIndentString() + "<- " + file + " - "
+            LOG.info(getIndentString() + "<- " + file + " - "
                     + (System.currentTimeMillis() - startTime) + "ms");
             indent.decrementAndGet();
         }
@@ -630,7 +634,7 @@ public class LoadService {
             }
 
             public void load(Ruby runtime, boolean wrap) {
-                runtime.loadScript(script);
+                runtime.loadScript(script, wrap);
             }
         }
         
@@ -790,13 +794,13 @@ public class LoadService {
 
     protected void debugLogTry(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
-            runtime.getErr().println( "LoadService: trying " + what + ": " + msg );
+            LOG.info( "LoadService: trying " + what + ": " + msg );
         }
     }
 
     protected void debugLogFound(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
-            runtime.getErr().println( "LoadService: found " + what + ": " + msg );
+            LOG.info( "LoadService: found " + what + ": " + msg );
         }
     }
 
@@ -808,7 +812,7 @@ public class LoadService {
             } catch (IOException e) {
                 resourceUrl = e.getMessage();
             }
-            runtime.getErr().println( "LoadService: found: " + resourceUrl );
+            LOG.info( "LoadService: found: " + resourceUrl );
         }
     }
 
@@ -874,7 +878,11 @@ public class LoadService {
         }
         String file = state.loadName;
         if (file.endsWith(".so") || file.endsWith(".dll") || file.endsWith(".bundle")) {
-            return new CExtension(resource);
+            if (RubyInstanceConfig.nativeEnabled) {
+                return new CExtension(resource);
+            } else {
+                throw runtime.newLoadError("native code is disabled, can't load cext `" + resource.getName() + "'");
+            }
         } else if (file.endsWith(".jar")) {
             return new JarredScript(resource);
         } else if (file.endsWith(".class")) {
@@ -1094,7 +1102,7 @@ public class LoadService {
                 jarFiles.put(loadPathEntry,current);
             } catch (ZipException ignored) {
                 if (runtime.getInstanceConfig().isDebug()) {
-                    runtime.getErr().println("ZipException trying to access " + loadPathEntry + ", stack trace follows:");
+                    LOG.info("ZipException trying to access " + loadPathEntry + ", stack trace follows:");
                     ignored.printStackTrace(runtime.getErr());
                 }
             } catch (FileNotFoundException ignored) {

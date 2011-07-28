@@ -93,10 +93,14 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 import org.jruby.util.SafePropertyAccessor;
-
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
+
+    private static final Logger LOG = LoggerFactory.getLogger("JavaClass");
+
     public static final String METHOD_MANGLE = "__method";
     public static final boolean DEBUG_SCALA = false;
 
@@ -136,7 +140,7 @@ public class JavaClass extends JavaObject {
                     Method method = sMethods[j];
                     String name = method.getName();
                     if (DEBUG_SCALA) {
-                        System.out.println("Companion object method " + name + " for " + companionClass);
+                        LOG.debug("Companion object method {} for {}", name, companionClass);
                     }
                     if (name.indexOf("$") >= 0) {
                         name = fixScalaNames(name);
@@ -146,7 +150,7 @@ public class JavaClass extends JavaObject {
                         // For JRUBY-4505, restore __method methods for reserved names
                         if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
                             if (DEBUG_SCALA) {
-                                System.out.println("in reserved " + name);
+                                LOG.debug("in reserved " + name);
                             }
                             installSingletonMethods(state.staticCallbacks, javaClass, singleton, method, name + METHOD_MANGLE);
                             continue;
@@ -154,12 +158,12 @@ public class JavaClass extends JavaObject {
                         if (assignedName == null) {
                             state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
                             if (DEBUG_SCALA) {
-                                System.out.println("Assigned name is null");
+                                LOG.debug("Assigned name is null");
                             }
                         } else {
                             if (Priority.METHOD.lessImportantThan(assignedName)) {
                                 if (DEBUG_SCALA) {
-                                    System.out.println("Less important");
+                                    LOG.debug("Less important");
                                 }
                                 continue;
                             }
@@ -170,12 +174,12 @@ public class JavaClass extends JavaObject {
                             }
                         }
                         if (DEBUG_SCALA) {
-                            System.out.println("Installing " + name + " " + method + " " + singleton);
+                            LOG.debug("Installing {} {} {}", name, method, singleton);
                         }
                         installSingletonMethods(state.staticCallbacks, javaClass, singleton, method, name);
                     } else {
                         if (DEBUG_SCALA) {
-                            System.out.println("Method " + method + " is sadly static");
+                            LOG.debug("Method {} is sadly static", method);
                         }
                     }
                 }

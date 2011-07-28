@@ -104,6 +104,14 @@ import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
+import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
+import org.jruby.compiler.ir.compiler_pass.IR_Printer;
+import org.jruby.compiler.ir.compiler_pass.InlineTest;
+import org.jruby.compiler.ir.compiler_pass.LinearizeCFG;
+import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
+import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
+import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
 import org.jruby.compiler.ir.instructions.AttrAssignInstr;
 import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BNEInstr;
@@ -146,6 +154,7 @@ import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
+import org.jruby.compiler.ir.instructions.RecordImplicitClosureArgInstr;
 import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -188,6 +197,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.util.ByteList;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -238,6 +249,9 @@ import org.jruby.util.ByteList;
 // this is not a big deal.  Think this through!
 
 public class IRBuilder {
+
+    private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
+
     private static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
     private static final Operand[] NO_ARGS = new Operand[]{};
 
@@ -247,69 +261,69 @@ public class IRBuilder {
 
         String methName = null;
         if (args.length > i && args[i].equals("-inline")) {
-           methName = args[i+1];
-           i += 2;
+            methName = args[i+1];
+            i += 2;
         }
 
         boolean isCommandLineScript = args.length > i && args[i].equals("-e");
         i += (isCommandLineScript ? 1 : 0);
 
         while (i < args.length) {
-           long t1 = new Date().getTime();
-           Node ast = buildAST(isCommandLineScript, args[i]);
-           long t2 = new Date().getTime();
-           IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
-           long t3 = new Date().getTime();
-           if (isDebug) {
-               System.out.println("################## Before local optimization pass ##################");
-               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
-           }
-           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
-           long t4 = new Date().getTime();
-           if (isDebug) {
-               System.out.println("################## After local optimization pass ##################");
-               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
-           }
-           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.CFG_Builder());
-           long t5 = new Date().getTime();
-//           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
-           long t6 = new Date().getTime();
-
-           if (methName != null) {
-              System.out.println("################## After inline pass ##################");
-              System.out.println("Asked to inline " + methName);
-              scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.InlineTest(methName));
-              scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
-              scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
-           }
-
-           if (isDebug) {
-               System.out.println("################## After dead code elimination pass ##################");
-           }
-           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis());
-           long t7 = new Date().getTime();
-           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination());
-           long t8 = new Date().getTime();
-           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.AddBindingInstructions());
-           long t9 = new Date().getTime();
-           if (isDebug) {
-               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
-           }
-           scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.LinearizeCFG());
-           if (isDebug) {
-               System.out.println("################## After cfg linearization pass ##################");
-               scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.IR_Printer());
-           }
-
-           System.out.println("Time to build AST         : " + (t2 - t1));
-           System.out.println("Time to build IR          : " + (t3 - t2));
-           System.out.println("Time to run local opts    : " + (t4 - t3));
-           System.out.println("Time to run build cfg     : " + (t5 - t4));
-           System.out.println("Time to run build domtree : " + (t6 - t5));
-           System.out.println("Time to run lva           : " + (t7 - t6));
-           System.out.println("Time to run dead code elim: " + (t8 - t7));
-           System.out.println("Time to add frame instrs  : " + (t9 - t8));
-           i++;
+            long t1 = new Date().getTime();
+            Node ast = buildAST(isCommandLineScript, args[i]);
+            long t2 = new Date().getTime();
+            IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
+            long t3 = new Date().getTime();
+            if (isDebug) {
+                LOG.debug("################## Before local optimization pass ##################");
+                scope.runCompilerPass(new IR_Printer());
+            }
+            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
+            long t4 = new Date().getTime();
+            if (isDebug) {
+                LOG.debug("################## After local optimization pass ##################");
+                scope.runCompilerPass(new IR_Printer());
+            }
+            scope.runCompilerPass(new CFG_Builder());
+            long t5 = new Date().getTime();
+//            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
+            long t6 = new Date().getTime();
+           
+            if (methName != null) {
+                LOG.debug("################## After inline pass ##################");
+                LOG.debug("Asked to inline " + methName);
+                scope.runCompilerPass(new InlineTest(methName));
+                scope.runCompilerPass(new LocalOptimizationPass());
+                scope.runCompilerPass(new IR_Printer());
+            }
+           
+            if (isDebug) {
+                LOG.debug("################## After dead code elimination pass ##################");
+            }
+            scope.runCompilerPass(new LiveVariableAnalysis());
+            long t7 = new Date().getTime();
+            scope.runCompilerPass(new DeadCodeElimination());
+            long t8 = new Date().getTime();
+            scope.runCompilerPass(new AddBindingInstructions());
+            long t9 = new Date().getTime();
+            if (isDebug) {
+                scope.runCompilerPass(new IR_Printer());
+            }
+            scope.runCompilerPass(new LinearizeCFG());
+            if (isDebug) {
+                LOG.debug("################## After cfg linearization pass ##################");
+                scope.runCompilerPass(new IR_Printer());
+            }
+           
+            LOG.debug("Time to build AST         : {}", (t2 - t1));
+            LOG.debug("Time to build IR          : {}", (t3 - t2));
+            LOG.debug("Time to run local opts    : {}", (t4 - t3));
+            LOG.debug("Time to run build cfg     : {}", (t5 - t4));
+            LOG.debug("Time to run build domtree : {}", (t6 - t5));
+            LOG.debug("Time to run lva           : {}", (t7 - t6));
+            LOG.debug("Time to run dead code elim: {}", (t8 - t7));
+            LOG.debug("Time to add frame instrs  : {}", (t9 - t8));
+            i++;
         }
     }
 
@@ -963,7 +977,7 @@ public class IRBuilder {
         s.addInstr(new DefineClassInstr(ret, cmo, superClass));
         s.getNearestModule().addClass(c);
 
-		  IRMethod rootMethod = c.getRootMethod();
+        IRMethod rootMethod = c.getRootMethod();
         Operand rv = build(classNode.getBodyNode(), rootMethod);
         if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
@@ -989,7 +1003,7 @@ public class IRBuilder {
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
-		  IRMethod rootMethod = mc.getRootMethod();
+        IRMethod rootMethod = mc.getRootMethod();
         Operand rv = build(sclassNode.getBodyNode(), rootMethod);
         if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
@@ -1179,7 +1193,8 @@ public class IRBuilder {
         m.addInstr(new RECV_EXCEPTION_Instr(exc));
         // Verify that the exception is of type 'JumpException'.
         // Since this is JRuby implementation Java code, we dont need EQQ here.
-        m.addInstr(new InstanceOfInstr(eqqResult, exc, "JumpException")); 
+        // SSS FIXME: Hardcoded exception class name!
+        m.addInstr(new InstanceOfInstr(eqqResult, exc, "org.jruby.exceptions.JumpException")); 
         m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
         Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
         if (v2 != null) m.addInstr(new CopyInstr(rv, (Operand)v1));
@@ -1689,12 +1704,19 @@ public class IRBuilder {
             // IMPORTANT: Receive the block argument before the opt and splat args
             // This is so that the *arg can be encoded as 'rest of the array'.  This
             // won't work if the block argument hasn't been received yet!
-        if (argsNode.getBlock() != null)
-            s.addInstr(new ReceiveClosureInstr(s.getLocalVariable(argsNode.getBlock().getName())));
+        Variable blockVar = null;
+        if (argsNode.getBlock() != null) {
+            blockVar = s.getLocalVariable(argsNode.getBlock().getName());
+            s.addInstr(new ReceiveClosureInstr(blockVar));
+        }
 
         // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
         // In addition, store the block argument in an implicit block variable
-        s.addInstr(new ReceiveClosureInstr(((IRExecutionScope)s).getImplicitBlockArg()));
+        Variable implicitBlockArg = ((IRExecutionScope)s).getImplicitBlockArg();
+        if (blockVar == null)
+            s.addInstr(new ReceiveClosureInstr(implicitBlockArg));
+        else
+            s.addInstr(new CopyInstr(implicitBlockArg, blockVar));
 
             // Now for the rest
         if (opt > 0) {
@@ -2047,8 +2069,11 @@ public class IRBuilder {
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
             if (argsNodeId != null)
-                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, false); // SSS: Changed this from 1 to 0
+                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, false);
         }
+
+            // Record implicit closure/block arg (passed into lexical method)
+        closure.addInstr(new RecordImplicitClosureArgInstr(((IRExecutionScope)s).getImplicitBlockArg()));
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
@@ -2197,6 +2222,9 @@ public class IRBuilder {
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
             buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, false);  // SSS: Changed this from 1 to 0
 
+            // Record implicit closure/block arg (passed into lexical method)
+        closure.addInstr(new RecordImplicitClosureArgInstr(((IRExecutionScope)s).getImplicitBlockArg()));
+
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
         if (closureRetVal != U_NIL)  // can be U_NIL if the node is an if node with returns in both branches.
@@ -2266,7 +2294,7 @@ public class IRBuilder {
         s.addInstr(new DefineModuleInstr(ret, (ModuleMetaObject) MetaObject.create(m)));
         s.getNearestModule().addModule(m);
 
-		  IRMethod rootMethod = m.getRootMethod();
+        IRMethod rootMethod = m.getRootMethod();
         Operand rv = build(moduleNode.getBodyNode(), rootMethod);
         if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
@@ -2430,7 +2458,7 @@ public class IRBuilder {
         Operand  v1;
         boolean  needsDefnCheck = needsDefinitionCheck(orNode.getFirstNode());
         if (needsDefnCheck) {
-		      l2 = s.getNewLabel();
+            l2 = s.getNewLabel();
             v1 = buildGetDefinitionBase(orNode.getFirstNode(), s);
             s.addInstr(new CopyInstr(flag, v1));
             s.addInstr(new BEQInstr(flag, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
@@ -2439,9 +2467,9 @@ public class IRBuilder {
         v1 = build(orNode.getFirstNode(), s); // build of 'x'
         s.addInstr(new CopyInstr(result, v1));
         s.addInstr(new IsTrueInstr(flag, v1));
-		  if (needsDefnCheck) {
+        if (needsDefnCheck) {
             s.addInstr(new LABEL_Instr(l2));
-		  }
+        }
         s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         Operand v2 = build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
         s.addInstr(new CopyInstr(result, v2));
@@ -2807,10 +2835,17 @@ public class IRBuilder {
 
     public Operand buildReturn(ReturnNode returnNode, IRScope m) {
         Operand retVal = (returnNode.getValueNode() == null) ? Nil.NIL : build(returnNode.getValueNode(), m);
+
         // Before we return, have to go execute all the ensure blocks
         if (!_ensureBlockStack.empty())
             EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
-        m.addInstr(new ReturnInstr(retVal));
+
+        // If 'm' is a block scope, a return returns from the closest enclosing method.
+        // The runtime takes care of lambdas
+        if (m instanceof IRClosure)
+            m.addInstr(new ReturnInstr(retVal, ((IRExecutionScope) m).getClosestMethodAncestor()));
+        else
+            m.addInstr(new ReturnInstr(retVal));
 
         // The value of the return itself in the containing expression can never be used because of control-flow reasons.
         // The expression that uses this result can never be executed beyond this point and hence the value itself is just
@@ -3013,8 +3048,9 @@ public class IRBuilder {
     }
 
     public void buildArgsPushArguments(List<Operand> args, ArgsPushNode argsPushNode, IRScope m) {
-        Operand a = new Array(new Operand[]{ build(argsPushNode.getFirstNode(), m), build(argsPushNode.getSecondNode(), m) });
-        args.add(a);
+        Operand v1 = build(argsPushNode.getFirstNode(), m);
+        Operand v2 = build(argsPushNode.getSecondNode(), m);
+        args.add(new CompoundArray(v1, v2, true));
     }
 
     public void buildArrayArguments(List<Operand> args, Node node, IRScope s) {

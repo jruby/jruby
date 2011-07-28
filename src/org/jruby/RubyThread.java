@@ -68,6 +68,9 @@ import org.jruby.runtime.ObjectMarshal;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.SelectorFactory;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
+
 import static org.jruby.CompatVersion.*;
 
 /**
@@ -83,6 +86,9 @@ import static org.jruby.CompatVersion.*;
  */
 @JRubyClass(name="Thread")
 public class RubyThread extends RubyObject implements ExecutionContext {
+
+    private static final Logger LOG = LoggerFactory.getLogger("RubyThread");
+
     private ThreadLike threadImpl;
     private RubyFixnum priority;
     private transient Map<IRubyObject, IRubyObject> threadLocalVariables;
@@ -689,10 +695,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return RubyKernel.raise(context, runtime.getKernel(), args, block);
         }
         
-        if (DEBUG) System.out.println("thread " + Thread.currentThread() + " before raising");
+        if (DEBUG) LOG.debug("thread {} before raising", Thread.currentThread());
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
 
-        if (DEBUG) System.out.println("thread " + Thread.currentThread() + " raising");
+        if (DEBUG) LOG.debug("thread {} raising", Thread.currentThread());
         IRubyObject exception = prepareRaiseException(runtime, args, block);
 
         runtime.getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.RAISE, exception));
@@ -858,13 +864,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // If the killee thread is the same as the killer thread, just die
         if (currentThread == this) throwThreadKill();
         
-        if (DEBUG) System.out.println("thread " + Thread.currentThread() + " trying to kill");
+        if (DEBUG) LOG.debug("thread {} trying to kill", Thread.currentThread());
 
         currentThread.pollThreadEvents();
 
         getRuntime().getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.KILL));
         
-        if (DEBUG) System.out.println("thread " + Thread.currentThread() + " succeeded with kill");
+        if (DEBUG) LOG.debug("thread {} succeeded with kill", Thread.currentThread());
         
         return this;
     }
@@ -1087,7 +1093,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private void receivedAnException(ThreadContext context, IRubyObject exception) {
         RubyModule kernelModule = getRuntime().getKernel();
         if (DEBUG) {
-            System.out.println("thread " + Thread.currentThread() + " before propagating exception: " + status);
+            LOG.debug("thread {} before propagating exception: {}", Thread.currentThread(), status);
         }
         kernelModule.callMethod(context, "raise", exception);
     }

@@ -9,3 +9,4 @@ fails:Process.setrlimit and Process.getrlimit limit and get total available memo
 fails:Process.setrlimit and Process.getrlimit limit and get total size for mlock(2) (bytes)
 fails:Process.setrlimit and Process.getrlimit limit and get number of processes for the user (number)
 fails:Process.setrlimit and Process.getrlimit limit and get resident memory size (bytes)
+fails:Process.setrlimit and Process.getrlimit coerces arguments to Integers
