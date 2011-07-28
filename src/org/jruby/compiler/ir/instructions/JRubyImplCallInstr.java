@@ -1,11 +1,12 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
-import org.jruby.RubyRegexp;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.MetaClass;
+import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
@@ -157,7 +158,12 @@ public class JRubyImplCallInstr extends CallInstr {
                 break;
             case TO_ARY:
                 receiver = getReceiver().retrieve(interp);
-                rVal = RuntimeHelpers.aryToAry((IRubyObject) receiver);
+                Operand[] args = getCallArgs();
+                // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays
+                if ((args.length > 0) && ((BooleanLiteral)args[0]).isFalse() && (receiver instanceof RubyArray))
+                    rVal = receiver;
+                else
+                    rVal = RuntimeHelpers.aryToAry((IRubyObject) receiver);
                 break;
             case SET_WITHIN_DEFINED:
                 interp.getContext().setWithinDefined(((BooleanLiteral)getCallArgs()[0]).isTrue());
@@ -166,7 +172,7 @@ public class JRubyImplCallInstr extends CallInstr {
             {
                 IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(interp);
                 name = ((StringLiteral)getCallArgs()[1])._str_value;
-					 ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
+                ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
                 rVal = (definedType == null ? Nil.NIL : (new StringLiteral(definedType))).retrieve(interp);
                 break;
             }

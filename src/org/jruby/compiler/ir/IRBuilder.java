@@ -659,8 +659,12 @@ public class IRBuilder {
                 break;
             }
             case MULTIPLEASGNNODE:
-                buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, v);
+            {
+                // Invoke to_ary on the operand only if it is not an array already
+                Variable nv = (Variable)generateJRubyUtilityCall(s, JRubyImplementationMethod.TO_ARY, v, new Operand[] { BooleanLiteral.FALSE });
+                buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, nv);
                 break;
+            }
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
             default:
