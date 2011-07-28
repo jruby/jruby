@@ -168,6 +168,12 @@ public class NaiveInterpreterContext implements InterpreterContext {
         return context;
     }
 
+    public IRubyObject[] setNewParameters(IRubyObject[] newParams) {
+        IRubyObject[] oldParams = parameters;
+        this.parameters = newParams;
+        return oldParams;
+    }
+
     public Object getParameter(int offset) {
         return parameters[offset];
     }

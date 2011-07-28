@@ -160,6 +160,7 @@ import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
+import org.jruby.compiler.ir.instructions.SetArgumentsInstr;
 import org.jruby.compiler.ir.instructions.SearchConstInstr;
 import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
@@ -673,7 +674,7 @@ public class IRBuilder {
     }
 
     // This method is called to build arguments for a block!
-    public void buildBlockArgsAssignment(Node node, IRScope s, int argIndex, boolean isSplat) {
+    public void buildBlockArgsAssignment(Node node, IRScope s, int argIndex, boolean isRoot, boolean isSplat) {
         Variable v;
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
@@ -728,9 +729,24 @@ public class IRBuilder {
                 break;
             }
             case MULTIPLEASGNNODE:
-                // SSS FIXME: Are we guaranteed that splats dont head to multiple-assignment nodes!  i.e. |*(a,b)|?
+            {
+                Variable oldArgs = null;
+                // Push
+                if (!isRoot) {
+                    v = s.getNewTemporaryVariable();
+                    s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
+                    oldArgs = s.getNewTemporaryVariable();
+                    s.addInstr(new SetArgumentsInstr(oldArgs, v, true));      // convert to array via to_ary if necessary 
+                    // SSS FIXME: Are we guaranteed that splats dont head to multiple-assignment nodes!  i.e. |*(a,b)|?
+                }
+                // Build
                 buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, null);
+                // Pop
+                if (!isRoot) {
+                    s.addInstr(new SetArgumentsInstr(null, oldArgs, false));  // restore oldArgs -- no to_ary required
+                }
                 break;
+            }
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
             default:
@@ -2073,7 +2089,7 @@ public class IRBuilder {
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
             if (argsNodeId != null)
-                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, false);
+                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, true, false);
         }
 
             // Record implicit closure/block arg (passed into lexical method)
@@ -2224,7 +2240,7 @@ public class IRBuilder {
             // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
-            buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, false);  // SSS: Changed this from 1 to 0
+            buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, true, false);  // SSS: Changed this from 1 to 0
 
             // Record implicit closure/block arg (passed into lexical method)
         closure.addInstr(new RecordImplicitClosureArgInstr(((IRExecutionScope)s).getImplicitBlockArg()));
@@ -2326,7 +2342,7 @@ public class IRBuilder {
             ListNode headNode = (ListNode) sourceArray;
             for (Node an: headNode.childNodes()) {
                 if (values == null) {
-                    buildBlockArgsAssignment(an, s, i, false);
+                    buildBlockArgsAssignment(an, s, i, false, false);
                 } else {
                     buildAssignment(an, s, values, i, false);
                 }
@@ -2347,7 +2363,7 @@ public class IRBuilder {
             buildAssignment(an, s, values, i, true); // rest of the argument array!
         }
         else {
-            buildBlockArgsAssignment(an, s, i, true); // rest of the argument array!
+            buildBlockArgsAssignment(an, s, i, false, true); // rest of the argument array!
         }
 
     }

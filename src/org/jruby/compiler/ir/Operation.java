@@ -23,7 +23,7 @@ public enum Operation {
     RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op), BREAK(OpType.ret_op),
     RECV_ARG(OpType.recv_arg_op), RECV_SELF(OpType.recv_arg_op), RECV_CLOSURE(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
     RECV_EXCEPTION(OpType.recv_arg_op),
-	 RECORD_CLOSURE(OpType.dont_care),
+	 SET_ARGS(OpType.dont_care), RECORD_CLOSURE(OpType.dont_care),
     CALL(OpType.call_op), JRUBY_IMPL(OpType.call_op), RUBY_INTERNALS(OpType.call_op),
     METHOD_LOOKUP(OpType.dont_care),
 
@@ -126,7 +126,7 @@ public enum Operation {
     // unless we know more about what the call is, what it does, etc.
     // Similarly for evals, stores, returns.
     public boolean hasSideEffects() {
-        return isCall() || isEval() || isStore() || isReturn() || isException() || this == RECORD_CLOSURE || type == OpType.def_op || type == OpType.yield_op;
+        return isCall() || isEval() || isStore() || isReturn() || isException() || this == SET_ARGS || this == RECORD_CLOSURE || type == OpType.def_op || type == OpType.yield_op;
     }
 
     // Conservative -- say no only if you know it for sure cannot
