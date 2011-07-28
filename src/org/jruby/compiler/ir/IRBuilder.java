@@ -3048,8 +3048,9 @@ public class IRBuilder {
     }
 
     public void buildArgsPushArguments(List<Operand> args, ArgsPushNode argsPushNode, IRScope m) {
-        Operand a = new Array(new Operand[]{ build(argsPushNode.getFirstNode(), m), build(argsPushNode.getSecondNode(), m) });
-        args.add(a);
+        Operand v1 = build(argsPushNode.getFirstNode(), m);
+        Operand v2 = build(argsPushNode.getSecondNode(), m);
+        args.add(new CompoundArray(v1, v2, true));
     }
 
     public void buildArrayArguments(List<Operand> args, Node node, IRScope s) {

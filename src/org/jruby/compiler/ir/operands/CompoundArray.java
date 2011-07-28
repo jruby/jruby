@@ -7,38 +7,53 @@ import java.util.Map;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.RubyArray;
 
-// This represents a concatenation of an array and a splat
-// Ex: a = 1,2,3,*[5,6,7]
+// This represents an array that is built at runtime from its constituents.
+//   * Array + Splat ([1,2,3], *[5,6,7])
+//   * Array + Value ([1,2,3], 5)
+// Note that in either case, the first operand array is not modified, 
+// i.e. this is a side-effect free operation, hence an operand
 //
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this will get built into an actual array object
 public class CompoundArray extends Operand
 {
-    Operand _a1;
-    Operand _a2;
+    Operand a1;
+    Operand a2;
+    boolean argsPushNode;
 
-    public CompoundArray(Operand a1, Operand a2) { _a1 = a1; _a2 = a2; }
+    public CompoundArray(Operand a1, Operand a2) { 
+        this.a1 = a1;
+        this.a2 = a2; 
+        argsPushNode = false;
+    }
 
-    public boolean isConstant() { return false; /*return _a1.isConstant() && _a2.isConstant();*/ }
+    public CompoundArray(Operand a1, Operand a2, boolean argsPushNode) { 
+        this.a1 = a1;
+        this.a2 = a2;
+        this.argsPushNode = argsPushNode;
+    }
 
-    public String toString() { return _a1 + ", *" + _a2; }
+    public boolean isConstant() { return false; /*return a1.isConstant() && a2.isConstant();*/ }
+
+    public String toString() { return a1 + ", *" + a2; }
 
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
     {
 /*
  * SSS FIXME:  Cannot convert this to an Array operand!
  *
-        _a1 = _a1.getSimplifiedOperand(valueMap);
-        _a2 = _a2.getSimplifiedOperand(valueMap);
+        a1 = a1.getSimplifiedOperand(valueMap);
+        a2 = a2.getSimplifiedOperand(valueMap);
 
         // For simplification, get the target value, even if compound
-        Operand p1 = _a1;
+        Operand p1 = a1;
         if (p1 instanceof Variable)
             p1 = ((Variable)p1).getValue(valueMap);
 
         // For simplification, get the target value, even if compound
-        Operand p2 = _a2;
+        Operand p2 = a2;
         if (p2 instanceof Variable)
             p2 = ((Variable)p2).getValue(valueMap);
 
@@ -69,18 +84,19 @@ public class CompoundArray extends Operand
 
     /** Append the list of variables used in this operand to the input list */
     @Override
-    public void addUsedVariables(List<Variable> l)
-    {
-        _a1.addUsedVariables(l);
-        _a2.addUsedVariables(l);
+    public void addUsedVariables(List<Variable> l) {
+        a1.addUsedVariables(l);
+        a2.addUsedVariables(l);
     }
 
     public Operand cloneForInlining(InlinerInfo ii) { 
-        return isConstant() ? this : new CompoundArray(_a1.cloneForInlining(ii), _a2.cloneForInlining(ii));
+        return isConstant() ? this : new CompoundArray(a1.cloneForInlining(ii), a2.cloneForInlining(ii));
     }
 
     @Override
     public Object retrieve(InterpreterContext interp) {
-        return RuntimeHelpers.argsCat((IRubyObject)_a1.retrieve(interp), (IRubyObject)_a2.retrieve(interp));
+        IRubyObject v1 = (IRubyObject)a1.retrieve(interp);
+        IRubyObject v2 = (IRubyObject)a2.retrieve(interp);
+        return argsPushNode ? ((RubyArray)v1.dup()).append(v2) : RuntimeHelpers.argsCat(v1, v2);
     }
 }
