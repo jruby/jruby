@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyString;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -76,7 +77,8 @@ public class BacktickString extends Operand {
         RubyString newString = interp.getRuntime().newString();
 
         for (Operand p: pieces) {
-            newString.append((IRubyObject) p.retrieve(interp));
+            RubyBasicObject piece = (RubyBasicObject) p.retrieve(interp);
+            newString.append((piece instanceof RubyString) ? (RubyString)piece : piece.to_s());
         }
         
         return ((IRubyObject) interp.getSelf()).callMethod(interp.getContext(), "`", newString);
