@@ -98,15 +98,15 @@ public class ClassVarNode extends Node implements INameNode {
         //RubyModule module = context.getRubyClass();
         RubyModule module = context.getCurrentScope().getStaticScope().getModule();
         
-        if (module == null && self.getMetaClass().fastIsClassVarDefined(name)) {
+        if (module == null && self.getMetaClass().isClassVarDefined(name)) {
             return CLASS_VARIABLE_BYTELIST;
-        } else if (module.fastIsClassVarDefined(name)) {
+        } else if (module.isClassVarDefined(name)) {
             return CLASS_VARIABLE_BYTELIST;
         }
 
         IRubyObject attached = module.isSingleton() ? ((MetaClass)module).getAttached() : null;
         
-        if (attached instanceof RubyModule && ((RubyModule) attached).fastIsClassVarDefined(name)) {
+        if (attached instanceof RubyModule && ((RubyModule) attached).isClassVarDefined(name)) {
             return CLASS_VARIABLE_BYTELIST; 
         }
 

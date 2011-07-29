@@ -227,7 +227,7 @@ public class RubyZlib {
 
     @JRubyMethod(name = "zlib_version", module = true, visibility = PRIVATE)
     public static IRubyObject zlib_version(IRubyObject recv) {
-        RubyBasicObject res = (RubyBasicObject) ((RubyModule)recv).fastGetConstant("ZLIB_VERSION");
+        RubyBasicObject res = (RubyBasicObject) ((RubyModule)recv).getConstant("ZLIB_VERSION");
         // MRI behavior, enforced by tests
         res.taint(recv.getRuntime());
         return res;
@@ -299,7 +299,7 @@ public class RubyZlib {
     }
 
     private static RaiseException newZlibError(Ruby runtime, String klass, String message) {
-        RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass(klass);
+        RubyClass errorClass = runtime.getModule("Zlib").getClass(klass);
         return new RaiseException(RubyException.newException(runtime, errorClass, message), true);
     }
 
@@ -358,7 +358,7 @@ public class RubyZlib {
         @JRubyMethod(name = "data_type")
         public IRubyObject data_type() {
             checkClosed();
-            return getRuntime().fastGetModule("Zlib").fastGetConstant("UNKNOWN");
+            return getRuntime().getModule("Zlib").getConstant("UNKNOWN");
         }
 
         @JRubyMethod(name = { "closed?", "ended?"})
@@ -612,7 +612,7 @@ public class RubyZlib {
 
                 // MRI behavior
                 if (finish && flater.needsInput()) {
-                    RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("BufError");
+                    RubyClass errorClass = runtime.getModule("Zlib").getClass("BufError");
                     throw new RaiseException(RubyException.newException(
                             runtime, errorClass, "buffer error"), true);
                 }
@@ -620,7 +620,7 @@ public class RubyZlib {
                 try {
                     resultLength = flater.inflate(outp);
                     if (flater.needsDictionary()) {
-                        RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("NeedDict");
+                        RubyClass errorClass = runtime.getModule("Zlib").getClass("NeedDict");
                         throw new RaiseException(RubyException.newException(
                                 runtime, errorClass, "need dictionary"));
                     } else {
@@ -1101,7 +1101,7 @@ public class RubyZlib {
         }
         
         private static RaiseException newGzipFileError(Ruby runtime, String klass, String message) {
-            RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("GzipFile").fastGetClass(klass);
+            RubyClass errorClass = runtime.getModule("Zlib").getClass("GzipFile").getClass(klass);
             return new RaiseException(RubyException.newException(runtime, errorClass, message), true);
         }
     }
@@ -1975,7 +1975,7 @@ public class RubyZlib {
         
         @JRubyMethod(name = "puts", rest = true)
         public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
-            RubyStringIO sio = (RubyStringIO)getRuntime().fastGetClass("StringIO").newInstance(context, new IRubyObject[0], Block.NULL_BLOCK);
+            RubyStringIO sio = (RubyStringIO)getRuntime().getClass("StringIO").newInstance(context, new IRubyObject[0], Block.NULL_BLOCK);
             sio.puts(context, args);
             write(sio.string());
             

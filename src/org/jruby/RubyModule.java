@@ -94,6 +94,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassProvider;
@@ -196,6 +197,14 @@ public class RubyModule extends RubyObject {
 
     public synchronized Map<String, IRubyObject> getConstantMapForWrite() {
         return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<String, IRubyObject>(4, 0.9f, 1) : constants;
+    }
+    
+    private Map<String, Autoload> getAutoloadMap() {
+        return autoloads;
+    }
+    
+    private synchronized Map<String, Autoload> getAutoloadMapForWrite() {
+        return autoloads == Collections.EMPTY_MAP ? autoloads = new ConcurrentHashMap<String, Autoload>(4, 0.9f, 1) : autoloads;
     }
     
     public void addIncludingHierarchy(IncludedModuleWrapper hierarchy) {
@@ -442,12 +451,9 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
+    @Deprecated
     public RubyClass fastGetClass(String internedName) {
-        IRubyObject module;
-        if ((module = fastGetConstantAt(internedName)) instanceof RubyClass) {
-            return (RubyClass)module;
-        }
-        return null;
+        return getClass(internedName);
     }
 
     /**
@@ -537,7 +543,7 @@ public class RubyModule extends RubyObject {
 
         
         for(String name : names) {
-            this.fastSetConstant(name, realVal);
+            this.setConstant(name, realVal);
         }
 
         return true;
@@ -2360,7 +2366,7 @@ public class RubyModule extends RubyObject {
         String internedName = validateClassVariable(var.asJavaString().intern());
         RubyModule module = this;
         do {
-            if (module.fastHasClassVariable(internedName)) {
+            if (module.hasClassVariable(internedName)) {
                 return context.getRuntime().getTrue();
             }
         } while ((module = module.getSuperClass()) != null);
@@ -2373,7 +2379,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "class_variable_get", required = 1, visibility = PRIVATE)
     public IRubyObject class_variable_get(IRubyObject var) {
-        return fastGetClassVar(validateClassVariable(var.asJavaString()).intern());
+        return getClassVar(validateClassVariable(var.asJavaString()).intern());
     }
 
     /** rb_mod_cvar_set
@@ -2381,7 +2387,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "class_variable_set", required = 2, visibility = PRIVATE)
     public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
-        return fastSetClassVar(validateClassVariable(var.asJavaString()).intern(), value);
+        return setClassVar(validateClassVariable(var.asJavaString()).intern(), value);
     }
 
     /** rb_mod_remove_cvar
@@ -2485,7 +2491,7 @@ public class RubyModule extends RubyObject {
             if (value != UNDEF) {
                 return value;
             }
-            context.getRuntime().getLoadService().removeAutoLoadFor(getName() + "::" + name);
+            removeAutoload(name);
             // FIXME: I'm not sure this is right, but the old code returned
             // the undef, which definitely isn't right...
             return context.getRuntime().getNil();
@@ -2611,16 +2617,9 @@ public class RubyModule extends RubyObject {
         return storeClassVariable(name, value);
     }
 
+    @Deprecated
     public IRubyObject fastSetClassVar(final String internedName, final IRubyObject value) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        RubyModule module = this;
-        do {
-            if (module.fastHasClassVariable(internedName)) {
-                return module.fastStoreClassVariable(internedName, value);
-            }
-        } while ((module = module.getSuperClass()) != null);
-        
-        return fastStoreClassVariable(internedName, value);
+        return setClassVar(internedName, value);
     }
 
     /**
@@ -2643,17 +2642,9 @@ public class RubyModule extends RubyObject {
         throw getRuntime().newNameError("uninitialized class variable " + name + " in " + getName(), name);
     }
 
+    @Deprecated
     public IRubyObject fastGetClassVar(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        assert IdUtil.isClassVariable(internedName);
-        IRubyObject value;
-        RubyModule module = this;
-        
-        do {
-            if ((value = module.fetchClassVariable(internedName)) != null) return value;
-        } while ((module = module.getSuperClass()) != null);
-
-        throw getRuntime().newNameError("uninitialized class variable " + internedName + " in " + getName(), internedName);
+        return getClassVar(internedName);
     }
 
     /**
@@ -2673,16 +2664,10 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
+    @Deprecated
     public boolean fastIsClassVarDefined(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        RubyModule module = this;
-        do {
-            if (module.fastHasClassVariable(internedName)) return true;
-        } while ((module = module.getSuperClass()) != null);
-
-        return false;
+        return isClassVarDefined(internedName);
     }
-
     
     /** rb_mod_remove_cvar
      *
@@ -2701,7 +2686,7 @@ public class RubyModule extends RubyObject {
             return value;
         }
 
-        if (fastIsClassVarDefined(javaName)) {
+        if (isClassVarDefined(javaName)) {
             throw cannotRemoveError(javaName);
         }
 
@@ -2737,11 +2722,9 @@ public class RubyModule extends RubyObject {
         return value == UNDEF ? resolveUndefConstant(getRuntime(), name) : value;
     }
 
+    @Deprecated
     public IRubyObject fastGetConstantAt(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        IRubyObject value = fastFetchConstant(internedName);
-
-        return value == UNDEF ? resolveUndefConstant(getRuntime(), internedName) : value;
+        return getConstantAt(internedName);
     }
 
     /**
@@ -2755,19 +2738,21 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstant(String name, boolean inherit) {
-        return fastGetConstant(name.intern(), inherit);
-    }
-    
-    public IRubyObject fastGetConstant(String internedName) {
-        return fastGetConstant(internedName, true);
-    }
-
-    public IRubyObject fastGetConstant(String internedName, boolean inherit) {
-        IRubyObject value = getConstantNoConstMissing(internedName, inherit);
+        IRubyObject value = getConstantNoConstMissing(name, inherit);
         Ruby runtime = getRuntime();
 
         return value == null ? callMethod(runtime.getCurrentContext(), "const_missing",
-                runtime.fastNewSymbol(internedName)) : value;
+                runtime.fastNewSymbol(name)) : value;
+    }
+
+    @Deprecated
+    public IRubyObject fastGetConstant(String internedName) {
+        return getConstant(internedName);
+    }
+
+    @Deprecated
+    public IRubyObject fastGetConstant(String internedName, boolean inherit) {
+        return getConstant(internedName, inherit);
     }
 
     public IRubyObject getConstantNoConstMissing(String name) {
@@ -2788,38 +2773,29 @@ public class RubyModule extends RubyObject {
 
     private IRubyObject iterateConstantNoConstMissing(String name, RubyModule init, boolean inherit) {
         for (RubyModule p = init; p != null; p = p.getSuperClass()) {
-            IRubyObject value = p.getConstantInner(name);
+            IRubyObject value = p.getConstantAt(name);
 
             if (value != null) return value == UNDEF ? null : value;
             if (!inherit) break;
         }
         return null;
     }
-    
-    protected IRubyObject getConstantInner(String name) {
-        IRubyObject value = constantTableFetch(name);
-
-        for (; value == UNDEF; value = constantTableFetch(name)) {
-            if (resolveUndefConstant(getRuntime(), name) == null) return UNDEF;
-        }
-        
-        return value;
-    }
 
     // not actually called anywhere (all known uses call the fast version)
     public IRubyObject getConstantFrom(String name) {
-        return fastGetConstantFrom(name.intern());
+        IRubyObject value = getConstantFromNoConstMissing(name);
+
+        return value != null ? value : getConstantFromConstMissing(name);
     }
     
+    @Deprecated
     public IRubyObject fastGetConstantFrom(String internedName) {
-        IRubyObject value = fastGetConstantFromNoConstMissing(internedName);
-
-        return value != null ? value : fastGetConstantFromConstMissing(internedName);
+        return getConstantFrom(internedName);
     }
 
-    public IRubyObject fastGetConstantFromNoConstMissing(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        assert IdUtil.isConstant(internedName);
+    public IRubyObject getConstantFromNoConstMissing(String name) {
+        assert name == name.intern() : name + " is not interned";
+        assert IdUtil.isConstant(name);
         Ruby runtime = getRuntime();
         RubyClass objectClass = runtime.getObject();
         IRubyObject value;
@@ -2827,16 +2803,15 @@ public class RubyModule extends RubyObject {
         RubyModule p = this;
 
         while (p != null) {
-            if ((value = p.constantTableFastFetch(internedName)) != null) {
+            if ((value = p.constantTableFetch(name)) != null) {
                 if (value == UNDEF) {
-                    if (p.resolveUndefConstant(runtime, internedName) == null) break;
-                    continue; // Not that is loaded loop around to resolve it next pass
+                    return p.resolveUndefConstant(runtime, name);
                 }
 
                 if (p == objectClass && this != objectClass) {
-                    String badCName = getName() + "::" + internedName;
+                    String badCName = getName() + "::" + name;
                     runtime.getWarnings().warn(ID.CONSTANT_BAD_REFERENCE, "toplevel constant " +
-                            internedName + " referenced by " + badCName);
+                            name + " referenced by " + badCName);
                 }
 
                 return value;
@@ -2845,19 +2820,30 @@ public class RubyModule extends RubyObject {
         }
         return null;
     }
+    
+    @Deprecated
+    public IRubyObject fastGetConstantFromNoConstMissing(String internedName) {
+        return getConstantFromNoConstMissing(internedName);
+    }
 
-    public IRubyObject fastGetConstantFromConstMissing(String internedName) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
-        assert IdUtil.isConstant(internedName);
-
+    public IRubyObject getConstantFromConstMissing(String name) {
         return callMethod(getRuntime().getCurrentContext(),
-                "const_missing", getRuntime().fastNewSymbol(internedName));
+                "const_missing", getRuntime().fastNewSymbol(name));
+    }
+    
+    @Deprecated
+    public IRubyObject fastGetConstantFromConstMissing(String internedName) {
+        return getConstantFromConstMissing(internedName);
     }
     
     public IRubyObject resolveUndefConstant(Ruby runtime, String name) {
-        if (!runtime.is1_9()) deleteConstant(name);
-        
-        return runtime.getLoadService().autoload(getName() + "::" + name);
+        Autoload autoload = getAutoloadMap().get(name);
+        if (autoload == null) {
+            return null;
+        }
+        IRubyObject value = autoload.getConstant(runtime.getCurrentContext());
+        if (value != null) return value;
+        return autoload.getLoadMethod().load(runtime);
     }
 
     /**
@@ -2898,17 +2884,25 @@ public class RubyModule extends RubyObject {
         if (oldValue != null) {
             Ruby runtime = getRuntime();
             if (oldValue == UNDEF) {
-                runtime.getLoadService().removeAutoLoadFor(getName() + "::" + name);
+                Autoload autoload = getAutoloadMap().get(name);
+                if (autoload != null) {
+                    if (!autoload.setConstant(runtime.getCurrentContext(), value)) {
+                        removeAutoload(name);
+                        storeConstant(name, value);
+                    }
+                }
             } else {
                 if (warn) {
                     runtime.getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
+                storeConstant(name, value);
             }
+        } else {
+            storeConstant(name, value);
         }
 
-        storeConstant(name, value);
         invalidateConstantCache();
-
+        
         // if adding a module under a constant name, set that module's basename to the constant name
         if (value instanceof RubyModule) {
             RubyModule module = (RubyModule)value;
@@ -2920,6 +2914,7 @@ public class RubyModule extends RubyObject {
         return value;
     }
 
+    @Deprecated
     public IRubyObject fastSetConstant(String internedName, IRubyObject value) {
         return setConstant(internedName, value);
     }
@@ -2955,8 +2950,7 @@ public class RubyModule extends RubyObject {
             Object value;
             if ((value = module.constantTableFetch(name)) != null) {
                 if (value != UNDEF) return true;
-                return getRuntime().getLoadService().autoloadFor(
-                        module.getName() + "::" + name) != null;
+                return getAutoloadMap().get(name) != null;
             }
 
         } while (isObject && (module = module.getSuperClass()) != null );
@@ -2973,10 +2967,9 @@ public class RubyModule extends RubyObject {
 
         do {
             Object value;
-            if ((value = module.constantTableFastFetch(internedName)) != null) {
+            if ((value = module.constantTableFetch(internedName)) != null) {
                 if (value != UNDEF) return true;
-                return getRuntime().getLoadService().autoloadFor(
-                        module.getName() + "::" + internedName) != null;
+                return getAutoloadMap().get(internedName) != null;
             }
 
         } while (isObject && (module = module.getSuperClass()) != null );
@@ -2994,10 +2987,9 @@ public class RubyModule extends RubyObject {
 
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             Object value;
-            if ((value = module.constantTableFastFetch(internedName)) != null) {
+            if ((value = module.constantTableFetch(internedName)) != null) {
                 if (value != UNDEF) return true;
-                return getRuntime().getLoadService().autoloadFor(
-                        module.getName() + "::" + internedName) != null;
+                return getAutoloadMap().get(internedName) != null;
             }
             if (!inherit) {
                 break;
@@ -3100,6 +3092,7 @@ public class RubyModule extends RubyObject {
         return getClassVariablesForRead().containsKey(name);
     }
 
+    @Deprecated
     public boolean fastHasClassVariable(String internedName) {
         return hasClassVariable(internedName);
     }
@@ -3109,6 +3102,7 @@ public class RubyModule extends RubyObject {
         return getClassVariablesForRead().get(name);
     }
 
+    @Deprecated
     public IRubyObject fastFetchClassVariable(String internedName) {
         return fetchClassVariable(internedName);
     }
@@ -3120,6 +3114,7 @@ public class RubyModule extends RubyObject {
         return value;
     }
 
+    @Deprecated
     public IRubyObject fastStoreClassVariable(String internedName, IRubyObject value) {
         return storeClassVariable(internedName, value);
     }
@@ -3174,9 +3169,9 @@ public class RubyModule extends RubyObject {
         return constantTableContains(name);
     }
 
+    @Deprecated
     public boolean fastHasConstant(String internedName) {
-        assert IdUtil.isConstant(internedName);
-        return constantTableFastContains(internedName);
+        return hasConstant(internedName);
     }
 
     // returns the stored value without processing undefs (autoloads)
@@ -3185,10 +3180,9 @@ public class RubyModule extends RubyObject {
         return constantTableFetch(name);
     }
 
-    // returns the stored value without processing undefs (autoloads)
+    @Deprecated
     public IRubyObject fastFetchConstant(String internedName) {
-        assert IdUtil.isConstant(internedName);
-        return constantTableFastFetch(internedName);
+        return fetchConstant(internedName);
     }
 
     public IRubyObject storeConstant(String name, IRubyObject value) {
@@ -3197,10 +3191,9 @@ public class RubyModule extends RubyObject {
         return constantTableStore(name, value);
     }
 
+    @Deprecated
     public IRubyObject fastStoreConstant(String internedName, IRubyObject value) {
-        assert IdUtil.isConstant(internedName) && value != null;
-        ensureConstantsSettable();
-        return constantTableFastStore(internedName, value);
+        return storeConstant(internedName, value);
     }
 
     // removes and returns the stored value without processing undefs (autoloads)
@@ -3209,8 +3202,7 @@ public class RubyModule extends RubyObject {
         ensureConstantsSettable();
         return constantTableRemove(name);
     }
-
-
+    
     @Deprecated
     public List<Variable<IRubyObject>> getStoredConstantList() {
         return null;
@@ -3246,16 +3238,8 @@ public class RubyModule extends RubyObject {
         return getConstantMap().containsKey(name);
     }
     
-    protected boolean constantTableFastContains(String internedName) {
-        return getConstantMap().containsKey(internedName);
-    }
-    
     protected IRubyObject constantTableFetch(String name) {
         return getConstantMap().get(name);
-    }
-    
-    protected IRubyObject constantTableFastFetch(String internedName) {
-        return getConstantMap().get(internedName);
     }
     
     protected IRubyObject constantTableStore(String name, IRubyObject value) {
@@ -3263,13 +3247,28 @@ public class RubyModule extends RubyObject {
         return value;
     }
     
-    protected IRubyObject constantTableFastStore(String internedName, IRubyObject value) {
-        getConstantMapForWrite().put(internedName, value);
-        return value;
-    }
-        
     protected IRubyObject constantTableRemove(String name) {
         return getConstantMapForWrite().remove(name);
+    }
+    
+    protected void addAutoload(String name, IAutoloadMethod loadMethod) {
+        getAutoloadMapForWrite().put(name, new Autoload(loadMethod));
+    }
+
+    protected IRubyObject removeAutoload(String name) {
+        Autoload autoload = getAutoloadMapForWrite().remove(name);
+        if (autoload != null) {
+            return autoload.getValue();
+        }
+        return null;
+    }
+    
+    protected String getAutoloadFile(String name) {
+        Autoload autoload = getAutoloadMap().get(name);
+        if (autoload != null) {
+            return autoload.getLoadMethod().file();
+        }
+        return null;
     }
 
     private static void define(RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {
@@ -3364,6 +3363,47 @@ public class RubyModule extends RubyObject {
     protected String classId;
 
     private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
+    private class Autoload {
+        private volatile ThreadContext ctx;
+        private volatile IRubyObject value;
+        private IAutoloadMethod loadMethod;
+
+        Autoload(IAutoloadMethod loadMethod) {
+            this.ctx = null;
+            this.value = null;
+            this.loadMethod = loadMethod;
+        }
+
+        synchronized IRubyObject getConstant(ThreadContext ctx) {
+            if (this.ctx == null) {
+                this.ctx = ctx;
+            } else if (isSelf(ctx)) {
+                return getValue();
+            }
+            return null;
+        }
+        
+        synchronized boolean setConstant(ThreadContext ctx, IRubyObject value) {
+            if (isSelf(ctx)) {
+                this.value = value;
+                return true;
+            }
+            return false;
+        }
+        
+        IRubyObject getValue() {
+            return value;
+        }
+        
+        IAutoloadMethod getLoadMethod() {
+            return loadMethod;
+        }
+
+        private boolean isSelf(ThreadContext rhs) {
+            return ctx != null && ctx.getThread() == rhs.getThread();
+        }
+    }
+    private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;
     private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
     private Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
     protected int generation;

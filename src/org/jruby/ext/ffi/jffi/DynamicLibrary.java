@@ -35,7 +35,7 @@ public class DynamicLibrary extends RubyObject {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         RubyClass symClass = result.defineClassUnder("Symbol",
-                module.fastGetClass("Pointer"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+                module.getClass("Pointer"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         symClass.defineAnnotatedMethods(Symbol.class);
         result.defineAnnotatedMethods(DynamicLibrary.class);
         result.defineAnnotatedConstants(DynamicLibrary.class);
@@ -106,7 +106,7 @@ public class DynamicLibrary extends RubyObject {
         private final String name;
         
         public Symbol(Ruby runtime, DynamicLibrary library, String name, DirectMemoryIO io) {
-            super(runtime, runtime.fastGetModule("FFI").fastGetClass("DynamicLibrary").fastGetClass("Symbol"),
+            super(runtime, runtime.getModule("FFI").getClass("DynamicLibrary").getClass("Symbol"),
                     io, Long.MAX_VALUE);
             this.library = library;
             this.name = name;

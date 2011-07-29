@@ -26,7 +26,7 @@ public final class MappedType extends Type {
     private final DynamicMethod toNativeMethod, fromNativeMethod;
 
     public static RubyClass createConverterTypeClass(Ruby runtime, RubyModule ffiModule) {
-        RubyClass convClass = ffiModule.fastGetClass("Type").defineClassUnder("Mapped", ffiModule.fastGetClass("Type"),
+        RubyClass convClass = ffiModule.getClass("Type").defineClassUnder("Mapped", ffiModule.getClass("Type"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         convClass.defineAnnotatedMethods(MappedType.class);
         convClass.defineAnnotatedConstants(MappedType.class);

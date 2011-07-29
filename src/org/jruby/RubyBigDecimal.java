@@ -138,7 +138,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value) {
-        super(runtime, runtime.fastGetClass("BigDecimal"));
+        super(runtime, runtime.getClass("BigDecimal"));
         this.value = value;
     }
     
@@ -150,7 +150,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public static RubyBigDecimal newBigDecimal(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return newInstance(recv.getRuntime().fastGetClass("BigDecimal"), args);
+        return newInstance(recv.getRuntime().getClass("BigDecimal"), args);
     }
 
     @JRubyMethod(name = "ver", meta = true)
@@ -207,7 +207,7 @@ public class RubyBigDecimal extends RubyNumeric {
         // are ever redefined -- should compare to the known values, rather
         // than do an expensive constant lookup.
         Ruby runtime = recv.getRuntime();
-        RubyClass clazz = runtime.fastGetClass("BigDecimal");
+        RubyClass clazz = runtime.getClass("BigDecimal");
         RubyModule c = (RubyModule)recv;
         
         args = Arity.scanArgs(runtime, args, 1, 1);
@@ -220,7 +220,7 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         
         long longMode = ((RubyFixnum)mode).getLongValue();
-        long EXCEPTION_ALL = ((RubyFixnum)clazz.fastGetConstant("EXCEPTION_ALL")).getLongValue();
+        long EXCEPTION_ALL = ((RubyFixnum)clazz.getConstant("EXCEPTION_ALL")).getLongValue();
         if ((longMode & EXCEPTION_ALL) != 0) {     
             if (value.isNil()) {
                 return c.searchInternalModuleVariable("vpExceptionMode");
@@ -232,24 +232,24 @@ public class RubyBigDecimal extends RubyNumeric {
             RubyFixnum currentExceptionMode = (RubyFixnum)c.searchInternalModuleVariable("vpExceptionMode");
             RubyFixnum newExceptionMode = new RubyFixnum(runtime, currentExceptionMode.getLongValue());
             
-            RubyFixnum EXCEPTION_INFINITY = (RubyFixnum)clazz.fastGetConstant("EXCEPTION_INFINITY");
+            RubyFixnum EXCEPTION_INFINITY = (RubyFixnum)clazz.getConstant("EXCEPTION_INFINITY");
             if ((longMode & EXCEPTION_INFINITY.getLongValue()) != 0) {
                 newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, "|", EXCEPTION_INFINITY)
                         : (RubyFixnum)currentExceptionMode.callCoerced(context, "&", new RubyFixnum(runtime, ~(EXCEPTION_INFINITY).getLongValue()));
             }
             
-            RubyFixnum EXCEPTION_NaN = (RubyFixnum)clazz.fastGetConstant("EXCEPTION_NaN");
+            RubyFixnum EXCEPTION_NaN = (RubyFixnum)clazz.getConstant("EXCEPTION_NaN");
             if ((longMode & EXCEPTION_NaN.getLongValue()) != 0) {
                 newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, "|", EXCEPTION_NaN)
                         : (RubyFixnum)currentExceptionMode.callCoerced(context, "&", new RubyFixnum(runtime, ~(EXCEPTION_NaN).getLongValue()));
             }
             
-            RubyFixnum EXCEPTION_UNDERFLOW = (RubyFixnum)clazz.fastGetConstant("EXCEPTION_UNDERFLOW");
+            RubyFixnum EXCEPTION_UNDERFLOW = (RubyFixnum)clazz.getConstant("EXCEPTION_UNDERFLOW");
             if ((longMode & EXCEPTION_UNDERFLOW.getLongValue()) != 0) {
                 newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, "|", EXCEPTION_UNDERFLOW)
                         : (RubyFixnum)currentExceptionMode.callCoerced(context, "&", new RubyFixnum(runtime, ~(EXCEPTION_UNDERFLOW).getLongValue()));
             }
-            RubyFixnum EXCEPTION_OVERFLOW = (RubyFixnum)clazz.fastGetConstant("EXCEPTION_OVERFLOW");
+            RubyFixnum EXCEPTION_OVERFLOW = (RubyFixnum)clazz.getConstant("EXCEPTION_OVERFLOW");
             if ((longMode & EXCEPTION_OVERFLOW.getLongValue()) != 0) {
                 newExceptionMode = (value.isTrue()) ? (RubyFixnum)currentExceptionMode.callCoerced(context, "|", EXCEPTION_OVERFLOW)
                         : (RubyFixnum)currentExceptionMode.callCoerced(context, "&", new RubyFixnum(runtime, ~(EXCEPTION_OVERFLOW).getLongValue()));
@@ -258,7 +258,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return newExceptionMode;
         }
         
-        long ROUND_MODE = ((RubyFixnum)clazz.fastGetConstant("ROUND_MODE")).getLongValue();
+        long ROUND_MODE = ((RubyFixnum)clazz.getConstant("ROUND_MODE")).getLongValue();
         if (longMode == ROUND_MODE) {
             if (value.isNil()) {
                 return c.searchInternalModuleVariable("vpRoundingMode");
@@ -268,13 +268,13 @@ public class RubyBigDecimal extends RubyNumeric {
             }
             
             RubyFixnum roundingMode = (RubyFixnum)value;
-            if (roundingMode == clazz.fastGetConstant("ROUND_UP") ||
-                    roundingMode == clazz.fastGetConstant("ROUND_DOWN") ||
-                    roundingMode == clazz.fastGetConstant("ROUND_FLOOR") ||
-                    roundingMode == clazz.fastGetConstant("ROUND_CEILING") ||
-                    roundingMode == clazz.fastGetConstant("ROUND_HALF_UP") ||
-                    roundingMode == clazz.fastGetConstant("ROUND_HALF_DOWN") ||
-                    roundingMode == clazz.fastGetConstant("ROUND_HALF_EVEN")) {
+            if (roundingMode == clazz.getConstant("ROUND_UP") ||
+                    roundingMode == clazz.getConstant("ROUND_DOWN") ||
+                    roundingMode == clazz.getConstant("ROUND_FLOOR") ||
+                    roundingMode == clazz.getConstant("ROUND_CEILING") ||
+                    roundingMode == clazz.getConstant("ROUND_HALF_UP") ||
+                    roundingMode == clazz.getConstant("ROUND_HALF_DOWN") ||
+                    roundingMode == clazz.getConstant("ROUND_HALF_EVEN")) {
                 c.setInternalModuleVariable("vpRoundingMode", roundingMode);
             } else {
                 throw runtime.newTypeError("invalid rounding mode");
@@ -285,32 +285,32 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RoundingMode getRoundingMode(Ruby runtime) {
-        RubyFixnum roundingMode = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+        RubyFixnum roundingMode = (RubyFixnum)runtime.getClass("BigDecimal")
                 .searchInternalModuleVariable("vpRoundingMode");
         return RoundingMode.valueOf((int)roundingMode.getLongValue());
     }
 
     private static boolean isNaNExceptionMode(Ruby runtime) {
-        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.getClass("BigDecimal")
                 .searchInternalModuleVariable("vpExceptionMode");
-        RubyFixnum EXCEPTION_NaN = (RubyFixnum)runtime.fastGetClass("BigDecimal")
-                .fastGetConstant("EXCEPTION_NaN");
+        RubyFixnum EXCEPTION_NaN = (RubyFixnum)runtime.getClass("BigDecimal")
+                .getConstant("EXCEPTION_NaN");
         return (currentExceptionMode.getLongValue() & EXCEPTION_NaN.getLongValue()) != 0;
     }
 
     private static boolean isInfinityExceptionMode(Ruby runtime) {
-        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.getClass("BigDecimal")
                 .searchInternalModuleVariable("vpExceptionMode");
-        RubyFixnum EXCEPTION_INFINITY = (RubyFixnum)runtime.fastGetClass("BigDecimal")
-                .fastGetConstant("EXCEPTION_INFINITY");
+        RubyFixnum EXCEPTION_INFINITY = (RubyFixnum)runtime.getClass("BigDecimal")
+                .getConstant("EXCEPTION_INFINITY");
         return (currentExceptionMode.getLongValue() & EXCEPTION_INFINITY.getLongValue()) != 0;
     }
     
     private static boolean isOverflowExceptionMode(Ruby runtime) {
-        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.fastGetClass("BigDecimal")
+        RubyFixnum currentExceptionMode = (RubyFixnum)runtime.getClass("BigDecimal")
                 .searchInternalModuleVariable("vpExceptionMode");
-        RubyFixnum EXCEPTION_OVERFLOW = (RubyFixnum)runtime.fastGetClass("BigDecimal")
-                .fastGetConstant("EXCEPTION_OVERFLOW");
+        RubyFixnum EXCEPTION_OVERFLOW = (RubyFixnum)runtime.getClass("BigDecimal")
+                .getConstant("EXCEPTION_OVERFLOW");
         return (currentExceptionMode.getLongValue() & EXCEPTION_OVERFLOW.getLongValue()) != 0;
     }
 
@@ -319,7 +319,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return (RubyBigDecimal)v;
         } else if(v instanceof RubyFixnum || v instanceof RubyBignum) {
             String s = v.toString();
-            return newInstance(v.getRuntime().fastGetClass("BigDecimal"),new IRubyObject[]{v.getRuntime().newString(s)});
+            return newInstance(v.getRuntime().getClass("BigDecimal"),new IRubyObject[]{v.getRuntime().newString(s)});
         }
         if(must) {
             String err;
@@ -432,7 +432,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyBigDecimal setResult(int scale) {
-        int prec = RubyFixnum.fix2int(getRuntime().fastGetClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit"));
+        int prec = RubyFixnum.fix2int(getRuntime().getClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit"));
         int prec2 = Math.max(scale,prec);
         if(prec2 > 0 && this.value.scale() > (prec2-getExponent())) {
             this.value = this.value.setScale(prec2-getExponent(),BigDecimal.ROUND_HALF_UP);
@@ -490,7 +490,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "*", required = 1)
     public IRubyObject op_mul(ThreadContext context, IRubyObject arg) {
-        return mult2(context, arg, getRuntime().fastGetClass("BigDecimal")
+        return mult2(context, arg, getRuntime().getClass("BigDecimal")
                 .searchInternalModuleVariable("vpPrecLimit"));
     }
 
@@ -564,7 +564,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject b) {
-        return addInternal(context, b, "add", getRuntime().fastGetClass("BigDecimal")
+        return addInternal(context, b, "add", getRuntime().getClass("BigDecimal")
                 .searchInternalModuleVariable("vpPrecLimit"));
     }
 
@@ -1094,29 +1094,29 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "sign")
     public IRubyObject sign() {
         if (isNaN()) {
-            return getMetaClass().fastGetConstant("SIGN_NaN");
+            return getMetaClass().getConstant("SIGN_NaN");
         }
 
         if (isInfinity()) {
             if (infinitySign < 0) {
-                return getMetaClass().fastGetConstant("SIGN_NEGATIVE_INFINITE");
+                return getMetaClass().getConstant("SIGN_NEGATIVE_INFINITE");
             } else {
-                return getMetaClass().fastGetConstant("SIGN_POSITIVE_INFINITE");
+                return getMetaClass().getConstant("SIGN_POSITIVE_INFINITE");
             }
         }
 
         if (isZero()) {
             if (zeroSign < 0) {
-                return getMetaClass().fastGetConstant("SIGN_NEGATIVE_ZERO");
+                return getMetaClass().getConstant("SIGN_NEGATIVE_ZERO");
             } else {
-                return getMetaClass().fastGetConstant("SIGN_POSITIVE_ZERO");
+                return getMetaClass().getConstant("SIGN_POSITIVE_ZERO");
             }
         }
         
         if (value.signum() < 0) {
-            return getMetaClass().fastGetConstant("SIGN_NEGATIVE_FINITE");
+            return getMetaClass().getConstant("SIGN_NEGATIVE_FINITE");
         } else {
-            return getMetaClass().fastGetConstant("SIGN_POSITIVE_FINITE");
+            return getMetaClass().getConstant("SIGN_POSITIVE_FINITE");
         }
     }
 

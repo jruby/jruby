@@ -27,7 +27,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     
     public static RubyClass createInvokerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Invoker",
-                module.fastGetClass("AbstractInvoker"),
+                module.getClass("AbstractInvoker"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(AbstractInvoker.class);
         result.defineAnnotatedMethods(JFFIInvoker.class);
@@ -37,7 +37,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     }
 
     JFFIInvoker(Ruby runtime, long address, Type returnType, Type[] parameterTypes, CallingConvention convention) {
-        this(runtime, runtime.fastGetModule("FFI").fastGetClass("Invoker"),
+        this(runtime, runtime.getModule("FFI").getClass("Invoker"),
                 new CodeMemoryIO(runtime, address),
                 returnType, parameterTypes, convention, null);
     }

@@ -643,7 +643,7 @@ public final class ThreadContext {
         RubyModule module;
 
         if ((module = getCurrentScope().getStaticScope().getModule()) != null) {
-            module.fastSetConstant(internedName, result);
+            module.setConstant(internedName, result);
             return result;
         }
 
@@ -660,7 +660,7 @@ public final class ThreadContext {
             throw runtime.newTypeError(target.toString() + " is not a class/module");
         }
         RubyModule module = (RubyModule)target;
-        module.fastSetConstant(internedName, result);
+        module.setConstant(internedName, result);
         
         return result;
     }
@@ -670,7 +670,7 @@ public final class ThreadContext {
      * This is for a Colon2 const decl
      */
     public IRubyObject setConstantInObject(String internedName, IRubyObject result) {
-        runtime.getObject().fastSetConstant(internedName, result);
+        runtime.getObject().setConstant(internedName, result);
         
         return result;
     }

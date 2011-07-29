@@ -64,13 +64,13 @@ import org.jruby.util.io.ChannelDescriptor;
 public class RubyUDPSocket extends RubyIPSocket {
 
     static void createUDPSocket(Ruby runtime) {
-        RubyClass rb_cUDPSocket = runtime.defineClass("UDPSocket", runtime.fastGetClass("IPSocket"), UDPSOCKET_ALLOCATOR);
+        RubyClass rb_cUDPSocket = runtime.defineClass("UDPSocket", runtime.getClass("IPSocket"), UDPSOCKET_ALLOCATOR);
         
-        rb_cUDPSocket.includeModule(runtime.fastGetClass("Socket").fastGetConstant("Constants"));
+        rb_cUDPSocket.includeModule(runtime.getClass("Socket").getConstant("Constants"));
 
         rb_cUDPSocket.defineAnnotatedMethods(RubyUDPSocket.class);
 
-        runtime.getObject().fastSetConstant("UDPsocket", rb_cUDPSocket);
+        runtime.getObject().setConstant("UDPsocket", rb_cUDPSocket);
     }
     private static ObjectAllocator UDPSOCKET_ALLOCATOR = new ObjectAllocator() {
 
@@ -123,7 +123,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                 // passing in something like INADDR_ANY
                 int intAddr = RubyNumeric.fix2int(host);
                 RubyModule socketMod = context.getRuntime().getModule("Socket");
-                if (intAddr == RubyNumeric.fix2int(socketMod.fastGetConstant("INADDR_ANY"))) {
+                if (intAddr == RubyNumeric.fix2int(socketMod.getConstant("INADDR_ANY"))) {
                     addr = new InetSocketAddress(InetAddress.getByName("0.0.0.0"), RubyNumeric.fix2int(port));
                 }
             } else {

@@ -67,7 +67,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      */
     public static RubyClass createCallbackClass(Ruby runtime, RubyModule module) {
 
-        RubyClass cbClass = module.defineClassUnder("Callback", module.fastGetClass("Pointer"),
+        RubyClass cbClass = module.defineClassUnder("Callback", module.getClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         cbClass.defineAnnotatedMethods(Callback.class);
@@ -97,7 +97,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         }
 
         synchronized (proc) {
-            Object existing = proc.fastGetInternalVariable(CALLBACK_ID);
+            Object existing = proc.getInternalVariable(CALLBACK_ID);
             if (existing instanceof Callback && ((Callback) existing).cbInfo == cbInfo) {
                 return (Callback) existing;
             } else if (existing instanceof Map) {
@@ -111,14 +111,14 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
             Callback cb = newCallback(runtime, cbInfo, proc);
             
             if (existing == null) {
-                ((RubyObject) proc).fastSetInternalVariable(CALLBACK_ID, cb);
+                ((RubyObject) proc).setInternalVariable(CALLBACK_ID, cb);
             } else {
                 Map<CallbackInfo, Callback> m = existing instanceof Map
                         ? (Map<CallbackInfo, Callback>) existing
                         : Collections.synchronizedMap(new WeakHashMap<CallbackInfo, Callback>());
                 m.put(cbInfo, cb);
                 m.put(((Callback) existing).cbInfo, (Callback) existing);
-                ((RubyObject) proc).fastSetInternalVariable(CALLBACK_ID, m);
+                ((RubyObject) proc).setInternalVariable(CALLBACK_ID, m);
             }
 
             return cb;
@@ -214,7 +214,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         private final ClosureInfo closureInfo;
         
         Callback(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo, ClosureInfo closureInfo) {
-            super(runtime, runtime.fastGetModule("FFI").fastGetClass("Callback"),
+            super(runtime, runtime.getModule("FFI").getClass("Callback"),
                     cbInfo.getParameterTypes().length, new CallbackMemoryIO(runtime, handle));
             this.cbInfo = cbInfo;
             this.closureInfo = closureInfo;
@@ -479,7 +479,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
                 buffer.setStructReturn(new byte[type.getNativeSize()], 0);
             
             } else {
-                throw runtime.newTypeError(value, runtime.fastGetModule("FFI").fastGetClass("Struct"));
+                throw runtime.newTypeError(value, runtime.getModule("FFI").getClass("Struct"));
             }
 
         } else if (type instanceof MappedType) {

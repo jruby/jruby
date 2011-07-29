@@ -171,28 +171,13 @@ public final class IncludedModuleWrapper extends RubyClass {
     }
 
     @Override
-    protected boolean variableTableFastContains(String internedName) {
-        return delegate.variableTableFastContains(internedName);
-    }
-
-    @Override
     protected Object variableTableFetch(String name) {
         return delegate.variableTableFetch(name);
     }
 
     @Override
-    protected Object variableTableFastFetch(String internedName) {
-        return delegate.variableTableFastFetch(internedName);
-    }
-
-    @Override
     protected Object variableTableStore(String name, Object value) {
         return delegate.variableTableStore(name, value);
-    }
-
-    @Override
-    protected Object variableTableFastStore(String internedName, Object value) {
-        return delegate.variableTableFastStore(internedName, value);
     }
 
     @Override
@@ -215,30 +200,14 @@ public final class IncludedModuleWrapper extends RubyClass {
     }
 
     @Override
-    protected boolean constantTableFastContains(String internedName) {
-        return delegate.constantTableFastContains(internedName);
-    }
-
-    @Override
     protected IRubyObject constantTableFetch(String name) {
         return delegate.constantTableFetch(name);
-    }
-
-    @Override
-    protected IRubyObject constantTableFastFetch(String internedName) {
-        return delegate.constantTableFastFetch(internedName);
     }
 
     @Override
     protected IRubyObject constantTableStore(String name, IRubyObject value) {
         // FIXME: legal here? may want UnsupportedOperationException
         return delegate.constantTableStore(name, value);
-    }
-
-    @Override
-    protected IRubyObject constantTableFastStore(String internedName, IRubyObject value) {
-        // FIXME: legal here? may want UnsupportedOperationException
-        return delegate.constantTableFastStore(internedName, value);
     }
 
     @Override

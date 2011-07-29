@@ -21,7 +21,7 @@ public final class MemoryPointer extends Pointer {
     
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("MemoryPointer",
-                module.fastGetClass("Pointer"),
+                module.getClass("Pointer"),
                 MemoryPointerAllocator.INSTANCE);
         result.defineAnnotatedMethods(MemoryPointer.class);
         result.defineAnnotatedConstants(MemoryPointer.class);
@@ -80,7 +80,7 @@ public final class MemoryPointer extends Pointer {
                     String.format("Failed to allocate %d objects of %d bytes", typeSize, count), true);
         }
 
-        return new MemoryPointer(runtime, runtime.fastGetModule("FFI").fastGetClass("MemoryPointer"), io, total, typeSize);
+        return new MemoryPointer(runtime, runtime.getModule("FFI").getClass("MemoryPointer"), io, total, typeSize);
     }
 
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)

@@ -165,8 +165,6 @@ public class LoadService {
 
     protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
 
-    protected final Map<String, IAutoloadMethod> autoloadMap = new HashMap<String, IAutoloadMethod>();
-
     protected final Ruby runtime;
     
     public LoadService(Ruby runtime) {
@@ -190,7 +188,7 @@ public class LoadService {
         }
 
         // add $RUBYLIB paths
-        RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
+        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
         RubyString env_rubylib = runtime.newString("RUBYLIB");
         if (env.has_key_p(env_rubylib).isTrue()) {
             String rubylib = env.op_aref(runtime.getCurrentContext(), env_rubylib).toString();
@@ -473,26 +471,6 @@ public class LoadService {
 
     public IRubyObject getLoadedFeatures() {
         return loadedFeatures;
-    }
-
-    public IAutoloadMethod autoloadFor(String name) {
-        return autoloadMap.get(name);
-    }
-
-    public void removeAutoLoadFor(String name) {
-        autoloadMap.remove(name);
-    }
-
-    public IRubyObject autoload(String name) {
-        IAutoloadMethod loadMethod = autoloadMap.get(name);
-        if (loadMethod != null) {
-            return loadMethod.load(runtime, name);
-        }
-        return null;
-    }
-
-    public void addAutoload(String name, IAutoloadMethod loadMethod) {
-        autoloadMap.put(name, loadMethod);
     }
 
     public void addBuiltinLibrary(String name, Library library) {
@@ -941,7 +919,7 @@ public class LoadService {
     protected LoadServiceResource tryResourceFromHome(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
         LoadServiceResource foundResource = null;
 
-        RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
+        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
         RubyString env_home = runtime.newString("HOME");
         if (env.has_key_p(env_home).isFalse()) {
             return null;

@@ -94,48 +94,48 @@ public abstract class Factory {
      */
     public void init(Ruby runtime, RubyModule ffi) {
         synchronized (ffi) {
-            if (ffi.fastGetClass("Type") == null) {
+            if (ffi.getClass("Type") == null) {
                 Type.createTypeClass(runtime, ffi);
             }
             DataConverter.createDataConverterModule(runtime, ffi);
 
-            if (ffi.fastGetClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
+            if (ffi.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS) == null) {
                 AbstractMemory.createAbstractMemoryClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("Buffer") == null) {
+            if (ffi.getClass("Buffer") == null) {
                 Buffer.createBufferClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("Pointer") == null) {
+            if (ffi.getClass("Pointer") == null) {
                 Pointer.createPointerClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("AutoPointer") == null) {
+            if (ffi.getClass("AutoPointer") == null) {
                 AutoPointer.createAutoPointerClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("MemoryPointer") == null) {
+            if (ffi.getClass("MemoryPointer") == null) {
                 MemoryPointer.createMemoryPointerClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("Struct") == null) {
+            if (ffi.getClass("Struct") == null) {
                 Struct.createStructClass(runtime, ffi);
             }
-            if (ffi.fastGetClass(StructLayout.CLASS_NAME) == null) {
+            if (ffi.getClass(StructLayout.CLASS_NAME) == null) {
                 StructLayout.createStructLayoutClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("StructByValue") == null) {
+            if (ffi.getClass("StructByValue") == null) {
                 StructByValue.createStructByValueClass(runtime, ffi);
             }
-            if (ffi.fastGetClass(AbstractInvoker.CLASS_NAME) == null) {
+            if (ffi.getClass(AbstractInvoker.CLASS_NAME) == null) {
                 AbstractInvoker.createAbstractInvokerClass(runtime, ffi);
             }
-            if (ffi.fastGetClass(CallbackInfo.CLASS_NAME) == null) {
+            if (ffi.getClass(CallbackInfo.CLASS_NAME) == null) {
                 CallbackInfo.createCallbackInfoClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("Enum") == null) {
+            if (ffi.getClass("Enum") == null) {
                 Enum.createEnumClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("Type").fastGetClass("Mapped") == null) {
+            if (ffi.getClass("Type").getClass("Mapped") == null) {
                 MappedType.createConverterTypeClass(runtime, ffi);
             }
-            if (ffi.fastGetClass(FileDescriptorIO.CLASS_NAME) == null) {
+            if (ffi.getClass(FileDescriptorIO.CLASS_NAME) == null) {
                 FileDescriptorIO.createFileDescriptorIOClass(runtime, ffi);
             }
             

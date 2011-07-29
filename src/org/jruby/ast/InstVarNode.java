@@ -120,6 +120,6 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     
     @Override
     public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return self.getInstanceVariables().fastHasInstanceVariable(name) ? INSTANCE_VARIABLE_BYTELIST : null;
+        return self.getInstanceVariables().hasInstanceVariable(name) ? INSTANCE_VARIABLE_BYTELIST : null;
     }
 }

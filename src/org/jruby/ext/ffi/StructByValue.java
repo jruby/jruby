@@ -19,12 +19,12 @@ public final class StructByValue extends Type {
     private final RubyClass structClass;
 
     public static RubyClass createStructByValueClass(Ruby runtime, RubyModule ffiModule) {
-        RubyClass sbvClass = ffiModule.defineClassUnder("StructByValue", ffiModule.fastGetClass("Type"),
+        RubyClass sbvClass = ffiModule.defineClassUnder("StructByValue", ffiModule.getClass("Type"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         sbvClass.defineAnnotatedMethods(StructByValue.class);
         sbvClass.defineAnnotatedConstants(StructByValue.class);
 
-        ffiModule.fastGetClass("Type").fastSetConstant("Struct", sbvClass);
+        ffiModule.getClass("Type").setConstant("Struct", sbvClass);
 
         return sbvClass;
     }
@@ -35,7 +35,7 @@ public final class StructByValue extends Type {
             throw context.getRuntime().newTypeError("wrong argument type " 
                     + structClass.getMetaClass().getName() + " (expected Class)");
         }
-        if (!((RubyClass) structClass).isKindOfModule(context.getRuntime().fastGetModule("FFI").fastGetClass("Struct"))) {
+        if (!((RubyClass) structClass).isKindOfModule(context.getRuntime().getModule("FFI").getClass("Struct"))) {
             throw context.getRuntime().newTypeError("wrong argument type " 
                     + structClass.getMetaClass().getName() + " (expected subclass of FFI::Struct)");
         }
@@ -51,7 +51,7 @@ public final class StructByValue extends Type {
     }
 
     StructByValue(Ruby runtime, RubyClass structClass, StructLayout structLayout) {
-        super(runtime, runtime.fastGetModule("FFI").fastGetClass("Type").fastGetClass("Struct"),
+        super(runtime, runtime.getModule("FFI").getClass("Type").getClass("Struct"),
                 NativeType.STRUCT, structLayout.size, structLayout.alignment);
         this.structClass = structClass;
         this.structLayout = structLayout;

@@ -29,22 +29,22 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         // Hook up the MemoryPointer class if its not already there
         //
         synchronized (ffi) {
-            if (ffi.fastGetClass("DynamicLibrary") == null) {
+            if (ffi.getClass("DynamicLibrary") == null) {
                 DynamicLibrary.createDynamicLibraryClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("Invoker") == null) {
+            if (ffi.getClass("Invoker") == null) {
                 JFFIInvoker.createInvokerClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("VariadicInvoker") == null) {
+            if (ffi.getClass("VariadicInvoker") == null) {
                 VariadicInvoker.createVariadicInvokerClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("Callback") == null) {
+            if (ffi.getClass("Callback") == null) {
                 CallbackManager.createCallbackClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("Function") == null) {
+            if (ffi.getClass("Function") == null) {
                 Function.createFunctionClass(runtime, ffi);
             }
-            if (ffi.fastGetClass("LastError") == null) {
+            if (ffi.getClass("LastError") == null) {
                 ffi.defineModuleUnder("LastError").defineAnnotatedMethods(LastError.class);
             }
         }
@@ -80,7 +80,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     @Override
     public Function newFunction(Ruby runtime, Pointer address, CallbackInfo cbInfo) {
         CodeMemoryIO mem = new CodeMemoryIO(runtime, address);
-        RubyClass klass = runtime.fastGetModule("FFI").fastGetClass("Function");
+        RubyClass klass = runtime.getModule("FFI").getClass("Function");
         return new Function(runtime, klass, mem, 
                 cbInfo.getReturnType(), cbInfo.getParameterTypes(),
                 cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT, null);

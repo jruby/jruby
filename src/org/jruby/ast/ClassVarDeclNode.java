@@ -89,7 +89,7 @@ public class ClassVarDeclNode extends AssignableNode implements INameNode {
             throw runtime.newTypeError("no class/module to define class variable");
         }
         
-        return rubyClass.fastSetClassVar(name, getValueNode().interpret(runtime, context, self, aBlock));
+        return rubyClass.setClassVar(name, getValueNode().interpret(runtime, context, self, aBlock));
     }
     
     @Override
@@ -98,7 +98,7 @@ public class ClassVarDeclNode extends AssignableNode implements INameNode {
             runtime.getWarnings().warn(ID.DECLARING_SCLASS_VARIABLE, getPosition(), "Declaring singleton class variable.");
         }
         
-        ASTInterpreter.getClassVariableBase(context, runtime).fastSetClassVar(name, value);
+        ASTInterpreter.getClassVariableBase(context, runtime).setClassVar(name, value);
         
         return runtime.getNil();
     }

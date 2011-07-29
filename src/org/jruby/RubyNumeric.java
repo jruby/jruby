@@ -933,7 +933,7 @@ public class RubyNumeric extends RubyObject {
         }
         if (f_negative_p(context, this) || (value == 0.0 && 1/value == Double.NEGATIVE_INFINITY)) {
             // negative or -0.0
-            return context.getRuntime().getMath().fastGetConstant("PI");
+            return context.getRuntime().getMath().getConstant("PI");
         }
         return RubyFixnum.zero(context.getRuntime());
     }    

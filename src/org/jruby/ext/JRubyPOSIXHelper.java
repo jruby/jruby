@@ -22,7 +22,7 @@ public class JRubyPOSIXHelper {
             Errno errno = Errno.valueOf(runtime.getPosix().errno());
             String name = errno.name();
             String msg  = errno.toString();
-            RubyClass errnoClass = runtime.getErrno().fastGetClass(name);
+            RubyClass errnoClass = runtime.getErrno().getClass(name);
             if (errnoClass != null) {
                 throw new RaiseException(runtime, errnoClass, msg, true);
             }

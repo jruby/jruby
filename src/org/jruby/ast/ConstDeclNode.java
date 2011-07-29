@@ -134,7 +134,7 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
             module = runtime.getObject();
         }
 
-        ((RubyModule) module).fastSetConstant(getName(), value);
+        ((RubyModule) module).setConstant(getName(), value);
         
         return runtime.getNil();
     }

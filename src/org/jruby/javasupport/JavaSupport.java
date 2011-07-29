@@ -239,25 +239,25 @@ public class JavaSupport {
     public RubyModule getJavaModule() {
         RubyModule module;
         if ((module = javaModule) != null) return module;
-        return javaModule = runtime.fastGetModule("Java");
+        return javaModule = runtime.getModule("Java");
     }
     
     public RubyModule getJavaUtilitiesModule() {
         RubyModule module;
         if ((module = javaUtilitiesModule) != null) return module;
-        return javaUtilitiesModule = runtime.fastGetModule("JavaUtilities");
+        return javaUtilitiesModule = runtime.getModule("JavaUtilities");
     }
     
     public RubyModule getJavaArrayUtilitiesModule() {
         RubyModule module;
         if ((module = javaArrayUtilitiesModule) != null) return module;
-        return javaArrayUtilitiesModule = runtime.fastGetModule("JavaArrayUtilities");
+        return javaArrayUtilitiesModule = runtime.getModule("JavaArrayUtilities");
     }
     
     public RubyClass getJavaObjectClass() {
         RubyClass clazz;
         if ((clazz = javaObjectClass) != null) return clazz;
-        return javaObjectClass = getJavaModule().fastGetClass("JavaObject");
+        return javaObjectClass = getJavaModule().getClass("JavaObject");
     }
     
     public JavaClass getObjectJavaClass() {
@@ -271,73 +271,73 @@ public class JavaSupport {
     public RubyClass getJavaArrayClass() {
         RubyClass clazz;
         if ((clazz = javaArrayClass) != null) return clazz;
-        return javaArrayClass = getJavaModule().fastGetClass("JavaArray");
+        return javaArrayClass = getJavaModule().getClass("JavaArray");
     }
     
     public RubyClass getJavaClassClass() {
         RubyClass clazz;
         if ((clazz = javaClassClass) != null) return clazz;
-        return javaClassClass = getJavaModule().fastGetClass("JavaClass");
+        return javaClassClass = getJavaModule().getClass("JavaClass");
     }
 
     public RubyModule getJavaInterfaceTemplate() {
         RubyModule module;
         if ((module = javaInterfaceTemplate) != null) return module;
-        return javaInterfaceTemplate = runtime.fastGetModule("JavaInterfaceTemplate");
+        return javaInterfaceTemplate = runtime.getModule("JavaInterfaceTemplate");
     }
 
     public RubyModule getPackageModuleTemplate() {
         RubyModule module;
         if ((module = packageModuleTemplate) != null) return module;
-        return packageModuleTemplate = runtime.fastGetModule("JavaPackageModuleTemplate");
+        return packageModuleTemplate = runtime.getModule("JavaPackageModuleTemplate");
     }
     
     public RubyClass getJavaProxyClass() {
         RubyClass clazz;
         if ((clazz = javaProxyClass) != null) return clazz;
-        return javaProxyClass = runtime.fastGetClass("JavaProxy");
+        return javaProxyClass = runtime.getClass("JavaProxy");
     }
 
     public RubyClass getArrayJavaProxyCreatorClass() {
         RubyClass clazz;
         if ((clazz = arrayJavaProxyCreatorClass) != null) return clazz;
-        return arrayJavaProxyCreatorClass = runtime.fastGetClass("ArrayJavaProxyCreator");
+        return arrayJavaProxyCreatorClass = runtime.getClass("ArrayJavaProxyCreator");
     }
     
     public RubyClass getConcreteProxyClass() {
         RubyClass clazz;
         if ((clazz = concreteProxyClass) != null) return clazz;
-        return concreteProxyClass = runtime.fastGetClass("ConcreteJavaProxy");
+        return concreteProxyClass = runtime.getClass("ConcreteJavaProxy");
     }
 
     public RubyClass getMapJavaProxyClass() {
         RubyClass clazz;
         if ((clazz = mapJavaProxy) != null) return clazz;
-        return mapJavaProxy = runtime.fastGetClass("MapJavaProxy");
+        return mapJavaProxy = runtime.getClass("MapJavaProxy");
     }
     
     public RubyClass getArrayProxyClass() {
         RubyClass clazz;
         if ((clazz = arrayProxyClass) != null) return clazz;
-        return arrayProxyClass = runtime.fastGetClass("ArrayJavaProxy");
+        return arrayProxyClass = runtime.getClass("ArrayJavaProxy");
     }
     
     public RubyClass getJavaFieldClass() {
         RubyClass clazz;
         if ((clazz = javaFieldClass) != null) return clazz;
-        return javaFieldClass = getJavaModule().fastGetClass("JavaField");
+        return javaFieldClass = getJavaModule().getClass("JavaField");
     }
 
     public RubyClass getJavaMethodClass() {
         RubyClass clazz;
         if ((clazz = javaMethodClass) != null) return clazz;
-        return javaMethodClass = getJavaModule().fastGetClass("JavaMethod");
+        return javaMethodClass = getJavaModule().getClass("JavaMethod");
     }
 
     public RubyClass getJavaConstructorClass() {
         RubyClass clazz;
         if ((clazz = javaConstructorClass) != null) return clazz;
-        return javaConstructorClass = getJavaModule().fastGetClass("JavaConstructor");
+        return javaConstructorClass = getJavaModule().getClass("JavaConstructor");
     }
 
 }

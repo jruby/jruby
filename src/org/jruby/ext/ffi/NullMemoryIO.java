@@ -15,7 +15,7 @@ public class NullMemoryIO extends InvalidMemoryIO implements DirectMemoryIO {
 
     @Override
     protected RubyClass getErrorClass(Ruby runtime) {
-        return runtime.fastGetModule("FFI").fastGetClass("NullPointerError");
+        return runtime.getModule("FFI").getClass("NullPointerError");
     }
 
     public long getAddress() {

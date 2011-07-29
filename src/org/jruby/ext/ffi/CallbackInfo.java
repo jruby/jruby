@@ -66,12 +66,12 @@ public class CallbackInfo extends Type implements NativeParam {
      */
     public static RubyClass createCallbackInfoClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder(CLASS_NAME,
-                module.fastGetClass("Type"),
+                module.getClass("Type"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(CallbackInfo.class);
         result.defineAnnotatedConstants(CallbackInfo.class);
 
-        module.fastGetClass("Type").fastSetConstant("Function", result);
+        module.getClass("Type").setConstant("Function", result);
         return result;
     }
     

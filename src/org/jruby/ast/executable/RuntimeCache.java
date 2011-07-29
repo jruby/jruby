@@ -411,7 +411,7 @@ public class RuntimeCache {
     public final IRubyObject getConstantFrom(RubyModule target, ThreadContext context, String name, int index) {
         IRubyObject value = getValueFrom(target, context, name, index);
         // We can callsite cache const_missing if we want
-        return value != null ? value : target.fastGetConstantFromConstMissing(name);
+        return value != null ? value : target.getConstantFromConstMissing(name);
     }
 
     public IRubyObject getValueFrom(RubyModule target, ThreadContext context, String name, int index) {
@@ -425,7 +425,7 @@ public class RuntimeCache {
 
     public IRubyObject reCacheFrom(RubyModule target, ThreadContext context, String name, int index) {
         Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
-        IRubyObject value = target.fastGetConstantFromNoConstMissing(name);
+        IRubyObject value = target.getConstantFromNoConstMissing(name);
         constants[index] = value;
         if (value != null) {
             constantGenerations[index] = newGeneration;

@@ -51,7 +51,7 @@ public class JavaInterfaceTemplate {
         }
 
         RubyModule targetModule = (RubyModule)clazz;
-        JavaClass javaClass = (JavaClass)self.getInstanceVariables().fastGetInstanceVariable("@java_class");
+        JavaClass javaClass = (JavaClass)self.getInstanceVariables().getInstanceVariable("@java_class");
         
         Method[] javaInstanceMethods = javaClass.javaClass().getMethods();
         DynamicMethod dummyMethod = new org.jruby.internal.runtime.methods.JavaMethod(targetModule, Visibility.PUBLIC) {
@@ -206,7 +206,7 @@ public class JavaInterfaceTemplate {
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
                     // TODO: WRONG - get interfaces from class
                     if (arg.respondsTo("java_object")) {
-                        IRubyObject interfaces = self.getMetaClass().getInstanceVariables().fastGetInstanceVariable("@java_interfaces");
+                        IRubyObject interfaces = self.getMetaClass().getInstanceVariables().getInstanceVariable("@java_interfaces");
                         assert interfaces instanceof RubyArray : "interface list was not an array";
 
                         return context.getRuntime().newBoolean(((RubyArray) interfaces).op_diff(
@@ -229,7 +229,7 @@ public class JavaInterfaceTemplate {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
-                    IRubyObject javaInterfaces = self.getInstanceVariables().fastGetInstanceVariable("@java_interfaces");
+                    IRubyObject javaInterfaces = self.getInstanceVariables().getInstanceVariable("@java_interfaces");
                     if (javaInterfaces != null && ((RubyArray) javaInterfaces).includes(context, arg)) {
                         return RuntimeHelpers.invoke(context, arg, "implement", self);
                     }
@@ -243,7 +243,7 @@ public class JavaInterfaceTemplate {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
-                    RubyArray javaInterfaces = (RubyArray) self.getInstanceVariables().fastGetInstanceVariable("@java_interfaces");
+                    RubyArray javaInterfaces = (RubyArray) self.getInstanceVariables().getInstanceVariable("@java_interfaces");
                     for (int i = 0; i < javaInterfaces.size(); i++) {
                         RuntimeHelpers.invoke(context, JavaUtilities.get_interface_module(self, javaInterfaces.eltInternal(i)), "implement", self);
                     }
@@ -295,8 +295,8 @@ public class JavaInterfaceTemplate {
         Ruby runtime = context.getRuntime();
 
         // not allowed for existing Java interface modules
-        if (module.getInstanceVariables().fastHasInstanceVariable("@java_class") &&
-                module.getInstanceVariables().fastGetInstanceVariable("@java_class").isTrue()) {
+        if (module.getInstanceVariables().hasInstanceVariable("@java_class") &&
+                module.getInstanceVariables().getInstanceVariable("@java_class").isTrue()) {
             throw runtime.newTypeError("can not add Java interface to existing Java interface");
         }
         
@@ -305,9 +305,9 @@ public class JavaInterfaceTemplate {
         // for this module to call append_features on each of those interfaces as
         // well
         synchronized (module) {
-            if (!module.getInstanceVariables().fastHasInstanceVariable("@java_interface_mods")) {
+            if (!module.getInstanceVariables().hasInstanceVariable("@java_interface_mods")) {
                 RubyArray javaInterfaceMods = RubyArray.newArray(runtime, self);
-                module.getInstanceVariables().fastSetInstanceVariable("@java_interface_mods", javaInterfaceMods);
+                module.getInstanceVariables().setInstanceVariable("@java_interface_mods", javaInterfaceMods);
                 RubyClass singleton = module.getSingletonClass();
 
                 singleton.addMethod("append_features", new JavaMethodOneBlock(singleton, Visibility.PUBLIC) {
@@ -317,7 +317,7 @@ public class JavaInterfaceTemplate {
                             throw context.getRuntime().newTypeError("append_features called with non-class");
                         }
                         RubyClass target = (RubyClass)arg;
-                        RubyArray javaInterfaceMods = (RubyArray)self.getInstanceVariables().fastGetInstanceVariable("@java_interface_mods");
+                        RubyArray javaInterfaceMods = (RubyArray)self.getInstanceVariables().getInstanceVariable("@java_interface_mods");
 
                         target.include(javaInterfaceMods.toJavaArray());
 
@@ -326,7 +326,7 @@ public class JavaInterfaceTemplate {
                 });
             } else {
                 // already set up append_features, just add the interface if we haven't already
-                RubyArray javaInterfaceMods =(RubyArray)module.getInstanceVariables().fastGetInstanceVariable("@java_interface_mods");
+                RubyArray javaInterfaceMods =(RubyArray)module.getInstanceVariables().getInstanceVariable("@java_interface_mods");
                 if (!javaInterfaceMods.includes(context, self)) {
                     javaInterfaceMods.append(self);
                 }

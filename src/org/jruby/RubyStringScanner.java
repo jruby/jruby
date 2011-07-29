@@ -375,7 +375,7 @@ public class RubyStringScanner extends RubyObject {
         Ruby runtime = getRuntime();
 
         if (!isMatched()) {
-            RubyClass errorClass = runtime.fastGetClass("StringScanner").fastGetClass("Error");
+            RubyClass errorClass = runtime.getClass("StringScanner").getClass("Error");
             throw new RaiseException(RubyException.newException(
                     runtime, errorClass, "unscan failed: previous match had failed"));
         }

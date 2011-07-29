@@ -216,7 +216,7 @@ public class ShellLauncher {
     }
 
     private static String[] getCurrentEnv(Ruby runtime, Map mergeEnv) {
-        RubyHash hash = (RubyHash)runtime.getObject().fastGetConstant("ENV");
+        RubyHash hash = (RubyHash)runtime.getObject().getConstant("ENV");
         String[] ret;
         
         if (mergeEnv != null && !mergeEnv.isEmpty()) {
@@ -346,7 +346,7 @@ public class ShellLauncher {
     }
 
     private static File findPathExecutable(Ruby runtime, String fname) {
-        RubyHash env = (RubyHash) runtime.getObject().fastGetConstant("ENV");
+        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
         IRubyObject pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
         String[] pathNodes = null;
         if (pathObject == null) {

@@ -32,12 +32,12 @@ public class DataConverter {
                 throw context.getRuntime().newNotImplementedError("native_type method not overridden and no native_type set");
             }
 
-            return (Type) m.fastGetInternalVariable("native_type");
+            return (Type) m.getInternalVariable("native_type");
 
         } else if (args.length == 1) {
             Type type = Util.findType(context, args[0]);
 
-            m.fastSetInternalVariable("native_type", type);
+            m.setInternalVariable("native_type", type);
 
             return type;
 

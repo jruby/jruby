@@ -32,7 +32,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     public static RubyClass createFunctionClass(Ruby runtime, RubyModule module) {
         RubyClass result = module.defineClassUnder("Function",
-                module.fastGetClass("Pointer"),
+                module.getClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(AbstractInvoker.class);
         result.defineAnnotatedMethods(Function.class);

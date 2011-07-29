@@ -178,8 +178,8 @@ public class RubyDigest {
 
     public static void createDigestMD5(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
-        RubyModule mDigest = runtime.fastGetModule("Digest");
-        RubyClass cDigestBase = mDigest.fastGetClass("Base");
+        RubyModule mDigest = runtime.getModule("Digest");
+        RubyClass cDigestBase = mDigest.getClass("Base");
         RubyClass cDigest_MD5 = mDigest.defineClassUnder("MD5",cDigestBase,cDigestBase.getAllocator());
         cDigest_MD5.setInternalVariable("metadata", new Metadata("MD5", 64));
     }
@@ -189,16 +189,16 @@ public class RubyDigest {
         if(provider == null) {
             throw runtime.newLoadError("RMD160 not supported without BouncyCastle");
         }
-        RubyModule mDigest = runtime.fastGetModule("Digest");
-        RubyClass cDigestBase = mDigest.fastGetClass("Base");
+        RubyModule mDigest = runtime.getModule("Digest");
+        RubyClass cDigestBase = mDigest.getClass("Base");
         RubyClass cDigest_RMD160 = mDigest.defineClassUnder("RMD160",cDigestBase,cDigestBase.getAllocator());
         cDigest_RMD160.setInternalVariable("metadata", new Metadata("RIPEMD160", 64));
     }
 
     public static void createDigestSHA1(Ruby runtime) {
         runtime.getLoadService().require("digest.so");
-        RubyModule mDigest = runtime.fastGetModule("Digest");
-        RubyClass cDigestBase = mDigest.fastGetClass("Base");
+        RubyModule mDigest = runtime.getModule("Digest");
+        RubyClass cDigestBase = mDigest.getClass("Base");
         RubyClass cDigest_SHA1 = mDigest.defineClassUnder("SHA1",cDigestBase,cDigestBase.getAllocator());
         cDigest_SHA1.setInternalVariable("metadata", new Metadata("SHA1", 64));
     }
@@ -210,8 +210,8 @@ public class RubyDigest {
         } catch(NoSuchAlgorithmException e) {
             throw runtime.newLoadError("SHA2 not supported");
         }
-        RubyModule mDigest = runtime.fastGetModule("Digest");
-        RubyClass cDigestBase = mDigest.fastGetClass("Base");
+        RubyModule mDigest = runtime.getModule("Digest");
+        RubyClass cDigestBase = mDigest.getClass("Base");
         RubyClass cDigest_SHA2_256 = mDigest.defineClassUnder("SHA256",cDigestBase,cDigestBase.getAllocator());
         Metadata sha256Metadata = new Metadata("SHA-256", 64);
         cDigest_SHA2_256.setInternalVariable("metadata", sha256Metadata);
@@ -258,7 +258,7 @@ public class RubyDigest {
         @JRubyMethod(name = "==", required = 1)
         public static IRubyObject op_equal(ThreadContext ctx, IRubyObject self, IRubyObject oth) {
             RubyString str1, str2;
-            RubyModule instance = (RubyModule)self.getRuntime().fastGetModule("Digest").fastGetConstantAt("Instance");
+            RubyModule instance = (RubyModule)self.getRuntime().getModule("Digest").getConstantAt("Instance");
             if (oth.getMetaClass().getRealClass().hasModuleInHierarchy(instance)) {
                 str1 = digest(ctx, self, null).convertToString();
                 str2 = digest(ctx, oth, null).convertToString();
@@ -409,7 +409,7 @@ public class RubyDigest {
         public DigestBase(Ruby runtime, RubyClass type) {
             super(runtime,type);
 
-            if(type == runtime.fastGetModule("Digest").fastGetClass("Base")) {
+            if(type == runtime.getModule("Digest").getClass("Base")) {
                 throw runtime.newNotImplementedError("Digest::Base is an abstract class");
             }
 

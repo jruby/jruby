@@ -93,7 +93,7 @@ public final class StructLayout extends Type {
      * @return The new class
      */
     public static RubyClass createStructLayoutClass(Ruby runtime, RubyModule module) {
-        RubyClass layoutClass = runtime.defineClassUnder(CLASS_NAME, module.fastGetClass("Type"),
+        RubyClass layoutClass = runtime.defineClassUnder(CLASS_NAME, module.getClass("Type"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, module);
         layoutClass.defineAnnotatedMethods(StructLayout.class);
         layoutClass.defineAnnotatedConstants(StructLayout.class);
@@ -170,7 +170,7 @@ public final class StructLayout extends Type {
         for (IRubyObject obj : fields) {
             
             if (!(obj instanceof Field)) {
-                throw runtime.newTypeError(obj, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Field"));
+                throw runtime.newTypeError(obj, runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
             }
 
             Field f = (Field) obj;
@@ -291,7 +291,7 @@ public final class StructLayout extends Type {
 
     final IRubyObject getValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr) {
         if (!(ptr instanceof AbstractMemory)) {
-            throw context.getRuntime().newTypeError(ptr, context.getRuntime().fastGetModule("FFI").fastGetClass("AbstractMemory"));
+            throw context.getRuntime().newTypeError(ptr, context.getRuntime().getModule("FFI").getClass("AbstractMemory"));
         }
         
         return getMember(context.getRuntime(), name).get(context, cache, (AbstractMemory) ptr);
@@ -299,7 +299,7 @@ public final class StructLayout extends Type {
 
     final void putValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr, IRubyObject value) {
         if (!(ptr instanceof AbstractMemory)) {
-            throw context.getRuntime().newTypeError(ptr, context.getRuntime().fastGetModule("FFI").fastGetClass("AbstractMemory"));
+            throw context.getRuntime().newTypeError(ptr, context.getRuntime().getModule("FFI").getClass("AbstractMemory"));
         }
         
         getMember(context.getRuntime(), name).put(context, cache, (AbstractMemory) ptr, value);
@@ -536,7 +536,7 @@ public final class StructLayout extends Type {
         }
 
         Field(Ruby runtime, RubyClass klass, FieldIO io) {
-            this(runtime, klass, (Type) runtime.fastGetModule("FFI").fastGetClass("Type").fastGetConstant("VOID"),
+            this(runtime, klass, (Type) runtime.getModule("FFI").getClass("Type").getConstant("VOID"),
                     -1, io);
             
         }
@@ -574,7 +574,7 @@ public final class StructLayout extends Type {
 
         final Type checkType(IRubyObject type) {
             if (!(type instanceof Type)) {
-                throw getRuntime().newTypeError(type, getRuntime().fastGetModule("FFI").fastGetClass("Type"));
+                throw getRuntime().newTypeError(type, getRuntime().getModule("FFI").getClass("Type"));
             }
             return (Type) type;
         }
@@ -760,7 +760,7 @@ public final class StructLayout extends Type {
             IRubyObject type = args[2];
 
             if (!(type instanceof CallbackInfo)) {
-                throw context.getRuntime().newTypeError(type, context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Function"));
+                throw context.getRuntime().newTypeError(type, context.getRuntime().getModule("FFI").getClass("Type").getClass("Function"));
             }
             init(args, FunctionFieldIO.INSTANCE);
 
@@ -790,7 +790,7 @@ public final class StructLayout extends Type {
 
             if (!(type instanceof StructByValue)) {
                 throw context.getRuntime().newTypeError(type,
-                        context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Struct"));
+                        context.getRuntime().getModule("FFI").getClass("Type").getClass("Struct"));
             }
             init(args, new InnerStructFieldIO((StructByValue) type));
 
@@ -819,7 +819,7 @@ public final class StructLayout extends Type {
             IRubyObject type = args[2];
             if (!(type instanceof Type.Array)) {
                 throw context.getRuntime().newTypeError(type,
-                        context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Array"));
+                        context.getRuntime().getModule("FFI").getClass("Type").getClass("Array"));
             }
             init(args, new ArrayFieldIO((Type.Array) type));
 
@@ -845,12 +845,12 @@ public final class StructLayout extends Type {
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
             if (!(args[2] instanceof MappedType)) {
                 throw context.getRuntime().newTypeError(args[2],
-                        context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetClass("Mapped"));
+                        context.getRuntime().getModule("FFI").getClass("Type").getClass("Mapped"));
             }
 
             if (!(args[3] instanceof Field)) {
                 throw context.getRuntime().newTypeError(args[3],
-                        context.getRuntime().fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("Field"));
+                        context.getRuntime().getModule("FFI").getClass("StructLayout").getClass("Field"));
             }
 
             init(args[0], args[2], args[1], new MappedFieldIO((MappedType) args[2], ((Field) args[3]).getFieldIO()));
@@ -879,7 +879,7 @@ public final class StructLayout extends Type {
         protected final Type.Array arrayType;
 
         ArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            this(runtime, runtime.fastGetModule("FFI").fastGetClass(CLASS_NAME).fastGetClass("ArrayProxy"),
+            this(runtime, runtime.getModule("FFI").getClass(CLASS_NAME).getClass("ArrayProxy"),
                     ptr, offset, type, aio);
         }
 
@@ -958,7 +958,7 @@ public final class StructLayout extends Type {
     @JRubyClass(name="FFI::StructLayout::CharArrayProxy", parent="FFI::StructLayout::ArrayProxy")
     public static final class CharArrayProxy extends ArrayProxy {
         CharArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            super(runtime, runtime.fastGetModule("FFI").fastGetClass("StructLayout").fastGetClass("CharArrayProxy"),
+            super(runtime, runtime.getModule("FFI").getClass("StructLayout").getClass("CharArrayProxy"),
                     ptr, offset, type, aio);
         }
 

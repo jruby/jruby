@@ -49,7 +49,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
      * @param runtime The runtime for the <tt>StructLayout</tt>
      */
     Struct(Ruby runtime) {
-        this(runtime, runtime.fastGetModule("FFI").fastGetClass("Struct"));
+        this(runtime, runtime.getModule("FFI").getClass("Struct"));
     }
 
     /**
@@ -82,7 +82,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     }
 
     static final boolean isStruct(Ruby runtime, RubyClass klass) {
-        return klass.isKindOfModule(runtime.fastGetModule("FFI").getClass("Struct"));
+        return klass.isKindOfModule(runtime.getModule("FFI").getClass("Struct"));
     }
 
     static final int getStructSize(Ruby runtime, IRubyObject structClass) {
@@ -95,7 +95,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
                     + structClass.getMetaClass().getName() + " (expected subclass of Struct");
         }
         try {
-            StructLayout layout = (StructLayout) ((RubyClass) structClass).fastGetInstanceVariable("@layout");
+            StructLayout layout = (StructLayout) ((RubyClass) structClass).getInstanceVariable("@layout");
             if (layout == null) {
                 throw runtime.newRuntimeError("No struct layout set for " + ((RubyClass) structClass).getName());
             }

@@ -1842,7 +1842,7 @@ abstract public class AbstractMemory extends RubyObject {
         } else if (value.respondsTo("to_ptr")) {
             putPointer(context, offset, value.callMethod(context, "to_ptr"));
         } else {
-            throw context.getRuntime().newTypeError(value, context.getRuntime().fastGetModule("FFI").fastGetClass("Pointer"));
+            throw context.getRuntime().newTypeError(value, context.getRuntime().getModule("FFI").getClass("Pointer"));
         }
     }
 

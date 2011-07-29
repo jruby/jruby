@@ -106,7 +106,7 @@ public class JavaProxy extends RubyObject {
         singleton.addReadWriteAttribute(context, "java_class");
         
         javaProxy.defineAnnotatedMethods(JavaProxy.class);
-        javaProxy.includeModule(runtime.fastGetModule("JavaProxyMethods"));
+        javaProxy.includeModule(runtime.getModule("JavaProxyMethods"));
         
         return javaProxy;
     }

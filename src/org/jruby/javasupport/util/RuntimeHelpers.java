@@ -694,13 +694,10 @@ public class RuntimeHelpers {
         return rubyClass.getClassVar(name);
     }
     
+    @Deprecated
     public static IRubyObject fastFetchClassVariable(ThreadContext context, Ruby runtime, 
             IRubyObject self, String internedName) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
-   
-        if (rubyClass == null) rubyClass = self.getMetaClass();
-
-        return rubyClass.fastGetClassVar(internedName);
+        return fetchClassVariable(context, runtime, self, internedName);
     }
     
     public static IRubyObject getConstant(ThreadContext context, String internedName) {
@@ -745,15 +742,10 @@ public class RuntimeHelpers {
         return value;
     }
     
+    @Deprecated
     public static IRubyObject fastSetClassVariable(ThreadContext context, Ruby runtime, 
             IRubyObject self, String internedName, IRubyObject value) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
-   
-        if (rubyClass == null) rubyClass = self.getMetaClass();
-
-        rubyClass.fastSetClassVar(internedName, value);
-   
-        return value;
+        return setClassVariable(context, runtime, self, internedName, value);
     }
     
     public static IRubyObject declareClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String name, IRubyObject value) {
@@ -767,15 +759,9 @@ public class RuntimeHelpers {
         return value;
     }
     
+    @Deprecated
     public static IRubyObject fastDeclareClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String internedName, IRubyObject value) {
-        // FIXME: This isn't quite right; it shouldn't evaluate the value if it's going to throw the error
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
-   
-        if (rubyClass == null) throw runtime.newTypeError("no class/module to define class variable");
-        
-        rubyClass.fastSetClassVar(internedName, value);
-   
-        return value;
+        return declareClassVariable(context, runtime, self, internedName, value);
     }
     
     public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {
@@ -1034,7 +1020,7 @@ public class RuntimeHelpers {
         }
         if (catchable instanceof RubyClass && catchable.getInstanceVariables().hasInstanceVariable("@java_class")) {
             RubyClass rubyClass = (RubyClass)catchable;
-            JavaClass javaClass = (JavaClass)rubyClass.fastGetInstanceVariable("@java_class");
+            JavaClass javaClass = (JavaClass)rubyClass.getInstanceVariable("@java_class");
             if (javaClass != null) {
                 Class cls = javaClass.javaClass();
                 if (cls.isInstance(throwable)) {
@@ -2180,7 +2166,7 @@ public class RuntimeHelpers {
     }
 
     public static IRubyObject getInstanceVariable(IRubyObject self, Ruby runtime, String internedName) {
-        IRubyObject result = self.getInstanceVariables().fastGetInstanceVariable(internedName);
+        IRubyObject result = self.getInstanceVariables().getInstanceVariable(internedName);
         if (result != null) return result;
         if (runtime.isVerbose()) warnAboutUninitializedIvar(runtime, internedName);
         return runtime.getNil();
@@ -2191,7 +2177,7 @@ public class RuntimeHelpers {
     }
 
     public static IRubyObject setInstanceVariable(IRubyObject value, IRubyObject self, String name) {
-        return self.getInstanceVariables().fastSetInstanceVariable(name, value);
+        return self.getInstanceVariables().setInstanceVariable(name, value);
     }
 
     public static RubyProc newLiteralLambda(ThreadContext context, Block block, IRubyObject self) {
@@ -2354,7 +2340,7 @@ public class RuntimeHelpers {
     }
 
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
-        return left instanceof RubyModule && ((RubyModule) left).fastGetConstantFromNoConstMissing(name) != null;
+        return left instanceof RubyModule && ((RubyModule) left).getConstantFromNoConstMissing(name) != null;
     }
 
     public static ByteList getDefinedConstantOrBoundMethod(IRubyObject left, String name) {

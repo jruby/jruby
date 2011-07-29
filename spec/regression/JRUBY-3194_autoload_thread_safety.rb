@@ -10,47 +10,66 @@ describe 'JRUBY-3194: threaded autoload' do
     $".replace @loaded_features
   end
 
-  if RUBY_VERSION >= "1.9.2"
-    # TODO: RubyModule#resolveUndefConstant() removes existing Constant in 1.8 mode for CRuby compatibility.
-    it 'should not raise for threaded autoload' do
-      file = Tempfile.open(['autoload', '.rb'])
-      file.puts 'sleep 0.5'
-      file.puts 'class Object; SpecRegressionJruby3194 = 1; end'
-      file.close
-      eval <<-END
-        class Object
-          autoload :SpecRegressionJruby3194, #{file.path.dump}
-        end
-      END
-      t1 = Thread.new {
-        Object::SpecRegressionJruby3194
-      }
-      t2 = Thread.new {
-        Object::SpecRegressionJruby3194
-      }
-      t1.join.value.should == 1
-      t2.join.value.should == 1
+  def add_autoload(path)
+    eval <<-END
+      class Object
+        autoload :SpecRegressionJruby3194, #{path.dump}
+      end
+    END
+  end
+
+  def remove_autoload_constant
+    eval <<-END
       class Object
         remove_const(:SpecRegressionJruby3194)
       end
-    end
+    END
   end
 
   it 'should not raise recursive autoload' do
     file = Tempfile.open(['autoload', '.rb'])
     file.puts 'class Object; SpecRegressionJruby3194 = 1; end'
     file.close
-    eval <<-END
-      class Object
-        autoload :SpecRegressionJruby3194, #{file.path.dump}
-      end
-    END
-    lambda {
-      (require file.path).should == true
-      SpecRegressionJruby3194.should == 1
-    }.should_not raise_error
-    class Object
-      remove_const(:SpecRegressionJruby3194)
+    add_autoload(file.path)
+    begin
+      lambda {
+        (require file.path).should == true
+        SpecRegressionJruby3194.should == 1
+      }.should_not raise_error
+    ensure
+      remove_autoload_constant
+    end
+  end
+
+  it 'should not raise for accessing a constant' do
+    file = Tempfile.open(['autoload', '.rb'])
+    file.puts 'sleep 0.5; class SpecRegressionJruby3194; X = 1; end'
+    file.close
+    add_autoload(file.path)
+    begin
+      lambda {
+        t1 = Thread.new { SpecRegressionJruby3194::X }
+        t2 = Thread.new { SpecRegressionJruby3194::X }
+        [t1, t2].each(&:join)
+      }.should_not raise_error
+    ensure
+      remove_autoload_constant
+    end
+  end
+
+  it 'should not raise for accessing an inner constant' do
+    file = Tempfile.open(['autoload', '.rb'])
+    file.puts 'class SpecRegressionJruby3194; sleep 0.5; X = 1; end'
+    file.close
+    add_autoload(file.path)
+    begin
+      lambda {
+        t1 = Thread.new { SpecRegressionJruby3194::X }
+        t2 = Thread.new { SpecRegressionJruby3194::X }
+        [t1, t2].each(&:join)
+      }.should_not raise_error
+    ensure
+      remove_autoload_constant
     end
   end
 end

@@ -160,7 +160,7 @@ public class Argv extends AbstractVariable {
     
     private static void updateARGV(IRubyObject receiver, BiVariableMap vars) {
         String name = "ARGV".intern();
-        IRubyObject argv = receiver.getRuntime().getTopSelf().getMetaClass().fastGetConstant(name);
+        IRubyObject argv = receiver.getRuntime().getTopSelf().getMetaClass().getConstant(name);
         if (argv == null || (argv instanceof RubyNil)) return;
         BiVariable var;  // This var is for ARGV.
         // ARGV constant should be only one

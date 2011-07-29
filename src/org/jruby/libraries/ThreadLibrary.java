@@ -241,7 +241,7 @@ public class ThreadLibrary implements Library {
             }
 
             if (!( args[0] instanceof Mutex )) {
-                throw context.getRuntime().newTypeError(args[0], runtime.fastGetClass("Mutex"));
+                throw context.getRuntime().newTypeError(args[0], runtime.getClass("Mutex"));
             }
             Mutex mutex = (Mutex)args[0];
 
@@ -415,7 +415,7 @@ public class ThreadLibrary implements Library {
         }
 
         public static void setup(Ruby runtime) {
-            RubyClass cSizedQueue = runtime.defineClass("SizedQueue", runtime.fastGetClass("Queue"), new ObjectAllocator() {
+            RubyClass cSizedQueue = runtime.defineClass("SizedQueue", runtime.getClass("Queue"), new ObjectAllocator() {
                 public IRubyObject allocate(Ruby runtime, RubyClass klass) {
                     return new SizedQueue(runtime, klass);
                 }

@@ -25,7 +25,7 @@ public final class StructByReference extends RubyObject {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         sbrClass.defineAnnotatedMethods(StructByReference.class);
         sbrClass.defineAnnotatedConstants(StructByReference.class);
-        sbrClass.includeModule(ffiModule.fastGetConstant("DataConverter"));
+        sbrClass.includeModule(ffiModule.getConstant("DataConverter"));
 
         return sbrClass;
     }
@@ -39,7 +39,7 @@ public final class StructByReference extends RubyObject {
                     + structClass.getMetaClass().getName() + " (expected Class)");
         }
 
-        if (!((RubyClass) structClass).isKindOfModule(context.getRuntime().fastGetModule("FFI").fastGetClass("Struct"))) {
+        if (!((RubyClass) structClass).isKindOfModule(context.getRuntime().getModule("FFI").getClass("Struct"))) {
             throw context.getRuntime().newTypeError("wrong argument type " 
                     + structClass.getMetaClass().getName() + " (expected subclass of FFI::Struct)");
         }
@@ -71,7 +71,7 @@ public final class StructByReference extends RubyObject {
 
     @JRubyMethod(name = "native_type")
     public IRubyObject native_type(ThreadContext context) {
-        return context.getRuntime().fastGetModule("FFI").fastGetClass("Type").fastGetConstant("POINTER");
+        return context.getRuntime().getModule("FFI").getClass("Type").getConstant("POINTER");
     }
 
 
@@ -84,7 +84,7 @@ public final class StructByReference extends RubyObject {
             return Pointer.getNull(context.getRuntime());
 
         } else {
-            throw context.getRuntime().newTypeError(value, context.getRuntime().fastGetModule("FFI").fastGetClass("Struct"));
+            throw context.getRuntime().newTypeError(value, context.getRuntime().getModule("FFI").getClass("Struct"));
         }
     }
 
@@ -100,7 +100,7 @@ public final class StructByReference extends RubyObject {
                         new IRubyObject[] { Pointer.getNull(context.getRuntime()) },
                         Block.NULL_BLOCK);
         } else {
-            throw context.getRuntime().newTypeError(value, context.getRuntime().fastGetModule("FFI").fastGetClass("Pointer"));
+            throw context.getRuntime().newTypeError(value, context.getRuntime().getModule("FFI").getClass("Pointer"));
         }
     }
 

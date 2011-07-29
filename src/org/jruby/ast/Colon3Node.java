@@ -96,7 +96,7 @@ public class Colon3Node extends Node implements INameNode {
         IRubyObject value = getValue(context);
 
         // We can callsite cache const_missing if we want
-        return value != null ? value : runtime.getObject().fastGetConstantFromConstMissing(name);
+        return value != null ? value : runtime.getObject().getConstantFromConstMissing(name);
     }
     
     @Override
@@ -116,7 +116,7 @@ public class Colon3Node extends Node implements INameNode {
     }
     
     private boolean hasConstant(RubyModule left) {
-        return left.fastGetConstantAt(name) != null;
+        return left.getConstantAt(name) != null;
     }
     
     private boolean hasMethod(IRubyObject left) {
@@ -136,7 +136,7 @@ public class Colon3Node extends Node implements INameNode {
     public IRubyObject reCache(ThreadContext context, String name) {
         Ruby runtime = context.getRuntime();
         Object newGeneration = runtime.getConstantInvalidator().getData();
-        IRubyObject value = runtime.getObject().fastGetConstantFromNoConstMissing(name);
+        IRubyObject value = runtime.getObject().getConstantFromNoConstMissing(name);
 
         cachedValue = value;
 
