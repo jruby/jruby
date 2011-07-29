@@ -320,6 +320,7 @@ public final class BasicObjectStub {
         return Collections.EMPTY_LIST;
     }
 
+    @SuppressWarnings("deprecation")
     public static class DummyInstanceVariables implements InstanceVariables {
         private final IRubyObject nil;
 
@@ -373,6 +374,7 @@ public final class BasicObjectStub {
         return new DummyInstanceVariables(getRuntime(self).getNil());
     }
 
+    @SuppressWarnings("deprecation")
     public static class DummyInternalVariables implements InternalVariables {
         public boolean hasInternalVariable(String name) {
             return false;
