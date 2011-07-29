@@ -10,6 +10,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
+import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
@@ -18,8 +19,9 @@ import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
@@ -57,7 +59,8 @@ public class JRubyImplCallInstr extends CallInstr {
        METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
        CLASS_VAR_DEFINED("isClassVarDefined"),
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound"),
-       SET_WITHIN_DEFINED("setWithinDefined");
+       SET_WITHIN_DEFINED("setWithinDefined"),
+       CHECK_ARITY("checkArity");
 
        public MethAddr methAddr;
        JRubyImplementationMethod(String methodName) {
@@ -174,6 +177,18 @@ public class JRubyImplCallInstr extends CallInstr {
             case SELF_METACLASS:
                 rVal = ((IRubyObject)getReceiver().retrieve(interp)).getMetaClass();
                 break;
+            case CHECK_ARITY:
+            {
+                Operand[] args = getCallArgs();
+                int required = ((Fixnum)args[0]).value.intValue();
+                int opt      = ((Fixnum)args[1]).value.intValue();
+                int rest     = ((Fixnum)args[2]).value.intValue();
+                int numArgs  = interp.getParameterCount();
+                if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
+                    Arity.raiseArgumentError(interp.getRuntime(), numArgs, required, required+opt);
+                }
+                break;
+            }
             case SELF_HAS_INSTANCE_VARIABLE:
             {
                 receiver = getReceiver().retrieve(interp);

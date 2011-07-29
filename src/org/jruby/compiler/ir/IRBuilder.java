@@ -1706,8 +1706,11 @@ public class IRBuilder {
         final int opt = argsNode.getOptionalArgsCount();
         final int rest = argsNode.getRestArg();
 
-        // FIXME: Add IR instructions for checking method arity!
-        // s.getVariableCompiler().checkMethodArity(required, opt, rest);
+        // FIXME: Expensive to this explicitly?  But, 2 advantages:
+        // (a) on inlining, we'll be able to get rid of these checks in almost every case.
+        // (b) compiler to bytecode will anyway generate this and this is explicit.
+        // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
+        generateJRubyUtilityCall(s, JRubyImplementationMethod.CHECK_ARITY, null, new Operand[] { new Fixnum((long)required), new Fixnum((long)opt), new Fixnum((long)rest) });
 
             // self = args[0]
         s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
