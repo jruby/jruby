@@ -201,7 +201,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
                 receivesClosureArg = true;
 
             // SSS FIXME: Should we build a ZSUPER IR Instr rather than have this code here?
-            if ((i instanceof RubyInternalCallInstr) && (((CallInstr) i).getMethodAddr() == MethAddr.ZSUPER))
+            if ((i instanceof RubyInternalCallInstr) && (((RubyInternalCallInstr) i).implMethod == RubyInternalCallInstr.RubyInternalsMethod.ZSUPER))
                 canCaptureCallersBinding = true;
 
             if (i instanceof CallInstr) {

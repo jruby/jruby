@@ -31,11 +31,11 @@ public class RubyInternalCallInstr extends CallInstr {
        // It calls regular to_ary on the object.  But, how does it succeed if it encounters a method_missing?
        // Ex: http://gist.github.com/163551
        TO_ARY("to_ary"),
-       DEFINE_ALIAS("define_alias"),
-       GVAR_ALIAS("gvar_alias"),
+       DEFINE_ALIAS("defineAlias"),
+       GVAR_ALIAS("aliasGlobalVariable"),
        SUPER("super"),
-       ZSUPER("zsuper"),
-       FOR_EACH("for_each"),
+       ZSUPER("super"),
+       FOR_EACH("each"),
        //CHECK_ARITY("checkArity"),
        UNDEF_METHOD("undefMethod");
 
@@ -49,7 +49,7 @@ public class RubyInternalCallInstr extends CallInstr {
        }
     }
 
-    RubyInternalsMethod implMethod;
+    public RubyInternalsMethod implMethod;
 
     public RubyInternalCallInstr(Variable result, RubyInternalsMethod m, Operand receiver, Operand[] args) {
         super(Operation.RUBY_INTERNALS, result, m.getMethAddr(), receiver, args, null);
