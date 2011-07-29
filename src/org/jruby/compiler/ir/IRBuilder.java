@@ -159,6 +159,7 @@ import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
+import org.jruby.compiler.ir.instructions.RubyInternalCallInstr.RubyInternalsMethod;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.SetArgumentsInstr;
 import org.jruby.compiler.ir.instructions.SearchConstInstr;
@@ -436,7 +437,13 @@ public class IRBuilder {
         return n;
     }
 
-    public Operand generateJRubyUtilityCall(IRScope m, JRubyImplementationMethod meth, Operand receiver, Operand[] args) {
+    public Variable generateRubyInternalsCall(IRScope m, RubyInternalsMethod meth, boolean hasResult, Operand receiver, Operand[] args) {
+        Variable ret = hasResult ? m.getNewTemporaryVariable() : null;
+        m.addInstr(new RubyInternalCallInstr(ret, meth, receiver, args));
+        return ret;
+    }
+
+    public Variable generateJRubyUtilityCall(IRScope m, JRubyImplementationMethod meth, Operand receiver, Operand[] args) {
         Variable ret = m.getNewTemporaryVariable();
         m.addInstr(new JRubyImplCallInstr(ret, meth, receiver, args));
         return ret;
@@ -662,7 +669,7 @@ public class IRBuilder {
             case MULTIPLEASGNNODE:
             {
                 // Invoke to_ary on the operand only if it is not an array already
-                Variable nv = (Variable)generateJRubyUtilityCall(s, JRubyImplementationMethod.TO_ARY, v, new Operand[] { BooleanLiteral.FALSE });
+                Variable nv = generateRubyInternalsCall(s, RubyInternalsMethod.TO_ARY, true, v, new Operand[] { BooleanLiteral.FALSE });
                 buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, nv);
                 break;
             }
@@ -759,8 +766,7 @@ public class IRBuilder {
     public Operand buildAlias(final AliasNode alias, IRScope s) {
         Operand newName = build(alias.getNewName(), s);
         Operand oldName = build(alias.getOldName(), s);
-        Operand[] args = new Operand[] { newName, oldName };
-        s.addInstr(new RubyInternalCallInstr(null, MethAddr.DEFINE_ALIAS, getSelf(s), args));
+        generateRubyInternalsCall(s, RubyInternalsMethod.DEFINE_ALIAS, false, getSelf(s), new Operand[] { newName, oldName });
         return Nil.NIL;
     }
 
@@ -2072,7 +2078,7 @@ public class IRBuilder {
         Operand  receiver = build(forNode.getIterNode(), m);
         Operand  forBlock = buildForIter(forNode, m);     
         // SSS FIXME: Really?  Why the internal call?
-        m.addInstr(new RubyInternalCallInstr(ret, MethAddr.FOR_EACH, receiver, NO_ARGS, forBlock));
+        m.addInstr(new RubyInternalCallInstr(ret, RubyInternalsMethod.FOR_EACH, receiver, NO_ARGS, forBlock));
         return ret;
     }
 
@@ -2913,7 +2919,7 @@ public class IRBuilder {
         List<Operand> args  = setupCallArgs(superNode.getArgsNode(), s);
         Operand       block = setupCallClosure(superNode.getIterNode(), s);
         Variable      ret   = s.getNewTemporaryVariable();
-        s.addInstr(new RubyInternalCallInstr(ret, MethAddr.SUPER, getSelf(s),
+        s.addInstr(new RubyInternalCallInstr(ret, RubyInternalsMethod.SUPER, getSelf(s),
                 args.toArray(new Operand[args.size()]), block));
         return ret;
     }
@@ -2933,8 +2939,8 @@ public class IRBuilder {
         // 1. Make this a TO_ARY IR instruction to enable optimization 
         // 2. Alternatively make this a regular call which would be subject to inlining
         //    if these utility methods are implemented as ruby ir code.
-        Operand  array = build(node.getValue(), s);
-        return generateJRubyUtilityCall(s, JRubyImplementationMethod.TO_ARY, array, NO_ARGS);
+        Operand array = build(node.getValue(), s);
+        return generateRubyInternalsCall(s, RubyInternalsMethod.TO_ARY, true, array, NO_ARGS);
     }
 
     public Operand buildTrue(Node node, IRScope m) {
@@ -2944,7 +2950,7 @@ public class IRBuilder {
 
     public Operand buildUndef(Node node, IRScope m) {
         Operand methName = build(((UndefNode) node).getName(), m);
-        return generateJRubyUtilityCall(m, JRubyImplementationMethod.UNDEF_METHOD, methName, NO_ARGS);
+        return generateRubyInternalsCall(m, RubyInternalsMethod.UNDEF_METHOD, true, methName, NO_ARGS);
     }
 
     private Operand buildConditionalLoop(IRExecutionScope s, Node conditionNode, Node bodyNode, boolean isWhile, boolean isLoopHeadCondition)
@@ -3007,10 +3013,9 @@ public class IRBuilder {
 
     // SSS FIXME: Got a little lazy?  We could/should define a special instruction ALIAS_GLOBAL_VAR_Instr probably
     // Is this a ruby-internals or a jruby-internals call?
-    public Operand buildVAlias(Node node, IRScope m) {
+    public Operand buildVAlias(Node node, IRScope s) {
         VAliasNode valiasNode = (VAliasNode) node;
-        Operand[] args = new Operand[] { new StringLiteral(valiasNode.getOldName()) };
-        m.addInstr(new RubyInternalCallInstr(null, MethAddr.GVAR_ALIAS, new StringLiteral(valiasNode.getNewName()), args));
+        generateRubyInternalsCall(s, RubyInternalsMethod.GVAR_ALIAS, false, new StringLiteral(valiasNode.getNewName()), new Operand[] { new StringLiteral(valiasNode.getOldName()) });
         return Nil.NIL;
     }
 
@@ -3056,7 +3061,7 @@ public class IRBuilder {
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
         Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
         Variable   ret   = s.getNewTemporaryVariable();
-        s.addInstr(new RubyInternalCallInstr(ret, MethAddr.ZSUPER, getSelf(s),
+        s.addInstr(new RubyInternalCallInstr(ret, RubyInternalsMethod.ZSUPER, getSelf(s),
                 ((IRExecutionScope) s).getClosestMethodAncestor().getCallArgs(), block));
         return ret;
     }

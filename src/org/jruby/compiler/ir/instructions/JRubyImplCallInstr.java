@@ -38,24 +38,17 @@ public class JRubyImplCallInstr extends CallInstr {
     public enum JRubyImplementationMethod {
        // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
        // and we are replicating it here ... Is this a bug there?
-       MATCH("op_match2"), 
-       MATCH2("op_match"), 
+       MATCH("op_match2"),
+       MATCH2("op_match"),
        MATCH3("match3"),
-       // SSS FIXME: This method (at least in the context of multiple assignment) is a little weird.
-       // It calls regular to_ary on the object.  But, if it encounters a method_missing, the value
-       // is inserted into an 1-element array!
-       // try "a,b,c = 1" first; then define Fixnum.to_ary method and try it again.
-       // Ex: http://gist.github.com/163551
-       TO_ARY("to_ary"),
-       UNDEF_METHOD("undefMethod"),
-       BLOCK_GIVEN("block_isGiven"),
        RT_IS_GLOBAL_DEFINED("runtime_isGlobalDefined"),
        RT_GET_OBJECT("runtime_getObject"),
        RT_GET_BACKREF("runtime_getBackref"),
        RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD("getDefinedConstantOrBoundMethod"),
-       SELF_METACLASS("self_metaClass"),
-       SELF_HAS_INSTANCE_VARIABLE("self_hasInstanceVariable"),
-       SELF_IS_METHOD_BOUND("self_isMethodBound"),
+       BLOCK_GIVEN("block_isGiven"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
+       SELF_METACLASS("self_metaClass"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
+       SELF_HAS_INSTANCE_VARIABLE("self_hasInstanceVariable"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
+       SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        TC_SAVE_ERR_INFO("threadContext_saveErrInfo"),
        TC_RESTORE_ERR_INFO("threadContext_restoreErrInfo"),
        TC_GET_CONSTANT_DEFINED("threadContext_getConstantDefined"),
@@ -152,19 +145,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 }
                 break;
             }
-            
-            case UNDEF_METHOD:
-                rVal = RuntimeHelpers.undefMethod(interp.getContext(), getReceiver().retrieve(interp));
-                break;
-            case TO_ARY:
-                receiver = getReceiver().retrieve(interp);
-                Operand[] args = getCallArgs();
-                // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays
-                if ((args.length > 0) && ((BooleanLiteral)args[0]).isFalse() && (receiver instanceof RubyArray))
-                    rVal = receiver;
-                else
-                    rVal = RuntimeHelpers.aryToAry((IRubyObject) receiver);
-                break;
             case SET_WITHIN_DEFINED:
                 interp.getContext().setWithinDefined(((BooleanLiteral)getCallArgs()[0]).isTrue());
                 break;

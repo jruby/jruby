@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 
 import org.jruby.compiler.ir.Operation;
@@ -7,6 +9,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
@@ -23,14 +26,39 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 // Rather than building a zillion instructions that capture calls to ruby implementation internals,
 // we are building one that will serve as a placeholder for internals-specific call optimizations.
 public class RubyInternalCallInstr extends CallInstr {
-    public RubyInternalCallInstr(Variable result, MethAddr methAddr, Operand receiver,
-            Operand[] args) {
-        super(Operation.RUBY_INTERNALS, result, methAddr, receiver, args, null);
+    public enum RubyInternalsMethod {
+       // SSS FIXME: I dont fully understand this method (in the context of multiple assignment).
+       // It calls regular to_ary on the object.  But, how does it succeed if it encounters a method_missing?
+       // Ex: http://gist.github.com/163551
+       TO_ARY("to_ary"),
+       DEFINE_ALIAS("define_alias"),
+       GVAR_ALIAS("gvar_alias"),
+       SUPER("super"),
+       ZSUPER("zsuper"),
+       FOR_EACH("for_each"),
+       //CHECK_ARITY("checkArity"),
+       UNDEF_METHOD("undefMethod");
+
+       public MethAddr methAddr;
+       RubyInternalsMethod(String methodName) {
+           this.methAddr = new MethAddr(methodName);
+       }
+
+       public MethAddr getMethAddr() { 
+           return this.methAddr; 
+       }
     }
 
-    public RubyInternalCallInstr(Variable result, MethAddr methAddr, Operand receiver,
-            Operand[] args, Operand closure) {
-        super(result, methAddr, receiver, args, closure);
+    RubyInternalsMethod implMethod;
+
+    public RubyInternalCallInstr(Variable result, RubyInternalsMethod m, Operand receiver, Operand[] args) {
+        super(Operation.RUBY_INTERNALS, result, m.getMethAddr(), receiver, args, null);
+        this.implMethod = m;
+    }
+
+    public RubyInternalCallInstr(Variable result, RubyInternalsMethod m, Operand receiver, Operand[] args, Operand closure) {
+        super(result, m.getMethAddr(), receiver, args, closure);
+        this.implMethod = m;
     }
 
     @Override
@@ -54,30 +82,55 @@ public class RubyInternalCallInstr extends CallInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new RubyInternalCallInstr(ii.getRenamedVariable(result),
-                (MethAddr) methAddr.cloneForInlining(ii), getReceiver().cloneForInlining(ii),
+                this.implMethod, getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp) {
-        MethAddr ma = getMethodAddr();
-        if (ma == MethAddr.DEFINE_ALIAS) {
-            Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
-
-            IRubyObject self = (IRubyObject)getReceiver().retrieve(interp);
-            RuntimeHelpers.defineAlias(interp.getContext(), self, args[0].retrieve(interp).toString(), (String) args[1].retrieve(interp).toString());
-        } else if ((ma == MethAddr.SUPER) || (ma == MethAddr.ZSUPER)) {
-            IRubyObject   self = (IRubyObject)getReceiver().retrieve(interp);
-            IRubyObject[] args = prepareArguments(getCallArgs(), interp);
-            getResult().store(interp, RuntimeHelpers.invokeSuper(interp.getContext(), self, args, prepareBlock(interp)));
-        } else if (ma == MethAddr.GVAR_ALIAS) {
-            throw new RuntimeException("GVAR_ALIAS: Not implemented yet!");
-        } else if (ma == MethAddr.FOR_EACH) {
-            // SSS FIXME: Correct?
-            super.interpret(interp);
-        } else {
-            super.interpret(interp);
+        Object   receiver;
+        Ruby     rt   = interp.getRuntime();
+        Object   rVal = null;
+        switch (this.implMethod) {
+            case DEFINE_ALIAS:
+            {
+                Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
+                IRubyObject self = (IRubyObject)getReceiver().retrieve(interp);
+                RuntimeHelpers.defineAlias(interp.getContext(), self, args[0].retrieve(interp).toString(), (String) args[1].retrieve(interp).toString());
+                break;
+            }
+            case GVAR_ALIAS:
+                throw new RuntimeException("GVAR_ALIAS: Not implemented yet!");
+            case SUPER:
+            case ZSUPER:
+            {
+                IRubyObject   self = (IRubyObject)getReceiver().retrieve(interp);
+                IRubyObject[] args = prepareArguments(getCallArgs(), interp);
+                rVal = RuntimeHelpers.invokeSuper(interp.getContext(), self, args, prepareBlock(interp));
+                break;
+            }
+            case UNDEF_METHOD:
+                rVal = RuntimeHelpers.undefMethod(interp.getContext(), getReceiver().retrieve(interp));
+                break;
+            case TO_ARY:
+                receiver = getReceiver().retrieve(interp);
+                Operand[] args = getCallArgs();
+                // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays
+                if ((args.length > 0) && ((BooleanLiteral)args[0]).isFalse() && (receiver instanceof RubyArray))
+                    rVal = receiver;
+                else
+                    rVal = RuntimeHelpers.aryToAry((IRubyObject) receiver);
+                break;
+            case FOR_EACH:
+                super.interpret(interp); // SSS FIXME: Correct?
+                break;
+            default:
+                super.interpret(interp);
         }
+
+        // Store the result
+        if (rVal != null) getResult().store(interp, rVal);
+
         return null;
     }
 
