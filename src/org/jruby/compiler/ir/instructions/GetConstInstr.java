@@ -33,9 +33,9 @@ public class GetConstInstr extends GetInstr {
         simplifyOperands(valueMap);
         if (!(getSource() instanceof MetaObject)) return null;
 
-		  // SSS FIXME: Isn't this always going to be an IR Module?
+        // SSS FIXME: Isn't this always going to be an IR Module?
         IRScope s = ((MetaObject) getSource()).scope;
-		  return (s instanceof IRModule) ? ((IRModule)s).getConstantValue(getName()) : null;
+        return (s instanceof IRModule) ? ((IRModule)s).getConstantValue(getName()) : null;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
@@ -57,7 +57,11 @@ public class GetConstInstr extends GetInstr {
             module = (RubyModule) source;
         }
 
-        getResult().store(interp, module.getConstant(getName()));
+        Object constant = module.getConstant(getName());
+        if (constant == null) constant = module.getConstantFromConstMissing(getName());
+
+        //if (container == null) throw runtime.newNameError("unitialized constant " + scope.getName(), scope.getName());
+        getResult().store(interp, constant);
         return null;
     }
 }

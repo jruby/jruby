@@ -1117,7 +1117,7 @@ public class IRBuilder {
         if (iVisited instanceof Colon2ConstNode) {
             // 1. Load the module first (lhs of node)
             // 2. Then load the constant from the module
-            Operand module = build(iVisited.getLeftNode(), s);
+            Operand module = build(leftNode, s);
             if (module instanceof MetaObject) module = MetaObject.create(((MetaObject)module).scope);
             Variable constVal = s.getNewTemporaryVariable();
             s.addInstr(new GetConstInstr(constVal, module, name));
