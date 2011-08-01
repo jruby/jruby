@@ -54,6 +54,10 @@ public class YieldInstr extends Instr {
         return (yieldArg == null) ? new Operand[]{block} : new Operand[] {block, yieldArg};
     }
 
+    public Operand[] getNonBlockOperands() {
+        return (yieldArg == null) ? new Operand[]{} : new Operand[] {yieldArg};
+    }
+
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         if (yieldArg != null) yieldArg = yieldArg.getSimplifiedOperand(valueMap);
     }

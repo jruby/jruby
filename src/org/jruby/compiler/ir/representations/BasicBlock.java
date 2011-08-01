@@ -123,7 +123,7 @@ public class BasicBlock {
 
     public void processClosureArgAndReturnInstrs(InlinerInfo ii, YieldInstr yi) {
         Variable  yieldResult = ii.getRenamedVariable(yi.result);
-        Operand[] yieldArgs   = yi.getOperands();
+        Operand[] yieldArgs   = yi.getNonBlockOperands();
 
         for (ListIterator<Instr> it = ((ArrayList<Instr>)_instrs).listIterator(); it.hasNext(); ) {
             Instr i = it.next();
