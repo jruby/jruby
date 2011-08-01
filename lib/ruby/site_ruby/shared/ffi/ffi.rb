@@ -78,7 +78,6 @@ require 'ffi/io'
 require 'ffi/variadic'
 require 'ffi/errno'
 require 'ffi/managedstruct'
-require 'ffi/enum'
 
 module FFI
   
