@@ -16,6 +16,7 @@ import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
+import org.jruby.compiler.ir.compiler_pass.InlineTest;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
@@ -249,6 +250,9 @@ public abstract class IRScopeImpl implements IRScope {
         runCompilerPass(new CFG_Builder());
         if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
         if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
+        if (RubyInstanceConfig.IR_TEST_INLINER != null) {
+            runCompilerPass(new InlineTest(RubyInstanceConfig.IR_TEST_INLINER));
+        }
         runCompilerPass(new AddBindingInstructions());
     }
 
