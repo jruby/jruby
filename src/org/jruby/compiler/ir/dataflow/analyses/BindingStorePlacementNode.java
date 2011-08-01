@@ -134,6 +134,8 @@ public class BindingStorePlacementNode extends FlowGraphNode {
     }
 
     public void addStoreAndBindingAllocInstructions() {
+        boolean addAllocateBindingInstructions = false; // SSS: This is going to be useful during JIT -- we are far away from there at this time
+
         BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) _prob;
         CFG cfg = bsp.getCFG();
         IRExecutionScope s = cfg.getScope();
@@ -182,11 +184,13 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     CFG cl_cfg = ((IRClosure) ((MetaObject) o).scope).getCFG();
                     BindingStorePlacementProblem cl_bsp = (BindingStorePlacementProblem) cl_cfg.getDataFlowSolution(bsp.getName());
 
-                    // Add a binding allocation instruction, if necessary
                     instrs.previous();
-                    if (!bindingAllocated) {
-                        instrs.add(new AllocateBindingInstr(s));
-                        bindingAllocated = true;
+                    if (addAllocateBindingInstructions) {
+                       // Add a binding allocation instruction, if necessary
+                       if (!bindingAllocated) {
+                           instrs.add(new AllocateBindingInstr(s));
+                           bindingAllocated = true;
+                       }
                     }
 
                     // If the call is an eval, or if the callee can capture this method's binding,
@@ -214,9 +218,11 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 } // Call has no closure && it requires stores
                 else if (call.targetRequiresCallersBinding()) {
                     instrs.previous();
-                    if (!bindingAllocated) {
-                        instrs.add(new AllocateBindingInstr(s));
-                        bindingAllocated = true;
+                    if (addAllocateBindingInstructions) {
+                        if (!bindingAllocated) {
+                            instrs.add(new AllocateBindingInstr(s));
+                            bindingAllocated = true;
+                        }
                     }
                     for (LocalVariable v : dirtyVars) {
                         instrs.add(new StoreToBindingInstr(s, v.getName(), v));
@@ -225,10 +231,12 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     dirtyVars.clear();
                 }
                 else if (call.canSetDollarVars()) {
-                    if (!bindingAllocated) {
-                        instrs.add(new AllocateBindingInstr(s));
-                        bindingAllocated = true;
-                    }
+                    if (addAllocateBindingInstructions) {
+                        if (!bindingAllocated) {
+                            instrs.add(new AllocateBindingInstr(s));
+                            bindingAllocated = true;
+                        }
+					}
                 }
             } else if ((i instanceof ClosureReturnInstr) || (i instanceof BREAK_Instr)) {
                 // At closure return and break instructions (both of which are exits from the closure),
