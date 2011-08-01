@@ -862,18 +862,19 @@ public class IRBuilder {
 
     public Operand buildBreak(BreakNode breakNode, IRExecutionScope s) {
         Operand rv = build(breakNode.getValueNode(), s);
-        // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
-        // Since we know this right now, should we build an exception instruction here?
-        if ((s instanceof IRClosure) || s.getCurrentLoop() == null) {
-            s.addInstr(new BREAK_Instr(rv));
-            return rv;
+        IRLoop currLoop = s.getCurrentLoop();
+        if (currLoop != null) {
+            s.addInstr(new BREAK_Instr(rv, currLoop.loopEndLabel));
+        }
+        else if (s instanceof IRClosure) {
+            s.addInstr(new BREAK_Instr(rv, null));
         }
         else {
-            // If this is not a closure, the break is equivalent to jumping to the loop end label
-            // But, since break can return a result even in loops, we need to pass back both
-            // the return value as well as the jump target -- so, create a special-purpose operand just for that purpose!
-            return new BreakResult(rv, s.getCurrentLoop().loopEndLabel);
+            // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
+            // Since we know this right now, should we build an exception instruction here?
+            s.addInstr(new BREAK_Instr(rv, null));
         }
+        return rv;
     }
 
     public Operand buildCall(CallNode callNode, IRScope s) {

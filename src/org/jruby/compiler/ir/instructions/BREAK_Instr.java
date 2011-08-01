@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Label;
@@ -23,19 +25,39 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
-public class BREAK_Instr extends OneOperandInstr
+public class BREAK_Instr extends Instr
 {
-    public BREAK_Instr(Operand rv) {
-        super(Operation.BREAK, null, rv);
+    Operand returnValue;
+    Label   target; 
+
+    public BREAK_Instr(Operand rv, Label target) {
+        super(Operation.BREAK, null);
+        this.returnValue = rv;
+        this.target = target;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new BREAK_Instr(argument.cloneForInlining(ii));
+        return new BREAK_Instr(returnValue.cloneForInlining(ii), (Label)(target == null ? null : target.cloneForInlining(ii)));
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + returnValue + ", " + target + ")";
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return target == null ? new Operand[] { returnValue } : new Operand[] { returnValue, target };
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        returnValue = returnValue.getSimplifiedOperand(valueMap);
     }
 
     @Override
     public Label interpret(InterpreterContext interp) {
-        interp.setReturnValue(getArg().retrieve(interp));
-        return interp.getMethodExitLabel();
+        interp.setReturnValue(returnValue.retrieve(interp));
+        return target == null ? interp.getMethodExitLabel() : target;
     }
 }

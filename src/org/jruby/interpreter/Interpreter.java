@@ -19,6 +19,7 @@ import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.exceptions.JumpException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.util.log.Logger;
@@ -67,6 +68,7 @@ public class Interpreter {
     public static IRubyObject interpret(ThreadContext context, CFG cfg, InterpreterContext interp) {
         Ruby runtime = context.getRuntime();
         boolean inClosure = (cfg.getScope() instanceof IRClosure);
+        boolean passThroughBreak = false;
         
         try {
             interp.setMethodExitLabel(cfg.getExitBB().getLabel()); // used by return and break instructions!
@@ -106,17 +108,21 @@ public class Interpreter {
             else if (lastInstr instanceof BREAK_Instr) {
                 if (!inClosure) throw runtime.newLocalJumpError(Reason.BREAK, rv, "unexpected break");
 
+                passThroughBreak = true;
                 RuntimeHelpers.breakJump(context, rv);
             }
 
             return rv;
+        } catch (JumpException.BreakJump bj) {
+            if (passThroughBreak) throw bj;
+            return (IRubyObject)bj.getValue();
         } catch (IRReturnJump rj) {
-				// - If we are in a lambda, stop propagating
-				// - If not in a lambda
-				//   - if in a closure, pass it along
-				//   - if not in a closure, we got this return jump from a closure further up the call stack.
-				//     So, continue popping the call stack till we get to the right method
-				if (!interp.inLambda() && (inClosure || (rj.methodToReturnFrom != cfg.getScope()))) throw rj; // pass it along
+            // - If we are in a lambda, stop propagating
+            // - If not in a lambda
+            //   - if in a closure, pass it along
+            //   - if not in a closure, we got this return jump from a closure further up the call stack.
+            //     So, continue popping the call stack till we get to the right method
+            if (!interp.inLambda() && (inClosure || (rj.methodToReturnFrom != cfg.getScope()))) throw rj; // pass it along
 
             return (IRubyObject) rj.returnValue;
         } finally {
