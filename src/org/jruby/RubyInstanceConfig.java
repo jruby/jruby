@@ -392,6 +392,7 @@ public class RubyInstanceConfig {
             = SafePropertyAccessor.getBoolean("jruby.errno.backtrace", false);
     
     public static final boolean IR_DEBUG = SafePropertyAccessor.getBoolean("jruby.ir.debug");
+    public static final boolean IR_COMPILER_DEBUG = SafePropertyAccessor.getBoolean("jruby.ir.compiler.debug");    
     public static final boolean IR_LIVE_VARIABLE = SafePropertyAccessor.getBoolean("jruby.ir.pass.live_variable");
     public static final boolean IR_DEAD_CODE = SafePropertyAccessor.getBoolean("jruby.ir.pass.dead_code");
     public static final String IR_TEST_INLINER = SafePropertyAccessor.getProperty("jruby.ir.pass.test_inliner");

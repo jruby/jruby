@@ -16,7 +16,9 @@ import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
+import org.jruby.compiler.ir.compiler_pass.IR_Printer;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
+import org.jruby.compiler.ir.compiler_pass.LinearizeCFG;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
@@ -246,14 +248,32 @@ public abstract class IRScopeImpl implements IRScope {
         // while another thread is using it.  This may need to happen on a clone()
         // and we may need to update the method to return the new method.  Also,
         // if this scope is held in multiple locations how do we update all references?
+
+        printPass("Before local optimization pass");
         runCompilerPass(new LocalOptimizationPass());
+        printPass("After local optimization pass");
+
         runCompilerPass(new CFG_Builder());
+        if (RubyInstanceConfig.IR_TEST_INLINER != null) {
+            if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
+                System.out.println("Asked to inline " + RubyInstanceConfig.IR_TEST_INLINER);
+            }
+            runCompilerPass(new InlineTest(RubyInstanceConfig.IR_TEST_INLINER));
+            runCompilerPass(new LocalOptimizationPass());
+            printPass("After inline");
+        }        
         if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
         if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
-        if (RubyInstanceConfig.IR_TEST_INLINER != null) {
-            runCompilerPass(new InlineTest(RubyInstanceConfig.IR_TEST_INLINER));
-        }
         runCompilerPass(new AddBindingInstructions());
+        runCompilerPass(new LinearizeCFG());
+        printPass("After CFG Linearize");
+    }
+    
+    private void printPass(String message) {
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
+            System.out.println("################## " + message + "##################");
+            runCompilerPass(new IR_Printer());        
+        }
     }
 
     public String toStringInstrs() {
