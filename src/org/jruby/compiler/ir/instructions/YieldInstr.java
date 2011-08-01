@@ -12,6 +12,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.RubyProc;
+import org.jruby.RubyNil;
 
 public class YieldInstr extends Instr {
     Operand block;
@@ -34,6 +35,7 @@ public class YieldInstr extends Instr {
         Object resultValue;
         Object blk = (Object)block.retrieve(interp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
+        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         if (yieldArg == null) {
             resultValue = ((Block)blk).yieldSpecific(interp.getContext());
         } else {
