@@ -114,8 +114,10 @@ public class JRubyImplCallInstr extends CallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new JRubyImplCallInstr(ii.getRenamedVariable(result), this.implMethod,
-                getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
+		  Operand receiver = getReceiver();
+		  System.out.println(this);
+        return new JRubyImplCallInstr(result == null ? null : ii.getRenamedVariable(result), this.implMethod,
+                receiver == null ? null : receiver.cloneForInlining(ii), cloneCallArgs(ii),
                 closure == null ? null : closure.cloneForInlining(ii));
     }
 
