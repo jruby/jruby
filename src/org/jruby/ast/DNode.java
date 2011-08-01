@@ -25,6 +25,10 @@ public abstract class DNode extends ListNode {
         this.encoding = encoding;
     }
 
+    public Encoding getEncoding() {
+        return encoding;
+    }
+
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return buildDynamicString(runtime, context, self, aBlock);
@@ -34,7 +38,7 @@ public abstract class DNode extends ListNode {
     public boolean is19() {
         return encoding != null;
     }
-    
+
     public boolean isSameEncoding(StrNode strNode) {
         return strNode.getValue().getEncoding() == encoding;
     }

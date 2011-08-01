@@ -134,8 +134,8 @@ public interface BodyCompiler {
     /**
      * Generate a new dynamic "String" value.
      */
-    public void createNewString(ArrayCallback callback, int count);
-    public void createNewSymbol(ArrayCallback callback, int count);
+    public void createNewString(ArrayCallback callback, int count, Encoding encoding);
+    public void createNewSymbol(ArrayCallback callback, int count, Encoding encoding);
 
     /**
      * Generate a new "Symbol" value (or fetch the existing one).

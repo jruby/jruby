@@ -435,19 +435,30 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokestatic(p(RubyBignum.class), "newBignum", sig(RubyBignum.class, params(Ruby.class, BigInteger.class)));
     }
 
-    public void createNewString(ArrayCallback callback, int count) {
+    public void createNewString(ArrayCallback callback, int count, Encoding encoding) {
         loadRuntime();
-        method.ldc(StandardASMCompiler.STARTING_DSTR_SIZE);
-        method.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class));
+
+        ByteList startingDstr = new ByteList(StandardASMCompiler.STARTING_DSTR_SIZE);
+        if (encoding != null) {
+            startingDstr.setEncoding(encoding);
+        }
+        script.getCacheCompiler().cacheByteList(this, startingDstr);
+        method.invokevirtual(p(ByteList.class), "dup", sig(ByteList.class));
+
+        method.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, ByteList.class));
         for (int i = 0; i < count; i++) {
             callback.nextValue(this, null, i);
-            method.invokevirtual(p(RubyString.class), "append", sig(RubyString.class, params(IRubyObject.class)));
+            if (encoding != null) {
+                method.invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, params(IRubyObject.class)));
+            } else {
+                method.invokevirtual(p(RubyString.class), "append", sig(RubyString.class, params(IRubyObject.class)));
+            }
         }
     }
 
-    public void createNewSymbol(ArrayCallback callback, int count) {
+    public void createNewSymbol(ArrayCallback callback, int count, Encoding encoding) {
         loadRuntime();
-        createNewString(callback, count);
+        createNewString(callback, count, encoding);
         toJavaString();
         invokeRuby("newSymbol", sig(RubySymbol.class, params(String.class)));
     }

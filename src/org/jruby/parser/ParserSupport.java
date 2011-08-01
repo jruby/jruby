@@ -36,6 +36,7 @@
 package org.jruby.parser;
 
 import java.math.BigInteger;
+import org.jcodings.Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
@@ -1598,10 +1599,17 @@ public class ParserSupport {
 
     public Node newRegexpNode(ISourcePosition position, Node contents, RegexpNode end) {
         RegexpOptions options = end.getOptions();
-        boolean is19 = !lexer.isOneEight();
+        Encoding encoding = null;
+        if (!lexer.isOneEight()) {
+            encoding = lexer.getEncoding();
+        }
 
         if (contents == null) {
             ByteList newValue = ByteList.create("");
+            if (encoding != null) {
+                newValue.setEncoding(encoding);
+            }
+
             regexpFragmentCheck(end, newValue);
             return new RegexpNode(position, newValue, options.withoutOnce());
         } else if (contents instanceof StrNode) {
@@ -1617,11 +1625,11 @@ public class ParserSupport {
                     regexpFragmentCheck(end, ((StrNode) fragment).getValue());
                 }
             }
-            
-            return new DRegexpNode(position, options, is19).addAll((DStrNode) contents);
+
+            return new DRegexpNode(position, options, encoding).addAll((DStrNode) contents);
         }
 
-        // No encoding or fragment check stuff for this...but what case is this anyways?
-        return new DRegexpNode(position, options, is19).add(contents);
+        // EvStrNode: #{val}: no fragment check stuff for this
+        return new DRegexpNode(position, options, encoding).add(contents);
     }
 }

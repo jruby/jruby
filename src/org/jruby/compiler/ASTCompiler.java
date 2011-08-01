@@ -34,10 +34,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.jcodings.Encoding;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
-
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.AliasNode;
@@ -2240,7 +2241,12 @@ public class ASTCompiler {
                                         compile(dregexpNode.get(index), context, true);
                                     }
                                 };
-                        context.createNewString(dstrCallback, dregexpNode.size());
+                        Encoding enc = null;
+                        if (dregexpNode.is19()) {
+                            enc = dregexpNode.getEncoding();
+                        }
+
+                        context.createNewString(dstrCallback, dregexpNode.size(), enc);
                     }
                 };
 
@@ -2266,7 +2272,12 @@ public class ASTCompiler {
                 };
 
         if (expr) {
-            context.createNewString(dstrCallback, dstrNode.size());
+            Encoding enc = null;
+            if (dstrNode.is19()) {
+                enc = dstrNode.getEncoding();
+            }
+
+            context.createNewString(dstrCallback, dstrNode.size(), enc);
         } else {
             // not an expression, only compile the elements
             for (Node nextNode : dstrNode.childNodes()) {
@@ -2287,7 +2298,11 @@ public class ASTCompiler {
                 };
 
         if (expr) {
-            context.createNewSymbol(dstrCallback, dsymbolNode.size());
+            Encoding enc = null;
+            if (dsymbolNode.is19()) {
+                enc = dsymbolNode.getEncoding();
+            }
+            context.createNewSymbol(dstrCallback, dsymbolNode.size(), enc);
         } else {
             // not an expression, only compile the elements
             for (Node nextNode : dsymbolNode.childNodes()) {
@@ -2317,9 +2332,13 @@ public class ASTCompiler {
                     public int getArity() {
                         return 1;
                     }
-                    
+
                     public void call(BodyCompiler context) {
-                        context.createNewString(dstrCallback, dxstrNode.size());
+                        Encoding enc = null;
+                        if (dxstrNode.is19()) {
+                            enc = dxstrNode.getEncoding();
+                        }
+                        context.createNewString(dstrCallback, dxstrNode.size(), enc);
                     }
                 };
 
