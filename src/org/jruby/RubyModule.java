@@ -199,6 +199,11 @@ public class RubyModule extends RubyObject {
         return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<String, IRubyObject>(4, 0.9f, 1) : constants;
     }
     
+    /**
+     * AutoloadMap must be accessed after checking ConstantMap. Checking UNDEF value in constantMap works as a guard.
+     * For looking up constant, check constantMap first then try to get an Autoload object from autoloadMap.
+     * For setting constant, update constantMap first and remove an Autoload object from autoloadMap.
+     */
     private Map<String, Autoload> getAutoloadMap() {
         return autoloads;
     }
@@ -2837,13 +2842,7 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject resolveUndefConstant(Ruby runtime, String name) {
-        Autoload autoload = getAutoloadMap().get(name);
-        if (autoload == null) {
-            return null;
-        }
-        IRubyObject value = autoload.getConstant(runtime.getCurrentContext());
-        if (value != null) return value;
-        return autoload.getLoadMethod().load(runtime);
+        return getAutoloadConstant(runtime, name);
     }
 
     /**
@@ -2882,18 +2881,11 @@ public class RubyModule extends RubyObject {
     private IRubyObject setConstantCommon(String name, IRubyObject value, boolean warn) {
         IRubyObject oldValue = fetchConstant(name);
         if (oldValue != null) {
-            Ruby runtime = getRuntime();
             if (oldValue == UNDEF) {
-                Autoload autoload = getAutoloadMap().get(name);
-                if (autoload != null) {
-                    if (!autoload.setConstant(runtime.getCurrentContext(), value)) {
-                        removeAutoload(name);
-                        storeConstant(name, value);
-                    }
-                }
+                setAutoloadConstant(name, value);
             } else {
                 if (warn) {
-                    runtime.getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
+                    getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
                 storeConstant(name, value);
             }
@@ -3251,22 +3243,65 @@ public class RubyModule extends RubyObject {
         return getConstantMapForWrite().remove(name);
     }
     
-    protected void addAutoload(String name, IAutoloadMethod loadMethod) {
+    /**
+     * Define an autoload. ConstantMap holds UNDEF for the name as an autoload marker.
+     */
+    protected void defineAutoload(String name, IAutoloadMethod loadMethod) {
+        storeConstant(name, RubyObject.UNDEF);
         getAutoloadMapForWrite().put(name, new Autoload(loadMethod));
     }
-
-    protected IRubyObject removeAutoload(String name) {
-        Autoload autoload = getAutoloadMapForWrite().remove(name);
+    
+    /**
+     * Extract an Object which is defined by autoload thread from autoloadMap and define it as a constant.
+     */
+    protected IRubyObject finishAutoload(String name) {
+        Autoload autoload = getAutoloadMap().get(name);
         if (autoload != null) {
-            return autoload.getValue();
+            IRubyObject value = autoload.getValue();
+            storeConstant(name, value);
+            removeAutoload(name);
+            return value;
         }
         return null;
+    }
+    
+    /**
+     * Get autoload constant.
+     * If it's first resolution for the constant, it tries to require the defined feature and returns the defined value.
+     * Multi-threaded accesses are blocked and processed sequentially except if the caller is the autoloading thread.
+     */
+    public IRubyObject getAutoloadConstant(Ruby runtime, String name) {
+        Autoload autoload = getAutoloadMap().get(name);
+        if (autoload == null) {
+            return null;
+        }
+        return autoload.getConstant(runtime.getCurrentContext());
+    }
+    
+    /**
+     * Set an Object as a defined constant in autoloading.
+     */
+    private void setAutoloadConstant(String name, IRubyObject value) {
+        Autoload autoload = getAutoloadMap().get(name);
+        if (autoload != null) {
+            if (!autoload.setConstant(getRuntime().getCurrentContext(), value)) {
+                storeConstant(name, value);
+                removeAutoload(name);
+            }
+        }
+    }
+    
+    /**
+     * Removes an Autoload object from autoloadMap. ConstantMap must be updated before calling this.
+     */
+    private void removeAutoload(String name) {
+        getAutoloadMapForWrite().remove(name);
     }
     
     protected String getAutoloadFile(String name) {
         Autoload autoload = getAutoloadMap().get(name);
         if (autoload != null) {
-            return autoload.getLoadMethod().file();
+            return autoload.getFile();
         }
         return null;
     }
@@ -3363,10 +3398,20 @@ public class RubyModule extends RubyObject {
     protected String classId;
 
     private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
+    
+    /**
+     * Objects for holding autoload state for the defined constant.
+     * 
+     * 'Module#autoload' creates this object and stores it in autoloadMap.
+     * This object can be shared with multiple threads so take care to change volatile and synchronized definitions.
+     */
     private class Autoload {
+        // A ThreadContext which is executing autoload.
         private volatile ThreadContext ctx;
+        // An object defined for the constant while autoloading.
         private volatile IRubyObject value;
-        private IAutoloadMethod loadMethod;
+        // A method which actually requires a defined feature.
+        private final IAutoloadMethod loadMethod;
 
         Autoload(IAutoloadMethod loadMethod) {
             this.ctx = null;
@@ -3374,16 +3419,20 @@ public class RubyModule extends RubyObject {
             this.loadMethod = loadMethod;
         }
 
-        synchronized IRubyObject getConstant(ThreadContext ctx) {
+        // Returns an object for the constant if the caller is the autoloading thread.
+        // Otherwise, try to start autoloading and returns the defined object by autoload.
+        IRubyObject getConstant(ThreadContext ctx) {
             if (this.ctx == null) {
                 this.ctx = ctx;
             } else if (isSelf(ctx)) {
                 return getValue();
             }
-            return null;
+            getLoadMethod().load(ctx.runtime);
+            return getValue();
         }
         
-        synchronized boolean setConstant(ThreadContext ctx, IRubyObject value) {
+        // Update an object for the constant if the caller is the autoloading thread.
+        boolean setConstant(ThreadContext ctx, IRubyObject value) {
             if (isSelf(ctx)) {
                 this.value = value;
                 return true;
@@ -3391,11 +3440,17 @@ public class RubyModule extends RubyObject {
             return false;
         }
         
+        // Returns an object for the constant defined by autoload.
         IRubyObject getValue() {
             return value;
         }
         
-        IAutoloadMethod getLoadMethod() {
+        // Returns the assigned feature.
+        String getFile() {
+            return getLoadMethod().file();
+        }
+
+        private IAutoloadMethod getLoadMethod() {
             return loadMethod;
         }
 
