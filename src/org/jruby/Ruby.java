@@ -1440,7 +1440,12 @@ public final class Ruby {
         addLazyBuiltin("readline.jar", "readline", "org.jruby.ext.ReadlineService");
         addLazyBuiltin("thread.jar", "thread", "org.jruby.libraries.ThreadLibrary");
         addLazyBuiltin("thread.rb", "thread", "org.jruby.libraries.ThreadLibrary");
-        addLazyBuiltin("digest.jar", "digest.so", "org.jruby.libraries.DigestLibrary");
+        if (is1_9()) { // JRUBY-4717: for 1.9 we should use methods in 1.9/digest.rb
+            addLazyBuiltin("digest.jar", "digest.so", "org.jruby.libraries.DigestLibrary");
+        } else {
+            addLazyBuiltin("digest.jar", "digest", "org.jruby.libraries.DigestLibrary");
+            addLazyBuiltin("digest.rb", "digest", "org.jruby.libraries.DigestLibrary");
+        }
         addLazyBuiltin("digest/md5.jar", "digest/md5", "org.jruby.libraries.MD5");
         addLazyBuiltin("digest/rmd160.jar", "digest/rmd160", "org.jruby.libraries.RMD160");
         addLazyBuiltin("digest/sha1.jar", "digest/sha1", "org.jruby.libraries.SHA1");
