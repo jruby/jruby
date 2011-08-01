@@ -36,6 +36,11 @@ public class CopyInstr extends OneOperandInstr {
         return null;
     }
 
+    @Override
+    public String toString() { 
+        return (argument instanceof Variable) ? super.toString() : (getResult() + " = " + getArg());
+    }
+
     // Can this instruction raise exceptions?
     @Override
     public boolean canRaiseException() { return false; }
