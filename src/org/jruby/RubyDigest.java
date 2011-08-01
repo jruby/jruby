@@ -177,7 +177,7 @@ public class RubyDigest {
     public static class SHA512 {}
 
     public static void createDigestMD5(Ruby runtime) {
-        runtime.getLoadService().require("digest.so");
+        runtime.getLoadService().require("digest");
         RubyModule mDigest = runtime.fastGetModule("Digest");
         RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_MD5 = mDigest.defineClassUnder("MD5",cDigestBase,cDigestBase.getAllocator());
@@ -185,7 +185,7 @@ public class RubyDigest {
     }
 
     public static void createDigestRMD160(Ruby runtime) {
-        runtime.getLoadService().require("digest.so");
+        runtime.getLoadService().require("digest");
         if(provider == null) {
             throw runtime.newLoadError("RMD160 not supported without BouncyCastle");
         }
@@ -196,7 +196,7 @@ public class RubyDigest {
     }
 
     public static void createDigestSHA1(Ruby runtime) {
-        runtime.getLoadService().require("digest.so");
+        runtime.getLoadService().require("digest");
         RubyModule mDigest = runtime.fastGetModule("Digest");
         RubyClass cDigestBase = mDigest.fastGetClass("Base");
         RubyClass cDigest_SHA1 = mDigest.defineClassUnder("SHA1",cDigestBase,cDigestBase.getAllocator());
@@ -204,7 +204,7 @@ public class RubyDigest {
     }
 
     public static void createDigestSHA2(Ruby runtime) {
-        runtime.getLoadService().require("digest.so");
+        runtime.getLoadService().require("digest");
         try {
             createMessageDigest(runtime, "SHA-256");
         } catch(NoSuchAlgorithmException e) {
@@ -323,35 +323,6 @@ public class RubyDigest {
         public static IRubyObject length(ThreadContext ctx, IRubyObject self) {
             return self.callMethod(ctx, "digest_length");
         }
-
-        @JRubyMethod
-        public static IRubyObject file(ThreadContext ctx, IRubyObject self, IRubyObject filename) {
-            Ruby runtime = self.getRuntime();
-            RubyString filenameStr = filename.convertToString();
-            
-            if (RubyFileTest.directory_p(runtime, filenameStr).isTrue()) {
-                if (Platform.IS_WINDOWS) {
-                    throw runtime.newErrnoEACCESError(filenameStr.asJavaString());
-                } else {
-                    throw runtime.newErrnoEISDirError(filenameStr.asJavaString());
-                }
-            }
-
-            IRubyObject io = RuntimeHelpers.invoke(ctx, runtime.getFile(),
-                    "open", filenameStr, runtime.newString("rb"));
-
-            try {
-                RubyString buf = runtime.newString();
-                final RubyFixnum bufSize = runtime.newFixnum(16 * 1024);
-                while(!RuntimeHelpers.invoke(ctx, io, "read", bufSize, buf).isNil()) {
-                    self.callMethod(ctx, "update", buf);
-                }
-            } finally {
-                io.callMethod(ctx, "close");
-            }
-
-            return self;
-        }
     }
 
 
@@ -385,12 +356,6 @@ public class RubyDigest {
             Ruby runtime = recv.getRuntime();
             byte[] digest = recv.callMethod(ctx, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
             return RubyDigest.toHexString(runtime, digest);
-        }
-
-        @JRubyMethod(meta = true)
-        public static IRubyObject file(ThreadContext ctx, IRubyObject recv, IRubyObject filename) {
-            IRubyObject obj = ((RubyClass)recv).newInstance(ctx, new IRubyObject[0], Block.NULL_BLOCK);
-            return obj.callMethod(ctx, "file", filename);
         }
     }
 
