@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Map;
 
 import org.jruby.MetaClass;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 
@@ -13,6 +14,8 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+
+import org.jruby.common.IRubyWarnings.ID;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
@@ -60,6 +63,20 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
         RubyModule clazz = (arg instanceof RubyModule) ? (RubyModule)arg : arg.getMetaClass();
         String     name  = method.getName();
         ThreadContext context = interp.getContext();
+
+		  // Error checks and warnings on method definitions
+		  Ruby runtime = interp.getRuntime();
+        if (clazz == runtime.getDummy()) {
+            throw runtime.newTypeError("no class/module to add method");
+        }
+
+        if (clazz == runtime.getObject() && name == "initialize") {
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
+        }
+
+        if (name == "__id__" || name == "__send__") {
+            runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem"); 
+        }
 
         Visibility visibility = context.getCurrentVisibility();
         if (name == "initialize" || name == "initialize_copy" || visibility == Visibility.MODULE_FUNCTION) {
