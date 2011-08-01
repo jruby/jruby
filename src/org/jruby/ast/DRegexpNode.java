@@ -32,6 +32,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -51,33 +52,21 @@ import org.jruby.util.RegexpOptions;
 public class DRegexpNode extends DNode implements ILiteralNode {
     private final RegexpOptions options;
     private RubyRegexp onceRegexp;
-    private boolean is19;
 
     // 1.8 constructor
     public DRegexpNode(ISourcePosition position, RegexpOptions options) {
-        this(position, options, false);
+        this(position, options, null);
     }
 
     // 1.9 constructor
-    public DRegexpNode(ISourcePosition position, RegexpOptions options, boolean is19) {
-        super(position, null);
+    public DRegexpNode(ISourcePosition position, RegexpOptions options, Encoding encoding) {
+        super(position, encoding);
         this.options = options;
-        this.is19 = is19;
     }
 
     @Override
     public NodeType getNodeType() {
         return NodeType.DREGEXPNODE;
-    }
-
-    @Override
-    protected RubyString allocateString(Ruby runtime) {
-        return runtime.newString(new ByteList());
-    }
-
-    @Override
-    public boolean is19() {
-        return is19;
     }
 
     /**
