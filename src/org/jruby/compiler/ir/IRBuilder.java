@@ -1096,7 +1096,8 @@ public class IRBuilder {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            s.addInstr(new PutConstInstr(getSelf(s), constDeclNode.getName(), val));
+            MetaObject object = MetaObject.create(IRClass.getCoreClass("Object"));            
+            s.addInstr(new PutConstInstr(object, constDeclNode.getName(), val));            
         }
 
         return val;
