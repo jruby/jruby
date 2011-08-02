@@ -60,7 +60,8 @@ public class JRubyImplCallInstr extends CallInstr {
        CLASS_VAR_DEFINED("isClassVarDefined"),
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound"),
        SET_WITHIN_DEFINED("setWithinDefined"),
-       CHECK_ARITY("checkArity");
+       CHECK_ARITY("checkArity"),
+       RAISE_ARGUMENT_ERROR("raiseArgumentError");
 
        public MethAddr methAddr;
        JRubyImplementationMethod(String methodName) {
@@ -114,11 +115,26 @@ public class JRubyImplCallInstr extends CallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-		  Operand receiver = getReceiver();
-		  System.out.println(this);
-        return new JRubyImplCallInstr(result == null ? null : ii.getRenamedVariable(result), this.implMethod,
-                receiver == null ? null : receiver.cloneForInlining(ii), cloneCallArgs(ii),
-                closure == null ? null : closure.cloneForInlining(ii));
+        Operand receiver = getReceiver();
+        if (this.implMethod == JRubyImplementationMethod.CHECK_ARITY) {
+            Operand[] args = getCallArgs();
+            int required = ((Fixnum)args[0]).value.intValue();
+            int opt      = ((Fixnum)args[1]).value.intValue();
+            int rest     = ((Fixnum)args[2]).value.intValue();
+            int numArgs  = ii.getArgsCount();
+            if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
+                // Argument error! Throw it at runtime
+                return new JRubyImplCallInstr(null, JRubyImplementationMethod.RAISE_ARGUMENT_ERROR, null, new Operand[]{args[0],args[1],args[2],new Fixnum((long)numArgs)});
+            }
+            else {
+                return null;
+            }
+        }
+        else {
+            return new JRubyImplCallInstr(result == null ? null : ii.getRenamedVariable(result), this.implMethod,
+                    receiver == null ? null : receiver.cloneForInlining(ii), cloneCallArgs(ii),
+                    closure == null ? null : closure.cloneForInlining(ii));
+        }
     }
 
     @Override
@@ -189,6 +205,16 @@ public class JRubyImplCallInstr extends CallInstr {
                 if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
                     Arity.raiseArgumentError(interp.getRuntime(), numArgs, required, required+opt);
                 }
+                break;
+            }
+            case RAISE_ARGUMENT_ERROR:
+            {
+                Operand[] args = getCallArgs();
+                int required = ((Fixnum)args[0]).value.intValue();
+                int opt      = ((Fixnum)args[1]).value.intValue();
+                int rest     = ((Fixnum)args[2]).value.intValue();
+                int numArgs  = ((Fixnum)args[3]).value.intValue();
+                Arity.raiseArgumentError(interp.getRuntime(), numArgs, required, required+opt);
                 break;
             }
             case SELF_HAS_INSTANCE_VARIABLE:
