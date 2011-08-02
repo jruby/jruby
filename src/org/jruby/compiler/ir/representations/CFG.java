@@ -512,14 +512,23 @@ public class CFG {
         // NOTE: No need to clone basic blocks in the closure because they are part of the caller's cfg
         // and is being merged in at the yield site -- there is no need for the closure after the merge.
         CFG ccfg = cl.getCFG();
-        BasicBlock cEntry = ccfg.getEntryBB(); 
-        BasicBlock cExit  = ccfg.getExitBB(); 
+        BasicBlock cEntry = ccfg.getEntryBB();
+        BasicBlock cExit  = ccfg.getExitBB();
         for (BasicBlock b: ccfg.getNodes()) {
             if (b != cEntry && b != cExit) {
-              _cfg.addVertex(b);
-              _bbMap.put(b._label, b);
-              b.updateCFG(this);
-              b.processClosureArgAndReturnInstrs(ii, yield);
+                _cfg.addVertex(b);
+                _bbMap.put(b._label, b);
+                b.updateCFG(this);
+                b.processClosureArgAndReturnInstrs(ii, yield);
+            }
+        }
+        for (BasicBlock b: ccfg.getNodes()) {
+            if (b != cEntry && b != cExit) {
+                for (CFG_Edge e: ccfg.outgoingEdgesOf(b)) {
+                    BasicBlock c = e._dst;
+                    if (c != cExit)
+                        _cfg.addEdge(b, c)._type = e._type;
+                }
             }
         }
         for (CFG_Edge e: ccfg.outgoingEdgesOf(cEntry)) {
