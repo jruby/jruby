@@ -60,7 +60,7 @@ public class Interpreter {
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
-        if (isDebug()) LOG.debug("-- Interpreted {} instructions", interpInstrsCount);
+        if (isDebug()) LOG.debug("-- Interpreted instructions: {}", interpInstrsCount);
 
         return rv;
     }
