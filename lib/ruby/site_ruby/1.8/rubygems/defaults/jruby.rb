@@ -1,5 +1,4 @@
 require 'rubygems/config_file'
-require 'rubygems/maven_gemify' # Maven support
 require 'rbconfig'
 
 module Gem
