@@ -341,7 +341,10 @@ public class CFG {
                 } // SSS FIXME: To be done
                 else if (i instanceof BREAK_Instr) {
                     tgt = null;
-                    retBBs.add(currBB); // the break instruction transfers control to the end of this closure cfg
+                    if (((BREAK_Instr)i).target == null) {
+                        // the break instruction transfers control to the end of this closure cfg
+                        retBBs.add(currBB);
+                    }
                     bbEndedWithControlXfer = true;
                 } else if (i instanceof ReturnInstr) {
                     tgt = null;

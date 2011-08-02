@@ -170,7 +170,6 @@ import org.jruby.compiler.ir.operands.Backref;
 import org.jruby.compiler.ir.operands.BacktickString;
 import org.jruby.compiler.ir.operands.Bignum;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
-import org.jruby.compiler.ir.operands.BreakResult;
 import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.CompoundString;
@@ -966,14 +965,10 @@ public class IRBuilder {
             Operand bodyValue = build(entry.getValue(), m);
             // bodyValue can be null if the body ends with a return!
             if (bodyValue != null) {
-               // Local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
-               // rather than wait to do it during an optimization pass when a dead jump needs to be removed.
+               // SSS FIXME: Do local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
+               // rather than wait to do it during an optimization pass when a dead jump needs to be removed.  For this, you have
+               // to look at what the last generated instruction was.
                Label tgt = endLabel;
-               if (bodyValue instanceof BreakResult) {
-                   BreakResult br = (BreakResult)bodyValue;
-                   bodyValue = br._result;
-                   tgt = br._jumpTarget;
-               }
                m.addInstr(new CopyInstr(result, bodyValue));
                m.addInstr(new JumpInstr(tgt));
             }
@@ -2174,14 +2169,9 @@ public class IRBuilder {
         if (ifNode.getThenBody() != null) {
             thenResult = build(ifNode.getThenBody(), s);
             if (thenResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
-                // Local optimization of break results to short-circuit the jump right away
-                // rather than wait to do it during an optimization pass.
+                // SSS FIXME: Can look at the last instr and short-circuit this jump if it is a break rather
+                // than wait for dead code elimination to do it
                 Label tgt = doneLabel;
-                if (thenResult instanceof BreakResult) {
-                    BreakResult br = (BreakResult)thenResult;
-                    thenResult = br._result;
-                    tgt = br._jumpTarget;
-                }
                 s.addInstr(new CopyInstr(result, thenResult));
                 s.addInstr(new JumpInstr(tgt));
             }

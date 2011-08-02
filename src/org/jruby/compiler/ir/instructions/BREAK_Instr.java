@@ -27,8 +27,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 public class BREAK_Instr extends Instr
 {
-    Operand returnValue;
-    Label   target; 
+    public final Label target; 
+    private Operand returnValue;
 
     public BREAK_Instr(Operand rv, Label target) {
         super(Operation.BREAK, null);
