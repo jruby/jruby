@@ -122,26 +122,6 @@ public class RubyDigest {
         return toHexString(recv.getRuntime(), arg.convertToString().getBytes());
     }
 
-    @JRubyMethod(name = "const_missing", required = 1, module = true)
-    public static IRubyObject const_missing(ThreadContext ctx, IRubyObject recv, IRubyObject symbol) {
-        Ruby runtime = ctx.getRuntime();
-        String sym = ((RubySymbol)symbol).asJavaString();
-        String libName;
-        if("SHA256".equals(sym) || "SHA384".equals(sym) || "SHA512".equals(sym)) {
-            libName = "digest/sha2.jar";
-        }
-        else {
-            libName = "digest/" + sym.toLowerCase();
-        }
-
-        runtime.getLoadService().require(libName);
-        RubyModule digest = runtime.getModule("Digest");
-        if(!digest.hasConstant(sym)) {
-            throw runtime.newNameError("unitialized constant Digest::" + sym, "Digest::" + sym);
-        }
-        return digest.getConstant(sym);
-    }
-
 
     private static class Metadata {
 
