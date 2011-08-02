@@ -154,7 +154,6 @@ import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
-import org.jruby.compiler.ir.instructions.RecordImplicitClosureArgInstr;
 import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -2103,9 +2102,6 @@ public class IRBuilder {
                 buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, true, false);
         }
 
-            // Record implicit closure/block arg (passed into lexical method)
-        closure.addInstr(new RecordImplicitClosureArgInstr(((IRExecutionScope)s).getImplicitBlockArg()));
-
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
         if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
@@ -2252,9 +2248,6 @@ public class IRBuilder {
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
             buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, true, false);  // SSS: Changed this from 1 to 0
-
-            // Record implicit closure/block arg (passed into lexical method)
-        closure.addInstr(new RecordImplicitClosureArgInstr(((IRExecutionScope)s).getImplicitBlockArg()));
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
