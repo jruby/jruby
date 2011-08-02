@@ -103,6 +103,7 @@ EXT_FILES = {
   'ext/pty/lib/expect.rb' => 'expect.rb',
   'ext/io/wait/lib/nonblock.rb' => 'io/nonblock.rb',
   'ext/nkf/lib/kconv.rb' => 'kconv.rb',
+  'ext/digest/lib/digest.rb' => 'digest.rb',
   'ext/digest/lib/md5.rb' => 'md5.rb',
   'ext/digest/lib/sha1.rb' => 'sha1.rb',
   'ext/digest/sha2/lib/sha2.rb' => 'digest/sha2.rb',
