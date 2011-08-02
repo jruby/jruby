@@ -148,9 +148,9 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
     public boolean nestedInClosure(IRClosure closure) {
         IRExecutionScope s = this;
-        do {
+        while (!(s instanceof IRMethod) && (s != closure)) {
             s = (IRExecutionScope)s.getLexicalParent();
-        } while (!(s instanceof IRMethod) && (s != closure));
+        }
         return (s == closure);
     }
 

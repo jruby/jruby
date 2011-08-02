@@ -258,6 +258,10 @@ public class LiveVariableNode extends FlowGraphNode
                     _tmp.clear(dv._id);
                 }
             }
+            else if (!i.hasSideEffects() && !i.transfersControl()) {
+                 i.markDead();
+                 it.remove();
+            }
             else {
 //                System.out.println("IGNORING! No result!");
             }

@@ -1090,7 +1090,7 @@ public class CFG {
                     Set<CFG_Edge> succs = _cfg.outgoingEdgesOf(curr);
                     if (succs.size() == 1) {
                         BasicBlock tgt = succs.iterator().next()._dst;
-                        if ((tgt != next) && ((li == null) || !li.operation.xfersControl())) {
+                        if ((tgt != next) && ((li == null) || !li.operation.transfersControl())) {
 //                            System.out.println("BB " + curr.getID() + " doesn't fall through to " + next.getID() + ".  Adding a jump to " + tgt._label);
                             curr.addInstr(new JumpInstr(tgt._label));
                         }
@@ -1107,7 +1107,7 @@ public class CFG {
                 Set<CFG_Edge> succs = _cfg.outgoingEdgesOf(curr);
                 assert succs.size() == 1;
                 BasicBlock tgt = succs.iterator().next()._dst;
-                if ((li == null) || !li.operation.xfersControl()) {
+                if ((li == null) || !li.operation.transfersControl()) {
 //                    System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
                     curr.addInstr(new JumpInstr(tgt._label));
                 }

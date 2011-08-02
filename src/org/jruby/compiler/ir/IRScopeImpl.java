@@ -264,6 +264,7 @@ public abstract class IRScopeImpl implements IRScope {
         }        
         if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
         if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
+        if (RubyInstanceConfig.IR_DEAD_CODE) printPass("After DCE ");
         runCompilerPass(new AddBindingInstructions());
         runCompilerPass(new LinearizeCFG());
         printPass("After CFG Linearize");

@@ -11,13 +11,15 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Block.Type;
 
-/* Receiver the closure argument (either implicit or explicit in Ruby source code) */
+/* Receive the closure argument (either implicit or explicit in Ruby source code) */
 public class ReceiveClosureInstr extends NoOperandInstr {
     public ReceiveClosureInstr(Variable dest) {
         super(Operation.RECV_CLOSURE, dest);
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
+		  // SSS FIXME: This is not strictly correct -- we have to wrap the block into an
+		  // operand type that converts the static code block to a proc which is a closure.
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
     }
 

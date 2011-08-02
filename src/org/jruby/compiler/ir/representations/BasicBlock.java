@@ -5,10 +5,13 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
+import org.jruby.compiler.ir.instructions.NopInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
+import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
+import org.jruby.compiler.ir.instructions.YieldInstr;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -54,13 +57,13 @@ public class BasicBlock {
         return _instrs;
     }
 
-	 private Instr[] _instrsArray = null;
+    private Instr[] _instrsArray = null;
 
     public Instr[] getInstrsArray() {
-		  if (_instrsArray == null) {
+        if (_instrsArray == null) {
             _instrsArray = _instrs.toArray(new Instr[_instrs.size()]);
-		  }
-		  return _instrsArray;
+        }
+        return _instrsArray;
     }
 
     public Instr getLastInstr() {
@@ -112,10 +115,11 @@ public class BasicBlock {
     public BasicBlock cloneForInlining(InlinerInfo ii) {
         BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
         for (Instr i: getInstrs()) {
-				Instr clonedInstr = i.cloneForInlining(ii);
-            clonedBB.addInstr(clonedInstr);
-            if (clonedInstr instanceof YieldInstr)
-                ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
+            Instr clonedInstr = i.cloneForInlining(ii);
+            if (clonedInstr != null) {
+                clonedBB.addInstr(clonedInstr);
+                if (clonedInstr instanceof YieldInstr) ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
+            }
         }
 
         return clonedBB;
@@ -130,6 +134,19 @@ public class BasicBlock {
             if (i instanceof ClosureReturnInstr) {
                 // Replace the closure return receive with a simple copy
                 it.set(new CopyInstr(yieldResult, ((ClosureReturnInstr)i).getArg()));
+            }
+            else if (i instanceof ReceiveSelfInstruction) {
+                ReceiveSelfInstruction rsi = (ReceiveSelfInstruction)i;
+                // SSS FIXME: It is not always the case that the call receiver is also the %self within
+                // a block  Ex: ... r.foo(args) { ... blah .. }.  i.e. there are scenarios where %self
+                // within the block is not identical to 'r'.  Handle this!
+                if (!rsi.result.equals(ii.getCallReceiver())) it.set(new CopyInstr(rsi.result, ii.getCallReceiver()));
+                else it.set(NopInstr.NOP);
+            }
+            else if (i instanceof ReceiveClosureInstr) {
+                ReceiveClosureInstr rci = (ReceiveClosureInstr)i;
+                if (!rci.result.equals(ii.getCallClosure())) it.set(new CopyInstr(rci.result, ii.getCallClosure()));
+                else it.set(NopInstr.NOP);
             }
             else if (i instanceof ReceiveClosureArgInstr) {
                 Operand closureArg;
@@ -165,7 +182,7 @@ public class BasicBlock {
         StringBuilder buf = new StringBuilder(toString() + "\n");
 
         for (Instr instr : getInstrs()) {
-            if (!instr.isDead()) buf.append('\t').append(instr).append('\n');
+            buf.append('\t').append(instr).append('\n');
         }
         
         return buf.toString();

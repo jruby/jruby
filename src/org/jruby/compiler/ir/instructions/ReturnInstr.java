@@ -32,7 +32,8 @@ public class ReturnInstr extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ReturnInstr(getArg().cloneForInlining(ii), methodToReturnFrom);
+		  // SSS FIXME: This should also look at the 'methodToReturnFrom' arg
+        return new CopyInstr(ii.getCallResultVariable(), getArg().cloneForInlining(ii));
     }
 
     @Override
