@@ -157,42 +157,52 @@ namespace :spec do
   rake_location = File.join(Gem.loaded_specs['rake'].full_gem_path, "lib")
   gem 'rspec'
   require 'rspec/core/rake_task'
-  desc "Runs Java Integration Specs"
-  RSpec::Core::RakeTask.new("ji" => "test:compile") do |t|
-    t.ruby_opts = " -I#{rake_location}"
-    t.rspec_opts ||= []
-    t.rspec_opts << "--options" << "spec/java_integration/spec.opts"
-    t.pattern = 'spec/java_integration/**/*_spec.rb'
-  end
 
-  desc "Runs Java Integration specs quietly"
-  RSpec::Core::RakeTask.new("ji:quiet" => "test:compile") do |t|
-    t.ruby_opts = " -I#{rake_location}"
-    t.rspec_opts ||= []
-    t.rspec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
-    t.pattern = 'spec/java_integration/**/*_spec.rb'
-  end
+  {"" => "--1.8", "_19" => "--1.9"}.each do |version_suffix, version_arg|
+    desc "Runs Java Integration Specs"
+    RSpec::Core::RakeTask.new("ji#{version_suffix}" => "test:compile") do |t|
+      t.ruby_opts = " -I#{rake_location}"
+      t.ruby_opts = version_arg
+      t.rspec_opts ||= []
+      t.rspec_opts << "--options" << "spec/java_integration/spec.opts"
+      t.pattern = 'spec/java_integration/**/*_spec.rb'
+    end
 
-  desc "Runs Compiler Specs"
-  RSpec::Core::RakeTask.new("compiler" => "test:compile") do |t|
-    t.pattern = 'spec/compiler/**/*_spec.rb'
-  end
+    desc "Runs Java Integration specs quietly"
+    RSpec::Core::RakeTask.new("ji:quiet#{version_suffix}" => "test:compile") do |t|
+      t.ruby_opts = " -I#{rake_location}"
+      t.ruby_opts = version_arg
+      t.rspec_opts ||= []
+      t.rspec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
+      t.pattern = 'spec/java_integration/**/*_spec.rb'
+    end
 
-  desc "Runs FFI specs"
-  RSpec::Core::RakeTask.new("ffi" => "test:compile") do |t|
-    t.pattern = 'spec/ffi/**/*_spec.rb'
-  end
+    desc "Runs Compiler Specs"
+    RSpec::Core::RakeTask.new("compiler#{version_suffix}" => "test:compile") do |t|
+      t.ruby_opts = version_arg
+      t.pattern = 'spec/compiler/**/*_spec.rb'
+    end
 
-  desc "Runs Java Signature Parser Specs"
-  RSpec::Core::RakeTask.new("java_signature_parser") do |t|
-    t.rspec_opts ||= []
-#    t.spec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
-    t.pattern = 'spec/grammar/**/*_spec.rb'
-  end
+    desc "Runs FFI specs"
+    RSpec::Core::RakeTask.new("ffi#{version_suffix}" => "test:compile") do |t|
+      t.ruby_opts = version_arg
+      t.pattern = 'spec/ffi/**/*_spec.rb'
+    end
 
-  desc "Runs Regression Specs"
-  RSpec::Core::RakeTask.new("regression") do |t|
-    t.pattern = 'spec/regression/**/*_spec.rb'
+    desc "Runs Java Signature Parser Specs"
+    RSpec::Core::RakeTask.new("java_signature_parser#{version_suffix}") do |t|
+      t.ruby_opts = version_arg
+      t.rspec_opts ||= []
+      #    t.spec_opts << "--options" << "spec/java_integration/spec.quiet.opts"
+      t.pattern = 'spec/grammar/**/*_spec.rb'
+    end
+
+    desc "Runs Regression Specs"
+    RSpec::Core::RakeTask.new("regression#{version_suffix}") do |t|
+      t.ruby_opts = version_arg
+      t.pattern = 'spec/regression/**/*_spec.rb'
+    end
+
   end
 
   # Complimentary tasks for running specs
