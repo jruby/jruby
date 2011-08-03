@@ -87,6 +87,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(org.jruby.lexer.yacc.ByteArrayLexerSourceTest.class);
         suite.addTestSuite(org.jruby.runtime.load.LoadServiceResourceInputStreamTest.class);
         suite.addTestSuite(TestRubyString.class);
+        suite.addTestSuite(TestRubyNKF.class);
         return suite;
     }
 }

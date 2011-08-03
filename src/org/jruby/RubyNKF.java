@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2007-2010 Koichiro Ohba <koichiro@meadowy.org>
+ * Copyright (C) 2007-2011 Koichiro Ohba <koichiro@meadowy.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,9 +34,13 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -227,18 +231,258 @@ public class RubyNKF {
         return result;
     }
 
-    private static int optionUTF(String s, int pos) {
-        int n = 8;
-        int first = pos + 1;
-        int second = pos + 2;
-        if (first < s.length() && Character.isDigit(s.charAt(first))) {
-            n = Character.digit(s.charAt(first), 10);
-            if (second < s.length() && Character.isDigit(s.charAt(second))) {
-                n *= 10;
-                n += Character.digit(s.charAt(second), 10);
+    private static class CmdOption {
+        private String opt;
+        private String longOpt;
+        private boolean hasArg = false;
+        private String value = null;
+        private Pattern pattern;
+
+        public CmdOption(String opt, String longOpt, String pattern) {
+            this.opt = opt;
+            this.longOpt = longOpt;
+            if (pattern != null) {
+                this.hasArg = true;
+                this.pattern = Pattern.compile(pattern);
             }
         }
-        return n;
+        String getOpt() { return opt; }
+        String getLongOpt() { return longOpt; }
+        boolean hasShortOpt() {
+            return opt != null;
+        }
+        boolean hasLongOpt() {
+            return longOpt != null;
+        }
+        boolean hasArg() {
+            return hasArg;
+        }
+        public String getValue() {
+            return value;
+        }
+        void setValue(String v) {
+            value = v;
+        }
+        String getKey() {
+            if (opt == null)
+                return longOpt;
+            else
+                return opt;
+        }
+        Pattern pattern() {
+            return pattern;
+        }
+        public String toString() {
+            return "[opt: " + opt
+                + " longOpt: " + longOpt
+                + " hasArg: " + hasArg
+                + " pattern: " + pattern
+                + " value: " + value + "]";
+        }
+    }
+    private static class CmdOptions {
+        private Map<String, CmdOption> shortOpts = new LinkedHashMap<String, CmdOption>();
+        private Map<String, CmdOption> longOpts = new LinkedHashMap<String, CmdOption>();
+
+        CmdOptions addOption(String opt) {
+            return addOption(opt, null);
+        }
+        CmdOptions addOption(String opt, String longOpt) {
+            return addOption(opt, longOpt, null);
+        }
+        CmdOptions addOption(String opt, String longOpt, String pattern) {
+            return addOption(new CmdOption(opt, longOpt, pattern));
+        }
+        CmdOptions addOption(CmdOption opt) {
+            if (opt.hasLongOpt()) {
+                longOpts.put(opt.getLongOpt(), opt);
+            }
+            if (opt.hasShortOpt()) {
+                shortOpts.put(opt.getOpt(), opt);
+            }
+            return this;
+        }
+        boolean hasShortOption(String opt) {
+            for (Map.Entry<String , CmdOption> e : shortOpts.entrySet()) {
+                if (opt.startsWith(e.getKey())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public CmdOption matchShortOption(String opt) {
+            // independent of opt length
+            for (Map.Entry<String , CmdOption> e : shortOpts.entrySet()) {
+                //System.out.println(opt + " = " + e.getKey());
+                if (opt.startsWith(e.getKey())) {
+                    //System.out.println("match[" + e.getKey() + "]");
+                    CmdOption cmd = e.getValue();
+                    if (cmd.hasArg()) {
+                        Matcher m = cmd.pattern().matcher(opt);
+                        if (m.find()) {
+                            //System.out.println("regix[" + m.group() + "]");
+                            cmd.setValue(m.group());
+                        }
+                    }
+                    return cmd;
+                }
+            }
+            return null;
+        }
+        boolean hasLongOption(String opt) {
+            for (Map.Entry<String , CmdOption> e : longOpts.entrySet()) {
+                if (opt.startsWith(e.getKey())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        CmdOption matchLongOption(String opt) {
+            for (Map.Entry<String , CmdOption> e : longOpts.entrySet()) {
+                //System.out.println(opt + " = " + e.getKey());
+                if (opt.startsWith(e.getKey())) {
+                    //System.out.println("match[" + e.getKey() + "]");
+                    CmdOption cmd = e.getValue();
+                    if (cmd.hasArg()) {
+                        Matcher m = cmd.pattern().matcher(opt);
+                        if (m.find()) {
+                            //System.out.println("regix[" + m.group() + "]");
+                            cmd.setValue(m.group(1));
+                        }
+                    }
+                    return cmd;
+                }
+            }
+            return null;
+        }
+    }
+    public static class CmdCommand {
+        private final List<CmdOption> options = new ArrayList<CmdOption>();
+        public boolean hasOption(String opt) {
+            for (CmdOption option : options) {
+                if (opt.equals(option.getOpt())) return true;
+                if (opt.equals(option.getLongOpt())) return true;
+            }
+            return false;
+        }
+        public void addOption(CmdOption opt) {
+            options.add(opt);
+        }
+        public CmdOption getOption(String opt) {
+            for (CmdOption option : options) {
+                if (opt.equals(option.getOpt())) return option;
+                if (opt.equals(option.getLongOpt())) return option;
+            }
+            return null;
+        }
+        public String getOptionValue(String opt) {
+            return getOption(opt).getValue();
+        }
+        public String toString() {
+            return options.toString();
+        }
+    }
+    private static class CmdParser {
+        public CmdCommand parse(CmdOptions opt, String args) {
+            CmdOptions options = opt;
+            CmdCommand cc = new CmdCommand();
+            String[] tokens = args.split("\\s");
+            for (int i = 0; i < tokens.length; i++) {
+                // long option
+                if (tokens[i].startsWith("--")) {
+                    String s = stripDash(tokens[i]);
+                    if (opt.hasLongOption(s)) {
+                        cc.addOption(opt.matchLongOption(s));
+                    }
+                } else {
+                    // short option
+                    String s = stripDash(tokens[i]);
+                    int max = s.length();
+                    for (int j = 0; j < max; j++) {
+                        if (opt.hasShortOption(s)) {
+                            CmdOption cmd = opt.matchShortOption(s);
+                            if (cmd.getValue() != null) {
+                                int op_len = cmd.getValue().length();
+                                s = s.substring(op_len);
+                                j = j + op_len;
+                            }
+                            cc.addOption(cmd);
+                        }
+                        s = s.substring(1);
+                    }
+                }
+            }
+            return cc;
+        }
+        private String stripDash(String s) {
+            if (s.startsWith("--")) {
+                return s.substring(2, s.length());
+            } else if (s.startsWith("-")) {
+                return s.substring(1, s.length());
+            } else {
+                return s;
+            }
+        }
+    }
+    public static CmdCommand parseOption(String s) {
+        CmdOptions options = new CmdOptions();
+        options.addOption("b");
+        options.addOption("u");
+        options.addOption("j", "jis");
+        options.addOption("s", "sjis");
+        options.addOption("e", "euc");
+        options.addOption("w", null, "[0-9][0-9]");
+        options.addOption("J", "jis-input");
+        options.addOption("S", "sjis-input");
+        options.addOption("E", "euc-input");
+        options.addOption("W", null, "[0-9][0-9]");
+        options.addOption("t");
+        options.addOption("i_");
+        options.addOption("o_");
+        options.addOption("r");
+        options.addOption("h1", "hiragana");
+        options.addOption("h2", "katakana");
+        options.addOption("h3", "katakana-hiragana");
+        options.addOption("T");
+        options.addOption("l");
+        options.addOption("f", null, "[0-9]+-[0-9]*");
+        options.addOption("F");
+        options.addOption("Z", null, "[0-3]");
+        options.addOption("X");
+        options.addOption("x");
+        options.addOption("B", null, "[0-2]");
+        options.addOption("I");
+        options.addOption("L", null, "[uwm]");
+        options.addOption("d");
+        options.addOption("c");
+        options.addOption("m", null, "[BQN0]");
+        options.addOption("M", null, "[BQ]");
+        options.addOption(null, "fj");
+        options.addOption(null, "unix");
+        options.addOption(null, "mac");
+        options.addOption(null, "msdos");
+        options.addOption(null, "windows");
+        options.addOption(null, "mime");
+        options.addOption(null, "base64");
+        options.addOption(null, "mime-input");
+        options.addOption(null, "base64-input");
+        options.addOption(null, "ic", "ic=(.*)");
+        options.addOption(null, "oc", "oc=(.*)");
+        options.addOption(null, "fb-skip");
+        options.addOption(null, "fb-html");
+        options.addOption(null, "fb-xml");
+        options.addOption(null, "fb-perl");
+        options.addOption(null, "fb-java");
+        options.addOption(null, "fb-subchar");
+        options.addOption(null, "no-cp932ext");
+        options.addOption(null, "cap-input");
+        options.addOption(null, "url-input");
+        options.addOption(null, "numchar-input");
+        options.addOption(null, "no-best-fit-chars");
+
+        CmdParser parser = new CmdParser();
+        CmdCommand cmd = parser.parse(options, s);
+        return cmd;
     }
 
     private static Map<String, NKFCharset> parseOpt(String s) {
@@ -250,123 +494,70 @@ public class RubyNKF {
         options.put("mime-decode", MIME_DETECT);
         options.put("mime-encode", NOCONV);
 
-        for (int i = 0; i < s.length(); i++) {
-            switch (s.charAt(i)) {
-            case 'b':
-                break;
-            case 'u':
-                break;
-            case 'j': // iso-2022-jp
-                options.put("output", JIS);
-                break;
-            case 's': // Shift_JIS
-                options.put("output", SJIS);
-                break;
-            case 'e': // EUC-JP
-                options.put("output", EUC);
-                break;
-            case 'w': // UTF-8
-            {
-                int n = optionUTF(s, i);
-                if (n == 32) {
-                    options.put("output", UTF32);
-                } else if (n == 16) {
-                    options.put("output", UTF16);
-                } else {
-                    options.put("output", UTF8);
-                }
-            }
-                break;
-            case 'J': // iso-2022-jp
-                options.put("input", JIS);
-                break;
-            case 'S': // Shift_JIS
-                options.put("input", SJIS);
-                break;
-            case 'E': // EUC-JP
-                options.put("input", EUC);
-                break;
-            case 'W': // UTF-8
-            {
-                int n = optionUTF(s, i);
-                if (n == 32)
-                    options.put("input", UTF32);
-                else if (n == 16)
-                    options.put("input", UTF16);
-                else
-                    options.put("input", UTF8);
-            }
-                break;
-            case 't':
-                break;
-            case 'r':
-                break;
-            case 'h':
-                break;
-            case 'm':
-                if (i+1 >= s.length()) {
-                    options.put("mime-decode", MIME_DETECT);
-                    break;
-                }
-                switch (s.charAt(i+1)) {
-                case 'B':
-                    options.put("mime-decode", BASE64);
-                    break;
-                case 'Q':
-                    options.put("mime-decode", QENCODE);
-                    break;
-                case 'N':
-                    // TODO: non-strict option
-                    break;
-                case '0':
-                    options.put("mime-decode", NOCONV);
-                    break;
-                }
-                break;
-            case 'M':
-                if (i+1 >= s.length()) {
-                    options.put("mime-encode", NOCONV);
-                }
-                switch (s.charAt(i+1)) {
-                case 'B':
-                    options.put("mime-encode", BASE64);
-                    break;
-                case 'Q':
-                    options.put("mime-encode", QENCODE);
-                    break;
-                }
-                break;
-            case 'l':
-                break;
-            case 'f':
-                break;
-            case 'F':
-                break;
-            case 'Z':
-                break;
-            case 'X':
-                break;
-            case 'x':
-                break;
-            case 'B':
-                break;
-            case 'T':
-                break;
-            case 'd':
-                break;
-            case 'c':
-                break;
-            case 'I':
-                break;
-            case 'L':
-                break;
-            case '-':
-                if (s.charAt(i+1) == '-') {
-                    // long name option
-                }
-            default:
+        CmdCommand cmd = parseOption(s);
+        if (cmd.hasOption("j")) {
+            options.put("output", JIS);
+        }
+        if (cmd.hasOption("s")) {
+            options.put("output", SJIS);
+        }
+        if (cmd.hasOption("e")) {
+            options.put("output", EUC);
+        }
+        if (cmd.hasOption("w")) {
+            CmdOption opt = cmd.getOption("w");
+            if ("32".equals(opt.getValue())) {
+                options.put("output", UTF32);
+            } else if("16".equals(opt.getValue())) {
+                options.put("output", UTF16);
+            } else {
+                options.put("output", UTF8);
             }
         }
+        if (cmd.hasOption("J")) {
+            options.put("input", JIS);
+        }
+        if (cmd.hasOption("S")) {
+            options.put("input", SJIS);
+        }
+        if (cmd.hasOption("E")) {
+            options.put("input", EUC);
+        }
+        if (cmd.hasOption("W")) {
+            CmdOption opt = cmd.getOption("W");
+            if ("32".equals(opt.getValue())) {
+                options.put("input", UTF32);
+            } else if("16".equals(opt.getValue())) {
+                options.put("input", UTF16);
+            } else {
+                options.put("input", UTF8);
+            }
+        }
+        if (cmd.hasOption("m")) {
+            CmdOption opt = cmd.getOption("m");
+            if (opt.getValue() == null) {
+                options.put("mime-decode", MIME_DETECT);
+            } else if ("B".equals(opt.getValue())) {
+                options.put("mime-decode", BASE64);
+            } else if ("Q".equals(opt.getValue())) {
+                options.put("mime-decode", QENCODE);
+            } else if ("N".equals(opt.getValue())) {
+                // TODO: non-strict option
+            } else if ("0".equals(opt.getValue())) {
+                options.put("mime-decode", NOCONV);
+            }
+        }
+        if (cmd.hasOption("M")) {
+            CmdOption opt = cmd.getOption("M");
+            if (opt.getValue() == null) {
+                options.put("mime-encode", NOCONV);
+            } else if ("B".equals(opt.getValue())) {
+                options.put("mime-encode", BASE64);
+            } else if ("Q".equals(opt.getValue())) {
+                options.put("mime-encode", QENCODE);
+            }
+        }
+
         return options;
     }
 
