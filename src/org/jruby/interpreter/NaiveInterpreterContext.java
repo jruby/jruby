@@ -28,7 +28,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     protected Object self;
     protected IRubyObject[] parameters;
     protected Object[] temporaryVariables;
-    protected Object[] renamedVariables;
     protected Object[] localVariables;
     protected Frame frame;
     protected Block block;
@@ -43,7 +42,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
 	 // - self if we are executing a class method of 'self'
 	 // - self.getMetaClass() if we are executing an instance method of 'self'
 	 // - the class in which the closure is lexically defined in if we are executing a closure
-    public NaiveInterpreterContext(ThreadContext context, RubyModule currentModule, IRubyObject self, String name, int localVariablesSize, int temporaryVariablesSize, int renamedVariablesSize, IRubyObject[] parameters, Block block, Block.Type blockType) {
+    public NaiveInterpreterContext(ThreadContext context, RubyModule currentModule, IRubyObject self, String name, int localVariablesSize, int temporaryVariablesSize, IRubyObject[] parameters, Block block, Block.Type blockType) {
         context.preMethodFrameOnly(currentModule, name, self, block);
         this.frame = context.getCurrentFrame();
 
@@ -53,7 +52,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
         this.parameters = parameters;
         this.localVariables = localVariablesSize > 0 ? new Object[localVariablesSize] : null;
         this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
-        this.renamedVariables = renamedVariablesSize > 0 ? new Object[renamedVariablesSize] : null;
         this.block = block;
 		  // SSS FIXME: Can it happen that (block.type != blockType)?
 		  this.blockType = blockType;
@@ -116,29 +114,11 @@ public class NaiveInterpreterContext implements InterpreterContext {
     }
 
     // Post-inlining
-    public void updateRenamedVariablesCount(int n) {
-        // SSS FIXME: use System.arraycopy
-        Object[] oldRenamedVars = this.renamedVariables;
-        this.renamedVariables = new Object[n];
-        for (int i = 0; i < oldRenamedVars.length; i++) this.renamedVariables[i] = oldRenamedVars[i];
-    }
-
-    // Post-inlining
     public void updateLocalVariablesCount(int n) {
         // SSS FIXME: use System.arraycopy
         Object[] oldLocalVars = this.localVariables;
         this.localVariables = new Object[n];
         for (int i = 0; i < oldLocalVars.length; i++) this.localVariables[i] = oldLocalVars[i];
-    }
-
-    public Object getRenamedVariable(int offset) {
-        return renamedVariables[offset];
-    }
-
-    public Object setRenamedVariable(int offset, Object value) {
-        Object oldValue = renamedVariables[offset];
-        renamedVariables[offset] = value;
-        return oldValue;
     }
 
     public Object getSharedBindingVariable(int bindingSlot) {

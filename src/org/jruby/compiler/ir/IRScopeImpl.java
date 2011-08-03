@@ -144,17 +144,14 @@ public abstract class IRScopeImpl implements IRScope {
         return new TemporaryVariable(allocateNextPrefixedName("%v"));
     }
 
-    // Generate a new variable for inlined code (just for ease of debugging, use differently named variables for inlined code)
+    // Generate a new variable for inlined code (for ease of debugging, use differently named variables for inlined code)
     public Variable getNewInlineVariable() {
-        return new RenamedVariable("%i", allocateNextPrefixedName("%i"));
+		  // Use the temporary variable counters for allocating temporary variables
+        return new RenamedVariable("%i", allocateNextPrefixedName("%v"));
     }
 
     public int getTemporaryVariableSize() {
         return getPrefixCountSize("%v");
-    }
-
-    public int getRenamedVariableSize() {
-        return getPrefixCountSize("%i");
     }
 
     public String getName() {

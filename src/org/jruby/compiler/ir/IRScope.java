@@ -72,11 +72,6 @@ public interface IRScope {
     public int getTemporaryVariableSize();
 
     /**
-     * How many renamed variables are in this scope?
-     */
-    public int getRenamedVariableSize();
-
-    /**
      * Get Local Variable from this scope
      */
     public LocalVariable getLocalVariable(String name);

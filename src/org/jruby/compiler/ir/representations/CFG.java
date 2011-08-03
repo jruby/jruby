@@ -603,9 +603,9 @@ public class CFG {
         DirectedGraph<BasicBlock, CFG_Edge> g = getNewCFG();
         for (BasicBlock b: mcfg.getNodes()) {
             if (b != mEntry && b != mExit) {
-              BasicBlock bCloned = b.cloneForInlining(ii);
-              _cfg.addVertex(bCloned);
-              _bbMap.put(bCloned._label, bCloned);
+                BasicBlock bCloned = b.cloneForInlining(ii);
+                _cfg.addVertex(bCloned);
+                _bbMap.put(bCloned._label, bCloned);
             }
         }
 

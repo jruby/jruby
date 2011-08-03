@@ -43,9 +43,6 @@ public interface InterpreterContext {
     public Object setTemporaryVariable(int offset, Object value);
     public Object getLocalVariable(int offset);
     public Object setLocalVariable(int offset, Object value);
-    public void   updateRenamedVariablesCount(int n);
-    public Object getRenamedVariable(int offset);
-    public Object setRenamedVariable(int offset, Object value);
 
     public void setDynamicScope(DynamicScope s);
     public void allocateSharedBindingScope(IRMethod method);
