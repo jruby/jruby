@@ -877,6 +877,8 @@ public final class StructLayout extends Type {
         protected final AbstractMemory ptr;
         final MemoryOp aio;
         protected final Type.Array arrayType;
+        private final boolean cacheable;
+        private IRubyObject[] valueCache;
 
         ArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
             this(runtime, runtime.getModule("FFI").getClass(CLASS_NAME).getClass("ArrayProxy"),
@@ -888,6 +890,8 @@ public final class StructLayout extends Type {
             this.ptr = ((AbstractMemory) ptr).slice(runtime, offset, type.getNativeSize());
             this.arrayType = type;
             this.aio = aio;
+            this.cacheable = type.getComponentType() instanceof Type.Array 
+                    || type.getComponentType() instanceof StructByValue;
         }
 
         private final long getOffset(IRubyObject index) {
@@ -903,17 +907,38 @@ public final class StructLayout extends Type {
         }
 
         private IRubyObject get(ThreadContext context, int index) {
-            return aio.get(context, ptr, getOffset(index));
+            IRubyObject obj;
+            
+            if (valueCache != null && (obj = valueCache[index]) != null) {
+                return obj;
+            }
+            putCachedValue(index, obj = aio.get(context, ptr, getOffset(index)));
+            
+            return obj;
+        }
+        
+        public final void putCachedValue(int idx, IRubyObject value) {
+            if (cacheable) {
+                if (valueCache == null) {
+                    valueCache = new IRubyObject[arrayType.length()];
+                }
+                valueCache[idx] = value;
+            }
         }
 
         @JRubyMethod(name = "[]")
         public IRubyObject get(ThreadContext context, IRubyObject index) {
-            return aio.get(context, ptr, getOffset(index));
+            return get(context, Util.int32Value(index));
         }
 
         @JRubyMethod(name = "[]=")
         public IRubyObject put(ThreadContext context, IRubyObject index, IRubyObject value) {
-            aio.put(context, ptr, getOffset(index), value);
+            int idx = Util.int32Value(index);
+            
+            putCachedValue(idx, value);
+            
+            aio.put(context, ptr, getOffset(idx), value);
+            
             return value;
         }
 
@@ -1197,19 +1222,66 @@ public final class StructLayout extends Type {
         public final boolean isValueReferenceNeeded() {
             return false;
         }
+    }    
+    
+    private static MemoryOp getArrayComponentMemoryOp(Type.Array arrayType) {
+        Type componentType = arrayType.getComponentType();
+        MemoryOp op = componentType instanceof Type.Array
+                ? new MultiDimensionArrayOp((Type.Array) componentType)
+                : MemoryOp.getMemoryOp(componentType);
+        if (op == null) {
+            throw arrayType.getRuntime().newNotImplementedError("unsupported array field type: " + arrayType.getComponentType());
+        }
+
+        return op;
     }
 
+    
+    static final class MultiDimensionArrayOp extends MemoryOp {
+        private final Type.Array arrayType;
+        private final MemoryOp op;
+        
+        public MultiDimensionArrayOp(Type.Array arrayType) {
+            this.arrayType = arrayType;
+            this.op = getArrayComponentMemoryOp(arrayType);
+        }
+        
+        @Override
+        IRubyObject get(ThreadContext context, MemoryIO io, long offset) {
+            throw context.getRuntime().newNotImplementedError("cannot get multi deminesional array field");
+        }
+
+        @Override
+        void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
+            if (isCharArray() && value instanceof RubyString) {
+                ByteList bl = value.convertToString().getByteList();
+                io.putZeroTerminatedByteArray(offset, bl.getUnsafeBytes(), bl.begin(),
+                    Math.min(bl.length(), arrayType.length() - 1));
+            } else {
+                throw context.getRuntime().newNotImplementedError("cannot set multi deminesional array field");
+            }
+        }
+
+        @Override
+        IRubyObject get(ThreadContext context, AbstractMemory ptr, long offset) {
+            return isCharArray()
+                    ? new StructLayout.CharArrayProxy(context.getRuntime(), ptr, offset, arrayType, op)
+                    : new StructLayout.ArrayProxy(context.getRuntime(), ptr, offset, arrayType, op);
+        }
+        
+        private boolean isCharArray() {
+            return arrayType.getComponentType().nativeType == NativeType.CHAR
+                    || arrayType.getComponentType().nativeType == NativeType.UCHAR;
+        }
+    }
+    
     static final class ArrayFieldIO implements FieldIO {
         private final Type.Array arrayType;
         private final MemoryOp op;
 
         public ArrayFieldIO(Type.Array arrayType) {
             this.arrayType = arrayType;
-            this.op = MemoryOp.getMemoryOp(arrayType.getComponentType());
-
-            if (op == null) {
-                throw arrayType.getRuntime().newNotImplementedError("unsupported array field type: " + arrayType.getComponentType());
-            }
+            this.op = getArrayComponentMemoryOp(arrayType);
         }
 
 
