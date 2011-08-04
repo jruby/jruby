@@ -8,6 +8,7 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class PutConstInstr extends PutInstr {
@@ -24,7 +25,7 @@ public class PutConstInstr extends PutInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject value = (IRubyObject) getValue().retrieve(interp);
         RubyModule module = (RubyModule) getTarget().retrieve(interp);
 

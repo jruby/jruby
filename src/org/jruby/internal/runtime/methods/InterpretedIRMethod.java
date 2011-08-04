@@ -56,7 +56,7 @@ public class InterpretedIRMethod extends DynamicMethod {
         }
 
         context.getCurrentScope().getStaticScope().setModule(clazz);
-        return Interpreter.INTERPRET_METHOD(context, c, interp, name, getImplementationClass(), false);
+        return Interpreter.INTERPRET_METHOD(context, c, interp, self, name, getImplementationClass(), false);
     }
 
     @Override

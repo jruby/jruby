@@ -12,6 +12,8 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /*
  * All variables are allocated in the binding of the nearest method ancestor.  Additionally, all variables 
@@ -65,10 +67,11 @@ public class LoadFromBindingInstr extends Instr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         LocalVariable v = (LocalVariable)getResult();
-        if (bindingSlot == -1)
-            bindingSlot = sourceMethod.getBindingSlot(getSlotName());
+        
+        if (bindingSlot == -1) bindingSlot = sourceMethod.getBindingSlot(getSlotName());
+        
         interp.setLocalVariable(v.getLocation(), interp.getSharedBindingVariable(bindingSlot));
         return null;
     }

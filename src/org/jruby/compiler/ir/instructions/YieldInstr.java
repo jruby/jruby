@@ -31,15 +31,15 @@ public class YieldInstr extends Instr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Object resultValue;
         Object blk = (Object)block.retrieve(interp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         if (yieldArg == null) {
-            resultValue = ((Block)blk).yieldSpecific(interp.getContext());
+            resultValue = ((Block)blk).yieldSpecific(context);
         } else {
-            resultValue = ((Block)blk).yield(interp.getContext(), (IRubyObject)yieldArg.retrieve(interp));
+            resultValue = ((Block)blk).yield(context, (IRubyObject)yieldArg.retrieve(interp));
         }
         getResult().store(interp, resultValue);
         return null;

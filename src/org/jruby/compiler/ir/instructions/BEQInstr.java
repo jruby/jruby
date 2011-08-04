@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class BEQInstr extends BranchInstr {
@@ -18,7 +19,7 @@ public class BEQInstr extends BranchInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Operand op1 = getOperand1();
         Operand op2 = getOperand2();
         Object value1 = op1.retrieve(interp);

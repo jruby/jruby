@@ -12,6 +12,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 //
@@ -137,7 +138,7 @@ public abstract class Instr {
     }
 
     @Interp
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 }

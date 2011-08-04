@@ -10,6 +10,7 @@ import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 //    is_true(a) = (!a.nil? && a != false) 
@@ -41,8 +42,8 @@ public class IsTrueInstr extends OneOperandInstr {
     public boolean canRaiseException() { return false; }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
-        getResult().store(interp, interp.getRuntime().newBoolean(((IRubyObject) getArg().retrieve(interp)).isTrue()));
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        getResult().store(interp, context.getRuntime().newBoolean(((IRubyObject) getArg().retrieve(interp)).isTrue()));
         return null;
     }
 }

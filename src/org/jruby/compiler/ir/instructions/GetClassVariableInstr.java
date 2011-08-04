@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class GetClassVariableInstr extends GetInstr {
@@ -20,7 +21,7 @@ public class GetClassVariableInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         getResult().store(interp, ((RubyModule) getSource().retrieve(interp)).getClassVar(getName()));
         return null;
     }

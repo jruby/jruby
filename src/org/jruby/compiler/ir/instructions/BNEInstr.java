@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class BNEInstr extends BranchInstr {
@@ -18,7 +19,7 @@ public class BNEInstr extends BranchInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Operand op1 = getOperand1();
         Operand op2 = getOperand2();
         Object value1 = op1.retrieve(interp);
@@ -26,8 +27,7 @@ public class BNEInstr extends BranchInstr {
             boolean v1True  = ((IRubyObject)value1).isTrue();
             boolean op2True = ((BooleanLiteral)op2).isTrue();
             return (v1True && !op2True) || (v1True && !op2True) ? target : null;
-        }
-        else {
+        } else {
             Object value2 = op2.retrieve(interp);
 //            System.out.println("VALUE1: " + value1 + ", VALUE2: " + value2);
             // FIXME: equals? rather than == 

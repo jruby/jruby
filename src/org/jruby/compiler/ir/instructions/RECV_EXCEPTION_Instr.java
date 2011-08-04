@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RECV_EXCEPTION_Instr extends NoOperandInstr
@@ -16,7 +17,7 @@ public class RECV_EXCEPTION_Instr extends NoOperandInstr
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         getResult().store(interp, interp.getException());
         return null;
     }

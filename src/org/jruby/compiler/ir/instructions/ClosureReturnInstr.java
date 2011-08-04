@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClosureReturnInstr extends OneOperandInstr {
@@ -20,7 +21,7 @@ public class ClosureReturnInstr extends OneOperandInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         interp.setReturnValue(getArg().retrieve(interp));
         return interp.getMethodExitLabel();
     }

@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class PutFieldInstr extends PutInstr {
@@ -18,7 +19,7 @@ public class PutFieldInstr extends PutInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject object = (IRubyObject) getTarget().retrieve(interp);
 
         RubyClass clazz = object.getMetaClass().getRealClass();

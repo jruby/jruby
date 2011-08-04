@@ -245,8 +245,8 @@ public class CallInstr extends MultiOperandInstr {
         return allArgs;
     }
     
-    private Label interpretMethodHandle(InterpreterContext interp, 
-            MethodHandle mh, IRubyObject[] args) {
+    private Label interpretMethodHandle(InterpreterContext interp, ThreadContext context, 
+            IRubyObject self, MethodHandle mh, IRubyObject[] args) {
         assert mh.getMethodNameOperand() == getReceiver();
 
         IRubyObject resultValue;
@@ -254,7 +254,7 @@ public class CallInstr extends MultiOperandInstr {
         String mn = mh.getResolvedMethodName();
         IRubyObject ro = mh.getReceiverObj();
         if (m.isUndefined()) {
-            resultValue = RuntimeHelpers.callMethodMissing(interp.getContext(), ro,
+            resultValue = RuntimeHelpers.callMethodMissing(context, ro,
                     m.getVisibility(), mn, CallType.FUNCTIONAL, args, prepareBlock(interp));
         } else {
             try {
@@ -270,18 +270,17 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Object ma = methAddr.retrieve(interp);
         IRubyObject[] args = prepareArguments(getCallArgs(), interp);
         
-        if (ma instanceof MethodHandle) return interpretMethodHandle(interp, (MethodHandle) ma, args);
+        if (ma instanceof MethodHandle) return interpretMethodHandle(interp, context, self, (MethodHandle) ma, args);
 
         IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
         String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
         Object resultValue;
         try {
-            resultValue = callAdapter.call(interp.getContext(), 
-                    (IRubyObject) interp.getSelf(), object, args, prepareBlock(interp));
+            resultValue = callAdapter.call(context, self, object, args, prepareBlock(interp));
         } catch (org.jruby.exceptions.JumpException.BreakJump bj) {
             resultValue = (IRubyObject) bj.getValue();
         }

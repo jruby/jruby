@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -12,6 +13,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class AttrAssignInstr extends MultiOperandInstr {
@@ -75,7 +77,7 @@ public class AttrAssignInstr extends MultiOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject receiver = (IRubyObject) obj.retrieve(interp);
         String      attrMeth = ((RubyString) attr.retrieve(interp)).asJavaString();
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
@@ -87,11 +89,9 @@ public class AttrAssignInstr extends MultiOperandInstr {
 
         for (int i = 0; i < args.length; i++) {
             IRubyObject rArg = (IRubyObject)args[i].retrieve(interp);
-            if ((args[i] instanceof Splat) || (args[i] instanceof CompoundArray)) { // append the contents of the splatted array
-                for (IRubyObject v: ((RubyArray)rArg).toJavaArray())
-                    argList.add(v);
-            }
-            else {
+            if ((args[i] instanceof Splat) || (args[i] instanceof CompoundArray)) { 
+                argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
+            } else {
                 argList.add(rArg);
             }
         }

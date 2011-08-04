@@ -15,6 +15,8 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.Map;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class AllocateBindingInstr extends Instr {
     IRMethod scope;   // Scope for which frame is needed
@@ -48,7 +50,7 @@ public class AllocateBindingInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
 /**
  * SSS: This is going to be a NO-OP in the current implementation because of the existing JRuby runtime
  * is structure.  ThreadContext accesses static-scope via a DynamicScope!  This means it expects a

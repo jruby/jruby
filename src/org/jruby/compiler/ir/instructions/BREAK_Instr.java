@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // A break instruction is not just any old instruction.
@@ -56,7 +57,7 @@ public class BREAK_Instr extends Instr
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         interp.setReturnValue(returnValue.retrieve(interp));
         return target == null ? interp.getMethodExitLabel() : target;
     }

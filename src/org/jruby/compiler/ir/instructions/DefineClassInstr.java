@@ -13,6 +13,8 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineClassInstr extends TwoOperandInstr {
     public DefineClassInstr(Variable dest, ClassMetaObject cmo, Operand superClass) {
@@ -26,22 +28,22 @@ public class DefineClassInstr extends TwoOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
-        Ruby       runtime   = interp.getRuntime();
-        ClassMetaObject cmo  = (ClassMetaObject)getOperand1();
-        IRScope    scope     = cmo.scope;
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.getRuntime();
+        ClassMetaObject cmo = (ClassMetaObject) getOperand1();
+        IRScope scope = cmo.scope;
         RubyModule container = cmo.getContainer(interp, runtime);
         RubyModule module;
         if (scope instanceof IRMetaClass) {
             module = container.getMetaClass();
         } else {
-				Operand superClass = getOperand2();
+            Operand superClass = getOperand2();
             RubyClass sc = superClass == Nil.NIL ? null : (RubyClass)superClass.retrieve(interp);
             module = container.defineOrGetClassUnder(scope.getName(), sc);
         }
 
-        Object v = cmo.interpretBody(interp, interp.getContext(), module);
-		  getResult().store(interp, v);
+        Object v = cmo.interpretBody(interp, context, module);
+        getResult().store(interp, v);
         return null;
     }
 }

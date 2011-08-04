@@ -5,6 +5,8 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // This is of the form:
 //    v = LBL_..
@@ -28,7 +30,7 @@ public class SET_RETADDR_Instr extends OneOperandInstr
     public boolean canRaiseException() { return false; }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         getResult().store(interp, ((Label)getArg()));
         return null;
     }

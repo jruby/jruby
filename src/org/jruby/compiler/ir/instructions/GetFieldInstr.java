@@ -8,6 +8,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class GetFieldInstr extends GetInstr {
@@ -21,15 +22,15 @@ public class GetFieldInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject object = (IRubyObject) getSource().retrieve(interp);
 
         RubyClass clazz = object.getMetaClass().getRealClass();
 
         // FIXME: Should add this as a field for instruction
         VariableAccessor accessor = clazz.getVariableAccessorForRead(getName());
-		  Object v = (accessor == null) ? null : accessor.get(object);
-        getResult().store(interp, v == null ? interp.getRuntime().getNil() : v);
+        Object v = (accessor == null) ? null : accessor.get(object);
+        getResult().store(interp, v == null ? context.getRuntime().getNil() : v);
         return null;
     }
 }

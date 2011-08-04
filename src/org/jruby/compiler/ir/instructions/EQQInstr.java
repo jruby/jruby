@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
@@ -19,13 +20,11 @@ public class EQQInstr extends TwoOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject receiver = (IRubyObject) getOperand1().retrieve(interp);
         IRubyObject value = (IRubyObject) getOperand2().retrieve(interp);
-        getResult().store(interp, receiver.callMethod(interp.getContext(), "===", value));
+        getResult().store(interp, receiver.callMethod(context, "===", value));
         
         return null;
     }
-
-
 }

@@ -8,8 +8,9 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.Ruby;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.Block.Type;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
 public class ReceiveClosureInstr extends NoOperandInstr {
@@ -25,7 +26,7 @@ public class ReceiveClosureInstr extends NoOperandInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Block blk = interp.getBlock();
         Ruby  runtime = interp.getRuntime();
         getResult().store(interp, blk == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, blk));

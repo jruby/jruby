@@ -13,6 +13,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineMetaClassInstr extends OneOperandInstr {
@@ -28,21 +29,22 @@ public class DefineMetaClassInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
-        Ruby runtime = interp.getRuntime();
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.getRuntime();
         IRubyObject obj = (IRubyObject)getArg().retrieve(interp);
+        
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
             throw runtime.newTypeError("no virtual class for " + obj.getMetaClass().getBaseName());
-        }
-        else {
+        } else {
             if (runtime.getSafeLevel() >= 4 && !obj.isTaint()) {
                 throw runtime.newSecurityError("Insecure: can't extend object.");
             }
+            
             RubyClass singletonClass = obj.getSingletonClass();
             dummyMetaClass.getStaticScope().setModule(singletonClass);
             DynamicMethod method = new InterpretedIRMethod(dummyMetaClass.getRootMethod(), singletonClass);
-            Object v = method.call(interp.getContext(), singletonClass, singletonClass, "", new IRubyObject[]{});
-		      getResult().store(interp, v);
+            Object v = method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{});
+            getResult().store(interp, v);
             return null;
         }
     }

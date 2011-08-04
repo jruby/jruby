@@ -2,12 +2,12 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.MethodHandle;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class MethodLookupInstr extends OneOperandInstr {
@@ -28,7 +28,7 @@ public class MethodLookupInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         getResult().store(interp, getMethodHandle().retrieve(interp));
         return null;
     }

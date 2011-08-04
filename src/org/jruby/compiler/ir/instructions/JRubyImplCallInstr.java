@@ -3,7 +3,6 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Map;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
@@ -138,7 +137,7 @@ public class JRubyImplCallInstr extends CallInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         String   name;
         Object   receiver;
         Ruby     rt   = interp.getRuntime();
@@ -149,25 +148,25 @@ public class JRubyImplCallInstr extends CallInstr {
             // and we are replicating it here ... Is this a bug there?
             case MATCH:
                 receiver = getReceiver().retrieve(interp);
-                rVal = ((RubyRegexp) receiver).op_match2(interp.getContext());
+                rVal = ((RubyRegexp) receiver).op_match2(context);
                 break;
             case MATCH2:
                 receiver = getReceiver().retrieve(interp);
-                rVal = ((RubyRegexp) receiver).op_match(interp.getContext(), (IRubyObject) getCallArgs()[0].retrieve(interp));
+                rVal = ((RubyRegexp) receiver).op_match(context, (IRubyObject) getCallArgs()[0].retrieve(interp));
                 break;
             case MATCH3: {// ENEBO: Only for rubystring?
                 receiver = getReceiver().retrieve(interp);
                 IRubyObject value = (IRubyObject) getCallArgs()[0].retrieve(interp);
                         
                 if (value instanceof RubyString) {
-                    rVal = ((RubyRegexp) receiver).op_match(interp.getContext(), value);
+                    rVal = ((RubyRegexp) receiver).op_match(context, value);
                 } else {
-                    rVal = value.callMethod(interp.getContext(), "=~", (IRubyObject) receiver);
+                    rVal = value.callMethod(context, "=~", (IRubyObject) receiver);
                 }
                 break;
             }
             case SET_WITHIN_DEFINED:
-                interp.getContext().setWithinDefined(((BooleanLiteral)getCallArgs()[0]).isTrue());
+                context.setWithinDefined(((BooleanLiteral)getCallArgs()[0]).isTrue());
                 break;
             case RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD:
             {
@@ -190,7 +189,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 break;
             case RT_GET_BACKREF:
                 // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
-                rVal = RuntimeHelpers.getBackref(rt, interp.getContext());
+                rVal = RuntimeHelpers.getBackref(rt, context);
                 break;
             case SELF_METACLASS:
                 rVal = ((IRubyObject)getReceiver().retrieve(interp)).getMetaClass();
@@ -203,7 +202,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 int rest     = ((Fixnum)args[2]).value.intValue();
                 int numArgs  = interp.getParameterCount();
                 if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-                    Arity.raiseArgumentError(interp.getRuntime(), numArgs, required, required+opt);
+                    Arity.raiseArgumentError(context.getRuntime(), numArgs, required, required+opt);
                 }
                 break;
             }
@@ -214,7 +213,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 int opt      = ((Fixnum)args[1]).value.intValue();
                 int rest     = ((Fixnum)args[2]).value.intValue();
                 int numArgs  = ((Fixnum)args[3]).value.intValue();
-                Arity.raiseArgumentError(interp.getRuntime(), numArgs, required, required+opt);
+                Arity.raiseArgumentError(context.getRuntime(), numArgs, required, required+opt);
                 break;
             }
             case SELF_HAS_INSTANCE_VARIABLE:

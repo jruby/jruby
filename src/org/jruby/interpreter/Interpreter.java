@@ -65,7 +65,7 @@ public class Interpreter {
         return rv;
     }
 
-    public static IRubyObject interpret(ThreadContext context, CFG cfg, InterpreterContext interp) {
+    public static IRubyObject interpret(ThreadContext context, IRubyObject self, CFG cfg, InterpreterContext interp) {
         Ruby runtime = context.getRuntime();
         boolean inClosure = (cfg.getScope() instanceof IRClosure);
         boolean passThroughBreak = false;
@@ -84,7 +84,7 @@ public class Interpreter {
                 if (isDebug()) LOG.debug("I: {}", lastInstr);
                 
                 try {
-                    Label jumpTarget = lastInstr.interpret(interp);
+                    Label jumpTarget = lastInstr.interpret(interp, context, self);
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
                 }
                 // SSS FIXME: This only catches Ruby exceptions
@@ -136,7 +136,7 @@ public class Interpreter {
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, CFG cfg, 
-            InterpreterContext interp, String name, RubyModule implClass, boolean isTraceable) {
+            InterpreterContext interp, IRubyObject self, String name, RubyModule implClass, boolean isTraceable) {
         Ruby runtime = interp.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");
         
@@ -144,7 +144,7 @@ public class Interpreter {
             String className = implClass.getName();
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, className, name, context.getFile(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
-            return interpret(context, cfg, interp);
+            return interpret(context, self, cfg, interp);
         } finally {
             if (isTraceable) {
                 try {methodPostTrace(runtime, context, name, implClass);}

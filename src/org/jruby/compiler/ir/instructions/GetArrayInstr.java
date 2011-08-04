@@ -9,6 +9,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // This is an internal ruby array generated during multiple assignment expressions.
@@ -47,14 +48,13 @@ public class GetArrayInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray array = (RubyArray) getArg().retrieve(interp);
         Object val;
         if (!all) {
             val = array.entry(index);
-        }
-        else {
+        } else {
             // SSS FIXME: This is inefficient!  Better implementation exists?
             int n = array.getLength();
             int size = n - index;
@@ -63,10 +63,10 @@ public class GetArrayInstr extends OneOperandInstr {
                 for (int i = 0; i < size; i++) {
                     rest[i] = array.entry(index+i);
                 }
-                val = RubyArray.newArrayNoCopyLight(interp.getRuntime(), rest);
+                val = RubyArray.newArrayNoCopyLight(context.getRuntime(), rest);
             }
             else {
-                val = RubyArray.newArrayNoCopy(interp.getRuntime(), array.toJavaArray(), index);
+                val = RubyArray.newArrayNoCopy(context.getRuntime(), array.toJavaArray(), index);
             }
         }
         getResult().store(interp, val);

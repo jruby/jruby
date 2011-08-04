@@ -8,18 +8,14 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import org.jruby.interpreter.InterpreterContext;
 
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 
 import org.jruby.javasupport.util.RuntimeHelpers;
 
@@ -87,7 +83,7 @@ public class RubyInternalCallInstr extends CallInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Object   receiver;
         Ruby     rt   = interp.getRuntime();
         Object   rVal = null;
@@ -95,8 +91,8 @@ public class RubyInternalCallInstr extends CallInstr {
             case DEFINE_ALIAS:
             {
                 Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
-                IRubyObject self = (IRubyObject)getReceiver().retrieve(interp);
-                RuntimeHelpers.defineAlias(interp.getContext(), self, args[0].retrieve(interp).toString(), (String) args[1].retrieve(interp).toString());
+                IRubyObject object = (IRubyObject)getReceiver().retrieve(interp);
+                RuntimeHelpers.defineAlias(interp.getContext(), object, args[0].retrieve(interp).toString(), (String) args[1].retrieve(interp).toString());
                 break;
             }
             case GVAR_ALIAS:
@@ -104,9 +100,9 @@ public class RubyInternalCallInstr extends CallInstr {
             case SUPER:
             case ZSUPER:
             {
-                IRubyObject   self = (IRubyObject)getReceiver().retrieve(interp);
+                IRubyObject   object = (IRubyObject)getReceiver().retrieve(interp);
                 IRubyObject[] args = prepareArguments(getCallArgs(), interp);
-                rVal = RuntimeHelpers.invokeSuper(interp.getContext(), self, args, prepareBlock(interp));
+                rVal = RuntimeHelpers.invokeSuper(interp.getContext(), object, args, prepareBlock(interp));
                 break;
             }
             case UNDEF_METHOD:
@@ -122,10 +118,10 @@ public class RubyInternalCallInstr extends CallInstr {
                     rVal = RuntimeHelpers.aryToAry((IRubyObject) receiver);
                 break;
             case FOR_EACH:
-                super.interpret(interp); // SSS FIXME: Correct?
+                super.interpret(interp, context, self); // SSS FIXME: Correct?
                 break;
             default:
-                super.interpret(interp);
+                super.interpret(interp, context, self);
         }
 
         // Store the result

@@ -57,7 +57,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, null, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), args, block, type);
         interp.setDynamicScope(binding.getDynamicScope());
 
-        return Interpreter.interpret(context, closure.getCFG(), interp);
+        return Interpreter.interpret(context, self, closure.getCFG(), interp);
     }
 
     @Override

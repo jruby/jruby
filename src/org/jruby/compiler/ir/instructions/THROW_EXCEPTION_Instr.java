@@ -8,14 +8,12 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyKernel;
 import org.jruby.runtime.Block;
-import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 
 // Right now, this is primarily used for JRuby implementation.  Ruby exceptions go through
 // RubyKernel.raise (or RubyThread.raise).
-public class THROW_EXCEPTION_Instr extends OneOperandInstr
-{
-    public THROW_EXCEPTION_Instr(Operand exc)
-    {
+public class THROW_EXCEPTION_Instr extends OneOperandInstr {
+    public THROW_EXCEPTION_Instr(Operand exc) {
         super(Operation.THROW, null, exc);
     }
 
@@ -24,7 +22,7 @@ public class THROW_EXCEPTION_Instr extends OneOperandInstr
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         RubyKernel.raise(interp.getContext(), interp.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)getArg().retrieve(interp)}, Block.NULL_BLOCK);
 
         // Control will never reach here but the Java compiler doesn't know that

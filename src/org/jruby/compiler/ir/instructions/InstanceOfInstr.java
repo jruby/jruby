@@ -1,12 +1,12 @@
 package org.jruby.compiler.ir.instructions;
 
-import java.lang.Class;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InstanceOfInstr extends OneOperandInstr {
@@ -23,7 +23,7 @@ public class InstanceOfInstr extends OneOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         try {
             if (type == null) type = Class.forName(className);
         } catch (ClassNotFoundException e) {
@@ -34,7 +34,7 @@ public class InstanceOfInstr extends OneOperandInstr {
             // for user ruby code, this may no longer be true and we have to appropriately fix this code then.
             throw new RuntimeException(e);
         }
-        getResult().store(interp, interp.getRuntime().newBoolean(type.isInstance(getArg().retrieve(interp)))); 
+        getResult().store(interp, context.getRuntime().newBoolean(type.isInstance(getArg().retrieve(interp)))); 
         return null;
     }
 }

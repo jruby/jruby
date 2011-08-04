@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /*
@@ -39,11 +40,11 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Operand destination = getResult(); // result is a confusing name
 
         if (restOfArgArray) {
-            interpretAsRestArg(destination, interp);
+            interpretAsRestArg(interp, context, destination);
         } else {
             destination.store(interp, interp.getParameter(argIndex));
         }
@@ -51,7 +52,7 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
     }
 
     @Interp
-    private void  interpretAsRestArg(Operand destination, InterpreterContext interp) {
-        destination.store(interp, interp.getRuntime().newArray(interp.getParametersFrom(argIndex)));
+    private void  interpretAsRestArg(InterpreterContext interp, ThreadContext context, Operand destination) {
+        destination.store(interp, context.getRuntime().newArray(interp.getParametersFrom(argIndex)));
     }
 }

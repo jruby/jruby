@@ -13,8 +13,9 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
 // identical except for 1 bit in interpret -- or will they diverge?
@@ -47,9 +48,9 @@ public class DefineClassMethodInstr extends OneOperandInstr {
 
     // SSS FIXME: Go through this and DefineClassmethodInstr.interpret, clean up, extract common code
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         String name = method.getName();
-        Ruby runtime = interp.getRuntime();
+        Ruby runtime = context.getRuntime();
         RubyObject obj = (RubyObject) getArg().retrieve(interp);
 
         if (runtime.getSafeLevel() >= 4 && !obj.isTaint()) {
@@ -68,7 +69,7 @@ public class DefineClassMethodInstr extends OneOperandInstr {
         }
 
         obj.getMetaClass().addMethod(name, new InterpretedIRMethod(method, Visibility.PUBLIC, obj.getMetaClass()));
-        obj.callMethod(interp.getContext(), "singleton_method_added", runtime.fastNewSymbol(name));
+        obj.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         return null;
     }
 }

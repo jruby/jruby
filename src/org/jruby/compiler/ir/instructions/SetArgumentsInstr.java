@@ -9,6 +9,7 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.RubyArray;
+import org.jruby.runtime.ThreadContext;
 
 // This instruction sets a new argument array -- this is used to intepret the block-arg assignment
 // tree of the form  |a,(b,(c,(d,..))),..| by pushing a argument array as we go up/down one level
@@ -32,7 +33,7 @@ public class SetArgumentsInstr extends OneOperandInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Object o = getArg().retrieve(interp);
         if (coerceToArray) {
             // run to_ary and convert to java array

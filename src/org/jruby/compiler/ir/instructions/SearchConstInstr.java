@@ -14,7 +14,6 @@ import org.jruby.runtime.ThreadContext;
 
 import java.util.Map;
 import org.jruby.RubyModule;
-import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,7 +46,7 @@ public class SearchConstInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         String name = getName();
         Object n = getSource();
 
@@ -64,8 +63,7 @@ public class SearchConstInstr extends GetInstr {
         }
 
         if (constant == null) {
-            ThreadContext context = interp.getContext();
-            Ruby runtime = interp.getRuntime();
+            Ruby runtime = context.getRuntime();
             constant = context.getCurrentScope().getStaticScope().getModule().callMethod(context, "const_missing", runtime.fastNewSymbol(name));
         }
         

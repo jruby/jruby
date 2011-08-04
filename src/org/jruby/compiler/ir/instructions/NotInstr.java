@@ -9,6 +9,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class NotInstr extends OneOperandInstr {
@@ -32,10 +33,10 @@ public class NotInstr extends OneOperandInstr {
     public boolean canRaiseException() { return false; }
 
     @Override
-    public Label interpret(InterpreterContext interp) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         boolean not = !((IRubyObject) getArg().retrieve(interp)).isTrue();
 
-        getResult().store(interp, interp.getRuntime().newBoolean(not));
+        getResult().store(interp, context.getRuntime().newBoolean(not));
         return null;
     }
 }
