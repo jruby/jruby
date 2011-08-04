@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.interpreter.NaiveInterpreterContext;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -28,6 +29,11 @@ public class InterpretedIRMethod extends DynamicMethod {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.temporaryVariableSize = method.getTemporaryVariableSize();
         this.method = method;
+    }
+    
+    @Override
+    public Arity getArity() {
+        return method.getStaticScope().getArity();
     }
 
     @Override
