@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.operands;
 
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Float extends Constant {
@@ -42,12 +43,12 @@ public class Float extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
 /*
 		  if (cachedValue == null)
             cachedValue = interp.getRuntime().newFloat(value);
 		  return cachedValue;
 */
-        return interp.getRuntime().newFloat(value);
+        return context.getRuntime().newFloat(value);
     }
 }

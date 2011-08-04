@@ -22,8 +22,8 @@ public class PutClassVariableInstr extends PutInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        IRubyObject value = (IRubyObject) getValue().retrieve(interp);
-        RubyModule module = (RubyModule) getTarget().retrieve(interp);
+        IRubyObject value = (IRubyObject) getValue().retrieve(interp, context, self);
+        RubyModule module = (RubyModule) getTarget().retrieve(interp, context, self);
 
         assert module != null : "MODULE should always be something";
 

@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // This operand is used to represent the result of an explicit return instruction.
@@ -25,7 +26,7 @@ public class UnexecutableNil extends Nil {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 }

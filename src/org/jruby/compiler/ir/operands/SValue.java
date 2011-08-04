@@ -6,6 +6,8 @@ import java.util.Map;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.RubyArray;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents a svalue node in Ruby code
 //
@@ -59,19 +61,19 @@ public class SValue extends Operand
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        Object val = _array.retrieve(interp);
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        Object val = _array.retrieve(interp, context, self);
         if (val instanceof RubyArray) {
             int n = ((RubyArray)val).getLength();
             if (n == 0)
-                return Nil.NIL.retrieve(interp); // SSS FIXME: interp.getRuntime().getNil();
+                return Nil.NIL.retrieve(interp, context, self); // SSS FIXME: interp.getRuntime().getNil();
             else if (n == 1)
                 return ((RubyArray)val).entry(0);
             else
                 return val;
         }
         else {
-            return Nil.NIL.retrieve(interp); // SSS FIXME: interp.getRuntime().getNil();
+            return Nil.NIL.retrieve(interp, context, self); // SSS FIXME: interp.getRuntime().getNil();
         }
     }
 }

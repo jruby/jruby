@@ -19,6 +19,7 @@ public class SET_RETADDR_Instr extends OneOperandInstr
 
     public Label getReturnAddr() { return (Label)argument; }
 
+    @Override
     public String toString() { return "" + result + " = " + argument; }
 
     public Instr cloneForInlining(InlinerInfo ii) {
@@ -31,7 +32,7 @@ public class SET_RETADDR_Instr extends OneOperandInstr
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        getResult().store(interp, ((Label)getArg()));
+        getResult().store(interp, context, self, ((Label)getArg()));
         return null;
     }
 }

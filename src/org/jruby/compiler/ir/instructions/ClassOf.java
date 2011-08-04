@@ -25,8 +25,8 @@ public class ClassOf extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-		  IRubyObject arg = (IRubyObject) getArg().retrieve(interp);
-        getResult().store(interp, (arg instanceof RubyClass) ? ((RubyClass)arg).getRealClass() : arg.getType());
+		  IRubyObject arg = (IRubyObject) getArg().retrieve(interp, context, self);
+        getResult().store(interp, context, self, (arg instanceof RubyClass) ? ((RubyClass)arg).getRealClass() : arg.getType());
 
         return null;
     }

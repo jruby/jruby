@@ -58,7 +58,7 @@ public class BREAK_Instr extends Instr
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        interp.setReturnValue(returnValue.retrieve(interp));
+        interp.setReturnValue(returnValue.retrieve(interp, context, self));
         return target == null ? interp.getMethodExitLabel() : target;
     }
 }

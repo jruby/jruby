@@ -48,7 +48,7 @@ public class InterpretedIRMethod extends DynamicMethod {
             c = method.getCFG();
         }
 		  // Do this *after* the method has been prepared!
-		  interp.allocateSharedBindingScope(method);
+		  interp.allocateSharedBindingScope(context, method);
         if (Interpreter.isDebug() && displayedCFG == false) {
             System.out.println("CFG:\n" + c.getGraph());
             System.out.println("\nInstructions:\n" + c.toStringInstrs());

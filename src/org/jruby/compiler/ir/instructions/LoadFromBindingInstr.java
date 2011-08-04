@@ -72,7 +72,7 @@ public class LoadFromBindingInstr extends Instr {
         
         if (bindingSlot == -1) bindingSlot = sourceMethod.getBindingSlot(getSlotName());
         
-        interp.setLocalVariable(v.getLocation(), interp.getSharedBindingVariable(bindingSlot));
+        interp.setLocalVariable(v.getLocation(), interp.getSharedBindingVariable(context, bindingSlot));
         return null;
     }
 }

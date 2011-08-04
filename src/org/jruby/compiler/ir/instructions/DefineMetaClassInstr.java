@@ -31,7 +31,7 @@ public class DefineMetaClassInstr extends OneOperandInstr {
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Ruby runtime = context.getRuntime();
-        IRubyObject obj = (IRubyObject)getArg().retrieve(interp);
+        IRubyObject obj = (IRubyObject)getArg().retrieve(interp, context, self);
         
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
             throw runtime.newTypeError("no virtual class for " + obj.getMetaClass().getBaseName());
@@ -44,7 +44,7 @@ public class DefineMetaClassInstr extends OneOperandInstr {
             dummyMetaClass.getStaticScope().setModule(singletonClass);
             DynamicMethod method = new InterpretedIRMethod(dummyMetaClass.getRootMethod(), singletonClass);
             Object v = method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{});
-            getResult().store(interp, v);
+            getResult().store(interp, context, self, v);
             return null;
         }
     }

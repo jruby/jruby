@@ -103,8 +103,9 @@ public class MetaObject extends Operand {
         return module;
     }
 
-    public RubyModule getContainer(InterpreterContext interp, Ruby runtime) {
+    public RubyModule getContainer(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         return scope.getContainer() != null ?
-            (RubyModule) scope.getContainer().retrieve(interp) : runtime.getObject();
+                (RubyModule) scope.getContainer().retrieve(interp, context, self) :
+                context.getRuntime().getObject();
     }
 }

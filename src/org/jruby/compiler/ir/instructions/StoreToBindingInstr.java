@@ -47,7 +47,7 @@ public class StoreToBindingInstr extends OneOperandInstr {
         
         if (bindingSlot == -1) bindingSlot = targetMethod.getBindingSlot(v.getName());
         
-        interp.setSharedBindingVariable(bindingSlot, interp.getLocalVariable(v.getLocation()));
+        interp.setSharedBindingVariable(bindingSlot, interp.getLocalVariable(context, v.getLocation()));
         return null;
     }
 }

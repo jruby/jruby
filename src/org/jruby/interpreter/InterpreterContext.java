@@ -36,30 +36,25 @@ public interface InterpreterContext {
     public int getParameterCount(); // How many parameters were passed into a call
 
     public IRubyObject[] getParametersFrom(int argIndex);
-    public Object getReturnValue();
+    public Object getReturnValue(ThreadContext context);
     public void setReturnValue(Object returnValue);
 
     public Object getTemporaryVariable(int offset);
     public Object setTemporaryVariable(int offset, Object value);
-    public Object getLocalVariable(int offset);
+    public Object getLocalVariable(ThreadContext context, int offset);
     public Object setLocalVariable(int offset, Object value);
 
     public void setDynamicScope(DynamicScope s);
-    public void allocateSharedBindingScope(IRMethod method);
+    public void allocateSharedBindingScope(ThreadContext context, IRMethod method);
     public DynamicScope getSharedBindingScope();
     public boolean hasAllocatedDynamicScope();
-    public Object getSharedBindingVariable(int bindingSlot);
+    public Object getSharedBindingVariable(ThreadContext context, int bindingSlot);
     public void setSharedBindingVariable(int bindingSlot, Object value);
 
     public Block getBlock();
     public void setBlock(Block block);
 
-    public Object getSelf();
-    
     // Section: Runtime helpers
-    public ThreadContext getContext();
-    public Ruby getRuntime();
-
     public void setFrame(Frame currentFrame);
     public Frame getFrame();
 

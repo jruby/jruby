@@ -28,8 +28,8 @@ public class ReceiveClosureInstr extends NoOperandInstr {
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Block blk = interp.getBlock();
-        Ruby  runtime = interp.getRuntime();
-        getResult().store(interp, blk == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, blk));
+        Ruby  runtime = context.getRuntime();
+        getResult().store(interp, context, self, blk == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, blk));
         return null;
     }
 }

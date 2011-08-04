@@ -34,7 +34,7 @@ public class CopyInstr extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        getResult().store(interp, getArg().retrieve(interp));
+        getResult().store(interp, context, self, getArg().retrieve(interp, context, self));
         return null;
     }
 

@@ -21,9 +21,9 @@ public class EQQInstr extends TwoOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        IRubyObject receiver = (IRubyObject) getOperand1().retrieve(interp);
-        IRubyObject value = (IRubyObject) getOperand2().retrieve(interp);
-        getResult().store(interp, receiver.callMethod(context, "===", value));
+        IRubyObject receiver = (IRubyObject) getOperand1().retrieve(interp, context, self);
+        IRubyObject value = (IRubyObject) getOperand2().retrieve(interp, context, self);
+        getResult().store(interp, context, self, receiver.callMethod(context, "===", value));
         
         return null;
     }

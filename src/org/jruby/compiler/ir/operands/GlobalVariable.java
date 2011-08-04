@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class GlobalVariable extends Variable {
@@ -31,14 +32,14 @@ public class GlobalVariable extends Variable {
     
     @Interp
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        return interp.getRuntime().getGlobalVariables().get(getName());
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        return context.getRuntime().getGlobalVariables().get(getName());
     }
 
     @Interp
     @Override
-    public Object store(InterpreterContext interp, Object value) {
-        return interp.getRuntime().getGlobalVariables().set(getName(), (IRubyObject) value);
+    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
+        return context.getRuntime().getGlobalVariables().set(getName(), (IRubyObject) value);
     }
 
     @Override

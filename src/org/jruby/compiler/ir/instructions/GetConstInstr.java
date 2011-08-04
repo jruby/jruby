@@ -45,7 +45,7 @@ public class GetConstInstr extends GetInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Object source = getSource().retrieve(interp);
+        Object source = getSource().retrieve(interp, context, self);
         RubyModule module;
 
         // Retrieving a MetaObject which is a closure returns a closure and not
@@ -62,7 +62,7 @@ public class GetConstInstr extends GetInstr {
         if (constant == null) constant = module.getConstantFromConstMissing(getName());
 
         //if (container == null) throw runtime.newNameError("unitialized constant " + scope.getName(), scope.getName());
-        getResult().store(interp, constant);
+        getResult().store(interp, context, self, constant);
         return null;
     }
 }

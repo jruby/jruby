@@ -57,7 +57,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
     // SSS FIXME: Go through this and DefineClassmethodInstr.interpret, clean up, extract common code
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        RubyObject arg   = (RubyObject)getArg().retrieve(interp);
+        RubyObject arg   = (RubyObject)getArg().retrieve(interp, context, self);
         RubyModule clazz = (arg instanceof RubyModule) ? (RubyModule)arg : arg.getMetaClass();
         String     name  = method.getName();
 

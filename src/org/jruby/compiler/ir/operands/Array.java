@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents an array [_, _, .., _] in ruby
@@ -105,13 +106,13 @@ public class Array extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject[] elements = new IRubyObject[elts.length];
 
         for (int i = 0; i < elements.length; i++) {
-            elements[i] = (IRubyObject) elts[i].retrieve(interp);
+            elements[i] = (IRubyObject) elts[i].retrieve(interp, context, self);
         }
 
-        return interp.getRuntime().newArray(elements);
+        return context.getRuntime().newArray(elements);
     }
 }

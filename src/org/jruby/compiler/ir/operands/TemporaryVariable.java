@@ -1,6 +1,8 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A set of variables which are only used in a particular scope and never
@@ -44,12 +46,12 @@ public class TemporaryVariable extends Variable {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         return interp.getTemporaryVariable(offset);
     }
 
     @Override
-    public Object store(InterpreterContext interp, Object value) {
+    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
         return interp.setTemporaryVariable(offset, value);
     }
 }

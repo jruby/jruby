@@ -1,6 +1,8 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class BooleanLiteral extends Constant {
     private BooleanLiteral() { }
@@ -26,12 +28,12 @@ public class BooleanLiteral extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
 /*
 		  if (cachedValue == null)
             cachedValue = interp.getRuntime().newBoolean(isTrue());
 		  return cachedValue;
 */
-        return interp.getRuntime().newBoolean(isTrue());
+        return context.getRuntime().newBoolean(isTrue());
     }
 }

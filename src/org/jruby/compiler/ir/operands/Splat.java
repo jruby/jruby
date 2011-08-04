@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents a splat value in Ruby code: *array
@@ -60,7 +61,7 @@ public class Splat extends Operand
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        return RuntimeHelpers.splatValue19((IRubyObject)_array.retrieve(interp));
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        return RuntimeHelpers.splatValue19((IRubyObject)_array.retrieve(interp, context, self));
     }
 }

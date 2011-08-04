@@ -44,15 +44,15 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
         Operand destination = getResult(); // result is a confusing name
 
         if (restOfArgArray) {
-            interpretAsRestArg(interp, context, destination);
+            interpretAsRestArg(interp, context, self, destination);
         } else {
-            destination.store(interp, interp.getParameter(argIndex));
+            destination.store(interp, context, self, interp.getParameter(argIndex));
         }
         return null;
     }
 
     @Interp
-    private void  interpretAsRestArg(InterpreterContext interp, ThreadContext context, Operand destination) {
-        destination.store(interp, context.getRuntime().newArray(interp.getParametersFrom(argIndex)));
+    private void  interpretAsRestArg(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand destination) {
+        destination.store(interp, context, self, context.getRuntime().newArray(interp.getParametersFrom(argIndex)));
     }
 }

@@ -21,7 +21,7 @@ public class PutGlobalVarInstr extends PutInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        getTarget().store(interp, getValue().retrieve(interp));
+        getTarget().store(interp, context, self, getValue().retrieve(interp, context, self));
         return null;
     }
 }

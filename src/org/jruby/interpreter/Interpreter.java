@@ -99,7 +99,7 @@ public class Interpreter {
             }
 
             // If a closure, and lastInstr was a return, have to return from the nearest method!
-            IRubyObject rv = (IRubyObject) interp.getReturnValue();
+            IRubyObject rv = (IRubyObject) interp.getReturnValue(context);
 
             if (lastInstr instanceof ReturnInstr && inClosure && !interp.inLambda()) {
                 throw new IRReturnJump(((ReturnInstr)lastInstr).methodToReturnFrom, rv);
@@ -137,7 +137,7 @@ public class Interpreter {
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, CFG cfg, 
             InterpreterContext interp, IRubyObject self, String name, RubyModule implClass, boolean isTraceable) {
-        Ruby runtime = interp.getRuntime();
+        Ruby runtime = context.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");
         
         try {

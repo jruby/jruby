@@ -8,6 +8,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArray;
+import org.jruby.runtime.ThreadContext;
 
 // This represents an array that is built at runtime from its constituents.
 //   * Array + Splat ([1,2,3], *[5,6,7])
@@ -74,12 +75,13 @@ public class CompoundArray extends Operand
         return this;
     }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
-    {
+    @Override
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
         // SSS FIXME: For constant arrays, we should never get here!
         return null;
     }
 
+    @Override
     public boolean isNonAtomicValue() { return true; }
 
     /** Append the list of variables used in this operand to the input list */
@@ -89,14 +91,15 @@ public class CompoundArray extends Operand
         a2.addUsedVariables(l);
     }
 
+    @Override
     public Operand cloneForInlining(InlinerInfo ii) { 
         return isConstant() ? this : new CompoundArray(a1.cloneForInlining(ii), a2.cloneForInlining(ii));
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        IRubyObject v1 = (IRubyObject)a1.retrieve(interp);
-        IRubyObject v2 = (IRubyObject)a2.retrieve(interp);
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        IRubyObject v1 = (IRubyObject)a1.retrieve(interp, context, self);
+        IRubyObject v2 = (IRubyObject)a2.retrieve(interp, context, self);
         return argsPushNode ? ((RubyArray)v1.dup()).append(v2) : RuntimeHelpers.argsCat(v1, v2);
     }
 }

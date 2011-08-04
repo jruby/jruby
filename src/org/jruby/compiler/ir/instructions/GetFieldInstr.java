@@ -23,14 +23,14 @@ public class GetFieldInstr extends GetInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        IRubyObject object = (IRubyObject) getSource().retrieve(interp);
+        IRubyObject object = (IRubyObject) getSource().retrieve(interp, context, self);
 
         RubyClass clazz = object.getMetaClass().getRealClass();
 
         // FIXME: Should add this as a field for instruction
         VariableAccessor accessor = clazz.getVariableAccessorForRead(getName());
         Object v = (accessor == null) ? null : accessor.get(object);
-        getResult().store(interp, v == null ? context.getRuntime().getNil() : v);
+        getResult().store(interp, context, self, v == null ? context.getRuntime().getNil() : v);
         return null;
     }
 }

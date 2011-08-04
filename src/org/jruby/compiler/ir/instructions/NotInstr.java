@@ -34,9 +34,9 @@ public class NotInstr extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        boolean not = !((IRubyObject) getArg().retrieve(interp)).isTrue();
+        boolean not = !((IRubyObject) getArg().retrieve(interp, context, self)).isTrue();
 
-        getResult().store(interp, context.getRuntime().newBoolean(not));
+        getResult().store(interp, context, self, context.getRuntime().newBoolean(not));
         return null;
     }
 }

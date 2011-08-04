@@ -78,17 +78,17 @@ public class AttrAssignInstr extends MultiOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        IRubyObject receiver = (IRubyObject) obj.retrieve(interp);
-        String      attrMeth = ((RubyString) attr.retrieve(interp)).asJavaString();
+        IRubyObject receiver = (IRubyObject) obj.retrieve(interp, context, self);
+        String      attrMeth = ((RubyString) attr.retrieve(interp, context, self)).asJavaString();
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
 
         // SSS FIXME: Is this correct?  Is value the 1st arg (or the last arg??)
         if (value != null) {
-            argList.add((IRubyObject)value.retrieve(interp));
+            argList.add((IRubyObject)value.retrieve(interp, context, self));
         }
 
         for (int i = 0; i < args.length; i++) {
-            IRubyObject rArg = (IRubyObject)args[i].retrieve(interp);
+            IRubyObject rArg = (IRubyObject)args[i].retrieve(interp, context, self);
             if ((args[i] instanceof Splat) || (args[i] instanceof CompoundArray)) { 
                 argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
             } else {
@@ -96,7 +96,7 @@ public class AttrAssignInstr extends MultiOperandInstr {
             }
         }
 
-        receiver.callMethod(interp.getContext(), attrMeth, argList.toArray(new IRubyObject[argList.size()]));
+        receiver.callMethod(context, attrMeth, argList.toArray(new IRubyObject[argList.size()]));
         return null;
     }
 }

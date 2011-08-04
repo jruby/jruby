@@ -50,7 +50,7 @@ public class GetArrayInstr extends OneOperandInstr {
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
-        RubyArray array = (RubyArray) getArg().retrieve(interp);
+        RubyArray array = (RubyArray) getArg().retrieve(interp, context, self);
         Object val;
         if (!all) {
             val = array.entry(index);
@@ -69,7 +69,7 @@ public class GetArrayInstr extends OneOperandInstr {
                 val = RubyArray.newArrayNoCopy(context.getRuntime(), array.toJavaArray(), index);
             }
         }
-        getResult().store(interp, val);
+        getResult().store(interp, context, self, val);
         return null;
     }
 }

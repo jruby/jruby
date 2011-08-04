@@ -6,6 +6,8 @@ import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class Operand {
     public static final Operand[] EMPTY_ARRAY = new Operand[0];
@@ -62,12 +64,12 @@ public abstract class Operand {
     }
 
     @Interp
-    public Object retrieve(InterpreterContext interp) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 
     @Interp
-    public Object store(InterpreterContext interp, Object value) {
+    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 }

@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -73,18 +75,18 @@ public class CompoundString extends Operand {
         return new CompoundString(newPieces);
     }
 
-    String retrieveJavaString(InterpreterContext interp) {
+    String retrieveJavaString(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         StringBuilder buf = new StringBuilder();
 
         for (Operand p : pieces) {
-            buf.append(p.retrieve(interp));
+            buf.append(p.retrieve(interp, context, self));
         }
 
         return buf.toString();
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        return interp.getRuntime().newString(retrieveJavaString(interp));
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        return context.getRuntime().newString(retrieveJavaString(interp, context, self));
     }
 }

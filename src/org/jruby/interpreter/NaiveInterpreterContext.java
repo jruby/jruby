@@ -5,7 +5,6 @@
 
 package org.jruby.interpreter;
 
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -22,10 +21,7 @@ import org.jruby.compiler.ir.operands.Label;
  * @author enebo
  */
 public class NaiveInterpreterContext implements InterpreterContext {
-    private final Ruby runtime;
-    private final ThreadContext context;
     protected Object returnValue;
-    protected Object self;
     protected IRubyObject[] parameters;
     protected Object[] temporaryVariables;
     protected Object[] localVariables;
@@ -46,19 +42,12 @@ public class NaiveInterpreterContext implements InterpreterContext {
         context.preMethodFrameOnly(currentModule, name, self, block);
         this.frame = context.getCurrentFrame();
 
-        this.context = context;
-        this.runtime = context.getRuntime();
-        this.self = self;
         this.parameters = parameters;
         this.localVariables = localVariablesSize > 0 ? new Object[localVariablesSize] : null;
         this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
         this.block = block;
 		  // SSS FIXME: Can it happen that (block.type != blockType)?
 		  this.blockType = blockType;
-    }
-
-    public Ruby getRuntime() {
-        return runtime;
     }
 
     public Block getBlock() {
@@ -77,7 +66,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
         this.currDynScope = s;
     }
 
-    public void allocateSharedBindingScope(IRMethod method) {
+    public void allocateSharedBindingScope(ThreadContext context, IRMethod method) {
         this.allocatedDynScope = true;
         this.currDynScope = new org.jruby.runtime.scope.SharedBindingDynamicScope(method.getStaticScope(), method);
         context.pushScope(this.currDynScope);
@@ -92,9 +81,9 @@ public class NaiveInterpreterContext implements InterpreterContext {
         return this.allocatedDynScope;
     }
 
-    public Object getReturnValue() {
+    public Object getReturnValue(ThreadContext context) {
         // FIXME: Maybe returnValue is a sure thing and we don't need this check.  Should be this way.
-        return returnValue == null ? runtime.getNil() : returnValue;
+        return returnValue == null ? context.getRuntime().getNil() : returnValue;
     }
 
     public void setReturnValue(Object returnValue) {
@@ -118,12 +107,12 @@ public class NaiveInterpreterContext implements InterpreterContext {
         // SSS FIXME: use System.arraycopy
         Object[] oldLocalVars = this.localVariables;
         this.localVariables = new Object[n];
-        for (int i = 0; i < oldLocalVars.length; i++) this.localVariables[i] = oldLocalVars[i];
+        System.arraycopy(oldLocalVars, 0, this.localVariables, 0, oldLocalVars.length);
     }
 
-    public Object getSharedBindingVariable(int bindingSlot) {
+    public Object getSharedBindingVariable(ThreadContext context, int bindingSlot) {
         Object value = currDynScope.getValue(bindingSlot, 0);
-        if (value == null) value = getRuntime().getNil();
+        if (value == null) value = context.getRuntime().getNil();
         return value;
     }
 
@@ -131,9 +120,9 @@ public class NaiveInterpreterContext implements InterpreterContext {
         currDynScope.setValueDepthZero((IRubyObject)value, bindingSlot);
     }
 
-    public Object getLocalVariable(int offset) {
+    public Object getLocalVariable(ThreadContext context, int offset) {
         Object o = localVariables[offset];
-		  return (o == null) ? getRuntime().getNil() : o;
+		  return (o == null) ? context.getRuntime().getNil() : o;
     }
 
     public Object setLocalVariable(int offset, Object value) {
@@ -142,10 +131,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
         localVariables[offset] = value;
 
         return oldValue;
-    }
-
-    public ThreadContext getContext() {
-        return context;
     }
 
     public IRubyObject[] setNewParameters(IRubyObject[] newParams) {
@@ -160,10 +145,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
     public int getParameterCount() {
         return parameters.length;
-    }
-
-    public Object getSelf() {
-        return self;
     }
 
     public Frame getFrame() {

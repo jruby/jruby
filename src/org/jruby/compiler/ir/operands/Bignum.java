@@ -5,6 +5,8 @@ import org.jruby.compiler.ir.IRClass;
 import java.math.BigInteger;
 import org.jruby.RubyBignum;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class Bignum extends Constant {
 
@@ -25,11 +27,11 @@ public class Bignum extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
 /*
         if (cachedValue == null) cachedValue = RubyBignum.newBignum(interp.getRuntime(), value);
         return cachedValue;
 */
-        return RubyBignum.newBignum(interp.getRuntime(), value);
+        return RubyBignum.newBignum(context.getRuntime(), value);
     }
 }

@@ -32,18 +32,18 @@ public class DefineClassInstr extends TwoOperandInstr {
         Ruby runtime = context.getRuntime();
         ClassMetaObject cmo = (ClassMetaObject) getOperand1();
         IRScope scope = cmo.scope;
-        RubyModule container = cmo.getContainer(interp, runtime);
+        RubyModule container = cmo.getContainer(interp, context, self);
         RubyModule module;
         if (scope instanceof IRMetaClass) {
             module = container.getMetaClass();
         } else {
             Operand superClass = getOperand2();
-            RubyClass sc = superClass == Nil.NIL ? null : (RubyClass)superClass.retrieve(interp);
+            RubyClass sc = superClass == Nil.NIL ? null : (RubyClass)superClass.retrieve(interp, context, self);
             module = container.defineOrGetClassUnder(scope.getName(), sc);
         }
 
         Object v = cmo.interpretBody(interp, context, module);
-        getResult().store(interp, v);
+        getResult().store(interp, context, self, v);
         return null;
     }
 }

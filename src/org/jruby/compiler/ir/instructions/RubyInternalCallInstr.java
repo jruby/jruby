@@ -85,14 +85,16 @@ public class RubyInternalCallInstr extends CallInstr {
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Object   receiver;
-        Ruby     rt   = interp.getRuntime();
+        Ruby     runtime = context.getRuntime();
         Object   rVal = null;
         switch (this.implMethod) {
             case DEFINE_ALIAS:
             {
                 Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
-                IRubyObject object = (IRubyObject)getReceiver().retrieve(interp);
-                RuntimeHelpers.defineAlias(interp.getContext(), object, args[0].retrieve(interp).toString(), (String) args[1].retrieve(interp).toString());
+                IRubyObject object = (IRubyObject)getReceiver().retrieve(interp, context, self);
+                RuntimeHelpers.defineAlias(context, object, 
+                        args[0].retrieve(interp, context, self).toString(), 
+                        (String) args[1].retrieve(interp, context, self).toString());
                 break;
             }
             case GVAR_ALIAS:
@@ -100,16 +102,16 @@ public class RubyInternalCallInstr extends CallInstr {
             case SUPER:
             case ZSUPER:
             {
-                IRubyObject   object = (IRubyObject)getReceiver().retrieve(interp);
-                IRubyObject[] args = prepareArguments(getCallArgs(), interp);
-                rVal = RuntimeHelpers.invokeSuper(interp.getContext(), object, args, prepareBlock(interp));
+                IRubyObject   object = (IRubyObject)getReceiver().retrieve(interp, context, self);
+                IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());
+                rVal = RuntimeHelpers.invokeSuper(context, object, args, prepareBlock(interp, context, self));
                 break;
             }
             case UNDEF_METHOD:
-                rVal = RuntimeHelpers.undefMethod(interp.getContext(), getReceiver().retrieve(interp));
+                rVal = RuntimeHelpers.undefMethod(context, getReceiver().retrieve(interp, context, self));
                 break;
             case TO_ARY:
-                receiver = getReceiver().retrieve(interp);
+                receiver = getReceiver().retrieve(interp, context, self);
                 Operand[] args = getCallArgs();
                 // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays
                 if ((args.length > 0) && ((BooleanLiteral)args[0]).isFalse() && (receiver instanceof RubyArray))
@@ -125,7 +127,7 @@ public class RubyInternalCallInstr extends CallInstr {
         }
 
         // Store the result
-        if (rVal != null) getResult().store(interp, rVal);
+        if (rVal != null) getResult().store(interp, context, self, rVal);
 
         return null;
     }

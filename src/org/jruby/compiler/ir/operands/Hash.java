@@ -8,6 +8,7 @@ import org.jruby.RubyHash;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents a hash { _ =>_, _ => _ .. } in ruby
@@ -79,13 +80,15 @@ public class Hash extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        Ruby runtime = interp.getRuntime();
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.getRuntime();
         RubyHash hash = RubyHash.newHash(runtime);
 
         for (KeyValuePair pair : pairs) {
-            hash.fastASetCheckString(runtime, (IRubyObject) pair.getKey().retrieve(interp),
-                    (IRubyObject) pair.getValue().retrieve(interp));
+            IRubyObject key = (IRubyObject) pair.getKey().retrieve(interp, context, self);
+            IRubyObject value = (IRubyObject) pair.getValue().retrieve(interp, context, self);
+            
+            hash.fastASetCheckString(runtime, key, value);
         }
 
         return hash;

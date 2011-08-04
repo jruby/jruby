@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.IRClass;
 
 import java.math.BigInteger;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Fixnum extends Constant {
@@ -62,11 +63,11 @@ public class Fixnum extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
 /*
         if (cachedValue == null) cachedValue = interp.getRuntime().newFixnum(value);
         return cachedValue;
 */
-        return interp.getRuntime().newFixnum(value);
+        return context.getRuntime().newFixnum(value);
     }
 }

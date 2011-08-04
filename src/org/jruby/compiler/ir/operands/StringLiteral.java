@@ -4,6 +4,8 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.util.ByteList;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.RubyString;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class StringLiteral extends Constant
 {
@@ -45,10 +47,10 @@ public class StringLiteral extends Constant
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         // ENEBO: This is not only used for full RubyStrings, but also for bytelist retrieval....extra wrapping
         // return interp.getRuntime().newString(_bl_value); 
         // SSS FIXME: AST interpreter passes in a coderange argument.
-        return RubyString.newStringShared(interp.getRuntime(), _bl_value);
+        return RubyString.newStringShared(context.getRuntime(), _bl_value);
     }
 }

@@ -3,7 +3,6 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Map;
 import java.util.HashMap;
 
-import org.jruby.RubyClass;
 import org.jruby.RubyMethod;
 import org.jruby.RubyProc;
 import org.jruby.util.TypeConverter;
@@ -17,12 +16,10 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IRClass;
-import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -255,40 +252,43 @@ public class CallInstr extends MultiOperandInstr {
         IRubyObject ro = mh.getReceiverObj();
         if (m.isUndefined()) {
             resultValue = RuntimeHelpers.callMethodMissing(context, ro,
-                    m.getVisibility(), mn, CallType.FUNCTIONAL, args, prepareBlock(interp));
+                    m.getVisibility(), mn, CallType.FUNCTIONAL, args, 
+                    prepareBlock(interp, context, self));
         } else {
             try {
-                resultValue = m.call(interp.getContext(), ro, ro.getMetaClass(), mn, args,
-                        prepareBlock(interp));
+                resultValue = m.call(context, ro, ro.getMetaClass(), mn, args,
+                        prepareBlock(interp, context, self));
             } catch (org.jruby.exceptions.JumpException.BreakJump bj) {
                 resultValue = (IRubyObject) bj.getValue();
             }
         }
         
-        getResult().store(interp, resultValue);
+        getResult().store(interp, context, self, resultValue);
         return null;        
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Object ma = methAddr.retrieve(interp);
-        IRubyObject[] args = prepareArguments(getCallArgs(), interp);
+        Object ma = methAddr.retrieve(interp, context, self);
+        IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());
         
         if (ma instanceof MethodHandle) return interpretMethodHandle(interp, context, self, (MethodHandle) ma, args);
 
-        IRubyObject object = (IRubyObject) getReceiver().retrieve(interp);
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(interp, context, self);
         String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
         Object resultValue;
         try {
-            resultValue = callAdapter.call(context, self, object, args, prepareBlock(interp));
+            resultValue = callAdapter.call(context, self, object, args, 
+                    prepareBlock(interp, context, self));
         } catch (org.jruby.exceptions.JumpException.BreakJump bj) {
             resultValue = (IRubyObject) bj.getValue();
         }
 
-        getResult().store(interp, resultValue);
+        getResult().store(interp, context, self, resultValue);
         return null;
     }
 
+    /** ENEBO: Dead code for now...
     public Label interpret_with_inline(InterpreterContext interp) {
         Object        ma    = methAddr.retrieve(interp);
         IRubyObject[] args  = prepareArguments(getCallArgs(), interp);
@@ -334,20 +334,23 @@ public class CallInstr extends MultiOperandInstr {
         getResult().store(interp, resultValue);
         return null;
     }
+     */
 
-    protected Block prepareBlock(InterpreterContext interp) {
+    protected Block prepareBlock(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         if (closure == null) return Block.NULL_BLOCK;
-        Object value = closure.retrieve(interp);
+        
+        Object value = closure.retrieve(interp, context, self);
+        
         if (value instanceof Block)
             return (Block)value;
         else if (value instanceof RubyProc)
             return ((RubyProc) value).getBlock();
         else if (value instanceof RubyMethod)
-            return ((RubyProc)((RubyMethod)value).to_proc(interp.getContext(), null)).getBlock();
+            return ((RubyProc)((RubyMethod)value).to_proc(context, null)).getBlock();
         else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil())
             return Block.NULL_BLOCK;
         else if (value instanceof IRubyObject)
-            return ((RubyProc)TypeConverter.convertToType((IRubyObject)value, interp.getRuntime().getProc(), "to_proc", true)).getBlock();
+            return ((RubyProc)TypeConverter.convertToType((IRubyObject)value, context.getRuntime().getProc(), "to_proc", true)).getBlock();
         else
             throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
     }

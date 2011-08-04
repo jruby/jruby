@@ -53,21 +53,20 @@ public class SearchConstInstr extends GetInstr {
         assert n instanceof MetaObject: "All sources should be a meta object";
 
         StaticScope staticScope = ((MetaObject) n).getScope().getStaticScope();
-
-        RubyModule object = interp.getRuntime().getObject();
+        Ruby runtime = context.getRuntime();
+        RubyModule object = runtime.getObject();
         Object constant;
         if (staticScope == null) { // FIXME: CORE CLASSES have no staticscope yet...hack for now
             constant = object.getConstant(name);
         } else {
-            constant = staticScope.getConstant(interp.getRuntime(), name, object);
+            constant = staticScope.getConstant(context.getRuntime(), name, object);
         }
 
         if (constant == null) {
-            Ruby runtime = context.getRuntime();
             constant = context.getCurrentScope().getStaticScope().getModule().callMethod(context, "const_missing", runtime.fastNewSymbol(name));
         }
         
-        getResult().store(interp, constant);
+        getResult().store(interp, context, self, constant);
         
         return null;
     }

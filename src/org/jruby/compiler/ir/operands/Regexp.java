@@ -7,6 +7,8 @@ import java.util.Map;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RegexpOptions;
 
 // Represents a regexp from ruby
@@ -56,9 +58,9 @@ public class Regexp extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        RubyRegexp reg = RubyRegexp.newRegexp(interp.getRuntime(),
-                ((RubyString) regexp.retrieve(interp)).getByteList(), options);
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        RubyRegexp reg = RubyRegexp.newRegexp(context.getRuntime(),
+                ((RubyString) regexp.retrieve(interp, context, self)).getByteList(), options);
 
         reg.setLiteral();
 

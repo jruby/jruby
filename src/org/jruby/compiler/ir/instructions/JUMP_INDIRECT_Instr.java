@@ -23,6 +23,6 @@ public class JUMP_INDIRECT_Instr extends OneOperandInstr
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return (Label)(getArg().retrieve(interp));
+        return (Label)(getArg().retrieve(interp, context, self));
     }
 }

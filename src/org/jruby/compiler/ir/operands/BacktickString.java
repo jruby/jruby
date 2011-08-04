@@ -8,6 +8,7 @@ import java.util.Map;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyString;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // This represents a backtick string in Ruby
@@ -73,14 +74,14 @@ public class BacktickString extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        RubyString newString = interp.getRuntime().newString();
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        RubyString newString = context.getRuntime().newString();
 
         for (Operand p: pieces) {
-            RubyBasicObject piece = (RubyBasicObject) p.retrieve(interp);
+            RubyBasicObject piece = (RubyBasicObject) p.retrieve(interp, context, self);
             newString.append((piece instanceof RubyString) ? (RubyString)piece : piece.to_s());
         }
         
-        return ((IRubyObject) interp.getSelf()).callMethod(interp.getContext(), "`", newString);
+        return self.callMethod(context, "`", newString);
     }
 }

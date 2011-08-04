@@ -34,7 +34,7 @@ public class SetArgumentsInstr extends OneOperandInstr {
     @Interp
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Object o = getArg().retrieve(interp);
+        Object o = getArg().retrieve(interp, context, self);
         if (coerceToArray) {
             // run to_ary and convert to java array
             if (!(o instanceof RubyArray)) o = RuntimeHelpers.aryToAry((IRubyObject)o);
@@ -47,7 +47,7 @@ public class SetArgumentsInstr extends OneOperandInstr {
         // Store it into the destination variable if we have a non-null variable
         Variable dest = getResult();
         if (dest != null)
-            dest.store(interp, origArgs);
+            dest.store(interp, context, self, origArgs);
 
         return null;
     }

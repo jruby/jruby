@@ -20,12 +20,13 @@ public class PutFieldInstr extends PutInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        IRubyObject object = (IRubyObject) getTarget().retrieve(interp);
+        IRubyObject object = (IRubyObject) getTarget().retrieve(interp, context, self);
 
         RubyClass clazz = object.getMetaClass().getRealClass();
 
         // FIXME: Should add this as a field for instruction
-        clazz.getVariableAccessorForWrite(getName()).set(object, getValue().retrieve(interp));
+        clazz.getVariableAccessorForWrite(getName()).set(object, 
+                getValue().retrieve(interp, context, self));
         return null;
     }
 }

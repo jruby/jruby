@@ -12,6 +12,7 @@ import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // This is of the form:
@@ -41,7 +42,7 @@ public abstract class MultiOperandInstr extends Instr {
     private boolean constArgs = false; 
     private IRubyObject[] preparedArgs = null;
 
-    protected IRubyObject[] prepareArguments(Operand[] args, InterpreterContext interp) {
+    protected IRubyObject[] prepareArguments(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand[] args) {
          if (preparedArgs == null) {
              preparedArgs = new IRubyObject[args.length];
 /**
@@ -62,7 +63,7 @@ public abstract class MultiOperandInstr extends Instr {
          if (!constArgs) {
              for (int i = 0; i < args.length; i++) {
                  if (!(args[i] instanceof Splat) && !(args[i] instanceof CompoundArray)) {
-                     preparedArgs[i] = (IRubyObject) args[i].retrieve(interp);
+                     preparedArgs[i] = (IRubyObject) args[i].retrieve(interp, context, self);
                  }
                  else {
                      // We got a splat or a compound array -- discard the args array, and rebuild as a list
@@ -72,12 +73,10 @@ public abstract class MultiOperandInstr extends Instr {
                          argList.add(preparedArgs[j]);
                      }
                      for (int j = i; j < args.length; j++) {
-                         IRubyObject rArg = (IRubyObject)args[j].retrieve(interp);
-                         if ((args[j] instanceof Splat) || (args[j] instanceof CompoundArray)) { // append the contents of the splatted array
-                             for (IRubyObject v: ((RubyArray)rArg).toJavaArray())
-                                 argList.add(v);
-                         }
-                         else {
+                         IRubyObject rArg = (IRubyObject)args[j].retrieve(interp, context, self);
+                         if ((args[j] instanceof Splat) || (args[j] instanceof CompoundArray)) {
+                             argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
+                         } else {
                              argList.add(rArg);
                          }
                      }

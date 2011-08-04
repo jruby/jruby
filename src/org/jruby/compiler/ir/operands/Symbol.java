@@ -1,6 +1,8 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class Symbol extends Reference {
     public Symbol(String name) {
@@ -8,8 +10,8 @@ public class Symbol extends Reference {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        return interp.getRuntime().newSymbol(getName());
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        return context.getRuntime().newSymbol(getName());
     }
 
     @Override

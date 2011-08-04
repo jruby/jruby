@@ -34,7 +34,8 @@ public class InstanceOfInstr extends OneOperandInstr {
             // for user ruby code, this may no longer be true and we have to appropriately fix this code then.
             throw new RuntimeException(e);
         }
-        getResult().store(interp, context.getRuntime().newBoolean(type.isInstance(getArg().retrieve(interp)))); 
+        getResult().store(interp, context, self, 
+                context.getRuntime().newBoolean(type.isInstance(getArg().retrieve(interp, context, self)))); 
         return null;
     }
 }

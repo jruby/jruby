@@ -27,7 +27,7 @@ public class DefineModuleInstr extends OneOperandInstr {
         Ruby runtime = context.getRuntime();
         ModuleMetaObject mmo = (ModuleMetaObject)getArg();
         IRScope scope = mmo.scope;
-        RubyModule container = mmo.getContainer(interp, runtime);
+        RubyModule container = mmo.getContainer(interp, context, self);
         RubyModule module = container.defineOrGetModuleUnder(scope.getName());
 
 		  // SSS FIXME: Hack/side-effect to get the meta-class instantiated for certain scenarios!
@@ -37,7 +37,7 @@ public class DefineModuleInstr extends OneOperandInstr {
 		  // explicit (probably in the extend methods?).
         module.getSingletonClass();
 
-        getResult().store(interp, mmo.interpretBody(interp, context, module));
+        getResult().store(interp, context, self, mmo.interpretBody(interp, context, module));
         return null;
     }
 }

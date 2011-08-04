@@ -44,15 +44,15 @@ public class ReceiveClosureArgInstr extends NoOperandInstr {
                 restOfArgs[j] = (IRubyObject)interp.getParameter(i);
                 j++;
             }
-            o =  org.jruby.RubyArray.newArray(interp.getRuntime(), restOfArgs);
+            o =  org.jruby.RubyArray.newArray(context.getRuntime(), restOfArgs);
         } else {
             if (numArgs <= argIndex) {
-                o = interp.getRuntime().getNil();
+                o = context.getRuntime().getNil();
             } else {
                 o = interp.getParameter(argIndex);
             }
         }
-        getResult().store(interp, o);
+        getResult().store(interp, context, self, o);
         return null;
     }
 }

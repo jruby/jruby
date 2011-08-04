@@ -51,7 +51,7 @@ public class DefineClassMethodInstr extends OneOperandInstr {
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         String name = method.getName();
         Ruby runtime = context.getRuntime();
-        RubyObject obj = (RubyObject) getArg().retrieve(interp);
+        RubyObject obj = (RubyObject) getArg().retrieve(interp, context, self);
 
         if (runtime.getSafeLevel() >= 4 && !obj.isTaint()) {
             throw runtime.newSecurityError("Insecure; can't define singleton method.");

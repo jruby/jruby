@@ -89,6 +89,7 @@ public class JRubyImplCallInstr extends CallInstr {
         return true;
     }
 
+    @Override
     public Operand[] getOperands() {
         int       offset  = (receiver != null) ? 2 : 1;
         Operand[] allArgs = new Operand[arguments.length + offset];
@@ -140,23 +141,23 @@ public class JRubyImplCallInstr extends CallInstr {
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         String   name;
         Object   receiver;
-        Ruby     rt   = interp.getRuntime();
+        Ruby     runtime   = context.getRuntime();
         Object   rVal = null;
 
         switch (this.implMethod) {
             // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
             // and we are replicating it here ... Is this a bug there?
             case MATCH:
-                receiver = getReceiver().retrieve(interp);
+                receiver = getReceiver().retrieve(interp, context, self);
                 rVal = ((RubyRegexp) receiver).op_match2(context);
                 break;
             case MATCH2:
-                receiver = getReceiver().retrieve(interp);
-                rVal = ((RubyRegexp) receiver).op_match(context, (IRubyObject) getCallArgs()[0].retrieve(interp));
+                receiver = getReceiver().retrieve(interp, context, self);
+                rVal = ((RubyRegexp) receiver).op_match(context, (IRubyObject) getCallArgs()[0].retrieve(interp, context, self));
                 break;
             case MATCH3: {// ENEBO: Only for rubystring?
-                receiver = getReceiver().retrieve(interp);
-                IRubyObject value = (IRubyObject) getCallArgs()[0].retrieve(interp);
+                receiver = getReceiver().retrieve(interp, context, self);
+                IRubyObject value = (IRubyObject) getCallArgs()[0].retrieve(interp, context, self);
                         
                 if (value instanceof RubyString) {
                     rVal = ((RubyRegexp) receiver).op_match(context, value);
@@ -170,29 +171,29 @@ public class JRubyImplCallInstr extends CallInstr {
                 break;
             case RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD:
             {
-                IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(interp);
+                IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(interp, context, self);
                 name = ((StringLiteral)getCallArgs()[1])._str_value;
                 ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
-                rVal = (definedType == null ? Nil.NIL : (new StringLiteral(definedType))).retrieve(interp);
+                rVal = (definedType == null ? Nil.NIL : (new StringLiteral(definedType))).retrieve(interp, context, self);
                 break;
             }
             case BLOCK_GIVEN:
-                rVal = rt.newBoolean(interp.getBlock().isGiven());
+                rVal = runtime.newBoolean(interp.getBlock().isGiven());
                 break;
             case RT_IS_GLOBAL_DEFINED:
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
-                rVal = rt.newBoolean(rt.getGlobalVariables().isDefined(name));
+                rVal = runtime.newBoolean(runtime.getGlobalVariables().isDefined(name));
                 break;
             case RT_GET_OBJECT:
-                rVal = rt.getObject();
+                rVal = runtime.getObject();
                 break;
             case RT_GET_BACKREF:
                 // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
-                rVal = RuntimeHelpers.getBackref(rt, context);
+                rVal = RuntimeHelpers.getBackref(runtime, context);
                 break;
             case SELF_METACLASS:
-                rVal = ((IRubyObject)getReceiver().retrieve(interp)).getMetaClass();
+                rVal = ((IRubyObject)getReceiver().retrieve(interp, context, self)).getMetaClass();
                 break;
             case CHECK_ARITY:
             {
@@ -218,40 +219,40 @@ public class JRubyImplCallInstr extends CallInstr {
             }
             case SELF_HAS_INSTANCE_VARIABLE:
             {
-                receiver = getReceiver().retrieve(interp);
+                receiver = getReceiver().retrieve(interp, context, self);
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
-                rVal = rt.newBoolean(((IRubyObject)receiver).getInstanceVariables().hasInstanceVariable(name));
+                rVal = runtime.newBoolean(((IRubyObject)receiver).getInstanceVariables().hasInstanceVariable(name));
                 break;
             }
             case SELF_IS_METHOD_BOUND:
             {
-                receiver = getReceiver().retrieve(interp);
+                receiver = getReceiver().retrieve(interp, context, self);
                 boolean bound = ((IRubyObject)receiver).getMetaClass().isMethodBound(((StringLiteral)getCallArgs()[0])._str_value, false); 
-                rVal = rt.newBoolean(bound);
+                rVal = runtime.newBoolean(bound);
                 break;
             }
             case TC_SAVE_ERR_INFO:
-                rVal = interp.getContext().getErrorInfo();
+                rVal = context.getErrorInfo();
                 break;
             case TC_RESTORE_ERR_INFO:
-                interp.getContext().setErrorInfo((IRubyObject)getCallArgs()[0].retrieve(interp));
+                context.setErrorInfo((IRubyObject)getCallArgs()[0].retrieve(interp, context, self));
                 break;
             case TC_GET_CONSTANT_DEFINED:
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
-                rVal = rt.newBoolean(interp.getContext().getConstantDefined(name));
+                rVal = runtime.newBoolean(context.getConstantDefined(name));
                 break;
             case TC_GET_CURRENT_MODULE:
-                rVal = interp.getContext().getCurrentScope().getStaticScope().getModule();
+                rVal = context.getCurrentScope().getStaticScope().getModule();
                 break;
             case BACKREF_IS_RUBY_MATCH_DATA:
                 // bRef = getBackref()
                 // flag = bRef instanceof RubyMatchData
                 try {
                     // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
-                    IRubyObject bRef = RuntimeHelpers.getBackref(rt, interp.getContext());
-                    rVal = rt.newBoolean(Class.forName("RubyMatchData").isInstance(bRef)); // SSS FIXME: Is this correct?
+                    IRubyObject bRef = RuntimeHelpers.getBackref(runtime, context);
+                    rVal = runtime.newBoolean(Class.forName("RubyMatchData").isInstance(bRef)); // SSS FIXME: Is this correct?
                 } catch (ClassNotFoundException e) {
                     // Should never get here!
                     throw new RuntimeException(e);
@@ -264,18 +265,18 @@ public class JRubyImplCallInstr extends CallInstr {
                  * v  = mc.getVisibility(methodName)
                  * v.isPrivate? || (v.isProtected? && receiver/self? instanceof mc.getRealClass)
                  * ------------------------------------------------------------ */
-                IRubyObject r   = (IRubyObject)getReceiver().retrieve(interp);
+                IRubyObject r   = (IRubyObject)getReceiver().retrieve(interp, context, self);
                 RubyClass   mc  = r.getMetaClass();
                 String      arg = ((StringLiteral)getCallArgs()[0])._str_value;
                 Visibility  v   = mc.searchMethod(arg).getVisibility();
-                rVal = rt.newBoolean((v != null) && !v.isPrivate() && !(v.isProtected() && mc.getRealClass().isInstance(r)));
+                rVal = runtime.newBoolean((v != null) && !v.isPrivate() && !(v.isProtected() && mc.getRealClass().isInstance(r)));
                 break;
             }
             case CLASS_VAR_DEFINED:
             {
                 // cm.classVarDefined(name) || (cm.isSingleton && !(cm.attached instanceof RubyModule) && cm.attached.classVarDefined(name))
                 boolean flag;
-                RubyModule cm = (RubyModule)getReceiver().retrieve(interp);
+                RubyModule cm = (RubyModule)getReceiver().retrieve(interp, context, self);
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
                 flag = cm.isClassVarDefined(name);
                 if (!flag) {
@@ -284,28 +285,27 @@ public class JRubyImplCallInstr extends CallInstr {
                         if (ao instanceof RubyModule) flag = ((RubyModule)ao).isClassVarDefined(name);
                     }
                 }
-                rVal = rt.newBoolean(flag);
+                rVal = runtime.newBoolean(flag);
                 break;
             }
             case FRAME_SUPER_METHOD_BOUND:
             {
-                receiver = getReceiver().retrieve(interp);
+                receiver = getReceiver().retrieve(interp, context, self);
                 boolean flag = false;
-                ThreadContext tc = interp.getContext();
-                String        fn = tc.getFrameName();
+                String        fn = context.getFrameName();
                 if (fn != null) {
-                    RubyModule fc = tc.getFrameKlazz();
+                    RubyModule fc = context.getFrameKlazz();
                     if (fc != null) {
                         flag = RuntimeHelpers.findImplementerIfNecessary(((IRubyObject)receiver).getMetaClass(), fc).getSuperClass().isMethodBound(fn, false);
                     }
                 }
-                rVal = rt.newBoolean(flag);
+                rVal = runtime.newBoolean(flag);
                 break;
             }
         }
 
         // Store the result
-        if (rVal != null) getResult().store(interp, rVal);
+        if (rVal != null) getResult().store(interp, context, self, rVal);
 
         return null;
     }

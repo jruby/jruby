@@ -29,7 +29,7 @@ public class MethodLookupInstr extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        getResult().store(interp, getMethodHandle().retrieve(interp));
+        getResult().store(interp, context, self, getMethodHandle().retrieve(interp, context, self));
         return null;
     }
 }

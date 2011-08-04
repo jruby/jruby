@@ -30,7 +30,7 @@ public class ReceiveSelfInstruction extends NoOperandInstr {
         // result is a confusing name
 
         // SSS FIXME: Anything else to do here?? 
-        getResult().store(interp, interp.getSelf());
+        getResult().store(interp, context, self, self);
         return null;
     }
 }

@@ -8,6 +8,7 @@ import org.jruby.RubyRange;
 
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents a range (1..5) or (a..b) in ruby code
@@ -76,8 +77,9 @@ public class Range extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        return RubyRange.newRange(interp.getRuntime(), interp.getContext(),
-                (IRubyObject) begin.retrieve(interp), (IRubyObject) end.retrieve(interp), exclusive);
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        return RubyRange.newRange(context.getRuntime(), context,
+                (IRubyObject) begin.retrieve(interp, context, self), 
+                (IRubyObject) end.retrieve(interp, context, self), exclusive);
     }
 }

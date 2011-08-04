@@ -5,6 +5,7 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.RubyRegexp;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 //
 // NOTE: This operand is only used in the initial stages of optimization
@@ -23,9 +24,7 @@ public class NthRef extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp) {
-        ThreadContext context = interp.getContext();
-
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         return RubyRegexp.nth_match(matchNumber,
                 context.getCurrentScope().getBackRef(context.getRuntime()));
     }
