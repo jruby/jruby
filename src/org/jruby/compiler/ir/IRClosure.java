@@ -13,12 +13,16 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
 
 public class IRClosure extends IRExecutionScope {
-
     public final Label startLabel; // Label for the start of the closure (used to implement redo)
     public final Label endLabel;   // Label for the end of the closure (used to implement retry)
-    public final int closureId;  // Unique id for this closure within the nearest ancestor method.
+    public final int closureId;    // Unique id for this closure within the nearest ancestor method.
 
     private final BlockBody body;
+
+    // Has this closure been inlined into a method? If yes, its independent existence has come to an end
+    // because it has very likely been integrated into another scope and we should no longer do anything
+    // with the instructions as an independent closure scope.
+    private boolean hasBeenInlined;     
 
     public IRClosure(IRScope lexicalParent, StaticScope staticScope, Arity arity, int argumentType) {
         super(lexicalParent, MetaObject.create(lexicalParent), null, staticScope);
@@ -28,6 +32,7 @@ public class IRClosure extends IRExecutionScope {
         setName("_CLOSURE_" + closureId);
 
         this.body = new InterpretedIRBlockBody(this, arity, argumentType);
+        this.hasBeenInlined = false;
     }
 
     @Override
@@ -82,5 +87,13 @@ public class IRClosure extends IRExecutionScope {
 
     public BlockBody getBlockBody() {
         return body;
+    }
+
+    public void markInlined() {
+        this.hasBeenInlined = true;
+    }
+
+    public boolean hasBeenInlined() {
+        return this.hasBeenInlined;
     }
 }

@@ -496,6 +496,10 @@ public class CFG {
     }
 
     private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
+        // Mark this closure as inlined so we dont run any destructive operations on it.
+        // since the closure in its original form will get destroyed by the inlining.
+        cl.markInlined();
+
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, getNewLabel(), false);
         _cfg.addVertex(splitBB);
