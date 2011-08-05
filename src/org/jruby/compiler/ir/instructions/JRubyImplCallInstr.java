@@ -8,6 +8,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
@@ -70,6 +71,16 @@ public class JRubyImplCallInstr extends CallInstr {
        public MethAddr getMethAddr() { 
            return this.methAddr; 
        }
+    }
+    
+    public static Instr createJRubyImplementationMethod(Variable result, 
+            JRubyImplementationMethod methAddr, Operand receiver, Operand[] args) {
+        switch (methAddr) {
+            case BLOCK_GIVEN:
+                return new BlockGivenInstr(result);
+            default:
+                return new JRubyImplCallInstr(result, methAddr, receiver, args);
+        }
     }
 
     JRubyImplementationMethod implMethod;
@@ -177,9 +188,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 rVal = (definedType == null ? Nil.NIL : (new StringLiteral(definedType))).retrieve(interp, context, self);
                 break;
             }
-            case BLOCK_GIVEN:
-                rVal = runtime.newBoolean(interp.getBlock().isGiven());
-                break;
             case RT_IS_GLOBAL_DEFINED:
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0])._str_value;

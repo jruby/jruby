@@ -253,7 +253,8 @@ public class IRBuilder {
     private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
 
     private static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
-    private static final Operand[] NO_ARGS = new Operand[]{};
+    // FIXME: Move this
+    public static final Operand[] NO_ARGS = new Operand[]{};
 
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
@@ -1309,7 +1310,7 @@ public class IRBuilder {
         Label undefLabel = s.getNewLabel();
         Variable tmpVar  = s.getNewTemporaryVariable();
         Operand[] args   = nameToCheck == null ? NO_ARGS : new Operand[]{new StringLiteral(nameToCheck)};
-        s.addInstr(new JRubyImplCallInstr(tmpVar, defnChecker, receiver, args));
+        s.addInstr(JRubyImplCallInstr.createJRubyImplementationMethod(tmpVar, defnChecker, receiver, args));
         s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
         return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral(definedReturnValue));
     }
