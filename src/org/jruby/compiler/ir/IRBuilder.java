@@ -192,6 +192,7 @@ import org.jruby.compiler.ir.operands.SValue;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Symbol;
+import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -554,6 +555,17 @@ public class IRBuilder {
         }
     }
 
+    private Variable getValueInTemporaryVariable(IRScope s, Operand val) {
+        if ((val != null) && (val instanceof TemporaryVariable)) {
+            return (Variable)val;
+        }
+        else {
+            Variable tmpVar = s.getNewTemporaryVariable();
+            s.addInstr(new CopyInstr(tmpVar, val));
+            return tmpVar;
+        }
+    }
+
     public Operand copyAndReturnValue(IRScope s, Operand val) {
         Variable v = s.getNewTemporaryVariable();
         s.addInstr(new CopyInstr(v, val));
@@ -788,10 +800,9 @@ public class IRBuilder {
             // build first node only and return its value
             return build(andNode.getFirstNode(), m);
         } else {
-            Variable ret = m.getNewTemporaryVariable();
             Label    l   = m.getNewLabel();
             Operand  v1  = build(andNode.getFirstNode(), m);
-            m.addInstr(new CopyInstr(ret, v1));
+            Variable ret = getValueInTemporaryVariable(m, v1);
             m.addInstr(new BEQInstr(v1, BooleanLiteral.FALSE, l));
             Operand  v2  = build(andNode.getSecondNode(), m);
             m.addInstr(new CopyInstr(ret, v2));
@@ -1284,8 +1295,7 @@ public class IRBuilder {
 
     private Variable buildDefnCheckIfThenPaths(IRScope s, Label undefLabel, Operand defVal) {
         Label defLabel = s.getNewLabel();
-        Variable tmpVar  = s.getNewTemporaryVariable();
-        s.addInstr(new CopyInstr(tmpVar, defVal));
+        Variable tmpVar = getValueInTemporaryVariable(s, defVal);
         s.addInstr(new JumpInstr(defLabel));
         s.addInstr(new LABEL_Instr(undefLabel));
         s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
@@ -2155,7 +2165,7 @@ public class IRBuilder {
     public Operand buildIf(final IfNode ifNode, IRScope s) {
         Node actualCondition = skipOverNewlines(s, ifNode.getCondition());
 
-        Variable result     = s.getNewTemporaryVariable();
+        Variable result     = null;
         Label    falseLabel = s.getNewLabel();
         Label    doneLabel  = s.getNewLabel();
         Operand  thenResult = null;
@@ -2173,15 +2183,17 @@ public class IRBuilder {
                 // SSS FIXME: Can look at the last instr and short-circuit this jump if it is a break rather
                 // than wait for dead code elimination to do it
                 Label tgt = doneLabel;
-                s.addInstr(new CopyInstr(result, thenResult));
+                result = getValueInTemporaryVariable(s, thenResult);
                 s.addInstr(new JumpInstr(tgt));
             }
             else {
+                result = s.getNewTemporaryVariable();
                 thenUnil = true;
             }
         }
         else {
             thenNull = true;
+            result = s.getNewTemporaryVariable();
             s.addInstr(new CopyInstr(result, Nil.NIL));
             s.addInstr(new JumpInstr(doneLabel));
         }
@@ -2318,8 +2330,7 @@ public class IRBuilder {
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
         Operand  values = build(multipleAsgnNode.getValueNode(), s);
-        Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new CopyInstr(ret, values));
+        Variable ret = getValueInTemporaryVariable(s, values);
         buildMultipleAsgnAssignment(multipleAsgnNode, s, ret);
         return ret;
     }
@@ -2440,11 +2451,10 @@ public class IRBuilder {
     // L:
     //
     public Operand buildOpAsgnAnd(OpAsgnAndNode andNode, IRScope s) {
-        Variable result = s.getNewTemporaryVariable();
         Label    l  = s.getNewLabel();
         Operand  v1 = build(andNode.getFirstNode(), s);
-        s.addInstr(new CopyInstr(result, v1));
-        Variable f  = s.getNewTemporaryVariable();
+        Variable result = getValueInTemporaryVariable(s, v1);
+        Variable f = s.getNewTemporaryVariable();
         s.addInstr(new IsTrueInstr(f, v1));
         s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
         Operand v2 = build(andNode.getSecondNode(), s);  // This does the assignment!
@@ -2478,9 +2488,8 @@ public class IRBuilder {
             s.addInstr(new CopyInstr(flag, v1));
             s.addInstr(new BEQInstr(flag, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
         }
-        Variable result = s.getNewTemporaryVariable();
         v1 = build(orNode.getFirstNode(), s); // build of 'x'
-        s.addInstr(new CopyInstr(result, v1));
+        Variable result = getValueInTemporaryVariable(s, v1);
         s.addInstr(new IsTrueInstr(flag, v1));
         if (needsDefnCheck) {
             s.addInstr(new LABEL_Instr(l2));
@@ -2639,10 +2648,9 @@ public class IRBuilder {
             build(orNode.getFirstNode(), m);
             return build(orNode.getSecondNode(), m);
         } else {
-            Variable ret = m.getNewTemporaryVariable();
             Label    l   = m.getNewLabel();
             Operand  v1  = build(orNode.getFirstNode(), m);
-            m.addInstr(new CopyInstr(ret, v1));
+            Variable ret = getValueInTemporaryVariable(m, v1);
             m.addInstr(new BEQInstr(v1, BooleanLiteral.TRUE, l));
             Operand  v2  = build(orNode.getSecondNode(), m);
             m.addInstr(new CopyInstr(ret, v2));
