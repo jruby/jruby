@@ -72,4 +72,32 @@ describe 'JRUBY-3194: threaded autoload' do
       remove_autoload_constant
     end
   end
+
+  it 'should raise NameError when autoload did not define the constant' do
+    file = Tempfile.open(['autoload', '.rb'])
+    file.puts ''
+    file.close
+    add_autoload(file.path)
+    begin
+      lambda {
+        SpecRegressionJruby3194
+      }.should raise_error NameError
+    ensure
+      remove_autoload_constant
+    end
+  end
+
+  it 'should allow to override autoload with constant' do
+    file = Tempfile.open(['autoload', '.rb'])
+    file.puts ''
+    file.close
+    add_autoload(file.path)
+    begin
+      class SpecRegressionJruby3194
+      end
+      SpecRegressionJruby3194.class.should == Class
+    ensure
+      remove_autoload_constant
+    end
+  end
 end

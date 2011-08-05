@@ -3258,7 +3258,9 @@ public class RubyModule extends RubyObject {
         Autoload autoload = getAutoloadMap().get(name);
         if (autoload != null) {
             IRubyObject value = autoload.getValue();
-            storeConstant(name, value);
+            if (value != null) {
+                storeConstant(name, value);
+            }
             removeAutoload(name);
             return value;
         }
@@ -3288,6 +3290,8 @@ public class RubyModule extends RubyObject {
                 storeConstant(name, value);
                 removeAutoload(name);
             }
+        } else {
+            storeConstant(name, value);
         }
     }
     
@@ -3433,7 +3437,9 @@ public class RubyModule extends RubyObject {
         
         // Update an object for the constant if the caller is the autoloading thread.
         boolean setConstant(ThreadContext ctx, IRubyObject value) {
-            if (isSelf(ctx)) {
+            if (this.ctx == null) {
+                return false;
+            } else if (isSelf(ctx)) {
                 this.value = value;
                 return true;
             }
