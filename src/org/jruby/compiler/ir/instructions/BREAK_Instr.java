@@ -41,7 +41,7 @@ public class BREAK_Instr extends OneOperandInstr
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        interp.setReturnValue(getArg().retrieve(interp));
+        interp.setReturnValue(getArg().retrieve(interp, context, self));
         return interp.getMethodExitLabel();
     }
 }
