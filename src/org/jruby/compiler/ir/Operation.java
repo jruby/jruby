@@ -127,7 +127,7 @@ public enum Operation {
     // unless we know more about what the call is, what it does, etc.
     // Similarly for evals, stores, returns.
     public boolean hasSideEffects() {
-        return isCall() || isEval() || isStore() || isReturn() || isException() || this == SET_ARGS || this == RECORD_CLOSURE || this == THREAD_POLL || type == OpType.def_op || type == OpType.yield_op;
+        return isCall() || isEval() || isStore() || isReturn() || isException() || this == SET_ARGS || this == RECORD_CLOSURE || this == THREAD_POLL || type == OpType.def_op || type == OpType.yield_op || type == OpType.debug_op;
     }
 
     // Conservative -- say no only if you know it for sure cannot
