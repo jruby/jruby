@@ -10,6 +10,9 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+// NOTE: breaks that jump out of while/until loops would have
+// been transformed by the IR building into an ordinary jump.
+//
 // A break instruction is not just any old instruction.
 // Like a return instruction, it exits a scope and returns a value
 //
@@ -26,39 +29,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
-public class BREAK_Instr extends Instr
+public class BREAK_Instr extends OneOperandInstr
 {
-    public final Label target; 
-    private Operand returnValue;
-
-    public BREAK_Instr(Operand rv, Label target) {
-        super(Operation.BREAK, null);
-        this.returnValue = rv;
-        this.target = target;
+    public BREAK_Instr(Operand rv) {
+        super(Operation.BREAK, null, rv);
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new BREAK_Instr(returnValue.cloneForInlining(ii), (Label)(target == null ? null : target.cloneForInlining(ii)));
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + returnValue + ", " + target + ")";
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return target == null ? new Operand[] { returnValue } : new Operand[] { returnValue, target };
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        returnValue = returnValue.getSimplifiedOperand(valueMap);
+        return new BREAK_Instr(getArg().cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        interp.setReturnValue(returnValue.retrieve(interp, context, self));
-        return target == null ? interp.getMethodExitLabel() : target;
+        interp.setReturnValue(getArg().retrieve(interp));
+        return interp.getMethodExitLabel();
     }
 }

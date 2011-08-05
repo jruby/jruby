@@ -862,15 +862,16 @@ public class IRBuilder {
         Operand rv = build(breakNode.getValueNode(), s);
         IRLoop currLoop = s.getCurrentLoop();
         if (currLoop != null) {
-            s.addInstr(new BREAK_Instr(rv, currLoop.loopEndLabel));
+            s.addInstr(new CopyInstr(currLoop.loopResult, rv));
+            s.addInstr(new JumpInstr(currLoop.loopEndLabel));
         }
         else if (s instanceof IRClosure) {
-            s.addInstr(new BREAK_Instr(rv, null));
+            s.addInstr(new BREAK_Instr(rv));
         }
         else {
             // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
             // Since we know this right now, should we build an exception instruction here?
-            s.addInstr(new BREAK_Instr(rv, null));
+            s.addInstr(new BREAK_Instr(rv));
         }
         return rv;
     }
@@ -2955,6 +2956,7 @@ public class IRBuilder {
             IRLoop loop = new IRLoop(s);
             s.startLoop(loop);
             s.addInstr(new LABEL_Instr(loop.loopStartLabel));
+            Variable loopResult = loop.loopResult;
 
             if (isLoopHeadCondition) {
                 Operand cv = build(conditionNode, s);
@@ -2964,14 +2966,13 @@ public class IRBuilder {
 
             // Looks like while can be treated as an expression!
             // So, capture the result of the body so that it can be returned.
-            Variable whileResult = s.getNewTemporaryVariable();
             if (bodyNode != null) {
                 Operand v = build(bodyNode, s);
                 if (v != U_NIL) {
-                    s.addInstr(new CopyInstr((Variable)whileResult, v));
+                    s.addInstr(new CopyInstr((Variable)loopResult, v));
                 }
                 else {
-                    // If the body of the while had an explicit return, the value in 'whileResult' will never be used.
+                    // If the body of the while had an explicit return, the value in 'loopResult' will never be used.
                     // So, we dont need to set it to anything.  We can leave it undefined!
                 }
             }
@@ -2992,7 +2993,7 @@ public class IRBuilder {
             s.addInstr(new LABEL_Instr(loop.loopEndLabel));
             s.endLoop(loop);
 
-            return whileResult;
+            return loopResult;
         }
     }
 
