@@ -9,6 +9,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
+import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
@@ -78,6 +79,8 @@ public class JRubyImplCallInstr extends CallInstr {
         switch (methAddr) {
             case BLOCK_GIVEN:
                 return new BlockGivenInstr(result);
+            case CHECK_ARITY:
+                return new CheckArityInstr(result, receiver, args);
             default:
                 return new JRubyImplCallInstr(result, methAddr, receiver, args);
         }
@@ -127,33 +130,18 @@ public class JRubyImplCallInstr extends CallInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         Operand receiver = getReceiver();
-        if (this.implMethod == JRubyImplementationMethod.CHECK_ARITY) {
-            Operand[] args = getCallArgs();
-            int required = ((Fixnum)args[0]).value.intValue();
-            int opt      = ((Fixnum)args[1]).value.intValue();
-            int rest     = ((Fixnum)args[2]).value.intValue();
-            int numArgs  = ii.getArgsCount();
-            if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-                // Argument error! Throw it at runtime
-                return new JRubyImplCallInstr(null, JRubyImplementationMethod.RAISE_ARGUMENT_ERROR, null, new Operand[]{args[0],args[1],args[2],new Fixnum((long)numArgs)});
-            }
-            else {
-                return null;
-            }
-        }
-        else {
-            return new JRubyImplCallInstr(result == null ? null : ii.getRenamedVariable(result), this.implMethod,
-                    receiver == null ? null : receiver.cloneForInlining(ii), cloneCallArgs(ii),
-                    closure == null ? null : closure.cloneForInlining(ii));
-        }
+
+        return new JRubyImplCallInstr(result == null ? null : ii.getRenamedVariable(result), this.implMethod,
+                receiver == null ? null : receiver.cloneForInlining(ii), cloneCallArgs(ii),
+                closure == null ? null : closure.cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        String   name;
-        Object   receiver;
-        Ruby     runtime   = context.getRuntime();
-        Object   rVal = null;
+        Ruby runtime = context.getRuntime();        
+        String name;
+        Object receiver;
+        Object rVal = null;
 
         switch (this.implMethod) {
             // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
@@ -203,18 +191,6 @@ public class JRubyImplCallInstr extends CallInstr {
             case SELF_METACLASS:
                 rVal = ((IRubyObject)getReceiver().retrieve(interp, context, self)).getMetaClass();
                 break;
-            case CHECK_ARITY:
-            {
-                Operand[] args = getCallArgs();
-                int required = ((Fixnum)args[0]).value.intValue();
-                int opt      = ((Fixnum)args[1]).value.intValue();
-                int rest     = ((Fixnum)args[2]).value.intValue();
-                int numArgs  = interp.getParameterCount();
-                if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-                    Arity.raiseArgumentError(context.getRuntime(), numArgs, required, required+opt);
-                }
-                break;
-            }
             case RAISE_ARGUMENT_ERROR:
             {
                 Operand[] args = getCallArgs();

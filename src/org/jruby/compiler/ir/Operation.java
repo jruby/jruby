@@ -3,7 +3,7 @@ package org.jruby.compiler.ir;
 enum OpType { dont_care, debug_op, obj_op, alu_op, call_op, yield_op, 
 recv_arg_op, ret_op, eval_op, branch_op, compare_op, exc_op, load_op, 
 store_op, declare_type_op, guard_op, box_op, marker_op, class_of, def_op,
-block_given_op};
+block_given_op, check_arity_op};
 
 public enum Operation {
 // ------ Define the operations below ----
@@ -73,7 +73,7 @@ public enum Operation {
     BOX_VALUE(OpType.box_op), UNBOX_VALUE(OpType.box_op),
     
     // JRuby-impl instructions
-    BLOCK_GIVEN(OpType.block_given_op);
+    BLOCK_GIVEN(OpType.block_given_op), CHECK_ARITY(OpType.check_arity_op);
 
     private OpType type;
 
