@@ -2392,7 +2392,7 @@ public class IRBuilder {
         s.addInstr(new ThreadPollInstr());
         // If a closure, the next is simply a return from the closure!
         // If a regular loop, the next is simply a jump to the end of the iteration
-        s.addInstr((s instanceof IRClosure) ? new ClosureReturnInstr(rv) : new JumpInstr(s.getCurrentLoop().iterEndLabel));
+        s.addInstr((s.getCurrentLoop() != null) ?  new JumpInstr(s.getCurrentLoop().iterEndLabel) : new ClosureReturnInstr(rv));
         return rv;
     }
 
@@ -2706,7 +2706,7 @@ public class IRBuilder {
     public Operand buildRedo(Node node, IRExecutionScope s) {
         // For closures, a redo is a jump to the beginning of the closure
         // For non-closures, a redo is a jump to the beginning of the loop
-        s.addInstr(new JumpInstr((s instanceof IRClosure) ? ((IRClosure)s).startLabel : s.getCurrentLoop().iterStartLabel));
+        s.addInstr(new JumpInstr((s.getCurrentLoop() != null) ?  s.getCurrentLoop().iterStartLabel : ((IRClosure)s).startLabel));
         return Nil.NIL;
     }
 
@@ -2976,7 +2976,9 @@ public class IRBuilder {
 
             if (isLoopHeadCondition) {
                 Operand cv = build(conditionNode, s);
-                s.addInstr(new BEQInstr(cv, isWhile ? BooleanLiteral.FALSE : BooleanLiteral.TRUE, loop.loopEndLabel));
+                s.addInstr(new BEQInstr(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop.iterStartLabel));
+                s.addInstr(new CopyInstr((Variable)loopResult, Nil.NIL));
+                s.addInstr(new JumpInstr(loop.loopEndLabel));
             }
             s.addInstr(new LABEL_Instr(loop.iterStartLabel));
 
@@ -3004,6 +3006,7 @@ public class IRBuilder {
             else {
                 Operand cv = build(conditionNode, s);
                 s.addInstr(new BEQInstr(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop.iterStartLabel));
+                s.addInstr(new CopyInstr((Variable)loopResult, Nil.NIL));
             }
 
             s.addInstr(new LABEL_Instr(loop.loopEndLabel));
