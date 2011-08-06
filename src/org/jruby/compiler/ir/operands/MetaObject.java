@@ -93,19 +93,22 @@ public class MetaObject extends Operand {
         return (scope instanceof IRModule) ? IRClass.getCoreClass("Module") : null;
     }
 
-    public RubyModule interpretBody(InterpreterContext interp, ThreadContext context, RubyModule module) {
+    public Object interpretBody(InterpreterContext interp, ThreadContext context, RubyModule module) {
         scope.getStaticScope().setModule(module);
         IRMethod rootMethod = ((IRModule) scope).getRootMethod();
         DynamicMethod method = new InterpretedIRMethod(rootMethod, module);
 
-        method.call(context, module, module, "", new IRubyObject[]{});
-
-        return module;
+        return method.call(context, module, module, "", new IRubyObject[]{});
     }
 
     public RubyModule getContainer(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return scope.getContainer() != null ?
-                (RubyModule) scope.getContainer().retrieve(interp, context, self) :
-                context.getRuntime().getObject();
+        if (scope.getContainer() == null) {
+            return context.getRuntime().getObject();
+        }
+        else {
+            Object c = scope.getContainer().retrieve(interp, context, self);
+            if (c instanceof RubyModule) return (RubyModule)c;
+            else throw context.getRuntime().newTypeError("no outer class/module");
+        }
     }
 }

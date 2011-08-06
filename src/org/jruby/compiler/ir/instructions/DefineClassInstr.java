@@ -38,7 +38,15 @@ public class DefineClassInstr extends TwoOperandInstr {
             module = container.getMetaClass();
         } else {
             Operand superClass = getOperand2();
-            RubyClass sc = superClass == Nil.NIL ? null : (RubyClass)superClass.retrieve(interp, context, self);
+            RubyClass sc;
+            if (superClass == Nil.NIL) {
+                sc = null;
+            }
+            else {
+                Object o = superClass.retrieve(interp, context, self);
+                if (o instanceof RubyClass) sc = (RubyClass)o;
+                else throw context.getRuntime().newTypeError("superclass must be Class (" + o + " given)");
+            }
             module = container.defineOrGetClassUnder(scope.getName(), sc);
         }
 
