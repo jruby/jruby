@@ -2221,6 +2221,7 @@ public class IRBuilder {
         }
 
         if (thenNull && elseNull) {
+            s.addInstr(new LABEL_Instr(doneLabel));
             return Nil.NIL;
         }
         else if (thenUnil && elseUnil) {
