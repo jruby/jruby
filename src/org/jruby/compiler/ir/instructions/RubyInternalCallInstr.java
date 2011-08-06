@@ -104,6 +104,7 @@ public class RubyInternalCallInstr extends CallInstr {
             {
                 IRubyObject   object = (IRubyObject)getReceiver().retrieve(interp, context, self);
                 IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());
+                // SSS FIXME: Do we need to set up the frame in some way so this doesn't bomb?
                 rVal = RuntimeHelpers.invokeSuper(context, object, args, prepareBlock(interp, context, self));
                 break;
             }

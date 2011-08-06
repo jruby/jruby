@@ -2110,6 +2110,9 @@ public class IRBuilder {
                 buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, true, false);
         }
 
+            // Start label -- used by redo!
+        closure.addInstr(new LABEL_Instr(closure.startLabel));
+
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
         if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
@@ -2253,6 +2256,9 @@ public class IRBuilder {
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
             buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, true, false);  // SSS: Changed this from 1 to 0
+
+            // start label -- used by redo!
+        closure.addInstr(new LABEL_Instr(closure.startLabel));
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
