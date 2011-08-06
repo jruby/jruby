@@ -169,10 +169,11 @@ public class RubyGlobal {
             if (updateRealENV) {
                 POSIX posix = getRuntime().getPosix();
                 String keyAsJava = keyAsStr.asJavaString();
+                // libc (un)setenv is not reentrant, so we need to synchronize across the entire JVM (JRUBY-5933)
                 if (valueAsStr == getRuntime().getNil()) {
-                    posix.unsetenv(keyAsJava);
+                    synchronized (Object.class) { posix.unsetenv(keyAsJava); }
                 } else {
-                    posix.setenv(keyAsJava, valueAsStr.asJavaString(), 1);
+                    synchronized (Object.class) { posix.setenv(keyAsJava, valueAsStr.asJavaString(), 1); }
                 }
             }
 
