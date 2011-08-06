@@ -2746,6 +2746,11 @@ public class IRBuilder {
         if (rescueNode.getBodyNode() != null)
             tmp = build(rescueNode.getBodyNode(), m);
 
+        // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
+        // let us discover the edge of the region during linear traversal of instructions during cfg construction.
+        ExceptionRegionEndMarkerInstr rbEndInstr = new ExceptionRegionEndMarkerInstr();
+        m.addInstr(rbEndInstr);
+
         // Else part of the body -- we simply fall through from the main body if there were no exceptions
         if (elseLabel != null) {
             m.addInstr(new LABEL_Instr(elseLabel));
@@ -2777,11 +2782,6 @@ public class IRBuilder {
             // buildRescueBodyInternal below.  So, in either case, we are good!
         }
 
-        // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
-        // let us discover the edge of the region during linear traversal of instructions during cfg construction.
-        ExceptionRegionEndMarkerInstr rbEndInstr = new ExceptionRegionEndMarkerInstr();
-        m.addInstr(rbEndInstr);
-
         // Build the actual rescue block(s)
         Label rbLabel = m.getNewLabel(); // Label marking start of the first rescue code.
         rescueBlockLabels.add(rbLabel);
@@ -2803,9 +2803,6 @@ public class IRBuilder {
         // Load exception & exception comparison type
         Variable exc = m.getNewTemporaryVariable();
         m.addInstr(new RECV_EXCEPTION_Instr(exc));
-        // SSS: FIXME: Is this correct?
-        // Compute all elements of the exception array eagerly
-//        Operand excType = (exceptionList == null) ? null : build(exceptionList, m);
 
         // Compare and branch as necessary!
         Label uncaughtLabel = null;
@@ -2814,8 +2811,14 @@ public class IRBuilder {
             uncaughtLabel = m.getNewLabel();
             caughtLabel = m.getNewLabel();
             Variable eqqResult = m.getNewTemporaryVariable();
-            for (Node excType : ((ListNode) exceptionList).childNodes()) {
-                m.addInstr(new EQQInstr(eqqResult, build(excType, m), exc));
+            if (exceptionList instanceof ListNode) {
+               for (Node excType : ((ListNode) exceptionList).childNodes()) {
+                   m.addInstr(new EQQInstr(eqqResult, build(excType, m), exc));
+                   m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, caughtLabel));
+               }
+            }
+            else { // splatnode, catch 
+                m.addInstr(new EQQInstr(eqqResult, exc, build(((SplatNode)exceptionList).getValue(), m)));
                 m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, caughtLabel));
             }
             // Uncaught exception -- build other rescue nodes or rethrow!
