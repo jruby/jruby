@@ -960,9 +960,14 @@ public final class StructLayout extends Type {
 
         @JRubyMethod(name = { "size" })
         public IRubyObject size(ThreadContext context) {
-            return arrayType.length(context);
+            return arrayType.size(context);
         }
 
+        @JRubyMethod(name = { "count"})
+        public IRubyObject length(ThreadContext context) {
+            return arrayType.length(context);
+        }
+        
         /**
          * Needed for Enumerable implementation
          */

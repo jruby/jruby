@@ -234,4 +234,17 @@ describe "Struct tests" do
     TestStruct.offset_of(:b).should == 4
     TestStruct.offset_of(:c).should == 8
   end
+  it "ArrayProxy#size should return total size in bytes" do
+    class Thing < FFI::Struct
+      layout :s => [:short, 3]
+    end
+    Thing.new.size.should == 6    
+  end
+  it "ArrayProxy#count should return number of elements" do
+    class Thing < FFI::Struct
+      layout :s => [:short, 3]
+    end
+    Thing.new.count.should == 3
+  end
+  
 end
