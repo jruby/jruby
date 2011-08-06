@@ -12,6 +12,8 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+// SSS: FIXME: This instruction is no longer being generated since it is just a marker!
+//
 // SSS NOTE: 'variables' are used only during optimizations -- they don't contribute to
 // the list of inputs to the case statement during dataflow analyses.
 // This is just a dummy placeholder instruction -- nothing to do during interpretation or code generation.

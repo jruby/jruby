@@ -117,7 +117,6 @@ import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.CaseInstr;
 import org.jruby.compiler.ir.instructions.ClassOf;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
@@ -917,10 +916,8 @@ public class IRBuilder {
         // the CASE instruction
         Label     endLabel  = m.getNewLabel();
         boolean   hasElse   = (caseNode.getElseNode() != null);
-        Label     elseLabel = hasElse ? m.getNewLabel() : null;
+        Label     elseLabel = m.getNewLabel();
         Variable  result    = m.getNewTemporaryVariable();
-        CaseInstr caseInstr = new CaseInstr(result, value, endLabel);
-        m.addInstr(caseInstr);
 
         // lists to aggregate variables and bodies for whens
         List<Operand> variables = new ArrayList<Operand>();
@@ -962,12 +959,11 @@ public class IRBuilder {
             bodies.put(bodyLabel, whenNode.getBodyNode());
         }
 
-        // Jump to else or the end in case nothing matches!
-        m.addInstr(new JumpInstr(hasElse ? elseLabel : endLabel));
+        // Jump to else in case nothing matches!
+        m.addInstr(new JumpInstr(elseLabel));
 
         // build "else" if it exists
         if (hasElse) {
-            caseInstr.setElse(elseLabel);
             bodies.put(elseLabel, caseNode.getElseNode());
         }
 
@@ -986,10 +982,16 @@ public class IRBuilder {
             }
         }
 
+        if (!hasElse) {
+            m.addInstr(new LABEL_Instr(elseLabel));
+            m.addInstr(new CopyInstr(result, Nil.NIL));
+            m.addInstr(new JumpInstr(endLabel));
+        }
+
         // close it out
         m.addInstr(new LABEL_Instr(endLabel));
-        caseInstr.setLabels(labels);
-        caseInstr.setVariables(variables);
+
+        // SSS: Got rid of the marker case label instruction
 
         return result;
     }
