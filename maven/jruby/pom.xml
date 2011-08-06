@@ -40,7 +40,7 @@
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>org.jruby.extras</groupId>
+      <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>
@@ -50,7 +50,7 @@
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>org.jruby.extras</groupId>
+      <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>
