@@ -22,12 +22,13 @@ task :macos_installer do
 
   puts "\nBuilding OS X Installer"
 
-  cleanup
-
   raise "JRuby #{VERSION_JRUBY} dist ZIP not found!" if !File.exist?(DIST_ZIP)
   sh "unzip #{DIST_ZIP} -d #{BUILD_DIR}"
 
   Dir.chdir "#{BASE_DIR}/install/macos" do
+    cleanup
+    ln_s "#{BASE_DIR}/#{BUILD_DIR}", BUILD_DIR
+    
     prepare_rubygems
 
     puts "- Setting package version"
@@ -39,14 +40,15 @@ task :macos_installer do
     replace_variables_in UNINSTALLER_SCRIPT
     replace_variables_in UNINSTALLER_WELCOME
 
-    puts "- Building package, it takes a while, be patient my friend"
+    puts "- Building package"
     mkdir_p PKG_DIR
-    sh "time /Developer/Applications/Utilities/PackageMaker.app/Contents/MacOS/PackageMaker -v --doc JRuby-installer.pmdoc --out #{PKG_DIR}/JRuby-#{VERSION_JRUBY}.pkg --version #{VERSION_JRUBY}"
-    sh "time /Developer/Applications/Utilities/PackageMaker.app/Contents/MacOS/PackageMaker -v --doc JRuby-uninstaller.pmdoc --out #{PKG_DIR}/JRuby-uninstaller-#{VERSION_JRUBY}.pkg --version #{VERSION_JRUBY}"
+    sh "time $(xcrun -find packagemaker) -v --no-recommend --doc JRuby-installer.pmdoc --out #{PKG_DIR}/JRuby-#{VERSION_JRUBY}.pkg --version #{VERSION_JRUBY}"
+    sh "time $(xcrun -find packagemaker) -v --no-recommend --doc JRuby-uninstaller.pmdoc --out #{PKG_DIR}/JRuby-uninstaller-#{VERSION_JRUBY}.pkg --version #{VERSION_JRUBY}"
 
     rm DMG if File.exist? DMG = File.join(BASE_DIR, DIST_DIR, "JRuby-#{VERSION_JRUBY}.dmg")
     sh "time hdiutil create #{DMG} -volname JRuby-#{VERSION_JRUBY} -fs HFS+ -srcfolder #{PKG_DIR}"
 
+    rm BUILD_DIR
     cleanup
   end
 end
@@ -89,7 +91,7 @@ end
 
 def cleanup
   puts "- Cleaning directories"
-  [MAC_DIST, GEMS_DIST_DIR, PKG_DIR ].each do |f|
+  [MAC_DIST, GEMS_DIST_DIR, PKG_DIR].each do |f|
     rm_r f if File.exist? f
   end
 end
