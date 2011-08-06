@@ -127,7 +127,13 @@ public class JavaClass extends JavaObject {
     private void handleScalaSingletons(Class<?> javaClass, InitializerState state) {
         // check for Scala companion object
         try {
-            Class<?> companionClass = javaClass.getClassLoader().loadClass(javaClass.getName() + "$");
+            ClassLoader cl = javaClass.getClassLoader();
+            if (cl == null) {
+                //this is a core class, bail
+                return;
+            }
+            
+            Class<?> companionClass = cl.loadClass(javaClass.getName() + "$");
             Field field = companionClass.getField("MODULE$");
             Object singleton = field.get(null);
             if (singleton != null) {
@@ -180,8 +186,11 @@ public class JavaClass extends JavaObject {
                     }
                 }
             }
-        } catch (Exception e) {
-            // ignore... there's no companion object
+            
+        // ignore... there's no companion object
+        } catch (ClassNotFoundException e) {
+        } catch (NoSuchFieldException e) {
+        } catch (IllegalAccessException e) {
         }
     }
     
