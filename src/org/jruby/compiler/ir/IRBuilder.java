@@ -444,7 +444,9 @@ public class IRBuilder {
 
     public Variable generateJRubyUtilityCall(IRScope m, JRubyImplementationMethod meth, Operand receiver, Operand[] args) {
         Variable ret = m.getNewTemporaryVariable();
-        m.addInstr(new JRubyImplCallInstr(ret, meth, receiver, args));
+        
+        m.addInstr(JRubyImplCallInstr.createJRubyImplementationMethod(ret, meth, receiver, args));
+        
         return ret;
     }
 
@@ -1720,15 +1722,16 @@ public class IRBuilder {
         // (a) on inlining, we'll be able to get rid of these checks in almost every case.
         // (b) compiler to bytecode will anyway generate this and this is explicit.
         // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
-        generateJRubyUtilityCall(s, JRubyImplementationMethod.CHECK_ARITY, null, new Operand[] { new Fixnum((long)required), new Fixnum((long)opt), new Fixnum((long)rest) });
+        Operand[] args = new Operand[] { new Fixnum((long)required), new Fixnum((long)opt), new Fixnum((long)rest) };
+        generateJRubyUtilityCall(s, JRubyImplementationMethod.CHECK_ARITY, null, args);
 
-            // self = args[0]
+        // self = args[0]
         s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
 
-            // Other args begin at index 0
+        // Other args begin at index 0
         int argIndex = 0;
 
-            // Both for fixed arity and variable arity methods
+        // Both for fixed arity and variable arity methods
         ListNode preArgs  = argsNode.getPre();
         for (int i = 0; i < required; i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
