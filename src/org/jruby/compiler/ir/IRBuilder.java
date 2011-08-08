@@ -900,7 +900,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr      callInstr    = new CallInstr(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
+        Instr      callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -1140,7 +1140,7 @@ public class IRBuilder {
             List<Operand> args       = setupCallArgs(null, s);
             Operand       block      = setupCallClosure(null, s);
             Variable      callResult = s.getNewTemporaryVariable();
-            Instr      callInstr  = new CallInstr(callResult, new MethAddr(c2mNode.getName()), 
+            Instr      callInstr  = CallInstr.create(callResult, new MethAddr(c2mNode.getName()), 
                     null, args.toArray(new Operand[args.size()]), block);
             s.addInstr(callInstr);
             return callResult;
@@ -1440,7 +1440,7 @@ public class IRBuilder {
                 // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
                 //   the nil? method is not monkey-patched?
                 // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
-                s.addInstr(new CallInstr(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
+                s.addInstr(CallInstr.create(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
                 s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.TRUE, undefLabel));
                 return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("$" + n));
             }
@@ -1951,7 +1951,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr         callInstr    = new CallInstr(callResult, new MethAddr(fcallNode.getName()), getSelf(s), args.toArray(new Operand[args.size()]), block);
+        Instr         callInstr    = CallInstr.create(callResult, new MethAddr(fcallNode.getName()), getSelf(s), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -2424,7 +2424,7 @@ public class IRBuilder {
 
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode(), s);
-        s.addInstr(new CallInstr(getResult, new MethAddr(opAsgnNode.getVariableName()), v1, NO_ARGS, null));
+        s.addInstr(CallInstr.create(getResult, new MethAddr(opAsgnNode.getVariableName()), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -2437,7 +2437,7 @@ public class IRBuilder {
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
-            s.addInstr(new CallInstr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {v2}, null));
+            s.addInstr(CallInstr.create(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {v2}, null));
             s.addInstr(new CopyInstr(getResult, setResult));
             s.addInstr(new LABEL_Instr(l));
 
@@ -2448,10 +2448,10 @@ public class IRBuilder {
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
             Variable setValue = s.getNewTemporaryVariable();
-            s.addInstr(new CallInstr(setValue, new MethAddr(opAsgnNode.getOperatorName()), getResult, new Operand[]{v2}, null));
+            s.addInstr(CallInstr.create(setValue, new MethAddr(opAsgnNode.getOperatorName()), getResult, new Operand[]{v2}, null));
            
             // set attr
-            s.addInstr(new CallInstr(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {setValue}, null));
+            s.addInstr(CallInstr.create(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {setValue}, null));
             return setResult;
         }
     }
@@ -2584,11 +2584,11 @@ public class IRBuilder {
         // SSS FIXME: Verify with Tom that I am not missing something here
         assert args.size() == 1;
         Operand  index = args.get(0);
-        s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, new Operand[] { index }, null));
+        s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, new Operand[] { index }, null));
         s.addInstr(new IsTrueInstr(flag, elt));
         s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
-        s.addInstr(new CallInstr(elt, new MethAddr("[]="), array, new Operand[] { index, value }, null));
+        s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, new Operand[] { index, value }, null));
         s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
@@ -2605,11 +2605,11 @@ public class IRBuilder {
         // SSS FIXME: Verify with Tom that I am not missing something here
         assert args.size() == 1;
         Operand  index = args.get(0);
-        s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, new Operand[] { index }, null));
+        s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, new Operand[] { index }, null));
         s.addInstr(new IsTrueInstr(flag, elt));
         s.addInstr(new BEQInstr(flag, BooleanLiteral.FALSE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
-        s.addInstr(new CallInstr(elt, new MethAddr("[]="), array, new Operand[] { index, value }, null));
+        s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, new Operand[] { index, value }, null));
         s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
@@ -2631,14 +2631,14 @@ public class IRBuilder {
         assert args.size() == 1;
         Operand  index = args.get(0);
         Variable elt   = s.getNewTemporaryVariable();
-        s.addInstr(new CallInstr(elt, new MethAddr("[]"), array, new Operand[] { index }, null));         // elt = a[index]
+        s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, new Operand[] { index }, null));         // elt = a[index]
         Operand value = build(opElementAsgnNode.getValueNode(), s);                                       // Load 'value'
         String  operation = opElementAsgnNode.getOperatorName();
-        s.addInstr(new CallInstr(elt, new MethAddr(operation), elt, new Operand[] { value }, null));      // elt = elt.OPERATION(value)
+        s.addInstr(CallInstr.create(elt, new MethAddr(operation), elt, new Operand[] { value }, null));      // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         Variable tmp = s.getNewTemporaryVariable();
-        s.addInstr(new CallInstr(tmp, new MethAddr("[]="), array, new Operand[] { index, elt }, null));   // a[index] = elt
+        s.addInstr(CallInstr.create(tmp, new MethAddr("[]="), array, new Operand[] { index, elt }, null));   // a[index] = elt
         return elt;
     }
 
@@ -3040,7 +3040,7 @@ public class IRBuilder {
     public Operand buildVCall(VCallNode node, IRScope s) {
         List<Operand> args       = new ArrayList<Operand>(); args.add(getSelf(s));
         Variable      callResult = s.getNewTemporaryVariable();
-        Instr         callInstr  = new CallInstr(callResult, new MethAddr(node.getName()), getSelf(s), NO_ARGS, null);
+        Instr         callInstr  = CallInstr.create(callResult, new MethAddr(node.getName()), getSelf(s), NO_ARGS, null);
         s.addInstr(callInstr);
         return callResult;
     }

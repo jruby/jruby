@@ -44,6 +44,10 @@ public class CallInstr extends MultiOperandInstr {
     public HashMap<DynamicMethod, Integer> profile;
     public CallSite callAdapter;
     
+    public static CallInstr create(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
+        return new CallInstr(result, methAddr, receiver, args, closure);
+    }
+    
     public CallInstr(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         this(Operation.CALL, result, methAddr, receiver, args, closure);
     }
