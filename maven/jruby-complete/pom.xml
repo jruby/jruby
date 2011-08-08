@@ -25,7 +25,7 @@
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>org.jruby.extras</groupId>
+      <groupId>com.github.jnr</groupId>
       <artifactId>jnr-netdb</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>
