@@ -1723,7 +1723,8 @@ public class IRBuilder {
         // (b) compiler to bytecode will anyway generate this and this is explicit.
         // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
         Operand[] args = new Operand[] { new Fixnum((long)required), new Fixnum((long)opt), new Fixnum((long)rest) };
-        generateJRubyUtilityCall(s, JRubyImplementationMethod.CHECK_ARITY, null, args);
+        // FIXME: I added getSelf() just so we won't NPE since this is a callinstr. Can we make this something other than callinstr?
+        generateJRubyUtilityCall(s, JRubyImplementationMethod.CHECK_ARITY, getSelf(s), args);
 
         // self = args[0]
         s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
