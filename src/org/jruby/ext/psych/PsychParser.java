@@ -37,6 +37,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -99,11 +100,15 @@ public class PsychParser extends RubyObject {
     @JRubyMethod
     public IRubyObject parse(ThreadContext context, IRubyObject target) {
         Ruby runtime = context.runtime;
+        boolean tainted = target.isTaint();
         
         // FIXME? only supports Unicode, since we have to produces strings...
         StreamReader reader;
         if (target.respondsTo("read")) {
             reader = new StreamReader(new InputStreamReader(new IOInputStream(target)));
+            if (target instanceof RubyIO) {
+                tainted = true;
+            }
         } else {
             reader = new StreamReader(new StringReader(target.convertToString().asJavaString()));
         }
@@ -134,10 +139,15 @@ public class PsychParser extends RubyObject {
                     RubyArray tags = RubyArray.newArray(runtime);
                     if (tags.size() > 0) {
                         for (Map.Entry<String, String> tag : tagsMap.entrySet()) {
+                            RubyString key   = RubyString.newString(runtime, tag.getKey());
+                            RubyString value = RubyString.newString(runtime, tag.getValue());
+                            key.setTaint(tainted);
+                            value.setTaint(tainted);
+
                             tags.append(RubyArray.newArray(
                                     runtime,
-                                    RubyString.newString(runtime, tag.getKey()),
-                                    RubyString.newString(runtime, tag.getValue())));
+                                    key,
+                                    value));
                         }
                     }
 
@@ -160,6 +170,7 @@ public class PsychParser extends RubyObject {
                     IRubyObject alias = runtime.getNil();
                     if (ae.getAnchor() != null) {
                         alias = RubyString.newString(runtime, ae.getAnchor());
+                        alias.setTaint(tainted);
                     }
 
                     invoke(
@@ -179,6 +190,10 @@ public class PsychParser extends RubyObject {
                     IRubyObject quoted_implicit = runtime.newBoolean(se.getImplicit().isSecond());
                     IRubyObject style = runtime.newFixnum(se.getStyle());
                     IRubyObject val = RubyString.newString(runtime, se.getValue());
+
+                    val.setTaint(tainted);
+                    anchor.setTaint(tainted);
+                    tag.setTaint(tainted);
 
                     invoke(
                             context,
@@ -200,6 +215,9 @@ public class PsychParser extends RubyObject {
                         RubyString.newString(runtime, sse.getTag());
                     IRubyObject implicit = runtime.newBoolean(sse.getImplicit());
                     IRubyObject style = runtime.newFixnum(sse.getFlowStyle() ? 1 : 0);
+
+                    anchor.setTaint(tainted);
+                    tag.setTaint(tainted);
 
                     invoke(
                             context,
@@ -224,6 +242,9 @@ public class PsychParser extends RubyObject {
                         RubyString.newString(runtime, mse.getTag());
                     IRubyObject implicit = runtime.newBoolean(mse.getImplicit());
                     IRubyObject style = runtime.newFixnum(mse.getFlowStyle() ? 1 : 0);
+
+                    anchor.setTaint(tainted);
+                    tag.setTaint(tainted);
 
                     invoke(
                             context,
