@@ -88,7 +88,8 @@ public class CallInstr extends MultiOperandInstr {
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        receiver = receiver.getSimplifiedOperand(valueMap);
+        // FIXME: receiver should never be null (checkArity seems to be one culprit)
+        if (receiver != null) receiver = receiver.getSimplifiedOperand(valueMap);
         methAddr = (MethAddr)methAddr.getSimplifiedOperand(valueMap);
         for (int i = 0; i < arguments.length; i++) {
             arguments[i] = arguments[i].getSimplifiedOperand(valueMap);
