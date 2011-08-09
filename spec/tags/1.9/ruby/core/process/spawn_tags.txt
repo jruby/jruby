@@ -1,1 +1,2 @@
 fails:Process.spawn passes environment vars to the child environment
+fails:Process.spawn runs the specified command

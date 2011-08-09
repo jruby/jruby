@@ -1,1 +1,2 @@
 fails:Fiber#resume can be invoked from the root Fiber
+fails:Fiber#resume passes control to the beginning of the block on first invocation
