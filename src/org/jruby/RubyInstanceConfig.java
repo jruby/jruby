@@ -445,10 +445,8 @@ public class RubyInstanceConfig {
         setCurrentDirectory(Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir"));
         samplingEnabled = SafePropertyAccessor.getBoolean("jruby.sampling.enabled", false);
 
-        String compatString = SafePropertyAccessor.getProperty("jruby.compat.version");
-        if (compatString == null) {
-            setCompatVersion(Constants.DEFAULT_RUBY_VERSION);
-        } else if (compatString.equalsIgnoreCase("RUBY1_8")) {
+        String compatString = SafePropertyAccessor.getProperty("jruby.compat.version", Constants.DEFAULT_RUBY_VERSION);
+        if (compatString.equalsIgnoreCase("RUBY1_8")) {
             setCompatVersion(CompatVersion.RUBY1_8);
         } else if (compatString.equalsIgnoreCase("RUBY1_9")) {
             setCompatVersion(CompatVersion.RUBY1_9);
