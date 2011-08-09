@@ -203,30 +203,13 @@ public class InvokeDynamicSupport {
     }
     
     public static CallSite fixnumOperatorBootstrap(Lookup lookup, String name, MethodType type, String operator, long value) throws NoSuchMethodException, IllegalAccessException {
-        CallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false, true);
-        String opMethod = MethodIndex.getFastOpsMethod(operator);
-        name = "fixnum_" + opMethod;
-        type = type.insertParameterTypes(0, MutableCallSite.class);
-        MethodHandle fallback = null;
-        if (operator.equals("+") || operator.equals("-")) {
-            if (value == 1) {
-                name += "_one";
-                fallback = lookup.findStatic(InvokeDynamicSupport.class, name, type);
-                fallback = insertArguments(fallback, 0, site);
-            } else if (value == 2) {
-                name += "_two";
-                fallback = lookup.findStatic(InvokeDynamicSupport.class, name, type);
-                fallback = insertArguments(fallback, 0, site);
-            }
-        }
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false, true);
         
-        if (fallback == null) {
-            type = type.insertParameterTypes(0, long.class);
-            fallback = lookup.findStatic(InvokeDynamicSupport.class, name, type);
-            fallback = insertArguments(fallback, 0, value, site);
-        }
+        MethodHandle target = lookup.findStatic(InvokeDynamicSupport.class, "fixnumOperator", 
+                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, String.class, long.class));
+        target = insertArguments(target, 3, site, operator, value);
         
-        site.setTarget(fallback);
+        site.setTarget(target);
         return site;
     }
 
@@ -703,72 +686,126 @@ public class InvokeDynamicSupport {
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, name, args, block);
     }
+    
+    public static IRubyObject fixnumOperator(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, String operator, long value) throws Throwable {
+        String opMethod = MethodIndex.getFastOpsMethod(operator);
+        String name = "fixnum_" + opMethod;
+        MethodType type = methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+        MethodHandle target = null;
+        
+        if (operator.equals("+") || operator.equals("-")) {
+            if (value == 1) {
+                name += "_one";
+                target = lookup().findStatic(InvokeDynamicSupport.class, name, type);
+            } else if (value == 2) {
+                name += "_two";
+                target = lookup().findStatic(InvokeDynamicSupport.class, name, type);
+            }
+        }
+        
+        if (target == null) {
+            type = type.insertParameterTypes(3, long.class);
+            target = lookup().findStatic(InvokeDynamicSupport.class, name, type);
+            target = insertArguments(target, 3, value);
+        }
 
-    public static IRubyObject fixnum_op_plus(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+        MethodHandle fallback = lookup().findStatic(InvokeDynamicSupport.class, "fixnumOperatorFail", 
+                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, String.class, RubyFixnum.class));
+        fallback = insertArguments(fallback, 3, site, operator, context.runtime.newFixnum(value));
+        
+        MethodHandle test = lookup().findStatic(InvokeDynamicSupport.class, "fixnumTest", methodType(boolean.class, Ruby.class, IRubyObject.class));
+        test = test.bindTo(context.runtime);
+        test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
+        
+        site.setTarget(guardWithTest(test, target, fallback));
+        return (IRubyObject)target.invokeWithArguments(context, caller, self);
+    }
+    
+    public static boolean fixnumTest(Ruby runtime, IRubyObject self) {
+        return self instanceof RubyFixnum && !runtime.isFixnumReopened();
+    }
+    
+    public static IRubyObject fixnumOperatorFail(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, String operator, RubyFixnum value) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        CacheEntry entry = site.entry;
+        
+        if (entry.typeOk(selfClass)) {
+            return entry.method.call(context, self, selfClass, operator, value);
+        } else {
+            entry = selfClass.searchWithCache(operator);
+            if (methodMissing(entry, site.callType(), operator, caller)) {
+                return callMethodMissing(entry, site.callType(), context, self, operator, value);
+            }
+            site.entry = entry;
+            return entry.method.call(context, self, selfClass, operator, value);
+        }
+    }
+
+    public static IRubyObject fixnum_op_plus(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_plus(context, value);
     }
 
-    public static IRubyObject fixnum_op_minus(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_minus(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_minus(context, value);
     }
 
-    public static IRubyObject fixnum_op_mul(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_mul(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_mul(context, value);
     }
 
-    public static IRubyObject fixnum_op_lt(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_lt(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_lt(context, value);
     }
 
-    public static IRubyObject fixnum_op_le(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_le(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_le(context, value);
     }
 
-    public static IRubyObject fixnum_op_gt(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_gt(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_gt(context, value);
     }
 
-    public static IRubyObject fixnum_op_ge(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_ge(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_ge(context, value);
     }
 
-    public static IRubyObject fixnum_op_cmp(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_cmp(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_cmp(context, value);
     }
 
-    public static IRubyObject fixnum_op_and(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_and(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_and(context, value);
     }
 
-    public static IRubyObject fixnum_op_or(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_or(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_or(context, value);
     }
 
-    public static IRubyObject fixnum_op_xor(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_xor(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_xor(context, value);
     }
 
-    public static IRubyObject fixnum_op_rshift(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_rshift(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_rshift(value);
     }
 
-    public static IRubyObject fixnum_op_lshift(long value, MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_lshift(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_lshift(value);
     }
 
-    public static IRubyObject fixnum_op_plus_one(MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_plus_one(ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
         return ((RubyFixnum)self).op_plus_one(context);
     }
 
-    public static IRubyObject fixnum_op_minus_one(MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_minus_one(ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
         return ((RubyFixnum)self).op_minus_one(context);
     }
 
-    public static IRubyObject fixnum_op_plus_two(MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_plus_two(ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
         return ((RubyFixnum)self).op_plus_two(context);
     }
 
-    public static IRubyObject fixnum_op_minus_two(MutableCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+    public static IRubyObject fixnum_op_minus_two(ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
         return ((RubyFixnum)self).op_minus_two(context);
     }
     
