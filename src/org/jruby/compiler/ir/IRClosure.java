@@ -19,17 +19,24 @@ public class IRClosure extends IRExecutionScope {
 
     private final BlockBody body;
 
+    // Oy, I have a headache!
+    // for-loop body closures are special in that they dont really define a new variable scope.
+    // They just silently reuse the parent scope.  This changes how variables are allocated (see IRMethod.java).
+    public final boolean isForLoopBody;
+
     // Has this closure been inlined into a method? If yes, its independent existence has come to an end
     // because it has very likely been integrated into another scope and we should no longer do anything
     // with the instructions as an independent closure scope.
     private boolean hasBeenInlined;     
 
-    public IRClosure(IRScope lexicalParent, StaticScope staticScope, Arity arity, int argumentType) {
+    public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
         super(lexicalParent, MetaObject.create(lexicalParent), null, staticScope);
-        startLabel = getNewLabel("_CLOSURE_START");
-        endLabel = getNewLabel("_CLOSURE_END");
+        this.isForLoopBody = isForLoopBody;
+        String prefix = isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_";
+        startLabel = getNewLabel(prefix + "START");
+        endLabel = getNewLabel(prefix + "END");
         closureId = lexicalParent.getNextClosureId();
-        setName("_CLOSURE_" + closureId);
+        setName(prefix + closureId);
 
         this.body = new InterpretedIRBlockBody(this, arity, argumentType);
         this.hasBeenInlined = false;

@@ -125,7 +125,7 @@ public class IRMethod extends IRExecutionScope {
     public LocalVariable getLocalVariable(String name, IRExecutionScope currScope) {
         LocalVariable lvar = localVariables.get(name);
         if (lvar == null) {
-            if (currScope instanceof IRClosure) {
+            if ((currScope instanceof IRClosure) && !((IRClosure)currScope).isForLoopBody) {
                 // Variable is local to the closure.  If not, it would have been found in the localVariables.get call above!
                 lvar = new ClosureLocalVariable((IRClosure)currScope, name, nextLocalVariableSlot);
             }
