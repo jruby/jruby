@@ -1,0 +1,1 @@
+fails:Fiber#resume can be invoked from the root Fiber
