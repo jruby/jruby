@@ -186,12 +186,15 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
 
         // Handle non-direct pointer parameters
         if (pointerCount > 0) {
+            final int MAX_PARAM_COUNT = 4;
+            final int MAX_POINTER_COUNT = 4;
             mv.label(indirect);
+            boolean emitFallback = true;
 
             // For functions with only a few pointer args, we can possibly use the jffi object fast-path
-            if (signature.getParameterCount() <= 4 && pointerCount <= 4) {
+            if (signature.getParameterCount() <= MAX_PARAM_COUNT && pointerCount <= MAX_POINTER_COUNT) {
                 Label fallback = new Label();
-                if (pointerCount > 3) {
+                if ((emitFallback = pointerCount > 3)) {
                     mv.iload(heapPointerCountVar);
                     mv.iconst_3();
                     mv.if_icmpgt(fallback);
@@ -240,12 +243,11 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                         sig(long.class, paramTypes));
                 narrow(mv, long.class, nativeIntType);
                 mv.go_to(boxResult);
-                mv.label(fallback);
+                if (emitFallback) mv.label(fallback);
             }
             
-            // Emit the fallback code to call the generic invoker path, if 
-            // more than 3 pointer parameters are present.
-            if (pointerCount > 3) {
+            // Emit the fallback code to call the generic invoker path.
+            if (emitFallback) {
 
                 // pop all the converted arguments off the stack
                 for (int i = 0; i < signature.getParameterCount(); i++) {
