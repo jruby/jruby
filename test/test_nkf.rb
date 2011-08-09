@@ -32,6 +32,19 @@ class NKFTest < Test::Unit::TestCase
       # IBM JDK does not appear to support all the same encodings; See JRUBY-3301.
     end
   end
+
+  def test_icoc
+    sjis = ["82a082a282a482a682a8"].pack("H*")
+    utf = ["e38182e38184e38186e38188e3818a"].pack("H*")
+    begin
+      conv = NKF.nkf("-m0 -x -W --oc=cp932 --fb-subchar=63", utf)
+      assert_equal(sjis, conv)
+      conv = NKF.nkf("-m0 -x -w --ic=cp932", sjis)
+      assert_equal(utf, conv)
+    rescue ArgumentError
+      # IBM JDK does not appear to support all the same encodings; See JRUBY-3301.
+    end
+  end
   
   def test_euc_utf
     euc = ["a4a2a4a4a4a6a4a8a4aa"].pack("H*")
