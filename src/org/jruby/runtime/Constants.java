@@ -30,6 +30,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.CompatVersion;
+
 public final class Constants {
     public static final String PLATFORM = "java";
 
@@ -53,6 +55,8 @@ public final class Constants {
     
     public static final String JODA_TIME_VERSION = "@joda.time.version@";
     public static final String TZDATA_VERSION = "@tzdata.version@";
+    
+    public static final CompatVersion DEFAULT_RUBY_VERSION;
 
     @Deprecated
     public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
@@ -60,6 +64,15 @@ public final class Constants {
     static {
         // This is populated here to avoid javac propagating the value to consumers
         REVISION = "@jruby.revision@";
+        String defaultRubyVersion = "@jruby.default.ruby.version@";
+        if (defaultRubyVersion.equals("1.8")) {
+            DEFAULT_RUBY_VERSION = CompatVersion.RUBY1_8;
+        } else if (defaultRubyVersion.equals("1.9")) {
+            DEFAULT_RUBY_VERSION = CompatVersion.RUBY1_9;
+        } else {
+            System.err.println("invalid version selected in build (\"" + defaultRubyVersion + "\"), using 1.8");
+            DEFAULT_RUBY_VERSION = CompatVersion.RUBY1_8;
+        }
     }
 
     private Constants() {}
