@@ -1,124 +1,171 @@
 package org.jruby.compiler.ir;
 
-enum OpType { dont_care, debug_op, obj_op, alu_op, call_op, yield_op, 
-recv_arg_op, ret_op, eval_op, branch_op, compare_op, exc_op, load_op, 
-store_op, declare_type_op, guard_op, box_op, marker_op, class_of, def_op,
-block_given_op, check_arity_op};
+class OpFlags {
+    final static int f_transfers_control   = 0x001;
+    final static int f_has_side_effect     = 0x002;
+    final static int f_can_raise_exception = 0x004;
+    final static int f_is_marker_op        = 0x008;
+    final static int f_is_branch           = 0x010;
+    final static int f_is_return           = 0x020;
+    final static int f_is_exception        = 0x040;
+    final static int f_is_debug_op         = 0x080;
+    final static int f_is_load             = 0x100;
+    final static int f_is_store            = 0x200;
+    final static int f_is_call             = 0x400;
+    final static int f_is_arg_receive      = 0x800;
+}
 
 public enum Operation {
+
+/* Mark a *non-control-flow* instruction as side-effecting if the following condition is false:
+ *    If "r = op(args)" is the instruction I and v is the value produced by the instruction at runtime,
+ *     and replacing I with "r = v" will leave the program behavior unchanged.  If so, and we determine
+ *     that the value of 'r' is not used anywhere, then it would be safe to get rid of I altogether.
+ *
+ * So definitions, calls, returns, stores are all side-effecting by this definition */
+
 // ------ Define the operations below ----
-    NOP(OpType.dont_care),
+    NOP(0),
 
-// value copy and type conversion operations
-    COPY(OpType.dont_care), SET_RETADDR(OpType.dont_care),
+    /** control-flow **/
+    JUMP(OpFlags.f_transfers_control | OpFlags.f_is_branch),
+    JUMP_INDIRECT(OpFlags.f_transfers_control | OpFlags.f_is_branch),
+    BEQ(OpFlags.f_transfers_control | OpFlags.f_is_branch),
+    BNE(OpFlags.f_transfers_control | OpFlags.f_is_branch),
 
-// ruby NOT
-    NOT(OpType.dont_care),
+    /** argument receive related in methods and blocks **/
+    RECV_SELF(OpFlags.f_is_arg_receive),
+    RECV_ARG(OpFlags.f_is_arg_receive),
+    RECV_OPT_ARG(OpFlags.f_is_arg_receive),
+    RECV_CLOSURE(OpFlags.f_is_arg_receive),
+    RECV_CLOSURE_ARG(OpFlags.f_is_arg_receive),
+    RECV_EXCEPTION(OpFlags.f_is_arg_receive),
+    SET_ARGS(OpFlags.f_has_side_effect),
+
+    /* By default, call instructions cannot be deleted even if their results
+     * aren't used by anyone unless we know more about what the call is, 
+     * what it does, etc.  Hence all these are marked side effecting */
+
+    /** calls **/
+    CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    JRUBY_IMPL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    RUBY_INTERNALS(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+
+    /* returns unwind stack, etc. */
+
+    /** returns **/
+    RETURN(OpFlags.f_transfers_control | OpFlags.f_has_side_effect | OpFlags.f_is_return),
+    CLOSURE_RETURN(OpFlags.f_transfers_control | OpFlags.f_has_side_effect | OpFlags.f_is_return),
+    /* BREAK is a return because it can only be used within closures
+     * and the net result is to return from the closure */
+    BREAK(OpFlags.f_transfers_control | OpFlags.f_has_side_effect | OpFlags.f_is_return),
+
+    /** defines **/
+    DEF_MODULE(OpFlags.f_has_side_effect),
+    DEF_CLASS(OpFlags.f_has_side_effect),
+    DEF_META_CLASS(OpFlags.f_has_side_effect),
+    DEF_INST_METH(OpFlags.f_has_side_effect),
+    DEF_CLASS_METH(OpFlags.f_has_side_effect),
+
+    THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
+
+    /** marker instructions used to flag/mark places in the code and dont actually get executed **/
+    LABEL(OpFlags.f_is_marker_op),
+    EXC_REGION_START(OpFlags.f_is_marker_op),
+    EXC_REGION_END(OpFlags.f_is_marker_op),
+    CASE(OpFlags.f_is_marker_op), // unused currently
+
+    /** debugging ops **/
+    LINE_NUM(OpFlags.f_is_debug_op),
+    FILE_NAME(OpFlags.f_is_debug_op),
+
+    /** value loads (SSS FIXME: Do any of these have side effects?) **/
+    GET_CONST(OpFlags.f_is_load),
+    GET_GLOBAL_VAR(OpFlags.f_is_load), 
+    GET_FIELD(OpFlags.f_is_load),
+    GET_CVAR(OpFlags.f_is_load),
+    GET_ARRAY(OpFlags.f_is_load),
+    BINDING_LOAD(OpFlags.f_is_load),
+    SEARCH_CONST(OpFlags.f_is_load), // SSS: side effect?
+
+    /** value stores **/
+    PUT_CONST(OpFlags.f_is_store | OpFlags.f_has_side_effect),
+    PUT_GLOBAL_VAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
+    PUT_FIELD(OpFlags.f_is_store | OpFlags.f_has_side_effect),
+    PUT_ARRAY(OpFlags.f_is_store | OpFlags.f_has_side_effect),
+    PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
+    BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect), 
+    ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     
+    /** JRuby-impl instructions **/
+    BLOCK_GIVEN(0),
+    CHECK_ARITY(OpFlags.f_can_raise_exception),
+
+    /** rest **/
+    COPY(0),
+    NOT(0), // ruby NOT operator
+    SET_RETADDR(0),
+    INSTANCE_OF(0), // java instanceof bytecode
+    CLASS_OF(0),
+    IS_TRUE(0), // checks if the operand is non-null and non-false
+    EQQ(0), // (FIXME: Exceptions?) a === call used only for its conditional results, as in case/when, begin/rescue, ...
+    ALLOC_BINDING(OpFlags.f_has_side_effect),
+    THREAD_POLL(OpFlags.f_has_side_effect),
+
+    /** for splitting calls into method-lookup and call -- unused **/
+    METHOD_LOOKUP(0),
+
+    /** primitive value boxing/unboxing -- still unused **/
+    BOX_VALUE(0),
+    UNBOX_VALUE(0),
+
+    /** optimization guards -- still unused **/
+    MODULE_VERSION_GUARD(0), 
+    METHOD_VERSION_GUARD(0);
+    
+/* ----------- unused ops ------------------
 // primitive alu operations -- unboxed primitive ops (not native ruby)
-    ADD(OpType.alu_op), SUB(OpType.alu_op), MUL(OpType.alu_op), DIV(OpType.alu_op),
-
-// java instanceof bytecode
-    INSTANCE_OF(OpType.dont_care),
-
-// method handle, arg receive, return value, and  call instructions
-//   BREAK is a ret_op not a branch_op because it can only be used within closures
-//   and the net result is to return from the closure
-    RETURN(OpType.ret_op), CLOSURE_RETURN(OpType.ret_op), BREAK(OpType.ret_op),
-    RECV_ARG(OpType.recv_arg_op), RECV_SELF(OpType.recv_arg_op), RECV_CLOSURE(OpType.recv_arg_op), RECV_OPT_ARG(OpType.recv_arg_op), RECV_CLOSURE_ARG(OpType.recv_arg_op),
-    RECV_EXCEPTION(OpType.recv_arg_op),
-	 SET_ARGS(OpType.dont_care), RECORD_CLOSURE(OpType.dont_care),
-    CALL(OpType.call_op), JRUBY_IMPL(OpType.call_op), RUBY_INTERNALS(OpType.call_op),
-    METHOD_LOOKUP(OpType.dont_care),
-
-// closure instructions
-    YIELD(OpType.yield_op),
-
-// def instructions
-    DEF_MODULE(OpType.def_op), DEF_CLASS(OpType.def_op), DEF_META_CLASS(OpType.def_op), DEF_INST_METH(OpType.def_op), DEF_CLASS_METH(OpType.def_op),
-
-// exception instructions
-    THROW(OpType.exc_op), RETRY(OpType.dont_care),
-
-// marker instructions -- used by the compiler to flag/mark places in the code, and dont actually get executed
-	 LABEL(OpType.marker_op), EXC_REGION_START(OpType.marker_op), EXC_REGION_END(OpType.marker_op), CASE(OpType.marker_op),
-
-// debugging / stacktrace info
-    LINE_NUM(OpType.debug_op), FILE_NAME(OpType.debug_op),
-
-// Loads
-    GET_CONST(OpType.load_op), GET_GLOBAL_VAR(OpType.load_op), GET_FIELD(OpType.load_op), GET_CVAR(OpType.load_op),
-    // SSS: Are these 3 loads really?
-	 GET_ARRAY(OpType.load_op), BINDING_LOAD(OpType.load_op), SEARCH_CONST(OpType.load_op), CLASS_OF(OpType.class_of),
-
-// Stores
-    PUT_CONST(OpType.store_op), PUT_GLOBAL_VAR(OpType.store_op), PUT_FIELD(OpType.store_op), PUT_ARRAY(OpType.store_op), PUT_CVAR(OpType.store_op),
-    BINDING_STORE(OpType.store_op), ATTR_ASSIGN(OpType.store_op),
-
-// jump and branch operations
-    JUMP(OpType.branch_op), JUMP_INDIRECT(OpType.branch_op), BEQ(OpType.branch_op), BNE(OpType.branch_op),
-
-// others
-    ALLOC_BINDING(OpType.dont_care), THREAD_POLL(OpType.dont_care),
+    ADD(0), SUB(0), MUL(0), DIV(OpFlags.f_can_raise_exception),
     DECLARE_TYPE(OpType.declare_type_op), // Charlie added this for Duby originally?
+ * -----------------------------------------*/
 
-// comparisons & checks
-    IS_TRUE(OpType.compare_op), // checks if the operand is non-null and non-false
-    EQQ(OpType.compare_op), // EQQ a === call used only for its conditional results, as in case/when, begin/rescue, ...
-    
-// optimization version guards
-    MODULE_VERSION_GUARD(OpType.guard_op), METHOD_VERSION_GUARD(OpType.guard_op),
+    private int flags;
 
-// primitive value boxing/unboxing
-    BOX_VALUE(OpType.box_op), UNBOX_VALUE(OpType.box_op),
-    
-    // JRuby-impl instructions
-    BLOCK_GIVEN(OpType.block_given_op), CHECK_ARITY(OpType.check_arity_op);
-
-    private OpType type;
-
-    Operation(OpType t) { 
-        type = t;
-    }
-
-    public boolean isALU() {
-        return type == OpType.alu_op;
+    Operation(int flags) { 
+        this.flags = flags;
     }
 
     public boolean transfersControl() { 
-        return isBranch() || isReturn() || isException();
+        return (flags & OpFlags.f_transfers_control) > 0;
     }
 
     public boolean isBranch() {
-        return type == OpType.branch_op;
+        return (flags & OpFlags.f_is_branch) > 0;
     }
 
     public boolean isLoad() {
-        return type == OpType.load_op;
+        return (flags & OpFlags.f_is_load) > 0;
     }
 
     public boolean isStore() {
-        return type == OpType.store_op;
+        return (flags & OpFlags.f_is_store) > 0;
     }
 
     public boolean isCall() {
-        return type == OpType.call_op;
-    }
-
-    public boolean isEval() {
-        return type == OpType.eval_op;
+        return (flags & OpFlags.f_is_call) > 0;
     }
 
     public boolean isReturn() {
-        return type == OpType.ret_op;
+        return (flags & OpFlags.f_is_return) > 0;
     }
     
     public boolean isException() {
-        return type == OpType.exc_op;
+        return (flags & OpFlags.f_is_exception) > 0;
     }
 
     public boolean isArgReceive() {
-        return type == OpType.recv_arg_op;
+        return (flags & OpFlags.f_is_arg_receive) > 0;
     }
 
     public boolean startsBasicBlock() {
@@ -129,16 +176,13 @@ public enum Operation {
         return transfersControl();
     }
 
-    // By default, call instructions cannot be deleted even if their results aren't used by anyone
-    // unless we know more about what the call is, what it does, etc.
-    // Similarly for evals, stores, returns.
     public boolean hasSideEffects() {
-        return isCall() || isEval() || isStore() || isReturn() || isException() || this == SET_ARGS || this == RECORD_CLOSURE || this == THREAD_POLL || type == OpType.def_op || type == OpType.yield_op || type == OpType.debug_op;
+        return (flags & OpFlags.f_has_side_effect) > 0;
     }
 
     // Conservative -- say no only if you know it for sure cannot
     public boolean canRaiseException() {
-        return (type != OpType.ret_op) && (type != OpType.debug_op) && (type != OpType.recv_arg_op) && (type != OpType.branch_op) && (type != OpType.marker_op);
+        return (flags & OpFlags.f_can_raise_exception) > 0;
     }
 
     @Override
