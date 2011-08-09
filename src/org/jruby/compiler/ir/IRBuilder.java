@@ -1154,12 +1154,14 @@ public class IRBuilder {
     }
 
     interface CodeBlock {
-        public Object run(Object[] args);
+        public Operand run(Object[] args);
     }
 
-    private Object[] protectCodeWithEnsure(IRScope m, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock ensureCode, Object[] ensureCodeArgs) {
+    private Variable protectCodeWithEnsure(IRScope m, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock ensureCode, Object[] ensureCodeArgs) {
         // This effectively mimics a begin-ensure-end code block
         // Except this silently swallows all exceptions raised by the protected code
+
+        Variable ret = m.getNewTemporaryVariable();
 
         // Push a new ensure block info node onto the stack of ensure block
         EnsureBlockInfo ebi = new EnsureBlockInfo(m);
@@ -1171,14 +1173,15 @@ public class IRBuilder {
         // Protected region code
         m.addInstr(new LABEL_Instr(rBeginLabel));
         m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabels));
-        Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
+        Operand v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
+        m.addInstr(new CopyInstr(ret, v1));
         m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
 
         _ensureBlockStack.pop();
 
         // Ensure block code
         m.addInstr(new LABEL_Instr(ebi.start));
-        Object v2 = ensureCode.run(ensureCodeArgs); // YIELD: Run the ensure code block
+        ensureCode.run(ensureCodeArgs); // YIELD: Run the ensure code block
         m.addInstr(new JUMP_INDIRECT_Instr(ebi.returnAddr));
 
         // By moving the exception region end marker here to include the ensure block,
@@ -1191,14 +1194,14 @@ public class IRBuilder {
         Label dummyRescueBlockLabel = m.getNewLabel();
         rescueLabels.add(dummyRescueBlockLabel);
         m.addInstr(new LABEL_Instr(dummyRescueBlockLabel));
+        m.addInstr(new CopyInstr(ret, Nil.NIL));
         m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, ebi.end));
         m.addInstr(new JumpInstr(ebi.start));
 
         // End
         m.addInstr(new LABEL_Instr(rEndLabel));
 
-        // SSS FIXME: Is this correct?  Shoudln't we be copying v1 & v2 into an variable and returning that instead?
-        return new Object[] { v1, v2 };
+        return ret;
     }
 
     private Operand protectCodeWithRescue(IRScope m, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock rescueBlock, Object[] rescueBlockArgs) {
@@ -1277,22 +1280,21 @@ public class IRBuilder {
 
             // Protected code
             CodeBlock protectedCode = new CodeBlock() {
-                public Object run(Object[] args) {
+                public Operand run(Object[] args) {
                    return buildGetDefinition((Node)args[0], (IRScope)args[1]);
                 }
             };
 
             // Ensure code
             CodeBlock ensureCode = new CodeBlock() {
-                public Object run(Object[] args) {
+                public Operand run(Object[] args) {
                     IRScope m = (IRScope)args[0];
                     m.addInstr(new JRubyImplCallInstr(null, JRubyImplementationMethod.SET_WITHIN_DEFINED, null, new Operand[]{BooleanLiteral.FALSE}));
-                    return null;
+                    return Nil.NIL;
                 }
             };
 
-            Object[] rvs = protectCodeWithEnsure(m, protectedCode, new Object[] {node, m}, ensureCode, new Object[] {m});
-            return (Operand)rvs[0];
+            return protectCodeWithEnsure(m, protectedCode, new Object[] {node, m}, ensureCode, new Object[] {m});
         }
     }
 
@@ -1458,7 +1460,7 @@ public class IRBuilder {
                 s.addInstr(new JRubyImplCallInstr(errInfo, JRubyImplementationMethod.TC_SAVE_ERR_INFO, null, NO_ARGS));
 
                 CodeBlock protectedCode = new CodeBlock() {
-                    public Object run(Object[] args) {
+                    public Operand run(Object[] args) {
                         IRScope  m      = (IRScope)args[0];
                         Node     n      = (Node)args[1];
                         String   name   = (String)args[2];
@@ -1477,7 +1479,7 @@ public class IRBuilder {
 
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
-                    public Object run(Object[] args) {
+                    public Operand run(Object[] args) {
                         // Nothing to do -- ignore the exception, and restore stashed error info!
                         IRScope  m  = (IRScope)args[0];
                         m.addInstr(new JRubyImplCallInstr(null, JRubyImplementationMethod.TC_RESTORE_ERR_INFO, null, new Operand[]{(Variable)args[1]}));
@@ -1502,7 +1504,7 @@ public class IRBuilder {
 
                 // protected main block
                 CodeBlock protectedCode = new CodeBlock() {
-                    public Object run(Object[] args) {
+                    public Operand run(Object[] args) {
                         /* --------------------------------------------------------------------------
                          * Generate IR for this sequence:
                          *
@@ -1530,7 +1532,7 @@ public class IRBuilder {
 
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
-                    public Object run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
+                    public Operand run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
                 };
 
                 // Try verifying definition, and if we get an exception, throw it out, and return nil
@@ -1565,7 +1567,7 @@ public class IRBuilder {
 
                 // protected main block
                 CodeBlock protectedCode = new CodeBlock() {
-                    public Object run(Object[] args) {
+                    public Operand run(Object[] args) {
                         /* --------------------------------------------------------------------------
                          * This basically combines checks from CALLNODE and FCALLNODE
                          *
@@ -1597,7 +1599,7 @@ public class IRBuilder {
 
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
-                    public Object run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
+                    public Operand run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
                 };
 
                 // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
@@ -1617,14 +1619,14 @@ public class IRBuilder {
             default:
                 // protected code
                 CodeBlock protectedCode = new CodeBlock() {
-                    public Object run(Object[] args) { 
+                    public Operand run(Object[] args) { 
                         build((Node)args[0], (IRScope)args[1]);
                         return Nil.NIL; 
                     }
                 };
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
-                    public Object run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
+                    public Operand run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
                 };
 
                 // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
