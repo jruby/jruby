@@ -474,7 +474,7 @@ public class RubyNKF {
         options.addOption(null, "fb-xml");
         options.addOption(null, "fb-perl");
         options.addOption(null, "fb-java");
-        options.addOption(null, "fb-subchar");
+        options.addOption(null, "fb-subchar", "fb-subchar=(.*)");
         options.addOption(null, "no-cp932ext");
         options.addOption(null, "cap-input");
         options.addOption(null, "url-input");
@@ -556,6 +556,57 @@ public class RubyNKF {
                 options.put("mime-encode", BASE64);
             } else if ("Q".equals(opt.getValue())) {
                 options.put("mime-encode", QENCODE);
+            }
+        }
+        if (cmd.hasOption("base64")) {
+            options.put("mime-encode", BASE64);
+        }
+        if (cmd.hasOption("oc")) {
+            CmdOption opt = cmd.getOption("oc");
+            if ("ISO-2022-JP".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", JIS);
+            } else if ("EUC-JP".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", EUC);
+            } else if ("CP932".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", SJIS);
+            } else if ("Shift_JIS".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", SJIS);
+            } else if ("UTF-8".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", UTF8);
+            } else if ("UTF-8N".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", UTF8);
+            } else if ("UTF-16".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", UTF16);
+            } else if ("UTF-16BE-BOM".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", UTF16);
+            } else if ("UTF-32".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", UTF32);
+            } else if ("UTF-32BE-BOM".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("output", UTF32);
+            }
+        }
+        if (cmd.hasOption("ic")) {
+            CmdOption opt = cmd.getOption("ic");
+            if ("ISO-2022-JP".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", JIS);
+            } else if ("EUC-JP".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", EUC);
+            } else if ("CP932".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", SJIS);
+            } else if ("Shift_JIS".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", SJIS);
+            } else if ("UTF-8".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", UTF8);
+            } else if ("UTF-8N".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", UTF8);
+            } else if ("UTF-16".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", UTF16);
+            } else if ("UTF-16BE-BOM".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", UTF16);
+            } else if ("UTF-32".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", UTF32);
+            } else if ("UTF-32BE-BOM".compareToIgnoreCase(opt.getValue()) == 0) {
+                options.put("input", UTF32);
             }
         }
 
