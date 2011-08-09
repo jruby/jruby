@@ -7,7 +7,7 @@ include FileUtils
 POSTFLIGHT = 'scripts/installer.postflight'
 PMDOC = 'JRuby-installer.pmdoc/01jruby.xml'
 GEMSPMDOC = 'JRuby-installer.pmdoc/02gems.xml'
-GEMSMAC = 'rubygems/jruby_mac.rb'
+GEMSMAC = 'install/macos/rubygems/jruby_mac.rb'
 JRUBY_DEST = '/Library/Frameworks/JRuby.framework'
 
 UNINSTALLER_INDEX = 'JRuby-uninstaller.pmdoc/index.xml'
@@ -27,8 +27,9 @@ task :macos_installer do
   raise "JRuby #{VERSION_JRUBY} dist ZIP not found!" if !File.exist?(DIST_ZIP)
   sh "unzip #{DIST_ZIP} -d #{BUILD_DIR}"
 
+  prepare_rubygems
+
   Dir.chdir "#{BASE_DIR}/install/macos" do
-    prepare_rubygems
 
     puts "- Setting package version"
     replace_variables_in POSTFLIGHT
