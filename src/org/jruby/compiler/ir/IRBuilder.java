@@ -98,7 +98,6 @@ import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
-import org.jruby.ast.TypedArgumentNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
@@ -120,7 +119,6 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.ClassOf;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
-import org.jruby.compiler.ir.instructions.DECLARE_LOCAL_TYPE_Instr;
 import org.jruby.compiler.ir.instructions.DefineClassInstr;
 import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
 import org.jruby.compiler.ir.instructions.DefineMetaClassInstr;
@@ -1736,11 +1734,6 @@ public class IRBuilder {
         ListNode preArgs  = argsNode.getPre();
         for (int i = 0; i < required; i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
-            // FIXME: Charlie added this to test something?
-            if (a instanceof TypedArgumentNode) {
-                TypedArgumentNode t = (TypedArgumentNode)a;
-                s.addInstr(new DECLARE_LOCAL_TYPE_Instr(argIndex, buildType(t.getTypeNode())));
-            }
             s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(a.getName()), argIndex));
         }
 
