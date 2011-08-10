@@ -29,6 +29,7 @@ package org.jruby.runtime.opto;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.InvocationCompiler;
 import org.jruby.compiler.impl.BaseBodyCompiler;
@@ -82,6 +83,17 @@ public class OptoFactory {
             }
         }
         return new ObjectIdentityInvalidator();
+    }
+    
+    public static Invalidator newMethodInvalidator(RubyModule module) {
+        if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7) {
+            try {
+                return (Invalidator)Class.forName("org.jruby.runtime.opto.GenerationAndSwitchPointInvalidator").getConstructor(RubyModule.class).newInstance(module);
+            } catch (Throwable t) {
+                // ignore
+            }
+        }
+        return new GenerationInvalidator(module);
     }
     
     // constructors for compiler impls

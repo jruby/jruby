@@ -97,6 +97,9 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.opto.Invalidator;
+import org.jruby.runtime.opto.OptoFactory;
+import org.jruby.runtime.opto.SwitchPointInvalidator;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.collections.WeakHashSet;
@@ -235,6 +238,9 @@ public class RubyModule extends RubyObject {
         } else {
             cacheEntryFactory = NormalCacheEntryFactory;
         }
+        
+        // set up an invalidator for use in new optimization strategies
+        invalidator = OptoFactory.newMethodInvalidator(this);
     }
     
     /** used by MODULE_ALLOCATOR and RubyClass constructors
@@ -1048,9 +1054,23 @@ public class RubyModule extends RubyObject {
             }
         }
     }
+    
+    private final Invalidator invalidator;
+    
+    public Invalidator getInvalidator() {
+        return invalidator;
+    }
+    
+    public void updateGeneration() {
+        generation = getRuntime().getNextModuleGeneration();
+    }
+    
+    public int getGeneration() {
+        return generation;
+    }
 
     protected void invalidateCacheDescendantsInner() {
-        generation = getRuntime().getNextModuleGeneration();
+        invalidator.invalidate();
     }
     
     protected void invalidateConstantCache() {
