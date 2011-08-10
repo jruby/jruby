@@ -329,13 +329,13 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   # JRUBY-5517
-  def test_rubyopts_rubygems_cleared_in_child
+  def test_rubyopts_benchmark_cleared_in_child
     rubyopt_org = ENV['RUBYOPT']
-    ENV['RUBYOPT'] = '-r rubygems'
+    ENV['RUBYOPT'] = '-r benchmark'
 
     # first subprocess will be "real", second should launch in-process
     # this will test whether in-process child is getting proper env for RUBYOPT
-    args = %{-e "p defined?(Gem) != nil; ENV[%{RUBYOPT}] = nil; system %{jruby -e 'p defined?(Gem) != nil'}"}
+    args = %{-e "p defined?(Benchmark) != nil; ENV[%{RUBYOPT}] = nil; system %{jruby -e 'p defined?(Benchmark) != nil'}"}
 
     assert_equal "true\nfalse\n", jruby(args)
   ensure
