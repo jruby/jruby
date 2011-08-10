@@ -6,6 +6,8 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.Splat;
+import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -39,7 +41,11 @@ public class YieldInstr extends Instr {
         if (yieldArg == null) {
             resultValue = ((Block)blk).yieldSpecific(context);
         } else {
-            resultValue = ((Block)blk).yield(context, (IRubyObject)yieldArg.retrieve(interp, context, self));
+            if ((yieldArg instanceof Splat) || (yieldArg instanceof CompoundArray))
+                resultValue = ((Block)blk).yieldArray(context, (IRubyObject)yieldArg.retrieve(interp, context, self), null, null);
+            else
+                resultValue = ((Block)blk).yield(context, (IRubyObject)yieldArg.retrieve(interp, context, self));
+
         }
         getResult().store(interp, context, self, resultValue);
         return null;
