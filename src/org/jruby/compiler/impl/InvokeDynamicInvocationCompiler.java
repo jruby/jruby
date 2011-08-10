@@ -220,6 +220,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         method.invokedynamic("yieldSpecific", signature, InvokeDynamicSupport.getInvocationHandle());
     }
 
+    @Override
     public void invokeBinaryFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum) {
         if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {
             super.invokeBinaryFixnumRHS(name, receiverCallback, fixnum);
@@ -241,5 +242,28 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
         method.invokedynamic("fixnumOperator", signature, InvokeDynamicSupport.getFixnumOperatorHandle(), name, fixnum);
+    }
+    
+    public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {
+            super.invokeBinaryFloatRHS(name, receiverCallback, flote);
+            return;
+        }
+        
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
+        methodCompiler.loadSelf();
+
+        if (receiverCallback != null) {
+            receiverCallback.call(methodCompiler);
+        } else {
+            methodCompiler.loadSelf();
+        }
+
+        String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+
+        method.invokedynamic("floatOperator", signature, InvokeDynamicSupport.getFloatOperatorHandle(), name, flote);
     }
 }

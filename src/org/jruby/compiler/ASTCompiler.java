@@ -847,12 +847,14 @@ public class ASTCompiler {
 
         if (argsCallback != null && argsCallback.getArity() == 1) {
             Node argument = callNode.getArgsNode().childNodes().get(0);
-            if (MethodIndex.hasFastOps(name)) {
-                if (argument instanceof FixnumNode) {
+            if (argument instanceof FixnumNode) {
+                if (MethodIndex.hasFastFixnumOps(name)) {
                     context.getInvocationCompiler().invokeBinaryFixnumRHS(name, receiverCallback, ((FixnumNode)argument).getValue());
                     if (!expr) context.consumeCurrentValue();
                     return;
-                } else if (argument instanceof FloatNode) {
+                }
+            } else if (argument instanceof FloatNode) {
+                if (MethodIndex.hasFastFloatOps(name)) {
                     context.getInvocationCompiler().invokeBinaryFloatRHS(name, receiverCallback, ((FloatNode)argument).getValue());
                     if (!expr) context.consumeCurrentValue();
                     return;

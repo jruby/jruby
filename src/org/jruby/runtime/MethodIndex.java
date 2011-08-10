@@ -78,13 +78,13 @@ public class MethodIndex {
 
         // only use fast ops if we're not tracing
         if (RubyInstanceConfig.FASTOPS_COMPILE_ENABLED &&
-                !(RubyInstanceConfig.FULL_TRACE_ENABLED)) return getFastOpsCallSite(name);
+                !(RubyInstanceConfig.FULL_TRACE_ENABLED)) return getFastFixnumOpsCallSite(name);
 
         return new NormalCachingCallSite(name);
     }
     
-    private static final Map<String, String> FAST_OPS = new HashMap<String, String>();
-    private static final String[][] fastOps = {
+    private static final Map<String, String> FIXNUM_OPS = new HashMap<String, String>();
+    private static final String[][] fastFixnumOps = {
         {"+", "op_plus"},
         {"-", "op_minus"},
         {"*", "op_mul"},
@@ -101,18 +101,34 @@ public class MethodIndex {
     };
     
     static {
-        for (String[] fastOp : fastOps) FAST_OPS.put(fastOp[0], fastOp[1]);
+        for (String[] fastOp : fastFixnumOps) FIXNUM_OPS.put(fastOp[0], fastOp[1]);
     }
     
-    public static boolean hasFastOps(String name) {
-        return FAST_OPS.containsKey(name);
+    private static final Map<String, String> FLOAT_OPS = new HashMap<String, String>();
+    private static final String[][] fastFloatOps = {
+        {"+", "op_plus"},
+        {"-", "op_minus"},
+        {"*", "op_mul"},
+        {"<", "op_lt"},
+        {"<=", "op_le"},
+        {">", "op_gt"},
+        {">=", "op_ge"},
+        {"<=>", "op_cmp"}
+    };
+    
+    static {
+        for (String[] fastOp : fastFloatOps) FLOAT_OPS.put(fastOp[0], fastOp[1]);
     }
     
-    public static String getFastOpsMethod(String name) {
-        return FAST_OPS.get(name);
+    public static boolean hasFastFixnumOps(String name) {
+        return FIXNUM_OPS.containsKey(name);
+    }
+    
+    public static String getFastFixnumOpsMethod(String name) {
+        return FIXNUM_OPS.get(name);
     }
 
-    public static CallSite getFastOpsCallSite(String name) {
+    public static CallSite getFastFixnumOpsCallSite(String name) {
         if (name.equals("+")) {
             return new PlusCallSite();
         } else if (name.equals("-")) {
@@ -141,14 +157,38 @@ public class MethodIndex {
             return new ShiftRightCallSite();
         } else if (name.equals("<<")) {
             return new ShiftLeftCallSite();
-        // disabled because Array subclasses often override
-//        } else if (name.equals("[]")) {
-//            return new ArefCallSite();
-//        } else if (name.equals("[]=")) {
-//            return new AsetCallSite();
-        // disabled because of differing 1.8/1.9 behavior
-//        } else if (name.equals("%")) {
-//            return new ModCallSite();
+        }
+
+        return new NormalCachingCallSite(name);
+    }
+    
+    public static boolean hasFastFloatOps(String name) {
+        return FLOAT_OPS.containsKey(name);
+    }
+    
+    public static String getFastFloatOpsMethod(String name) {
+        return FLOAT_OPS.get(name);
+    }
+
+    public static CallSite getFastFloatOpsCallSite(String name) {
+        if (name.equals("+")) {
+            return new PlusCallSite();
+        } else if (name.equals("-")) {
+            return new MinusCallSite();
+        } else if (name.equals("*")) {
+            return new MulCallSite();
+        } else if (name.equals("<")) {
+            return new LtCallSite();
+        } else if (name.equals("<=")) {
+            return new LeCallSite();
+        } else if (name.equals(">")) {
+            return new GtCallSite();
+        } else if (name.equals(">=")) {
+            return new GeCallSite();
+        } else if (name.equals("==")) {
+            return new EqCallSite();
+        } else if (name.equals("<=>")) {
+            return new CmpCallSite();
         }
 
         return new NormalCachingCallSite(name);
