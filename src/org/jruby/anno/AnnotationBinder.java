@@ -404,7 +404,13 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     boolean hasContext = false;
                     boolean hasBlock = false;
 
+                    StringBuffer buffer = new StringBuffer();
+                    boolean first = true;
                     for (ParameterDeclaration pd : md.getParameters()) {
+                        if (!first) buffer.append(", ");
+                        first = false;
+                        buffer.append(pd.getType().toString());
+                        buffer.append(".class");
                         hasContext |= pd.getType().toString().equals("org.jruby.runtime.ThreadContext");
                         hasBlock |= pd.getType().toString().equals("org.jruby.runtime.Block");
                     }
@@ -427,7 +433,11 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                             md.getSimpleName() + "\", " +
                             isStatic + ", " +
                             "CallConfiguration." + getCallConfigNameByAnno(anno) + ", " +
-                            anno.notImplemented() + ");");
+                            anno.notImplemented() + ", "
+                            + md.getDeclaringType().getQualifiedName() + ".class, "
+                            + "\"" + md.getSimpleName() + "\", "
+                            + md.getReturnType().toString() + ".class, "
+                            + "new Class[] {" + buffer.toString() + "});");
                     generateMethodAddCalls(md, anno);
                 }
             }

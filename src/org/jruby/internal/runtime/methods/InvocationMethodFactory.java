@@ -717,7 +717,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         javaMethodName,
                         desc1.isStatic,
                         CallConfiguration.getCallConfig(info.isFrame(), info.isScope(), info.isBacktrace()),
-                        desc1.anno.notImplemented());
+                        desc1.anno.notImplemented(),
+                        desc1.getDeclaringClass(),
+                        desc1.name,
+                        desc1.getReturnClass(),
+                        desc1.getParameterClasses());
                 return ic;
             } catch(Exception e) {
                 e.printStackTrace();
