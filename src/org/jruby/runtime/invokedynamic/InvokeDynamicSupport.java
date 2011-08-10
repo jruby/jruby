@@ -718,7 +718,7 @@ public class InvokeDynamicSupport {
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
         
         site.setTarget(guardWithTest(test, target, fallback));
-        return (IRubyObject)target.invokeWithArguments(context, caller, self);
+        return (IRubyObject)site.getTarget().invokeWithArguments(context, caller, self);
     }
     
     public static boolean fixnumTest(Ruby runtime, IRubyObject self) {
