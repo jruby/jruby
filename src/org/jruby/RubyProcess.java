@@ -109,7 +109,7 @@ public class RubyProcess {
         }
         
         // Bunch of methods still not implemented
-        @JRubyMethod(name = {"to_int", "stopped?", "stopsig", "signaled?", "termsig?", "exited?", "coredump?"}, frame = true)
+        @JRubyMethod(name = {"to_int", "stopped?", "stopsig", "signaled?", "termsig?", "exited?"}, frame = true)
         public IRubyObject not_implemented() {
             String error = "Process::Status#" + getRuntime().getCurrentContext().getFrameName() + " not implemented";
             throw getRuntime().newNotImplementedError(error);
@@ -184,6 +184,13 @@ public class RubyProcess {
         @JRubyMethod(name = "success?")
         public IRubyObject success_p(ThreadContext context) {
             return context.getRuntime().newBoolean(status == EXIT_SUCCESS);
+        }
+
+        @JRubyMethod(name = "coredump?")
+        public IRubyObject coredump_p(ThreadContext context) {
+            // Temporarily return false until a backend can be implemented
+            // to copy the CRuby behavior (checking WCOREDUMP)
+            return context.getRuntime().getFalse();
         }
         
         @JRubyMethod
