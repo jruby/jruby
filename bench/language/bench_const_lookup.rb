@@ -9,16 +9,7 @@ class H < G; end
 class I < H; end
 class J < I
   def bench
-    100000.times do
-      FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-      FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-      FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-      FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-      FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-      FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-      FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-      FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-      FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
+    1000000.times do
       FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
     end
   end
@@ -31,16 +22,7 @@ module A
       module D
         module E
           def bench
-            100000.times do
-              FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO
-              FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO
-              FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO
-              FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO
-              FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO
-              FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO
-              FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO
-              FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO
-              FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO
+            1000000.times do
               FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO; FOO
             end
           end
@@ -48,16 +30,7 @@ module A
           
           class K < I
             def bench
-              100000.times do
-                FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-                FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-                FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-                FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-                FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-                FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-                FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-                FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
-                FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
+              1000000.times do
                 FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2; FOO2
               end
             end
@@ -76,9 +49,9 @@ def bench_const_lookup(bm)
     j = J.new
     k = F::K.new
 
-    5.times { $bm.report("100k * 100 nested const get") { F::bench }}
-    5.times { $bm.report("100k * 100 inherited const get") { j.bench }}
-    5.times { $bm.report("100k * 100 both") { k.bench }}
+    5.times { $bm.report("1M * 10 nested const get") { F::bench }}
+    5.times { $bm.report("1M * 10 inherited const get") { j.bench }}
+    5.times { $bm.report("1M * 10 both") { k.bench }}
   end
   $bm = oldbm
 end
