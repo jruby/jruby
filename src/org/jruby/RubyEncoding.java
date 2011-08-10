@@ -203,12 +203,17 @@ public class RubyEncoding extends RubyObject {
     private static class UTF8Coder {
         private final CharsetEncoder encoder = UTF8.newEncoder();
         private final CharsetDecoder decoder = UTF8.newDecoder();
-        private final ByteBuffer byteBuffer = ByteBuffer.allocate(4096);
-        private final CharBuffer charBuffer = CharBuffer.allocate(1024);
-        
+        /** The maximum number of characters we can encode/decode in our cached buffers */
+        private static final int CHAR_THRESHOLD = 1024;
+        /** The resulting encode/decode buffer sized by the max number of
+         * characters (using 4 bytes per char possible for utf-8) */
+        private static final int BUF_SIZE = CHAR_THRESHOLD * 4;
+        private final ByteBuffer byteBuffer = ByteBuffer.allocate(BUF_SIZE);
+        private final CharBuffer charBuffer = CharBuffer.allocate(BUF_SIZE);
+
         public byte[] encode(CharSequence cs) {
             ByteBuffer buffer;
-            if (cs.length() > 1024) {
+            if (cs.length() > CHAR_THRESHOLD) {
                 buffer = UTF8.encode(cs.toString());
             } else {
                 buffer = byteBuffer;
@@ -228,7 +233,7 @@ public class RubyEncoding extends RubyObject {
         
         public String decode(byte[] bytes, int start, int length) {
             CharBuffer cbuffer;
-            if (length > 4096) {
+            if (length > CHAR_THRESHOLD) {
                 cbuffer = UTF8.decode(ByteBuffer.wrap(bytes, start, length));
             } else {
                 cbuffer = charBuffer;
