@@ -436,17 +436,7 @@ public class InvokeDynamicSupport {
         }
         
         MethodHandle target = getTarget(site, selfClass, name, entry, 0);
-        
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            site.setTarget(target = createFail(FAIL_0, site, name, entry.method));
-        } else {
-            target = postProcess(site, target);
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_0, target, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(TEST_0, target, FALLBACK_0, entry, site));
-            }
-        }
+        target = updateInvocationTarget(target, site, selfClass, name, entry, false, 0);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, name);
     }
@@ -459,17 +449,7 @@ public class InvokeDynamicSupport {
         }
         
         MethodHandle target = getTarget(site, selfClass, name, entry, 1);
-        
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            site.setTarget(target = createFail(FAIL_1, site, name, entry.method));
-        } else {
-            target = postProcess(site, target);
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_1, target, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(TEST_1, target, FALLBACK_1, entry, site));
-            }
-        }
+        target = updateInvocationTarget(target, site, selfClass, name, entry, false, 1);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, name, arg0);
     }
@@ -482,17 +462,7 @@ public class InvokeDynamicSupport {
         }
         
         MethodHandle target = getTarget(site, selfClass, name, entry, 2);
-        
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            site.setTarget(target = createFail(FAIL_2, site, name, entry.method));
-        } else {
-            target = postProcess(site, target);
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_2, target, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(TEST_2, target, FALLBACK_2, entry, site));
-            }
-        }
+        target = updateInvocationTarget(target, site, selfClass, name, entry, false, 2);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, name, arg0, arg1);
     }
@@ -505,21 +475,11 @@ public class InvokeDynamicSupport {
         }
         
         MethodHandle target = getTarget(site, selfClass, name, entry, 3);
-        
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            site.setTarget(target = createFail(FAIL_3, site, name, entry.method));
-        } else {
-            target = postProcess(site, target);
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_3, target, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(TEST_3, target, FALLBACK_3, entry, site));
-            }
-        }
+        target = updateInvocationTarget(target, site, selfClass, name, entry, false, 3);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, name, arg0, arg1, arg2);
     }
-
+    
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = selfClass.searchWithCache(name);
@@ -528,17 +488,7 @@ public class InvokeDynamicSupport {
         }
         
         MethodHandle target = getTarget(site, selfClass, name, entry, -1);
-        
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            site.setTarget(target = createFail(FAIL_N, site, name, entry.method));
-        } else {
-            target = postProcess(site, target);
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_N, target, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(TEST_N, target, FALLBACK_N, entry, site));
-            }
-        }
+        target = updateInvocationTarget(target, site, selfClass, name, entry, false, 4);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, name, args);
     }
@@ -560,17 +510,7 @@ public class InvokeDynamicSupport {
         }
 
         MethodHandle target = getTarget(site, selfClass, name, entry, 0);
-
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            site.setTarget(target = createFail(FAIL_0_B, site, name, entry.method));
-        } else {
-            target = postProcess(site, target);
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_0_B, target, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(TEST_0_B, target, FALLBACK_0_B, entry, site));
-            }
-        }
+        target = updateInvocationTarget(target, site, selfClass, name, entry, true, 0);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, name, block);
     }
@@ -592,17 +532,7 @@ public class InvokeDynamicSupport {
         }
 
         MethodHandle target = getTarget(site, selfClass, name, entry, 1);
-
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            site.setTarget(target = createFail(FAIL_1_B, site, name, entry.method));
-        } else {
-            target = postProcess(site, target);
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_1_B, target, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(TEST_1_B, target, FALLBACK_1_B, entry, site));
-            }
-        }
+        target = updateInvocationTarget(target, site, selfClass, name, entry, true, 1);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, name, arg0, block);
     }
@@ -624,17 +554,7 @@ public class InvokeDynamicSupport {
         }
 
         MethodHandle target = getTarget(site, selfClass, name, entry, 2);
-
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            site.setTarget(target = createFail(FAIL_2_B, site, name, entry.method));
-        } else {
-            target = postProcess(site, target);
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_2_B, target, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(TEST_2_B, target, FALLBACK_2_B, entry, site));
-            }
-        }
+        target = updateInvocationTarget(target, site, selfClass, name, entry, true, 2);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, name, arg0, arg1, block);
     }
@@ -656,17 +576,7 @@ public class InvokeDynamicSupport {
         }
 
         MethodHandle target = getTarget(site, selfClass, name, entry, 3);
-
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            site.setTarget(target = createFail(FAIL_3_B, site, name, entry.method));
-        } else {
-            target = postProcess(site, target);
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_3_B, target, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(TEST_3_B, target, FALLBACK_3_B, entry, site));
-            }
-        }
+        target = updateInvocationTarget(target, site, selfClass, name, entry, true, 3);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, name, arg0, arg1, arg2, block);
     }
@@ -688,19 +598,44 @@ public class InvokeDynamicSupport {
         }
 
         MethodHandle target = getTarget(site, selfClass, name, entry, -1);
-
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
-            site.setTarget(target = createFail(FAIL_N_B, site, name, entry.method));
-        } else {
-            target = postProcess(site, target);
-            if (site.getTarget() != null) {
-                site.setTarget(createGWT(TEST_N_B, target, site.getTarget(), entry, site, false));
-            } else {
-                site.setTarget(createGWT(TEST_N_B, target, FALLBACK_N_B, entry, site));
-            }
-        }
+        target = updateInvocationTarget(target, site, selfClass, name, entry, true, 4);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, name, args, block);
+    }
+
+    /**
+     * Update the given call site using the new target, wrapping with appropriate
+     * guard and argument-juggling logic. Return a handle suitable for invoking
+     * with the site's original method type.
+     */
+    private static MethodHandle updateInvocationTarget(MethodHandle target, JRubyCallSite site, RubyModule selfClass, String name, CacheEntry entry, boolean block, int arity) {
+        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
+            site.setTarget(target = createFail((block?FAILS_B:FAILS)[arity], site, name, entry.method));
+        } else {
+            target = postProcess(site, target);
+            
+            boolean curry;
+            MethodHandle fallback;
+            MethodHandle gwt;
+            if (site.getTarget() != null) {
+                fallback = site.getTarget();
+                curry = false;
+            } else {
+                fallback = (block?FALLBACKS_B:FALLBACKS)[arity];
+                curry = true;
+            }
+            gwt = createGWT(selfClass, (block?TESTS_B:TESTS)[arity], target, fallback, entry, site, curry);
+            
+            if (RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
+                // wrap in switchpoint for mutation invalidation
+                SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+                gwt = switchPoint.guardWithTest(gwt, fallback);
+            }
+            
+            site.setTarget(gwt);
+            
+        }
+        return target;
     }
     
     public static IRubyObject fixnumOperator(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, String operator, long value) throws Throwable {
@@ -1020,8 +955,8 @@ public class InvokeDynamicSupport {
         return body;
     }
 
-    private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
-        return createGWT(test, target, fallback, entry, site, true);
+    private static MethodHandle createGWT(RubyModule selfClass, MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
+        return createGWT(selfClass, test, target, fallback, entry, site, true);
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -1036,8 +971,11 @@ public class InvokeDynamicSupport {
         return myFail;
     }
 
-    private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
-        MethodHandle myTest = insertArguments(test, 0, entry.token);
+    private static MethodHandle createGWT(RubyModule selfClass, MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
+        MethodHandle myTest =
+                RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT ?
+                insertArguments(test, 0, selfClass) :
+                insertArguments(test, 0, entry.token);
         MethodHandle myFallback = curryFallback ? insertArguments(fallback, 0, site) : fallback;
         MethodHandle guardWithTest = guardWithTest(myTest, target, myFallback);
         
@@ -1179,8 +1117,12 @@ public class InvokeDynamicSupport {
         return nativeTarget;
     }
 
-    public static boolean test(int token, IRubyObject self) {
-        return token == ((RubyBasicObject)self).getMetaClass().getCacheToken();
+    public static boolean testGeneration(int token, IRubyObject self) {
+        return token == ((RubyBasicObject)self).getMetaClass().getGeneration();
+    }
+
+    public static boolean testMetaclass(RubyModule metaclass, IRubyObject self) {
+        return metaclass == ((RubyBasicObject)self).getMetaClass();
     }
     
     private static IRubyObject getLast(IRubyObject[] args) {
@@ -2097,11 +2039,22 @@ public class InvokeDynamicSupport {
             1,
             IRubyObject.class);
 
-    private static final MethodHandle TEST = dropArguments(
-            findStatic(InvokeDynamicSupport.class, "test",
+    private static final MethodHandle TEST_GENERATION = dropArguments(
+            findStatic(InvokeDynamicSupport.class, "testGeneration",
                 methodType(boolean.class, int.class, IRubyObject.class)),
             1,
             ThreadContext.class, IRubyObject.class);
+
+    private static final MethodHandle TEST_METACLASS = dropArguments(
+            findStatic(InvokeDynamicSupport.class, "testMetaclass",
+                methodType(boolean.class, RubyModule.class, IRubyObject.class)),
+            1,
+            ThreadContext.class, IRubyObject.class);
+    
+    private static final MethodHandle TEST =
+            RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT ?
+            TEST_METACLASS :
+            TEST_GENERATION;
 
     private static MethodHandle dropNameAndArgs(MethodHandle original, int index, int count, boolean block) {
         switch (count) {
@@ -2492,6 +2445,54 @@ public class InvokeDynamicSupport {
                     methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
     private static final MethodHandle FAIL_ITER_N_B = findStatic(InvokeDynamicSupport.class, "failIter",
                     methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
+    
+    private static final MethodHandle[] TESTS = new MethodHandle[] {
+        TEST_0,
+        TEST_1,
+        TEST_2,
+        TEST_3,
+        TEST_N
+    };
+    
+    private static final MethodHandle[] FALLBACKS = new MethodHandle[] {
+        FALLBACK_0,
+        FALLBACK_1,
+        FALLBACK_2,
+        FALLBACK_3,
+        FALLBACK_N
+    };
+    
+    private static final MethodHandle[] FAILS = new MethodHandle[] {
+        FAIL_0,
+        FAIL_1,
+        FAIL_2,
+        FAIL_3,
+        FAIL_N
+    };
+    
+    private static final MethodHandle[] TESTS_B = new MethodHandle[] {
+        TEST_0_B,
+        TEST_1_B,
+        TEST_2_B,
+        TEST_3_B,
+        TEST_N_B
+    };
+    
+    private static final MethodHandle[] FALLBACKS_B = new MethodHandle[] {
+        FALLBACK_0_B,
+        FALLBACK_1_B,
+        FALLBACK_2_B,
+        FALLBACK_3_B,
+        FALLBACK_N_B
+    };
+    
+    private static final MethodHandle[] FAILS_B = new MethodHandle[] {
+        FAIL_0_B,
+        FAIL_1_B,
+        FAIL_2_B,
+        FAIL_3_B,
+        FAIL_N_B
+    };
     
     ////////////////////////////////////////////////////////////////////////////
     // Utility methods for lookup

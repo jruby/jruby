@@ -364,6 +364,8 @@ public class RubyInstanceConfig {
     
     public static final boolean INVOKEDYNAMIC_INVOCATION = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
             USE_INVOKEDYNAMIC && SafePropertyAccessor.getBoolean("jruby.invokedynamic.invocation", true);
+    public static final boolean INVOKEDYNAMIC_INVOCATION_SWITCHPOINT = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
+            USE_INVOKEDYNAMIC && SafePropertyAccessor.getBoolean("jruby.invokedynamic.invocation.switchpoint", false);
     public static final boolean INVOKEDYNAMIC_INDIRECT = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
             USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && SafePropertyAccessor.getBoolean("jruby.invokedynamic.indirect", false);
     public static final boolean INVOKEDYNAMIC_JAVA = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||

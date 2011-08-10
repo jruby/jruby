@@ -19,6 +19,6 @@ public class CacheEntry {
     }
 
     public static final boolean typeOk(CacheEntry entry, RubyClass incomingType) {
-        return entry.token == incomingType.getCacheToken();
+        return entry.token == incomingType.getGeneration();
     }
 }

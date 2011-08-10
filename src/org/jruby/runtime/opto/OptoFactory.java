@@ -86,7 +86,7 @@ public class OptoFactory {
     }
     
     public static Invalidator newMethodInvalidator(RubyModule module) {
-        if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7) {
+        if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 && RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
             try {
                 return (Invalidator)Class.forName("org.jruby.runtime.opto.GenerationAndSwitchPointInvalidator").getConstructor(RubyModule.class).newInstance(module);
             } catch (Throwable t) {

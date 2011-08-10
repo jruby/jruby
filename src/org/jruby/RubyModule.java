@@ -240,7 +240,7 @@ public class RubyModule extends RubyObject {
         }
         
         // set up an invalidator for use in new optimization strategies
-        invalidator = OptoFactory.newMethodInvalidator(this);
+        methodInvalidator = OptoFactory.newMethodInvalidator(this);
     }
     
     /** used by MODULE_ALLOCATOR and RubyClass constructors
@@ -890,7 +890,7 @@ public class RubyModule extends RubyObject {
 
         // we grab serial number first; the worst that will happen is we cache a later
         // update with an earlier serial number, which would just flush anyway
-        int token = getCacheToken();
+        int token = getGeneration();
         DynamicMethod method = searchMethodInner(name);
 
         if (method instanceof DefaultMethod) {
@@ -900,7 +900,12 @@ public class RubyModule extends RubyObject {
         return method != null ? addToCache(name, method, token) : addToCache(name, UndefinedMethod.getInstance(), token);
     }
     
+    @Deprecated
     public final int getCacheToken() {
+        return generation;
+    }
+    
+    public final int getGeneration() {
         return generation;
     }
 
@@ -919,7 +924,7 @@ public class RubyModule extends RubyObject {
         CacheEntry cacheEntry = getCachedMethods().get(name);
 
         if (cacheEntry != null) {
-            if (cacheEntry.token == getCacheToken()) {
+            if (cacheEntry.token == getGeneration()) {
                 return cacheEntry;
             }
         }
@@ -1055,22 +1060,16 @@ public class RubyModule extends RubyObject {
         }
     }
     
-    private final Invalidator invalidator;
-    
     public Invalidator getInvalidator() {
-        return invalidator;
+        return methodInvalidator;
     }
     
     public void updateGeneration() {
         generation = getRuntime().getNextModuleGeneration();
     }
-    
-    public int getGeneration() {
-        return generation;
-    }
 
     protected void invalidateCacheDescendantsInner() {
-        invalidator.invalidate();
+        methodInvalidator.invalidate();
     }
     
     protected void invalidateConstantCache() {
@@ -3504,4 +3503,7 @@ public class RubyModule extends RubyObject {
     public int index;
 
     private volatile Map<String, IRubyObject> classVariables = Collections.EMPTY_MAP;
+    
+    // Invalidator used for method caches
+    private final Invalidator methodInvalidator;
 }

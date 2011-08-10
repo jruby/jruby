@@ -2364,7 +2364,7 @@ public class RuntimeHelpers {
         } else {
             metaClass = object.getMetaClass();
         }
-        return metaClass.getCacheToken() == generation;
+        return metaClass.getGeneration() == generation;
     }
 
     public static String[] getScopeNames(String scopeNames) {
