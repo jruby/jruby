@@ -28,33 +28,6 @@ public class StandardErrorLoggerTest {
         baos.close();
     }
 
-    @Test
-    public void withNoPlaceholder() {
-        logger.debug("test");
-        stream.flush();
-        Assert.assertEquals("test\n", baos.toString());
-    }
-
-    @Test
-    public void withJustOnePlaceholder() {
-        logger.debug("{}", "a");
-        stream.flush();
-        Assert.assertEquals("a\n", baos.toString());
-    }
-
-    @Test
-    public void withOnePlaceholder() {
-        logger.debug("a {}", "test");
-        stream.flush();
-        Assert.assertEquals("a test\n", baos.toString());
-    }
-
-    @Test
-    public void withTwoPlaceholders() {
-        logger.debug("{} and {}", "test1", "test2");
-        stream.flush();
-        Assert.assertEquals("test1 and test2\n", baos.toString());
-    }
 
     @Test
     public void withDebuggingDisabled() {
