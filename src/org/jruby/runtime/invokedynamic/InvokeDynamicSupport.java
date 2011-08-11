@@ -612,7 +612,9 @@ public class InvokeDynamicSupport {
      * with the site's original method type.
      */
     private static MethodHandle updateInvocationTarget(MethodHandle target, JRubyCallSite site, RubyModule selfClass, String name, CacheEntry entry, boolean block, int arity) {
-        if (target == null || ++site.failCount > RubyInstanceConfig.MAX_FAIL_COUNT) {
+        if (target == null ||
+                (!site.hasSeenType(selfClass.id)
+                && site.seenTypes() > RubyInstanceConfig.MAX_FAIL_COUNT)) {
             site.setTarget(target = createFail((block?FAILS_B:FAILS)[arity], site, name, entry.method));
         } else {
             target = postProcess(site, target);
@@ -620,13 +622,16 @@ public class InvokeDynamicSupport {
             boolean curry;
             MethodHandle fallback;
             MethodHandle gwt;
-            if (site.getTarget() != null) {
+            if (site.getTarget() != null && !site.hasSeenType(selfClass.id)) {
+                // new type for site, stack it up
                 fallback = site.getTarget();
                 curry = false;
             } else {
+                // no existing target or rebinding a seen class, wipe out site
                 fallback = (block?FALLBACKS_B:FALLBACKS)[arity];
                 curry = true;
             }
+            site.addType(selfClass.id);
             gwt = createGWT(selfClass, (block?TESTS_B:TESTS)[arity], target, fallback, entry, site, curry);
             
             if (RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
