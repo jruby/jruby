@@ -17,21 +17,25 @@ public class ExceptionRegionStartMarkerInstr extends Instr
     final public Label _begin;
     final public Label _end;
     final public List<Label> _rescueBlockLabels;
+    final public Label _ensureBlockLabel;
 
-    public ExceptionRegionStartMarkerInstr(Label rBegin, Label rEnd, List<Label> rbLabels)
+    public ExceptionRegionStartMarkerInstr(Label rBegin, Label rEnd, Label ensureBlockLabel, List<Label> rbLabels)
     {
         super(Operation.EXC_REGION_START);
         _begin = rBegin;
         _end = rEnd;
         _rescueBlockLabels = rbLabels;
+        _ensureBlockLabel = ensureBlockLabel;
     }
 
     public String toString() {
         StringBuffer buf = new StringBuffer(super.toString());
         buf.append("(").append(_begin).append(", ").append(_end).append(", ").append("[");
         for (Label l: _rescueBlockLabels)
-           buf.append(l).append(",");
-        buf.append("])");
+            buf.append(l).append(",");
+        buf.append("]");
+        if (_ensureBlockLabel != null) buf.append("ensure[").append(_ensureBlockLabel).append("]");
+        buf.append(")");
         return buf.toString();
     }
 
@@ -44,6 +48,6 @@ public class ExceptionRegionStartMarkerInstr extends Instr
         for (Label l: _rescueBlockLabels)
             newLabels.add(ii.getRenamedLabel(l));
 
-        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(_begin), ii.getRenamedLabel(_end), newLabels);
+        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(_begin), ii.getRenamedLabel(_end), (_ensureBlockLabel == null) ? null : ii.getRenamedLabel(_ensureBlockLabel), newLabels);
     }
 }

@@ -11,7 +11,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubyException;
 
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.Label;
@@ -30,7 +29,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
     protected Block.Type blockType;
     protected DynamicScope currDynScope = null;
     protected boolean allocatedDynScope = false;
-    protected RubyException currException = null;
+    protected Object currException = null;
 
     private Label methodExitLabel = null;
 
@@ -177,14 +176,14 @@ public class NaiveInterpreterContext implements InterpreterContext {
     }
 
     // Set the most recently raised exception
-    public void setException(RubyException e) {
-        // SSS FIXME: More things to be done besides this
+    public void setException(Object e) {
+        // SSS FIXME: More things to be done besides this?
         currException = e;
     }
 
     // SSS FIXME: Should we get-and-clear instead of just get?
     // Get the most recently raised exception
-    public RubyException getException() {
+    public Object getException() {
         return currException;
     }
 }

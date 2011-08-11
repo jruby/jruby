@@ -63,10 +63,10 @@ public interface InterpreterContext {
     public Label getMethodExitLabel();
 
     // Set the most recently raised exception
-    public void setException(RubyException e);
+    public void setException(Object e);
 
     // Get the most recently raised exception
-    public RubyException getException();
+    public Object getException();
 
     // Are we in a lambda context?
     public boolean inLambda();

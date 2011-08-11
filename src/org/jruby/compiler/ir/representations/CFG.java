@@ -74,6 +74,7 @@ public class CFG {
     BasicBlock[]                        _fallThruMap;   // Map of basic block id -> fall thru basic block
     List<BasicBlock>                    _linearizedBBList;  // Linearized list of bbs
     Map<BasicBlock, BasicBlock>         _bbRescuerMap;  // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
+    Map<BasicBlock, BasicBlock>         _bbEnsurerMap;   // Map of bb -> first bb of the ensure block that protects this bb
     List<ExceptionRegion>               _outermostERs;  // Outermost exception regions
 
     private Instr[]       _instrs;
@@ -88,6 +89,7 @@ public class CFG {
         _bbMap = new HashMap<Label, BasicBlock>();
         _outermostERs = new ArrayList<ExceptionRegion>();
         _bbRescuerMap = new HashMap<BasicBlock, BasicBlock>();
+        _bbEnsurerMap  = new HashMap<BasicBlock, BasicBlock>();
         _instrs = null;
     }
 
@@ -137,23 +139,35 @@ public class CFG {
         return _bbMap.get(l);
     }
 
-    // SSS: For now, do this with utmost inefficiency!
-    // This keeps regular code execution fast.
+    // SSS FIXME: Extremely inefficient
     public int getRescuerPC(Instr excInstr) {
         for (BasicBlock b: _linearizedBBList) {
             for (Instr i: b.getInstrs()) {
                 if (i == excInstr) {
                     BasicBlock rescuerBB = _bbRescuerMap.get(b);
-                    if (rescuerBB == null)
-                        return -1;
-                    else
-                        return rescuerBB.getLabel().getTargetPC();
+                    return (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
                 }
             }
         }
 
         // SSS FIXME: Cannot happen! Throw runtime exception
         System.err.println("Fell through looking for rescuer ipc for " + excInstr);
+        return -1;
+    }
+
+    // SSS FIXME: Extremely inefficient
+    public int getEnsurerPC(Instr excInstr) {
+        for (BasicBlock b: _linearizedBBList) {
+            for (Instr i: b.getInstrs()) {
+                if (i == excInstr) {
+                    BasicBlock ensurerBB = _bbEnsurerMap.get(b);
+                    return (ensurerBB == null) ? -1 : ensurerBB.getLabel().getTargetPC();
+                }
+            }
+        }
+
+        // SSS FIXME: Cannot happen! Throw runtime exception
+        System.err.println("Fell through looking for ensurer ipc for " + excInstr);
         return -1;
     }
 
@@ -178,6 +192,7 @@ public class CFG {
         _cfg.removeVertex(b);
         _bbMap.remove(b._label);
         _bbRescuerMap.remove(b);
+        _bbEnsurerMap.remove(b);
         // SSS FIXME: Patch up rescued regions as well??
     }
 
@@ -310,8 +325,8 @@ public class CFG {
             if (i instanceof ExceptionRegionStartMarkerInstr) {
 // SSS: Do we need this anymore?
 //                currBB.addInstr(i);
-                ExceptionRegionStartMarkerInstr rbsmi = (ExceptionRegionStartMarkerInstr)i;
-                ExceptionRegion rr = new ExceptionRegion(rbsmi._rescueBlockLabels);
+                ExceptionRegionStartMarkerInstr ersmi = (ExceptionRegionStartMarkerInstr)i;
+                ExceptionRegion rr = new ExceptionRegion(ersmi._rescueBlockLabels, ersmi._ensureBlockLabel);
                 rr.addBB(currBB);
                 allExceptionRegions.add(rr);
 
@@ -407,6 +422,7 @@ public class CFG {
             // 3. Add an exception edge from every exclusive bb of the region to firstRescueBB
             for (BasicBlock b: rr._exclusiveBBs) {
                 _bbRescuerMap.put(b, firstRescueBB);
+                if (rr._ensureBlockLabel != null) _bbEnsurerMap.put(b, getTargetBB(rr._ensureBlockLabel));
                 g.addEdge(b, firstRescueBB)._type = CFG_Edge_Type.EXCEPTION_EDGE;
             }
         }
@@ -465,7 +481,14 @@ public class CFG {
     private void mergeBBs(BasicBlock a, BasicBlock b) {
         BasicBlock aR = _bbRescuerMap.get(a);
         BasicBlock bR = _bbRescuerMap.get(b);
-        // We can merge the two basic blocks only if they are protected by the same rescue block!
+        // We can merge 'a' and 'b' if one of the following is true:
+        // 1. 'a' and 'b' are both not empty
+        //    They are protected by the same rescue block.
+        //    NOTE: We need not check the ensure block map because all ensure blocks are already
+        //    captured in the bb rescue block map.
+        // 2. One of 'a' or 'b' is empty.  We dont need to check for rescue block match because
+        //    an empty basic block cannot raise an exception, can it.
+        //
         if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
             a.swallowBB(b);
             _cfg.removeEdge(a, b);
@@ -475,8 +498,13 @@ public class CFG {
 
             removeBB(b);
 
-            if ((aR == null) && (bR != null))
+            // Update rescue and ensure maps
+            if ((aR == null) && (bR != null)) {
                 _bbRescuerMap.put(a, bR);
+                BasicBlock aE = _bbEnsurerMap.get(a);
+                BasicBlock bE = _bbEnsurerMap.get(b);
+                if ((aE == null) && (bE != null)) _bbEnsurerMap.put(a, bE);
+            }
         }
     }
 
@@ -559,19 +587,24 @@ public class CFG {
         // 6. Update bb rescuer map
         // 6a. splitBB will be protected by the same bb as yieldB
         BasicBlock yieldBBrescuer = _bbRescuerMap.get(yieldBB);
-        if (yieldBBrescuer != null)
-            _bbRescuerMap.put(splitBB, yieldBBrescuer);
+        if (yieldBBrescuer != null) _bbRescuerMap.put(splitBB, yieldBBrescuer);
+
+        BasicBlock yieldBBensurer = _bbEnsurerMap.get(yieldBB);
+        if (yieldBBensurer != null) _bbEnsurerMap.put(splitBB, yieldBBensurer);
 
         // 6b. remap existing protections for bbs in mcfg to their renamed bbs.
-        // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by callBBrescuer.
+        // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by yieldBBrescuer/yieldBBensurer
         Map<BasicBlock, BasicBlock> cRescuerMap = ccfg._bbRescuerMap;
+        Map<BasicBlock, BasicBlock> cEnsurerMap = ccfg._bbEnsurerMap;
         for (BasicBlock cb: ccfg.getNodes()) {
             if (cb != cEntry && cb != cExit) {
                 BasicBlock cbProtector = cRescuerMap.get(cb);
-                if (cbProtector != null)
-                    _bbRescuerMap.put(cb, cbProtector);
-                else if (yieldBBrescuer != null)
-                    _bbRescuerMap.put(cb, yieldBBrescuer);
+                if (cbProtector != null) _bbRescuerMap.put(cb, cbProtector);
+                else if (yieldBBrescuer != null) _bbRescuerMap.put(cb, yieldBBrescuer);
+
+                BasicBlock cbEnsurer = cEnsurerMap.get(cb);
+                if (cbEnsurer != null) _bbEnsurerMap.put(cb, cbEnsurer);
+                else if (yieldBBensurer != null) _bbEnsurerMap.put(cb, yieldBBensurer);
             }
         }
 
@@ -651,20 +684,25 @@ public class CFG {
         // 6. Update bb rescuer map
         // 6a. splitBB will be protected by the same bb as callBB
         BasicBlock callBBrescuer = _bbRescuerMap.get(callBB);
-        if (callBBrescuer != null)
-            _bbRescuerMap.put(splitBB, callBBrescuer);
+        if (callBBrescuer != null) _bbRescuerMap.put(splitBB, callBBrescuer);
+
+        BasicBlock callBBensurer = _bbEnsurerMap.get(callBB);
+        if (callBBensurer != null) _bbEnsurerMap.put(splitBB, callBBensurer);
 
         // 6b. remap existing protections for bbs in mcfg to their renamed bbs.
         // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by callBBrescuer.
         Map<BasicBlock, BasicBlock> mRescuerMap = mcfg._bbRescuerMap;
+        Map<BasicBlock, BasicBlock> mEnsurerMap = mcfg._bbEnsurerMap;
         for (BasicBlock x: mcfg.getNodes()) {
             if (x != mEntry && x != mExit) {
                 BasicBlock xRenamed   = ii.getRenamedBB(x);
                 BasicBlock xProtector = mRescuerMap.get(x);
-                if (xProtector != null)
-                    _bbRescuerMap.put(xRenamed, ii.getRenamedBB(xProtector));
-                else if (callBBrescuer != null)
-                    _bbRescuerMap.put(xRenamed, callBBrescuer);
+                if (xProtector != null) _bbRescuerMap.put(xRenamed, ii.getRenamedBB(xProtector));
+                else if (callBBrescuer != null) _bbRescuerMap.put(xRenamed, callBBrescuer);
+
+                BasicBlock xEnsurer = mEnsurerMap.get(x);
+                if (xEnsurer != null) _bbEnsurerMap.put(xRenamed, ii.getRenamedBB(xEnsurer));
+                else if (callBBensurer != null) _bbEnsurerMap.put(xRenamed, callBBensurer);
             }
         }
 
@@ -857,9 +895,13 @@ public class CFG {
             buf.append(b.toStringInstrs());
         }
 
-        buf.append("\n\n------ Exception handling map ------\n");
+        buf.append("\n\n------ Rescue block map ------\n");
         for (BasicBlock bb: _bbRescuerMap.keySet()) {
             buf.append("BB " + bb.getID() + " --> BB " + _bbRescuerMap.get(bb).getID() + "\n");
+        }
+        buf.append("\n\n------ Ensure block map ------\n");
+        for (BasicBlock bb: _bbEnsurerMap.keySet()) {
+            buf.append("BB " + bb.getID() + " --> BB " + _bbEnsurerMap.get(bb).getID() + "\n");
         }
 
         List<IRClosure> closures = _scope.getClosures();
@@ -967,8 +1009,8 @@ public class CFG {
                     if (e._type == CFG_Edge_Type.EXCEPTION_EDGE) {
 //                        System.out.println("Removing edge: " + e);
                         toRemove.add(e);
-                        if (_bbRescuerMap.get(e._src) == e._dst)
-                            _bbRescuerMap.remove(e._src);
+                        if (_bbRescuerMap.get(e._src) == e._dst) _bbRescuerMap.remove(e._src);
+                        if (_bbEnsurerMap.get(e._src) == e._dst) _bbEnsurerMap.remove(e._src);
                     }
                 }
             }
