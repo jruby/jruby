@@ -77,6 +77,23 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public static final String IRUBYOBJECT = p(IRubyObject.class);
     public static final boolean VERIFY_CLASSFILES = true;
 
+    public static Class[] getStaticMethodArgs(Class target, int args) {
+        switch (args) {
+        case 0:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, Block.class};
+        case 1:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class};
+        case 2:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class};
+        case 3:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class};
+        case 4:
+            return new Class[] {target, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class};
+        default:
+            throw new RuntimeException("unsupported arity: " + args);
+        }
+    }
+
     public static String getStaticMethodSignature(String classname, int args) {
         switch (args) {
         case 0:

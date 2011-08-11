@@ -51,11 +51,14 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.JumpException;
+import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.CompiledMethod;
+import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JittedMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.LocalStaticScope;
@@ -989,6 +992,15 @@ public class InvokeDynamicSupport {
     }
     
     private static MethodHandle tryDispatchDirect(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
+        // get the "real" method in a few ways
+        while (method instanceof AliasMethod) method = method.getRealMethod();
+        if (method instanceof DefaultMethod) {
+            DefaultMethod defaultMethod = (DefaultMethod)method;
+            if (defaultMethod.getMethodForCaching() instanceof JittedMethod) {
+                method = defaultMethod.getMethodForCaching();
+            }
+        }
+        
         DynamicMethod.NativeCall nativeCall = method.getNativeCall();
         
         MethodType trimmed = site.type().dropParameterTypes(2, 4);
@@ -1022,7 +1034,7 @@ public class InvokeDynamicSupport {
                 // * exactly match arities
                 // * 3 or fewer arguments
                 
-                int nativeArgCount = (method instanceof CompiledMethod)
+                int nativeArgCount = (method instanceof CompiledMethod || method instanceof JittedMethod)
                         ? getRubyArgCount(nativeCall.getNativeSignature())
                         : getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
                 
@@ -1084,7 +1096,7 @@ public class InvokeDynamicSupport {
                     // Ruby to Java
                     if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Java method #" + method.getSerialNumber() + ": " + nativeCall);
                     nativeTarget = createJavaHandle(method);
-                } else if (method instanceof CompiledMethod) {
+                } else if (method instanceof CompiledMethod || method instanceof JittedMethod) {
                     // Ruby to Ruby
                     if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Ruby method #" + method.getSerialNumber() + ": " + nativeCall);
                     nativeTarget = createRubyHandle(site, method);
@@ -1773,8 +1785,16 @@ public class InvokeDynamicSupport {
                     nativeCall.getNativeName(),
                     methodType(nativeCall.getNativeReturn(),
                     nativeCall.getNativeSignature()));
-            CompiledMethod cm = (CompiledMethod)method;
-            nativeTarget = insertArguments(nativeTarget, 0, cm.getScriptObject());
+            Object scriptObject;
+            if (method instanceof CompiledMethod) {
+                scriptObject = ((CompiledMethod)method).getScriptObject();
+            } else if (method instanceof JittedMethod) {
+                scriptObject = ((JittedMethod)method).getScriptObject();
+            } else {
+                throw new RuntimeException("invalid method for ruby handle: " + method);
+            }
+            
+            nativeTarget = insertArguments(nativeTarget, 0, scriptObject);
             
             // juggle args into correct places
             int argCount = getRubyArgCount(nativeCall.getNativeSignature());

@@ -31,6 +31,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.executable.Script;
+import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
@@ -65,6 +66,15 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
         this.staticScope = staticScope;
         this.arity = arity;
         this.realMethod = realMethod;
+        
+        int argCount = arity.getValue();
+        if (argCount == -1) argCount = 4;
+        
+        this.nativeCall = new NativeCall(
+                jitCompiledScript.getClass(),
+                "__file__",
+                IRubyObject.class,
+                StandardASMCompiler.getStaticMethodArgs(jitCompiledScript.getClass(), argCount), true);
     }
 
     public StaticScope getStaticScope() {
@@ -74,6 +84,10 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
     @Override
     public DynamicMethod getRealMethod() {
         return realMethod;
+    }
+    
+    public Object getScriptObject() {
+        return jitCompiledScript;
     }
 
     @Override
