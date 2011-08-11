@@ -1,44 +1,37 @@
 package org.jruby.util.log;
 
-import org.junit.After;
+import junit.framework.TestCase;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
-public class StandardErrorLoggerTest {
+public class StandardErrorLoggerTest extends TestCase {
 
     private ByteArrayOutputStream baos;
     private StandardErrorLogger logger;
     private PrintStream stream;
 
-    @Before
-    public void setup() {
+    public void setUp() {
         baos = new ByteArrayOutputStream();
         stream = new PrintStream(baos);
         logger = new StandardErrorLogger("test", stream);
     }
 
-    @After
     public void tearDown() throws IOException {
         baos.reset();
         baos.close();
     }
 
-
-    @Test
-    public void withDebuggingDisabled() {
+    public void testWithDebuggingDisabled() {
         logger.setDebugEnable(false);
         logger.debug("test");
         stream.flush();
         Assert.assertEquals("", baos.toString());
     }
 
-    @Test
-    public void withException() {
+    public void testWithException() {
         logger.debug(new IllegalStateException());
         stream.flush();
         Assert.assertTrue(baos.toString().contains(IllegalStateException.class.getName()));

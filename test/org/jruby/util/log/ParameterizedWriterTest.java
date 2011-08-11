@@ -1,5 +1,6 @@
 package org.jruby.util.log;
 
+import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -10,48 +11,42 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 
-public class ParameterizedWriterTest {
+public class ParameterizedWriterTest extends TestCase {
 
     private ByteArrayOutputStream baos;
     private PrintStream stream;
     private ParameterizedWriter writer;
 
-    @Before
     public void setUp() throws Exception {
         baos = new ByteArrayOutputStream();
         stream = new PrintStream(baos);
         writer = new ParameterizedWriter(stream);
     }
 
-    @After
     public void tearDown() throws IOException {
         baos.reset();
         baos.close();
     }
 
-    @Test
-    public void withNoPlaceholder() {
+    public void testWithNoPlaceholder() {
         writer.write("test");
         stream.flush();
         Assert.assertEquals("test\n", baos.toString());
     }
 
-    @Test
-    public void withJustOnePlaceholder() {
+    public void testWithJustOnePlaceholder() {
         writer.write("{}", "a");
         stream.flush();
         Assert.assertEquals("a\n", baos.toString());
     }
 
-    @Test
-    public void withOnePlaceholder() {
+    public void testWithOnePlaceholder() {
         writer.write("a {}", "test");
         stream.flush();
         Assert.assertEquals("a test\n", baos.toString());
     }
 
-    @Test
-    public void withTwoPlaceholders() {
+    public void testWithTwoPlaceholders() {
         writer.write("{} and {}", "test1", "test2");
         stream.flush();
         Assert.assertEquals("test1 and test2\n", baos.toString());
