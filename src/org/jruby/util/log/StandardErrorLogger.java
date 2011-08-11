@@ -27,13 +27,22 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.log;
 
+import java.io.PrintStream;
+
 public class StandardErrorLogger implements Logger {
 
     private final String loggerName;
     private boolean debug = true;
+    private ParameterizedWriter writer;
 
     public StandardErrorLogger(String loggerName) {
         this.loggerName = loggerName;
+        this.writer = new ParameterizedWriter(System.err);
+    }
+
+    public StandardErrorLogger(String loggerName, PrintStream stream) {
+        this.loggerName = loggerName;
+        this.writer = new ParameterizedWriter(stream);
     }
 
     public String getName() {
@@ -103,29 +112,16 @@ public class StandardErrorLogger implements Logger {
     }
 
     private void write(String message, Object[] args) {
-        final StringBuilder builder = new StringBuilder();
-        if (message != null) {
-            final String[] strings = message.split("\\{\\}");
-            if (args.length == 0 || strings.length == args.length) {
-                for (int i = 0; i < strings.length; i++) {
-                    builder.append(strings[i]);
-                    if (args.length > 0) {
-                        builder.append(args[i]);
-                    }
-                }
-            } else {
-                System.err.println("wrong number of placeholders / arguments");
-            }
-        }
-        System.err.println(builder.toString());
+        writer.write(message, args);
     }
 
     private void write(String message, Throwable throwable) {
-        System.err.println(message);
+        writer.write(message);
         writeStackTrace(throwable);
     }
 
     private void writeStackTrace(Throwable throwable) {
-        throwable.printStackTrace(System.err);
+        throwable.printStackTrace(writer.getStream());
     }
+
 }
