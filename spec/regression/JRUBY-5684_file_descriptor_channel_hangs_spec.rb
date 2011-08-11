@@ -9,7 +9,7 @@ describe "JRUBY-5684: Piped file descriptors wrapped in an IO" do
       extend FFI::Library
       ffi_lib FFI::Library::LIBC
       attach_function :_pipe, :pipe, [:buffer_in], :int
-    
+
       def self.pipe
         ptr = FFI::MemoryPointer.new(:int, 2)
         ret = _pipe(ptr)
@@ -24,9 +24,9 @@ describe "JRUBY-5684: Piped file descriptors wrapped in an IO" do
   end
 
   it "can write and read to and from the pipe" do
-    r, w = LibC.pipe
+    r, w = @libc.pipe
     w.puts 'hi'
     w.close
-    puts r.read
+    r.read.chomp.should == "hi"
   end
 end
