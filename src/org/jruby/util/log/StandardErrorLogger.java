@@ -27,13 +27,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.log;
 
+import java.io.PrintStream;
+
 public class StandardErrorLogger implements Logger {
 
     private final String loggerName;
     private boolean debug = true;
+    private PrintStream stream = System.err;
 
     public StandardErrorLogger(String loggerName) {
         this.loggerName = loggerName;
+    }
+
+    public StandardErrorLogger(String loggerName, PrintStream stream) {
+        this.loggerName = loggerName;
+        this.stream = stream;
     }
 
     public String getName() {
@@ -113,19 +121,21 @@ public class StandardErrorLogger implements Logger {
                         builder.append(args[i]);
                     }
                 }
+            } else if (strings.length == 0 && args.length == 1) {
+                builder.append(args[0]);
             } else {
-                System.err.println("wrong number of placeholders / arguments");
+                stream.println("wrong number of placeholders / arguments");
             }
         }
-        System.err.println(builder.toString());
+        stream.println(builder.toString());
     }
 
     private void write(String message, Throwable throwable) {
-        System.err.println(message);
+        stream.println(message);
         writeStackTrace(throwable);
     }
 
     private void writeStackTrace(Throwable throwable) {
-        throwable.printStackTrace(System.err);
+        throwable.printStackTrace(stream);
     }
 }
