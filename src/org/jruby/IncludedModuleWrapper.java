@@ -226,4 +226,9 @@ public final class IncludedModuleWrapper extends RubyClass {
     public Collection<String> getConstantNames() {
         return delegate.getConstantNames();
     }
+
+    @Override
+    public IRubyObject getAutoloadConstant(Ruby runtime, String name) {
+        return delegate.getAutoloadConstant(runtime, name);
+    }
 }
