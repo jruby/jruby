@@ -1,10 +1,7 @@
 package org.jruby.util.log;
 
 import junit.framework.TestCase;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
