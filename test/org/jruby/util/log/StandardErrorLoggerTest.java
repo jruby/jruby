@@ -37,4 +37,11 @@ public class StandardErrorLoggerTest {
         Assert.assertEquals("", baos.toString());
     }
 
+    @Test
+    public void withException() {
+        logger.debug(new IllegalStateException());
+        stream.flush();
+        Assert.assertTrue(baos.toString().contains(IllegalStateException.class.getName()));
+    }
+
 }
