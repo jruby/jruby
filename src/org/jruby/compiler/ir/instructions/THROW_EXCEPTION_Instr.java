@@ -23,8 +23,11 @@ public class THROW_EXCEPTION_Instr extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        RubyKernel.raise(context, context.getRuntime().getKernel(), 
-                new IRubyObject[] {(IRubyObject)getArg().retrieve(interp, context, self)}, Block.NULL_BLOCK);
+		Object excObj = getArg().retrieve(interp, context, self);
+        if (excObj instanceof IRubyObject)
+            RubyKernel.raise(context, context.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
+        else
+            throw (Error)excObj;
 
         // Control will never reach here but the Java compiler doesn't know that
         // since the above method doesn't declare that it throws an exception,

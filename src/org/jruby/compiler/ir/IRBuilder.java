@@ -1172,7 +1172,7 @@ public class IRBuilder {
 
         // Protected region code
         m.addInstr(new LABEL_Instr(rBeginLabel));
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabels));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.start, rescueLabels));
         Operand v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         m.addInstr(new CopyInstr(ret, v1));
         m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
@@ -1215,7 +1215,7 @@ public class IRBuilder {
 
         // Protected region code
         m.addInstr(new LABEL_Instr(rBeginLabel));
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabels));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabels));
         Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         m.addInstr(new CopyInstr(rv, (Operand)v1));
         m.addInstr(new JumpInstr(rEndLabel));
@@ -1881,7 +1881,7 @@ public class IRBuilder {
 
         // Start of region
         m.addInstr(new LABEL_Instr(rBeginLabel));
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueLabels));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.start, rescueLabels));
 
         // Generate IR for Code being protected
         Operand  rv = (bodyNode instanceof RescueNode) ? buildRescueInternal(bodyNode, m, rBeginLabel) : build(bodyNode, m);
@@ -2737,7 +2737,7 @@ public class IRBuilder {
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
         List<Label> rescueBlockLabels = new ArrayList<Label>();
-        ExceptionRegionStartMarkerInstr rbStartInstr = new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, rescueBlockLabels);
+        ExceptionRegionStartMarkerInstr rbStartInstr = new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueBlockLabels);
         m.addInstr(rbStartInstr);
 
         // Body

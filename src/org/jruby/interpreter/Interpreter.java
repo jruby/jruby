@@ -13,6 +13,7 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
+import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.representations.CFG;
@@ -87,14 +88,18 @@ public class Interpreter {
                     Label jumpTarget = lastInstr.interpret(interp, context, self);
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
                 }
-                // SSS FIXME: This only catches Ruby exceptions
-                // What about Java exceptions?
                 catch (org.jruby.exceptions.RaiseException re) {
                     ipc = cfg.getRescuerPC(lastInstr);
-
                     if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
                     interp.setException(re.getException());
+                }
+                catch (Error e) {
+                    if (lastInstr instanceof THROW_EXCEPTION_Instr) throw e; // pass it along if we just executed a throw!
+
+                    ipc = cfg.getEnsurerPC(lastInstr);
+                    if (ipc == -1) throw e; // No ensure block here, pass it on! 
+                    interp.setException(e);
                 }
             }
 

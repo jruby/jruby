@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import org.jruby.compiler.ir.operands.Label;
 
 public class ExceptionRegion {
-	 Label                 _ensureBlockLabel; 
+    Label                 _ensureBlockLabel; 
     List<Label>           _rescueBlockLabels; // Labels of all the rescue blocks that handle exceptions in this region
 
     List<BasicBlock>      _exclusiveBBs;  // Basic blocks exclusively contained within this region
@@ -13,8 +13,9 @@ public class ExceptionRegion {
     BasicBlock            _endBB;         // Last BB of the rescued region
     BasicBlock            _firstRescueBB; // First BB of the first rescue block of this region 
 
-    public ExceptionRegion(List<Label> rescueBlockLabels) {
+    public ExceptionRegion(List<Label> rescueBlockLabels, Label ensureBlockLabel) {
         _rescueBlockLabels = rescueBlockLabels;
+        _ensureBlockLabel = ensureBlockLabel;
         _exclusiveBBs = new ArrayList<BasicBlock>();
         _nestedRegions = new ArrayList<ExceptionRegion>();
     }
@@ -44,7 +45,7 @@ public class ExceptionRegion {
         for (Label l: _rescueBlockLabels)
             newLabels.add(ii.getRenamedLabel(l));
 
-        ExceptionRegion newR = new ExceptionRegion(newLabels);
+        ExceptionRegion newR = new ExceptionRegion(newLabels, _ensureBlockLabel == null ? null : ii.getRenamedLabel(_ensureBlockLabel));
         newR._endBB = ii.getRenamedBB(_endBB);
         newR._firstRescueBB = ii.getRenamedBB(_firstRescueBB);
         for (BasicBlock b: _exclusiveBBs) {
