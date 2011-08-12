@@ -25,7 +25,7 @@ task :macos_installer do
   cleanup
 
   raise "JRuby #{VERSION_JRUBY} dist ZIP not found!" if !File.exist?(DIST_ZIP)
-  sh "unzip #{DIST_ZIP} -d #{BUILD_DIR}"
+  sh "unzip -o #{DIST_ZIP} -d #{BUILD_DIR}"
 
   prepare_rubygems
 
