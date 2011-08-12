@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.apache.tools.ant.taskdefs.Length;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -188,12 +189,12 @@ public class CallableSelector {
 
             // dig out as many trailing args as possible that match varargs type
             int nonVarargs = types.length - 1;
-
+            
             // add one for vararg
             count += 1;
 
             // check remaining args
-            for (int i = 0; i < nonVarargs; i++) {
+            for (int i = 0; i < nonVarargs && i < args.length; i++) {
                 if (types[i].equals(argClass(args[i]))) {
                     count++;
                 }
@@ -243,6 +244,9 @@ public class CallableSelector {
 
     private static boolean exactMatch(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();
+        
+        if (args.length != types.length) return false;
+        
         for (int i = 0; i < types.length; i++) {
             if (!EXACT.match(types[i], args[i])) {
                 return false;
@@ -280,6 +284,9 @@ public class CallableSelector {
 
     private static boolean assignableAndPrimitivable(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();
+        
+        if (args.length != types.length) return false;
+        
         for (int i = 0; i < types.length; i++) {
             if (!(ASSIGNABLE.match(types[i], args[i]) && PRIMITIVABLE.match(types[i], args[i]))) {
                 return false;
@@ -290,6 +297,9 @@ public class CallableSelector {
 
     private static boolean assignableOrDuckable(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();
+        
+        if (args.length != types.length) return false;
+        
         for (int i = 0; i < types.length; i++) {
             if (!(ASSIGNABLE.match(types[i], args[i]) || DUCKABLE.match(types[i], args[i]))) {
                 return false;
@@ -306,6 +316,11 @@ public class CallableSelector {
 
         Class varArgArrayType = types[types.length - 1];
         Class varArgType = varArgArrayType.getComponentType();
+        
+        // if there's no args, we only match when there's just varargs
+        if (args.length == 0) {
+            return types.length <= 1;
+        }
 
         // dig out as many trailing args as will fit, ensuring they match varargs type
         int nonVarargs = types.length - 1;

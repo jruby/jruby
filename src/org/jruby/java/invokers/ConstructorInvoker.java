@@ -54,13 +54,13 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         if (constructor.isVarArgs()) {
             len = constructor.getParameterTypes().length - 1;
             convertedArgs = new Object[len + 1];
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i < len && i < args.length; i++) {
                 convertedArgs[i] = convertArg(args[i], constructor, i);
             }
             convertedArgs[len] = convertVarargs(args, constructor);
         } else {
             convertedArgs = new Object[len];
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i < len && i < args.length; i++) {
                 convertedArgs[i] = convertArg(args[i], constructor, i);
             }
         }
@@ -72,6 +72,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        if (javaVarargsCallables != null) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY);
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor)findCallableArityZero(self, name);
 
