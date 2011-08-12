@@ -13,6 +13,8 @@ public class ParameterizedWriterTest extends TestCase {
     private ByteArrayOutputStream baos;
     private PrintStream stream;
     private ParameterizedWriter writer;
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
 
     public void setUp() throws Exception {
         baos = new ByteArrayOutputStream();
@@ -28,24 +30,24 @@ public class ParameterizedWriterTest extends TestCase {
     public void testWithNoPlaceholder() {
         writer.write("test");
         stream.flush();
-        Assert.assertEquals("test\n", baos.toString());
+        Assert.assertEquals("test" + LINE_SEPARATOR, baos.toString());
     }
 
     public void testWithJustOnePlaceholder() {
         writer.write("{}", "a");
         stream.flush();
-        Assert.assertEquals("a\n", baos.toString());
+        Assert.assertEquals("a" + LINE_SEPARATOR, baos.toString());
     }
 
     public void testWithOnePlaceholder() {
         writer.write("a {}", "test");
         stream.flush();
-        Assert.assertEquals("a test\n", baos.toString());
+        Assert.assertEquals("a test" + LINE_SEPARATOR, baos.toString());
     }
 
     public void testWithTwoPlaceholders() {
         writer.write("{} and {}", "test1", "test2");
         stream.flush();
-        Assert.assertEquals("test1 and test2\n", baos.toString());
+        Assert.assertEquals("test1 and test2" + LINE_SEPARATOR, baos.toString());
     }
 }
