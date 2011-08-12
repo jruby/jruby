@@ -108,24 +108,25 @@ public class RubyTCPSocket extends RubyIPSocket {
             if (localHost != null) {
                 socket.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
             }
-            boolean success = false;
             try {
                 channel.configureBlocking(false);
                 channel.connect( new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort) );
                 context.getThread().select(channel, this, SelectionKey.OP_CONNECT);
                 channel.finishConnect();
-                success = true;
+                // only try to set blocking back if we succeeded to finish connecting
+                channel.configureBlocking(true);
+                initSocket(context.getRuntime(), new ChannelDescriptor(channel, new ModeFlags(ModeFlags.RDWR)));
             } catch (NoRouteToHostException nrthe) {
+                channel.close();
                 throw context.getRuntime().newErrnoEHOSTUNREACHError("SocketChannel.connect");
             } catch(ConnectException e) {
+                channel.close();
                 throw context.getRuntime().newErrnoECONNREFUSEDError();
             } catch(UnknownHostException e) {
+                channel.close();
                 throw sockerr(context.getRuntime(), "initialize: name or service not known");
-            } finally {
-                // only try to set blocking back if we succeeded to finish connecting
-                if (success) channel.configureBlocking(true);
             }
-            initSocket(context.getRuntime(), new ChannelDescriptor(channel, new ModeFlags(ModeFlags.RDWR)));
+
         } catch (InvalidValueException ex) {
             throw context.getRuntime().newErrnoEINVALError();
         } catch (ClosedChannelException cce) {
