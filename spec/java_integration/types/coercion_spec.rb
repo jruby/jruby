@@ -2,14 +2,14 @@ require File.dirname(__FILE__) + "/../spec_helper"
 require 'rational'
 require 'complex'
 
-import "java_integration.fixtures.CoreTypeMethods"
-import "java_integration.fixtures.JavaFields"
-import "java_integration.fixtures.ValueReceivingInterface"
-import "java_integration.fixtures.ValueReceivingInterfaceHandler"
+java_import "java_integration.fixtures.CoreTypeMethods"
+java_import "java_integration.fixtures.JavaFields"
+java_import "java_integration.fixtures.ValueReceivingInterface"
+java_import "java_integration.fixtures.ValueReceivingInterfaceHandler"
 
-import "java_integration.fixtures.PackageConstructor"
-import "java_integration.fixtures.ProtectedConstructor"
-import "java_integration.fixtures.PrivateConstructor"
+java_import "java_integration.fixtures.PackageConstructor"
+java_import "java_integration.fixtures.ProtectedConstructor"
+java_import "java_integration.fixtures.PrivateConstructor"
 
 describe "Java String and primitive-typed methods" do
   it "should coerce to Ruby types when returned" do 

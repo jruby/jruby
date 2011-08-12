@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import java.lang.OutOfMemoryError
-import "java_integration.fixtures.ThrowExceptionInInitializer"
+java_import java.lang.OutOfMemoryError
+java_import "java_integration.fixtures.ThrowExceptionInInitializer"
 
 describe "Non-wrapped Java throwables" do
   it "can be rescued" do

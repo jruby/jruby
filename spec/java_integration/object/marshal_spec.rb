@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java.util.ArrayList"
+java_import "java.util.ArrayList"
 
 describe "A Java object" do
   it "marshals as custom Ruby marshal data" do

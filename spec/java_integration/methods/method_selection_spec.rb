@@ -1,7 +1,7 @@
 # specs for JRUBY-4680
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import 'java_integration.fixtures.ClassWithMultipleSignaturesWithPrimitiveArgs'
+java_import 'java_integration.fixtures.ClassWithMultipleSignaturesWithPrimitiveArgs'
 
 describe "JRuby" do
   before :each do

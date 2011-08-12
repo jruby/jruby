@@ -1,14 +1,14 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java_integration.fixtures.ClassWithEnums"
-import "java_integration.fixtures.JavaFields"
-import "java_integration.fixtures.InnerClasses"
+java_import "java_integration.fixtures.ClassWithEnums"
+java_import "java_integration.fixtures.JavaFields"
+java_import "java_integration.fixtures.InnerClasses"
 
 describe "Kernel\#java_import" do
   describe "given a default-package class" do
     it "imports the class appropriately" do
       m = Module.new do
-        import Java::DefaultPackageClass
+        java_import Java::DefaultPackageClass
       end
       m::DefaultPackageClass.should == Java::DefaultPackageClass
     end

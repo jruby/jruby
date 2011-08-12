@@ -1,16 +1,16 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java.util.ArrayList"
-import "java_integration.fixtures.ProtectedInstanceMethod"
-import "java_integration.fixtures.ProtectedStaticMethod"
-import "java_integration.fixtures.PackageInstanceMethod"
-import "java_integration.fixtures.PackageStaticMethod"
-import "java_integration.fixtures.PrivateInstanceMethod"
-import "java_integration.fixtures.PrivateStaticMethod"
-import "java_integration.fixtures.ConcreteWithVirtualCall"
-import "java_integration.fixtures.ComplexPrivateConstructor"
-import "java_integration.fixtures.ReceivesArrayList"
-import "java_integration.fixtures.ClassWithAbstractMethods"
+java_import "java.util.ArrayList"
+java_import "java_integration.fixtures.ProtectedInstanceMethod"
+java_import "java_integration.fixtures.ProtectedStaticMethod"
+java_import "java_integration.fixtures.PackageInstanceMethod"
+java_import "java_integration.fixtures.PackageStaticMethod"
+java_import "java_integration.fixtures.PrivateInstanceMethod"
+java_import "java_integration.fixtures.PrivateStaticMethod"
+java_import "java_integration.fixtures.ConcreteWithVirtualCall"
+java_import "java_integration.fixtures.ComplexPrivateConstructor"
+java_import "java_integration.fixtures.ReceivesArrayList"
+java_import "java_integration.fixtures.ClassWithAbstractMethods"
 
 describe "A Ruby subclass of a Java concrete class" do
   it "should allow access to the proxy object for the class" do

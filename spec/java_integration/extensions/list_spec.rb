@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java.util.ArrayList"
+java_import "java.util.ArrayList"
 
 describe "List Ruby extensions" do 
   before(:each) do 

@@ -1,9 +1,9 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java_integration.fixtures.PrivateField"
-import "java_integration.fixtures.ProtectedField"
-import "java_integration.fixtures.PublicField"
-import "java_integration.fixtures.PackageField"
+java_import "java_integration.fixtures.PrivateField"
+java_import "java_integration.fixtures.ProtectedField"
+java_import "java_integration.fixtures.PublicField"
+java_import "java_integration.fixtures.PackageField"
 
 describe "field_accessor" do
   {

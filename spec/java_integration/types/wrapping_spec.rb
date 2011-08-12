@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java_integration.fixtures.JavaTypeMethods"
-import "java_integration.fixtures.InterfaceWrapper"
+java_import "java_integration.fixtures.JavaTypeMethods"
+java_import "java_integration.fixtures.InterfaceWrapper"
 
 describe "A Java method returning/receiving uncoercible Java types" do
   it "wraps the objects in Ruby object wrappers" do

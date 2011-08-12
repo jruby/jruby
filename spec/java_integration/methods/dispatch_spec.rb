@@ -1,8 +1,8 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import "java_integration.fixtures.ClassWithVarargs"
-import "java_integration.fixtures.CoreTypeMethods"
-import "java_integration.fixtures.StaticMethodSelection"
+java_import "java_integration.fixtures.ClassWithVarargs"
+java_import "java_integration.fixtures.CoreTypeMethods"
+java_import "java_integration.fixtures.StaticMethodSelection"
 
 describe "Non-overloaded static Java methods" do
   it "should raise ArgumentError when called with incorrect arity" do

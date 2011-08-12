@@ -1,10 +1,10 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-import java.lang.reflect.Field
-import "java_integration.fixtures.PrivateField"
-import "java_integration.fixtures.ProtectedField"
-import "java_integration.fixtures.PublicField"
-import "java_integration.fixtures.PackageField"
+java_import java.lang.reflect.Field
+java_import "java_integration.fixtures.PrivateField"
+java_import "java_integration.fixtures.ProtectedField"
+java_import "java_integration.fixtures.PublicField"
+java_import "java_integration.fixtures.PackageField"
 
 describe "A JavaClass" do
   it "should provide a look up for fields using a Java formatted name" do
