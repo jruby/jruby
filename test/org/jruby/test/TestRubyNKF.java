@@ -2,6 +2,7 @@ package org.jruby.test;
 
 import org.jruby.Ruby;
 import org.jruby.RubyNKF;
+import org.jruby.ext.nkf.Command;
 
 public class TestRubyNKF extends TestRubyBase {
     public TestRubyNKF(final String name) {
@@ -17,7 +18,7 @@ public class TestRubyNKF extends TestRubyBase {
     }
 
     public void testOptParse() throws Exception {
-        RubyNKF.CmdCommand cmd = RubyNKF.parseOption("-j");
+        Command cmd = RubyNKF.parseOption("-j");
         assertEquals("[[opt: j longOpt: jis hasArg: false pattern: null value: null]]", cmd.toString());
         cmd = RubyNKF.parseOption("--hiragana");
         assertEquals("[[opt: h1 longOpt: hiragana hasArg: false pattern: null value: null]]", cmd.toString());
@@ -38,7 +39,7 @@ public class TestRubyNKF extends TestRubyBase {
     }
 
     public void testOptParseWithArg() throws Exception {
-        RubyNKF.CmdCommand cmd = RubyNKF.parseOption("-L");
+        Command cmd = RubyNKF.parseOption("-L");
         assertEquals("[[opt: L longOpt: null hasArg: true pattern: [uwm] value: null]]", cmd.toString());
         cmd = RubyNKF.parseOption("-Lu");
         assertEquals("[[opt: L longOpt: null hasArg: true pattern: [uwm] value: u]]", cmd.toString());
@@ -55,12 +56,12 @@ public class TestRubyNKF extends TestRubyBase {
     }
 
     public void testMultiShortOptParse() throws Exception {
-        RubyNKF.CmdCommand cmd = RubyNKF.parseOption("-jSbw32");
+        Command cmd = RubyNKF.parseOption("-jSbw32");
         assertEquals("[[opt: j longOpt: jis hasArg: false pattern: null value: null], [opt: S longOpt: sjis-input hasArg: false pattern: null value: null], [opt: b longOpt: null hasArg: false pattern: null value: null], [opt: w longOpt: null hasArg: true pattern: [0-9][0-9] value: 32]]", cmd.toString());
     }
 
     public void testLongOptArg() throws Exception {
-        RubyNKF.CmdCommand cmd = RubyNKF.parseOption("--ic=ISO-2022-JP");
+        Command cmd = RubyNKF.parseOption("--ic=ISO-2022-JP");
         assertEquals("[[opt: null longOpt: ic hasArg: true pattern: ic=(.*) value: ISO-2022-JP]]", cmd.toString());
         assertTrue(cmd.hasOption("ic"));
         cmd = RubyNKF.parseOption("-w16 --oc=utf-8");
