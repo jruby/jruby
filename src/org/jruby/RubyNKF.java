@@ -34,13 +34,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.List;
-import java.util.LinkedHashMap;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
+import java.util.HashMap;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -60,6 +56,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.Pack;
+import org.jruby.ext.nkf.Option;
+import org.jruby.ext.nkf.Options;
+import org.jruby.ext.nkf.CommandParser;
+import org.jruby.ext.nkf.Command;
 
 @JRubyModule(name="NKF")
 public class RubyNKF {
@@ -231,201 +231,8 @@ public class RubyNKF {
         return result;
     }
 
-    private static class CmdOption {
-        private String opt;
-        private String longOpt;
-        private boolean hasArg = false;
-        private String value = null;
-        private Pattern pattern;
-
-        public CmdOption(String opt, String longOpt, String pattern) {
-            this.opt = opt;
-            this.longOpt = longOpt;
-            if (pattern != null) {
-                this.hasArg = true;
-                this.pattern = Pattern.compile(pattern);
-            }
-        }
-        String getOpt() { return opt; }
-        String getLongOpt() { return longOpt; }
-        boolean hasShortOpt() {
-            return opt != null;
-        }
-        boolean hasLongOpt() {
-            return longOpt != null;
-        }
-        boolean hasArg() {
-            return hasArg;
-        }
-        public String getValue() {
-            return value;
-        }
-        void setValue(String v) {
-            value = v;
-        }
-        String getKey() {
-            if (opt == null)
-                return longOpt;
-            else
-                return opt;
-        }
-        Pattern pattern() {
-            return pattern;
-        }
-        public String toString() {
-            return "[opt: " + opt
-                + " longOpt: " + longOpt
-                + " hasArg: " + hasArg
-                + " pattern: " + pattern
-                + " value: " + value + "]";
-        }
-    }
-    private static class CmdOptions {
-        private Map<String, CmdOption> shortOpts = new LinkedHashMap<String, CmdOption>();
-        private Map<String, CmdOption> longOpts = new LinkedHashMap<String, CmdOption>();
-
-        CmdOptions addOption(String opt) {
-            return addOption(opt, null);
-        }
-        CmdOptions addOption(String opt, String longOpt) {
-            return addOption(opt, longOpt, null);
-        }
-        CmdOptions addOption(String opt, String longOpt, String pattern) {
-            return addOption(new CmdOption(opt, longOpt, pattern));
-        }
-        CmdOptions addOption(CmdOption opt) {
-            if (opt.hasLongOpt()) {
-                longOpts.put(opt.getLongOpt(), opt);
-            }
-            if (opt.hasShortOpt()) {
-                shortOpts.put(opt.getOpt(), opt);
-            }
-            return this;
-        }
-        boolean hasShortOption(String opt) {
-            for (Map.Entry<String , CmdOption> e : shortOpts.entrySet()) {
-                if (opt.startsWith(e.getKey())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        public CmdOption matchShortOption(String opt) {
-            // independent of opt length
-            for (Map.Entry<String , CmdOption> e : shortOpts.entrySet()) {
-                //System.out.println(opt + " = " + e.getKey());
-                if (opt.startsWith(e.getKey())) {
-                    //System.out.println("match[" + e.getKey() + "]");
-                    CmdOption cmd = e.getValue();
-                    if (cmd.hasArg()) {
-                        Matcher m = cmd.pattern().matcher(opt);
-                        if (m.find()) {
-                            //System.out.println("regix[" + m.group() + "]");
-                            cmd.setValue(m.group());
-                        }
-                    }
-                    return cmd;
-                }
-            }
-            return null;
-        }
-        boolean hasLongOption(String opt) {
-            for (Map.Entry<String , CmdOption> e : longOpts.entrySet()) {
-                if (opt.startsWith(e.getKey())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        CmdOption matchLongOption(String opt) {
-            for (Map.Entry<String , CmdOption> e : longOpts.entrySet()) {
-                //System.out.println(opt + " = " + e.getKey());
-                if (opt.startsWith(e.getKey())) {
-                    //System.out.println("match[" + e.getKey() + "]");
-                    CmdOption cmd = e.getValue();
-                    if (cmd.hasArg()) {
-                        Matcher m = cmd.pattern().matcher(opt);
-                        if (m.find()) {
-                            //System.out.println("regix[" + m.group() + "]");
-                            cmd.setValue(m.group(1));
-                        }
-                    }
-                    return cmd;
-                }
-            }
-            return null;
-        }
-    }
-    public static class CmdCommand {
-        private final List<CmdOption> options = new ArrayList<CmdOption>();
-        public boolean hasOption(String opt) {
-            for (CmdOption option : options) {
-                if (opt.equals(option.getOpt())) return true;
-                if (opt.equals(option.getLongOpt())) return true;
-            }
-            return false;
-        }
-        public void addOption(CmdOption opt) {
-            options.add(opt);
-        }
-        public CmdOption getOption(String opt) {
-            for (CmdOption option : options) {
-                if (opt.equals(option.getOpt())) return option;
-                if (opt.equals(option.getLongOpt())) return option;
-            }
-            return null;
-        }
-        public String getOptionValue(String opt) {
-            return getOption(opt).getValue();
-        }
-        public String toString() {
-            return options.toString();
-        }
-    }
-    private static class CmdParser {
-        public CmdCommand parse(CmdOptions opt, String args) {
-            CmdOptions options = opt;
-            CmdCommand cc = new CmdCommand();
-            String[] tokens = args.split("\\s");
-            for (int i = 0; i < tokens.length; i++) {
-                // long option
-                if (tokens[i].startsWith("--")) {
-                    String s = stripDash(tokens[i]);
-                    if (opt.hasLongOption(s)) {
-                        cc.addOption(opt.matchLongOption(s));
-                    }
-                } else {
-                    // short option
-                    String s = stripDash(tokens[i]);
-                    int max = s.length();
-                    for (int j = 0; j < max; j++) {
-                        if (opt.hasShortOption(s)) {
-                            CmdOption cmd = opt.matchShortOption(s);
-                            if (cmd.getValue() != null) {
-                                int op_len = cmd.getValue().length();
-                                s = s.substring(op_len);
-                                j = j + op_len;
-                            }
-                            cc.addOption(cmd);
-                        }
-                        s = s.substring(1);
-                    }
-                }
-            }
-            return cc;
-        }
-        private String stripDash(String s) {
-            if (s.startsWith("--")) {
-                return s.substring(2, s.length());
-            } else if (s.startsWith("-")) {
-                return s.substring(1, s.length());
-            } else {
-                return s;
-            }
-        }
-    }
-    public static CmdCommand parseOption(String s) {
-        CmdOptions options = new CmdOptions();
+    public static Command parseOption(String s) {
+        Options options = new Options();
         options.addOption("b");
         options.addOption("u");
         options.addOption("j", "jis");
@@ -480,8 +287,8 @@ public class RubyNKF {
         options.addOption(null, "numchar-input");
         options.addOption(null, "no-best-fit-chars");
 
-        CmdParser parser = new CmdParser();
-        CmdCommand cmd = parser.parse(options, s);
+        CommandParser parser = new CommandParser();
+        Command cmd = parser.parse(options, s);
         return cmd;
     }
 
@@ -494,7 +301,7 @@ public class RubyNKF {
         options.put("mime-decode", MIME_DETECT);
         options.put("mime-encode", NOCONV);
 
-        CmdCommand cmd = parseOption(s);
+        Command cmd = parseOption(s);
         if (cmd.hasOption("j")) {
             options.put("output", JIS);
         }
@@ -505,7 +312,7 @@ public class RubyNKF {
             options.put("output", EUC);
         }
         if (cmd.hasOption("w")) {
-            CmdOption opt = cmd.getOption("w");
+            Option opt = cmd.getOption("w");
             if ("32".equals(opt.getValue())) {
                 options.put("output", UTF32);
             } else if("16".equals(opt.getValue())) {
@@ -524,7 +331,7 @@ public class RubyNKF {
             options.put("input", EUC);
         }
         if (cmd.hasOption("W")) {
-            CmdOption opt = cmd.getOption("W");
+            Option opt = cmd.getOption("W");
             if ("32".equals(opt.getValue())) {
                 options.put("input", UTF32);
             } else if("16".equals(opt.getValue())) {
@@ -534,7 +341,7 @@ public class RubyNKF {
             }
         }
         if (cmd.hasOption("m")) {
-            CmdOption opt = cmd.getOption("m");
+            Option opt = cmd.getOption("m");
             if (opt.getValue() == null) {
                 options.put("mime-decode", MIME_DETECT);
             } else if ("B".equals(opt.getValue())) {
@@ -548,7 +355,7 @@ public class RubyNKF {
             }
         }
         if (cmd.hasOption("M")) {
-            CmdOption opt = cmd.getOption("M");
+            Option opt = cmd.getOption("M");
             if (opt.getValue() == null) {
                 options.put("mime-encode", NOCONV);
             } else if ("B".equals(opt.getValue())) {
@@ -561,7 +368,7 @@ public class RubyNKF {
             options.put("mime-encode", BASE64);
         }
         if (cmd.hasOption("oc")) {
-            CmdOption opt = cmd.getOption("oc");
+            Option opt = cmd.getOption("oc");
             if ("ISO-2022-JP".compareToIgnoreCase(opt.getValue()) == 0) {
                 options.put("output", JIS);
             } else if ("EUC-JP".compareToIgnoreCase(opt.getValue()) == 0) {
@@ -585,7 +392,7 @@ public class RubyNKF {
             }
         }
         if (cmd.hasOption("ic")) {
-            CmdOption opt = cmd.getOption("ic");
+            Option opt = cmd.getOption("ic");
             if ("ISO-2022-JP".compareToIgnoreCase(opt.getValue()) == 0) {
                 options.put("input", JIS);
             } else if ("EUC-JP".compareToIgnoreCase(opt.getValue()) == 0) {
