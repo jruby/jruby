@@ -8,7 +8,7 @@ describe "Kernel\#java_import" do
   describe "given a default-package class" do
     it "imports the class appropriately" do
       m = Module.new do
-        import Java::DefaultPackageClass
+        java_import Java::DefaultPackageClass
       end
       m::DefaultPackageClass.should == Java::DefaultPackageClass
     end
