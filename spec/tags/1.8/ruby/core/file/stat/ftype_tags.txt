@@ -1,0 +1,1 @@
+fails(spec-ci):File::Stat#ftype returns 'socket' when the file is a socket
