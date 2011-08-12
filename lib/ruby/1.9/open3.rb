@@ -71,7 +71,7 @@ module Open3
   # Closing stdin, stdout and stderr does not wait the process.
   #
   def popen3(*cmd, &block)
-    IO::popen3(*cmd, &p)
+    IO::popen3(*cmd, &block)
     # if Hash === cmd.last
     #   opts = cmd.pop.dup
     # else
