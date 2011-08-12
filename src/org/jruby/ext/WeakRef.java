@@ -34,7 +34,7 @@ public class WeakRef extends RubyObject {
         }
     };
     
-    @JRubyClass(name="RefError", parent="StandardError")
+    @JRubyClass(name="WeakRef::RefError", parent="StandardError")
     public static class RefError {}
 
     public WeakRef(Ruby runtime, RubyClass klazz) {
@@ -84,7 +84,7 @@ public class WeakRef extends RubyObject {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         RubyException exception =
-                (RubyException)runtime.getClass("RefError").newInstance(context,
+                (RubyException)runtime.getClass("WeakRef").getClass("RefError").newInstance(context,
                 new IRubyObject[] {runtime.newString(message)}, Block.NULL_BLOCK);
         
         RaiseException re = new RaiseException(exception);

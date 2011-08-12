@@ -41,6 +41,6 @@ public class WeakRefLibrary implements Library {
         RubyClass delegatorClass = (RubyClass) runtime.getClassFromPath("Delegator");
         RubyClass weakrefClass = runtime.defineClass("WeakRef", delegatorClass, WeakRef.WEAKREF_ALLOCATOR);
         weakrefClass.defineAnnotatedMethods(WeakRef.class);
-        runtime.defineClass("RefError", runtime.getStandardError(), runtime.getStandardError().getAllocator());
+        weakrefClass.defineClassUnder("RefError", runtime.getStandardError(), runtime.getStandardError().getAllocator());
     }
 }
