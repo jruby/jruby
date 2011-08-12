@@ -79,6 +79,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ClassCache.OneShotClassLoader;
+import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.collections.WeakHashSet;
@@ -1136,21 +1137,17 @@ public class RubyClass extends RubyModule {
             return realSuper.isReifiable();
         }
     }
-
-    /**
-     * Reify this class, first reifying all its ancestors. This causes the
-     * reified class and all ancestors' reified classes to come into existence,
-     * so any future changes will not be reflected.
-     */
+    
     public void reifyWithAncestors() {
-        if (isReifiable()) {
-            RubyClass realSuper = getSuperClass().getRealClass();
-
-            if (realSuper.reifiedClass == null) realSuper.reifyWithAncestors();
-            reify();
-        }
+        reifyWithAncestors(null, true);
     }
-
+    public void reifyWithAncestors(String classDumpDir) {
+        reifyWithAncestors(classDumpDir, true);
+    }
+    public void reifyWithAncestors(boolean useChildLoader) {
+        reifyWithAncestors(null, useChildLoader);
+    }
+    
     /**
      * Reify this class, first reifying all its ancestors. This causes the
      * reified class and all ancestors' reified classes to come into existence,
@@ -1160,27 +1157,34 @@ public class RubyClass extends RubyModule {
      * the intermediate reified class bytes.
      *
      * @param classDumpDir the path in which to dump reified class bytes
+     * @param useChildLoader whether to load the class into its own child classloader
      */
-    public void reifyWithAncestors(String classDumpDir) {
+    public void reifyWithAncestors(String classDumpDir, boolean useChildLoader) {
         if (isReifiable()) {
             RubyClass realSuper = getSuperClass().getRealClass();
 
-            if (realSuper.reifiedClass == null) realSuper.reifyWithAncestors(classDumpDir);
-            reify(classDumpDir);
+            if (realSuper.reifiedClass == null) realSuper.reifyWithAncestors(classDumpDir, useChildLoader);
+            reify(classDumpDir, useChildLoader);
         }
     }
 
-    public synchronized void reify() {
-        reify(null);
-    }
-
     private static final boolean DEBUG_REIFY = false;
+
+    public synchronized void reify() {
+        reify(null, true);
+    }
+    public synchronized void reify(String classDumpDir) {
+        reify(classDumpDir, true);
+    }
+    public synchronized void reify(boolean useChildLoader) {
+        reify(null, useChildLoader);
+    }
 
     /**
      * Stand up a real Java class for the backing store of this object
      * @param classDumpDir Directory to save reified java class
      */
-    public synchronized void reify(String classDumpDir) {
+    public synchronized void reify(String classDumpDir, boolean useChildLoader) {
         Class reifiedParent = RubyObject.class;
 
         // calculate an appropriate name, using "Anonymous####" if none is present
@@ -1193,7 +1197,7 @@ public class RubyClass extends RubyModule {
         
         String javaName = "rubyobj." + name.replaceAll("::", ".");
         String javaPath = "rubyobj/" + name.replaceAll("::", "/");
-        OneShotClassLoader parentCL;
+        ClassDefiningClassLoader parentCL;
         Class parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {
             throw getClassRuntime().newTypeError("class " + getName() + " parent class is not yet reified");
@@ -1202,7 +1206,11 @@ public class RubyClass extends RubyModule {
         if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
             parentCL = (OneShotClassLoader)superClass.getRealClass().getReifiedClass().getClassLoader();
         } else {
-            parentCL = new OneShotClassLoader(runtime.getJRubyClassLoader());
+            if (useChildLoader) {
+                parentCL = new OneShotClassLoader(runtime.getJRubyClassLoader());
+            } else {
+                parentCL = runtime.getJRubyClassLoader();
+            }
         }
 
         if (superClass.reifiedClass != null) {

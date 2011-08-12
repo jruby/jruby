@@ -108,4 +108,13 @@ describe "JRuby class reification" do
     anno.should_not be_nil
   end
 
+  it "allows loading reified classes into the main JRubyClassLoader" do
+    class JRUBY5564; end
+    a_class = JRUBY5564.become_java!(false)
+
+    # load the java class from the classloader
+    cl = java.lang.Thread.current_thread.getContextClassLoader
+    cl.load_class(a_class.get_name).should == a_class
+  end
+
 end
