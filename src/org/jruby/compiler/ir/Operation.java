@@ -1,7 +1,8 @@
 package org.jruby.compiler.ir;
 
+// SSS FIXME: If we can hide these flags from leaking out to the rest of the codebase,
+// that would be awesome, but I cannot nest this class in an Enum class.
 class OpFlags {
-    final static int f_transfers_control   = 0x001;
     final static int f_has_side_effect     = 0x002;
     final static int f_can_raise_exception = 0x004;
     final static int f_is_marker_op        = 0x008;
@@ -28,10 +29,10 @@ public enum Operation {
     NOP(0),
 
     /** control-flow **/
-    JUMP(OpFlags.f_transfers_control | OpFlags.f_is_branch),
-    JUMP_INDIRECT(OpFlags.f_transfers_control | OpFlags.f_is_branch),
-    BEQ(OpFlags.f_transfers_control | OpFlags.f_is_branch),
-    BNE(OpFlags.f_transfers_control | OpFlags.f_is_branch),
+    JUMP(OpFlags.f_is_branch),
+    JUMP_INDIRECT(OpFlags.f_is_branch),
+    BEQ(OpFlags.f_is_branch),
+    BNE(OpFlags.f_is_branch),
 
     /** argument receive related in methods and blocks **/
     RECV_SELF(OpFlags.f_is_arg_receive),
@@ -55,11 +56,11 @@ public enum Operation {
     /* returns unwind stack, etc. */
 
     /** returns **/
-    RETURN(OpFlags.f_transfers_control | OpFlags.f_has_side_effect | OpFlags.f_is_return),
-    CLOSURE_RETURN(OpFlags.f_transfers_control | OpFlags.f_has_side_effect | OpFlags.f_is_return),
+    RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
+    CLOSURE_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
     /* BREAK is a return because it can only be used within closures
      * and the net result is to return from the closure */
-    BREAK(OpFlags.f_transfers_control | OpFlags.f_has_side_effect | OpFlags.f_is_return),
+    BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return),
 
     /** defines **/
     DEF_MODULE(OpFlags.f_has_side_effect),
@@ -137,7 +138,7 @@ public enum Operation {
     }
 
     public boolean transfersControl() { 
-        return (flags & OpFlags.f_transfers_control) > 0;
+        return (flags & (OpFlags.f_is_branch | OpFlags.f_is_return | OpFlags.f_is_exception)) > 0;
     }
 
     public boolean isBranch() {
