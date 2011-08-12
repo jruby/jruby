@@ -138,7 +138,7 @@ public class JavaClass extends JavaObject {
             Object singleton = field.get(null);
             if (singleton != null) {
                 Method[] sMethods = getMethods(companionClass);
-                for (int j = sMethods.length; j-- >= 0;) {
+                for (int j = sMethods.length - 1; j >= 0; j--) {
                     Method method = sMethods[j];
                     String name = method.getName();
                     if (DEBUG_SCALA) {
