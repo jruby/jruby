@@ -73,15 +73,15 @@ public class JRubyCallSite extends MutableCallSite {
         return expression;
     }
     
-    public boolean hasSeenType(int typeCode) {
+    public synchronized boolean hasSeenType(int typeCode) {
         return seenTypes.contains(typeCode);
     }
     
-    public void addType(int typeCode) {
+    public synchronized void addType(int typeCode) {
         seenTypes.add(typeCode);
     }
     
-    public int seenTypes() {
+    public synchronized int seenTypes() {
         return seenTypes.size();
     }
     
