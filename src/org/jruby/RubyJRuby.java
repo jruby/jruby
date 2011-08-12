@@ -74,6 +74,7 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.util.JRubyClassLoader;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -493,8 +494,21 @@ public class RubyJRuby {
                 throw context.getRuntime().newTypeError(maybeClass, context.getRuntime().getClassClass());
             }
 
+            String dumpDir = null;
+            boolean childLoader = true;
             if (args.length > 0) {
-                clazz.reifyWithAncestors(args[0].convertToString().asJavaString());
+                if (args[0] instanceof RubyString) {
+                    dumpDir = args[0].convertToString().asJavaString();
+                    if (args.length > 1) {
+                        childLoader = args[1].isTrue();
+                    }
+                } else {
+                    childLoader = args[0].isTrue();
+                    if (args.length > 1) {
+                        dumpDir = args[0].convertToString().asJavaString();
+                    }
+                }
+                clazz.reifyWithAncestors(dumpDir, childLoader);
             } else {
                 clazz.reifyWithAncestors();
             }
