@@ -127,7 +127,9 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         int varargsCount = args.length - varargsStart;
 
         Object varargs;
-        if (varargsCount == 1 && args[varargsStart] instanceof ArrayJavaProxy) {
+        if (args.length == 0) {
+            return Array.newInstance(varargType, 0);
+        } else if (varargsCount == 1 && args[varargsStart] instanceof ArrayJavaProxy) {
             // we may have a pre-created array to pass; try that first
             varargs = args[varargsStart].toJava(varargArrayType);
         } else {

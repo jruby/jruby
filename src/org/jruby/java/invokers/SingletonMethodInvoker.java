@@ -31,13 +31,13 @@ public class SingletonMethodInvoker extends MethodInvoker {
         if (method.isVarArgs()) {
             len = method.getParameterTypes().length - 1;
             convertedArgs = new Object[len + 1];
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i < len && i < args.length; i++) {
                 convertedArgs[i] = convertArg(args[i], method, i);
             }
             convertedArgs[len] = convertVarargs(args, method);
         } else {
             convertedArgs = new Object[len];
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i < len && i < args.length; i++) {
                 convertedArgs[i] = convertArg(args[i], method, i);
             }
         }
@@ -46,6 +46,7 @@ public class SingletonMethodInvoker extends MethodInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        if (javaVarargsCallables != null) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY);
         JavaMethod method = (JavaMethod)findCallableArityZero(self, name);
 
         return method.invokeDirect(singleton);
