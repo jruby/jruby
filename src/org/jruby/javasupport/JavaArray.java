@@ -65,7 +65,7 @@ public class JavaArray extends JavaObject {
         return getRuntime().newFixnum(getLength());
     }
 
-    private int getLength() {
+    public int getLength() {
         return Array.getLength(getValue());
     }
 

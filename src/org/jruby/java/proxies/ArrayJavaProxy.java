@@ -1,5 +1,7 @@
 package org.jruby.java.proxies;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -130,6 +132,45 @@ public class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod(name = {"to_a","to_ary"}, backtrace = true)
     public IRubyObject to_a(ThreadContext context) {
         return JavaUtil.convertJavaArrayToRubyWithNesting(context, this.getObject());
+    }
+    
+    @JRubyMethod
+    public IRubyObject inspect(ThreadContext context) {
+        StringBuffer buffer = new StringBuffer();
+        JavaArray javaArray = getJavaArray();
+        Class componentClass = javaArray.getComponentType();
+        buffer.append(componentClass.getName());
+        if (componentClass.isPrimitive()) {
+            switch (componentClass.getName().charAt(0)) {
+                case 'b':
+                    if (componentClass == byte.class) buffer.append(Arrays.toString((byte[])getObject()));
+                    if (componentClass == boolean.class) buffer.append(Arrays.toString((boolean[])getObject()));
+                    break;
+                case 's':
+                    if (componentClass == short.class) buffer.append(Arrays.toString((short[])getObject()));
+                    break;
+                case 'c':
+                    if (componentClass == char.class) buffer.append(Arrays.toString((char[])getObject()));
+                    break;
+                case 'i':
+                    if (componentClass == int.class) buffer.append(Arrays.toString((int[])getObject()));
+                    break;
+                case 'l':
+                    if (componentClass == long.class) buffer.append(Arrays.toString((long[])getObject()));
+                    break;
+                case 'f':
+                    if (componentClass == float.class) buffer.append(Arrays.toString((float[])getObject()));
+                    break;
+                case 'd':
+                    if (componentClass == double.class) buffer.append(Arrays.toString((double[])getObject()));
+                    break;
+            }
+        } else {
+            buffer.append(Arrays.toString((Object[])getObject()));
+        }
+        buffer.append('@')
+                .append(Integer.toHexString(inspectHashCode()));
+        return context.runtime.newString(buffer.toString());        
     }
     
     public IRubyObject getRange(ThreadContext context, IRubyObject[] args) {

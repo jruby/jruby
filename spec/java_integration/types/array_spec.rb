@@ -68,6 +68,11 @@ describe "A Java primitive Array of type" do
       ret = ArrayReceiver::call_with_boolean(arr)
       ret.to_a.should == [false, true, false]
     end
+    
+    it "inspects to show type and contents" do
+      arr = [false, true, false].to_java :boolean
+      arr.inspect.should =~ /^boolean\[false, true, false\]@[0-9a-f]+$/
+    end
   end
 
   describe "byte" do 
@@ -145,6 +150,11 @@ describe "A Java primitive Array of type" do
       arr.ubyte_get(0).should == 0xFF
       arr[0].should == -1
     end
+    
+    it "inspects to show type and contents" do
+      arr = [1, 2, 3].to_java :byte
+      arr.inspect.should =~ /^byte\[1, 2, 3\]@[0-9a-f]+$/
+    end
   end
 
   describe "char" do 
@@ -212,6 +222,11 @@ describe "A Java primitive Array of type" do
       ret = ArrayReceiver::call_with_char(arr)
       ret.to_a.should == [13, 42, 120]
     end
+    
+    it "inspects to show type and contents" do
+      arr = [100, 101, 102].to_java :char
+      arr.inspect.should =~ /^char\[d, e, f\]@[0-9a-f]+$/
+    end
   end
 
   describe "double" do 
@@ -278,6 +293,11 @@ describe "A Java primitive Array of type" do
       arr = [13.2, 42.3, 120.4].to_java :double
       ret = ArrayReceiver::call_with_double(arr)
       ret.to_a.should == [13.2, 42.3, 120.4]
+    end
+    
+    it "inspects to show type and contents" do
+      arr = [1.0, 1.1, 1.2].to_java :double
+      arr.inspect.should =~ /^double\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/
     end
   end
 
@@ -350,6 +370,11 @@ describe "A Java primitive Array of type" do
       ret[1].should be_within(0.00001).of(42.3)
       ret[2].should be_within(0.00001).of(120.4)
     end
+    
+    it "inspects to show type and contents" do
+      arr = [1.0, 1.1, 1.2].to_java :float
+      arr.inspect.should =~ /^float\[1\.0, 1\.1, 1\.2\]@[0-9a-f]+$/
+    end
   end
 
   describe "int" do 
@@ -416,6 +441,11 @@ describe "A Java primitive Array of type" do
       arr = [13, 42, 120].to_java :int
       ret = ArrayReceiver::call_with_int(arr)
       ret.to_a.should == [13, 42, 120]
+    end
+    
+    it "inspects to show type and contents" do
+      arr = [13, 42, 120].to_java :int
+      arr.inspect.should =~ /^int\[13, 42, 120\]@[0-9a-f]+$/
     end
   end
 
@@ -484,6 +514,11 @@ describe "A Java primitive Array of type" do
       ret = ArrayReceiver::call_with_long(arr)
       ret.to_a.should == [13, 42, 120]
     end
+    
+    it "inspects to show type and contents" do
+      arr = [13, 42, 120].to_java :long
+      arr.inspect.should =~ /^long\[13, 42, 120\]@[0-9a-f]+$/
+    end
   end
 
   describe "short" do 
@@ -551,6 +586,11 @@ describe "A Java primitive Array of type" do
       ret = ArrayReceiver::call_with_short(arr)
       ret.to_a.should == [13, 42, 120]
     end
+    
+    it "inspects to show type and contents" do
+      arr = [13, 42, 120].to_java :short
+      arr.inspect.should =~ /^short\[13, 42, 120\]@[0-9a-f]+$/
+    end
   end
 
   describe "string" do 
@@ -617,6 +657,11 @@ describe "A Java primitive Array of type" do
       arr = ["flurg", :glax, "morg"].to_java :string
       ret = ArrayReceiver::call_with_string(arr)
       ret.to_a.should == ["flurg", "glax", "morg"]
+    end
+    
+    it "inspects to show type and contents" do
+      arr = ['foo', 'bar', 'baz'].to_java :string
+      arr.inspect.should =~ /^java.lang.String\[foo, bar, baz\]@[0-9a-f]+$/
     end
   end
 
@@ -722,6 +767,12 @@ describe "A Java primitive Array of type" do
     it "should raise TypeError when types can't be coerced" do
       lambda { [Time.new].to_java :string }.should raise_error(TypeError)
     end
+    
+    it "inspects to show type and contents" do
+      jobject = java.lang.Object
+      arr = [jobject.new, jobject.new, jobject.new].to_java :object
+      arr.inspect.should =~ /^java.lang.Object\[java\.lang\.Object@[0-9a-f]+, java\.lang\.Object@[0-9a-f]+, java\.lang\.Object@[0-9a-f]+\]@[0-9a-f]+$/
+    end
   end
 
   describe "Class ref" do 
@@ -792,6 +843,15 @@ describe "A Java primitive Array of type" do
         arr = [h1, h2, h3].to_java java.lang.Class
         ret = ArrayReceiver::call_with_object(arr)
         ret.to_a.should == [h1, h2, h3]
+    end
+    
+    it "inspects to show type and contents" do
+      h1 = java.util.Set.java_class
+      h2 = java.util.HashMap.java_class
+      h3 = java.lang.ref.SoftReference.java_class
+
+      arr = [h1, h2, h3].to_java java.lang.Class
+      arr.inspect.should =~ /^java\.lang\.Class\[interface java\.util\.Set, class java\.util\.HashMap, class java\.lang\.ref\.SoftReference\]@[0-9a-f]+$/
     end
   end
 end
