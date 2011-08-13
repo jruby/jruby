@@ -140,11 +140,11 @@ public class DataConverters {
     }
     
     public static final class CallbackDataConverter extends NativeDataConverter {
+        private final NativeCallbackFactory callbackFactory;
         private final NativeFunctionInfo functionInfo;
-        private final CallbackInfo cbInfo;
 
         public CallbackDataConverter(CallbackInfo cbInfo) {
-            this.cbInfo = cbInfo;
+            this.callbackFactory = CallbackManager.getInstance().getCallbackFactory(cbInfo.getRuntime(), cbInfo);
             this.functionInfo = new NativeFunctionInfo(cbInfo.getRuntime(),
                     cbInfo.getReturnType(), cbInfo.getParameterTypes(),
                     cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT);
@@ -172,8 +172,7 @@ public class DataConverters {
                 return obj;
             
             } else if (obj instanceof RubyProc || obj.respondsTo("call")) {
-                return CallbackManager.getInstance().getCallback(context.getRuntime(), 
-                    cbInfo, obj);
+                return callbackFactory.getCallback(obj);
                 
             } else {
                 throw context.getRuntime().newTypeError("wrong argument type.  Expected callable object");

@@ -15,11 +15,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 final class CallbackMethodWithBlock extends DefaultMethod {
     private final int cbindex;
-    
+    private final NativeCallbackFactory cbFactory;
+
     public CallbackMethodWithBlock(RubyModule implementationClass, Function function, 
             FunctionInvoker functionInvoker, ParameterMarshaller[] marshallers, Signature signature, int cbindex) {
         super(implementationClass, function, functionInvoker, marshallers, signature);
         this.cbindex = cbindex;
+        this.cbFactory = CallbackManager.getInstance().getCallbackFactory(implementationClass.getRuntime(), (CallbackInfo) signature.getParameterType(cbindex));
     }
 
     @Override
@@ -38,9 +40,8 @@ final class CallbackMethodWithBlock extends DefaultMethod {
             for (int i = 0; i < cbindex; i++) {
                 params[i] = args[i];
             }
-            
-            params[cbindex] = CallbackManager.getInstance().getCallback(context.getRuntime(), 
-                    (CallbackInfo) signature.getParameterType(cbindex), block);
+
+            params[cbindex] = cbFactory.newCallback(block);
             
             for (int i = cbindex + 1; i < params.length; i++) {
                 params[i] = args[i - 1];

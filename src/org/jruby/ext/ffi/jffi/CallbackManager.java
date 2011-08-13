@@ -38,6 +38,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static final String CALLBACK_ID = "ffi_callback";
 
+    private final Map<CallbackInfo, NativeCallbackFactory> factories
+            = new WeakHashMap<CallbackInfo, NativeCallbackFactory>();
+
     /** Holder for the single instance of CallbackManager */
     private static final class SingletonHolder {
         static final CallbackManager INSTANCE = new CallbackManager();
@@ -71,100 +74,17 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     
     public final org.jruby.ext.ffi.Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
         return proc instanceof RubyObject
-                ? getCallback(runtime, cbInfo, (RubyObject) proc)
-                : newCallback(runtime, cbInfo, proc);
+                ? getCallbackFactory(runtime, cbInfo).getCallback(proc)
+                : getCallbackFactory(runtime, cbInfo).newCallback(proc);
     }
 
-    /**
-     * Gets a Callback object conforming to the signature contained in the
-     * <tt>CallbackInfo</tt> for the ruby <tt>Proc</tt> or <tt>Block</tt> instance.
-     *
-     * @param runtime The ruby runtime the callback is attached to
-     * @param cbInfo The signature of the native callback
-     * @param proc The ruby object to call when the callback is invoked.
-     * @return A native value returned to the native caller.
-     */
-    public final org.jruby.ext.ffi.Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, RubyObject proc) {
-        if (proc instanceof Function) {
-            return (Function) proc;
+    public final synchronized NativeCallbackFactory getCallbackFactory(Ruby runtime, CallbackInfo cbInfo) {
+        NativeCallbackFactory factory = factories.get(cbInfo);
+        if (factory == null) {
+            factories.put(cbInfo, factory = new NativeCallbackFactory(runtime, cbInfo));
         }
 
-        synchronized (proc) {
-            Object existing = proc.getInternalVariable(CALLBACK_ID);
-            if (existing instanceof NativeCallbackPointer && ((NativeCallbackPointer) existing).cbInfo == cbInfo) {
-                return (NativeCallbackPointer) existing;
-            } else if (existing instanceof Map) {
-                Map m = (Map) existing;
-                NativeCallbackPointer cb = (NativeCallbackPointer) m.get(proc);
-                if (cb != null) {
-                    return cb;
-                }
-            }
-
-            NativeCallbackPointer cb = newCallback(runtime, cbInfo, proc);
-            
-            if (existing == null) {
-                ((RubyObject) proc).setInternalVariable(CALLBACK_ID, cb);
-            } else {
-                Map<CallbackInfo, NativeCallbackPointer> m = existing instanceof Map
-                        ? (Map<CallbackInfo, NativeCallbackPointer>) existing
-                        : Collections.synchronizedMap(new WeakHashMap<CallbackInfo, NativeCallbackPointer>());
-                m.put(cbInfo, cb);
-                m.put(((NativeCallbackPointer) existing).cbInfo, (NativeCallbackPointer) existing);
-                ((RubyObject) proc).setInternalVariable(CALLBACK_ID, m);
-            }
-
-            return cb;
-        }
-        
-    }
-
-    /**
-     * Gets a Callback object conforming to the signature contained in the
-     * <tt>CallbackInfo</tt> for the ruby <tt>Proc</tt> or <tt>Block</tt> instance.
-     *
-     * @param runtime The ruby runtime the callback is attached to
-     * @param cbInfo The signature of the native callback
-     * @param proc The ruby <tt>Block</tt> object to call when the callback is invoked.
-     * @return A native value returned to the native caller.
-     */
-    final NativeCallbackPointer getCallback(Ruby runtime, CallbackInfo cbInfo, Block proc) {
-        return newCallback(runtime, cbInfo, proc);
-    }
-
-    private final NativeCallbackPointer newCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
-        NativeFunctionInfo info = getClosureInfo(runtime, cbInfo);
-        NativeClosureProxy cbProxy = new NativeClosureProxy(runtime, info, proc);
-        Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy, info.callContext);
-        return new NativeCallbackPointer(runtime, handle, cbInfo, info);
-    }
-
-    private final NativeFunctionInfo getClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
-        Object info = cbInfo.getProviderCallbackInfo();
-        if (info != null && info instanceof NativeFunctionInfo) {
-            return (NativeFunctionInfo) info;
-        }
-
-        cbInfo.setProviderCallbackInfo(info = newClosureInfo(runtime, cbInfo));
-
-        return (NativeFunctionInfo) info;
-    }
-
-    private final NativeFunctionInfo newClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
-
-        Type[] paramTypes = cbInfo.getParameterTypes();
-        for (int i = 0; i < paramTypes.length; ++i) {
-            if (!isParameterTypeValid(paramTypes[i]) || FFIUtil.getFFIType(paramTypes[i]) == null) {
-                throw runtime.newTypeError("invalid callback parameter type: " + paramTypes[i]);
-            }
-        }
-
-        if (!isReturnTypeValid(cbInfo.getReturnType()) || FFIUtil.getFFIType(cbInfo.getReturnType()) == null) {
-            runtime.newTypeError("invalid callback return type: " + cbInfo.getReturnType());
-        }
-
-        return new NativeFunctionInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(),
-                cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT);
+        return factory;
     }
 
     /**
@@ -179,78 +99,4 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         return new CallbackMemoryIO(runtime, handle, proc);
     }
 
-    /**
-     * Checks if a type is a valid callback return type
-     *
-     * @param type The type to examine
-     * @return <tt>true</tt> if <tt>type</tt> is a valid return type for a callback.
-     */
-    private static final boolean isReturnTypeValid(Type type) {
-        if (type instanceof Type.Builtin) {
-            switch (type.getNativeType()) {
-                case CHAR:
-                case UCHAR:
-                case SHORT:
-                case USHORT:
-                case INT:
-                case UINT:
-                case LONG:
-                case ULONG:
-                case LONG_LONG:
-                case ULONG_LONG:
-                case FLOAT:
-                case DOUBLE:
-                case POINTER:
-                case VOID:
-                case BOOL:
-                    return true;
-            }
-
-        } else if (type instanceof CallbackInfo) {
-            return true;
-
-        } else if (type instanceof StructByValue) {
-            return true;
-        }
-        return false;
-    }
-    
-    /**
-     * Checks if a type is a valid parameter type for a callback
-     *
-     * @param type The type to examine
-     * @return <tt>true</tt> if <tt>type</tt> is a valid parameter type for a callback.
-     */
-    private static final boolean isParameterTypeValid(Type type) {
-        if (type instanceof Type.Builtin) {
-            switch (type.getNativeType()) {
-                case CHAR:
-                case UCHAR:
-                case SHORT:
-                case USHORT:
-                case INT:
-                case UINT:
-                case LONG:
-                case ULONG:
-                case LONG_LONG:
-                case ULONG_LONG:
-                case FLOAT:
-                case DOUBLE:
-                case POINTER:
-                case STRING:
-                case BOOL:
-                    return true;
-            }
-        } else if (type instanceof CallbackInfo) {
-            return true;
-        
-        } else if (type instanceof StructByValue) {
-            return true;
-        
-        } else if (type instanceof MappedType) {
-            return isParameterTypeValid(((MappedType) type).getRealType());
-        }
-        
-        return false;
-    }
 }
