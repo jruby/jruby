@@ -171,6 +171,24 @@ public class CFG {
         return -1;
     }
 
+    public boolean bbIsProtected(BasicBlock b) {
+        // No need to look in ensurerMap because (_bbEnsurerMap(b) != null) => (_bbResucerMap(b) != null)
+        return (_bbRescuerMap.get(b) != null);
+    }
+
+    /* Add 'b' as a global ensure block that protects all unprotected blocks in this scope */
+    public void addGlobalEnsureBlock(BasicBlock geb) {
+        _cfg.addVertex(geb);
+        _cfg.addEdge(_entryBB, geb)._type = CFG_Edge_Type.EXCEPTION_EDGE;
+        _cfg.addEdge(geb, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
+        for (BasicBlock b: getNodes()) {
+            if (!bbIsProtected(b)) {
+                _bbRescuerMap.put(b, geb);
+                _bbEnsurerMap.put(b, geb);
+            }
+        }
+    }
+
     private Label getNewLabel() {
         return _scope.getNewLabel();
     }
@@ -485,10 +503,10 @@ public class CFG {
         // 1. 'a' and 'b' are both not empty
         //    They are protected by the same rescue block.
         //    NOTE: We need not check the ensure block map because all ensure blocks are already
-        //    captured in the bb rescue block map.
+        //    captured in the bb rescue block map.  So, if aR == bR, it is guaranteed that the
+        //    ensure blocks for the two are identical.
         // 2. One of 'a' or 'b' is empty.  We dont need to check for rescue block match because
         //    an empty basic block cannot raise an exception, can it.
-        //
         if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
             a.swallowBB(b);
             _cfg.removeEdge(a, b);
@@ -1053,35 +1071,41 @@ public class CFG {
             if (b == _exitBB) {
                 assert stack.empty();
             }
+            else if (b == _entryBB) {
+                int i = 0;
+                BasicBlock[] bs = new BasicBlock[3];
+                for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                    bs[i++] = e._dst;
+                }
+                BasicBlock b1 = bs[0], b2 = bs[1], b3 = bs[2];
+                if (b3 != null) pushBBOnStack(stack, bbSet, b3);
+                if (b2 == null) {
+                    pushBBOnStack(stack, bbSet, b1);
+                }
+                else if (b1.getID() < b2.getID()) {
+                    pushBBOnStack(stack, bbSet, b2);
+                    pushBBOnStack(stack, bbSet, b1);
+                }
+                else {
+                    pushBBOnStack(stack, bbSet, b1);
+                    pushBBOnStack(stack, bbSet, b2);
+                }
+            }
             else {
                 // Find the basic block that is the target of the 'taken' branch
                 Instr lastInstr = b.getLastInstr();
                 if (lastInstr == null) {
                     // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
-                    BasicBlock b1 = null, b2 = null; 
+                    BasicBlock b1 = null;
                     for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
                         if (b1 == null)
                             b1 = e._dst;
-                        else if (b2 == null)
-                            b2 = e._dst;
                         else
                             throw new RuntimeException("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
                     }
 
                     assert (b1 != null);
-
-                    // Process lower number target first!
-                    if (b2 == null) {
-                        pushBBOnStack(stack, bbSet, b1);
-                    }
-                    else if (b1.getID() < b2.getID()) {
-                        pushBBOnStack(stack, bbSet, b2);
-                        pushBBOnStack(stack, bbSet, b1);
-                    }
-                    else {
-                        pushBBOnStack(stack, bbSet, b1);
-                        pushBBOnStack(stack, bbSet, b2);
-                    }
+                    pushBBOnStack(stack, bbSet, b1);
                 }
                 else {
 //                   System.out.println("last instr is: " + lastInstr);

@@ -1,13 +1,20 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
 import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
+import org.jruby.compiler.ir.instructions.StoreToBindingInstr;
+import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
+import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.representations.BasicBlock;
+import org.jruby.compiler.ir.operands.LocalVariable;
 
 import java.util.Set;
+import java.util.HashSet;
 
 // This problem tries to find places to insert binding stores -- for spilling local variables onto a heap store
 // It does better than spilling all local variables to the heap at all call sites.  This is similar to a
@@ -38,11 +45,42 @@ public class BindingStorePlacementProblem extends DataFlowProblem
         return getCFG().usesLocalVariable(v);
     }
 
-    public void addStoreAndBindingAllocInstructions()
-    {
+    public void addStoreAndBindingAllocInstructions() {
+        /* --------------------------------------------------------------------
+         * If this is a closure, introduce a global ensure block that spills
+         * into the binding the union of dirty vars from all call sites that
+         * aren't protected by any other rescue or ensure block.
+         *
+         * This conservative scenario ensures that no matter what call site
+         * we receive an exception from, when we exit the closure, all dirty
+         * vars from the parent scope have been stored.
+         * -------------------------------------------------------------------- */
+        boolean mightRequireGlobalEnsureBlock = false;
+        Set<LocalVariable> dirtyVars = null;
+        CFG cfg = getCFG();
+        IRScope cfgScope = cfg.getScope();
+        if (cfgScope instanceof IRClosure) {
+            mightRequireGlobalEnsureBlock = true;
+            dirtyVars = new HashSet<LocalVariable>();
+        }
+
         for (FlowGraphNode n: _fgNodes) {
             BindingStorePlacementNode bspn = (BindingStorePlacementNode)n;
-            bspn.addStoreAndBindingAllocInstructions();
+            if (mightRequireGlobalEnsureBlock && !cfg.bbIsProtected(bspn.getBB()))
+                bspn.addStoreAndBindingAllocInstructions(dirtyVars);
+            else
+                bspn.addStoreAndBindingAllocInstructions(null);
+        }
+
+        if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
+            BasicBlock geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
+            Variable exc = cfgScope.getNewTemporaryVariable();
+            geb.addInstr(new RECV_EXCEPTION_Instr(exc));
+            for (LocalVariable v: dirtyVars) {
+                geb.addInstr(new StoreToBindingInstr((IRClosure)cfgScope, v.getName(), v));
+            }
+            geb.addInstr(new THROW_EXCEPTION_Instr(exc));
+            cfg.addGlobalEnsureBlock(geb);
         }
     }
 }

@@ -133,7 +133,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         return "";
     }
 
-    public void addStoreAndBindingAllocInstructions() {
+    public void addStoreAndBindingAllocInstructions(Set<LocalVariable> callsiteDirtyVars) {
         boolean addAllocateBindingInstructions = false; // SSS: This is going to be useful during JIT -- we are far away from there at this time
 
         BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) _prob;
@@ -236,8 +236,13 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                             instrs.add(new AllocateBindingInstr(s));
                             bindingAllocated = true;
                         }
-					}
+                    }
                 }
+
+                // Add all the remaining dirty local vars into callsiteDirtyVars
+                // These variables would have to be spilled into the binding if this
+                // call raised an exception and exited this scope.
+                if ((callsiteDirtyVars != null) && call.canRaiseException()) callsiteDirtyVars.addAll(dirtyVars);
             } else if ((i instanceof ClosureReturnInstr) || (i instanceof BREAK_Instr)) {
                 // At closure return and break instructions (both of which are exits from the closure),
                 // we need a binding store on exit only for vars that are both:
