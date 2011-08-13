@@ -213,3 +213,30 @@ rb_uint2big(unsigned long long v)
 {
     return (VALUE) newNumber(JRuby_uint2big, (long long) v);
 }
+
+extern "C" VALUE
+jruby_timet2num(time_t v)
+{
+    if ((time_t)-1 < 0) {
+        if (sizeof(int) == sizeof(time_t)) {
+            return INT2NUM(v);
+        }
+        else if (sizeof(long) == sizeof(time_t)) {
+            return LONG2NUM(v);
+        }
+        else if (sizeof(LONG_LONG) == sizeof(time_t)) {
+            return LL2NUM(v);
+        }
+    }
+    else {
+        if (sizeof(int) == sizeof(time_t)) {
+            return UINT2NUM(v);
+        }
+        else if (sizeof(long) == sizeof(time_t)) {
+            return ULONG2NUM(v);
+        }
+        else if (sizeof(LONG_LONG) == sizeof(time_t)) {
+            return ULL2NUM(v);
+        }
+    }
+}
