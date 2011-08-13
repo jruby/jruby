@@ -68,8 +68,8 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         RubyClass cbClass = module.defineClassUnder("Callback", module.getClass("Pointer"),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
-        cbClass.defineAnnotatedMethods(Callback.class);
-        cbClass.defineAnnotatedConstants(Callback.class);
+        cbClass.defineAnnotatedMethods(NativeCallbackPointer.class);
+        cbClass.defineAnnotatedConstants(NativeCallbackPointer.class);
 
         return cbClass;
     }
@@ -96,26 +96,26 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
 
         synchronized (proc) {
             Object existing = proc.getInternalVariable(CALLBACK_ID);
-            if (existing instanceof Callback && ((Callback) existing).cbInfo == cbInfo) {
-                return (Callback) existing;
+            if (existing instanceof NativeCallbackPointer && ((NativeCallbackPointer) existing).cbInfo == cbInfo) {
+                return (NativeCallbackPointer) existing;
             } else if (existing instanceof Map) {
                 Map m = (Map) existing;
-                Callback cb = (Callback) m.get(proc);
+                NativeCallbackPointer cb = (NativeCallbackPointer) m.get(proc);
                 if (cb != null) {
                     return cb;
                 }
             }
 
-            Callback cb = newCallback(runtime, cbInfo, proc);
+            NativeCallbackPointer cb = newCallback(runtime, cbInfo, proc);
             
             if (existing == null) {
                 ((RubyObject) proc).setInternalVariable(CALLBACK_ID, cb);
             } else {
-                Map<CallbackInfo, Callback> m = existing instanceof Map
-                        ? (Map<CallbackInfo, Callback>) existing
-                        : Collections.synchronizedMap(new WeakHashMap<CallbackInfo, Callback>());
+                Map<CallbackInfo, NativeCallbackPointer> m = existing instanceof Map
+                        ? (Map<CallbackInfo, NativeCallbackPointer>) existing
+                        : Collections.synchronizedMap(new WeakHashMap<CallbackInfo, NativeCallbackPointer>());
                 m.put(cbInfo, cb);
-                m.put(((Callback) existing).cbInfo, (Callback) existing);
+                m.put(((NativeCallbackPointer) existing).cbInfo, (NativeCallbackPointer) existing);
                 ((RubyObject) proc).setInternalVariable(CALLBACK_ID, m);
             }
 
@@ -133,15 +133,15 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * @param proc The ruby <tt>Block</tt> object to call when the callback is invoked.
      * @return A native value returned to the native caller.
      */
-    final Callback getCallback(Ruby runtime, CallbackInfo cbInfo, Block proc) {
+    final NativeCallbackPointer getCallback(Ruby runtime, CallbackInfo cbInfo, Block proc) {
         return newCallback(runtime, cbInfo, proc);
     }
 
-    private final Callback newCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
+    private final NativeCallbackPointer newCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
         ClosureInfo info = getClosureInfo(runtime, cbInfo);
         WeakRefCallbackProxy cbProxy = new WeakRefCallbackProxy(runtime, info, proc);
         Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy, info.callContext);
-        return new Callback(runtime, handle, cbInfo, info);
+        return new NativeCallbackPointer(runtime, handle, cbInfo, info);
     }
 
     private final ClosureInfo getClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
@@ -207,11 +207,11 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * Wrapper around the native callback, to represent it as a ruby object
      */
     @JRubyClass(name = "FFI::Callback", parent = "FFI::Pointer")
-    static class Callback extends AbstractInvoker {
+    static class NativeCallbackPointer extends AbstractInvoker {
         private final CallbackInfo cbInfo;
         private final ClosureInfo closureInfo;
         
-        Callback(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo, ClosureInfo closureInfo) {
+        NativeCallbackPointer(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo, ClosureInfo closureInfo) {
             super(runtime, runtime.getModule("FFI").getClass("Callback"),
                     cbInfo.getParameterTypes().length, new CallbackMemoryIO(runtime, handle));
             this.cbInfo = cbInfo;
