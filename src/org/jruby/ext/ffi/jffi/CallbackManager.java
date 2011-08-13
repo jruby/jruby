@@ -8,7 +8,7 @@ import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -17,11 +17,9 @@ import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.anno.JRubyClass;
 import org.jruby.ext.ffi.AbstractInvoker;
-import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.MappedType;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.NullMemoryIO;
@@ -302,46 +300,6 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
 
         public void invoke(Closure.Buffer buffer) {
             invoke(buffer, proc);
-        }
-    }
-
-    /**
-     * An implementation of MemoryIO that throws exceptions on any attempt to read/write
-     * the callback memory area (which is code).
-     *
-     * This also keeps the callback alive via the handle member, as long as this
-     * CallbackMemoryIO instance is contained in a valid Callback pointer.
-     */
-    static final class CallbackMemoryIO extends InvalidMemoryIO implements AllocatedDirectMemoryIO {
-        private final Closure.Handle handle;
-        private final AtomicBoolean released = new AtomicBoolean(false);
-
-        public CallbackMemoryIO(Ruby runtime,  Closure.Handle handle) {
-            super(runtime);
-            this.handle = handle;
-        }
-
-        public final long getAddress() {
-            return handle.getAddress();
-        }
-
-        public final boolean isNull() {
-            return false;
-        }
-
-        public final boolean isDirect() {
-            return true;
-        }
-
-        public void free() {
-            if (released.getAndSet(true)) {
-                throw runtime.newRuntimeError("callback already freed");
-            }
-            handle.dispose();
-        }
-
-        public void setAutoRelease(boolean autorelease) {
-            handle.setAutoRelease(autorelease);
         }
     }
 
