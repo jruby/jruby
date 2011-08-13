@@ -13,6 +13,7 @@ class NativeFunctionInfo {
     final com.kenai.jffi.Type jffiReturnType;
     final com.kenai.jffi.Type[] jffiParameterTypes;
     final com.kenai.jffi.CallingConvention convention;
+    final com.kenai.jffi.CallContext callContext;
 
     public NativeFunctionInfo(Ruby runtime, org.jruby.ext.ffi.Type returnType,
             org.jruby.ext.ffi.Type[] parameterTypes, CallingConvention convention) {
@@ -31,6 +32,7 @@ class NativeFunctionInfo {
             }
         }
 
+        this.callContext = new com.kenai.jffi.CallContext(jffiReturnType, jffiParameterTypes, convention);
         this.convention = convention;
     }
 

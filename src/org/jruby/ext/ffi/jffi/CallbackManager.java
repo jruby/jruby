@@ -138,23 +138,37 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     }
 
     private final NativeCallbackPointer newCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
-        ClosureInfo info = getClosureInfo(runtime, cbInfo);
+        NativeFunctionInfo info = getClosureInfo(runtime, cbInfo);
         WeakRefCallbackProxy cbProxy = new WeakRefCallbackProxy(runtime, info, proc);
         Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy, info.callContext);
         return new NativeCallbackPointer(runtime, handle, cbInfo, info);
     }
 
-    private final ClosureInfo getClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
+    private final NativeFunctionInfo getClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
         Object info = cbInfo.getProviderCallbackInfo();
-        if (info != null && info instanceof ClosureInfo) {
-            return (ClosureInfo) info;
+        if (info != null && info instanceof NativeFunctionInfo) {
+            return (NativeFunctionInfo) info;
         }
+
         cbInfo.setProviderCallbackInfo(info = newClosureInfo(runtime, cbInfo));
-        return (ClosureInfo) info;
+
+        return (NativeFunctionInfo) info;
     }
 
-    private final ClosureInfo newClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
-        return new ClosureInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(),
+    private final NativeFunctionInfo newClosureInfo(Ruby runtime, CallbackInfo cbInfo) {
+
+        Type[] paramTypes = cbInfo.getParameterTypes();
+        for (int i = 0; i < paramTypes.length; ++i) {
+            if (!isParameterTypeValid(paramTypes[i]) || FFIUtil.getFFIType(paramTypes[i]) == null) {
+                throw runtime.newTypeError("invalid callback parameter type: " + paramTypes[i]);
+            }
+        }
+
+        if (!isReturnTypeValid(cbInfo.getReturnType()) || FFIUtil.getFFIType(cbInfo.getReturnType()) == null) {
+            runtime.newTypeError("invalid callback return type: " + cbInfo.getReturnType());
+        }
+
+        return new NativeFunctionInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(),
                 cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT);
     }
 
@@ -162,45 +176,12 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      */
     final CallbackMemoryIO newClosure(Ruby runtime, Type returnType, Type[] parameterTypes, 
             Object proc, CallingConvention convention) {
-        ClosureInfo info = new ClosureInfo(runtime, returnType, parameterTypes, convention);
+        NativeFunctionInfo info = new NativeFunctionInfo(runtime, returnType, parameterTypes, convention);
 
         final CallbackProxy cbProxy = new CallbackProxy(runtime, info, proc);
         final Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy, info.callContext);
         
         return new CallbackMemoryIO(runtime, handle);
-    }
-    
-    /**
-     * Holds the JFFI return type and parameter types to avoid
-     */
-    private static class ClosureInfo {
-        final CallingConvention convention;
-        final Type returnType;
-        final Type[] parameterTypes;
-        final com.kenai.jffi.Type ffiReturnType;
-        final com.kenai.jffi.Type[] ffiParameterTypes;
-        final com.kenai.jffi.CallContext callContext;
-        
-        public ClosureInfo(Ruby runtime, Type returnType, Type[] paramTypes, CallingConvention convention) {
-            this.convention = convention;
-
-            this.ffiParameterTypes = new com.kenai.jffi.Type[paramTypes.length];
-
-            for (int i = 0; i < paramTypes.length; ++i) {
-                if (!isParameterTypeValid(paramTypes[i]) || (ffiParameterTypes[i] = FFIUtil.getFFIType(paramTypes[i])) == null) {
-                    throw runtime.newTypeError("invalid callback parameter type: " + paramTypes[i]);
-                }
-            }
-            
-            ffiReturnType = FFIUtil.getFFIType(returnType);
-            if (!isReturnTypeValid(returnType) || ffiReturnType == null) {
-                runtime.newTypeError("invalid callback return type: " + returnType);
-            }
-
-            this.callContext = new com.kenai.jffi.CallContext(ffiReturnType, ffiParameterTypes, convention);
-            this.returnType = returnType;
-            this.parameterTypes = (Type[]) paramTypes.clone();
-        }
     }
 
     /**
@@ -209,9 +190,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     @JRubyClass(name = "FFI::Callback", parent = "FFI::Pointer")
     static class NativeCallbackPointer extends AbstractInvoker {
         private final CallbackInfo cbInfo;
-        private final ClosureInfo closureInfo;
+        private final NativeFunctionInfo closureInfo;
         
-        NativeCallbackPointer(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo, ClosureInfo closureInfo) {
+        NativeCallbackPointer(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo, NativeFunctionInfo closureInfo) {
             super(runtime, runtime.getModule("FFI").getClass("Callback"),
                     cbInfo.getParameterTypes().length, new CallbackMemoryIO(runtime, handle));
             this.cbInfo = cbInfo;
@@ -228,7 +209,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         @Override
         public DynamicMethod createDynamicMethod(RubyModule module) {
             com.kenai.jffi.Function function = new com.kenai.jffi.Function(((DirectMemoryIO) getMemoryIO()).getAddress(),
-                    closureInfo.ffiReturnType, closureInfo.ffiParameterTypes);
+                    closureInfo.jffiReturnType, closureInfo.jffiParameterTypes);
             return MethodFactory.createDynamicMethod(getRuntime(), module, function,
                     closureInfo.returnType, closureInfo.parameterTypes, closureInfo.convention, getRuntime().getNil());
         }
@@ -239,9 +220,9 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      */
     private static abstract class AbstractCallbackProxy implements Closure {
         protected final Ruby runtime;
-        protected final ClosureInfo closureInfo;
+        protected final NativeFunctionInfo closureInfo;
         
-        AbstractCallbackProxy(Ruby runtime, ClosureInfo closureInfo) {
+        AbstractCallbackProxy(Ruby runtime, NativeFunctionInfo closureInfo) {
             this.runtime = runtime;
             this.closureInfo = closureInfo;
         }
@@ -273,7 +254,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static final class WeakRefCallbackProxy extends AbstractCallbackProxy implements Closure {
         private final WeakReference<Object> proc;
 
-        WeakRefCallbackProxy(Ruby runtime, ClosureInfo closureInfo, Object proc) {
+        WeakRefCallbackProxy(Ruby runtime, NativeFunctionInfo closureInfo, Object proc) {
             super(runtime, closureInfo);
             this.proc = new WeakReference<Object>(proc);
         }
@@ -293,7 +274,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     private static final class CallbackProxy extends AbstractCallbackProxy implements Closure {
         private final Object proc;
 
-        CallbackProxy(Ruby runtime, ClosureInfo closureInfo, Object proc) {
+        CallbackProxy(Ruby runtime, NativeFunctionInfo closureInfo, Object proc) {
             super(runtime, closureInfo);
             this.proc = proc;
         }
