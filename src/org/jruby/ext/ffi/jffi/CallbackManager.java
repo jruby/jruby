@@ -15,8 +15,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
-import org.jruby.anno.JRubyClass;
-import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.DirectMemoryIO;
@@ -29,7 +27,6 @@ import org.jruby.ext.ffi.Struct;
 import org.jruby.ext.ffi.StructByValue;
 import org.jruby.ext.ffi.Type;
 import org.jruby.ext.ffi.Util;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -182,37 +179,6 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         final Closure.Handle handle = ClosureManager.getInstance().newClosure(cbProxy, info.callContext);
         
         return new CallbackMemoryIO(runtime, handle);
-    }
-
-    /**
-     * Wrapper around the native callback, to represent it as a ruby object
-     */
-    @JRubyClass(name = "FFI::Callback", parent = "FFI::Pointer")
-    static class NativeCallbackPointer extends AbstractInvoker {
-        private final CallbackInfo cbInfo;
-        private final NativeFunctionInfo closureInfo;
-        
-        NativeCallbackPointer(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo, NativeFunctionInfo closureInfo) {
-            super(runtime, runtime.getModule("FFI").getClass("Callback"),
-                    cbInfo.getParameterTypes().length, new CallbackMemoryIO(runtime, handle));
-            this.cbInfo = cbInfo;
-            this.closureInfo = closureInfo;
-        }
-
-        void dispose() {
-            MemoryIO mem = getMemoryIO();
-            if (mem instanceof CallbackMemoryIO) {
-                ((CallbackMemoryIO) mem).free();
-            }
-        }
-
-        @Override
-        public DynamicMethod createDynamicMethod(RubyModule module) {
-            com.kenai.jffi.Function function = new com.kenai.jffi.Function(((DirectMemoryIO) getMemoryIO()).getAddress(),
-                    closureInfo.jffiReturnType, closureInfo.jffiParameterTypes);
-            return MethodFactory.createDynamicMethod(getRuntime(), module, function,
-                    closureInfo.returnType, closureInfo.parameterTypes, closureInfo.convention, getRuntime().getNil());
-        }
     }
 
     /**
