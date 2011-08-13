@@ -89,6 +89,8 @@ public class Interpreter {
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
                 }
                 catch (org.jruby.exceptions.RaiseException re) {
+                    if (lastInstr instanceof THROW_EXCEPTION_Instr) throw re; // pass it along if we just executed a throw!
+
                     ipc = cfg.getRescuerPC(lastInstr);
                     if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
