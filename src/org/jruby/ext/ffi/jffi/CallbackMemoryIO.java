@@ -17,10 +17,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 final class CallbackMemoryIO extends InvalidMemoryIO implements AllocatedDirectMemoryIO {
     private final Closure.Handle handle;
     private final AtomicBoolean released = new AtomicBoolean(false);
+    private Object proc;
 
-    public CallbackMemoryIO(Ruby runtime, Closure.Handle handle) {
+    public CallbackMemoryIO(Ruby runtime, Closure.Handle handle, Object proc) {
         super(runtime);
         this.handle = handle;
+        this.proc = proc;
+    }
+
+    public CallbackMemoryIO(Ruby runtime, Closure.Handle handle) {
+        this(runtime, handle, null);
     }
 
     public final long getAddress() {
@@ -39,6 +45,7 @@ final class CallbackMemoryIO extends InvalidMemoryIO implements AllocatedDirectM
         if (released.getAndSet(true)) {
             throw runtime.newRuntimeError("callback already freed");
         }
+        this.proc = null;
         handle.dispose();
     }
 
