@@ -7,52 +7,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 final class TypeSizeMapper {
 
-    private static final int[] sizes;
-    static {
-        NativeType[] types = NativeType.values();
-        int[] sz = new int[types.length];
-        for (int i = 0; i < sz.length; ++i) {
-            switch (types[i]) {
-                case CHAR:
-                case UCHAR:
-                    sz[types[i].ordinal()] = 1;
-                    break;
-                case SHORT:
-                case USHORT:
-                    sz[types[i].ordinal()] = 2;
-                    break;
-                case INT:
-                case UINT:
-                case FLOAT:
-                    sz[types[i].ordinal()] = 4;
-                    break;
-                case LONG_LONG:
-                case ULONG_LONG:
-                case DOUBLE:
-                    sz[types[i].ordinal()] = 8;
-                    break;
-                case LONG:
-                case ULONG:
-                    sz[types[i].ordinal()] = Platform.getPlatform().longSize() >> 3;
-                    break;
-                case POINTER:
-                    sz[types[i].ordinal()] = Platform.getPlatform().addressSize() >> 3;
-                    break;
-                default:
-                    sz[types[i].ordinal()] = -1;
-                    break;
-            }
-        }
-        sizes = sz;
-    }
+    private static final int getTypeSize(ThreadContext context, RubyModule ffi, IRubyObject type) {
+        if (type instanceof Type) {
+            return ((Type) type).getNativeSize();
 
-    private static final int getTypeSize(IRubyObject type) {
-        int index = NativeType.valueOf(type).ordinal();
-        return index >= 0 && index < sizes.length ? sizes[index] : -1;
+        } else if (type.isNil()) {
+            throw context.getRuntime().newTypeError("nil is invalid FFI type");
+        }
+
+        return callTypeSize(context, ffi, type);
     }
 
     /**
-     * Calls up to ruby code to calculate the size of the tpe
+     * Calls up to ruby code to calculate the size of the type
      * 
      * @param context The current thread context
      * @param ffi The FFI ruby module
@@ -60,14 +27,12 @@ final class TypeSizeMapper {
      * @return size of the type
      */
     private static final int callTypeSize(ThreadContext context, RubyModule ffi, IRubyObject sizeArg) {
-        return getTypeSize(ffi.callMethod(context, "type_size", sizeArg));
+        return getTypeSize(context, ffi, ffi.callMethod(context, "find_type", sizeArg));
     }
 
     public static final int getTypeSize(ThreadContext context, IRubyObject sizeArg) {
-        final RubyModule ffi = context.getRuntime().getModule("FFI");
-        final IRubyObject typeDefs = ffi.fetchConstant("TypeDefs");
-        final IRubyObject type = ((RubyHash) typeDefs).fastARef(sizeArg);
-        final int size = type != null && !type.isNil() ? getTypeSize(type) : 0;
-        return size > 0 ? size : callTypeSize(context, ffi, sizeArg);
+        RubyModule ffi = context.getRuntime().getModule("FFI");
+
+        return getTypeSize(context, ffi, ((RubyHash) ffi.fetchConstant("TypeDefs")).fastARef(sizeArg));
     }
 }

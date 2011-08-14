@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Defines a C callback's parameters and return type.
  */
 @JRubyClass(name = "FFI::CallbackInfo", parent = "FFI::Type")
-public class CallbackInfo extends Type implements NativeParam {
+public class CallbackInfo extends Type {
     public static final String CLASS_NAME = "CallbackInfo";
     
     /** The arity of this function. */

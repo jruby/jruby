@@ -81,6 +81,9 @@ abstract public class AbstractMemory extends RubyObject {
         } else if (sizeArg instanceof RubySymbol) {
             return TypeSizeMapper.getTypeSize(context, sizeArg);
 
+        } else if (sizeArg instanceof Type) {
+            return ((Type) sizeArg).getNativeSize();
+
         } else if (sizeArg instanceof RubyClass && Struct.isStruct(context.getRuntime(), (RubyClass) sizeArg)) {
             return Struct.getStructSize(context.getRuntime(), sizeArg);
 
