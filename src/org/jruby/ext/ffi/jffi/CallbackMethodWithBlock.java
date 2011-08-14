@@ -41,13 +41,17 @@ final class CallbackMethodWithBlock extends DefaultMethod {
                 params[i] = args[i];
             }
 
-            params[cbindex] = cbFactory.newCallback(block);
+            NativeCallbackPointer cb;
+            params[cbindex] = cb = cbFactory.newCallback(block);
             
             for (int i = cbindex + 1; i < params.length; i++) {
                 params[i] = args[i - 1];
             }
-            
-            return getNativeInvoker().invoke(context, params);
+            try {
+                return getNativeInvoker().invoke(context, params);
+            } finally {
+                cb.dispose();
+            }
         }
     }
 }

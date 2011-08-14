@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 final class CallbackMemoryIO extends InvalidMemoryIO implements AllocatedDirectMemoryIO {
     private final Closure.Handle handle;
-    private final AtomicBoolean released = new AtomicBoolean(false);
+    private final AtomicBoolean released = new AtomicBoolean();
     private Object proc;
 
     public CallbackMemoryIO(Ruby runtime, Closure.Handle handle, Object proc) {
@@ -42,11 +42,10 @@ final class CallbackMemoryIO extends InvalidMemoryIO implements AllocatedDirectM
     }
 
     public void free() {
-        if (released.getAndSet(true)) {
-            throw runtime.newRuntimeError("callback already freed");
+        if (!released.getAndSet(true)) {
+            this.proc = null;
+            handle.dispose();
         }
-        this.proc = null;
-        handle.dispose();
     }
 
     public void setAutoRelease(boolean autorelease) {
