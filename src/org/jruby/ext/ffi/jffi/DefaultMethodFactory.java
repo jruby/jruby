@@ -70,26 +70,6 @@ public final class DefaultMethodFactory extends MethodFactory {
         Signature signature = new Signature(returnType, parameterTypes, convention, 
                 false, enums instanceof RubyHash ? (RubyHash) enums : null);
 
-        
-        /*
-         * If there is exactly _one_ callback argument to the function,
-         * then a block can be given and automatically subsituted for the callback
-         * parameter.
-         */
-        if (marshallers.length > 0) {
-            int cbcount = 0, cbindex = -1;
-            for (int i = 0; i < parameterTypes.length; ++i) {
-                if (parameterTypes[i] instanceof CallbackInfo) {
-                    cbcount++;
-                    cbindex = i;
-                }
-            }
-            if (cbcount == 1) {
-                return new CallbackMethodWithBlock(module, function, 
-                        functionInvoker, marshallers, signature, cbindex);
-            }
-        }
-        
         switch (parameterTypes.length) {
             case 0:
                 return new DefaultMethodZeroArg(module, function, functionInvoker, signature);
