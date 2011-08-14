@@ -2,6 +2,7 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.*;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.ext.ffi.*;
 import org.jruby.ext.ffi.Type;
 
@@ -21,6 +22,7 @@ public class NativeCallbackFactory {
     private final ClosurePool closurePool;
     private final NativeFunctionInfo closureInfo;
     private final CallbackInfo callbackInfo;
+    private final RubyClass callbackClass;
 
     private final class ClosureRef extends WeakReference<Object> {
         final NativeCallbackPointer ptr;
@@ -39,6 +41,7 @@ public class NativeCallbackFactory {
         this.closureInfo = newFunctionInfo(runtime, cbInfo);
         this.closurePool = com.kenai.jffi.ClosureManager.getInstance().getClosurePool(closureInfo.callContext);
         this.callbackInfo = cbInfo;
+        this.callbackClass = runtime.getModule("FFI").getClass("Callback");
     }
 
     private void expunge(Reference<? extends Object> ref) {
@@ -127,7 +130,7 @@ public class NativeCallbackFactory {
     }
 
     NativeCallbackPointer newCallback(Object callable) {
-        return new NativeCallbackPointer(runtime,
+        return new NativeCallbackPointer(runtime, callbackClass,
                 closurePool.newClosureHandle(new NativeClosureProxy(runtime, closureInfo, callable)),
                 callbackInfo, closureInfo);
     }

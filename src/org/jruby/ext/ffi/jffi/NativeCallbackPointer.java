@@ -2,6 +2,7 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.Closure;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.ext.ffi.AbstractInvoker;
@@ -24,6 +25,14 @@ class NativeCallbackPointer extends AbstractInvoker {
         this.cbInfo = cbInfo;
         this.closureInfo = closureInfo;
     }
+
+    NativeCallbackPointer(Ruby runtime, RubyClass klass, Closure.Handle handle, CallbackInfo cbInfo, NativeFunctionInfo closureInfo) {
+        super(runtime, klass,
+                cbInfo.getParameterTypes().length, new CallbackMemoryIO(runtime, handle));
+        this.cbInfo = cbInfo;
+        this.closureInfo = closureInfo;
+    }
+
 
     void dispose() {
         MemoryIO mem = getMemoryIO();
