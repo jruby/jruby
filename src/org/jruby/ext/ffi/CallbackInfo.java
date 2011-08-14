@@ -54,7 +54,6 @@ public class CallbackInfo extends Type implements NativeParam {
     protected final Type returnType;
     protected final boolean stdcall;
 
-    private volatile Object providerCallbackInfo;
 
     /**
      * Creates a CallbackInfo class for a ruby runtime
@@ -174,14 +173,6 @@ public class CallbackInfo extends Type implements NativeParam {
 
     public final boolean isStdcall() {
         return stdcall;
-    }
-
-    public final Object getProviderCallbackInfo() {
-        return providerCallbackInfo;
-    }
-
-    public final void setProviderCallbackInfo(Object info) {
-        this.providerCallbackInfo = info;
     }
 
     @JRubyMethod(name = "to_s")
