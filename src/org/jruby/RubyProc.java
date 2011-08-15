@@ -44,6 +44,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -239,9 +240,14 @@ public class RubyProc extends RubyObject implements DataType {
         }
 
         if (isProc()) {
-            List<IRubyObject> list = new ArrayList<IRubyObject>(Arrays.asList(args));
-            int required = this.block.arity().required();
+            // for procs and blocks, single array passed to multi-arg must be spread
+            if (this.block.arity() != Arity.ONE_ARGUMENT && args.length == 1 && args[0].respondsTo("to_ary")) {
+                args = args[0].convertToArray().toJavaArray();
+            }
+            
             if (this.block.arity().isFixed()) {
+                List<IRubyObject> list = new ArrayList<IRubyObject>(Arrays.asList(args));
+                int required = this.block.arity().required();
                 if (required > args.length) {
                     for (int i = args.length; i < required; i++) {
                         list.add(context.getRuntime().getNil());
