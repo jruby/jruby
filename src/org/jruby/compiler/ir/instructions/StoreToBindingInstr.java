@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
@@ -47,7 +48,12 @@ public class StoreToBindingInstr extends OneOperandInstr {
         
         if (bindingSlot == -1) bindingSlot = targetMethod.getBindingSlot(v.getName());
         
-        interp.setSharedBindingVariable(bindingSlot, interp.getLocalVariable(context, v.getLocation()));
+        // FIXME: This is a pseudo-hack.  bindings set up for blocks in opt arg default values
+        // can trip over this since we cannot store somethign which is not a real IRubyObject.
+        Object value = interp.getLocalVariable(context, v.getLocation());
+        if (!(value instanceof UndefinedValue)) {
+            interp.setSharedBindingVariable(bindingSlot, value);
+        }
         return null;
     }
 }
