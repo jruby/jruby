@@ -79,10 +79,15 @@ public class RubyYielder extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = {"yield", "<<"}, rest = true)
+    @JRubyMethod(rest = true)
     public IRubyObject yield(ThreadContext context, IRubyObject[]args) {
         checkInit();
-        proc.call(context, args);
+        return proc.call(context, args);
+    }
+
+    @JRubyMethod(name = "<<", rest = true)
+    public IRubyObject op_lshift(ThreadContext context, IRubyObject[]args) {
+        yield(context, args);
         return this;
     }
 }

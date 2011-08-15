@@ -361,16 +361,6 @@ class Generator
   end
 
   class Enumerator
-    class Yielder #:nodoc:
-      def initialize(&proc)
-        @proc = proc
-      end
-      def yield(*args)
-        @proc[*args]
-      end 
-      alias :<< :yield
-    end
-
     def __generator
       @generator ||= __choose_generator
     end

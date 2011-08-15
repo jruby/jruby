@@ -71,9 +71,10 @@ public class RubyEnumerator extends RubyObject {
         enmr.defineAnnotatedMethods(RubyEnumerator.class);
         runtime.setEnumerator(enmr);
 
+        RubyYielder.createYielderClass(runtime);
+        
         if (runtime.is1_9()) {
             runtime.getLoadService().require("generator_internal");
-            RubyYielder.createYielderClass(runtime);
         }
     }
 
