@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
@@ -53,6 +55,7 @@ public class GC {
     private static volatile Reference<Object> reaper = null;
     private static Runnable gcTask;
     private static volatile Future<?> gcFuture;
+    private static final AtomicInteger gcDisable = new AtomicInteger();
 
     /**
      * This is an upcall from the C++ stub to mark objects that are only strongly
@@ -73,11 +76,13 @@ public class GC {
     static void init(final Native n) {
         gcTask = new Runnable() {
             public void run() {
-                GIL.acquire();
-                try {
-                    n.gc();
-                } finally {
-                    GIL.releaseNoCleanup();
+                if (gcDisable.get() == 0) {
+                    GIL.acquire();
+                    try {
+                        n.gc();
+                    } finally {
+                        GIL.releaseNoCleanup();
+                    }
                 }
             }
         };
@@ -108,6 +113,16 @@ public class GC {
                     GC.trigger();
                 }
             };
+        }
+    }
+
+    static void disable() {
+        gcDisable.incrementAndGet();
+    }
+
+    static void enable() {
+        if (gcDisable.decrementAndGet() == 0) {
+            cleanup();
         }
     }
 }

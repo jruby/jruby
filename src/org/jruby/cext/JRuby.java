@@ -299,11 +299,18 @@ public class JRuby {
         RubyThread thread = runtime.getCurrentContext().getThread();
         NativeFunctionTask task = new NativeFunctionTask(Native.getInstance(runtime), blocking_func,
                 blocking_data, unblocking_func, unblocking_data);
+
+        GC.disable();
         int lockCount = GIL.releaseAllLocks();
         try {
             thread.executeBlockingTask(task);
-        } catch (InterruptedException e) {}
-        GIL.acquire(lockCount);
+        } catch (InterruptedException e) {
+            // ignore   
+        } finally  {
+            GIL.acquire(lockCount);
+            GC.enable();
+        }
+
         return task.retval;
     }
 }
