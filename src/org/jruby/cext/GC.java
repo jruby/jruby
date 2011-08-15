@@ -29,7 +29,7 @@
 package org.jruby.cext;
 
 import java.lang.ref.Reference;
-import java.util.IdentityHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -38,6 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.SoftReferenceReaper;
+import org.jruby.util.WeakReferenceReaper;
 
 /**
  * The cext {@link GC} keeps track of native handles and associates them with their corresponding Java objects
@@ -46,7 +47,7 @@ import org.jruby.util.SoftReferenceReaper;
  */
 public class GC {
 
-    private static final Map<Object, Handle> nativeHandles = new IdentityHashMap<Object, Handle>();
+    private static final Map<Integer, Handle> nativeHandles = new HashMap<Integer, Handle>();
     private static final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory());
     private static volatile Reference<Object> reaper = null;
     private static Runnable gcTask;
@@ -74,10 +75,6 @@ public class GC {
                 GIL.acquire();
                 try {
                     n.gc();
-                    Object obj;
-                    while ((obj = n.pollGC()) != null) {
-                        nativeHandles.remove(obj);
-                    }
                 } finally {
                     GIL.releaseNoCleanup();
                 }
@@ -86,7 +83,15 @@ public class GC {
     }
 
     static final Handle lookup(IRubyObject obj) {
-        return nativeHandles.get(obj);
+        int key = System.identityHashCode(obj);
+        Handle h;
+        while ((h = nativeHandles.get(key++)) != null) {
+            if (h.get() == obj) {
+                return h;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -94,7 +99,25 @@ public class GC {
      * @param obj
      */
     static final void register(IRubyObject obj, Handle h) {
-        nativeHandles.put(obj, h);
+        int key = h.objectId;
+        Handle existing;
+        while ((existing = nativeHandles.get(key)) != null) {
+            if (existing == h) {
+                return;
+            }
+            key++;
+        }
+        nativeHandles.put(key, h);
+        Cleaner.register(h);
+    }
+
+    static final void unregister(Handle h) {
+        int key = h.objectId;
+        Handle existing;
+        while ((existing = nativeHandles.get(key)) != null && existing != h) {
+            key++;
+        }
+        nativeHandles.remove(key);
     }
 
     static final void cleanup() {
@@ -103,7 +126,7 @@ public class GC {
         // soft references.
         //
         if (reaper == null) {
-            reaper = new SoftReferenceReaper<Object>(new Object()) {
+            reaper = new WeakReferenceReaper<Object>(new Object()) {
                 public void run() {
                     reaper = null;
                     GC.trigger();

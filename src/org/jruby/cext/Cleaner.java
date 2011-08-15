@@ -36,14 +36,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-abstract class Cleaner extends WeakReference<IRubyObject> {
-    private static ReferenceQueue<IRubyObject> queue = new ReferenceQueue<IRubyObject>();
+abstract class Cleaner extends WeakReference<Object> {
+    private static ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
     private static Cleaner list = null;
     
     private Cleaner prev, next;
 
 
-    Cleaner(IRubyObject obj) {
+    Cleaner(Object obj) {
         super(obj, queue);
     }
 
@@ -63,7 +63,7 @@ abstract class Cleaner extends WeakReference<IRubyObject> {
             while (true) {
                 Reference ref; // routing around generics here: IBM J9 doesn't like it
                 try {
-                     ref = (Reference) queue.remove();
+                     ref = queue.remove();
                 } catch (InterruptedException ex) {
                     break;
                 }
@@ -88,6 +88,7 @@ abstract class Cleaner extends WeakReference<IRubyObject> {
                             }
                             r.prev = r.next = null;
                             r.dispose();
+                            r.clear();
                         }
                     } while((ref = queue.poll()) != null);
                 } finally {
@@ -98,7 +99,7 @@ abstract class Cleaner extends WeakReference<IRubyObject> {
     };
 
     static {
-        Thread t = new Thread(reaper, "Cext reference reaper");
+        Thread t = new Thread(reaper, "JRuby C extension cleanup thread");
         t.setPriority(Thread.MAX_PRIORITY);
         t.setDaemon(true);
         t.start();
