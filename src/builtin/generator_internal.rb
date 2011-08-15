@@ -289,15 +289,20 @@ class Generator
     end
 
     # Rewinds the generator and enumerates the elements.
-    def each
+    def each(&block)
       return enum_for(:each) unless block_given?
       
-      rewind
+      # if using the block form only, don't "next" for internal iteration
+      if @block && !@enum
+        @block.call Enumerator::Yielder.new(&block)
+      else
+        rewind
 
-      until end?
-        yield self.next
+        until end?
+          yield self.next
+        end
       end
-
+      
       self
     end
   end
@@ -354,6 +359,16 @@ class Generator
   end
 
   class Enumerator
+    class Yielder #:nodoc:
+      def initialize(&proc)
+        @proc = proc
+      end
+      def yield(*args)
+        @proc[*args]
+      end 
+      alias :<< :yield
+    end
+
     def __generator
       @generator ||= __choose_generator
     end

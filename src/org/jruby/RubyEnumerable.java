@@ -1662,7 +1662,7 @@ public class RubyEnumerable {
         enumerator.getInternalVariables().setInternalVariable("chunk_initial_state", initialState);
 
         RuntimeHelpers.invoke(context, enumerator, "initialize", 
-                              CallBlock.newCallClosure(self, context.getRuntime().getEnumerable(), Arity.noArguments(), 
+                              CallBlock.newCallClosure(self, context.getRuntime().getEnumerable(), Arity.ONE_ARGUMENT, 
                                                        new ChunkedBlockCallback(context.getRuntime(), enumerator), context));
         return enumerator;
     }
