@@ -190,6 +190,7 @@ import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Symbol;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
+import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -1765,7 +1766,7 @@ public class IRBuilder {
                 LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
                 Variable av = s.getLocalVariable(n.getName());
                 s.addInstr(new ReceiveOptionalArgumentInstr(av, argIndex));
-                s.addInstr(new BNEInstr(av, Nil.NIL, l)); // if 'av' is not null, go to default
+                s.addInstr(new BNEInstr(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not null, go to default
                 build(n, s);
                 s.addInstr(new LABEL_Instr(l));
             }

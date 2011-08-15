@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Nil;
+import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -28,7 +29,8 @@ public class ReceiveOptionalArgumentInstr extends NoOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Object v = interp.getParameterCount() > argIndex ? interp.getParameter(argIndex) : Nil.NIL.retrieve(interp, context, self);
+        Object v = interp.getParameterCount() > argIndex ? 
+                interp.getParameter(argIndex) : UndefinedValue.UNDEFINED;
         getResult().store(interp, context, self, v);
         return null;
     }
