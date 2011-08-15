@@ -38,6 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.SoftReferenceReaper;
+import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.WeakReferenceReaper;
 
 /**
@@ -47,7 +48,7 @@ import org.jruby.util.WeakReferenceReaper;
  */
 public class GC {
 
-    private static final Map<Integer, Handle> nativeHandles = new HashMap<Integer, Handle>();
+    private static final Map<Object, Handle> nativeHandles = new WeakIdentityHashMap();
     private static final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory());
     private static volatile Reference<Object> reaper = null;
     private static Runnable gcTask;
@@ -83,15 +84,7 @@ public class GC {
     }
 
     static final Handle lookup(IRubyObject obj) {
-        int key = System.identityHashCode(obj);
-        Handle h;
-        while ((h = nativeHandles.get(key++)) != null) {
-            if (h.get() == obj) {
-                return h;
-            }
-        }
-
-        return null;
+        return nativeHandles.get(obj);
     }
 
     /**
@@ -99,25 +92,8 @@ public class GC {
      * @param obj
      */
     static final void register(IRubyObject obj, Handle h) {
-        int key = h.objectId;
-        Handle existing;
-        while ((existing = nativeHandles.get(key)) != null) {
-            if (existing == h) {
-                return;
-            }
-            key++;
-        }
-        nativeHandles.put(key, h);
+        nativeHandles.put(obj, h);
         Cleaner.register(h);
-    }
-
-    static final void unregister(Handle h) {
-        int key = h.objectId;
-        Handle existing;
-        while ((existing = nativeHandles.get(key)) != null && existing != h) {
-            key++;
-        }
-        nativeHandles.remove(key);
     }
 
     static final void cleanup() {
