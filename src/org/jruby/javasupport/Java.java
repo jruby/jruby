@@ -76,7 +76,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
-import org.jruby.util.ClassProvider;
+import org.jruby.util.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
@@ -96,11 +96,7 @@ import org.jruby.java.proxies.MapJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
-import org.jruby.util.ClassCache;
 import org.jruby.util.ClassCache.OneShotClassLoader;
-import org.jruby.util.CodegenUtils;
-import org.jruby.util.IdUtil;
-import org.jruby.util.SafePropertyAccessor;
 
 @JRubyModule(name = "Java")
 public class Java implements Library {
@@ -1109,11 +1105,13 @@ public class Java implements Library {
         // hashcode is a combination of the interfaces and the Ruby class we're using
         // to implement them
         if (!RubyInstanceConfig.INTERFACES_USE_PROXY) {
+            boolean cacheable = false;
             int interfacesHashCode = interfacesHashCode(interfaces);
             // if it's a singleton class and the real class is proc, we're doing closure conversion
             // so just use Proc's hashcode
             if (wrapper.getMetaClass().isSingleton() && wrapper.getMetaClass().getRealClass() == runtime.getProc()) {
                 interfacesHashCode = 31 * interfacesHashCode + runtime.getProc().hashCode();
+                cacheable = true;
             } else {
                 // normal new class implementing interfaces
                 interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().getRealClass().hashCode();
@@ -1123,8 +1121,13 @@ public class Java implements Library {
             try {
                 proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
             } catch (ClassNotFoundException cnfe) {
-                OneShotClassLoader oneShotClassLoader = new ClassCache.OneShotClassLoader(runtime.getJRubyClassLoader());
-                proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, oneShotClassLoader);
+                ClassDefiningClassLoader classLoader;
+                if (cacheable) {
+                    classLoader = runtime.getJRubyClassLoader();
+                } else {
+                    classLoader = new OneShotClassLoader(runtime.getJRubyClassLoader());
+                }
+                proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, classLoader);
             }
 
             try {
