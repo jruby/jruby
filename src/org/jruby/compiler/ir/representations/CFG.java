@@ -139,6 +139,15 @@ public class CFG {
         return _bbMap.get(l);
     }
 
+    public BasicBlock getRescuerBB(BasicBlock b) {
+        return _bbRescuerMap.get(b);
+    }
+
+    public boolean bbIsProtected(BasicBlock b) {
+        // No need to look in ensurerMap because (_bbEnsurerMap(b) != null) => (_bbResucerMap(b) != null)
+        return (getRescuerBB(b) != null);
+    }
+
     // SSS FIXME: Extremely inefficient
     public int getRescuerPC(Instr excInstr) {
         for (BasicBlock b: _linearizedBBList) {
@@ -171,18 +180,13 @@ public class CFG {
         return -1;
     }
 
-    public boolean bbIsProtected(BasicBlock b) {
-        // No need to look in ensurerMap because (_bbEnsurerMap(b) != null) => (_bbResucerMap(b) != null)
-        return (_bbRescuerMap.get(b) != null);
-    }
-
     /* Add 'b' as a global ensure block that protects all unprotected blocks in this scope */
     public void addGlobalEnsureBlock(BasicBlock geb) {
         _cfg.addVertex(geb);
-        _cfg.addEdge(_entryBB, geb)._type = CFG_Edge_Type.EXCEPTION_EDGE;
         _cfg.addEdge(geb, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         for (BasicBlock b: getNodes()) {
             if (!bbIsProtected(b)) {
+                _cfg.addEdge(b, geb)._type = CFG_Edge_Type.EXCEPTION_EDGE;
                 _bbRescuerMap.put(b, geb);
                 _bbEnsurerMap.put(b, geb);
             }
