@@ -1100,16 +1100,34 @@ public class CFG {
                 Instr lastInstr = b.getLastInstr();
                 if (lastInstr == null) {
                     // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
-                    BasicBlock b1 = null;
+                    BasicBlock b1 = null, b2 = null;
                     for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
                         if (b1 == null)
                             b1 = e._dst;
-                        else
+                        else if (b2 == null)
+                            b2 = e._dst;
+                        else {
+                            System.out.println("============= ERROR ================");
+                            System.out.println("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
+                            System.out.println("\nGraph:\n" + getGraph().toString());
+                            System.out.println("\nInstructions:\n" + toStringInstrs());
+                            System.out.println("====================================");
                             throw new RuntimeException("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
+                        }
                     }
 
                     assert (b1 != null);
-                    pushBBOnStack(stack, bbSet, b1);
+                    if (b2 == null) {
+                        pushBBOnStack(stack, bbSet, b1);
+                    }
+                    else if (b1.getID() < b2.getID()) {
+                        pushBBOnStack(stack, bbSet, b2);
+                        pushBBOnStack(stack, bbSet, b1);
+                    }
+                    else {
+                        pushBBOnStack(stack, bbSet, b1);
+                        pushBBOnStack(stack, bbSet, b2);
+                    }
                 }
                 else {
 //                   System.out.println("last instr is: " + lastInstr);
