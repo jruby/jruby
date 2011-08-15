@@ -122,14 +122,17 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
-        // SSS FIXME: if we already have an array, I think we dont need to call prepareArgumentsForCall
-        IRubyObject[] raw;
-        if (value == null) {
-            raw = new IRubyObject[] {}; // FIXME: Use preallocd one
-        } else {
-            raw = isArray ? ((RubyArray) value).toJavaArray(): new IRubyObject[] { value };
-        }
-        IRubyObject[] args = prepareArgumentsForCall(context, raw, type);
+        IRubyObject[] args;
+        if (isArray) {
+				if (arity().getValue() > 1)
+                args = prepareArgumentsForCall(context, ((RubyArray)value).toJavaArray(), type);
+            else
+					 args = new IRubyObject[] { prepareArrayArgsForCall(context.getRuntime(), value) };
+		  }
+        else {
+            args = prepareArgumentsForCall(context, value == null ? new IRubyObject[] {} : new IRubyObject[] { value }, type);
+		  }
+
         return commonCallPath(context, args, self, klass, isArray, binding, type, Block.NULL_BLOCK);
     }
 
@@ -137,19 +140,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
     }
     
-    protected IRubyObject setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
-        switch (argumentType) {
-        case ZERO_ARGS:
-            return null;
-        case MULTIPLE_ASSIGNMENT:
-        case SINGLE_RESTARG:
-            return value;
-        default:
-            return defaultArgsLogic(context.getRuntime(), value);
-        }
-    }
-    
-    private IRubyObject defaultArgsLogic(Ruby ruby, IRubyObject value) {
+    private IRubyObject prepareArrayArgsForCall(Ruby ruby, IRubyObject value) {
         int length = ArgsUtil.arrayLength(value);
         switch (length) {
         case 0:

@@ -19,11 +19,13 @@ import org.jruby.RubyNil;
 public class YieldInstr extends Instr {
     Operand block;
     Operand yieldArg;
+    private final boolean wrapIntoArray;
 
-    public YieldInstr(Variable result, Variable block, Operand arg) {
+    public YieldInstr(Variable result, Variable block, Operand arg, boolean wrapIntoArray) {
         super(Operation.YIELD, result);
         this.block = block;
         this.yieldArg = arg;
+        this.wrapIntoArray = wrapIntoArray;
     }
    
     public Instr cloneForInlining(InlinerInfo ii) {
@@ -41,11 +43,18 @@ public class YieldInstr extends Instr {
         if (yieldArg == null) {
             resultValue = ((Block)blk).yieldSpecific(context);
         } else {
-            if ((yieldArg instanceof Splat) || (yieldArg instanceof CompoundArray))
-                resultValue = ((Block)blk).yieldArray(context, (IRubyObject)yieldArg.retrieve(interp, context, self), null, null);
-            else
-                resultValue = ((Block)blk).yield(context, (IRubyObject)yieldArg.retrieve(interp, context, self));
-
+            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(interp, context, self);
+            if ((yieldArg instanceof Splat) || (yieldArg instanceof CompoundArray)) {
+                if (wrapIntoArray) {
+                    resultValue = ((Block)blk).yield(context, yieldVal);
+                }
+                else {
+                    resultValue = ((Block)blk).yieldArray(context, yieldVal, null, null);
+                }
+            }
+            else {
+                resultValue = ((Block)blk).yield(context, yieldVal);
+            }
         }
         getResult().store(interp, context, self, resultValue);
         return null;
@@ -53,9 +62,10 @@ public class YieldInstr extends Instr {
 
     @Override
     public String toString() { 
-        return super.toString() + "(" + block + ", " + yieldArg + ")";
+        return wrapIntoArray ? (super.toString() + "(" + block + ", WRAP[" + yieldArg + "])") : (super.toString() + "(" + block + ", " + yieldArg + ")");
     }
 
+    // if wrapIntoArray, maybe convert yieldArg into a CompoundArray operand?
     public Operand[] getOperands() {
         return (yieldArg == null) ? new Operand[]{block} : new Operand[] {block, yieldArg};
     }

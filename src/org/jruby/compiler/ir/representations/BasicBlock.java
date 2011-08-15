@@ -125,6 +125,7 @@ public class BasicBlock {
         return clonedBB;
     }
 
+    // SSS FIXME: Verify correctness; also deal with YieldInstr.wrapIntoArray flag
     public void processClosureArgAndReturnInstrs(InlinerInfo ii, YieldInstr yi) {
         Variable  yieldResult = ii.getRenamedVariable(yi.result);
         Operand[] yieldArgs   = yi.getNonBlockOperands();
