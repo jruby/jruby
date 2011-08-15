@@ -1115,13 +1115,7 @@ public class Java implements Library {
             try {
                 proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
             } catch (ClassNotFoundException cnfe) {
-                ClassDefiningClassLoader classLoader;
-                if (cacheable) {
-                    classLoader = runtime.getJRubyClassLoader();
-                } else {
-                    classLoader = new OneShotClassLoader(runtime.getJRubyClassLoader());
-                }
-                proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, classLoader);
+                proxyImplClass = generateRealClassImplForInterfaces(wrapper, interfaces, runtime, cacheable, implClassName);
             }
 
             try {
@@ -1170,6 +1164,16 @@ public class Java implements Library {
             });
             return JavaObject.wrap(runtime, proxyObject);
         }
+    }
+
+    private static Class generateRealClassImplForInterfaces(IRubyObject wrapper, Class[] interfaces, Ruby runtime, boolean cacheable, String implClassName) {
+        ClassDefiningClassLoader classLoader;
+        if (cacheable) {
+            classLoader = runtime.getJRubyClassLoader();
+        } else {
+            classLoader = new OneShotClassLoader(runtime.getJRubyClassLoader());
+        }
+        return RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, classLoader);
     }
 
     public static Class generateRealClass(final RubyClass clazz) {
