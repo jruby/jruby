@@ -23,9 +23,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -42,7 +40,6 @@ public class CallInstr extends MultiOperandInstr {
     private boolean canBeEval;
     private boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
     public HashMap<DynamicMethod, Integer> profile;
-    public CallSite callAdapter;
     
     public static CallInstr create(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         return new CallInstr(result, methAddr, receiver, args, closure);
@@ -62,7 +59,6 @@ public class CallInstr extends MultiOperandInstr {
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
-        callAdapter = MethodIndex.getFunctionalCallSite(methAddr.toString());
     }
 
     public Operand[] getOperands() {
@@ -284,7 +280,7 @@ public class CallInstr extends MultiOperandInstr {
         String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
         Object resultValue;
         try {
-            resultValue = callAdapter.call(context, self, object, args, 
+            resultValue = RuntimeHelpers.invoke(context, object, name, args, 
                     prepareBlock(interp, context, self));
         } catch (org.jruby.exceptions.JumpException.BreakJump bj) {
             resultValue = (IRubyObject) bj.getValue();
