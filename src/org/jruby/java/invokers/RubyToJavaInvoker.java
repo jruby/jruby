@@ -101,8 +101,12 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         if (javaCallable != null) {
             // no constructor support yet
             if (javaCallable instanceof org.jruby.javasupport.JavaMethod) {
-                Method method = (Method)((org.jruby.javasupport.JavaMethod)javaCallable).getValue();
-                setNativeCall(method.getDeclaringClass(), method.getName(), method.getReturnType(), method.getParameterTypes(), Modifier.isStatic(method.getModifiers()), true);
+                org.jruby.javasupport.JavaMethod javaMethod = (org.jruby.javasupport.JavaMethod)javaCallable;
+                Method method = (Method)javaMethod.getValue();
+                // only public, since non-public don't bind
+                if (Modifier.isPublic(method.getModifiers()) && Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
+                    setNativeCall(method.getDeclaringClass(), method.getName(), method.getReturnType(), method.getParameterTypes(), Modifier.isStatic(method.getModifiers()), true);
+                }
             }
         } else {
             // use the lowest-arity non-overload
@@ -111,7 +115,10 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                         && callablesForArity.length == 1
                         && callablesForArity[0] instanceof org.jruby.javasupport.JavaMethod) {
                     Method method = (Method)((org.jruby.javasupport.JavaMethod)callablesForArity[0]).getValue();
-                    setNativeCall(method.getDeclaringClass(), method.getName(), method.getReturnType(), method.getParameterTypes(), Modifier.isStatic(method.getModifiers()), true);
+                    // only public, since non-public don't bind
+                    if (Modifier.isPublic(method.getModifiers()) && Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
+                        setNativeCall(method.getDeclaringClass(), method.getName(), method.getReturnType(), method.getParameterTypes(), Modifier.isStatic(method.getModifiers()), true);
+                    }
                 }
             }
         }
