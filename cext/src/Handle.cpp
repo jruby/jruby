@@ -87,10 +87,14 @@ void
 Handle::makeStrong_(JNIEnv* env)
 {
     if ((flags & FL_WEAK) != 0) {
-        flags &= ~FL_WEAK;
-        jobject tmp = env->NewGlobalRef(obj);
+        jobject tmp = env->NewLocalRef(obj);
+        if (unlikely(env->IsSameObject(tmp, NULL))) {
+            rb_raise(rb_eRuntimeError, "weak handle is null");
+        }
         env->DeleteWeakGlobalRef(obj);
-        obj = tmp;
+        obj = env->NewGlobalRef(tmp);
+        env->DeleteLocalRef(tmp);
+        flags &= ~FL_WEAK;
     }
 }
 
@@ -227,6 +231,7 @@ jruby::objectToValue(JNIEnv* env, jobject obj)
     }
 
     VALUE v = (VALUE) env->CallStaticLongMethod(Handle_class, Handle_nativeHandle, obj);
+    makeStrongRef(env, v);
     checkExceptions(env);
 
     return v;
