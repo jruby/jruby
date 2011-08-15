@@ -295,6 +295,8 @@ class Generator
       # if using the block form only, don't "next" for internal iteration
       if @block && !@enum
         @block.call Enumerator::Yielder.new(&block)
+      elsif @enum && !@block
+        @enum.each(&block)
       else
         rewind
 
