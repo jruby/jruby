@@ -42,6 +42,7 @@ public enum Operation {
     RECV_CLOSURE_ARG(OpFlags.f_is_arg_receive),
     RECV_EXCEPTION(OpFlags.f_is_arg_receive),
     SET_ARGS(OpFlags.f_has_side_effect),
+    OPT_ARG_EXISTS(0),
 
     /* By default, call instructions cannot be deleted even if their results
      * aren't used by anyone unless we know more about what the call is, 
