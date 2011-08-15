@@ -431,7 +431,7 @@ public class Readline {
                 RubyString line = lines[i].convertToString();
                 holder.history.addToHistory(line.getUnicodeValue());
             }
-            return recv.getRuntime().getNil();
+            return recv;
         }
 
         @JRubyMethod(name = "pop")
