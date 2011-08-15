@@ -181,6 +181,10 @@ public enum Operation {
         return (flags & OpFlags.f_has_side_effect) > 0;
     }
 
+    public boolean isDebugOp() {
+        return (flags & OpFlags.f_is_debug_op) > 0;
+    }
+
     // Conservative -- say no only if you know it for sure cannot
     public boolean canRaiseException() {
         return (flags & OpFlags.f_can_raise_exception) > 0;
