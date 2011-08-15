@@ -60,7 +60,6 @@ public final class Handle extends Cleaner {
 
     private final Ruby runtime;
     private final long address;
-    final int objectId;
     
     static Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
         return new Handle(runtime, rubyObject, nativeHandle);
@@ -70,7 +69,6 @@ public final class Handle extends Cleaner {
         super(obj);
         this.runtime = runtime;
         this.address = address;
-        this.objectId = System.identityHashCode(obj);
     }
     
     public final long getAddress() {
@@ -103,7 +101,6 @@ public final class Handle extends Cleaner {
 
     @Override
     void dispose() {
-        GC.unregister(this);
         Native.freeHandle(address);
     }
 
