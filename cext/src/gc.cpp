@@ -128,17 +128,11 @@ Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
 
         if ((h->flags & (FL_MARK | FL_CONST)) == 0) {
 
-            if (unlikely(h->getType() == T_DATA)) {
-                if ((h->flags & FL_WEAK) == 0) {
-                    h->flags |= FL_WEAK;
-                    jobject obj = env->NewWeakGlobalRef(h->obj);
-                    env->DeleteGlobalRef(h->obj);
-                    h->obj = obj;
-                }
-
-            } else {
-                TAILQ_REMOVE(&liveHandles, h, all);
-                TAILQ_INSERT_TAIL(&deadHandles, h, all);
+            if ((h->flags & FL_WEAK) == 0) {
+                h->flags |= FL_WEAK;
+                jobject obj = env->NewWeakGlobalRef(h->obj);
+                env->DeleteGlobalRef(h->obj);
+                h->obj = obj;
             }
 
         } else if ((h->flags & FL_MARK) != 0) {
@@ -157,15 +151,5 @@ Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
 extern "C" JNIEXPORT jobject JNICALL
 Java_org_jruby_cext_Native_pollGC(JNIEnv* env, jobject self)
 {
-    Handle* h = TAILQ_FIRST(&deadHandles);
-    if (h == TAILQ_END(&deadHandles)) {
-        return NULL;
-    }
-    TAILQ_REMOVE(&deadHandles, h, all);
-
-    jobject obj = env->NewLocalRef(h->obj);
-    env->DeleteGlobalRef(h->obj);
-    delete h;
-
-    return obj;
+    return NULL;
 }

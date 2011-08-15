@@ -46,9 +46,6 @@ DataSyncQueue jruby::nsyncq = TAILQ_HEAD_INITIALIZER(nsyncq);
 DataSyncQueue jruby::jsyncq = TAILQ_HEAD_INITIALIZER(jsyncq);
 DataSyncQueue jruby::cleanq = TAILQ_HEAD_INITIALIZER(cleanq);
 
-static int allocCount;
-static const int GC_THRESHOLD = 10000;
-
 Handle::Handle()
 {
     obj = NULL;
@@ -59,9 +56,6 @@ Handle::Handle(JNIEnv* env, jobject obj_, int type_)
 {
     Init();
     setType(type_);
-    if (type_ == T_CLASS || type_ == T_MODULE) {
-        this->flags |= FL_CONST;
-    }
     this->obj = env->NewGlobalRef(obj_);
 }
 
@@ -75,12 +69,6 @@ Handle::Init()
     flags = 0;
     setType(T_NONE);
     TAILQ_INSERT_TAIL(&liveHandles, this, all);
-
-    if (++allocCount > GC_THRESHOLD) {
-        allocCount = 0;
-        JLocalEnv env;
-        env->CallStaticVoidMethod(GC_class, GC_trigger);
-    }
 }
 
 Handle*
@@ -98,10 +86,12 @@ Handle::specialHandle(VALUE v)
 void
 Handle::makeStrong_(JNIEnv* env)
 {
-    flags |= FL_WEAK;
-    jobject tmp = env->NewGlobalRef(obj);
-    env->DeleteWeakGlobalRef(obj);
-    obj = tmp;
+    if ((flags & FL_WEAK) != 0) {
+        flags &= ~FL_WEAK;
+        jobject tmp = env->NewGlobalRef(obj);
+        env->DeleteWeakGlobalRef(obj);
+        obj = tmp;
+    }
 }
 
 RubyFixnum::RubyFixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_, T_FIXNUM)
