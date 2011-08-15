@@ -19,7 +19,7 @@ import java.util.List;
  * Different dataflow problems encapsulate different dataflow properties, and a different flow graph node is built in each case */
 abstract public class FlowGraphNode
 {
-    public FlowGraphNode(DataFlowProblem p, BasicBlock n) { _prob = p; _bb = n; }
+    public FlowGraphNode(DataFlowProblem p, BasicBlock n) { _prob = p; _bb = n; _rescuerBB = _prob.getCFG().getRescuerBB(_bb); }
    
 /* ----------- Public abstract methods ---------- */
     /** Initialize this data flow node to compute the new solution
@@ -103,7 +103,13 @@ abstract public class FlowGraphNode
         }
     }
 
+    public FlowGraphNode getExceptionTargetNode() {
+        // If there is a rescue node, on exception, control goes to the rescuer bb.  If not, it goes to the scope exit.
+        return _prob.getFlowGraphNode(_rescuerBB == null ? _prob.getCFG().getExitBB() : _rescuerBB);
+    }
+
 /* --------- protected fields/methods below --------- */
     protected DataFlowProblem _prob;   // Dataflow problem with which this node is associated
     protected BasicBlock _bb;          // CFG node for which this node contains info.
+    private   BasicBlock _rescuerBB;   // Basicblock that protects any exceptions raised in this node
 }
