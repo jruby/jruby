@@ -13,9 +13,11 @@ import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
 
-import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collection;
+import java.util.Set;
+import java.util.BitSet;
+import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -27,8 +29,8 @@ public class LiveVariableNode extends FlowGraphNode
     @Override
     public void init()
     {
-        _setSize = _prob.getDFVarsCount();
-        _in = new BitSet(_setSize);
+        this.setSize = _prob.getDFVarsCount();
+        this.out = new BitSet(this.setSize);
     }
 
     private void addDFVar(Variable v)
@@ -51,12 +53,12 @@ public class LiveVariableNode extends FlowGraphNode
     public void initSolnForNode()
     {
         LiveVariablesProblem p = (LiveVariablesProblem)_prob;
-        _tmp = new BitSet(_setSize);
+        this.in = new BitSet(this.setSize);
         if (_bb == p.getCFG().getExitBB()) {
             Collection<Variable> lv = p.getVarsLiveOnExit();
             if ((lv != null) && !lv.isEmpty()) {
                 for (Variable v: lv)
-                    _tmp.set(p.getDFVar(v)._id);
+                    this.in.set(p.getDFVar(v)._id);
             }
         }
     }
@@ -65,7 +67,7 @@ public class LiveVariableNode extends FlowGraphNode
     {
 //        System.out.println("computing meet for BB " + _bb.getID() + " with BB " + ((LiveVariableNode)pred)._bb.getID());
         // All variables live at the entry of 'pred' are also live at exit of this node
-        _tmp.or(((LiveVariableNode)pred)._in);
+        this.in.or(((LiveVariableNode)pred).out);
     }
 
     private LiveVariablesProblem processClosure(IRClosure cl, Collection<Variable> liveOnEntry)
@@ -84,7 +86,7 @@ public class LiveVariableNode extends FlowGraphNode
     {
         LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
 
-        _out = (BitSet)_tmp.clone();
+        this.tmp = (BitSet)this.in.clone();
 //        System.out.println("Apply TF for BB " + _bb.getID());
 //        System.out.println("After MEET, df state is:\n" + toString());
 
@@ -99,7 +101,7 @@ public class LiveVariableNode extends FlowGraphNode
             Variable v = i.getResult();
             if (v != null) {
                 DataFlowVar dv = lvp.getDFVar(v);
-                _tmp.clear(dv._id);
+                this.tmp.clear(dv._id);
 //                System.out.println("cleared live flag for: " + v);
             }
 
@@ -114,69 +116,93 @@ public class LiveVariableNode extends FlowGraphNode
 //                   System.out.println("Processing closure: " + o + "-------");
                 if ((o != null) && (o instanceof MetaObject)) {
                     IRClosure cl = (IRClosure)((MetaObject)o).scope;
-                    if (c.isLVADataflowBarrier()) {
+                    if (c.isDataflowBarrier()) {
                         processClosure(cl, lvp.getAllVars());
 
 //                        System.out.println(".. call is a data flow barrier ..");
                         // Mark all non-self local variables live if 'c' is a dataflow barrier!
-                        for (Variable x: lvp.getNonSelfLocalVars()) _tmp.set(lvp.getDFVar(x)._id);
+                        for (Variable x: lvp.getNonSelfLocalVars()) this.tmp.set(lvp.getDFVar(x)._id);
                     }
                     else {
                         // Propagate current LVA state through the closure
                         // SSS FIXME: Think through this .. Is there any way out of having
                         // to recompute the entire lva for the closure each time through?
 
-                        // 1. Collect variables live at this point.
-                        List<Variable> liveVars = new ArrayList<Variable>();
-                        for (int j = 0; j < _tmp.size(); j++) {
-                            if (_tmp.get(j) == true) {
+                        // Collect variables live at this point.
+                        Set<Variable> liveVars = new HashSet<Variable>();
+                        for (int j = 0; j < this.tmp.size(); j++) {
+                            if (this.tmp.get(j) == true) {
 //                                System.out.println(lvp.getVariable(j) + " is live on exit of closure!");
                                 liveVars.add(lvp.getVariable(j));
                             }
                         }
 //                        System.out.println(" .. collected live on exit ..");
 
-                        // 2. Run LVA on the closure
+                        // Collect variables live out of the exception target node.  Since this call can directly jump to
+                        // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
+                        // have a control-flow edge from this call to that block.  Since we dont want to add a
+                        // control-flow edge from pretty much very call to the rescuer/exit BB, we are handling it
+                        // implicitly here.
+                        if (c.canRaiseException()) {
+                            BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
+                            for (int k = 0; k < etOut.size(); k++) {
+                                if (etOut.get(k) == true) liveVars.add(lvp.getVariable(k));
+                            }
+                        }
+                        // Run LVA on the closure
                         LiveVariablesProblem xlvp = processClosure(cl, liveVars);
 
 //                        System.out.println("------- done with closure" + o);
 
-                        // 3. Collect variables live on entry of the closure and merge that info into the current problem.
+                        // Collect variables live on entry of the closure and merge that info into the current problem.
                         for (Variable y: xlvp.getVarsLiveOnEntry()) {
                             DataFlowVar dv = lvp.getDFVar(y);
                             // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                             if (dv != null) {
 //                                System.out.println(y + " is live on entry of the closure!");
-                                _tmp.set(dv._id);
+                                this.tmp.set(dv._id);
                             }
                         } 
                     }
                 }
-                else if (c.isLVADataflowBarrier()) {
+                else if (c.isDataflowBarrier()) {
 //                    System.out.println(".. call is a data flow barrier ..");
                      // Mark all non-self local variables live if 'c' is a dataflow barrier!
-                    for (Variable x: lvp.getNonSelfLocalVars()) _tmp.set(lvp.getDFVar(x)._id);
+                    for (Variable x: lvp.getNonSelfLocalVars()) this.tmp.set(lvp.getDFVar(x)._id);
+                }
+                else if (c.canRaiseException()) {
+//                    System.out.println(".. can raise exception ..");
+                    // Collect variables live out of the exception target node.  Since this call can directly jump to
+                    // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
+                    // have a control-flow edge from this call to that block.  Since we dont want to add a
+                    // control-flow edge from pretty much very call to the rescuer/exit BB, we are handling it
+                    // implicitly here.
+                    BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
+                    for (int k = 0; k < etOut.size(); k++) {
+                        if (etOut.get(k) == true) { 
+                            this.tmp.set(k); 
+//                            System.out.println("marking var live: " + lvp.getVariable(k)); 
+                         }
+                    }
                 }
             }
 
-            // Now, for all variables used by 'i' mark them live before 'i'
+            // Now, for all variables used by 'i', mark them live before 'i'
             for (Variable x: i.getUsedVariables()) {
                 DataFlowVar dv = lvp.getDFVar(x);
                 // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                 if (dv != null) {
-                    _tmp.set(dv._id);
+                    this.tmp.set(dv._id);
 //                    System.out.println("set live flag for: " + x);
                 }
             }
         }
 
-            // IN is the same!
-        if (_tmp.equals(_in)) {
+        if (this.tmp.equals(this.out)) { // OUT is the same!
             return false;
         }
-            // IN changed!
-        else {
-            _in = _tmp;
+        else { // OUT changed!
+            this.out = this.tmp;
             return true;
         }
     }
@@ -187,8 +213,8 @@ public class LiveVariableNode extends FlowGraphNode
         StringBuilder buf = new StringBuilder();
         buf.append("\tVars Live on Entry: ");
         int count = 0;
-        for (int i = 0; i < _in.size(); i++) {
-            if (_in.get(i) == true) {
+        for (int i = 0; i < this.in.size(); i++) {
+            if (this.in.get(i) == true) {
                 count++;
                 buf.append(' ').append(i);
                 if (count % 10 == 0)
@@ -201,8 +227,8 @@ public class LiveVariableNode extends FlowGraphNode
 
         buf.append("\n\tVars Live on Exit: ");
         count = 0;
-        for (int i = 0; i < _out.size(); i++) {
-            if (_out.get(i) == true) {
+        for (int i = 0; i < this.out.size(); i++) {
+            if (this.out.get(i) == true) {
                 count++;
                 buf.append(' ').append(i);
                 if (count % 10 == 0)
@@ -222,8 +248,8 @@ public class LiveVariableNode extends FlowGraphNode
 //        System.out.println("dead processing for " + _bb.getID());
         LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
 
-        if (_out == null) {
-           // _out cannot be null for reachable bbs! 
+        if (this.in == null) {
+           // this.in cannot be null for reachable bbs
            // This bb is unreachable! (or we have a mighty bug!)
            // Mark everything dead in here!
            for (Instr i: _bb.getInstrs())
@@ -232,7 +258,7 @@ public class LiveVariableNode extends FlowGraphNode
            return;
         }
 
-        _tmp = (BitSet)_out.clone();
+        this.tmp = (BitSet)this.in.clone();
 
         // Traverse the instructions in this basic block in reverse order!
         // Mark as dead all instructions whose results are not used! 
@@ -245,20 +271,20 @@ public class LiveVariableNode extends FlowGraphNode
             if (v != null) {
                 DataFlowVar dv = lvp.getDFVar(v);
                     // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!
-                if ((_tmp.get(dv._id) == false) && !i.hasSideEffects()) {
+                if ((this.tmp.get(dv._id) == false) && !i.hasSideEffects() && !i.operation.isDebugOp()) {
 //                    System.out.println("YES!");
                     i.markDead();
                     it.remove();
                 }
-                else if (_tmp.get(dv._id) == false) {
+                else if (this.tmp.get(dv._id) == false) {
 //                    System.out.println("NO!  has side effects! Op is: " + i.operation);
                 }
                 else {
 //                    System.out.println("NO! LIVE result:" + v);
-                    _tmp.clear(dv._id);
+                    this.tmp.clear(dv._id);
                 }
             }
-            else if (!i.hasSideEffects() && !i.transfersControl()) {
+            else if (!i.hasSideEffects() && !i.operation.isDebugOp() && !i.transfersControl()) {
                  i.markDead();
                  it.remove();
             }
@@ -268,23 +294,34 @@ public class LiveVariableNode extends FlowGraphNode
 
             if (i instanceof CallInstr) {
                 CallInstr c = (CallInstr) i;
-                if (c.isLVADataflowBarrier()) {
+                if (c.isDataflowBarrier()) {
                     // Mark all non-self local variables live if 'c' is a dataflow barrier!
-                    for (Variable x: lvp.getNonSelfLocalVars()) _tmp.set(lvp.getDFVar(x)._id);
+                    for (Variable x: lvp.getNonSelfLocalVars()) this.tmp.set(lvp.getDFVar(x)._id);
                 }
                 else {
+                    if (c.canRaiseException()) {
+                        // Collect variables live out of the exception target node.  Since this call can directly jump to
+                        // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
+                        // have a control-flow edge from this call to that block.  Since we dont want to add a
+                        // control-flow edge from pretty much very call to the rescuer/exit BB, we are handling it
+                        // implicitly here.
+                        BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
+                        for (int k = 0; k < etOut.size(); k++) {
+                            if (etOut.get(k) == true) this.tmp.set(k);
+                        }
+                    }
+
                     Operand o = c.getClosureArg();
                     if ((o != null) && (o instanceof MetaObject)) {
-                        // 2. Run LVA on the closure
                         IRClosure cl = (IRClosure)((MetaObject)o).scope;
                         CFG x = cl.getCFG();
                         LiveVariablesProblem xlvp = (LiveVariablesProblem)x.getDataFlowSolution(lvp.getName());
-                        // 3. Collect variables live on entry and merge that info into the current problem.
+                        // Collect variables live on entry and merge that info into the current problem.
                         for (Variable y: xlvp.getVarsLiveOnEntry()) {
                             DataFlowVar dv = lvp.getDFVar(y);
                             // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                             if (dv != null)
-                                _tmp.set(dv._id);
+                                this.tmp.set(dv._id);
                         } 
                     }
                 }
@@ -295,19 +332,19 @@ public class LiveVariableNode extends FlowGraphNode
                for (Variable x: i.getUsedVariables()) {
                    DataFlowVar dv = lvp.getDFVar(x);
                    if (dv != null)
-                       _tmp.set(dv._id);
+                       this.tmp.set(dv._id);
                }
             }
         }
     }
 
-    BitSet getLiveInBitSet()  { return _in; }
+    BitSet getLiveInBitSet()  { return this.in; }
 
-    BitSet getLiveOutBitSet() { return _out; }
+    BitSet getLiveOutBitSet() { return this.out; }
 
 /* ---------- Private fields, methods --------- */
-    private BitSet _in;         // Variables live at entry of this node
-    private BitSet _out;        // Variables live at exit of node
-    private BitSet _tmp;        // Temporary set of live variables
-    private int    _setSize;    // Size of the "_in" and "_out" bit sets 
+    private BitSet in;         // Variables live at entry of this node
+    private BitSet out;        // Variables live at exit of node
+    private BitSet tmp;        // Temporary set of live variables
+    private int    setSize;    // Size of the "this.in" and "this.out" bit sets 
 }
