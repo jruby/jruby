@@ -85,163 +85,166 @@ public class RealClassGenerator {
      * @return
      */
     public static Class defineOldStyleImplClass(Ruby ruby, String name, String[] superTypeNames, Map<String, List<Method>> simpleToAll, ClassDefiningClassLoader classLoader) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        String pathName = name.replace('.', '/');
-        
-        // construct the class, implementing all supertypes
-        cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, pathName, null, p(Object.class), superTypeNames);
-        cw.visitSource(pathName + ".gen", null);
-        
-        // fields needed for dispatch and such
-        cw.visitField(ACC_STATIC | ACC_FINAL | ACC_PRIVATE, "$runtimeCache", ci(RuntimeCache.class), null, null).visitEnd();
-        cw.visitField(ACC_PRIVATE | ACC_FINAL, "$self", ci(IRubyObject.class), null, null).visitEnd();
-
-        // create static init
-        SkinnyMethodAdapter clinitMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(void.class), null, null);
-        
-        // create constructor
-        SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, IRubyObject.class), null, null);
-        initMethod.aload(0);
-        initMethod.invokespecial(p(Object.class), "<init>", sig(void.class));
-        
-        // store the wrapper
-        initMethod.aload(0);
-        initMethod.aload(1);
-        initMethod.putfield(pathName, "$self", ci(IRubyObject.class));
-        
-        // end constructor
-        initMethod.voidreturn();
-        initMethod.end();
-
-        int cacheSize = 0;
-
-        // for each simple method name, implement the complex methods, calling the simple version
-        for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
-            String simpleName = entry.getKey();
-            Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, entry.getValue());
-
-            Set<String> implementedNames = new HashSet<String>();
-
-            for (Method method : entry.getValue()) {
-                Class[] paramTypes = method.getParameterTypes();
-                Class returnType = method.getReturnType();
-
-                String fullName = simpleName + prettyParams(paramTypes);
-                if (implementedNames.contains(fullName)) continue;
-                implementedNames.add(fullName);
-
-                // indices for temp values
-                int baseIndex = 1;
-                for (Class paramType : paramTypes) {
-                    if (paramType == double.class || paramType == long.class) {
-                        baseIndex += 2;
-                    } else {
-                        baseIndex += 1;
-                    }
-                }
-                int selfIndex = baseIndex;
-                int rubyIndex = selfIndex + 1;
-                
-                SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
-                        cw, ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null);
-                mv.start();
-                mv.line(1);
-                
-                // TODO: this code should really check if a Ruby equals method is implemented or not.
-                if(simpleName.equals("equals") && paramTypes.length == 1 && paramTypes[0] == Object.class && returnType == Boolean.TYPE) {
-                    mv.line(2);
-                    mv.aload(0);
-                    mv.aload(1);
-                    mv.invokespecial(p(Object.class), "equals", sig(Boolean.TYPE, params(Object.class)));
-                    mv.ireturn();
-                } else if(simpleName.equals("hashCode") && paramTypes.length == 0 && returnType == Integer.TYPE) {
-                    mv.line(3);
-                    mv.aload(0);
-                    mv.invokespecial(p(Object.class), "hashCode", sig(Integer.TYPE));
-                    mv.ireturn();
-                } else if(simpleName.equals("toString") && paramTypes.length == 0 && returnType == String.class) {
-                    mv.line(4);
-                    mv.aload(0);
-                    mv.invokespecial(p(Object.class), "toString", sig(String.class));
-                    mv.areturn();
-                } else if (simpleName.equals("__ruby_object") && paramTypes.length == 0 && returnType == IRubyObject.class) {
-                    mv.aload(0);
-                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
-                    mv.areturn();
-                } else {
-                    mv.line(5);
-
-                    int cacheIndex = cacheSize++;
-
-                    // prepare temp locals
-                    mv.aload(0);
-                    mv.getfield(pathName, "$self", ci(IRubyObject.class));
-                    mv.astore(selfIndex);
-                    mv.aload(selfIndex);
-                    mv.invokeinterface(p(IRubyObject.class), "getRuntime", sig(Ruby.class));
-                    mv.astore(rubyIndex);
-
-                    // get method from cache
-                    mv.getstatic(pathName, "$runtimeCache", ci(RuntimeCache.class));
-                    mv.aload(selfIndex);
-                    mv.ldc(cacheIndex);
-                    for (String eachName : nameSet) {
-                        mv.ldc(eachName);
-                    }
-                    mv.invokevirtual(p(RuntimeCache.class), "searchWithCache",
-                            sig(DynamicMethod.class, params(IRubyObject.class, int.class, String.class, nameSet.size())));
-
-                    // get current context
-                    mv.aload(rubyIndex);
-                    mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
-
-                    // load self, class, and name
-                    mv.aloadMany(selfIndex, selfIndex);
-                    mv.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
-                    mv.ldc(simpleName);
-
-                    // coerce arguments
-                    coerceArgumentsToRuby(mv, paramTypes, rubyIndex);
-
-                    // load null block
-                    mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-
-                    // invoke method
-                    mv.line(13);
-                    mv.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
-
-                    coerceResultAndReturn(mv, returnType);
-                }                
-                mv.end();
-            }
-        }
-        
-        // end setup method
-        clinitMethod.newobj(p(RuntimeCache.class));
-        clinitMethod.dup();
-        clinitMethod.invokespecial(p(RuntimeCache.class), "<init>", sig(void.class));
-        clinitMethod.dup();
-        clinitMethod.ldc(cacheSize);
-        clinitMethod.invokevirtual(p(RuntimeCache.class), "initMethodCache", sig(void.class, int.class));
-        clinitMethod.putstatic(pathName, "$runtimeCache", ci(RuntimeCache.class));
-        clinitMethod.voidreturn();
-        clinitMethod.end();
-        
-        // end class
-        cw.visitEnd();
-        
-        // create the class
-        byte[] bytes = cw.toByteArray();
         Class newClass;
+        byte[] bytes;
+
         synchronized (classLoader) {
             // try to load the specified name; only if that fails, try to define the class
             try {
                 newClass = classLoader.loadClass(name);
             } catch (ClassNotFoundException cnfe) {
+                ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+                String pathName = name.replace('.', '/');
+
+                // construct the class, implementing all supertypes
+                cw.visit(V1_5, ACC_PUBLIC | ACC_SUPER, pathName, null, p(Object.class), superTypeNames);
+                cw.visitSource(pathName + ".gen", null);
+
+                // fields needed for dispatch and such
+                cw.visitField(ACC_STATIC | ACC_FINAL | ACC_PRIVATE, "$runtimeCache", ci(RuntimeCache.class), null, null).visitEnd();
+                cw.visitField(ACC_PRIVATE | ACC_FINAL, "$self", ci(IRubyObject.class), null, null).visitEnd();
+
+                // create static init
+                SkinnyMethodAdapter clinitMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_STATIC, "<clinit>", sig(void.class), null, null);
+
+                // create constructor
+                SkinnyMethodAdapter initMethod = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", sig(void.class, IRubyObject.class), null, null);
+                initMethod.aload(0);
+                initMethod.invokespecial(p(Object.class), "<init>", sig(void.class));
+
+                // store the wrapper
+                initMethod.aload(0);
+                initMethod.aload(1);
+                initMethod.putfield(pathName, "$self", ci(IRubyObject.class));
+
+                // end constructor
+                initMethod.voidreturn();
+                initMethod.end();
+
+                int cacheSize = 0;
+
+                // for each simple method name, implement the complex methods, calling the simple version
+                for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
+                    String simpleName = entry.getKey();
+                    Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, entry.getValue());
+
+                    Set<String> implementedNames = new HashSet<String>();
+
+                    for (Method method : entry.getValue()) {
+                        Class[] paramTypes = method.getParameterTypes();
+                        Class returnType = method.getReturnType();
+
+                        String fullName = simpleName + prettyParams(paramTypes);
+                        if (implementedNames.contains(fullName)) continue;
+                        implementedNames.add(fullName);
+
+                        // indices for temp values
+                        int baseIndex = 1;
+                        for (Class paramType : paramTypes) {
+                            if (paramType == double.class || paramType == long.class) {
+                                baseIndex += 2;
+                            } else {
+                                baseIndex += 1;
+                            }
+                        }
+                        int selfIndex = baseIndex;
+                        int rubyIndex = selfIndex + 1;
+
+                        SkinnyMethodAdapter mv = new SkinnyMethodAdapter(
+                                cw, ACC_PUBLIC, simpleName, sig(returnType, paramTypes), null, null);
+                        mv.start();
+                        mv.line(1);
+
+                        // TODO: this code should really check if a Ruby equals method is implemented or not.
+                        if (simpleName.equals("equals") && paramTypes.length == 1 && paramTypes[0] == Object.class && returnType == Boolean.TYPE) {
+                            mv.line(2);
+                            mv.aload(0);
+                            mv.aload(1);
+                            mv.invokespecial(p(Object.class), "equals", sig(Boolean.TYPE, params(Object.class)));
+                            mv.ireturn();
+                        } else if (simpleName.equals("hashCode") && paramTypes.length == 0 && returnType == Integer.TYPE) {
+                            mv.line(3);
+                            mv.aload(0);
+                            mv.invokespecial(p(Object.class), "hashCode", sig(Integer.TYPE));
+                            mv.ireturn();
+                        } else if (simpleName.equals("toString") && paramTypes.length == 0 && returnType == String.class) {
+                            mv.line(4);
+                            mv.aload(0);
+                            mv.invokespecial(p(Object.class), "toString", sig(String.class));
+                            mv.areturn();
+                        } else if (simpleName.equals("__ruby_object") && paramTypes.length == 0 && returnType == IRubyObject.class) {
+                            mv.aload(0);
+                            mv.getfield(pathName, "$self", ci(IRubyObject.class));
+                            mv.areturn();
+                        } else {
+                            mv.line(5);
+
+                            int cacheIndex = cacheSize++;
+
+                            // prepare temp locals
+                            mv.aload(0);
+                            mv.getfield(pathName, "$self", ci(IRubyObject.class));
+                            mv.astore(selfIndex);
+                            mv.aload(selfIndex);
+                            mv.invokeinterface(p(IRubyObject.class), "getRuntime", sig(Ruby.class));
+                            mv.astore(rubyIndex);
+
+                            // get method from cache
+                            mv.getstatic(pathName, "$runtimeCache", ci(RuntimeCache.class));
+                            mv.aload(selfIndex);
+                            mv.ldc(cacheIndex);
+                            for (String eachName : nameSet) {
+                                mv.ldc(eachName);
+                            }
+                            mv.invokevirtual(p(RuntimeCache.class), "searchWithCache",
+                                    sig(DynamicMethod.class, params(IRubyObject.class, int.class, String.class, nameSet.size())));
+
+                            // get current context
+                            mv.aload(rubyIndex);
+                            mv.invokevirtual(p(Ruby.class), "getCurrentContext", sig(ThreadContext.class));
+
+                            // load self, class, and name
+                            mv.aloadMany(selfIndex, selfIndex);
+                            mv.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
+                            mv.ldc(simpleName);
+
+                            // coerce arguments
+                            coerceArgumentsToRuby(mv, paramTypes, rubyIndex);
+
+                            // load null block
+                            mv.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+
+                            // invoke method
+                            mv.line(13);
+                            mv.invokevirtual(p(DynamicMethod.class), "call", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
+
+                            coerceResultAndReturn(mv, returnType);
+                        }
+                        mv.end();
+                    }
+                }
+
+                // end setup method
+                clinitMethod.newobj(p(RuntimeCache.class));
+                clinitMethod.dup();
+                clinitMethod.invokespecial(p(RuntimeCache.class), "<init>", sig(void.class));
+                clinitMethod.dup();
+                clinitMethod.ldc(cacheSize);
+                clinitMethod.invokevirtual(p(RuntimeCache.class), "initMethodCache", sig(void.class, int.class));
+                clinitMethod.putstatic(pathName, "$runtimeCache", ci(RuntimeCache.class));
+                clinitMethod.voidreturn();
+                clinitMethod.end();
+
+                // end class
+                cw.visitEnd();
+
+                // create the class
+                bytes = cw.toByteArray();
+
                 newClass = classLoader.defineClass(name, cw.toByteArray());
             }
         }
-        
+
         if (DEBUG) {
             FileOutputStream fos = null;
             try {
