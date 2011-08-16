@@ -46,6 +46,7 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
+import org.jcodings.Encoding;
 
 import org.joda.time.DateTime;
 
@@ -70,6 +71,8 @@ import org.jruby.util.CRC32Ext;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.io.Stream;
+
+import static org.jruby.CompatVersion.*;
 
 @JRubyModule(name="Zlib")
 public class RubyZlib {
@@ -1429,12 +1432,23 @@ public class RubyZlib {
         }
 
         @JRubyMethod(visibility = PRIVATE)
-        public IRubyObject initialize(IRubyObject arg, Block unusedBlock) {
-            realIo = arg;
+        public IRubyObject initialize(IRubyObject stream) {
+            realIo = stream;
             line = 0;
             position = 0;
             io = new HeaderReadableGZIPInputStream(new CountingIOInputStream(realIo));
             bufferedStream = new BufferedInputStream(io);
+            return this;
+        }
+
+        @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
+        public IRubyObject initialize19(IRubyObject stream) {
+            return initialize(stream);
+        }
+
+        @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
+        public IRubyObject initialize19(IRubyObject stream, IRubyObject options) {
+            initialize(stream);
             return this;
         }
 
@@ -1445,7 +1459,7 @@ public class RubyZlib {
             realIo.callMethod(rt.getCurrentContext(), "seek",
                     new IRubyObject[]{rt.newFixnum(-io.pos()), rt.newFixnum(Stream.SEEK_CUR)});
             // ... and then reinitialize
-            initialize(realIo, Block.NULL_BLOCK);
+            initialize(realIo);
             return getRuntime().getNil();
         }
 
@@ -1878,14 +1892,30 @@ public class RubyZlib {
         private HeaderModifyableGZIPOutputStream io;
         
         @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
-        public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-            realIo = (RubyObject) args[0];
+        public IRubyObject initialize(IRubyObject[] args) {
+            return initialize(args[0]);
+        }
+        
+        @JRubyMethod(visibility = PRIVATE)
+        public IRubyObject initialize(IRubyObject arg) {
+            realIo = (RubyObject) arg;
             try {
                 io = new HeaderModifyableGZIPOutputStream(realIo);
                 return this;
             } catch (IOException ioe) {
                 throw getRuntime().newIOErrorFromException(ioe);
             }
+        }
+
+        @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
+        public IRubyObject initialize19(IRubyObject stream) {
+            return initialize(stream);
+        }
+
+        @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
+        public IRubyObject initialize19(IRubyObject stream, IRubyObject options) {
+            initialize(stream);
+            return this;
         }
 
         @Override
