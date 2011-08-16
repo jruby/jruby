@@ -84,6 +84,8 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     }
 
     public void beginClass(CompilerCallback bodyPrep, StaticScope scope) {
+        assert scope != null : "compiling a class body with no scope";
+        
         // store the local vars in a local variable for preparing the class (using previous scope)
         methodCompiler.loadThreadContext();
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
@@ -107,7 +109,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.astore(methodCompiler.getVarsArrayIndex());
         }
 
-        if (scope != null && scope.getNumberOfVariables() >= 1) {
+        if (scope.getNumberOfVariables() >= 1) {
             switch (scope.getNumberOfVariables()) {
             case 1:
                 methodCompiler.loadNil();
@@ -145,6 +147,8 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
     }
 
     public void beginClosure(CompilerCallback argsCallback, StaticScope scope) {
+        assert scope != null : "compiling a closure body with no scope";
+        
         methodCompiler.loadThreadContext();
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
         method.astore(methodCompiler.getDynamicScopeIndex());
@@ -156,7 +160,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
             method.astore(methodCompiler.getVarsArrayIndex());
         }
         
-        if (scope != null && scope.getNumberOfVariables() >= 1) {
+        if (scope.getNumberOfVariables() >= 1) {
             switch (scope.getNumberOfVariables()) {
             case 1:
                 methodCompiler.loadNil();

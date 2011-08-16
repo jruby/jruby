@@ -90,6 +90,8 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     }
 
     public void beginClass(CompilerCallback bodyPrep, StaticScope scope) {
+        assert scope != null : "compiling a class body with no scope";
+        
         // class bodies prepare their own dynamic scope, so let it do that
         bodyPrep.call(methodCompiler);
         
@@ -111,20 +113,20 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
     }
 
     public void beginClosure(CompilerCallback argsCallback, StaticScope scope) {
+        assert scope != null : "compiling a closure body with no scope";
+        
         // store the local vars in a local variable
         methodCompiler.loadThreadContext();
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
         method.astore(methodCompiler.getDynamicScopeIndex());
         
-        if (scope != null) {
-            for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-                methodCompiler.loadNil();
-                assignLocalVariable(i, false);
-            }
-            
-            // temp locals must start after last real local
-            tempVariableIndex += scope.getNumberOfVariables();
+        for (int i = 0; i < scope.getNumberOfVariables(); i++) {
+            methodCompiler.loadNil();
+            assignLocalVariable(i, false);
         }
+
+        // temp locals must start after last real local
+        tempVariableIndex += scope.getNumberOfVariables();
 
         if (argsCallback != null) {
             // load block

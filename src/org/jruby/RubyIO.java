@@ -2895,8 +2895,6 @@ public class RubyIO extends RubyObject {
             // ChannelStream#readall knows what size should be allocated at first. Just use it.
             if (descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel) {
                 buf = openFile.getMainStreamSafe().readall();
-            } else if (descriptor == null) {
-                buf = null;
             } else {
                 RubyThread thread = runtime.getCurrentContext().getThread();
                 try {
