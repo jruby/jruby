@@ -896,7 +896,7 @@ public class JavaUtil {
         ThreadContext context = rubyObject.getRuntime().getCurrentContext();
         IRubyObject origObject = rubyObject;
         if (rubyObject.dataGetStruct() instanceof JavaObject) {
-            rubyObject = (JavaObject) rubyObject.dataGetStruct();
+            rubyObject = (IRubyObject)rubyObject.dataGetStruct();
             if(rubyObject == null) {
                 throw new RuntimeException("dataGetStruct returned null for " + origObject.getType().getName());
             }
@@ -1268,7 +1268,7 @@ public class JavaUtil {
     @Deprecated
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
         if (object.respondsTo("to_java_object")) {
-            IRubyObject result = (JavaObject)object.dataGetStruct();
+            IRubyObject result = (IRubyObject)object.dataGetStruct();
             if (result == null) {
                 result = object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
             }

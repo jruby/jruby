@@ -63,7 +63,7 @@ public class JavaArrayUtilities {
                 bytes = (byte[])wrapped;
             }
         } else {
-            IRubyObject byteArray = (JavaObject)wrappedObject.dataGetStruct();
+            IRubyObject byteArray = (IRubyObject)wrappedObject.dataGetStruct();
             if (byteArray instanceof JavaArray &&
                     ((JavaArray)byteArray).getValue() instanceof byte[]) {
                 bytes = (byte[])((JavaArray)byteArray).getValue();
