@@ -599,7 +599,7 @@ RUBY_DLLSPEC VALUE jruby_timet2num(time_t v);
 
 RUBY_DLLSPEC VALUE rb_funcall(VALUE obj, ID meth, int cnt, ...);
 RUBY_DLLSPEC VALUE rb_funcall2(VALUE obj, ID meth, int cnt, VALUE*);
-RUBY_DLLSPEC VALUE rb_funcall2b(VALUE obj, ID meth, int cnt, VALUE*, VALUE);
+RUBY_DLLSPEC VALUE jruby_funcall2b(VALUE obj, ID meth, int cnt, VALUE*, VALUE);
 /** Starts the lookup in the superclass to call a method on the current self */
 RUBY_DLLSPEC VALUE rb_call_super(int argc, const VALUE *argv);
 

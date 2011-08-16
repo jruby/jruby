@@ -61,7 +61,7 @@ rb_funcall2(VALUE recv, ID meth, int argCount, VALUE* args)
 }
 
 extern "C" VALUE
-rb_funcall2b(VALUE recv, ID meth, int argCount, VALUE* args, VALUE block)
+jruby_funcall2b(VALUE recv, ID meth, int argCount, VALUE* args, VALUE block)
 {
     JLocalEnv env;
     return callRubyMethodB(env, recv, idToObject(env, meth), argCount, args, block);
