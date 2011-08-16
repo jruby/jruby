@@ -53,6 +53,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import org.jcodings.specific.ASCIIEncoding;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -550,6 +551,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
+        if (modes.isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
 
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
@@ -562,6 +564,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile = new OpenFile();
 
         openFile.setMode(modes.getOpenFileFlags());
+        if (modes.isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modeString));
     }
@@ -569,7 +572,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     protected void openInternal(String path, String modeString) throws InvalidValueException {
         openFile = new OpenFile();
 
-        openFile.setMode(getIOModes(getRuntime(), modeString).getOpenFileFlags());
+        ModeFlags modes = getIOModes(getRuntime(), modeString);
+        openFile.setMode(modes.getOpenFileFlags());
+        if (modes.isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modeString));
     }
