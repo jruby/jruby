@@ -29,6 +29,8 @@
  */
 package org.jruby.embed.jsr223;
 
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -85,10 +87,8 @@ public class Utils {
     static void preEval(ScriptingContainer container, ScriptContext context) {
         Object receiver = getReceiverObject(context);
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
-        Set<String> keys = bindings.keySet();
-        for (String key : keys) {
-            Object value = bindings.get(key);
-            Utils.put(container, receiver, key, value, context);
+        for (Map.Entry<String, Object> entry : bindings.entrySet()) {
+            Utils.put(container, receiver, entry.getKey(), entry.getValue(), context);
         }
         
         //container.setReader(context.getReader());
@@ -98,11 +98,9 @@ public class Utils {
         // if key of globalMap exists in engineMap, this key-value pair should be skipped.
         bindings = context.getBindings(ScriptContext.GLOBAL_SCOPE);
         if (bindings == null) return;
-        keys = bindings.keySet();
-        for (String key : keys) {
-            if (container.getVarMap().containsKey(key)) continue;
-            Object value = bindings.get(key);
-            put(container, receiver, key, value, context);
+        for (Map.Entry<String, Object> entry : bindings.entrySet()) {
+            if (container.getVarMap().containsKey(entry.getKey())) continue;
+            put(container, receiver, entry.getKey(), entry.getValue(), context);
         }
     }
 
@@ -118,9 +116,11 @@ public class Utils {
         Bindings engineMap = context.getBindings(ScriptContext.ENGINE_SCOPE);
         int size = engineMap.keySet().size();
         String[] names = engineMap.keySet().toArray(new String[size]);
-        for (int i=0; i<names.length; i++) {
-            if (shouldLVarBeDeleted(container, names[i])) {
-                engineMap.remove(names[i]);
+        Iterator<Map.Entry<String, Object>> iter = engineMap.entrySet().iterator();
+        for (;iter.hasNext();) {
+            Map.Entry<String, Object> entry = iter.next();
+            if (shouldLVarBeDeleted(container, entry.getKey())) {
+                iter.remove();
             }
         }
         Set<String> keys = container.getVarMap().keySet();
