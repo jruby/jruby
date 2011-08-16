@@ -68,7 +68,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
         this.realMethod = realMethod;
         
         int argCount = arity.getValue();
-        if (argCount == -1) argCount = 4;
+        if (argCount < 0 || argCount > 3) argCount = 4;
         
         this.nativeCall = new NativeCall(
                 jitCompiledScript.getClass(),
