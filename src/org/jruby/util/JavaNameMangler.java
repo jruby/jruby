@@ -224,10 +224,6 @@ public class JavaNameMangler {
         return builder.toString();
     }
 
-    public static String unmangleMethodName(String name) {
-        return name.replaceAll("\\", "/");
-    }
-
     private static int escapeChar(char character) {
         int index = DANGEROUS_CHARS.indexOf(character);
         if (index == -1) return -1;
