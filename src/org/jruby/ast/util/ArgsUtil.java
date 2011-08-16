@@ -81,8 +81,11 @@ public final class ArgsUtil {
             return RubyArray.newArrayLight(runtime, value);
         }
         
-        // empirically it appears that to_ary coersions always return array or nil, so this
-        // should always be an array by now.
+        // must be array by now, or error
+        if (!(newValue instanceof RubyArray)) {
+            throw runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
+        }
+        
         return (RubyArray)newValue;
     }
     
