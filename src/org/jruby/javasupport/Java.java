@@ -1096,6 +1096,7 @@ public class Java implements Library {
 
     public static IRubyObject newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
         final Ruby runtime = wrapper.getRuntime();
+        ClassDefiningClassLoader classLoader;
 
         Class[] tmp_interfaces = interfaces;
         interfaces = new Class[tmp_interfaces.length + 1];
@@ -1105,23 +1106,23 @@ public class Java implements Library {
         // hashcode is a combination of the interfaces and the Ruby class we're using
         // to implement them
         if (!RubyInstanceConfig.INTERFACES_USE_PROXY) {
-            boolean cacheable = false;
             int interfacesHashCode = interfacesHashCode(interfaces);
             // if it's a singleton class and the real class is proc, we're doing closure conversion
             // so just use Proc's hashcode
             if (wrapper.getMetaClass().isSingleton() && wrapper.getMetaClass().getRealClass() == runtime.getProc()) {
                 interfacesHashCode = 31 * interfacesHashCode + runtime.getProc().hashCode();
-                cacheable = true;
+                classLoader = runtime.getJRubyClassLoader();
             } else {
                 // normal new class implementing interfaces
                 interfacesHashCode = 31 * interfacesHashCode + wrapper.getMetaClass().getRealClass().hashCode();
+                classLoader = new OneShotClassLoader(runtime.getJRubyClassLoader());
             }
             String implClassName = "org.jruby.gen.InterfaceImpl" + Math.abs(interfacesHashCode);
             Class proxyImplClass;
             try {
                 proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
             } catch (ClassNotFoundException cnfe) {
-                proxyImplClass = generateRealClassImplForInterfaces(wrapper, interfaces, runtime, cacheable, implClassName);
+                proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, classLoader);
             }
 
             try {
@@ -1170,16 +1171,6 @@ public class Java implements Library {
             });
             return JavaObject.wrap(runtime, proxyObject);
         }
-    }
-
-    private static Class generateRealClassImplForInterfaces(IRubyObject wrapper, Class[] interfaces, Ruby runtime, boolean cacheable, String implClassName) {
-        ClassDefiningClassLoader classLoader;
-        if (cacheable) {
-            classLoader = runtime.getJRubyClassLoader();
-        } else {
-            classLoader = new OneShotClassLoader(runtime.getJRubyClassLoader());
-        }
-        return RealClassGenerator.createOldStyleImplClass(interfaces, wrapper.getMetaClass(), runtime, implClassName, classLoader);
     }
 
     public static Class generateRealClass(final RubyClass clazz) {
