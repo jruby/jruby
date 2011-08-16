@@ -1766,14 +1766,19 @@ public class IRBuilder {
                 LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
                 Variable av = s.getLocalVariable(n.getName());
                 s.addInstr(new ReceiveOptionalArgumentInstr(av, argIndex));
-                s.addInstr(new BNEInstr(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not null, go to default
+                s.addInstr(new BNEInstr(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
                 build(n, s);
                 s.addInstr(new LABEL_Instr(l));
             }
         }
 
         if (rest > -1) {
-            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(argsNode.getRestArgNode().getName()), argIndex, true));
+            // Consider: def foo(*); .. ; end
+            // For this code, there is no argument name available from the ruby code.
+            // So, we generate an implicit arg name
+            String argName = argsNode.getRestArgNode().getName();
+            argName = (argName.equals("")) ? "%_arg_array" : argName;
+            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(argName), argIndex, true));
         }
 
         // FIXME: Ruby 1.9 post args code needs to come here
