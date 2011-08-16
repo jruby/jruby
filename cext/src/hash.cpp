@@ -101,3 +101,13 @@ rb_hash_foreach(VALUE hash, int (*func)(ANYARGS), VALUE arg)
         }
     }
 }
+
+extern "C" VALUE
+rb_hash_delete_if(VALUE obj)
+{
+    if (rb_block_given_p()) {
+        return rb_funcall2b(obj, rb_intern("delete_if"), 0, NULL, rb_block_proc());
+    } else {
+        return callMethod(obj, "delete_if", 0, NULL);
+    }
+}

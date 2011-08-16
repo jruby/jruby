@@ -243,3 +243,8 @@ rb_undef_alloc_func(VALUE klass) {
   rb_undef_method(rb_singleton_class(klass), "allocate");
 }
 
+extern "C" void
+rb_alias(VALUE module, ID id_new, ID id_old)
+{
+    callMethod(module, "alias_method", 2, ID2SYM(id_new), ID2SYM(id_old));
+}

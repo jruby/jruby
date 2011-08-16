@@ -27,7 +27,7 @@
  ***** END LICENSE BLOCK *****/
 
 #ifndef JRUBY_H
-#define	JRUBY_H
+#define JRUBY_H
 
 #include <jni.h>
 #include <map>
@@ -100,6 +100,7 @@ namespace jruby {
     extern jmethodID Handle_nativeHandle;
     extern jmethodID RubyObject_getNativeTypeIndex_method;
     extern jmethodID JRuby_callMethod;
+    extern jmethodID JRuby_callMethodB;
     extern jmethodID JRuby_callMethod0;
     extern jmethodID JRuby_callMethod1;
     extern jmethodID JRuby_callMethod2;
@@ -174,6 +175,7 @@ namespace jruby {
     VALUE callMethodANonConst(VALUE recv, const char* methodName, int argCount, VALUE* args);
     VALUE callRubyMethod(JNIEnv* env, VALUE recv, jobject obj, int argCount, ...);
     VALUE callRubyMethodA(JNIEnv* env, VALUE recv, jobject obj, int argCount, VALUE* args);
+    VALUE callRubyMethodB(JNIEnv* env, VALUE recv, jobject obj, int argCount, VALUE* args, VALUE block);
     VALUE callRubyMethodV(JNIEnv* env, VALUE recv, jobject obj, int argCount, va_list ap);
 
     jobject getConstMethodNameInstance(const char* methodName);
@@ -254,4 +256,4 @@ namespace jruby {
 #define FL_USER18    (((VALUE)1)<<(FL_USHIFT+18))
 #define FL_USER19    (((VALUE)1)<<(FL_USHIFT+19))
 
-#endif	/* JRUBY_H */
+#endif  /* JRUBY_H */

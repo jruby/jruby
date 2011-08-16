@@ -132,9 +132,24 @@ RubyArray::jsync(JNIEnv* env)
         checkExceptions(env);
         jint begin = env->GetIntField(obj, RubyArray_begin_field);
         checkExceptions(env);
+        long capa = (long)(env->GetArrayLength(values) - begin);
+        checkExceptions(env);
 
         RArray* rarray = rwdata.rarray;
-        assert((env->GetArrayLength(values) - begin) >= rarray->aux.capa);
+        if (capa < rarray->aux.capa) {
+            // Items were added in native code, grow Java array
+            // We just drop the array, we're copying from C, anyway
+            jint oldLength = env->GetArrayLength(values);
+            env->DeleteLocalRef(values);
+            values = env->NewObjectArray(capa * 2 + begin, IRubyObject_class, NULL);
+            env->NewLocalRef(values);
+            env->SetObjectField(obj, RubyArray_values_field, values);
+            checkExceptions(env);
+            capa = (long)(env->GetArrayLength(values) - begin);
+            checkExceptions(env);
+        }
+
+        assert(capa >= rarray->aux.capa);
 
         long used_length = rarray->len;
         // Copy all values back into the Java array
@@ -176,7 +191,7 @@ RubyArray::nsync(JNIEnv* env)
     // If capacity has grown, reallocate the C array
     if ((capa > rarray->aux.capa) || (rarray->aux.capa == 0)) {
         rarray->aux.capa = capa;
-        rarray->ptr = (VALUE*)realloc(rarray->ptr, sizeof(VALUE) * capa);
+        rarray->ptr = (VALUE*)realloc(rarray->ptr, sizeof(VALUE) * capa * 2);
     }
 
     // If there is content, copy over
@@ -395,4 +410,30 @@ rb_iterate(VALUE(*ifunc)(VALUE), VALUE ary, VALUE(*cb)(ANYARGS), VALUE cb_data)
     }
 
     return ary;
+}
+
+extern "C" VALUE
+rb_ary_to_s(VALUE ary)
+{
+    return callMethod(ary, "to_s", 0);
+}
+
+extern "C" void
+rb_mem_clear(VALUE* ary, int len)
+{
+    for(int i = 0; i < len; i++) {
+        ary[i] = Qnil;
+    }
+}
+
+extern "C" VALUE
+rb_ary_freeze(VALUE ary)
+{
+    return rb_obj_freeze(ary);
+}
+
+extern "C" VALUE
+rb_ary_to_ary(VALUE ary)
+{
+    return callMethod(ary, "to_ary", 0);
 }

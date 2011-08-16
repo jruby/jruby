@@ -169,3 +169,12 @@ rb_thread_fd_writable(int f)
     return Qtrue;
 }
 
+extern "C" void
+rb_thread_wait_for(struct timeval time) {
+    rb_thread_select(0, 0, 0, 0, &time);
+}
+
+extern "C" VALUE
+rb_thread_wakeup(VALUE thread) {
+    return callMethodA(thread, "wakeup", 0, NULL);
+}

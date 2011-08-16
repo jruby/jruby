@@ -61,3 +61,34 @@ rb_struct_define(const char* name_cstr, ...)
 
     return objectToValue(env, newStructSubclass);
 }
+
+extern "C" VALUE
+rb_struct_aref(VALUE struct_handle, VALUE key) {
+    return callMethodA(struct_handle, "[]", 1, &key);
+}
+
+extern "C" VALUE
+rb_struct_aset(VALUE struct_handle, VALUE key, VALUE val) {
+    return callMethod(struct_handle, "[]=", 2, key, val);
+}
+
+extern "C" VALUE
+rb_struct_new(VALUE klass, ...)
+{
+    va_list args;
+    va_start(args, klass);
+    int sz = 4;
+    int length = 0;
+
+    VALUE* mem = (VALUE*)xcalloc(sizeof(VALUE), sz);
+    while(va_arg(args, VALUE)) {
+        mem[length] = va_arg(args, VALUE);
+        if (sz = ++length) {
+            xrealloc(mem, sizeof(VALUE) * (sz *= 2));
+        }
+    }
+
+    va_end(args);
+
+    return callMethodA(klass, "new", length, mem);
+}

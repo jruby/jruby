@@ -39,6 +39,12 @@ jruby_big_bytes_used(VALUE obj)
     return NUM2INT(callMethod(obj, "size", 0));
 }
 
+extern "C" VALUE
+jruby_big_sign(VALUE obj)
+{
+    return callMethod(obj, ">", 1, INT2NUM(0));
+}
+
 extern "C" long long
 rb_big2ll(VALUE obj)
 {

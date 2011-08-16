@@ -60,6 +60,7 @@ namespace jruby {
     jclass Block_class;
     jclass FileDescriptor_class;
     jmethodID JRuby_callMethod;
+    jmethodID JRuby_callMethodB;
     jmethodID JRuby_callMethod0;
     jmethodID JRuby_callMethod1;
     jmethodID JRuby_callMethod2;
@@ -291,6 +292,8 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/runtime/builtin/IRubyObject;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/Block;)Lorg/jruby/RubyClass;");
     JRuby_callMethod = getStaticMethodID(env, JRuby_class, "callRubyMethod",
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;[Lorg/jruby/runtime/builtin/IRubyObject;)J");
+    JRuby_callMethodB = getStaticMethodID(env, JRuby_class, "callRubyMethodB",
+            "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;[Lorg/jruby/runtime/builtin/IRubyObject;Lorg/jruby/runtime/builtin/IRubyObject;)J");
     JRuby_callMethod0 = getStaticMethodID(env, JRuby_class, "callRubyMethod0",
             "(Lorg/jruby/runtime/builtin/IRubyObject;Ljava/lang/Object;)J");
     JRuby_callMethod1 = getStaticMethodID(env, JRuby_class, "callRubyMethod1",

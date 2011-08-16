@@ -61,6 +61,13 @@ rb_funcall2(VALUE recv, ID meth, int argCount, VALUE* args)
 }
 
 extern "C" VALUE
+rb_funcall2b(VALUE recv, ID meth, int argCount, VALUE* args, VALUE block)
+{
+    JLocalEnv env;
+    return callRubyMethodB(env, recv, idToObject(env, meth), argCount, args, block);
+}
+
+extern "C" VALUE
 rb_funcall3(VALUE recv, ID mid, int argc, const VALUE *argv)
 {
     // FIXME: This is supposed to only call public methods

@@ -110,6 +110,37 @@ jruby::callRubyMethodA(JNIEnv* env, VALUE recv, jobject methodName, int argCount
     return makeStrongRef(env, (VALUE) ret);
 }
 
+VALUE
+jruby::callRubyMethodB(JNIEnv* env, VALUE recv, jobject methodName, int argCount, VALUE* args, VALUE block)
+{
+    // Do not do something like 'assert(recv != 0x0);' -> false is 0x0
+    assert(methodName != 0x0);
+    assert(argCount > 0 ? args != NULL : 1);
+
+    jsync(env);
+
+    jobjectArray argArray;
+
+    jvalue jparams[4];
+    jparams[0].l = valueToObject(env, recv);
+    jparams[1].l = methodName;
+    jparams[2].l = argArray = env->NewObjectArray(argCount, IRubyObject_class, NULL);
+    checkExceptions(env);
+    for (int i = 0; i < argCount; ++i) {
+        env->SetObjectArrayElement(argArray, i, valueToObject(env, args[i]));
+        checkExceptions(env);
+    }
+    jparams[3].l = valueToObject(env, block);
+
+    jlong ret = env->CallStaticLongMethodA(JRuby_class, JRuby_callMethodB, jparams);
+    checkExceptions(env);
+
+    nsync(env);
+    checkExceptions(env);
+
+    return makeStrongRef(env, (VALUE) ret);
+}
+
 #undef callMethod
 VALUE
 jruby::callMethod(VALUE recv, jobject methodName, int argCount, ...)

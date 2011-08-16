@@ -66,6 +66,13 @@ public class JRuby {
         return Handle.nativeHandle(retval);
     }
 
+    public static long callRubyMethodB(IRubyObject recv, Object methodName, IRubyObject[] args, IRubyObject blockProc) {
+        IRubyObject retval = recv.callMethod(recv.getRuntime().getCurrentContext(),
+                methodName.toString(), args, ((RubyProc)blockProc).getBlock());
+
+        return Handle.nativeHandle(retval);
+    }
+
     public static long callRubyMethod0(IRubyObject recv, Object methodName) {
         IRubyObject retval = RuntimeHelpers.invoke(recv.getRuntime().getCurrentContext(),
                 recv, methodName.toString());
@@ -97,7 +104,7 @@ public class JRuby {
 
     public static long callSuperMethod(Ruby runtime, IRubyObject[] args) {
         ThreadContext currentContext = runtime.getCurrentContext();
-        IRubyObject retval = RuntimeHelpers.invokeSuper(currentContext, 
+        IRubyObject retval = RuntimeHelpers.invokeSuper(currentContext,
                 runtime.getCurrentContext().getFrameSelf(), args, Block.NULL_BLOCK);
 
         return Handle.nativeHandle(retval);
@@ -305,7 +312,7 @@ public class JRuby {
         try {
             thread.executeBlockingTask(task);
         } catch (InterruptedException e) {
-            // ignore   
+            // ignore
         } finally  {
             GIL.acquire(lockCount);
             GC.enable();

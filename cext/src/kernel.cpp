@@ -127,3 +127,10 @@ rb_define_alias(VALUE klass, const char* new_name, const char* old_name)
             env->NewStringUTF(old_name));
     checkExceptions(env);
 }
+
+extern "C" VALUE
+rb_f_sprintf(int argc, const VALUE* argv)
+{
+    VALUE ary = rb_ary_new4(argc-1, argv+1);
+    return callMethod(argv[0], "%", 1, ary);
+}

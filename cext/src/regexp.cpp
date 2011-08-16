@@ -30,13 +30,19 @@
 #include "ruby.h"
 
 using namespace jruby;
- 
+
 extern "C" VALUE
 rb_reg_nth_match(long nth, VALUE match_data) {
   if (NIL_P(match_data)) {
     return Qnil;
   }
   return callMethod(match_data, "[]", 1, LONG2NUM(nth));
+}
+
+extern "C" VALUE
+rb_reg_match(VALUE re, VALUE str)
+{
+    return callMethodA(re, "=~", 1, &str);
 }
 
 extern "C" VALUE
@@ -62,4 +68,10 @@ extern "C" VALUE
 rb_reg_regcomp(VALUE str)
 {
     return callMethod(rb_cRegexp, "new", 1, str);
+}
+
+extern "C" VALUE
+rb_backref_get(void)
+{
+    return rb_gv_get("$~");
 }

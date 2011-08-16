@@ -209,6 +209,12 @@ rb_io_check_closed(rb_io_t* io) {
     }
 }
 
+extern "C" VALUE
+rb_io_close(VALUE io)
+{
+    return callMethod(io, "close", 0);
+}
+
 static int set_non_blocking(int fd) {
 #ifndef JRUBY_WIN32
     int flags;
