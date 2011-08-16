@@ -32,6 +32,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.PositionAware;
@@ -43,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * 
  * @author jpetersen
  */
-public class ProcMethod extends DynamicMethod implements PositionAware {
+public class ProcMethod extends DynamicMethod implements PositionAware, MethodArgs2 {
     private RubyProc proc;
 
     /**
@@ -85,5 +86,9 @@ public class ProcMethod extends DynamicMethod implements PositionAware {
 
     public int getLine() {
         return proc.getBlock().getBody().getLine();
+    }
+
+    public String[] getParameterList() {
+        return proc.getBlock().getBody().getParameterList();
     }
 }

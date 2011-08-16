@@ -70,6 +70,7 @@ import java.util.Map;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.internal.runtime.methods.MethodArgs2;
+import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ExecutionContext;
