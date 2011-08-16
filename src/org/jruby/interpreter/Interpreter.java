@@ -16,11 +16,13 @@ import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.util.log.Logger;
@@ -69,7 +71,6 @@ public class Interpreter {
     public static IRubyObject interpret(ThreadContext context, IRubyObject self, CFG cfg, InterpreterContext interp) {
         Ruby runtime = context.getRuntime();
         boolean inClosure = (cfg.getScope() instanceof IRClosure);
-        boolean passThroughBreak = false;
         
         try {
             interp.setMethodExitLabel(cfg.getExitBB().getLabel()); // used by return and break instructions!
@@ -88,7 +89,16 @@ public class Interpreter {
                     Label jumpTarget = lastInstr.interpret(interp, context, self);
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
                 }
-                catch (org.jruby.exceptions.RaiseException re) {
+                catch (IRBreakJump bj) {
+                    if ((lastInstr instanceof BREAK_Instr) && !inClosure) throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
+                    if (bj.methodToReturnTo != cfg.getScope()) throw bj; // pass it along
+
+                    // We got where we need to get to.  Retrieve the result and store it
+                    Operand r = lastInstr.getResult();
+                    if (r != null) r.store(interp, context, self, bj.breakValue);
+                    ipc += 1;
+                }
+                catch (RaiseException re) {
                     if (lastInstr instanceof THROW_EXCEPTION_Instr) throw re; // pass it along if we just executed a throw!
 
                     ipc = cfg.getRescuerPC(lastInstr);
@@ -111,18 +121,8 @@ public class Interpreter {
             if (lastInstr instanceof ReturnInstr && inClosure && !interp.inLambda()) {
                 throw new IRReturnJump(((ReturnInstr)lastInstr).methodToReturnFrom, rv);
             }
-            // If a closure, and lastInstr was a break, have to return from the nearest closure!
-            else if (lastInstr instanceof BREAK_Instr) {
-                if (!inClosure) throw runtime.newLocalJumpError(Reason.BREAK, rv, "unexpected break");
-
-                passThroughBreak = true;
-                RuntimeHelpers.breakJump(context, rv);
-            }
 
             return rv;
-        } catch (JumpException.BreakJump bj) {
-            if (passThroughBreak) throw bj;
-            return (IRubyObject)bj.getValue();
         } catch (IRReturnJump rj) {
             // - If we are in a lambda, stop propagating
             // - If not in a lambda
@@ -143,7 +143,7 @@ public class Interpreter {
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, CFG cfg, 
-            InterpreterContext interp, IRubyObject self, String name, RubyModule implClass, boolean isTraceable) {
+        InterpreterContext interp, IRubyObject self, String name, RubyModule implClass, boolean isTraceable) {
         Ruby runtime = context.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");
         

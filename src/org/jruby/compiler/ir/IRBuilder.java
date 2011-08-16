@@ -878,12 +878,12 @@ public class IRBuilder {
             s.addInstr(new JumpInstr(currLoop.loopEndLabel));
         }
         else if (s instanceof IRClosure) {
-            s.addInstr(new BREAK_Instr(rv));
+            s.addInstr(new BREAK_Instr(rv, ((IRExecutionScope)s).getClosestMethodAncestor()));
         }
         else {
             // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
             // Since we know this right now, should we build an exception instruction here?
-            s.addInstr(new BREAK_Instr(rv));
+            s.addInstr(new BREAK_Instr(rv, null));
         }
         return rv;
     }

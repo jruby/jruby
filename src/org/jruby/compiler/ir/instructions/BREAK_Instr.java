@@ -2,11 +2,13 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 
+import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.interpreter.IRBreakJump;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -29,19 +31,20 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
-public class BREAK_Instr extends OneOperandInstr
-{
-    public BREAK_Instr(Operand rv) {
+public class BREAK_Instr extends OneOperandInstr {
+    public final IRMethod methodToReturnTo;
+
+    public BREAK_Instr(Operand rv, IRMethod m) {
         super(Operation.BREAK, null, rv);
+        this.methodToReturnTo = m;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new BREAK_Instr(getArg().cloneForInlining(ii));
+        return new BREAK_Instr(getArg().cloneForInlining(ii), methodToReturnTo);
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        interp.setReturnValue(getArg().retrieve(interp, context, self));
-        return interp.getMethodExitLabel();
+        throw new IRBreakJump(methodToReturnTo, getArg().retrieve(interp, context, self));
     }
 }
