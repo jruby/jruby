@@ -12,6 +12,6 @@ class TestJrubyExt < Test::Unit::TestCase
   def test_method_args
     assert_equal([[:req, :a], [:req, :b], [:opt, :c], [:opt, :d], [:rest, :e], [:block, :f]], method(:foo1).args)
     assert_equal([], method(:foo2).args)
-    assert_equal([[:rest]], method(:foo3).args)
+    assert_equal([], method(:foo3).args)
   end
 end
