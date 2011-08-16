@@ -939,7 +939,7 @@ RUBY_DLLSPEC double jruby_float_value(VALUE v);
 RUBY_DLLSPEC VALUE rb_Float(VALUE object_handle);
 
 RUBY_DLLSPEC int jruby_big_bytes_used(VALUE obj);
-RUBY_DLLSPEC int jruby_big_sign(VALUE);
+RUBY_DLLSPEC VALUE jruby_big_sign(VALUE);
 #define RBIGNUM_LEN(obj) jruby_big_bytes_used(obj)
 #define RBIGNUM_SIGN(obj) jruby_big_sign(obj)
 // fake out, used with RBIGNUM_LEN anyway, which provides the full answer
