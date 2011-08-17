@@ -14,7 +14,8 @@ public enum RubyEvent {
     RETURN   ("return", 1),
     C_CALL   ("c-call", 1),
     C_RETURN ("c-return", 1),
-    RAISE    ("raise", 1);
+    RAISE    ("raise", 1),
+    COVERAGE ("coverage", 1);
 
     private final String event_name;
     private final int line_number_offset;

@@ -456,6 +456,9 @@ public class LoadService {
             } else if (libObject instanceof BasicLibraryService) {
                 BasicLibraryService service = (BasicLibraryService)libObject;
                 service.basicLoad(runtime);
+            } else {
+                // invalid type of library, raise error
+                throw runtime.newLoadError("library `" + libraryName + "' is not of type Library or BasicLibraryService");
             }
         } catch (RaiseException re) {
             throw re;
