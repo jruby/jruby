@@ -44,6 +44,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
+import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
@@ -995,6 +996,23 @@ public class RubyStringIO extends RubyObject {
         }
 
         return val.getByteList().length();
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject set_encoding(ThreadContext context, IRubyObject enc) {
+        Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(enc);
+        data.internal.setEncoding(encoding);
+        return this;
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject external_encoding(ThreadContext context) {
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(data.internal.getEncoding());
+    }
+    
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject internal_encoding(ThreadContext context) {
+        return context.nil;
     }
 
     /* rb: check_modifiable */
