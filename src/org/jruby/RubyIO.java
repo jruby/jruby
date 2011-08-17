@@ -3612,7 +3612,17 @@ public class RubyIO extends RubyObject {
     public static IRubyObject popen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         int mode;
+        // yes, I know it's not used. See JRUBY-5942
+        RubyHash options = null;
 
+        // for 1.9 mode, strip off the trailing options hash, if there
+        if (args.length > 1 && args[args.length - 1] instanceof RubyHash) {
+            options = (RubyHash)args[args.length - 1];
+            IRubyObject[] newArgs = new IRubyObject[args.length - 1];
+            System.arraycopy(args, 0, newArgs, 0, args.length - 1);
+            args = newArgs;
+        }
+        
         Ruby19POpen r19Popen = new Ruby19POpen(runtime, args);
 
         if ("-".equals(r19Popen.cmd.toString())) {
