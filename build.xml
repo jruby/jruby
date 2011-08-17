@@ -1324,15 +1324,14 @@
           description="Creates the Java API docs">
     <javadoc destdir="${api.docs.dir}" author="true" version="true" use="true"
              windowtitle="JRuby API" source="${javac.version}" useexternalfile="true"
-             maxmemory="256m">
+             encoding="UTF-8" maxmemory="256m">
       <fileset dir="${src.dir}">
         <include name="**/*.java"/>
       </fileset>
+      <arg value="-J-Dfile.encoding=UTF-8"/>
       <classpath refid="build.classpath"/>
-      <doctitle><![CDATA[<h1>JRuby</h1>]]>
-      </doctitle>
-      <bottom><![CDATA[<i>Copyright &#169; 2002-2009 JRuby Team. All Rights Reserved.</i>]]>
-      </bottom>
+      <doctitle><![CDATA[<h1>JRuby</h1>]]></doctitle>
+      <bottom><![CDATA[<i>Copyright &#169; 2002-2009 JRuby Team. All Rights Reserved.</i>]]></bottom>
     </javadoc>
   </target>
 
