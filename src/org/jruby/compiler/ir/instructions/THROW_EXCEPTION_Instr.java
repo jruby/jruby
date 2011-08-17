@@ -23,16 +23,16 @@ public class THROW_EXCEPTION_Instr extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-		Object excObj = getArg().retrieve(interp, context, self);
+        Object excObj = getArg().retrieve(interp, context, self);
         if (excObj instanceof IRubyObject)
             RubyKernel.raise(context, context.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
         else if (excObj instanceof Error)  // from regular ensures
-			  throw (Error)excObj;
+           throw (Error)excObj;
         else // from breaks running ensures
-			  throw (RuntimeException)excObj;
+           throw (RuntimeException)excObj;
 
         // Control will never reach here but the Java compiler doesn't know that
-        // since the above method doesn't declare that it throws an exception,
+        // since RubyKernel.raise doesn't declare that it throws an exception.
         return null;
     }
 }
