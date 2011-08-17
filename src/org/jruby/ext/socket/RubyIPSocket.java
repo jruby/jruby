@@ -41,6 +41,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.BadDescriptorException;
+import static org.jruby.CompatVersion.*;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -77,13 +78,13 @@ public class RubyIPSocket extends RubyBasicSocket {
         }
     }
 
-    private IRubyObject addrFor(ThreadContext context, InetSocketAddress addr) {
+    private IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
         Ruby r = context.getRuntime();
         IRubyObject[] ret = new IRubyObject[4];
         ret[0] = r.newString("AF_INET");
         ret[1] = r.newFixnum(addr.getPort());
         String hostAddress = addr.getAddress().getHostAddress();
-        if (doNotReverseLookup(context)) {
+        if (!reverse || doNotReverseLookup(context)) {
             ret[2] = r.newString(hostAddress);
         } else {
             ret[2] = r.newString(addr.getHostName());
@@ -91,38 +92,71 @@ public class RubyIPSocket extends RubyBasicSocket {
         ret[3] = r.newString(hostAddress);
         return r.newArrayNoCopy(ret);
     }
+    
     @Deprecated
     public IRubyObject addr() {
         return addr(getRuntime().getCurrentContext());
     }
+    
     @JRubyMethod
     public IRubyObject addr(ThreadContext context) {
+        return addrCommon(context, true);
+    }
+    
+    @JRubyMethod(name = "addr", compat = RUBY1_9)
+    public IRubyObject addr19(ThreadContext context) {
+        return addrCommon(context, true);
+    }
+    
+    @JRubyMethod(name = "addr", compat = RUBY1_9)
+    public IRubyObject addr19(ThreadContext context, IRubyObject reverse) {
+        return addrCommon(context, reverse.isTrue());
+    }
+    
+    private IRubyObject addrCommon(ThreadContext context, boolean reverse) {
         try {
             InetSocketAddress address = getLocalSocket("addr");
             if (address == null) {
                 throw context.getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
             }
-            return addrFor(context, address);
+            return addrFor(context, address, reverse);
         } catch (BadDescriptorException e) {
             throw context.runtime.newErrnoEBADFError();
         }
     }
+    
     @Deprecated
     public IRubyObject peeraddr() {
         return peeraddr(getRuntime().getCurrentContext());
     }
+    
     @JRubyMethod
     public IRubyObject peeraddr(ThreadContext context) {
+        return peeraddrCommon(context, true);
+    }
+    
+    @JRubyMethod(name = "peeraddr", compat = RUBY1_9)
+    public IRubyObject peeraddr19(ThreadContext context) {
+        return peeraddrCommon(context, true);
+    }
+    
+    @JRubyMethod(name = "peeraddr", compat = RUBY1_9)
+    public IRubyObject peeraddr19(ThreadContext context, IRubyObject reverse) {
+        return peeraddrCommon(context, reverse.isTrue());
+    }
+    
+    private IRubyObject peeraddrCommon(ThreadContext context, boolean reverse) {
         try {
             InetSocketAddress address = getRemoteSocket();
             if (address == null) {
                 throw context.getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
             }
-            return addrFor(context, address);
+            return addrFor(context, address, reverse);
         } catch (BadDescriptorException e) {
             throw context.runtime.newErrnoEBADFError();
         }
     }
+    
     @Override
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
         try {
