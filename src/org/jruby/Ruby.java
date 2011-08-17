@@ -125,7 +125,9 @@ import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.FileChannel;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jcodings.specific.USASCIIEncoding;
@@ -134,6 +136,7 @@ import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -144,6 +147,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.JRubyFile;
 import org.jruby.util.io.SelectorPool;
 
 /**
@@ -1456,6 +1460,7 @@ public final class Ruby {
             addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
             addLazyBuiltin("fiber.rb", "fiber", "org.jruby.libraries.FiberExtLibrary");
             addLazyBuiltin("psych.jar", "psych", "org.jruby.ext.psych.PsychLibrary");
+            addLazyBuiltin("coverage.jar", "coverage", "org.jruby.ext.coverage.CoverageLibrary");
         }
 
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
@@ -3886,6 +3891,10 @@ public final class Ruby {
     public boolean isBooting() {
         return booting;
     }
+    
+    public CoverageData getCoverageData() {
+        return coverageData;
+    }
 
     private volatile int constantGeneration = 1;
     private final ThreadService threadService;
@@ -4108,4 +4117,6 @@ public final class Ruby {
     private volatile boolean booting = true;
     
     private RubyHash envObject;
+    
+    private final CoverageData coverageData = new CoverageData();
 }
