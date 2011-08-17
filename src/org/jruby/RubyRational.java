@@ -333,6 +333,10 @@ public class RubyRational extends RubyNumeric {
         return convert(context, context.getRuntime().getRational(), x, y);
     }
     
+    public static RubyRational newRational(Ruby runtime, long x, long y) {
+        return new RubyRational(runtime, runtime.getRational(), runtime.newFixnum(x), runtime.newFixnum(y));
+    }
+    
     @Deprecated
     public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
         switch (args.length) {
@@ -856,8 +860,17 @@ public class RubyRational extends RubyNumeric {
     private static long ML = (long)(Math.log(Double.MAX_VALUE) / Math.log(2.0) - 1);
     @JRubyMethod(name = "to_f")
     public IRubyObject to_f(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
-        if (f_zero_p(context, num)) return runtime.newFloat(0);
+        return context.runtime.newFloat(getDoubleValue(context));
+    }
+    
+    @Override
+    public double getDoubleValue() {
+        return getDoubleValue(getRuntime().getCurrentContext());
+    }
+    
+    public double getDoubleValue(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        if (f_zero_p(context, num)) return 0;
 
         IRubyObject myNum = this.num;
         IRubyObject myDen = this.den;
@@ -887,7 +900,7 @@ public class RubyRational extends RubyNumeric {
 
         if (e > 1023 || e < -1022) {
             runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
-            return runtime.newFloat(e > 0 ? Double.MAX_VALUE : 0);
+            return e > 0 ? Double.MAX_VALUE : 0;
         }
 
         double f = RubyNumeric.num2dbl(myNum) / RubyNumeric.num2dbl(myDen);
@@ -900,7 +913,7 @@ public class RubyRational extends RubyNumeric {
             runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
         }
 
-        return runtime.newFloat(f);
+        return f;
     }
 
     /** nurat_to_r

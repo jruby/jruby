@@ -92,6 +92,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRubyNKF.class);
         suite.addTestSuite(StandardErrorLoggerTest.class);
         suite.addTestSuite(ParameterizedWriterTest.class);
+        suite.addTestSuite(TestRubyRational.class);
         return suite;
     }
 }
