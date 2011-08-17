@@ -878,6 +878,8 @@ public class IRBuilder {
             s.addInstr(new JumpInstr(currLoop.loopEndLabel));
         }
         else if (s instanceof IRClosure) {
+            // This lexical scope value is only used (and valid) in regular block contexts.
+            // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
             s.addInstr(new BREAK_Instr(rv, (IRExecutionScope)(s.getLexicalParent())));
         }
         else {

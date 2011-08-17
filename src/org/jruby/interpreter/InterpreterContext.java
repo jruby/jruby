@@ -70,4 +70,7 @@ public interface InterpreterContext {
 
     // Are we in a lambda context?
     public boolean inLambda();
+
+    // Are we in a proc context?
+    public boolean inProc();
 }

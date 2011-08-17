@@ -33,10 +33,10 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
     private Label methodExitLabel = null;
 
-	 // currentModule is:
-	 // - self if we are executing a class method of 'self'
-	 // - self.getMetaClass() if we are executing an instance method of 'self'
-	 // - the class in which the closure is lexically defined in if we are executing a closure
+    // currentModule is:
+    // - self if we are executing a class method of 'self'
+    // - self.getMetaClass() if we are executing an instance method of 'self'
+    // - the class in which the closure is lexically defined in if we are executing a closure
     public NaiveInterpreterContext(ThreadContext context, RubyModule currentModule, IRubyObject self, String name, int localVariablesSize, int temporaryVariablesSize, IRubyObject[] parameters, Block block, Block.Type blockType) {
         context.preMethodFrameOnly(currentModule, name, self, block);
         this.frame = context.getCurrentFrame();
@@ -45,8 +45,8 @@ public class NaiveInterpreterContext implements InterpreterContext {
         this.localVariables = localVariablesSize > 0 ? new Object[localVariablesSize] : null;
         this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
         this.block = block;
-		  // SSS FIXME: Can it happen that (block.type != blockType)?
-		  this.blockType = blockType;
+        // SSS FIXME: Can it happen that (block.type != blockType)?
+        this.blockType = blockType;
     }
 
     public Block getBlock() {
@@ -55,6 +55,10 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
     public boolean inLambda() {
         return (blockType != null) && (blockType == Block.Type.LAMBDA);
+    }
+
+    public boolean inProc() {
+        return (blockType != null) && (blockType == Block.Type.PROC);
     }
 
     public void setBlock(Block block) {
@@ -121,7 +125,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
     public Object getLocalVariable(ThreadContext context, int offset) {
         Object o = localVariables[offset];
-		  return (o == null) ? context.getRuntime().getNil() : o;
+        return (o == null) ? context.getRuntime().getNil() : o;
     }
 
     public Object setLocalVariable(int offset, Object value) {
