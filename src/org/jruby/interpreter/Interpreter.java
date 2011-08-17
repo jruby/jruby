@@ -62,10 +62,13 @@ public class Interpreter {
         InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule);
         ThreadContext context = runtime.getCurrentContext();
 
-        IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
-        if (isDebug()) LOG.debug("-- Interpreted instructions: {}", interpInstrsCount);
-
-        return rv;
+        try {
+            IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
+            if (isDebug()) LOG.debug("-- Interpreted instructions: {}", interpInstrsCount);
+            return rv;
+        } catch (IRBreakJump bj) {
+            throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
+        }
     }
 
     public static IRubyObject interpret(ThreadContext context, IRubyObject self, CFG cfg, InterpreterContext interp) {
