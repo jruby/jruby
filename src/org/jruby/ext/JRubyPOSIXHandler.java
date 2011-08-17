@@ -34,7 +34,7 @@ public class JRubyPOSIXHandler implements POSIXHandler {
     }
 
     public void unimplementedError(String method) {
-        throw runtime.newNotImplementedError(method + " unsupported on this platform");
+        throw runtime.newNotImplementedError(method + " unsupported or native support failed to load");
     }
 
     public void warn(WARNING_ID id, String message, Object... data) {
