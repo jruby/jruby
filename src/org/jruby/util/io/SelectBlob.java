@@ -383,7 +383,7 @@ public class SelectBlob {
 
     private boolean[] getUnselectableWrites() {
         if (unselectableWrites == null) {
-            unselectableWrites = new boolean[readSize];
+            unselectableWrites = new boolean[writeSize];
         }
         return unselectableWrites;
     }
