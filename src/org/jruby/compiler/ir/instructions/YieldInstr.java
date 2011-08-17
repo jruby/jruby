@@ -40,20 +40,18 @@ public class YieldInstr extends Instr {
         Object blk = (Object)block.retrieve(interp, context, self);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
+        // Blocks that get yielded are always normal
+        Block b = (Block)blk;
+        b.type = Block.Type.NORMAL;
         if (yieldArg == null) {
-            resultValue = ((Block)blk).yieldSpecific(context);
+            resultValue = b.yieldSpecific(context);
         } else {
             IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(interp, context, self);
             if ((yieldArg instanceof Splat) || (yieldArg instanceof CompoundArray)) {
-                if (wrapIntoArray) {
-                    resultValue = ((Block)blk).yield(context, yieldVal);
-                }
-                else {
-                    resultValue = ((Block)blk).yieldArray(context, yieldVal, null, null);
-                }
-            }
-            else {
-                resultValue = ((Block)blk).yield(context, yieldVal);
+                if (wrapIntoArray) resultValue = b.yield(context, yieldVal);
+                else resultValue = b.yieldArray(context, yieldVal, null, null);
+            } else {
+                resultValue = b.yield(context, yieldVal);
             }
         }
         getResult().store(interp, context, self, resultValue);

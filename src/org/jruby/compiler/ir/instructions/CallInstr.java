@@ -343,17 +343,22 @@ public class CallInstr extends MultiOperandInstr {
         
         Object value = closure.retrieve(interp, context, self);
         
+        Block b = null;
         if (value instanceof Block)
-            return (Block)value;
+            b = (Block)value;
         else if (value instanceof RubyProc)
-            return ((RubyProc) value).getBlock();
+            b = ((RubyProc) value).getBlock();
         else if (value instanceof RubyMethod)
-            return ((RubyProc)((RubyMethod)value).to_proc(context, null)).getBlock();
+            b = ((RubyProc)((RubyMethod)value).to_proc(context, null)).getBlock();
         else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil())
-            return Block.NULL_BLOCK;
+            b = Block.NULL_BLOCK;
         else if (value instanceof IRubyObject)
-            return ((RubyProc)TypeConverter.convertToType((IRubyObject)value, context.getRuntime().getProc(), "to_proc", true)).getBlock();
+            b = ((RubyProc)TypeConverter.convertToType((IRubyObject)value, context.getRuntime().getProc(), "to_proc", true)).getBlock();
         else
             throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
+
+        // Blocks passed in through calls are always normal blocks, no matter where they came from
+        b.type = Block.Type.NORMAL;
+        return b;
     }
 }
