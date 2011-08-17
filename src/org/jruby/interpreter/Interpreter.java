@@ -90,13 +90,23 @@ public class Interpreter {
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
                 }
                 catch (IRBreakJump bj) {
-                    if ((lastInstr instanceof BREAK_Instr) && !inClosure) throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
-                    if (bj.methodToReturnTo != cfg.getScope()) throw bj; // pass it along
+                    if ((lastInstr instanceof BREAK_Instr) && !inClosure)
+                        throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
 
-                    // We got where we need to get to.  Retrieve the result and store it
-                    Operand r = lastInstr.getResult();
-                    if (r != null) r.store(interp, context, self, bj.breakValue);
-                    ipc += 1;
+                    if (bj.scopeToReturnTo != cfg.getScope()) {
+                        // We need to continue to break upwards.
+                        // Run any ensures we need to run before breaking up. 
+                        // Quite easy to do this by passing 'bj' as the exception to the ensure block!
+                        ipc = cfg.getEnsurerPC(lastInstr);
+                        if (ipc == -1) throw bj; // No ensure block here, just rethrow bj
+                        interp.setException(bj); // Found an ensure block, set 'bj' as the exception and transfer control
+                    }
+                    else {
+                        // We got where we need to get to.  Retrieve the result and store it
+                        Operand r = lastInstr.getResult();
+                        if (r != null) r.store(interp, context, self, bj.breakValue);
+                        ipc += 1;
+                    }
                 }
                 catch (RaiseException re) {
                     if (lastInstr instanceof THROW_EXCEPTION_Instr) throw re; // pass it along if we just executed a throw!

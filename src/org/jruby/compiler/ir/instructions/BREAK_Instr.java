@@ -2,7 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 
-import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Label;
@@ -32,19 +32,24 @@ import org.jruby.runtime.builtin.IRubyObject;
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
 public class BREAK_Instr extends OneOperandInstr {
-    public final IRMethod methodToReturnTo;
+    public final IRExecutionScope scopeToReturnTo;
 
-    public BREAK_Instr(Operand rv, IRMethod m) {
+    public BREAK_Instr(Operand rv, IRExecutionScope s) {
         super(Operation.BREAK, null, rv);
-        this.methodToReturnTo = m;
+        this.scopeToReturnTo = s;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new BREAK_Instr(getArg().cloneForInlining(ii), methodToReturnTo);
+        return new BREAK_Instr(getArg().cloneForInlining(ii), scopeToReturnTo);
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        throw new IRBreakJump(methodToReturnTo, getArg().retrieve(interp, context, self));
+        throw new IRBreakJump(scopeToReturnTo, getArg().retrieve(interp, context, self));
+    }
+
+    @Override
+    public String toString() {
+        return operation + "(" + argument + (scopeToReturnTo == null ? "" : ", " + scopeToReturnTo) + ")";
     }
 }

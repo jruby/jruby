@@ -878,7 +878,7 @@ public class IRBuilder {
             s.addInstr(new JumpInstr(currLoop.loopEndLabel));
         }
         else if (s instanceof IRClosure) {
-            s.addInstr(new BREAK_Instr(rv, ((IRExecutionScope)s).getClosestMethodAncestor()));
+            s.addInstr(new BREAK_Instr(rv, (IRExecutionScope)(s.getLexicalParent())));
         }
         else {
             // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception

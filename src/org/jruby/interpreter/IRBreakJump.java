@@ -1,13 +1,13 @@
 package org.jruby.interpreter;
 
-import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.IRExecutionScope;
 
 public class IRBreakJump extends RuntimeException {
-    public final IRMethod methodToReturnTo;
+    public final IRExecutionScope scopeToReturnTo;
     public final Object breakValue;
 
-    public IRBreakJump(IRMethod m, Object rv) {
-        this.methodToReturnTo = m;
+    public IRBreakJump(IRExecutionScope s, Object rv) {
+        this.scopeToReturnTo = s;
         this.breakValue = rv;
     }
 }
