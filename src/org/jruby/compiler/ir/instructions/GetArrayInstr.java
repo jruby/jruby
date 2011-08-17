@@ -58,7 +58,7 @@ public class GetArrayInstr extends OneOperandInstr {
             // SSS FIXME: This is inefficient!  Better implementation exists?
             int n = array.getLength();
             int size = n - index;
-            if (size < 5) {
+            if ((size > 0) && (size < 5)) {
                 IRubyObject[] rest = new IRubyObject[size];
                 for (int i = 0; i < size; i++) {
                     rest[i] = array.entry(index+i);
