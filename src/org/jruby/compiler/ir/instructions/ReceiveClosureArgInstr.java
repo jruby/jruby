@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.RubyArray;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -38,13 +39,17 @@ public class ReceiveClosureArgInstr extends NoOperandInstr {
         Object o;
         int numArgs = interp.getParameterCount();
         if (restOfArgArray) {
-            IRubyObject[] restOfArgs = new IRubyObject[numArgs-argIndex];
-            int j = 0;
-            for (int i = argIndex; i < numArgs; i++) {
-                restOfArgs[j] = (IRubyObject)interp.getParameter(i);
-                j++;
+            if (numArgs < argIndex) {
+                o = RubyArray.newArrayNoCopy(context.getRuntime(), new IRubyObject[] {});
+            } else {
+                IRubyObject[] restOfArgs = new IRubyObject[numArgs-argIndex];
+                int j = 0;
+                for (int i = argIndex; i < numArgs; i++) {
+                    restOfArgs[j] = (IRubyObject)interp.getParameter(i);
+                    j++;
+                }
+                o = RubyArray.newArray(context.getRuntime(), restOfArgs);
             }
-            o =  org.jruby.RubyArray.newArray(context.getRuntime(), restOfArgs);
         } else {
             if (numArgs <= argIndex) {
                 o = context.getRuntime().getNil();
