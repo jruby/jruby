@@ -124,14 +124,16 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
         IRubyObject[] args;
         if (isArray) {
-				if (arity().getValue() > 1)
-                args = prepareArgumentsForCall(context, ((RubyArray)value).toJavaArray(), type);
-            else
-					 args = new IRubyObject[] { prepareArrayArgsForCall(context.getRuntime(), value) };
-		  }
+            if (arity().getValue() > 1) {
+                args = value == null ? new IRubyObject[] {} : prepareArgumentsForCall(context, ((RubyArray)value).toJavaArray(), type);
+            }
+            else {
+                args = assignArrayToBlockArgs(context.getRuntime(), value);
+            }
+        }
         else {
             args = prepareArgumentsForCall(context, value == null ? new IRubyObject[] {} : new IRubyObject[] { value }, type);
-		  }
+        }
 
         return commonCallPath(context, args, self, klass, isArray, binding, type, Block.NULL_BLOCK);
     }
@@ -163,15 +165,16 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                     length + " for 1)");
     }
 
-    protected IRubyObject setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {
+    protected IRubyObject[] assignArrayToBlockArgs(Ruby ruby, IRubyObject value) {
         switch (argumentType) {
-        case ZERO_ARGS:
-            return null;
-        case MULTIPLE_ASSIGNMENT:
-        case SINGLE_RESTARG:
-            return ArgsUtil.convertToRubyArray(ruby, value, hasMultipleArgsHead);
-        default:
-            return defaultArgLogic(ruby, value);
+            case ZERO_ARGS:
+                return new IRubyObject[] {};
+            case MULTIPLE_ASSIGNMENT:
+            case SINGLE_RESTARG:
+                return ArgsUtil.convertToJavaArray(value);
+            default: {
+                return new IRubyObject[] {prepareArrayArgsForCall(ruby, value)};
+            }
         }
     }
 
