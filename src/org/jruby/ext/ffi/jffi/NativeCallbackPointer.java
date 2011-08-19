@@ -46,6 +46,6 @@ class NativeCallbackPointer extends AbstractInvoker {
         com.kenai.jffi.Function function = new com.kenai.jffi.Function(((DirectMemoryIO) getMemoryIO()).getAddress(),
                 closureInfo.jffiReturnType, closureInfo.jffiParameterTypes);
         return MethodFactory.createDynamicMethod(getRuntime(), module, function,
-                closureInfo.returnType, closureInfo.parameterTypes, closureInfo.convention, getRuntime().getNil());
+                closureInfo.returnType, closureInfo.parameterTypes, closureInfo.convention, getRuntime().getNil(), false);
     }
 }

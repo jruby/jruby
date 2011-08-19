@@ -271,7 +271,7 @@ final class NativeClosureProxy implements Closure {
                 ? new Function(runtime, cbInfo.getMetaClass(),
                     new CodeMemoryIO(runtime, address),
                     cbInfo.getReturnType(), cbInfo.getParameterTypes(),
-                    cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT, runtime.getNil())
+                    cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT, runtime.getNil(), false)
 
                 : runtime.getNil();
 

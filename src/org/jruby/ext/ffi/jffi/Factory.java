@@ -83,7 +83,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         RubyClass klass = runtime.getModule("FFI").getClass("Function");
         return new Function(runtime, klass, mem, 
                 cbInfo.getReturnType(), cbInfo.getParameterTypes(),
-                cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT, null);
+                cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT, null, false);
     }
 
 
