@@ -6,8 +6,7 @@ import java.util.Map;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-public class BoxedValue extends Operand
-{
+public class BoxedValue extends Operand {
     final public Operand _value;
 
     public BoxedValue(Operand v) { _value = v; }

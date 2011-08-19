@@ -19,8 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, it could get converted to calls
 //
-public class SValue extends Operand
-{
+public class SValue extends Operand {
     Operand _array;
 
     public SValue(Operand a) { _array = a; }
@@ -29,8 +28,7 @@ public class SValue extends Operand
 
     public String toString() { return "SValue(" + _array + ")"; }
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
-    {
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
         _array = _array.getSimplifiedOperand(valueMap);
         if (_array instanceof Array) {
             Array a = (Array)_array;
@@ -41,8 +39,7 @@ public class SValue extends Operand
         }
     }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
-    {
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
         // SSS FIXME: This should never get called for constant svalues
         return null;
     }
@@ -51,8 +48,7 @@ public class SValue extends Operand
 
     /** Append the list of variables used in this operand to the input list */
     @Override
-    public void addUsedVariables(List<Variable> l)
-    {
+    public void addUsedVariables(List<Variable> l) {
         _array.addUsedVariables(l);
     }
  

@@ -7,8 +7,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class StringLiteral extends Constant
-{
+public class StringLiteral extends Constant {
 // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 // SSS: Get rid of _bl_value since it is not needed anymore
 

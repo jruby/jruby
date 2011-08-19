@@ -2,8 +2,7 @@ package org.jruby.compiler.ir.operands;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
-public abstract class Constant extends Operand
-{
+public abstract class Constant extends Operand {
     public boolean isConstant() { return true; }
 
 	 // Cache value during interpretation (to prevent useless rebuilding of this constant over and over again)

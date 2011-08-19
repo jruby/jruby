@@ -14,8 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, it could get converted to calls that implement splat semantics
-public class Splat extends Operand
-{
+public class Splat extends Operand {
     Operand _array;
 
     public Splat(Operand a) { _array = a; }
@@ -26,8 +25,7 @@ public class Splat extends Operand
 
     public boolean isNonAtomicValue() { return true; }
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
-    {
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
 /*
  * SSS FIXME:  Cannot convert this to an Array operand!
  *
@@ -39,8 +37,7 @@ public class Splat extends Operand
         return this;
     }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray)
-    {
+    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
         if (_array instanceof Array) 
             return ((Array)_array).fetchCompileTimeArrayElement(argIndex, getSubArray);
         else if (_array instanceof Range)
@@ -51,8 +48,7 @@ public class Splat extends Operand
 
     /** Append the list of variables used in this operand to the input list */
     @Override
-    public void addUsedVariables(List<Variable> l)
-    {
+    public void addUsedVariables(List<Variable> l) {
         _array.addUsedVariables(l);
     }
 

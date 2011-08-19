@@ -6,8 +6,7 @@ import java.util.Map;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-public class UnboxedValue extends Operand
-{
+public class UnboxedValue extends Operand {
     final public Operand _value;
 
     public UnboxedValue(Operand v) { _value = v; }

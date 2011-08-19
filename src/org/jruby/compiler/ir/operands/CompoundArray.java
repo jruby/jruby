@@ -18,8 +18,7 @@ import org.jruby.runtime.ThreadContext;
 //
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this will get built into an actual array object
-public class CompoundArray extends Operand
-{
+public class CompoundArray extends Operand {
     Operand a1;
     Operand a2;
     boolean argsPushNode;
@@ -40,8 +39,7 @@ public class CompoundArray extends Operand
 
     public String toString() { return a1 + ", *" + a2; }
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
-    {
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
 /*
  * SSS FIXME:  Cannot convert this to an Array operand!
  *
