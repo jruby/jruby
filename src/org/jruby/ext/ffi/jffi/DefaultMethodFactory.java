@@ -55,7 +55,7 @@ public final class DefaultMethodFactory extends MethodFactory {
     }
     
     DynamicMethod createMethod(RubyModule module, Function function, 
-            Type returnType, Type[] parameterTypes, CallingConvention convention, IRubyObject enums) {
+            Type returnType, Type[] parameterTypes, CallingConvention convention, IRubyObject enums, boolean ignoreError) {
 
         FunctionInvoker functionInvoker = getFunctionInvoker(returnType);
 
@@ -68,7 +68,7 @@ public final class DefaultMethodFactory extends MethodFactory {
         }
 
         Signature signature = new Signature(returnType, parameterTypes, convention, 
-                false, enums instanceof RubyHash ? (RubyHash) enums : null);
+                ignoreError, enums instanceof RubyHash ? (RubyHash) enums : null);
 
         switch (parameterTypes.length) {
             case 0:

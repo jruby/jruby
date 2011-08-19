@@ -28,6 +28,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     private final com.kenai.jffi.Function function;
     private final NativeFunctionInfo functionInfo;
     private final IRubyObject enums;
+    private final boolean ignoreError;
     private volatile boolean autorelease = true;
 
     public static RubyClass createFunctionClass(Ruby runtime, RubyModule module) {
@@ -42,15 +43,17 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     }
     
     Function(Ruby runtime, RubyClass klass, DirectMemoryIO address,
-            Type returnType, Type[] parameterTypes, CallingConvention convention, IRubyObject enums) {
+            Type returnType, Type[] parameterTypes, CallingConvention convention,
+            IRubyObject enums, boolean ignoreError) {
         super(runtime, klass, parameterTypes.length, address);
 
         this.functionInfo = new NativeFunctionInfo(runtime, returnType, parameterTypes, convention);
 
         function = new com.kenai.jffi.Function(address.getAddress(), 
-                functionInfo.jffiReturnType, functionInfo.jffiParameterTypes, functionInfo.convention);
+                functionInfo.jffiReturnType, functionInfo.jffiParameterTypes, functionInfo.convention, !ignoreError);
         
         this.enums = enums;
+        this.ignoreError = ignoreError;
         // Wire up Function#call(*args) to use the super-fast native invokers
         getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
     }
@@ -64,6 +67,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         function = new com.kenai.jffi.Function(address.getAddress(), 
                 functionInfo.jffiReturnType, functionInfo.jffiParameterTypes, functionInfo.convention);
         this.enums = enums;
+        this.ignoreError = false;
         // Wire up Function#call(*args) to use the super-fast native invokers
         getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
     }
@@ -105,6 +109,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         // Get the convention from the options hash
         String convention = "default";
         IRubyObject enums = null;
+        boolean ignoreError = false;
         if (args.length > optionsIndex && args[optionsIndex] instanceof RubyHash) {
             options = (RubyHash) args[optionsIndex];
 
@@ -112,6 +117,9 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
             if (rbConvention != null && !rbConvention.isNil()) {
                 convention = rbConvention.asJavaString();
             }
+
+            IRubyObject rbSaveErrno = options.fastARef(context.getRuntime().newSymbol("save_errno"));
+            ignoreError |= (rbSaveErrno != null && !rbSaveErrno.isTrue());
 
             enums = options.fastARef(context.getRuntime().newSymbol("enums"));
             if (enums != null && !enums.isNil() && !(enums instanceof RubyHash)) {
@@ -128,7 +136,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
                     returnType, parameterTypes, proc, callConvention);
         }
         return new Function(context.getRuntime(), (RubyClass) recv, fptr,
-                    returnType, parameterTypes, callConvention, enums);
+                    returnType, parameterTypes, callConvention, enums, ignoreError);
     }
 
     @JRubyMethod(name = "free")
@@ -161,7 +169,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     @Override
     public DynamicMethod createDynamicMethod(RubyModule module) {
         return MethodFactory.createDynamicMethod(getRuntime(), module, function,
-                    functionInfo.returnType, functionInfo.parameterTypes, functionInfo.convention, enums);
+                    functionInfo.returnType, functionInfo.parameterTypes, functionInfo.convention, enums, ignoreError);
     }
     
 }
