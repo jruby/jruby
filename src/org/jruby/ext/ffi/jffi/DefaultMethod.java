@@ -4,6 +4,7 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.CallbackInfo;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -18,6 +19,7 @@ class DefaultMethod extends JFFIDynamicMethod {
     private final NativeCallbackFactory cbFactory;
     private NativeInvoker compiledInvoker;
     private JITHandle jitHandle;
+    private IndyCompiler indyCompiler;
 
     
 
@@ -62,17 +64,20 @@ class DefaultMethod extends JFFIDynamicMethod {
     protected final NativeInvoker getNativeInvoker() {
         return compiledInvoker != null ? compiledInvoker : tryCompilation();
     }
-    
+
+    private synchronized JITHandle getJITHandle() {
+        if (jitHandle == null) {
+            jitHandle = JITCompiler.getInstance().getHandle(signature);
+        }
+        return jitHandle;
+    }
+
     private synchronized NativeInvoker tryCompilation() {
         if (compiledInvoker != null) {
             return compiledInvoker;
         }
 
-        if (jitHandle == null) {
-            jitHandle = JITCompiler.getInstance().getHandle(signature);
-        }
-
-        NativeInvoker invoker = jitHandle.compile(function, signature);
+        NativeInvoker invoker = getJITHandle().compile(function, signature);
         if (invoker != null) {
             return compiledInvoker = invoker;
         }
@@ -80,7 +85,7 @@ class DefaultMethod extends JFFIDynamicMethod {
         //
         // Once compilation has failed, always fallback to the default invoker
         //
-        if (jitHandle.compilationFailed()) {
+        if (getJITHandle().compilationFailed()) {
             compiledInvoker = defaultInvoker;
         }
         
@@ -118,5 +123,26 @@ class DefaultMethod extends JFFIDynamicMethod {
                 cb.dispose();
             }
         }
+    }
+
+    @Override
+    public synchronized NativeCall getNativeCall() {
+        if (!Boolean.getBoolean("jruby.ffi.compile.invokedynamic")) {
+            return null;
+        }
+
+        NativeInvoker invoker = null;
+        while (!getJITHandle().compilationFailed() && (invoker = getJITHandle().compile(function, signature)) == null)
+            ;
+        if (indyCompiler == null) {
+            indyCompiler = new IndyCompiler(signature, invoker);
+        }
+
+        return indyCompiler.getNativeCall();
+    }
+
+    @Override
+    public NativeCall getNativeCall(int args, boolean block) {
+        return null;
     }
 }
