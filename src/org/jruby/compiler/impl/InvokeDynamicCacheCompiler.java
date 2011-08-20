@@ -36,6 +36,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
+import org.jruby.ast.executable.AbstractScript;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -262,16 +263,33 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      * @param scope the original scope to base the new one on
      */
     @Override
-    public void cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
+    public int cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
         String scopeString = RuntimeHelpers.encodeScope(scope);
         
+        int index = scopeCount;
+        scopeCount++;
+        
+        method.loadThis();
         method.loadThreadContext();
         
         method.method.invokedynamic(
                 "getStaticScope",
-                sig(StaticScope.class, ThreadContext.class),
+                sig(StaticScope.class, AbstractScript.class, ThreadContext.class),
                 InvokeDynamicSupport.getStaticScopeHandle(),
-                scopeString);
+                scopeString,
+                index);
+        
+        return index;
+    }
+    
+    public void loadStaticScope(BaseBodyCompiler method, int index) {
+        method.loadThis();
+        
+        method.method.invokedynamic(
+                "getStaticScope",
+                sig(StaticScope.class, AbstractScript.class),
+                InvokeDynamicSupport.getLoadStaticScopeHandle(),
+                index);
     }
     
     /**

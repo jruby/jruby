@@ -42,6 +42,10 @@ public class RuntimeCache {
         return scope;
     }
 
+    public final StaticScope getScope(int index) {
+        return scopes[index];
+    }
+
     public final CallSite getCallSite(int index) {
         return callSites[index];
     }

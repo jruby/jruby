@@ -79,6 +79,18 @@ public abstract class AbstractScript implements Script {
     public final StaticScope getScope8(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 8);}
     public final StaticScope getScope9(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 9);}
 
+    public final StaticScope getScope(int i) {return runtimeCache.getScope(i);}
+    public final StaticScope getScope0() {return runtimeCache.getScope(0);}
+    public final StaticScope getScope1() {return runtimeCache.getScope(1);}
+    public final StaticScope getScope2() {return runtimeCache.getScope(2);}
+    public final StaticScope getScope3() {return runtimeCache.getScope(3);}
+    public final StaticScope getScope4() {return runtimeCache.getScope(4);}
+    public final StaticScope getScope5() {return runtimeCache.getScope(5);}
+    public final StaticScope getScope6() {return runtimeCache.getScope(6);}
+    public final StaticScope getScope7() {return runtimeCache.getScope(7);}
+    public final StaticScope getScope8() {return runtimeCache.getScope(8);}
+    public final StaticScope getScope9() {return runtimeCache.getScope(9);}
+
     public static final int NUMBERED_CALLSITE_COUNT = 10;
 
     public final CallSite getCallSite(int i) {return runtimeCache.callSites[i];}

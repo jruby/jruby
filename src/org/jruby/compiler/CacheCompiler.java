@@ -52,7 +52,9 @@ public interface CacheCompiler {
 
     public void cacheConstantFrom(BaseBodyCompiler method, String constantName);
 
-    public void cacheStaticScope(BaseBodyCompiler method, StaticScope scope);
+    public int cacheStaticScope(BaseBodyCompiler method, StaticScope scope);
+    
+    public void loadStaticScope(BaseBodyCompiler method, int index);
 
     public void cacheMethod(BaseBodyCompiler method, String methodName);
 

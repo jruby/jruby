@@ -96,22 +96,35 @@ public class InheritedCacheCompiler implements CacheCompiler {
         this.scriptCompiler = scriptCompiler;
     }
 
-    public void cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
+    public int cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
         String scopeString = RuntimeHelpers.encodeScope(scope);
+        
+        int index = scopeCount;
+        scopeCount++;
 
         // retrieve scope from scopes array
         method.loadThis();
         method.loadThreadContext();
         method.method.ldc(scopeString);
-        if (scopeCount < AbstractScript.NUMBERED_SCOPE_COUNT) {
+        if (index < AbstractScript.NUMBERED_SCOPE_COUNT) {
             // use numbered access method
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope" + scopeCount, sig(StaticScope.class, ThreadContext.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope" + index, sig(StaticScope.class, ThreadContext.class, String.class));
         } else {
-            method.method.pushInt(scopeCount);
+            method.method.pushInt(index);
             method.method.invokevirtual(scriptCompiler.getClassname(), "getScope", sig(StaticScope.class, ThreadContext.class, String.class, int.class));
         }
 
-        scopeCount++;
+        return index;
+    }
+    
+    public void loadStaticScope(BaseBodyCompiler method, int index) {
+        if (scopeCount < AbstractScript.NUMBERED_SCOPE_COUNT) {
+            // use numbered access method
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope" + index, sig(StaticScope.class, ThreadContext.class, String.class));
+        } else {
+            method.method.pushInt(index);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope", sig(StaticScope.class, ThreadContext.class, String.class, int.class));
+        }
     }
     
     public void cacheCallSite(BaseBodyCompiler method, String name, CallType callType) {

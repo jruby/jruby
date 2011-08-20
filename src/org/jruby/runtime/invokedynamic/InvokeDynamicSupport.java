@@ -50,6 +50,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.ast.executable.AbstractScript;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
@@ -132,7 +133,11 @@ public class InvokeDynamicSupport {
     }
     
     public static org.objectweb.asm.MethodHandle getStaticScopeHandle() {
-        return getBootstrapHandle("getStaticScopeBootstrap", BOOTSTRAP_STRING_SIG);
+        return getBootstrapHandle("getStaticScopeBootstrap", BOOTSTRAP_STRING_INT_SIG);
+    }
+    
+    public static org.objectweb.asm.MethodHandle getLoadStaticScopeHandle() {
+        return getBootstrapHandle("getLoadStaticScopeBootstrap", BOOTSTRAP_BARE_SIG);
     }
     
     public static org.objectweb.asm.MethodHandle getCallSiteHandle() {
@@ -319,13 +324,28 @@ public class InvokeDynamicSupport {
         return site;
     }
     
-    public static CallSite getStaticScopeBootstrap(Lookup lookup, String name, MethodType type, String staticScope) {
+    public static CallSite getStaticScopeBootstrap(Lookup lookup, String name, MethodType type, String scopeString, int index) {
         MutableCallSite site = new MutableCallSite(type);
         MethodHandle init = findStatic(
                 InvokeDynamicSupport.class,
                 "initStaticScope",
-                methodType(StaticScope.class, MutableCallSite.class, ThreadContext.class, String.class));
-        init = insertArguments(init, 2, staticScope);
+                methodType(StaticScope.class, MutableCallSite.class, AbstractScript.class, ThreadContext.class, String.class, int.class));
+        init = insertArguments(init, 3, scopeString, index);
+        init = insertArguments(
+                init,
+                0,
+                site);
+        site.setTarget(init);
+        return site;
+    }
+    
+    public static CallSite getLoadStaticScopeBootstrap(Lookup lookup, String name, MethodType type, int index) {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle init = findStatic(
+                InvokeDynamicSupport.class,
+                "loadStaticScope",
+                methodType(StaticScope.class, MutableCallSite.class, AbstractScript.class, int.class));
+        init = insertArguments(init, 2, index);
         init = insertArguments(
                 init,
                 0,
@@ -930,9 +950,15 @@ public class InvokeDynamicSupport {
         return rubyFloat;
     }
     
-    public static StaticScope initStaticScope(MutableCallSite site, ThreadContext context, String staticScope) {
-        StaticScope scope = RuntimeHelpers.createScopeForClass(context, staticScope);
-        site.setTarget(dropArguments(constant(StaticScope.class, scope), 0, ThreadContext.class));
+    public static StaticScope initStaticScope(MutableCallSite site, AbstractScript script, ThreadContext context, String staticScope, int index) {
+        StaticScope scope = script.getScope(context, staticScope, index);
+        site.setTarget(dropArguments(constant(StaticScope.class, scope), 0, AbstractScript.class, ThreadContext.class));
+        return scope;
+    }
+    
+    public static StaticScope loadStaticScope(MutableCallSite site, AbstractScript script, int index) {
+        StaticScope scope = script.getScope(index);
+        site.setTarget(dropArguments(constant(StaticScope.class, scope), 0, AbstractScript.class));
         return scope;
     }
     
