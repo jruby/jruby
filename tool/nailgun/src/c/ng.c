@@ -576,7 +576,7 @@ int main(int argc, char *argv[], char *env[]) {
 
   if (connect(nailgunsocket, (struct sockaddr *)&server_addr,
     sizeof(struct sockaddr)) == -1) {
-    perror("connect");
+    perror("connect to Nailgun server");
     cleanUpAndExit(NAILGUN_CONNECT_FAILED);
   } 
     
