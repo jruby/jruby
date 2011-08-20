@@ -37,12 +37,7 @@ public class RuntimeCache {
     public final StaticScope getScope(ThreadContext context, String varNamesDescriptor, int index) {
         StaticScope scope = scopes[index];
         if (scope == null) {
-            String[] scopeData = varNamesDescriptor.split(",");
-            String[] varNames = scopeData[0].split(";");
-            for (int i = 0; i < varNames.length; i++) {
-                varNames[i] = varNames[i].intern();
-            }
-            scope = scopes[index] = new LocalStaticScope(context.getCurrentScope().getStaticScope(), varNames);
+            scopes[index] = scope = RuntimeHelpers.createScopeForClass(context, varNamesDescriptor);
         }
         return scope;
     }

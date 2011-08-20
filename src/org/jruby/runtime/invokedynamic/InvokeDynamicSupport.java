@@ -931,12 +931,7 @@ public class InvokeDynamicSupport {
     }
     
     public static StaticScope initStaticScope(MutableCallSite site, ThreadContext context, String staticScope) {
-        String[] scopeData = staticScope.split(",");
-        String[] varNames = scopeData[0].split(";");
-        for (int i = 0; i < varNames.length; i++) {
-            varNames[i] = varNames[i].intern();
-        }
-        StaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), varNames);
+        StaticScope scope = RuntimeHelpers.createScopeForClass(context, staticScope);
         site.setTarget(dropArguments(constant(StaticScope.class, scope), 0, ThreadContext.class));
         return scope;
     }

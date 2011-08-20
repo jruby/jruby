@@ -2617,8 +2617,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         method.ldc(newMethodName);
 
-        String scopeNames = RuntimeHelpers.encodeScope(scope);
-        method.ldc(scopeNames);
+        script.getCacheCompiler().cacheStaticScope(this, scope);
 
         method.pushInt(methodArity);
 
@@ -2630,10 +2629,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         if (receiver != null) {
             invokeUtilityMethod("defs", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, String.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
+                    params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
         } else {
             invokeUtilityMethod("def", sig(IRubyObject.class,
-                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, String.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
+                    params(ThreadContext.class, IRubyObject.class, Object.class, String.class, String.class, StaticScope.class, int.class, String.class, int.class, CallConfiguration.class, String.class)));
         }
 
         script.addInvokerDescriptor(newMethodName, methodArity, scope, inspector.getCallConfig(), filename, line);

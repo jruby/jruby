@@ -313,12 +313,10 @@ public abstract class StaticScope implements Serializable {
     public void setModule(RubyModule module) {
         this.cref = module;
         
-        if (previousCRefScope == null) {
-            for (StaticScope scope = getEnclosingScope(); scope != null; scope = scope.getEnclosingScope()) {
-                if (scope.cref != null) {
-                    previousCRefScope = scope;
-                    return;
-                }
+        for (StaticScope scope = getEnclosingScope(); scope != null; scope = scope.getEnclosingScope()) {
+            if (scope.cref != null) {
+                previousCRefScope = scope;
+                return;
             }
         }
     }

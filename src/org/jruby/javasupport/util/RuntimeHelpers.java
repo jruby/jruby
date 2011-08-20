@@ -339,7 +339,7 @@ public class RuntimeHelpers {
                 context.getCurrentScope(), callback, hasMultipleArgsHead, argsNodeType);
     }
     
-    public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String name, String javaName, String scopeString,
+    public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String name, String javaName, StaticScope scope,
             int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
@@ -348,8 +348,6 @@ public class RuntimeHelpers {
         Visibility visibility = context.getCurrentVisibility();
         
         performNormalMethodChecks(containingClass, runtime, name);
-
-        StaticScope scope = createScopeForClass(context, scopeString);
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method = constructNormalMethod(
@@ -363,14 +361,12 @@ public class RuntimeHelpers {
         return runtime.getNil();
     }
     
-    public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String name, String javaName, String scopeString,
+    public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String name, String javaName, StaticScope scope,
             int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.getRuntime();
 
         RubyClass rubyClass = performSingletonMethodChecks(runtime, receiver, name);
-        
-        StaticScope scope = createScopeForClass(context, scopeString);
         
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method = constructSingletonMethod(
@@ -2018,7 +2014,7 @@ public class RuntimeHelpers {
         scope.setArities(Integer.parseInt(scopeElements[1]), Integer.parseInt(scopeElements[2]), Integer.parseInt(scopeElements[3]));
     }
 
-    private static StaticScope createScopeForClass(ThreadContext context, String scopeString) {
+    public static StaticScope createScopeForClass(ThreadContext context, String scopeString) {
         StaticScope scope = decodeLocalScope(context, scopeString);
         scope.determineModule();
 
