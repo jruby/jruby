@@ -46,7 +46,6 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
-import org.jcodings.Encoding;
 
 import org.joda.time.DateTime;
 
@@ -443,9 +442,24 @@ public class RubyZlib {
             }
         }
 
-        static void checkWindowBits(Ruby runtime, int wbits) {
+        /**
+         * We only do windowBits=15(32K buffer, LZ77 algorithm) since java.util.zip only allows it.
+         * NOTE: deflateInit2 of zlib.c also accepts MAX_WBITS + 16(gzip compression).
+         * inflateInit2 also accepts MAX_WBITS + 16(gzip decompression) and MAX_WBITS + 32(automatic detection of gzip and LZ77).
+         */
+        static void checkWindowBits(Ruby runtime, int wbits, boolean forInflate) {
             wbits = Math.abs(wbits);
-            if (wbits < MIN_WBITS || wbits > MAX_WBITS) {
+            if ((wbits & 0xf) < MIN_WBITS) {
+                throw newStreamError(runtime, "stream error: invalid window bits");
+            }
+            if ((wbits & 0xf) != 0xf) {
+                // windowBits < 15 for reducing memory is meaningless on Java platform. 
+                runtime.getWarnings().warn("windowBits < 15 is ignored on this platform");
+                // continue
+            }
+            if (forInflate && wbits > MAX_WBITS + 32) {
+                throw newStreamError(runtime, "stream error: invalid window bits");
+            } else if (!forInflate && wbits > MAX_WBITS + 16) {
                 throw newStreamError(runtime, "stream error: invalid window bits");
             }
         }
@@ -502,7 +516,7 @@ public class RubyZlib {
 
             if (args.length > 0 && !args[0].isNil()) {
                 window_bits = RubyNumeric.fix2int(args[0]);
-                checkWindowBits(getRuntime(), window_bits);
+                checkWindowBits(getRuntime(), window_bits, true);
             }
 
             init(window_bits);
@@ -748,10 +762,11 @@ public class RubyZlib {
             }
             if (!args[1].isNil()) {
                 window_bits = RubyNumeric.fix2int(args[1]);
-                checkWindowBits(getRuntime(), window_bits);
+                checkWindowBits(getRuntime(), window_bits, false);
             }
             if (!args[2].isNil()) {
                 memlevel = RubyNumeric.fix2int(args[2]);
+                // We accepts any memlevel and ignores it. Memory setting means nothing on Java platform.
             }
             if (!args[3].isNil()) {
                 strategy = RubyNumeric.fix2int(args[3]);
@@ -760,7 +775,6 @@ public class RubyZlib {
             return this;
         }
 
-        // We cannot handle size of win_bits and memlevel without implementing our Zlib.
         private void init(int level, int win_bits, int memlevel, int strategy) {
             // Zlib behavior: negative win_bits means no header and no checksum.
             flater = new Deflater(level, win_bits < 0);
