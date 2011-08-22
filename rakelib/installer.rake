@@ -66,3 +66,31 @@ task :windows_installer => :install_installer_gems do
     puts "Skipping windows installers since install4j is not available"
   end
 end
+
+#           #
+#  HELPERS  #
+#           #
+
+def replace_variables_in(path)
+  File.open(path,"w") do |f|
+    f.write ERB.new(File.read("#{path}.erb")).result
+  end
+end
+
+def prepare_rubygems
+  replace_variables_in GEMSMAC
+  cp GEMSMAC, GEMS_DEFAULTS_DIR
+
+  File.open("#{GEMS_DEFAULTS_DIR}/jruby.rb", "a+") do |file|
+    file.write("require 'rubygems/defaults/jruby_mac'")
+  end
+
+  mv "#{MAC_DIST}/lib/ruby/gems", GEMS_DIST_DIR
+end
+
+def cleanup
+  puts "- Cleaning directories"
+  [MAC_DIST, GEMS_DIST_DIR, PKG_DIR ].each do |f|
+    rm_r f if File.exist? f
+  end
+end
