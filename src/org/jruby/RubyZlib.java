@@ -33,6 +33,7 @@
 package org.jruby;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,7 +117,18 @@ public class RubyZlib {
     public static final byte Z_BINARY = (byte) 0;
     public static final byte Z_ASCII = (byte) 1;
     public static final byte Z_UNKNOWN = (byte) 2;
-
+    // from zlib.c in ruby
+    final static byte GZ_MAGIC_ID_1 = (byte) 0x1f;
+    final static byte GZ_MAGIC_ID_2 = (byte) 0x8b;
+    final static byte GZ_METHOD_DEFLATE = (byte) 8;
+    final static byte GZ_FLAG_MULTIPART = (byte) 0x2;
+    final static byte GZ_FLAG_EXTRA = (byte) 0x4;
+    final static byte GZ_FLAG_ORIG_NAME = (byte) 0x8;
+    final static byte GZ_FLAG_COMMENT = (byte) 0x10;
+    final static byte GZ_FLAG_ENCRYPT = (byte) 0x20;
+    final static byte GZ_FLAG_UNKNOWN_MASK = (byte) 0xc0;
+    final static byte GZ_EXTRAFLAG_FAST = (byte) 0x4;
+    final static byte GZ_EXTRAFLAG_SLOW = (byte) 0x2;
     
     /** Create the Zlib module and add it to the Ruby runtime.
      * 
@@ -714,6 +726,10 @@ public class RubyZlib {
 
         public static final int BASE_SIZE = 100;
         private Deflater flater;
+        private int wrap;
+        private boolean dumpHeaderNeeded = false;
+        private boolean dumpTrailerNeeded = false;
+        private CRC32 checksum;
         private ByteList collected;
         protected static final ObjectAllocator DEFLATE_ALLOCATOR = new ObjectAllocator() {
 
@@ -753,7 +769,7 @@ public class RubyZlib {
         public IRubyObject _initialize(IRubyObject[] args) {
             args = Arity.scanArgs(getRuntime(), args, 0, 4);
             int level = -1;
-            int window_bits = MAX_WBITS;
+            int windowBits = MAX_WBITS;
             int memlevel = 8;
             int strategy = 0;
             if (!args[0].isNil()) {
@@ -761,8 +777,8 @@ public class RubyZlib {
                 checkLevel(getRuntime(), level);
             }
             if (!args[1].isNil()) {
-                window_bits = RubyNumeric.fix2int(args[1]);
-                checkWindowBits(getRuntime(), window_bits, false);
+                windowBits = RubyNumeric.fix2int(args[1]);
+                checkWindowBits(getRuntime(), windowBits, false);
             }
             if (!args[2].isNil()) {
                 memlevel = RubyNumeric.fix2int(args[2]);
@@ -771,13 +787,22 @@ public class RubyZlib {
             if (!args[3].isNil()) {
                 strategy = RubyNumeric.fix2int(args[3]);
             }
-            init(level, window_bits, memlevel, strategy);
+            init(level, windowBits, memlevel, strategy);
             return this;
         }
 
-        private void init(int level, int win_bits, int memlevel, int strategy) {
+        private void init(int level, int windowBits, int memlevel, int strategy) {
             // Zlib behavior: negative win_bits means no header and no checksum.
-            flater = new Deflater(level, win_bits < 0);
+            if (windowBits < 0) {
+                wrap = 0;
+            } else if ((windowBits & 0x10) != 0) {
+                wrap = 2; // gzip wrapper
+                dumpHeaderNeeded = true;
+                checksum = new CRC32();
+            } else {
+                wrap = 1; // zlib header
+            }
+            flater = new Deflater(level, (wrap != 1));
             flater.setStrategy(strategy);
             collected = new ByteList(BASE_SIZE);
         }
@@ -873,6 +898,9 @@ public class RubyZlib {
         protected void internalReset() {
             flater.reset();
             collected = new ByteList(BASE_SIZE);
+            if (checksum != null) {
+                checksum.reset();
+            }
         }
 
         public boolean internalFinished() {
@@ -892,6 +920,12 @@ public class RubyZlib {
         }
 
         private void append(ByteList obj) throws IOException {
+            if (checksum != null) {
+                checksum.update(obj.getUnsafeBytes(), obj.getBegin(), obj.getRealSize());
+                if (dumpHeaderNeeded) {
+                    writeHeader();
+                }
+            }
             flater.setInput(obj.getUnsafeBytes(), obj.getBegin(), obj.getRealSize());
             run();
         }
@@ -902,8 +936,13 @@ public class RubyZlib {
             }
             if (flush == Z_FINISH) {
                 flater.finish();
+                run();
+                if (dumpTrailerNeeded) {
+                    writeTrailer();
+                }
+            } else {
+                run();
             }
-            run();
             IRubyObject obj = RubyString.newString(getRuntime(), collected);
             collected = new ByteList(BASE_SIZE);
             return obj;
@@ -936,8 +975,65 @@ public class RubyZlib {
                 }
             }
         }
+        
+        private void writeHeader() throws IOException {
+            collected.append(dumpHeader(null, null, Z_DEFAULT_COMPRESSION, OS_CODE, 0));
+            dumpHeaderNeeded = false;
+            dumpTrailerNeeded = true;
+        }
+        
+        private void writeTrailer() {
+            collected.append(dumpTrailer(flater.getTotalIn(), (int) checksum.getValue()));
+            dumpTrailerNeeded = false;
+        }
     }
 
+    static byte[] dumpHeader(String origName, String comment, int level, byte osCode, long modifiedTime) throws IOException {
+        //  See http://www.gzip.org/zlib/rfc-gzip.html
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte flags = 0, extraflags = 0;
+        if (origName != null) {
+            flags |= GZ_FLAG_ORIG_NAME;
+        }
+        if (comment != null) {
+            flags |= GZ_FLAG_COMMENT;
+        }
+        if (level == Z_BEST_SPEED) {
+            extraflags |= GZ_EXTRAFLAG_FAST;
+        } else if (level == Z_BEST_COMPRESSION) {
+            extraflags |= GZ_EXTRAFLAG_SLOW;
+        }
+        final byte header[] = {
+            GZ_MAGIC_ID_1,
+            GZ_MAGIC_ID_2,
+            GZ_METHOD_DEFLATE,
+            flags,
+            (byte) (modifiedTime), (byte) (modifiedTime >> 8), // 4 bytes of modified time
+            (byte) (modifiedTime >> 16), (byte) (modifiedTime >> 24),
+            extraflags,
+            OS_CODE
+        };
+        out.write(header);
+        if (origName != null) {
+            out.write(origName.toString().getBytes());
+            out.write('\0');
+        }
+        if (comment != null) {
+            out.write(comment.toString().getBytes());
+            out.write('\0');
+        }
+        return out.toByteArray();
+    }
+    
+    static byte[] dumpTrailer(int originalDataSize, int checksumInt) {
+        return new byte[] {
+            (byte) (checksumInt), (byte)(checksumInt >> 8),
+            (byte) (checksumInt >> 16), (byte)(checksumInt >> 24),
+            (byte) (originalDataSize), (byte)(originalDataSize >> 8),
+            (byte) (originalDataSize >> 16), (byte)(originalDataSize >> 24)
+        };
+    }
+    
     @JRubyClass(name="Zlib::GzipFile")
     public static class RubyGzipFile extends RubyObject {
         @JRubyClass(name="Zlib::GzipFile::Error", parent="Zlib::Error")
@@ -949,19 +1045,6 @@ public class RubyZlib {
         @JRubyClass(name="Zlib::GzipFile::LengthError", parent="Zlib::GzipFile::Error")
         public static class LengthError extends Error {}
 
-        // from zlib.c in ruby
-        final static byte GZ_MAGIC_ID_1 = (byte) 0x1f;
-        final static byte GZ_MAGIC_ID_2 = (byte) 0x8b;
-        final static byte GZ_METHOD_DEFLATE = (byte) 8;
-        final static byte GZ_FLAG_MULTIPART = (byte) 0x2;
-        final static byte GZ_FLAG_EXTRA = (byte) 0x4;
-        final static byte GZ_FLAG_ORIG_NAME = (byte) 0x8;
-        final static byte GZ_FLAG_COMMENT = (byte) 0x10;
-        final static byte GZ_FLAG_ENCRYPT = (byte) 0x20;
-        final static byte GZ_FLAG_UNKNOWN_MASK = (byte) 0xc0;
-        final static byte GZ_EXTRAFLAG_FAST = (byte) 0x4;
-        final static byte GZ_EXTRAFLAG_SLOW = (byte) 0x2;
- 
         private static IRubyObject wrapBlock(ThreadContext context, RubyGzipFile instance, Block block) {
             if (block.isGiven()) {
                 try {
@@ -1573,6 +1656,7 @@ public class RubyZlib {
                 }
                 return RubyString.newEmptyString(getRuntime());
             } catch (IOException ioe) {
+                ioe.printStackTrace(System.err);
                 throw getRuntime().newIOErrorFromException(ioe);
             }
         }
@@ -1824,7 +1908,7 @@ public class RubyZlib {
             public void finish() throws IOException {
                 writeHeaderIfNeeded();
                 super.finish();
-                writeTrailer();
+                out.write(dumpTrailer(def.getTotalIn(), (int) checksum.getValue()));
             }
 
             public void setModifiedTime(long newModifiedTime) {
@@ -1847,59 +1931,11 @@ public class RubyZlib {
             // header is always written before the first bytes
             private void writeHeaderIfNeeded() throws IOException {
                 if (headerIsWritten == false) {
-                    writeHeader();
+                    out.write(dumpHeader((nullFreeOrigName != null ? nullFreeOrigName.toString()
+                            : null), (nullFreeComment != null ? nullFreeComment.toString() : null),
+                            level, OS_CODE, modifiedTime));
                     headerIsWritten = true;
                 }
-            }
-
-            private void writeHeader() throws IOException {
-                //  See http://www.gzip.org/zlib/rfc-gzip.html
-                byte flags = 0, extraflags = 0;
-                if (nullFreeOrigName != null) {
-                    flags |= GZ_FLAG_ORIG_NAME;
-                }
-                if (nullFreeComment != null) {
-                    flags |= GZ_FLAG_COMMENT;
-                }
-                if (level == Z_BEST_SPEED) {
-                    extraflags |= GZ_EXTRAFLAG_FAST;
-                } else if (level == Z_BEST_COMPRESSION) {
-                    extraflags |= GZ_EXTRAFLAG_SLOW;
-                }
-                final byte header[] = {
-                    GZ_MAGIC_ID_1,
-                    GZ_MAGIC_ID_2,
-                    GZ_METHOD_DEFLATE,
-                    flags,
-                    (byte) (modifiedTime), (byte) (modifiedTime >> 8), // 4 bytes of modified time
-                    (byte) (modifiedTime >> 16), (byte) (modifiedTime >> 24),
-                    extraflags,
-                    OS_CODE
-                };
-                out.write(header);
-                if (nullFreeOrigName != null) {
-                    out.write(nullFreeOrigName.toString().getBytes());
-                    out.write('\0');
-                }
-                if (nullFreeComment != null) {
-                    out.write(nullFreeComment.toString().getBytes());
-                    out.write('\0');
-                }
-            }
-
-            private void writeTrailer() throws IOException {
-                final int originalDataSize = def.getTotalIn();
-                final int checksumInt = (int) checksum.getValue();
-
-                final byte[] trailer = {
-                    (byte) (checksumInt), (byte)(checksumInt >> 8),
-                    (byte) (checksumInt >> 16), (byte)(checksumInt >> 24),
-
-                    (byte) (originalDataSize), (byte)(originalDataSize >> 8),
-                    (byte) (originalDataSize >> 16), (byte)(originalDataSize >> 24)
-                };
-
-                out.write(trailer);
             }
         }
 
@@ -1976,7 +2012,7 @@ public class RubyZlib {
 
         @JRubyMethod(name = {"pos", "tell"})
         public IRubyObject pos() {
-            return RubyFixnum.int2fix(getRuntime(), io.pos());
+            return RubyNumeric.int2fix(getRuntime(), io.pos());
         }
 
         @JRubyMethod(name = "orig_name=", required = 1)
