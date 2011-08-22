@@ -685,30 +685,37 @@ public class RubyZlib {
             }
         }
 
+        @Override
         protected int internalTotalIn() {
             return flater.getTotalIn();
         }
 
+        @Override
         protected int internalTotalOut() {
             return flater.getTotalOut();
         }
 
+        @Override
         protected boolean internalStreamEndP() {
             return flater.finished();
         }
 
+        @Override
         protected void internalReset() {
             flater.reset();
         }
 
+        @Override
         protected boolean internalFinished() {
             return flater.finished();
         }
 
+        @Override
         protected int internalAdler() {
             return flater.getAdler();
         }
 
+        @Override
         protected IRubyObject internalFinish() {
             run(true);
             flater.end();
@@ -716,6 +723,7 @@ public class RubyZlib {
             return flushOutput(getRuntime());
         }
 
+        @Override
         protected void internalClose() {
             flater.end();
         }
@@ -883,18 +891,22 @@ public class RubyZlib {
             }
         }
 
+        @Override
         protected int internalTotalIn() {
             return flater.getTotalIn();
         }
 
+        @Override
         protected int internalTotalOut() {
             return flater.getTotalOut();
         }
 
+        @Override
         protected boolean internalStreamEndP() {
             return flater.finished();
         }
 
+        @Override
         protected void internalReset() {
             flater.reset();
             collected = new ByteList(BASE_SIZE);
@@ -903,18 +915,22 @@ public class RubyZlib {
             }
         }
 
+        @Override
         public boolean internalFinished() {
             return flater.finished();
         }
 
+        @Override
         protected int internalAdler() {
             return flater.getAdler();
         }
 
+        @Override
         protected IRubyObject internalFinish() {
             return finish();
         }
 
+        @Override
         protected void internalClose() {
             flater.end();
         }
@@ -1045,7 +1061,7 @@ public class RubyZlib {
         @JRubyClass(name="Zlib::GzipFile::LengthError", parent="Zlib::GzipFile::Error")
         public static class LengthError extends Error {}
 
-        private static IRubyObject wrapBlock(ThreadContext context, RubyGzipFile instance, Block block) {
+        static IRubyObject wrapBlock(ThreadContext context, RubyGzipFile instance, Block block) {
             if (block.isGiven()) {
                 try {
                     return block.yield(context, instance);
@@ -1249,7 +1265,7 @@ public class RubyZlib {
         private static class CountingIOInputStream extends IOInputStream {
 
             private int position;
-            private IRubyObject io;
+            IRubyObject io;
 
             public CountingIOInputStream(IRubyObject io) {
                 super(io);
@@ -1669,7 +1685,7 @@ public class RubyZlib {
 
         @JRubyMethod(name = {"pos", "tell"})
         public IRubyObject pos() {
-            return RubyFixnum.int2fix(getRuntime(), position);
+            return RubyNumeric.int2fix(getRuntime(), position);
         }
 
         @JRubyMethod(name = "readchar")
