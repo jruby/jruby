@@ -438,19 +438,16 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void createNewString(ArrayCallback callback, int count, Encoding encoding) {
         loadRuntime();
-
-        method.newobj(p(ByteList.class));
-        method.dup();
-        method.ldc(StandardASMCompiler.STARTING_DSTR_SIZE);
-        method.invokespecial(p(ByteList.class), "<init>", sig(Void.TYPE, int.class));
+        ByteList startingDstr = new ByteList(StandardASMCompiler.STARTING_DSTR_SIZE);
 
         if (encoding != null) {
-            script.getCacheCompiler().cacheEncoding(this, encoding);
-            method.ldc(StringSupport.CR_7BIT);
-            method.invokestatic(p(RubyString.class), "newStringNoCopy", sig(RubyString.class, Ruby.class, ByteList.class, Encoding.class, int.class));
-        } else {
-            method.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, ByteList.class));
+            startingDstr.setEncoding(encoding);
         }
+        
+        script.getCacheCompiler().cacheByteList(this, startingDstr);
+        method.invokevirtual(p(ByteList.class), "dup", sig(ByteList.class));
+        method.ldc(StringSupport.CR_7BIT);
+        method.invokestatic(p(RubyString.class), "newStringShared", sig(RubyString.class, Ruby.class, ByteList.class, int.class));
 
         for (int i = 0; i < count; i++) {
             callback.nextValue(this, null, i);
