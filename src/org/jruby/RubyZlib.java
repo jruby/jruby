@@ -33,6 +33,7 @@
 package org.jruby;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -493,6 +494,10 @@ public class RubyZlib {
 
         public static final int BASE_SIZE = 100;
         private Inflater flater;
+        private int wrap;
+        private boolean readHeaderNeeded = false;
+        private boolean readTrailerNeeded = false;
+        private CRC32 checksum;
         private ByteList collected;
         private ByteList input;
         protected static final ObjectAllocator INFLATE_ALLOCATOR = new ObjectAllocator() {
@@ -524,19 +529,32 @@ public class RubyZlib {
 
         @JRubyMethod(name = "initialize", optional = 1, visibility = PRIVATE)
         public IRubyObject _initialize(IRubyObject[] args) {
-            int window_bits = MAX_WBITS;
+            int windowBits = MAX_WBITS;
 
             if (args.length > 0 && !args[0].isNil()) {
-                window_bits = RubyNumeric.fix2int(args[0]);
-                checkWindowBits(getRuntime(), window_bits, true);
+                windowBits = RubyNumeric.fix2int(args[0]);
+                checkWindowBits(getRuntime(), windowBits, true);
             }
 
-            init(window_bits);
+            init(windowBits);
             return this;
         }
 
-        private void init(int window_bits) {
-            flater = new Inflater(window_bits < 0);
+        private void init(int windowBits) {
+            if (windowBits < 0) {
+                wrap = 0;
+            } else if ((windowBits & 0x10) != 0) {
+                wrap = 2; // gzip wrapper
+                readHeaderNeeded = true;
+                checksum = new CRC32();
+            } else if ((windowBits & 0x20) != 0) {
+                wrap = 3; // automatic detection
+                readHeaderNeeded = true;
+                checksum = new CRC32();
+            } else {
+                wrap = 1;
+            }
+            flater = new Inflater(wrap != 1);
             collected = new ByteList(BASE_SIZE);
             input = new ByteList();
         }
@@ -547,9 +565,12 @@ public class RubyZlib {
             return flushOutput(context.getRuntime());
         }
 
-        private IRubyObject flushOutput(Ruby runtime) {
+        private RubyString flushOutput(Ruby runtime) {
             if (collected.getRealSize() > 0) {
-                IRubyObject res = RubyString.newString(runtime, collected.getUnsafeBytes(), collected.getBegin(), collected.getRealSize());
+                if (checksum != null) {
+                    checksum.update(collected.getUnsafeBytes(), collected.getBegin(), collected.getRealSize());
+                }
+                RubyString res = RubyString.newString(runtime, collected.getUnsafeBytes(), collected.getBegin(), collected.getRealSize());
                 resetBuffer(collected);
                 return res;
             }
@@ -561,18 +582,53 @@ public class RubyZlib {
             checkClosed();
             if (arg.isNil()) {
                 run(true);
+                passThroughBuffer();
+                end();
             } else {
                 append(arg.convertToString().getByteList());
             }
             return this;
         }
 
+        private void end() {
+            if (internalFinished()) {
+                if (readTrailerNeeded && input.getRealSize() >= 8) {
+                    readTrailer(input.bytes(), (flater.getBytesWritten() & 0xffffffffL),
+                            checksum.getValue());
+                    input.view(8, input.getRealSize() - 8);
+                }
+            }
+            flater.end();
+        }
+
+        private boolean passThroughBuffer() {
+            // MRI behavior: in finished mode, we work as pass-through
+            if (internalFinished()) {
+                if (input.getRealSize() > 0) {
+                    collected.append(input);
+                    resetBuffer(input);
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public void append(ByteList obj) {
             if (!internalFinished()) {
-                byte[] bytes = obj.bytes();
-                flater.setInput(bytes);
-                input = new ByteList(bytes, false);
-                run(false);
+                if (readHeaderNeeded) {
+                    input.append(obj);
+                    byte[] bytes = input.bytes();
+                    int size = parseHeader(bytes);
+                    if (size >= 0) {
+                        flater.setInput(bytes, size, bytes.length - size);
+                        input = new ByteList(bytes, size, bytes.length - size, false);
+                    }
+                } else {
+                    byte[] bytes = obj.bytes();
+                    flater.setInput(bytes);
+                    input = new ByteList(bytes, false);
+                    run(false);
+                }
             } else {
                 input.append(obj);
             }
@@ -671,18 +727,6 @@ public class RubyZlib {
                     outp = new byte[outp.length * 2];
                 }
             }
-
-            // MRI behavior: in finished mode, we work as pass-through
-            if (internalFinished() && finish) {
-                if (input.getRealSize() > 0) {
-                    collected.append(input);
-                    resetBuffer(input);
-                }
-            }
-
-            if (finish) {
-                flater.end();
-            }
         }
 
         @Override
@@ -718,14 +762,35 @@ public class RubyZlib {
         @Override
         protected IRubyObject internalFinish() {
             run(true);
-            flater.end();
-            resetBuffer(input);
-            return flushOutput(getRuntime());
+            RubyString str = flushOutput(getRuntime());
+            end();
+            if (passThroughBuffer()) {
+                str.append(flushOutput(getRuntime()));
+            }
+            return str;
         }
 
         @Override
         protected void internalClose() {
             flater.end();
+        }
+        
+        private int parseHeader(byte[] bytes) {
+            ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+            try {
+                // parsed Gzip header is not used
+                GzipHeader header = readHeader(getRuntime(), is);
+                readHeaderNeeded = false;
+                readTrailerNeeded = true;
+                return header.length;
+            } catch (RaiseException re) {
+                return -1;
+            }
+        }
+        
+        private void readTrailer(byte[] trailer, long bytesWritten, long checksum) {
+            checkTrailer(getRuntime(), trailer, bytesWritten, checksum);
+            readTrailerNeeded = false;
         }
     }
 
@@ -993,7 +1058,7 @@ public class RubyZlib {
         }
         
         private void writeHeader() throws IOException {
-            collected.append(dumpHeader(null, null, Z_DEFAULT_COMPRESSION, OS_CODE, 0));
+            collected.append(dumpHeader(null, null, Z_DEFAULT_COMPRESSION, OS_CODE, System.currentTimeMillis()));
             dumpHeaderNeeded = false;
             dumpTrailerNeeded = true;
         }
@@ -1049,7 +1114,141 @@ public class RubyZlib {
             (byte) (originalDataSize >> 16), (byte)(originalDataSize >> 24)
         };
     }
+
+    private static class GzipHeader {
+        public DateTime mtime;
+        public int level;
+        public byte osCode;
+        public String origName;
+        public String comment;
+        public int length;
+
+        public GzipHeader() {
+            // nothing to do
+        }
+    }
+
+    static GzipHeader readHeader(Ruby runtime, InputStream in) {
+        GzipHeader header = new GzipHeader();
+        try {
+            if ((byte) readUByte(in) != GZ_MAGIC_ID_1) {
+                throw RubyGzipFile.newGzipFileError(runtime, "not in gzip format");
+            }
+            if ((byte) readUByte(in) != GZ_MAGIC_ID_2) {
+                throw RubyGzipFile.newGzipFileError(runtime, "not in gzip format");
+            }
+            byte b = (byte) readUByte(in);
+            if ((byte) b != GZ_METHOD_DEFLATE) {
+                throw RubyGzipFile.newGzipFileError(runtime, "unsupported compression method " + b);
+            }
+            int flags = readUByte(in);
+            if ((flags & GZ_FLAG_MULTIPART) != 0) {
+                throw RubyGzipFile.newGzipFileError(runtime,
+                        "multi-part gzip file is not supported");
+            } else if ((flags & GZ_FLAG_ENCRYPT) != 0) {
+                throw RubyGzipFile
+                        .newGzipFileError(runtime, "encrypted gzip file is not supported");
+            } else if ((flags & GZ_FLAG_UNKNOWN_MASK) != 0) {
+                throw RubyGzipFile.newGzipFileError(runtime, "unknown flags " + flags);
+            }
+            header.mtime = new DateTime(readUInt(in) * 1000);
+            int extraflags = readUByte(in);
+            if ((extraflags & GZ_EXTRAFLAG_FAST) != 0) {
+                header.level = Z_BEST_SPEED;
+            } else if ((extraflags & GZ_EXTRAFLAG_SLOW) != 0) {
+                header.level = Z_BEST_COMPRESSION;
+            } else {
+                header.level = Z_DEFAULT_COMPRESSION;
+            }
+            header.osCode = (byte) readUByte(in);
+            header.length += 10;
+            if ((flags & GZ_FLAG_EXTRA) != 0) {
+                int size = readUShort(in);
+                byte[] extra = new byte[2 + size];
+                // just discard it
+                readBytes(in, extra);
+                header.length += 2 + extra.length;
+            }
+            if ((flags & GZ_FLAG_ORIG_NAME) != 0) {
+                header.origName = readNullTerminateString(in);
+                header.length += header.origName.getBytes().length + 1;
+            }
+            if ((flags & GZ_FLAG_COMMENT) != 0) {
+                header.comment = readNullTerminateString(in);
+                header.length += header.comment.getBytes().length + 1;
+            }
+        } catch (IOException ioe) {
+            throw RubyGzipFile.newGzipFileError(runtime, ioe.getMessage());
+        }
+        // TODO: should check header CRC (cruby-zlib doesn't do for now)
+        return header;
+    }
+
+    static void checkTrailer(Ruby runtime, byte[] trailer, long bytesWritten, long checksum) {
+        long uint = bytesToUInt(trailer, 0);
+        if (uint != checksum) {
+            throw RubyGzipFile.newCRCError(runtime, "invalid compressed data -- crc error");
+        }
+        uint = bytesToUInt(trailer, 4);
+        if (uint != bytesWritten) {
+            throw RubyGzipFile.newLengthError(runtime, "invalid compressed data -- length error");
+        }
+    }
     
+    private static int readUByte(InputStream in) throws IOException {
+        int ret = in.read();
+        if (ret == -1) {
+            throw new EOFException();
+        }
+        return ret & 0xff;
+    }
+
+    private static int readUShort(InputStream in) throws IOException {
+        return (readUByte(in) | (readUByte(in) << 8)) & 0xffff;
+    }
+
+    private static long readUInt(InputStream in) throws IOException {
+        return (readUShort(in) | (readUShort(in) << 16)) & 0xffffffffL;
+    }
+
+    private static void readBytes(InputStream in, byte[] bytes) throws IOException {
+        readBytes(in, bytes, 0, bytes.length);
+    }
+
+    private static void readBytes(InputStream in, byte[] bytes, int pos, int len) throws IOException {
+        if (bytes.length < pos + len) {
+            throw new IllegalArgumentException();
+        }
+        while (len > 0) {
+            int ret = in.read(bytes, pos, len);
+            if (ret == -1) {
+                throw new EOFException();
+            }
+            pos += ret;
+            len -= ret;
+        }
+    }
+
+    private static String readNullTerminateString(InputStream in) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        int c;
+        while ((c = readUByte(in)) != '\0') {
+            builder.append((char) c);
+        }
+        return builder.toString();
+    }
+
+    private static long bytesToUInt(byte[] bytes, int pos) {
+        if (bytes.length < pos + 4) {
+            throw new IllegalArgumentException();
+        }
+        return (bytes[pos++] & 0xff
+                | (bytes[pos++] & 0xff) << 8
+                | (bytes[pos++] & 0xff) << 16
+                | (bytes[pos++] & 0xff) << 24)
+                & 0xffffffffL;
+    }
+
     @JRubyClass(name="Zlib::GzipFile")
     public static class RubyGzipFile extends RubyObject {
         @JRubyClass(name="Zlib::GzipFile::Error", parent="Zlib::Error")
@@ -1323,7 +1522,7 @@ public class RubyZlib {
             public HeaderReadableGZIPInputStream(CountingIOInputStream io) {
                 super(new BufferedInputStream(io), new Inflater(true), DEFAULT_BUFFER_SIZE);
                 this.countingStream = io;
-                readHeader();
+                parseHeader(io);
                 eof = false;
                 checksum.reset();
             }
@@ -1335,7 +1534,7 @@ public class RubyZlib {
                 }
                 int ret = super.read();
                 if (ret == -1) {
-                    readTrailer();
+                    parseTrailer();
                 } else {
                     checksum.update((byte) (ret & 0xff));
                 }
@@ -1349,7 +1548,7 @@ public class RubyZlib {
                 }
                 int ret = super.read(b);
                 if (ret == -1) {
-                    readTrailer();
+                    parseTrailer();
                 } else {
                     checksum.update(b, 0, ret);
                 }
@@ -1363,7 +1562,7 @@ public class RubyZlib {
                 }
                 int ret = super.read(b, off, len);
                 if (ret == -1) {
-                    readTrailer();
+                    parseTrailer();
                 } else {
                     checksum.update(b, off, ret);
                 }
@@ -1405,142 +1604,45 @@ public class RubyZlib {
                 return checksum.getValue();
             }
 
-            private void readHeader() {
-                checksum.reset();
-                try {
-                    if ((byte) readUByte() != GZ_MAGIC_ID_1) {
-                        throw newGzipFileError(countingStream.getRuntime(), "not in gzip format");
-                    }
-                    if ((byte) readUByte() != GZ_MAGIC_ID_2) {
-                        throw newGzipFileError(countingStream.getRuntime(), "not in gzip format");
-                    }
-                    byte b = (byte) readUByte();
-                    if ((byte) b != GZ_METHOD_DEFLATE) {
-                        throw newGzipFileError(countingStream.getRuntime(), "unsupported compression method " + b);
-                    }
-                    int flags = readUByte();
-                    if ((flags & GZ_FLAG_MULTIPART) != 0) {
-                        throw newGzipFileError(countingStream.getRuntime(), "multi-part gzip file is not supported");
-                    } else if ((flags & GZ_FLAG_ENCRYPT) != 0) {
-                        throw newGzipFileError(countingStream.getRuntime(), "encrypted gzip file is not supported");
-                    } else if ((flags & GZ_FLAG_UNKNOWN_MASK) != 0) {
-                        throw newGzipFileError(countingStream.getRuntime(), "unknown flags " + flags);
-                    }
-                    mtime.setDateTime(new DateTime(readUInt() * 1000));
-                    int extraflags = readUByte();
-                    if ((extraflags & GZ_EXTRAFLAG_FAST) != 0) {
-                        level = Z_BEST_SPEED;
-                    } else if ((extraflags & GZ_EXTRAFLAG_SLOW) != 0) {
-                        level = Z_BEST_COMPRESSION;
-                    } else {
-                        level = Z_DEFAULT_COMPRESSION;
-                    }
-                    osCode = (byte) readUByte();
-                    if ((flags & GZ_FLAG_EXTRA) != 0) {
-                        int size = readUShort();
-                        byte[] extra = new byte[2 + size];
-                        // just discard it
-                        readBytes(extra);
-                    }
-                    if ((flags & GZ_FLAG_ORIG_NAME) != 0) {
-                        nullFreeOrigName = countingStream.getRuntime().newString(readNullTerminateString());
-                        nullFreeOrigName.setTaint(true);   // for safe
-                    }
-                    if ((flags & GZ_FLAG_COMMENT) != 0) {
-                        nullFreeComment = countingStream.getRuntime().newString(readNullTerminateString());
-                        nullFreeComment.setTaint(true);
-                    }
-                } catch (IOException ioe) {
-                    throw newGzipFileError(countingStream.getRuntime(), ioe.getMessage());
+            private void parseHeader(CountingIOInputStream io) {
+                GzipHeader header = readHeader(io.getRuntime(), in);
+                mtime.setDateTime(header.mtime);
+                level = header.level;
+                osCode = header.osCode;
+                if (header.origName != null) {
+                    nullFreeOrigName = io.getRuntime().newString(header.origName);
+                    nullFreeOrigName.setTaint(true);
                 }
-                // TODO: should check header CRC (cruby-zlib doesn't do for now)
-            }
-
-            private int readUByte() throws IOException {
-                int ret = in.read();
-                if (ret == -1) {
-                    throw new EOFException();
-                } else {
-                    checksum.update((byte) (ret & 0xff));
-                }
-                return ret & 0xff;
-            }
-
-            private int readUShort() throws IOException {
-                return (readUByte() | (readUByte() << 8)) & 0xffff;
-            }
-
-            private long readUInt() throws IOException {
-                return (readUShort() | (readUShort() << 16)) & 0xffffffffL;
-            }
-
-            private void readBytes(byte[] bytes) throws IOException {
-                readBytes(bytes, 0, bytes.length, true);
-            }
-
-            private void readBytes(byte[] bytes, int pos, int len, boolean updateChecksum) throws IOException {
-                if (bytes.length < pos + len) {
-                    throw new IllegalArgumentException();
-                }
-                while (len > 0) {
-                    int ret = in.read(bytes, pos, len);
-                    if (ret == -1) {
-                        throw new EOFException();
-                    } else {
-                        if (updateChecksum) {
-                            checksum.update(bytes, pos, ret);
-                        }
-                    }
-                    pos += ret;
-                    len -= ret;
+                if (header.comment != null) {
+                    nullFreeComment = io.getRuntime().newString(header.comment);
+                    nullFreeComment.setTaint(true);
                 }
             }
-
-            private String readNullTerminateString() throws IOException {
-                StringBuilder builder = new StringBuilder();
-                int c;
-                while ((c = readUByte()) != '\0') {
-                    builder.append((char) c);
-                }
-                return builder.toString();
-            }
-
-            private void readTrailer() throws IOException {
+            
+            private void parseTrailer() {
                 try {
                     eof = true;
                     int rest = 8;
                     byte[] trailer = new byte[8];
                     int remaining = super.inf.getRemaining();
                     if (remaining > 0) {
-                        System.arraycopy(super.buf, super.len - remaining, trailer, 0, (remaining > 8) ? 8 : remaining);
+                        System.arraycopy(super.buf, super.len - remaining, trailer, 0,
+                                (remaining > 8) ? 8 : remaining);
                         rest -= remaining;
                     }
-                    if (rest > 0) {
-                        // Do not update checksum for trailer
-                        readBytes(trailer, 8 - rest, rest, false);
+                    while (rest > 0) {
+                        int ret = in.read(trailer, 8 - rest, rest);
+                        if (ret == -1) {
+                            throw new EOFException();
+                        }
+                        rest -= ret;
                     }
-                    long uint = bytesToUInt(trailer, 0);
-                    if (uint != checksum.getValue()) {
-                        throw newCRCError(countingStream.getRuntime(), "invalid compressed data -- crc error");
-                    }
-                    uint = bytesToUInt(trailer, 4);
-                    if (uint != (super.inf.getBytesWritten() & 0xffffffffL)) {
-                        throw newLengthError(countingStream.getRuntime(), "invalid compressed data -- length error");
-                    }
+                    checkTrailer(countingStream.getRuntime(), trailer,
+                            (super.inf.getBytesWritten() & 0xffffffffL), checksum.getValue());
                 } catch (IOException ignored) {
-                    throw newNoFooter(countingStream.getRuntime(), "footer is not found");
+                    throw RubyGzipFile.newNoFooter(countingStream.getRuntime(),
+                            "footer is not found");
                 }
-            }
-
-            private long bytesToUInt(byte[] bytes, int pos) {
-                if (bytes.length < pos + 4) {
-                    throw new IllegalArgumentException();
-                }
-                return (bytes[pos++] & 0xff
-                        | (bytes[pos++] & 0xff) << 8
-                        | (bytes[pos++] & 0xff) << 16
-                        | (bytes[pos++] & 0xff) << 24)
-                        & 0xffffffffL;
             }
         }
 
