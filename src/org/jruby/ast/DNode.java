@@ -45,10 +45,11 @@ public abstract class DNode extends ListNode {
     }
 
     protected RubyString allocateString(Ruby runtime) {
-        if (!is19()) return runtime.newString();
+        ByteList bytes = new ByteList();
         
-        // FIXME: Need a nicer constructor...          
-        return RubyString.newStringNoCopy(runtime, new ByteList(), encoding, StringSupport.CR_7BIT);
+        if (is19()) bytes.setEncoding(encoding);
+
+        return RubyString.newStringShared(runtime, bytes, StringSupport.CR_7BIT);
     }
 
     public void appendToString(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RubyString string, Node node) {
