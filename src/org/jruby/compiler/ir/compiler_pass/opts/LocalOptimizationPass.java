@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.compiler_pass.opts;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.ListIterator;
 
 import org.jruby.compiler.ir.IRClosure;
@@ -11,9 +12,7 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.CodeVersion;
 import org.jruby.compiler.ir.operands.Array;
@@ -25,8 +24,7 @@ import org.jruby.compiler.ir.operands.Constant;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 
-public class LocalOptimizationPass implements CompilerPass
-{
+public class LocalOptimizationPass implements CompilerPass {
     public LocalOptimizationPass() { }
 
     // Should we run this pass on the current scope before running it on nested scopes?
@@ -53,14 +51,14 @@ public class LocalOptimizationPass implements CompilerPass
     private static void recordSimplification(Variable res, Operand val, Map<Operand, Operand> valueMap, Map<Variable, List<Variable>> simplificationMap) {
         valueMap.put(res, val);
 
-        // If 'res' has simplified to a variable, then record this reverse mapping
-        // so, we can respect Read-After-Write scenarios for 'val' and purge this
-        // simplification when 'val' gets modified
-        if (val instanceof Variable) {
-           Variable v = (Variable)val;
-           List<Variable> x = simplificationMap.get(val);
+        // For all variables used by val, record a reverse mapping to let us track
+        // Read-After-Write scenarios when any of these variables are modified.
+        List<Variable> valVars = new ArrayList<Variable>(); 
+        val.addUsedVariables(valVars);
+        for (Variable v: valVars) {
+           List<Variable> x = simplificationMap.get(v);
            if (x == null) {
-              x = new java.util.ArrayList<Variable>();
+              x = new ArrayList<Variable>();
               simplificationMap.put(v, x);
            }
            x.add(res);
@@ -96,11 +94,11 @@ public class LocalOptimizationPass implements CompilerPass
             }
 
             // Simplify instruction and record mapping between target variable and simplified value
-//            System.out.println("BEFORE: " + i);
+            // System.out.println("BEFORE: " + i);
             Operand  val = i.simplifyAndGetResult(valueMap);
             Variable res = i.getResult();
-//            System.out.println("For " + i + "; dst = " + res + "; val = " + val);
-//            System.out.println("AFTER: " + i);
+            // System.out.println("For " + i + "; dst = " + res + "; val = " + val);
+            // System.out.println("AFTER: " + i);
             if (val != null && res != null && res != val) {
                 recordSimplification(res, val, valueMap, simplificationMap);
             }
