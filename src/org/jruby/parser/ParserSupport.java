@@ -1629,7 +1629,8 @@ public class ParserSupport {
             return new DRegexpNode(position, options, encoding).addAll((DStrNode) contents);
         }
 
-        // EvStrNode: #{val}: no fragment check stuff for this
+        // EvStrNode: #{val}: no fragment check, but at least set encoding
+        regexpFragmentCheck(end, ByteList.create(""));
         return new DRegexpNode(position, options, encoding).add(contents);
     }
 }
