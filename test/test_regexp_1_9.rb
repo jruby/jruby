@@ -12,4 +12,12 @@ class TestRegex19 < Test::Unit::TestCase
     atext = "[#{letter}]"
     assert_nothing_raised { /#{atext}/ }
   end
+
+  # JRUBY-5924
+  def test_matchdata_end_position_on_unicode_strings
+    rails_scriptlet_re = /(?m-ix:<%(=+|-|\#|%)?(.*?)([-=])?%>([ \t]*\r?\n)?)/
+    match = rails_scriptlet_re.match "<%= @user %> á"
+
+    assert_equal 12, match.end(0)
+  end
 end

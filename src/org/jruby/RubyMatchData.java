@@ -112,13 +112,19 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
+    // FIXME: many regs == null checks...some part of this should be refactored into multiple methods
     private void updateCharOffset() {
         if (charOffsetUpdated) return;
 
         int numRegs = regs == null ? 1 : regs.numRegs;
         if (charOffsets == null || charOffsets.numRegs < numRegs) charOffsets = new Region(numRegs);
 
-        Pair[]pairs = new Pair[numRegs * 2];
+        int numPairs = 1;
+        if (regs != null) {
+            for (;regs.beg[numPairs] >= 0; numPairs++) {}
+        }
+
+        Pair[] pairs = new Pair[numPairs * 2];
         for (int i = 0; i < pairs.length; i++) pairs[i] = new Pair();
 
         int numPos = 0;
