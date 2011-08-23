@@ -494,7 +494,7 @@ public class RubyZlib {
 
         public static final int BASE_SIZE = 100;
         private Inflater flater;
-        private int wrap;
+        private int windowBits;
         private boolean readHeaderNeeded = false;
         private boolean readTrailerNeeded = false;
         private CRC32 checksum;
@@ -529,7 +529,7 @@ public class RubyZlib {
 
         @JRubyMethod(name = "initialize", optional = 1, visibility = PRIVATE)
         public IRubyObject _initialize(IRubyObject[] args) {
-            int windowBits = MAX_WBITS;
+            windowBits = MAX_WBITS;
 
             if (args.length > 0 && !args[0].isNil()) {
                 windowBits = RubyNumeric.fix2int(args[0]);
@@ -541,20 +541,19 @@ public class RubyZlib {
         }
 
         private void init(int windowBits) {
+            boolean nowrap = false;
             if (windowBits < 0) {
-                wrap = 0;
+                nowrap = true;
             } else if ((windowBits & 0x10) != 0) {
-                wrap = 2; // gzip wrapper
+                nowrap = true; // gzip wrapper
                 readHeaderNeeded = true;
                 checksum = new CRC32();
             } else if ((windowBits & 0x20) != 0) {
-                wrap = 3; // automatic detection
+                nowrap = true; // automatic detection
                 readHeaderNeeded = true;
                 checksum = new CRC32();
-            } else {
-                wrap = 1;
             }
-            flater = new Inflater(wrap != 1);
+            flater = new Inflater(nowrap);
             collected = new ByteList(BASE_SIZE);
             input = new ByteList();
         }
@@ -619,16 +618,27 @@ public class RubyZlib {
                     input.append(obj);
                     byte[] bytes = input.bytes();
                     int size = parseHeader(bytes);
-                    if (size >= 0) {
+                    switch (size) {
+                    case -1:
+                        // not in gzip format; reinitialize Inflater
+                        init(windowBits & 0xf);
+                        flater.setInput(obj.bytes());
+                        input = new ByteList(bytes, false);
+                        break;
+                    case 0:
+                        // buffer is short
+                        return;
+                    default:
                         flater.setInput(bytes, size, bytes.length - size);
                         input = new ByteList(bytes, size, bytes.length - size, false);
+                        break;
                     }
                 } else {
                     byte[] bytes = obj.bytes();
                     flater.setInput(bytes);
                     input = new ByteList(bytes, false);
-                    run(false);
                 }
+                run(false);
             } else {
                 input.append(obj);
             }
@@ -746,7 +756,7 @@ public class RubyZlib {
 
         @Override
         protected void internalReset() {
-            flater.reset();
+            init(windowBits);
         }
 
         @Override
@@ -780,11 +790,15 @@ public class RubyZlib {
             try {
                 // parsed Gzip header is not used
                 GzipHeader header = readHeader(getRuntime(), is);
+                if (header == null) {
+                    // Not a gzip format
+                    return -1;
+                }
                 readHeaderNeeded = false;
                 readTrailerNeeded = true;
                 return header.length;
             } catch (RaiseException re) {
-                return -1;
+                return 0;
             }
         }
         
@@ -799,7 +813,7 @@ public class RubyZlib {
 
         public static final int BASE_SIZE = 100;
         private Deflater flater;
-        private int wrap;
+        private int windowBits;
         private boolean dumpHeaderNeeded = false;
         private boolean dumpTrailerNeeded = false;
         private CRC32 checksum;
@@ -842,7 +856,7 @@ public class RubyZlib {
         public IRubyObject _initialize(IRubyObject[] args) {
             args = Arity.scanArgs(getRuntime(), args, 0, 4);
             int level = -1;
-            int windowBits = MAX_WBITS;
+            windowBits = MAX_WBITS;
             int memlevel = 8;
             int strategy = 0;
             if (!args[0].isNil()) {
@@ -866,16 +880,15 @@ public class RubyZlib {
 
         private void init(int level, int windowBits, int memlevel, int strategy) {
             // Zlib behavior: negative win_bits means no header and no checksum.
+            boolean nowrap = false;
             if (windowBits < 0) {
-                wrap = 0;
+                nowrap = true;
             } else if ((windowBits & 0x10) != 0) {
-                wrap = 2; // gzip wrapper
+                nowrap = true; // gzip wrapper
                 dumpHeaderNeeded = true;
                 checksum = new CRC32();
-            } else {
-                wrap = 1; // zlib header
             }
-            flater = new Deflater(level, (wrap != 1));
+            flater = new Deflater(level, nowrap);
             flater.setStrategy(strategy);
             collected = new ByteList(BASE_SIZE);
         }
@@ -1132,10 +1145,10 @@ public class RubyZlib {
         GzipHeader header = new GzipHeader();
         try {
             if ((byte) readUByte(in) != GZ_MAGIC_ID_1) {
-                throw RubyGzipFile.newGzipFileError(runtime, "not in gzip format");
+                return null;
             }
             if ((byte) readUByte(in) != GZ_MAGIC_ID_2) {
-                throw RubyGzipFile.newGzipFileError(runtime, "not in gzip format");
+                return null;
             }
             byte b = (byte) readUByte(in);
             if ((byte) b != GZ_METHOD_DEFLATE) {
@@ -1606,6 +1619,9 @@ public class RubyZlib {
 
             private void parseHeader(CountingIOInputStream io) {
                 GzipHeader header = readHeader(io.getRuntime(), in);
+                if (header == null) {
+                    throw RubyGzipFile.newGzipFileError(io.getRuntime(), "not in gzip format");
+                }
                 mtime.setDateTime(header.mtime);
                 level = header.level;
                 osCode = header.osCode;
