@@ -3,7 +3,7 @@ require 'test/unit'
 
 class TestRegex19 < Test::Unit::TestCase
   def test_to_s
-    assert_equal /(?-mix:foo|bar)/, /#{Regexp.union("foo", "bar")}/
+    assert_equal(/(?-mix:foo|bar)/, /#{Regexp.union("foo", "bar")}/)
   end
 
   # JRUBY-5622
@@ -19,5 +19,10 @@ class TestRegex19 < Test::Unit::TestCase
     match = rails_scriptlet_re.match "<%= @user %> á"
 
     assert_equal 12, match.end(0)
+  end
+
+  def test_dregexp_with_escape_char
+    re_quoted_string = %r{"\x80"}n
+    assert_nothing_raised { %r{#{re_quoted_string}}n }
   end
 end
