@@ -25,30 +25,31 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.libraries;
 
-import org.jruby.CompatVersion;
+package org.jruby.ext.fiber;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.load.Library;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * These methods get loaded when you require 'fiber'.
+ * A thread-based implementation of Ruby 1.9 Fiber library.
  */
-public class FiberExtLibrary implements Library {
+public class ThreadFiberLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) {
-        RubyClass cFiber = runtime.getClass("Fiber");
-        cFiber.defineAnnotatedMethods(FiberExtMeta.class);
-    }
+        RubyClass cFiber = runtime.defineClass("Fiber", runtime.getObject(), new ObjectAllocator() {
+            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+                return new ThreadFiber(runtime, klazz);
+            }
+        });
 
-    public static class FiberExtMeta {
+        cFiber.defineAnnotatedMethods(Fiber.class);
+        cFiber.defineAnnotatedMethods(FiberMeta.class);
 
-        @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
-        public static IRubyObject current(ThreadContext context, IRubyObject recv) {
-            return context.getRuntime().getCurrentContext().getFiber();
-        }
+        Fiber rootFiber = new ThreadFiber(runtime, cFiber).makeRootFiber();
+        runtime.setRootFiber(rootFiber);
+        runtime.getCurrentContext().setFiber(rootFiber);
     }
 }

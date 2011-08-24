@@ -330,6 +330,8 @@ public class RubyInstanceConfig {
     
     public static final boolean ERRNO_BACKTRACE
             = SafePropertyAccessor.getBoolean("jruby.errno.backtrace", false);
+    
+    public static final boolean COROUTINE_FIBERS = SafePropertyAccessor.getBoolean("jruby.fiber.coroutines");
 
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);
