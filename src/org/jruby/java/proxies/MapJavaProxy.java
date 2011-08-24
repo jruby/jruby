@@ -30,9 +30,15 @@ package org.jruby.java.proxies;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -104,81 +110,72 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         private void setSize(int size) {
             this.size = size;
         }
+        
+        private Map getMap() {
+            return (Map) ((JavaProxy)receiver).getObject();
+        }
 
         @Override
         public void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-            if (checkForExisting) {
-                Set<Map.Entry> entries = ((Map) ((JavaProxy)receiver).getObject()).entrySet();
-                for (Map.Entry entry : entries) {
-                    IRubyObject rubyfiedKey = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getKey());
-                    if (key.eql(rubyfiedKey)) {
-                        entry.setValue(value.toJava(Object.class));
-                        return;
-                    }
-                }
-            }
-            ((Map) ((JavaProxy)receiver).getObject()).put(key.toJava(Object.class), value.toJava(Object.class));
-            size = ((Map) ((JavaProxy)receiver).getObject()).size();
+            Map map = getMap();
+            map.put(key.toJava(Object.class), value.toJava(Object.class));
+            size = map.size();
         }
 
         @Override
         public IRubyObject internalGet(IRubyObject key) {
-            Set<Map.Entry> entries = ((Map) ((JavaProxy)receiver).getObject()).entrySet();
-            for (Map.Entry entry : entries) {
-                IRubyObject rubyfiedKey = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getKey());
-                if (key.eql(rubyfiedKey)) {
-                    return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getValue());
-                }
-            }
-            return null;
+            Object result = getMap().get(key.toJava(Object.class));
+            if (result == null) return null;
+            return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), result);
         }
 
         @Override
         public RubyHashEntry internalGetEntry(IRubyObject key) {
-            Set<Map.Entry> entries = ((Map) ((JavaProxy)receiver).getObject()).entrySet();
-            for (Map.Entry entry : entries) {
-                IRubyObject rubyfiedKey = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getKey());
-                if (key.eql(rubyfiedKey)) {
-                    IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getValue());
-                    return new RubyHashEntry(entry.hashCode(), key, value, null, null);
-                }
+            Map map = getMap();
+            Object convertedKey = key.toJava(Object.class);
+            Object value = map.get(convertedKey);
+            
+            if (value != null) {
+                RubyHashEntry rubyEntry = new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
+                return rubyEntry;
             }
+            
             return NO_ENTRY;
         }
 
         @Override
         public RubyHashEntry internalDelete(final IRubyObject key) {
-            Set<Map.Entry> entries = ((Map) ((JavaProxy)receiver).getObject()).entrySet();
-            for (Map.Entry entry : entries) {
-                IRubyObject rubyfiedKey = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getKey());
-                if (key.eql(rubyfiedKey)) {
-                    IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getValue());
-                    RubyHashEntry rubyEntry = new RubyHashEntry(entry.hashCode(), key, value, null, null);
-                    ((Map) ((JavaProxy)receiver).getObject()).remove(entry.getKey());
-                    size = ((Map) ((JavaProxy)receiver).getObject()).size();
-                    return rubyEntry;
-                }
+            Map map = getMap();
+            Object convertedKey = key.toJava(Object.class);
+            Object value = map.get(convertedKey);
+            
+            if (value != null) {
+                RubyHashEntry rubyEntry = new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
+                map.remove(convertedKey);
+                size = map.size();
+                return rubyEntry;
             }
+            
             return NO_ENTRY;
         }
 
         @Override
         public RubyHashEntry internalDeleteEntry(final RubyHashEntry entry) {
-            Set<Map.Entry> entries = ((Map) ((JavaProxy)receiver).getObject()).entrySet();
-            for (Map.Entry mapEntry : entries) {
-                IRubyObject rubyfiedKey = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), mapEntry.getKey());
-                if (((IRubyObject)entry.getKey()).eql(rubyfiedKey)) {
-                    ((Map) ((JavaProxy)receiver).getObject()).remove(mapEntry.getKey());
-                    size = ((Map) ((JavaProxy)receiver).getObject()).size();
-                    return entry;
-                }
+            Map map = getMap();
+            Object convertedKey = ((IRubyObject)entry.getKey()).toJava(Object.class);
+            
+            if (map.containsKey(convertedKey)) {
+                map.remove(convertedKey);
+                size = map.size();
+                return entry;
             }
+            
             return NO_ENTRY;
         }
 
         @Override
         public void visitAll(Visitor visitor) {
-            Map.Entry[] entries = (Entry[]) ((Map) ((JavaProxy)receiver).getObject()).entrySet().toArray(new Map.Entry[0]);
+            Map.Entry[] entries = (Entry[]) getMap().entrySet().toArray(new Map.Entry[0]);
             for (Map.Entry entry : entries) {
                 IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getKey());
                 IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getValue());
@@ -188,48 +185,20 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public void op_asetForString(Ruby runtime, RubyString key, IRubyObject value) {
-            Set<Map.Entry> entries = ((Map) ((JavaProxy)receiver).getObject()).entrySet();
-            for (Map.Entry entry : entries) {
-                IRubyObject rubyfiedKey = JavaUtil.convertJavaToUsableRubyObject(getRuntime(), entry.getKey());
-                if (key.eql(rubyfiedKey)) {
-                    entry.setValue(value.toJava(Object.class));
-                    return;
-                }
-            }
-            ((Map) ((JavaProxy)receiver).getObject()).put(key.toJava(String.class), value.toJava(Object.class));
-            size = ((Map) ((JavaProxy)receiver).getObject()).size();
+            getMap().put(key.toJava(String.class), value.toJava(Object.class));
+            size = getMap().size();
         }
 
         @Override
         public RubyHash rehash() {
-            Map oldMap = ((Map) ((JavaProxy)receiver).getObject());
-            Method[] methods = oldMap.getClass().getMethods();
-            try {
-                for (int i = 0; i < methods.length; i++) {
-                    if ("clone".equals(methods[i].getName())) {
-                        Map map = (Map) methods[i].invoke(oldMap);
-                        dataWrapStruct(map);
-                        break;
-                    }
-                }
-            } catch  (IllegalAccessException ex) {
-                throw getRuntime().newRuntimeError(ex.getMessage());
-            } catch (IllegalArgumentException ex) {
-                throw getRuntime().newRuntimeError(ex.getMessage());
-            } catch (InvocationTargetException ex) {
-                throw getRuntime().newRuntimeError(ex.getMessage());
-            }
-            return this;
+            throw getRuntime().newNotImplementedError("rehash method is not implemented in a Java Map backed object");
         }
 
         @Override
         public RubyHash rb_clear() {
-            Map map = ((Map) ((JavaProxy)receiver).getObject());
-            if (map != null) {
-                map.clear();
-                ((JavaProxy)receiver).setObject(map);
-                size = 0;
-            }
+            getMap().clear();
+            size = 0;
+            
             return this;
         }
 
@@ -694,13 +663,33 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().getCompareByIdentity_p(context);
     }
 
-    @JRubyMethod(name = "dup", compat = CompatVersion.RUBY1_9)
-    public IRubyObject dup(ThreadContext context) {
-        return getOrCreateRubyHashMap().dup(context);
+    @Override
+    public IRubyObject dup() {
+        try {
+            MapJavaProxy proxy = new MapJavaProxy(getRuntime(), metaClass);
+            Map newMap = (Map)getObject().getClass().newInstance();
+            newMap.putAll((Map)getObject());
+            proxy.setObject(newMap);
+            return proxy;
+        } catch (InstantiationException ex) {
+            throw getRuntime().newNotImplementedError("can't dup Map of type " + getObject().getClass().getName());
+        } catch (IllegalAccessException ex) {
+            throw getRuntime().newNotImplementedError("can't dup Map of type " + getObject().getClass().getName());
+        }
     }
 
-    @JRubyMethod(name = "clone", compat = CompatVersion.RUBY1_9)
-    public IRubyObject rbClone(ThreadContext context) {
-        return getOrCreateRubyHashMap().rbClone(context);
+    @Override
+    public IRubyObject rbClone() {
+        try {
+            MapJavaProxy proxy = new MapJavaProxy(getRuntime(), metaClass);
+            Map newMap = (Map)getObject().getClass().newInstance();
+            newMap.putAll((Map)getObject());
+            proxy.setObject(newMap);
+            return proxy;
+        } catch (InstantiationException ex) {
+            throw getRuntime().newNotImplementedError("can't clone Map of type " + getObject().getClass().getName());
+        } catch (IllegalAccessException ex) {
+            throw getRuntime().newNotImplementedError("can't clone Map of type " + getObject().getClass().getName());
+        }
     }
 }

@@ -115,11 +115,12 @@ h = java.util.HashMap.new
 k1 = [1]
 h[k1] = 1
 k1[0] = 100
-# this fails though should be passed. JavaProxy's op_aref is used?
-#test_equal(nil, h[k1])
-h.rehash
-test_equal(1, h[k1])
-test_equal(Java::JavaUtil::HashMap, h.class)
+test_equal(nil, h[k1])
+# CON: Removed these tests because Map does not support rehash
+#h.rehash
+#test_equal(1, h[k1])
+#test_equal(Java::JavaUtil::HashMap, h.class)
+test_exception(NotImplementedError) {h.rehash}
 
 h.put(1, 2); h.put(3, 4);
 test_equal(1, h.index(2))
