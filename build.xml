@@ -286,6 +286,7 @@
       <classpath refid="jruby.execute.classpath"/>
       <src path="${src.dir}"/>
       <exclude name="org/jruby/runtime/Constants.java"/>
+      <exclude name="java/dyn/**"/>
       <patternset refid="java.src.pattern"/>
       <compilerarg line="-XDignore.symbol.file=true"/>
       <compilerarg line="-J-Xmx${jruby.compile.memory}"/>

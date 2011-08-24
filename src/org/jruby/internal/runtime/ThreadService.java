@@ -206,6 +206,13 @@ public class ThreadService {
 
         return context;
     }
+
+    /*
+     * Used only for Fiber context management
+     */
+    public void setCurrentContext(ThreadContext context) {
+        localContext.set(new SoftReference<ThreadContext>(context));
+    }
     
     private SoftReference adoptCurrentThread() {
         Thread current = Thread.currentThread();

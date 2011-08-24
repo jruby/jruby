@@ -1054,15 +1054,13 @@ public final class Ruby {
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), RubyInstanceConfig.nativeEnabled);
         javaSupport = new JavaSupport(this);
         
-        if (RubyInstanceConfig.POOLING_ENABLED) {
-            executor = new ThreadPoolExecutor(
-                    RubyInstanceConfig.POOL_MIN,
-                    RubyInstanceConfig.POOL_MAX,
-                    RubyInstanceConfig.POOL_TTL,
-                    TimeUnit.SECONDS,
-                    new SynchronousQueue<Runnable>(),
-                    new DaemonThreadFactory());
-        }
+        executor = new ThreadPoolExecutor(
+                RubyInstanceConfig.POOL_MIN,
+                RubyInstanceConfig.POOL_MAX,
+                RubyInstanceConfig.POOL_TTL,
+                TimeUnit.SECONDS,
+                new SynchronousQueue<Runnable>(),
+                new DaemonThreadFactory());
         
         // initialize the root of the class hierarchy completely
         initRoot();
@@ -1480,7 +1478,11 @@ public final class Ruby {
         }
         
         if (is1_9()) {
-            LoadService.reflectedLoad(this, "fiber", "org.jruby.libraries.FiberLibrary", getJRubyClassLoader(), false);
+            if (RubyInstanceConfig.COROUTINE_FIBERS) {
+                LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.CoroutineFiberLibrary", getJRubyClassLoader(), false);
+            } else {
+                LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.ThreadFiberLibrary", getJRubyClassLoader(), false);
+            }
         }
         
         addBuiltinIfAllowed("openssl.jar", new Library() {
