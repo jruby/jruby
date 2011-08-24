@@ -1790,7 +1790,6 @@ public class RubyZlib {
                 }
                 return RubyString.newEmptyString(getRuntime());
             } catch (IOException ioe) {
-                ioe.printStackTrace(System.err);
                 throw getRuntime().newIOErrorFromException(ioe);
             }
         }
