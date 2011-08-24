@@ -33,6 +33,7 @@ import static jnr.constants.platform.AddressFamily.*;
 
 import java.io.IOException;
 
+import java.net.BindException;
 import java.net.ConnectException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -131,6 +132,8 @@ public class RubyTCPSocket extends RubyIPSocket {
             throw context.getRuntime().newErrnoEINVALError();
         } catch (ClosedChannelException cce) {
             throw context.getRuntime().newErrnoECONNREFUSEDError();
+        } catch(BindException e) {
+            throw context.getRuntime().newErrnoEADDRFromBindException(e);
         } catch(IOException e) {
             throw sockerr(context.getRuntime(), e.getLocalizedMessage());
         } catch (IllegalArgumentException iae) {

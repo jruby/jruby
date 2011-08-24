@@ -129,22 +129,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         } catch(UnknownHostException e) {
             throw sockerr(context.getRuntime(), "initialize: name or service not known");
         } catch(BindException e) {
-            // e.printStackTrace();
-            String msg = e.getMessage();
-            if (msg == null) {
-                msg = "bind";
-            } else {
-                msg = "bind - " + msg;
-            }
-
-            // This is ugly, but what can we do, Java provides the same BindingException
-            // for both EADDRNOTAVAIL and EADDRINUSE, so we differentiate the errors
-            // based on BindException's message.
-            if(ADDR_NOT_AVAIL_PATTERN.matcher(msg).find()) {
-                throw context.getRuntime().newErrnoEADDRNOTAVAILError(msg);
-            } else {
-                throw context.getRuntime().newErrnoEADDRINUSEError(msg);
-            }
+            throw context.getRuntime().newErrnoEADDRFromBindException(e);
         } catch(SocketException e) {
             String msg = e.getMessage();
             if(msg.indexOf("Permission denied") != -1) {
@@ -277,6 +262,4 @@ public class RubyTCPServer extends RubyTCPSocket {
     public IRubyObject gets(ThreadContext context) {
         throw context.getRuntime().newErrnoENOTCONNError();
     }
-
-    private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
 }

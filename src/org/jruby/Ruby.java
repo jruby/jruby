@@ -125,10 +125,13 @@ import jnr.constants.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
+
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
@@ -3160,6 +3163,25 @@ public final class Ruby {
         }
         String message = errnoObj.description();
         return newErrnoFromInt(errno, message);
+    }
+
+    private final static Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
+
+    public RaiseException newErrnoEADDRFromBindException(BindException be) {
+        String msg = be.getMessage();
+        if (msg == null) {
+            msg = "bind";
+        } else {
+            msg = "bind - " + msg;
+        }
+        // This is ugly, but what can we do, Java provides the same BindingException
+        // for both EADDRNOTAVAIL and EADDRINUSE, so we differentiate the errors
+        // based on BindException's message.
+        if(ADDR_NOT_AVAIL_PATTERN.matcher(msg).find()) {
+            return newErrnoEADDRNOTAVAILError(msg);
+        } else {
+            return newErrnoEADDRINUSEError(msg);
+        }
     }
 
     public RaiseException newTypeError(String message) {
