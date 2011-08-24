@@ -349,3 +349,307 @@ class TestZlib < Test::Unit::TestCase
     s.string
   end
 end
+
+# Test for MAX_WBITS + 16
+class TestZlibDeflateGzip < Test::Unit::TestCase
+  def test_deflate_gzip
+    d = Zlib::Deflate.new(Zlib::DEFAULT_COMPRESSION, Zlib::MAX_WBITS + 16)
+    d << "foo"
+    s = d.finish
+    assert_equal("foo", Zlib::GzipReader.new(StringIO.new(s)).read)
+  end
+
+  def test_deflate_gzip_compat
+    z = Zlib::Deflate.new(Zlib::DEFAULT_COMPRESSION, Zlib::MAX_WBITS + 16)
+    s = z.deflate("foo") + z.finish
+    assert_equal("foo", Zlib::Inflate.new(Zlib::MAX_WBITS + 16).inflate(s))
+  end
+
+  def test_initialize
+    z = Zlib::Deflate.new(8, 15+16)
+    s = z.deflate("foo", Zlib::FINISH)
+    assert_equal("foo", Zlib::Inflate.new(15+16).inflate(s))
+
+    z = Zlib::Deflate.new(8, 15+16)
+    s = z.deflate("foo")
+    s << z.deflate(nil, Zlib::FINISH)
+    assert_equal("foo", Zlib::Inflate.new(15+16).inflate(s))
+
+    assert_raise(Zlib::StreamError) { Zlib::Deflate.new(10000) }
+  end
+
+  def test_addstr
+    z = Zlib::Deflate.new(8, 15+16)
+    z << "foo"
+    s = z.deflate(nil, Zlib::FINISH)
+    assert_equal("foo", Zlib::Inflate.new(15+16).inflate(s))
+  end
+
+  def test_flush
+    z = Zlib::Deflate.new(8, 15+16)
+    z << "foo"
+    s = z.flush
+    z << "bar"
+    s << z.flush_next_in
+    z << "baz"
+    s << z.flush_next_out
+    s << z.deflate("qux", Zlib::FINISH)
+    assert_equal("foobarbazqux", Zlib::Inflate.new(15+16).inflate(s))
+  end
+
+  def test_avail
+    z = Zlib::Deflate.new(8, 15+16)
+    assert_equal(0, z.avail_in)
+    assert_equal(0, z.avail_out)
+    z << "foo"
+    z.avail_out += 100
+    z << "bar"
+    s = z.finish
+    assert_equal("foobar", Zlib::Inflate.new(15+16).inflate(s))
+  end
+
+  def test_total
+    z = Zlib::Deflate.new(8, 15+16)
+    1000.times { z << "foo" }
+    s = z.finish
+    assert_equal(3000, z.total_in)
+    assert_operator(3000, :>, z.total_out)
+    assert_equal("foo" * 1000, Zlib::Inflate.new(15+16).inflate(s))
+  end
+
+  def test_data_type
+    z = Zlib::Deflate.new(8, 15+16)
+    assert([Zlib::ASCII, Zlib::BINARY, Zlib::UNKNOWN].include?(z.data_type))
+  end
+
+  def test_adler
+    z = Zlib::Deflate.new(8, 15+16)
+    z << "foo"
+    s = z.finish
+    assert_equal(0x8c736521, z.adler)
+  end
+
+  def test_finished_p
+    z = Zlib::Deflate.new(8, 15+16)
+    assert_equal(false, z.finished?)
+    z << "foo"
+    assert_equal(false, z.finished?)
+    s = z.finish
+    assert_equal(true, z.finished?)
+    z.close
+    assert_raise(Zlib::Error) { z.finished? }
+  end
+
+  def test_closed_p
+    z = Zlib::Deflate.new(8, 15+16)
+    assert_equal(false, z.closed?)
+    z << "foo"
+    assert_equal(false, z.closed?)
+    s = z.finish
+    assert_equal(false, z.closed?)
+    z.close
+    assert_equal(true, z.closed?)
+  end
+
+  def test_params
+    z = Zlib::Deflate.new(8, 15+16)
+    z << "foo"
+    z.params(Zlib::DEFAULT_COMPRESSION, Zlib::DEFAULT_STRATEGY)
+    z << "bar"
+    s = z.finish
+    assert_equal("foobar", Zlib::Inflate.new(15+16).inflate(s))
+
+    data = ('a'..'z').to_a.join
+    z = Zlib::Deflate.new(Zlib::NO_COMPRESSION, Zlib::MAX_WBITS+16,
+                          Zlib::DEF_MEM_LEVEL, Zlib::DEFAULT_STRATEGY)
+    z << data[0, 10]
+    z.params(Zlib::BEST_COMPRESSION, Zlib::DEFAULT_STRATEGY)
+    z << data[10 .. -1]
+    assert_equal(data, Zlib::Inflate.new(15+16).inflate(z.finish))
+
+    z = Zlib::Deflate.new(8, 15+16)
+    s = z.deflate("foo", Zlib::FULL_FLUSH)
+    z.avail_out = 0
+    z.params(Zlib::NO_COMPRESSION, Zlib::FILTERED)
+    s << z.deflate("bar", Zlib::FULL_FLUSH)
+    z.avail_out = 0
+    z.params(Zlib::BEST_COMPRESSION, Zlib::HUFFMAN_ONLY)
+    s << z.deflate("baz", Zlib::FINISH)
+    assert_equal("foobarbaz", Zlib::Inflate.new(15+16).inflate(s))
+
+    z = Zlib::Deflate.new(8, 15+16)
+    assert_raise(Zlib::StreamError) { z.params(10000, 10000) }
+    z.close # without this, outputs `zlib(finalizer): the stream was freed prematurely.'
+  end
+
+  def test_reset
+    z = Zlib::Deflate.new(Zlib::NO_COMPRESSION, 15+16)
+    z << "foo"
+    z.reset
+    z << "bar"
+    s = z.finish
+    assert_equal("bar", Zlib::Inflate.new(15+16).inflate(s))
+  end
+
+  def test_close
+    z = Zlib::Deflate.new(8, 15+16)
+    z.close
+    assert_raise(Zlib::Error) { z << "foo" }
+    assert_raise(Zlib::Error) { z.reset }
+  end
+
+  COMPRESS_MSG = '0000000100100011010001010110011110001001101010111100110111101111'
+  def test_deflate_no_flush
+    d = Zlib::Deflate.new(8, 15+16)
+    d.deflate(COMPRESS_MSG, Zlib::SYNC_FLUSH) # for header output
+    assert(d.deflate(COMPRESS_MSG, Zlib::NO_FLUSH).empty?)
+    assert(!d.finish.empty?)
+    d.close
+  end
+
+  def test_deflate_sync_flush
+    d = Zlib::Deflate.new(8, 15+16)
+    assert_nothing_raised do
+      d.deflate(COMPRESS_MSG, Zlib::SYNC_FLUSH)
+    end
+    assert(!d.finish.empty?)
+    d.close
+  end
+
+  def test_deflate_full_flush
+    d = Zlib::Deflate.new(8, 15+16)
+    assert_nothing_raised do
+      d.deflate(COMPRESS_MSG, Zlib::FULL_FLUSH)
+    end
+    assert(!d.finish.empty?)
+    d.close
+  end
+
+  def test_deflate_flush_finish
+    d = Zlib::Deflate.new(8, 15+16)
+    d.deflate("init", Zlib::SYNC_FLUSH) # for flushing header
+    assert(!d.deflate(COMPRESS_MSG, Zlib::FINISH).empty?)
+    d.close
+  end
+
+  def test_deflate_raise_after_finish
+    d = Zlib::Deflate.new(8, 15+16)
+    d.deflate("init")
+    d.finish
+    assert_raise(Zlib::StreamError) do
+      d.deflate('foo')
+    end
+    #
+    d = Zlib::Deflate.new(8, 15+16)
+    d.deflate("init", Zlib::FINISH)
+    assert_raise(Zlib::StreamError) do
+      d.deflate('foo')
+    end
+  end
+end
+
+# Test for MAX_WBITS + 16
+class TestZlibInflateGzip < Test::Unit::TestCase
+  def test_inflate_gzip
+    Zlib::GzipWriter.wrap(sio = StringIO.new("")) { |gz| gz << "foo" }
+    assert_equal("foo", Zlib::Inflate.new(Zlib::MAX_WBITS + 16).inflate(sio.string))
+    i = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+    i << sio.string
+    assert_equal("foo", i.finish)
+  end
+
+  def test_initialize
+    assert_raise(Zlib::StreamError) { Zlib::Inflate.new(-1) }
+
+    z = Zlib::Deflate.new(8, 15+16)
+    s = z.deflate("foo") + z.finish
+    z = Zlib::Inflate.new(15+16)
+    z << s << nil
+    assert_equal("foo", z.finish)
+  end
+
+  def test_inflate
+    z = Zlib::Deflate.new(8, 15+16)
+    s = z.deflate("foo") + z.finish
+    z = Zlib::Inflate.new(15+16)
+    s = z.inflate(s)
+    s << z.inflate(nil)
+    assert_equal("foo", s)
+    z.inflate("foo") # ???
+    z << "foo" # ???
+  end
+end
+
+# Test for MAX_WBITS + 32
+class TestZlibInflateAuto < Test::Unit::TestCase
+  def test_inflate_auto_detection_zip
+    s = Zlib::Deflate.deflate("foo")
+    assert_equal("foo", Zlib::Inflate.new(Zlib::MAX_WBITS + 32).inflate(s))
+    i = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
+    i << s
+    assert_equal("foo", i.finish)
+  end
+
+  def test_inflate_auto_detection_gzip
+    Zlib::GzipWriter.wrap(sio = StringIO.new("")) { |gz| gz << "foo" }
+    assert_equal("foo", Zlib::Inflate.new(Zlib::MAX_WBITS + 32).inflate(sio.string))
+    i = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
+    i << sio.string
+    assert_equal("foo", i.finish)
+  end
+
+  def test_corrupted_header
+    gz = Zlib::GzipWriter.new(StringIO.new(s = ""))
+    gz.orig_name = "X"
+    gz.comment = "Y"
+    gz.print("foo")
+    gz.finish
+    # 14: magic(2) + method(1) + flag(1) + mtime(4) + exflag(1) + os(1) + orig_name(2) + comment(2)
+    1.upto(14) do |idx|
+      assert_raise(Zlib::BufError, idx) do
+        z = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
+        p z.inflate(s[0, idx]) + z.finish
+      end
+    end
+  end
+
+  def test_split_header
+    gz = Zlib::GzipWriter.new(StringIO.new(s = ""))
+    gz.orig_name = "X"
+    gz.comment = "Y"
+    gz.print("foo")
+    gz.finish
+    # 14: magic(2) + method(1) + flag(1) + mtime(4) + exflag(1) + os(1) + orig_name(2) + comment(2)
+    z = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
+    assert_equal(
+      "foo",
+      [
+        z.inflate(s.slice!(0, 5)),
+        z.inflate(s.slice!(0, 5)),
+        z.inflate(s.slice!(0, 5)),
+        z.inflate(s.slice!(0, 5)),
+        z.inflate(s.slice!(0, 5)),
+        z.inflate(s.slice!(0, 5))
+      ].join + z.finish
+    )
+  end
+
+  def test_initialize
+    assert_raise(Zlib::StreamError) { Zlib::Inflate.new(-1) }
+
+    s = Zlib::Deflate.deflate("foo")
+    z = Zlib::Inflate.new(15+32)
+    z << s << nil
+    assert_equal("foo", z.finish)
+  end
+
+  def test_inflate
+    s = Zlib::Deflate.deflate("foo")
+    z = Zlib::Inflate.new(15+32)
+    s = z.inflate(s)
+    s << z.inflate(nil)
+    assert_equal("foo", s)
+    z.inflate("foo") # ???
+    z << "foo" # ???
+  end
+end
