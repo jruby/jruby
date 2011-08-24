@@ -339,7 +339,7 @@ public class RubyZlib {
         protected abstract boolean internalStreamEndP();
         protected abstract void internalReset();
         protected abstract boolean internalFinished();
-        protected abstract int internalAdler();
+        protected abstract long internalAdler();
 
         // TODO: eliminate?
         protected abstract IRubyObject internalFinish();
@@ -581,8 +581,6 @@ public class RubyZlib {
             checkClosed();
             if (arg.isNil()) {
                 run(true);
-                passThroughBuffer();
-                end();
             } else {
                 append(arg.convertToString().getByteList());
             }
@@ -765,8 +763,8 @@ public class RubyZlib {
         }
 
         @Override
-        protected int internalAdler() {
-            return flater.getAdler();
+        protected long internalAdler() {
+            return (checksum != null) ? checksum.getValue() : flater.getAdler() & 0xffffffffL;
         }
 
         @Override
@@ -813,7 +811,9 @@ public class RubyZlib {
 
         public static final int BASE_SIZE = 100;
         private Deflater flater;
+        private int level;
         private int windowBits;
+        private int strategy;
         private boolean dumpHeaderNeeded = false;
         private boolean dumpTrailerNeeded = false;
         private CRC32 checksum;
@@ -855,10 +855,10 @@ public class RubyZlib {
         @JRubyMethod(name = "initialize", optional = 4, visibility = PRIVATE, backtrace = true)
         public IRubyObject _initialize(IRubyObject[] args) {
             args = Arity.scanArgs(getRuntime(), args, 0, 4);
-            int level = -1;
+            level = -1;
             windowBits = MAX_WBITS;
             int memlevel = 8;
-            int strategy = 0;
+            strategy = 0;
             if (!args[0].isNil()) {
                 level = RubyNumeric.fix2int(args[0]);
                 checkLevel(getRuntime(), level);
@@ -986,11 +986,7 @@ public class RubyZlib {
 
         @Override
         protected void internalReset() {
-            flater.reset();
-            collected = new ByteList(BASE_SIZE);
-            if (checksum != null) {
-                checksum.reset();
-            }
+            init(level, windowBits, 8, strategy);
         }
 
         @Override
@@ -999,8 +995,8 @@ public class RubyZlib {
         }
 
         @Override
-        protected int internalAdler() {
-            return flater.getAdler();
+        protected long internalAdler() {
+            return (checksum != null) ? checksum.getValue() : flater.getAdler() & 0xffffffffL;
         }
 
         @Override
@@ -1015,10 +1011,10 @@ public class RubyZlib {
 
         private void append(ByteList obj) throws IOException {
             if (checksum != null) {
-                checksum.update(obj.getUnsafeBytes(), obj.getBegin(), obj.getRealSize());
                 if (dumpHeaderNeeded) {
                     writeHeader();
                 }
+                checksum.update(obj.getUnsafeBytes(), obj.getBegin(), obj.getRealSize());
             }
             flater.setInput(obj.getUnsafeBytes(), obj.getBegin(), obj.getRealSize());
             run();

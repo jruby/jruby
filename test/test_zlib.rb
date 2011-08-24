@@ -482,7 +482,7 @@ class TestZlib < Test::Unit::TestCase
     end
 
     def test_reset
-      z = Zlib::Deflate.new(8, 15+16)
+      z = Zlib::Deflate.new(Zlib::NO_COMPRESSION, 15+16)
       z << "foo"
       z.reset
       z << "bar"
