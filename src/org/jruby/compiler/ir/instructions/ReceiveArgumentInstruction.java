@@ -29,6 +29,10 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
     public ReceiveArgumentInstruction(Variable destination, int index) {
         this(destination, index, false);
     }
+    
+    public boolean isRestOfArgArray() {
+        return restOfArgArray;
+    }
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, restOfArgArray));

@@ -12,6 +12,7 @@ import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 
@@ -68,7 +69,7 @@ public class IRMethod extends IRExecutionScope {
     public void addInstr(Instr i) {
         // Accumulate call arguments
         // SSS FIXME: ReceiveSelf should inherit from ReceiveArg?
-        if (i instanceof ReceiveArgumentInstruction) callArgs.add(i.result);
+        if (i instanceof ReceiveArgumentInstruction) callArgs.add(((ReceiveArgumentInstruction) i).isRestOfArgArray() ? new Splat(i.result) : i.result);
 
         super.addInstr(i);
     }
