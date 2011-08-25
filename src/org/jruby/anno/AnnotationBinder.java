@@ -115,7 +115,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("import java.util.Arrays;");
                     out.println("import java.util.List;");
 
-                    out.println("public class " + qualifiedName + "$Populator extends TypePopulator {");
+                    out.println("public class " + qualifiedName + "$POPULATOR extends TypePopulator {");
                     out.println("    public void populate(RubyModule cls, Class clazz) {");
                     if (DEBUG) {
                         out.println("        System.out.println(\"Using pregenerated populator: \" + \"" + cd.getSimpleName() + "Populator\");");
@@ -325,7 +325,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.close();
                     out = null;
 
-                    FileOutputStream fos = new FileOutputStream("src_gen/" + qualifiedName + "$Populator.java");
+                    FileOutputStream fos = new FileOutputStream("src_gen/" + qualifiedName + "$POPULATOR.java");
                     fos.write(bytes.toByteArray());
                     fos.close();
                 } catch (IOException ioe) {
