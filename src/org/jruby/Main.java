@@ -43,6 +43,8 @@ import java.io.File;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -84,7 +86,31 @@ public class Main {
     }
 
     private Main(boolean hardExit) {
-        this(new RubyInstanceConfig(), hardExit);
+        // used only from main(String[]), so we process dotfile here
+        processDotfile();
+        this.config = new RubyInstanceConfig();
+        config.setHardExit(hardExit);
+    }
+    
+    public void processDotfile() {
+        String home = SafePropertyAccessor.getProperty("user.home");
+        if (home != null) {
+            File dotfile = new File(home + "/.jrubyrc");
+            if (!dotfile.exists()) return;
+            
+            // process properties into system
+            Properties props = System.getProperties();
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(dotfile);
+                props.load(fis);
+                System.setProperties(props);
+            } catch (IOException ioe) {
+                // do anything?
+            } finally {
+                if (fis != null) try {fis.close();} catch (Exception e) {}
+            }
+        }
     }
 
     public static class Status {
