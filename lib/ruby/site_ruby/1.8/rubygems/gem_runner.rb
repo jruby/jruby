@@ -4,6 +4,7 @@
 # See LICENSE.txt for permissions.
 #++
 
+require "rubygems"
 require 'rubygems/command_manager'
 require 'rubygems/config_file'
 require 'rubygems/doc_manager'
@@ -25,6 +26,7 @@ Gem.load_env_plugins rescue nil
 class Gem::GemRunner
 
   def initialize(options={})
+    # TODO: nuke these options
     @command_manager_class = options[:command_manager] || Gem::CommandManager
     @config_file_class = options[:config_file] || Gem::ConfigFile
     @doc_manager_class = options[:doc_manager] || Gem::DocManager
@@ -74,7 +76,7 @@ class Gem::GemRunner
 
   def do_configuration(args)
     Gem.configuration = @config_file_class.new(args)
-    Gem.use_paths(Gem.configuration[:gemhome], Gem.configuration[:gempath])
+    Gem.use_paths Gem.configuration[:gemhome], Gem.configuration[:gempath]
     Gem::Command.extra_args = Gem.configuration[:gem]
     @doc_manager_class.configured_args = Gem.configuration[:rdoc]
   end

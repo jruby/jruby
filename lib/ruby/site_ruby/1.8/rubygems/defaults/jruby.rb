@@ -1,3 +1,5 @@
+require 'rubygems/config_file'
+require 'rubygems/maven_gemify' # Maven support
 require 'rbconfig'
 
 module Gem
@@ -46,18 +48,25 @@ module Gem
 end
 
 ## JAR FILES: Allow gem path entries to contain jar files
-require 'rubygems/source_index'
-class Gem::SourceIndex
+class Gem::Specification
   class << self
-    def installed_spec_directories
-      # TODO: fix remaining glob tests
-      Gem.path.collect do |dir|
+    # Replace existing dirs
+    def dirs
+      @@dirs ||= Gem.path.collect {|dir|
         if File.file?(dir) && dir =~ /\.jar$/
           "file:#{dir}!/specifications"
         elsif File.directory?(dir) || dir =~ /^file:/
           File.join(dir, "specifications")
         end
-      end.compact + spec_directories_from_classpath
+      }.compact + spec_directories_from_classpath
+    end
+
+    # Replace existing dirs=
+    def dirs= dirs
+      self.reset
+
+      # ugh
+      @@dirs = Array(dirs).map { |dir| File.join dir, "specifications" } + spec_directories_from_classpath
     end
 
     def spec_directories_from_classpath

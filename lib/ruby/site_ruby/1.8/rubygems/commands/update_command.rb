@@ -21,13 +21,17 @@ class Gem::Commands::UpdateCommand < Gem::Command
 
     add_install_update_options
 
-    OptionParser.accept Gem::Requirement do |value|
-      Gem::Requirement.new value
+    OptionParser.accept Gem::Version do |value|
+      Gem::Version.new value
+
+      value
     end
 
-    add_option('--system [VERSION]', Gem::Requirement,
+    add_option('--system [VERSION]', Gem::Version,
                'Update the RubyGems system software') do |value, options|
-      options[:system] = value || Gem::Requirement.default
+      value = true unless value
+
+      options[:system] = value
     end
 
     add_local_remote_options
@@ -48,6 +52,9 @@ class Gem::Commands::UpdateCommand < Gem::Command
   end
 
   def execute
+    @installer = Gem::DependencyInstaller.new options
+    @updated   = []
+
     hig = {}
 
     if options[:system] then
@@ -58,37 +65,16 @@ class Gem::Commands::UpdateCommand < Gem::Command
 
       hig = {} # highest installed gems
 
-      Gem.source_index.each do |name, spec|
+      Gem::Specification.each do |spec|
         if hig[spec.name].nil? or hig[spec.name].version < spec.version then
           hig[spec.name] = spec
         end
       end
     end
 
-    gems_to_update = which_to_update hig, options[:args]
+    gems_to_update = which_to_update hig, options[:args].uniq
 
-    updated = []
-
-    installer = Gem::DependencyInstaller.new options
-
-    gems_to_update.uniq.sort.each do |name|
-      next if updated.any? { |spec| spec.name == name }
-      success = false
-
-      say "Updating #{name}"
-      begin
-        installer.install name
-        success = true
-      rescue Gem::InstallError => e
-        alert_error "Error installing #{name}:\n\t#{e.message}"
-        success = false
-      end
-
-      installer.installed_gems.each do |spec|
-        updated << spec
-        say "Successfully installed #{spec.full_name}" if success
-      end
-    end
+    updated = update_gems gems_to_update
 
     if updated.empty? then
       say "Nothing to update"
@@ -111,31 +97,84 @@ class Gem::Commands::UpdateCommand < Gem::Command
     end
   end
 
+  def update_gem name, version = Gem::Requirement.default
+    return if @updated.any? { |spec| spec.name == name }
+    success = false
+
+    say "Updating #{name}"
+    begin
+      @installer.install name, version
+      success = true
+    rescue Gem::InstallError => e
+      alert_error "Error installing #{name}:\n\t#{e.message}"
+      success = false
+    end
+
+    @installer.installed_gems.each do |spec|
+      @updated << spec
+      say "Successfully installed #{spec.full_name}" if success
+    end
+  end
+
+  def update_gems gems_to_update
+    gems_to_update.uniq.sort.each do |(name, version)|
+      update_gem name, version
+    end
+
+    @updated
+  end
+
   ##
   # Update RubyGems software to the latest version.
 
   def update_rubygems
-    say "Updating RubyGems"
-
     unless options[:args].empty? then
-      raise "No gem names are allowed with the --system option"
+      alert_error "Gem names are not allowed with the --system option"
+      terminate_interaction 1
     end
 
     options[:user_install] = false
 
-    Gem.source_index.refresh!
+    # TODO: rename version and other variable name conflicts
+    # TODO: get rid of all this indirection on name and other BS
 
-    req = if Gem::Requirement === options[:system] then
-            options[:system]
-          else
-            Gem::Requirement.new
-          end
+    version = options[:system]
+    if version == true then
+      version     = Gem::Version.new     Gem::VERSION
+      requirement = Gem::Requirement.new ">= #{Gem::VERSION}"
+    else
+      version     = Gem::Version.new     version
+      requirement = Gem::Requirement.new version
+    end
 
-    update_gems       = Gem.source_index.find_name 'rubygems-update', req
-    latest_update_gem = update_gems.last
+    rubygems_update         = Gem::Specification.new
+    rubygems_update.name    = 'rubygems-update'
+    rubygems_update.version = version
 
-    say "Updating RubyGems to #{latest_update_gem.version}"
-    version = latest_update_gem.version
+    hig = {
+      'rubygems-update' => rubygems_update
+    }
+
+    gems_to_update = which_to_update hig, options[:args], :system
+    name, up_ver   = gems_to_update.first
+    current_ver    = Gem::Version.new Gem::VERSION
+
+    target = if options[:system] == true then
+               up_ver
+             else
+               version
+             end
+
+    if current_ver == target then
+      # if options[:system] != true and version == current_ver then
+      say "Latest version currently installed. Aborting."
+      terminate_interaction
+    end
+
+    update_gem name, target
+
+    installed_gems = Gem::Specification.find_all_by_name 'rubygems-update', requirement
+    version        = installed_gems.last.version
 
     args = []
     args << '--prefix' << Gem.prefix if Gem.prefix
@@ -158,7 +197,7 @@ class Gem::Commands::UpdateCommand < Gem::Command
     end
   end
 
-  def which_to_update(highest_installed_gems, gem_names)
+  def which_to_update highest_installed_gems, gem_names, system = false
     result = []
 
     highest_installed_gems.each do |l_name, l_spec|
@@ -178,9 +217,11 @@ class Gem::Commands::UpdateCommand < Gem::Command
         version
       end.last
 
-      if highest_remote_gem and
-         l_spec.version < highest_remote_gem.first[1] then
-        result << l_name
+      highest_remote_gem ||= [[nil, Gem::Version.new(0), nil]] # "null" object
+      highest_remote_ver = highest_remote_gem.first[1]
+
+      if system or (l_spec.version < highest_remote_ver) then
+        result << [l_spec.name, [l_spec.version, highest_remote_ver].max]
       end
     end
 

@@ -49,6 +49,11 @@ class Gem::Commands::UninstallCommand < Gem::Command
       options[:user_install] = value
     end
 
+    add_option('--[no-]format-executable',
+               'Assume executable names match Ruby\'s prefix and suffix.') do |value, options|
+      options[:format_executable] = value
+    end
+
     add_version_option
     add_platform_option
   end
@@ -68,6 +73,8 @@ class Gem::Commands::UninstallCommand < Gem::Command
   end
 
   def execute
+    original_path = Gem.path
+
     get_all_gem_names.each do |gem_name|
       begin
         Gem::Uninstaller.new(gem_name, options).uninstall
@@ -75,6 +82,8 @@ class Gem::Commands::UninstallCommand < Gem::Command
         spec = e.spec
         alert("In order to remove #{spec.name}, please execute:\n" \
               "\tgem uninstall #{spec.name} --install-dir=#{spec.installation_path}")
+      ensure
+        Gem.use_paths(*original_path)
       end
     end
   end
