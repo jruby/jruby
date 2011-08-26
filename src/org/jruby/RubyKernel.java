@@ -573,14 +573,6 @@ public class RubyKernel {
         }
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the one or two-arg versions.
-     */
-    public static IRubyObject sub_bang(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return getLastlineString(context, context.getRuntime()).sub_bang(context, args, block);
-    }
-
     @JRubyMethod(name = "sub!", module = true, visibility = PRIVATE, reads = LASTLINE, compat = RUBY1_8)
     public static IRubyObject sub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
         return getLastlineString(context, context.getRuntime()).sub_bang(context, arg0, block);
@@ -589,20 +581,6 @@ public class RubyKernel {
     @JRubyMethod(name = "sub!", module = true, visibility = PRIVATE, reads = LASTLINE, compat = RUBY1_8)
     public static IRubyObject sub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
         return getLastlineString(context, context.getRuntime()).sub_bang(context, arg0, arg1, block);
-    }
-
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the one or two-arg versions.
-     */
-    public static IRubyObject sub(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyString str = (RubyString) getLastlineString(context, context.getRuntime()).dup();
-
-        if (!str.sub_bang(context, args, block).isNil()) {
-            context.getCurrentScope().setLastLine(str);
-        }
-
-        return str;
     }
 
     @JRubyMethod(name = "sub", module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE, compat = RUBY1_8)
@@ -627,14 +605,6 @@ public class RubyKernel {
         return str;
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the one or two-arg versions.
-     */
-    public static IRubyObject gsub_bang(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return getLastlineString(context, context.getRuntime()).gsub_bang(context, args, block);
-    }
-
     @JRubyMethod(name = "gsub!", module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE, compat = RUBY1_8)
     public static IRubyObject gsub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
         return getLastlineString(context, context.getRuntime()).gsub_bang(context, arg0, block);
@@ -643,20 +613,6 @@ public class RubyKernel {
     @JRubyMethod(name = "gsub!", module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE, compat = RUBY1_8)
     public static IRubyObject gsub_bang(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
         return getLastlineString(context, context.getRuntime()).gsub_bang(context, arg0, arg1, block);
-    }
-
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the one or two-arg versions.
-     */
-    public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyString str = (RubyString) getLastlineString(context, context.getRuntime()).dup();
-
-        if (!str.gsub_bang(context, args, block).isNil()) {
-            context.getCurrentScope().setLastLine(str);
-        }
-
-        return str;
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE, compat = RUBY1_8)
@@ -699,14 +655,6 @@ public class RubyKernel {
         return str;
     }
 
-    /**
-     * Variable-arity version for compatibility. Not bound to Ruby.
-     * @deprecated Use the zero or one-arg versions.
-     */
-    public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return getLastlineString(context, context.getRuntime()).chomp_bang(args);
-    }
-
     @JRubyMethod(name = "chomp!", module = true, visibility = PRIVATE, reads = LASTLINE, writes = LASTLINE, compat = RUBY1_8)
     public static IRubyObject chomp_bang(ThreadContext context, IRubyObject recv) {
         return getLastlineString(context, context.getRuntime()).chomp_bang(context);
@@ -741,18 +689,6 @@ public class RubyKernel {
 
         context.getCurrentScope().setLastLine(dup);
         return dup;
-    }
-
-    /**
-     * Variable arity version for compatibility. Not bound to a Ruby method.
-     * 
-     * @param context The thread context for the current thread
-     * @param recv The receiver of the method (usually a class that has included Kernel)
-     * @return
-     * @deprecated Use the versions with zero, one, or two args.
-     */
-    public static IRubyObject split(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return getLastlineString(context, context.getRuntime()).split(context, args);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE, writes = {LASTLINE, BACKREF}, compat = RUBY1_8)

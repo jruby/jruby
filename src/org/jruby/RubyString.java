@@ -1491,12 +1491,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(visibility = PRIVATE, compat = RUBY1_8)
     @Override
-    public IRubyObject initialize() {
+    public IRubyObject initialize(ThreadContext context) {
         return this;
     }
 
     @JRubyMethod(visibility = PRIVATE, compat = RUBY1_8)
-    public IRubyObject initialize(IRubyObject arg0) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
         replace(arg0);
         return this;
     }
@@ -7395,163 +7395,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
             return value;
         } else {
             return super.toJava(target);
-        }
-    }
-
-    /**
-     * Variable-arity versions for compatibility. Not bound to Ruby.
-     * @deprecated Use the versions with zero or one arguments
-     */
-
-    @Deprecated
-    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        switch (args.length) {
-        case 0: return this;
-        case 1: return initialize(args[0]);
-        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject sub(ThreadContext context, IRubyObject[] args, Block block) {
-        RubyString str = strDup(context.getRuntime());
-        str.sub_bang(context, args, block);
-        return str;
-    }
-
-    @Deprecated
-    public IRubyObject sub_bang(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-        case 1: return sub_bang(context, args[0], block);
-        case 2: return sub_bang(context, args[0], args[1], block);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject gsub(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-        case 1: return gsub(context, args[0], block);
-        case 2: return gsub(context, args[0], args[1], block);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject gsub_bang(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-        case 1: return gsub_bang(context, args[0], block);
-        case 2: return gsub_bang(context, args[0], args[1], block);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject index(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 1: return index(context, args[0]);
-        case 2: return index(context, args[0], args[1]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject rindex(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 1: return rindex(context, args[0]);
-        case 2: return rindex(context, args[0], args[1]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 1: return op_aref(context, args[0]);
-        case 2: return op_aref(context, args[0], args[1]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject op_aset(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 2: return op_aset(context, args[0], args[1]);
-        case 3: return op_aset(context, args[0], args[1], args[2]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 2, 3); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject slice_bang(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 1: return slice_bang(context, args[0]);
-        case 2: return slice_bang(context, args[0], args[1]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject to_i(IRubyObject[] args) {
-        switch (args.length) {
-        case 0: return to_i();
-        case 1: return to_i(args[0]);
-        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public RubyArray split(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-        case 0: return split(context);
-        case 1: return split(context, args[0]);
-        case 2: return split(context, args[0], args[1]);
-        default:Arity.raiseArgumentError(context.getRuntime(), args.length, 0, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject ljust(IRubyObject [] args) {
-        switch (args.length) {
-        case 1: return ljust(args[0]);
-        case 2: return ljust(args[0], args[1]);
-        default: Arity.raiseArgumentError(getRuntime(), args.length, 1, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject rjust(IRubyObject [] args) {
-        switch (args.length) {
-        case 1: return rjust(args[0]);
-        case 2: return rjust(args[0], args[1]);
-        default:Arity.raiseArgumentError(getRuntime(), args.length, 1, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject center(IRubyObject [] args) {
-        switch (args.length) {
-        case 1: return center(args[0]);
-        case 2: return center(args[0], args[1]);
-        default:Arity.raiseArgumentError(getRuntime(), args.length, 1, 2); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public RubyString chomp(IRubyObject[] args) {
-        switch (args.length) {
-        case 0:return chomp(getRuntime().getCurrentContext());
-        case 1:return chomp(getRuntime().getCurrentContext(), args[0]);
-        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1); return null; // not reached
-        }
-    }
-
-    @Deprecated
-    public IRubyObject chomp_bang(IRubyObject[] args) {
-        switch (args.length) {
-        case 0: return chomp_bang(getRuntime().getCurrentContext());
-        case 1: return chomp_bang(getRuntime().getCurrentContext(), args[0]);
-        default:Arity.raiseArgumentError(getRuntime(), args.length, 0, 1); return null; // not reached
         }
     }
 }
