@@ -685,7 +685,10 @@ public class RubyZlib {
             // Need to process buffer first for calculating checksum
             RubyString str = flushOutput(runtime);
             // process trailer if needed
-            if (internalFinished() && readTrailerNeeded && input.getRealSize() >= 8) {
+            if (internalFinished() && readTrailerNeeded) {
+                if (input.getRealSize() < 8) {
+                    throw Util.newBufError(runtime, "buffer error");
+                }
                 readTrailer(input.bytes(), (flater.getBytesWritten() & 0xffffffffL),
                         checksum.getValue());
                 input.view(8, input.getRealSize() - 8);
