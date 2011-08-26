@@ -578,6 +578,15 @@ class TestZlibInflateGzip < Test::Unit::TestCase
     z.inflate("foo") # ???
     z << "foo" # ???
   end
+
+  def test_incomplete_finish
+    gzip = "\x1f\x8b\x08\x00\x1a\x96\xe0\x4c\x00\x03\xcb\x48\xcd\xc9\xc9\x07\x00\x86\xa6\x10\x36\x05\x00\x00"
+    z = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+    assert_equal("hello", z.inflate(gzip))
+    assert_raise(Zlib::BufError) do
+      z.finish
+    end
+  end
 end
 
 # Test for MAX_WBITS + 32
@@ -651,5 +660,14 @@ class TestZlibInflateAuto < Test::Unit::TestCase
     assert_equal("foo", s)
     z.inflate("foo") # ???
     z << "foo" # ???
+  end
+
+  def test_incomplete_finish
+    gzip = "\x1f\x8b\x08\x00\x1a\x96\xe0\x4c\x00\x03\xcb\x48\xcd\xc9\xc9\x07\x00\x86\xa6\x10\x36\x05\x00\x00"
+    z = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
+    assert_equal("hello", z.inflate(gzip))
+    assert_raise(Zlib::BufError) do
+      z.finish
+    end
   end
 end
