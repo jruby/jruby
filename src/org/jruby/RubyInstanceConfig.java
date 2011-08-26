@@ -617,7 +617,7 @@ public class RubyInstanceConfig {
                 .append("    jruby.thread.pool.ttl=<time to live, in seconds>\n")
                 .append("       The maximum number of seconds to keep alive an idle thread. Default is 60.\n")
                 .append("\nMISCELLANY:\n")
-                .append("    jruby.compat.version=RUBY1_8|RUBY1_9\n")
+                .append("    jruby.compat.version=1.8|1.9\n")
                 .append("       Specify the major Ruby version to be compatible with; Default is RUBY1_8\n")
                 .append("    jruby.objectspace.enabled=true|false\n")
                 .append("       Enable or disable ObjectSpace.each_object (default is disabled)\n")
