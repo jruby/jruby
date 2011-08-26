@@ -94,29 +94,35 @@ public class Main {
     }
     
     public void processDotfile() {
-        String home = SafePropertyAccessor.getProperty("user.home");
-        if (home != null) {
-            File dotfile = new File(home + "/.jrubyrc");
-            if (!dotfile.exists()) return;
-            
-            Properties sysProps = System.getProperties();
-            Properties newProps = new Properties();
-            FileInputStream fis = null;
-            try {
-                // load properties and re-set as jruby.*
-                fis = new FileInputStream(dotfile);
-                newProps.load(fis);
-                for (Map.Entry entry : newProps.entrySet()) {
-                    sysProps.put("jruby." + entry.getKey(), entry.getValue());
-                }
-                
-                // replace system properties
-                System.setProperties(sysProps);
-            } catch (IOException ioe) {
-                // do anything?
-            } finally {
-                if (fis != null) try {fis.close();} catch (Exception e) {}
+        // try current dir, then home dir
+        String home = SafePropertyAccessor.getProperty("user.dir");
+        File dotfile = new File(home + "/.jrubyrc");
+        if (!dotfile.exists()) {
+            home = SafePropertyAccessor.getProperty("user.home");
+            dotfile = new File(home + "/.jrubyrc");
+        }
+        
+        // no dotfile!
+        if (!dotfile.exists()) return;
+        
+        // update system properties with long form jruby properties from .jrubyrc
+        Properties sysProps = System.getProperties();
+        Properties newProps = new Properties();
+        FileInputStream fis = null;
+        try {
+            // load properties and re-set as jruby.*
+            fis = new FileInputStream(dotfile);
+            newProps.load(fis);
+            for (Map.Entry entry : newProps.entrySet()) {
+                sysProps.put("jruby." + entry.getKey(), entry.getValue());
             }
+
+            // replace system properties
+            System.setProperties(sysProps);
+        } catch (IOException ioe) {
+            // do anything?
+        } finally {
+            if (fis != null) try {fis.close();} catch (Exception e) {}
         }
     }
 
