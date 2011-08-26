@@ -139,7 +139,32 @@ public final class Util {
         l.setRealSize(0);
         l.invalidate();
     }
+
+    public static RaiseException newZlibError(Ruby runtime, String message) {
+        return newZlibError(runtime, "Error", message);
+    }
+
+    public static RaiseException newBufError(Ruby runtime, String message) {
+        return newZlibError(runtime, "BufError", message);
+    }
     
+    public static RaiseException newDictError(Ruby runtime, String message) {
+        return newZlibError(runtime, "NeedDict", message);
+    }
+
+    public static RaiseException newStreamError(Ruby runtime, String message) {
+        return newZlibError(runtime, "StreamError", message);
+    }
+
+    public static RaiseException newDataError(Ruby runtime, String message) {
+        return newZlibError(runtime, "DataError", message);
+    }
+
+    private static RaiseException newZlibError(Ruby runtime, String klass, String message) {
+        RubyClass errorClass = runtime.getModule("Zlib").getClass(klass);
+        return new RaiseException(RubyException.newException(runtime, errorClass, message), true);
+    }
+
     public static RaiseException newGzipFileError(Ruby runtime, String message) {
         return newGzipFileError(runtime, "Error", message);
     }
@@ -155,7 +180,7 @@ public final class Util {
     public static RaiseException newLengthError(Ruby runtime, String message) {
         return newGzipFileError(runtime, "LengthError", message);
     }
-    
+
     private static RaiseException newGzipFileError(Ruby runtime, String klass, String message) {
         RubyClass errorClass = runtime.getModule("Zlib").getClass("GzipFile").getClass(klass);
         return new RaiseException(RubyException.newException(runtime, errorClass, message), true);

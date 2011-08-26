@@ -266,23 +266,6 @@ public class RubyZlib {
         return recv.getRuntime().newArray(ll);
     }
 
-    private static RaiseException newZlibError(Ruby runtime, String klass, String message) {
-        RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass(klass);
-        return new RaiseException(RubyException.newException(runtime, errorClass, message), true);
-    }
-
-    static RaiseException newZlibError(Ruby runtime, String message) {
-        return newZlibError(runtime, "Error", message);
-    }
-
-    static RaiseException newStreamError(Ruby runtime, String message) {
-        return newZlibError(runtime, "StreamError", message);
-    }
-
-    static RaiseException newDataError(Ruby runtime, String message) {
-        return newZlibError(runtime, "DataError", message);
-    }
-
     @JRubyClass(name="Zlib::ZStream")
     public static abstract class ZStream extends RubyObject {
         protected boolean closed = false;
@@ -398,13 +381,13 @@ public class RubyZlib {
 
         void checkClosed() {
             if (closed) {
-                throw newZlibError(getRuntime(), "stream is not ready");
+                throw Util.newZlibError(getRuntime(), "stream is not ready");
             }
         }
 
         static void checkLevel(Ruby runtime, int level) {
             if ((level < 0 || level > 9) && level != Deflater.DEFAULT_COMPRESSION) {
-                throw newStreamError(runtime, "stream error: invalid level");
+                throw Util.newStreamError(runtime, "stream error: invalid level");
             }
         }
 
@@ -416,7 +399,7 @@ public class RubyZlib {
         static void checkWindowBits(Ruby runtime, int wbits, boolean forInflate) {
             wbits = Math.abs(wbits);
             if ((wbits & 0xf) < MIN_WBITS) {
-                throw newStreamError(runtime, "stream error: invalid window bits");
+                throw Util.newStreamError(runtime, "stream error: invalid window bits");
             }
             if ((wbits & 0xf) != 0xf) {
                 // windowBits < 15 for reducing memory is meaningless on Java platform. 
@@ -424,9 +407,9 @@ public class RubyZlib {
                 // continue
             }
             if (forInflate && wbits > MAX_WBITS + 32) {
-                throw newStreamError(runtime, "stream error: invalid window bits");
+                throw Util.newStreamError(runtime, "stream error: invalid window bits");
             } else if (!forInflate && wbits > MAX_WBITS + 16) {
-                throw newStreamError(runtime, "stream error: invalid window bits");
+                throw Util.newStreamError(runtime, "stream error: invalid window bits");
             }
         }
 
@@ -437,7 +420,7 @@ public class RubyZlib {
                 case Deflater.HUFFMAN_ONLY:
                     break;
                 default:
-                    throw newStreamError(runtime, "stream error: invalid strategy");
+                    throw Util.newStreamError(runtime, "stream error: invalid strategy");
             }
         }
     }
@@ -588,7 +571,7 @@ public class RubyZlib {
             try {
                 return set_dictionary(arg);
             } catch (IllegalArgumentException iae) {
-                throw newStreamError(context.getRuntime(), "stream error: " + iae.getMessage());
+                throw Util.newStreamError(context.getRuntime(), "stream error: " + iae.getMessage());
             }
         }
 
@@ -637,17 +620,13 @@ public class RubyZlib {
 
                 // MRI behavior
                 if (finish && flater.needsInput()) {
-                    RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("BufError");
-                    throw new RaiseException(RubyException.newException(
-                            runtime, errorClass, "buffer error"), true);
+                    throw Util.newBufError(runtime, "buffer error");
                 }
 
                 try {
                     resultLength = flater.inflate(outp);
                     if (flater.needsDictionary()) {
-                        RubyClass errorClass = runtime.fastGetModule("Zlib").fastGetClass("NeedDict");
-                        throw new RaiseException(RubyException.newException(
-                                runtime, errorClass, "need dictionary"));
+                        throw Util.newDictError(runtime, "need dictionary");
                     } else {
                         if (input.getRealSize() > 0) {
                             int remaining = flater.getRemaining();
@@ -659,7 +638,7 @@ public class RubyZlib {
                         }
                     }
                 } catch (DataFormatException ex) {
-                    throw newDataError(runtime, "data error: " + ex.getMessage());
+                    throw Util.newDataError(runtime, "data error: " + ex.getMessage());
                 }
 
                 collected.append(outp, 0, resultLength);
@@ -878,7 +857,7 @@ public class RubyZlib {
                 run();
                 return arg;
             } catch (IllegalArgumentException iae) {
-                throw newStreamError(context.getRuntime(), "stream error: " + iae.getMessage());
+                throw Util.newStreamError(context.getRuntime(), "stream error: " + iae.getMessage());
             }
         }
 
@@ -897,7 +876,7 @@ public class RubyZlib {
         public IRubyObject deflate(IRubyObject[] args) {
             args = Arity.scanArgs(getRuntime(), args, 1, 1);
             if (internalFinished()) {
-                throw newStreamError(getRuntime(), "stream error");
+                throw Util.newStreamError(getRuntime(), "stream error");
             }
             ByteList data = null;
             if (!args[0].isNil()) {
@@ -1724,7 +1703,7 @@ public class RubyZlib {
         
         private static void checkLevel(Ruby runtime, int level) {
             if (level < 0 || level > 9) {
-                throw newStreamError(runtime, "stream error: invalid level");
+                throw Util.newStreamError(runtime, "stream error: invalid level");
             }
         }
 
