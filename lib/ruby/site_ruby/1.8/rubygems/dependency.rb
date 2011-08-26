@@ -27,16 +27,17 @@ class Gem::Dependency
   attr_writer :prerelease
 
   ##
-  # Dependency type.
-
-  attr_reader :type
-
-  ##
   # Constructs a dependency with +name+ and +requirements+. The last
   # argument can optionally be the dependency type, which defaults to
   # <tt>:runtime</tt>.
 
   def initialize name, *requirements
+    if Regexp === name then
+      msg = ["NOTE: Dependency.new w/ a regexp is deprecated.",
+             "Dependency.new called from #{Gem.location_of_caller.join(":")}"]
+      warn msg.join("\n") unless Deprecate.skip
+    end
+
     type         = Symbol === requirements.last ? requirements.pop : :runtime
     requirements = requirements.first if 1 == requirements.length # unpack
 
@@ -66,7 +67,7 @@ class Gem::Dependency
 
   def inspect # :nodoc:
     "<%s type=%p name=%p requirements=%p>" %
-      [self.class, @type, @name, requirement.to_s]
+      [self.class, self.type, self.name, requirement.to_s]
   end
 
   ##
@@ -126,7 +127,18 @@ class Gem::Dependency
   end
 
   def to_s # :nodoc:
-    "#{name} (#{requirement}, #{type})"
+    if type != :runtime then
+      "#{name} (#{requirement}, #{type})"
+    else
+      "#{name} (#{requirement})"
+    end
+  end
+
+  ##
+  # Dependency type.
+
+  def type
+    @type ||= :runtime
   end
 
   def == other # :nodoc:
@@ -140,7 +152,7 @@ class Gem::Dependency
   # Dependencies are ordered by name.
 
   def <=> other
-    @name <=> other.name
+    self.name <=> other.name
   end
 
   ##
@@ -181,5 +193,68 @@ class Gem::Dependency
     requirement.satisfied_by?(spec.version)
   end
 
-end
+  ##
+  # Merges the requirements of +other+ into this dependency
 
+  def merge other
+    unless name == other.name then
+      raise ArgumentError,
+            "#{self} and #{other} have different names"
+    end
+
+    default = Gem::Requirement.default
+    self_req  = self.requirement
+    other_req = other.requirement
+
+    return self.class.new name, self_req  if other_req == default
+    return self.class.new name, other_req if self_req  == default
+
+    self.class.new name, self_req.as_list.concat(other_req.as_list)
+  end
+
+  def matching_specs platform_only = false
+    matches = Gem::Specification.find_all { |spec|
+      self.name === spec.name and # TODO: == instead of ===
+        requirement.satisfied_by? spec.version
+    }
+
+    if platform_only
+      matches.reject! { |spec|
+        not Gem::Platform.match spec.platform
+      }
+    end
+
+    matches = matches.sort_by { |s| s.sort_obj } # HACK: shouldn't be needed
+  end
+
+  ##
+  # True if the dependency will not always match the latest version.
+
+  def specific?
+    @requirement.specific?
+  end
+
+  def to_specs
+    matches = matching_specs true
+
+    # TODO: check Gem.activated_spec[self.name] in case matches falls outside
+
+    if matches.empty? then
+      specs = Gem::Specification.all_names.join ", "
+      error = Gem::LoadError.new "Could not find #{name} (#{requirement}) amongst [#{specs}]"
+      error.name        = self.name
+      error.requirement = self.requirement
+      raise error
+    end
+
+    # TODO: any other resolver validations should go here
+
+    matches
+  end
+
+  def to_spec
+    matches = self.to_specs
+
+    matches.find { |spec| spec.activated? } or matches.last
+  end
+end

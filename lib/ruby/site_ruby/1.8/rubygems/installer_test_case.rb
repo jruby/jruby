@@ -6,7 +6,7 @@ class Gem::Installer
   ##
   # Available through requiring rubygems/installer_test_case
 
-  attr_accessor :gem_dir
+  attr_writer :gem_dir
 
   ##
   # Available through requiring rubygems/installer_test_case
@@ -57,45 +57,61 @@ class Gem::InstallerTestCase < Gem::TestCase
   def setup
     super
 
+    @installer_tmp = File.join @tempdir, 'installer'
+    FileUtils.mkdir_p @installer_tmp
+
+    Gem.use_paths @installer_tmp
+    Gem.ensure_gem_subdirectories @installer_tmp
+
     @spec = quick_gem 'a'
-
-    @gem = File.join @tempdir, @spec.file_name
-
-    @installer = util_installer @spec, @gem, @gemhome
+    util_make_exec @spec
+    util_build_gem @spec
+    @gem = @spec.cache_file
 
     @user_spec = quick_gem 'b'
-    @user_gem = File.join @tempdir, @user_spec.file_name
+    util_make_exec @user_spec
+    util_build_gem @user_spec
+    @user_gem = @user_spec.cache_file
 
-    @user_installer = util_installer @user_spec, @user_gem, Gem.user_dir
-    @user_installer.gem_dir = File.join(Gem.user_dir, 'gems',
-                                        @user_spec.full_name)
+    Gem.use_paths @gemhome
+
+    @installer      = util_installer @spec, @gemhome
+    @user_installer = util_installer @user_spec, Gem.user_dir, :user
+
+    Gem.use_paths @gemhome
   end
 
-  def util_gem_bindir(version = '2')
-    File.join util_gem_dir(version), "bin"
+  def util_gem_bindir spec = @spec
+    # TODO: deprecate
+    spec.bin_dir
   end
 
-  def util_gem_dir(version = '2')
-    File.join @gemhome, "gems", "a-#{version}" # HACK
+  def util_gem_dir spec = @spec
+    # TODO: deprecate
+    spec.gem_dir
   end
 
   def util_inst_bindir
     File.join @gemhome, "bin"
   end
 
-  def util_make_exec(version = '2', shebang = "#!/usr/bin/ruby")
-    @spec.executables = ["my_exec"]
+  def util_make_exec(spec = @spec, shebang = "#!/usr/bin/ruby")
+    spec.executables = %w[executable]
+    spec.files << 'bin/executable'
 
-    FileUtils.mkdir_p util_gem_bindir(version)
-    exec_path = File.join util_gem_bindir(version), "my_exec"
-    File.open exec_path, 'w' do |f|
-      f.puts shebang
+    exec_path = spec.bin_file "executable"
+    write_file exec_path do |io|
+      io.puts shebang
+    end
+
+    bin_path = File.join @tempdir, "bin", "executable"
+    write_file bin_path do |io|
+      io.puts shebang
     end
   end
 
   def util_setup_gem(ui = @ui) # HACK fix use_ui to make this automatic
-    @spec.files = File.join('lib', 'code.rb')
-    @spec.executables << 'executable'
+    @spec.files << File.join('lib', 'code.rb')
     @spec.extensions << File.join('ext', 'a', 'mkrf_conf.rb')
 
     Dir.chdir @tempdir do
@@ -112,25 +128,15 @@ class Gem::InstallerTestCase < Gem::TestCase
 
       use_ui ui do
         FileUtils.rm @gem
-        Gem::Builder.new(@spec).build
+
+        @gem = Gem::Builder.new(@spec).build
       end
     end
 
     @installer = Gem::Installer.new @gem
   end
 
-  def util_installer(spec, gem_path, gem_home)
-    util_build_gem spec
-    FileUtils.mv File.join(@gemhome, 'cache', spec.file_name),
-                 @tempdir
-
-    installer = Gem::Installer.new gem_path
-    installer.gem_dir = util_gem_dir
-    installer.gem_home = gem_home
-    installer.spec = spec
-
-    installer
+  def util_installer(spec, gem_home, user=false)
+    Gem::Installer.new spec.cache_file, :user_install => user
   end
-
 end
-

@@ -15,14 +15,14 @@ class Gem::DependencyInstaller
   attr_reader :installed_gems
 
   DEFAULT_OPTIONS = {
-    :env_shebang => false,
-    :domain => :both, # HACK dup
-    :force => false,
-    :format_executable => false, # HACK dup
+    :env_shebang         => false,
+    :domain              => :both, # HACK dup
+    :force               => false,
+    :format_executable   => false, # HACK dup
     :ignore_dependencies => false,
-    :prerelease => false,
-    :security_policy => nil, # HACK NoSecurity requires OpenSSL.  AlmostNo? Low?
-    :wrappers => true,
+    :prerelease          => false,
+    :security_policy     => nil, # HACK NoSecurity requires OpenSSL. AlmostNo? Low?
+    :wrappers            => true,
   }
 
   ##
@@ -45,25 +45,26 @@ class Gem::DependencyInstaller
 
   def initialize(options = {})
     if options[:install_dir] then
-      spec_dir = options[:install_dir], 'specifications'
-      @source_index = Gem::SourceIndex.from_gems_in spec_dir
-    else
-      @source_index = Gem.source_index
+      @gem_home = options[:install_dir]
+
+      Gem::Specification.dirs = @gem_home
+      Gem.ensure_gem_subdirectories @gem_home
+      options[:install_dir] = @gem_home # FIX: because we suck and reuse below
     end
 
     options = DEFAULT_OPTIONS.merge options
 
-    @bin_dir = options[:bin_dir]
-    @development = options[:development]
-    @domain = options[:domain]
-    @env_shebang = options[:env_shebang]
-    @force = options[:force]
-    @format_executable = options[:format_executable]
+    @bin_dir             = options[:bin_dir]
+    @development         = options[:development]
+    @domain              = options[:domain]
+    @env_shebang         = options[:env_shebang]
+    @force               = options[:force]
+    @format_executable   = options[:format_executable]
     @ignore_dependencies = options[:ignore_dependencies]
-    @prerelease = options[:prerelease]
-    @security_policy = options[:security_policy]
-    @user_install = options[:user_install]
-    @wrappers = options[:wrappers]
+    @prerelease          = options[:prerelease]
+    @security_policy     = options[:security_policy]
+    @user_install        = options[:user_install]
+    @wrappers            = options[:wrappers]
 
     @installed_gems = []
 
@@ -95,6 +96,7 @@ class Gem::DependencyInstaller
 
     if @domain == :both or @domain == :remote then
       begin
+        # REFACTOR: all = dep.requirement.needs_all?
         requirements = dep.requirement.requirements.map do |req, ver|
           req
         end
@@ -130,17 +132,33 @@ class Gem::DependencyInstaller
   def gather_dependencies
     specs = @specs_and_sources.map { |spec,_| spec }
 
+    # these gems were listed by the user, always install them
+    keep_names = specs.map { |spec| spec.full_name }
+
     dependency_list = Gem::DependencyList.new @development
     dependency_list.add(*specs)
     to_do = specs.dup
 
     add_found_dependencies to_do, dependency_list unless @ignore_dependencies
 
+    dependency_list.specs.reject! { |spec|
+      not keep_names.include?(spec.full_name) and
+      Gem::Specification.include?(spec)
+    }
+
+    unless dependency_list.ok? or @ignore_dependencies or @force then
+      reason = dependency_list.why_not_ok?.map { |k,v|
+        "#{k} requires #{v.join(", ")}"
+      }.join("; ")
+      raise Gem::DependencyError, "Unable to resolve dependencies: #{reason}"
+    end
+
     @gems_to_install = dependency_list.dependency_order.reverse
   end
 
   def add_found_dependencies to_do, dependency_list
     seen = {}
+    dependencies = Hash.new { |h, name| h[name] = Gem::Dependency.new name }
 
     until to_do.empty? do
       spec = to_do.shift
@@ -151,29 +169,29 @@ class Gem::DependencyInstaller
       deps |= spec.development_dependencies if @development
 
       deps.each do |dep|
+        dependencies[dep.name] = dependencies[dep.name].merge dep
+
         results = find_gems_with_sources(dep).reverse
 
-        # FIX: throw in everything that satisfies, and let
-        # FIX: dependencylist reduce to the chosen few
         results.reject! do |dep_spec,|
           to_do.push dep_spec
 
           # already locally installed
-          @source_index.any? do |_, installed_spec|
+          Gem::Specification.any? do |installed_spec|
             dep.name == installed_spec.name and
               dep.requirement.satisfied_by? installed_spec.version
           end
         end
 
         results.each do |dep_spec, source_uri|
-          next if seen[dep_spec.name]
           @specs_and_sources << [dep_spec, source_uri]
 
-          # FIX: this is the bug
           dependency_list.add dep_spec
         end
       end
     end
+
+    dependency_list.remove_specs_unsatisfied_by dependencies
   end
 
   ##
@@ -194,23 +212,20 @@ class Gem::DependencyInstaller
 
     local_gems = Dir["#{glob}*"].sort.reverse
 
-    unless local_gems.empty? then
-      local_gems.each do |gem_file|
-        next unless gem_file =~ /gem$/
-        begin
-          spec = Gem::Format.from_file_by_path(gem_file).spec
-          spec_and_source = [spec, gem_file]
-          break
-        rescue SystemCallError, Gem::Package::FormatError
-        end
+    local_gems.each do |gem_file|
+      next unless gem_file =~ /gem$/
+      begin
+        spec = Gem::Format.from_file_by_path(gem_file).spec
+        spec_and_source = [spec, gem_file]
+        break
+      rescue SystemCallError, Gem::Package::FormatError
       end
     end
 
-    if spec_and_source.nil? then
+    unless spec_and_source then
       dep = Gem::Dependency.new gem_name, version
       dep.prerelease = true if prerelease
       spec_and_sources = find_gems_with_sources(dep).reverse
-
       spec_and_source = spec_and_sources.find { |spec, source|
         Gem::Platform.match spec.platform
       }
@@ -251,10 +266,9 @@ class Gem::DependencyInstaller
 
     gather_dependencies
 
-    @gems_to_install.each do |spec|
-      last = spec == @gems_to_install.last
-      # HACK is this test for full_name acceptable?
-      next if @source_index.any? { |n,_| n == spec.full_name } and not last
+    last = @gems_to_install.size - 1
+    @gems_to_install.each_with_index do |spec, index|
+      next if Gem::Specification.include?(spec) and index != last
 
       # TODO: make this sorta_verbose so other users can benefit from it
       say "Installing gem #{spec.full_name}" if Gem.configuration.really_verbose
@@ -277,7 +291,6 @@ class Gem::DependencyInstaller
                                 :ignore_dependencies => @ignore_dependencies,
                                 :install_dir         => @install_dir,
                                 :security_policy     => @security_policy,
-                                :source_index        => @source_index,
                                 :user_install        => @user_install,
                                 :wrappers            => @wrappers
 
@@ -288,6 +301,4 @@ class Gem::DependencyInstaller
 
     @installed_gems
   end
-
 end
-

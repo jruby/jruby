@@ -1,5 +1,28 @@
 require "rubygems/version"
 
+# :stopdoc:
+
+# Hack to handle syck's DefaultKey bug with psych
+#
+# Quick note! If/when psych loads in 1.9, it will redefine
+# YAML to point to Psych by removing the YAML constant.
+# Thusly, over in Gem.load_yaml, we define DefaultKey again
+# after proper yaml library has been loaded.
+#
+# All this is so that there is always a YAML::Syck::DefaultKey
+# class no matter if the full yaml library has loaded or not.
+#
+module YAML
+  if !defined? Syck
+    module Syck
+      class DefaultKey
+      end
+    end
+  end
+end
+
+# :startdoc:
+
 ##
 # A Requirement is a set of one or more version restrictions. It supports a
 # few (<tt>=, !=, >, <, >=, <=, ~></tt>) different restriction operators.
@@ -102,7 +125,7 @@ class Gem::Requirement
   end
 
   def as_list # :nodoc:
-    requirements.map { |op, version| "#{op} #{version}" }
+    requirements.map { |op, version| "#{op} #{version}" }.sort
   end
 
   def hash # :nodoc:
@@ -110,11 +133,15 @@ class Gem::Requirement
   end
 
   def marshal_dump # :nodoc:
+    fix_syck_default_key_in_requirements
+
     [@requirements]
   end
 
   def marshal_load array # :nodoc:
     @requirements = array[0]
+
+    fix_syck_default_key_in_requirements
   end
 
   def prerelease?
@@ -131,7 +158,20 @@ class Gem::Requirement
   # True if +version+ satisfies this Requirement.
 
   def satisfied_by? version
-    requirements.all? { |op, rv| OPS[op].call version, rv }
+    # #28965: syck has a bug with unquoted '=' YAML.loading as YAML::DefaultKey
+    requirements.all? { |op, rv| (OPS[op] || OPS["="]).call version, rv }
+  end
+
+  alias :=== :satisfied_by?
+  alias :=~ :satisfied_by?
+
+  ##
+  # True if the requirement will not always match the latest version.
+
+  def specific?
+    return true if @requirements.length > 1 # GIGO, > 1, > 2 is silly
+
+    not %w[> >=].include? @requirements.first.first # grab the operator
   end
 
   def to_s # :nodoc:
@@ -140,6 +180,17 @@ class Gem::Requirement
 
   def <=> other # :nodoc:
     to_s <=> other.to_s
+  end
+
+  private
+
+  def fix_syck_default_key_in_requirements
+    # Fixup the Syck DefaultKey bug
+    @requirements.each do |r|
+      if r[0].kind_of? YAML::Syck::DefaultKey
+        r[0] = "="
+      end
+    end
   end
 end
 

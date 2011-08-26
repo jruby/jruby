@@ -69,6 +69,25 @@ class Gem::RemoteFetcher
       when URI::HTTP then proxy
       else URI.parse(proxy)
       end
+    @user_agent = user_agent
+  end
+
+  ##
+  # Given a name and requirement, downloads this gem into cache and returns the
+  # filename. Returns nil if the gem cannot be located.
+  #--
+  # Should probably be integrated with #download below, but that will be a
+  # larger, more emcompassing effort. -erikh
+
+  def download_to_cache dependency
+    found = Gem::SpecFetcher.fetcher.fetch dependency, true, true,
+                                           dependency.prerelease?
+
+    return if found.empty?
+
+    spec, source_uri = found.sort_by { |(s,_)| s.version }.last
+
+    download spec, source_uri
   end
 
   ##
@@ -80,12 +99,12 @@ class Gem::RemoteFetcher
     Gem.ensure_gem_subdirectories(install_dir) rescue nil
 
     if File.writable?(install_dir)
-      cache_dir = File.join install_dir, 'cache'
+      cache_dir = File.join install_dir, "cache"
     else
-      cache_dir = File.join(Gem.user_dir, 'cache')
+      cache_dir = File.join Gem.user_dir, "cache"
     end
 
-    gem_file_name = spec.file_name
+    gem_file_name = File.basename spec.cache_file
     local_gem_path = File.join cache_dir, gem_file_name
 
     FileUtils.mkdir_p cache_dir rescue nil unless File.exist? cache_dir
@@ -93,8 +112,8 @@ class Gem::RemoteFetcher
    # Always escape URI's to deal with potential spaces and such
     unless URI::Generic === source_uri
       source_uri = URI.parse(URI.const_defined?(:DEFAULT_PARSER) ?
-                             URI::DEFAULT_PARSER.escape(source_uri) :
-                             URI.escape(source_uri))
+                             URI::DEFAULT_PARSER.escape(source_uri.to_s) :
+                             URI.escape(source_uri.to_s))
     end
 
     # if it's a maven artifact, use maven to fetch it
@@ -139,7 +158,7 @@ class Gem::RemoteFetcher
         path = source_uri.path
         path = File.dirname(path) if File.extname(path) == '.gem'
 
-        remote_gem_path = File.join(path, 'gems', gem_file_name)
+        remote_gem_path = correct_for_windows_path(File.join(path, 'gems', gem_file_name))
 
         FileUtils.cp(remote_gem_path, local_gem_path)
       rescue Errno::EACCES
@@ -175,18 +194,54 @@ class Gem::RemoteFetcher
   end
 
   ##
+  # File Fetcher. Dispatched by +fetch_path+. Use it instead.
+
+  def fetch_file uri, *_
+    Gem.read_binary correct_for_windows_path uri.path
+  end
+
+  ##
+  # HTTP Fetcher. Dispatched by +fetch_path+. Use it instead.
+
+  def fetch_http uri, last_modified = nil, head = false, depth = 0
+    fetch_type = head ? Net::HTTP::Head : Net::HTTP::Get
+    response   = request uri, fetch_type, last_modified
+
+    case response
+    when Net::HTTPOK, Net::HTTPNotModified then
+      head ? response : response.body
+    when Net::HTTPMovedPermanently, Net::HTTPFound, Net::HTTPSeeOther,
+         Net::HTTPTemporaryRedirect then
+      raise FetchError.new('too many redirects', uri) if depth > 10
+
+      location = URI.parse response['Location']
+      fetch_http(location, last_modified, head, depth + 1)
+    else
+      raise FetchError.new("bad response #{response.message} #{response.code}", uri)
+    end
+  end
+
+  alias :fetch_https :fetch_http
+
+  ##
   # Downloads +uri+ and returns it as a String.
 
   def fetch_path(uri, mtime = nil, head = false)
-    data = open_uri_or_path uri, mtime, head
+    uri = URI.parse uri unless URI::Generic === uri
+
+    raise ArgumentError, "bad uri: #{uri}" unless uri
+    raise ArgumentError, "uri scheme is invalid: #{uri.scheme.inspect}" unless
+      uri.scheme
+
+    data = send "fetch_#{uri.scheme}", uri, mtime, head
     data = Gem.gunzip data if data and not head and uri.to_s =~ /gz$/
     data
   rescue FetchError
     raise
   rescue Timeout::Error
-    raise FetchError.new('timed out', uri)
+    raise FetchError.new('timed out', uri.to_s)
   rescue IOError, SocketError, SystemCallError => e
-    raise FetchError.new("#{e.class}: #{e}", uri)
+    raise FetchError.new("#{e.class}: #{e}", uri.to_s)
   end
 
   ##
@@ -275,47 +330,21 @@ class Gem::RemoteFetcher
     raise FetchError.new(e.message, uri)
   end
 
+  def correct_for_windows_path(path)
+    if path[0].chr == '/' && path[1].chr =~ /[a-z]/i && path[2].chr == ':'
+      path = path[1..-1]
+    else
+      path
+    end
+  end
+
   ##
   # Read the data from the (source based) URI, but if it is a file:// URI,
   # read from the filesystem instead.
 
   def open_uri_or_path(uri, last_modified = nil, head = false, depth = 0)
-    raise "block is dead" if block_given?
-
-    uri = URI.parse uri unless URI::Generic === uri
-
-    # This check is redundant unless Gem::RemoteFetcher is likely
-    # to be used directly, since the scheme is checked elsewhere.
-    # - Daniel Berger
-    unless ['http', 'https', 'file'].include?(uri.scheme)
-     raise ArgumentError, 'uri scheme is invalid'
-    end
-
-    if uri.scheme == 'file'
-      path = uri.path
-
-      # Deal with leading slash on Windows paths
-      if path[0].chr == '/' && path[1].chr =~ /[a-zA-Z]/ && path[2].chr == ':'
-         path = path[1..-1]
-      end
-
-      return Gem.read_binary(path)
-    end
-
-    fetch_type = head ? Net::HTTP::Head : Net::HTTP::Get
-    response   = request uri, fetch_type, last_modified
-
-    case response
-    when Net::HTTPOK, Net::HTTPNotModified then
-      head ? response : response.body
-    when Net::HTTPMovedPermanently, Net::HTTPFound, Net::HTTPSeeOther,
-         Net::HTTPTemporaryRedirect then
-      raise FetchError.new('too many redirects', uri) if depth > 10
-
-      open_uri_or_path(response['Location'], last_modified, head, depth + 1)
-    else
-      raise FetchError.new("bad response #{response.message} #{response.code}", uri)
-    end
+    raise "NO: Use fetch_path instead"
+    # TODO: deprecate for fetch_path
   end
 
   ##
@@ -330,12 +359,7 @@ class Gem::RemoteFetcher
       request.basic_auth uri.user, uri.password
     end
 
-    ua = "RubyGems/#{Gem::VERSION} #{Gem::Platform.local}"
-    ua << " Ruby/#{RUBY_VERSION} (#{RUBY_RELEASE_DATE}"
-    ua << " patchlevel #{RUBY_PATCHLEVEL}" if defined? RUBY_PATCHLEVEL
-    ua << ")"
-
-    request.add_field 'User-Agent', ua
+    request.add_field 'User-Agent', @user_agent
     request.add_field 'Connection', 'keep-alive'
     request.add_field 'Keep-Alive', '30'
 
@@ -425,6 +449,25 @@ class Gem::RemoteFetcher
 
     connection.finish
     connection.start
+  end
+
+  def user_agent
+    ua = "RubyGems/#{Gem::VERSION} #{Gem::Platform.local}"
+
+    ruby_version = RUBY_VERSION
+    ruby_version += 'dev' if RUBY_PATCHLEVEL == -1
+
+    ua << " Ruby/#{ruby_version} (#{RUBY_RELEASE_DATE}"
+    if RUBY_PATCHLEVEL >= 0 then
+      ua << " patchlevel #{RUBY_PATCHLEVEL}"
+    elsif defined?(RUBY_REVISION) then
+      ua << " revision #{RUBY_REVISION}"
+    end
+    ua << ")"
+
+    ua << " #{RUBY_ENGINE}" if defined?(RUBY_ENGINE) and RUBY_ENGINE != 'ruby'
+
+    ua
   end
 
 end
