@@ -39,7 +39,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -450,9 +449,9 @@ public class RubyInstanceConfig {
         samplingEnabled = SafePropertyAccessor.getBoolean("jruby.sampling.enabled", false);
 
         String compatString = SafePropertyAccessor.getProperty("jruby.compat.version", Constants.DEFAULT_RUBY_VERSION);
-        if (compatString.equalsIgnoreCase("RUBY1_8")) {
+        if (compatString.equalsIgnoreCase("RUBY1_8") || compatString.equalsIgnoreCase("1.8")) {
             setCompatVersion(CompatVersion.RUBY1_8);
-        } else if (compatString.equalsIgnoreCase("RUBY1_9")) {
+        } else if (compatString.equalsIgnoreCase("RUBY1_9") || compatString.equalsIgnoreCase("1.9")) {
             setCompatVersion(CompatVersion.RUBY1_9);
         } else {
             error.println("Compatibility version `" + compatString + "' invalid; use RUBY1_8 or RUBY1_9. Using RUBY1_8.");
