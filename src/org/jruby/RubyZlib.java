@@ -443,6 +443,11 @@ public class RubyZlib {
         private CRC32 checksum;
         private ByteList collected;
         private ByteList input;
+
+        private boolean jzlib = false;
+        private com.jcraft.jzlib.ZStream flater2 = null;
+        private boolean finished = false;
+
         protected static final ObjectAllocator INFLATE_ALLOCATOR = new ObjectAllocator() {
 
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -484,18 +489,22 @@ public class RubyZlib {
         }
 
         private void init(int windowBits) {
+            jzlib = false;
+            finished = false;
+            flater2 = null;
             boolean nowrap = false;
             if (windowBits < 0) {
                 nowrap = true;
             } else if ((windowBits & 0x10) != 0) {
-                nowrap = true; // gzip wrapper
-                readHeaderNeeded = true;
-                checksum = new CRC32();
+                jzlib=true;
+                flater2 = new com.jcraft.jzlib.ZStream();
+                flater2.inflateInit(windowBits);
             } else if ((windowBits & 0x20) != 0) {
-                nowrap = true; // automatic detection
-                readHeaderNeeded = true;
-                checksum = new CRC32();
+                jzlib=true;
+                flater2 = new com.jcraft.jzlib.ZStream();
+                flater2.inflateInit(windowBits);
             }
+//	    if(!jzlib)
             flater = new Inflater(nowrap);
             collected = new ByteList(BASE_SIZE);
             input = new ByteList();
@@ -551,8 +560,16 @@ public class RubyZlib {
                     }
                 } else {
                     byte[] bytes = obj.bytes();
+
+                    if(jzlib){
+                        flater2.next_in=bytes;
+                        flater2.next_in_index=0;
+                        flater2.avail_in=bytes.length;
+                    }
+                    else{
                     flater.setInput(bytes);
                     input = new ByteList(bytes, false);
+                    }
                 }
             } else {
                 input.append(obj);
@@ -579,6 +596,11 @@ public class RubyZlib {
         }
 
         private IRubyObject set_dictionary(IRubyObject str) {
+            if(jzlib){
+              byte[] tmp = str.convertToString().getBytes();
+              flater2.inflateSetDictionary(tmp, tmp.length);
+            }
+            else
             flater.setDictionary(str.convertToString().getBytes());
             run(false);
             return str;
@@ -621,12 +643,32 @@ public class RubyZlib {
 
             while (!internalFinished() && resultLength != 0) {
                 // MRI behavior
-                if (finish && flater.needsInput()) {
+                boolean  needsInput = jzlib ? flater2.avail_in<0 : flater.needsInput();
+                if (finish && needsInput) {
                     throw Util.newBufError(runtime, "buffer error");
                 }
 
                 try {
-                    resultLength = flater.inflate(outp);
+                    if(jzlib){
+                      flater2.next_out = outp;
+                      flater2.next_out_index = 0;
+                      flater2.avail_out = outp.length;
+                      int ret = flater2.inflate(com.jcraft.jzlib.JZlib.Z_NO_FLUSH);
+                      switch(ret){
+                      case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
+                           throw Util.newDataError(runtime, flater2.msg);
+                      case com.jcraft.jzlib.JZlib.Z_OK:
+                      case com.jcraft.jzlib.JZlib.Z_STREAM_END:
+                          if(ret == com.jcraft.jzlib.JZlib.Z_STREAM_END)
+                              finished=true;
+                          resultLength = flater2.next_out_index;
+                          break;
+                      default:
+                          resultLength=0;
+                      }
+                    }
+                    else 
+                        resultLength = flater.inflate(outp);
                     if (flater.needsDictionary()) {
                         throw Util.newDictError(runtime, "need dictionary");
                     } else {
@@ -666,16 +708,25 @@ public class RubyZlib {
 
         @Override
         protected int internalTotalIn() {
+            if(jzlib)
+                return (int)flater2.total_in;
+            else
             return flater.getTotalIn();
         }
 
         @Override
         protected int internalTotalOut() {
+            if(jzlib)
+                return (int)flater2.total_out;
+            else
             return flater.getTotalOut();
         }
 
         @Override
         protected boolean internalStreamEndP() {
+            if(jzlib)
+                return finished;
+            else
             return flater.finished();
         }
 
@@ -686,11 +737,17 @@ public class RubyZlib {
 
         @Override
         protected boolean internalFinished() {
+            if(jzlib)
+                return finished;
+            else
             return flater.finished();
         }
 
         @Override
         protected long internalAdler() {
+            if(jzlib)
+                return flater2.getAdler();
+            else
             return (checksum != null) ? checksum.getValue() : flater.getAdler() & 0xffffffffL;
         }
 
@@ -709,6 +766,9 @@ public class RubyZlib {
 
         @Override
         protected void internalClose() {
+            if(jzlib)
+                flater2.inflateEnd();
+            else
             flater.end();
         }
 
