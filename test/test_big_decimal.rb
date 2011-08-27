@@ -235,8 +235,9 @@ class TestBigDecimal < Test::Unit::TestCase
   def test_decimal_format
     require 'java'
     format = java.text.DecimalFormat.new("#,##0.00")
+    locale_separator = java.text.DecimalFormatSymbols.new().getDecimalSeparator()
     value = java.math.BigDecimal.new("10")
-    assert_equal "10.00", format.format(value)
+    assert_equal "10" + locale_separator.chr + "00", format.format(value)
   end
 
   #JRUBY-5190
