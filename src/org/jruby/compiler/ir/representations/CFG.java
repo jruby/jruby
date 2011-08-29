@@ -382,16 +382,13 @@ public class CFG {
                 } else if (i instanceof JumpInstr) {
                     tgt = ((JumpInstr) i).getJumpTarget();
                     bbEndedWithControlXfer = true;
-                } // CASE IR instructions are dummy instructions
-                // -- all when/then clauses have been converted into if-then-else blocks
+                } 
                 else if (i instanceof CaseInstr) {
+                    // CASE IR instructions are dummy instructions
+                    // -- all when/then clauses have been converted into if-then-else blocks
                     tgt = null;
-                } // SSS FIXME: To be done
-                else if (i instanceof BREAK_Instr) {
-                    tgt = null;
-                    retBBs.add(currBB); // the break instruction transfers control to the end of this closure cfg
-                    bbEndedWithControlXfer = true;
-                } else if (i instanceof ReturnInstr) {
+                }
+                else if (iop.isReturn()) { // BREAK, RETURN, CLOSURE_RETURN
                     tgt = null;
                     retBBs.add(currBB);
                     bbEndedWithControlXfer = true;
@@ -959,6 +956,7 @@ public class CFG {
 
     private void pushBBOnStack(Stack<BasicBlock> stack, BitSet bbSet, BasicBlock bb) {
         if (!bbSet.get(bb.getID())) {
+            // System.out.println("pushing " + bb);
             stack.push(bb);
             bbSet.set(bb.getID());
         }
@@ -1059,6 +1057,7 @@ public class CFG {
         if (_linearizedBBList != null) // Done!
             return _linearizedBBList;
 
+        // System.out.println("--- start ---");
         _linearizedBBList = new ArrayList<BasicBlock>();
 
         // Linearize the basic blocks of the cfg!
@@ -1080,7 +1079,7 @@ public class CFG {
 
         while (!stack.empty()) {
             BasicBlock b = stack.pop();
-//            System.out.println("processing bb: " + b.getID());
+            // System.out.println("processing bb: " + b.getID());
             _linearizedBBList.add(b);
 
             if (b == _exitBB) {
@@ -1141,36 +1140,36 @@ public class CFG {
                     }
                 }
                 else {
-//                   System.out.println("last instr is: " + lastInstr);
-                   BasicBlock blockToIgnore = null;
-                   if (lastInstr instanceof JumpInstr) {
-                       blockToIgnore = _bbMap.get(((JumpInstr)lastInstr).target);
-
-                       // Check if all of blockToIgnore's predecessors get to it with a jump!
-                       // This can happen because of exceptions and rescue handlers
-                       // If so, dont ignore it.  Process it right away (because everyone will end up ignoring this block!)
-                       boolean allJumps = true;
-                       for (CFG_Edge e: _cfg.incomingEdgesOf(blockToIgnore)) {
-                           if (! (e._src.getLastInstr() instanceof JumpInstr))
-                               allJumps = false;
-                       }
-
-                       if (allJumps)
-                           blockToIgnore = null;
-                   }
-                   else if (lastInstr instanceof BranchInstr) {
-                       // Push the taken block onto the stack first so that it gets processed last!
-                       BasicBlock takenBlock = _bbMap.get(((BranchInstr)lastInstr).getJumpTarget());
-                       pushBBOnStack(stack, bbSet, takenBlock);
-                       blockToIgnore = takenBlock;
-                   }
-
-                   // Push everything else
-                   for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
-                       BasicBlock x = e._dst;
-                       if (x != blockToIgnore)
-                           pushBBOnStack(stack, bbSet, x);
-                   }
+                    // System.out.println("last instr is: " + lastInstr);
+                    BasicBlock blockToIgnore = null;
+                    if (lastInstr instanceof JumpInstr) {
+                        blockToIgnore = _bbMap.get(((JumpInstr)lastInstr).target);
+                   
+                        // Check if all of blockToIgnore's predecessors get to it with a jump!
+                        // This can happen because of exceptions and rescue handlers
+                        // If so, dont ignore it.  Process it right away (because everyone will end up ignoring this block!)
+                        boolean allJumps = true;
+                        for (CFG_Edge e: _cfg.incomingEdgesOf(blockToIgnore)) {
+                            if (! (e._src.getLastInstr() instanceof JumpInstr))
+                                allJumps = false;
+                        }
+                   
+                        if (allJumps)
+                            blockToIgnore = null;
+                    }
+                    else if (lastInstr instanceof BranchInstr) {
+                        // Push the taken block onto the stack first so that it gets processed last!
+                        BasicBlock takenBlock = _bbMap.get(((BranchInstr)lastInstr).getJumpTarget());
+                        pushBBOnStack(stack, bbSet, takenBlock);
+                        blockToIgnore = takenBlock;
+                    }
+                   
+                    // Push everything else
+                    for (CFG_Edge e: _cfg.outgoingEdgesOf(b)) {
+                        BasicBlock x = e._dst;
+                        if (x != blockToIgnore)
+                            pushBBOnStack(stack, bbSet, x);
+                    }
                 }
                 assert !stack.empty();
             }
@@ -1225,6 +1224,7 @@ public class CFG {
                 }
             }
         }
+        // System.out.println("--- end ---");
 
         return _linearizedBBList;
     }
