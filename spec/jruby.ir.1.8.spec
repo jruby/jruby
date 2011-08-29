@@ -21,7 +21,6 @@ class MSpecScript
 
     # Current crashers
     '^' + SPEC_DIR + '/language/if',
-    '^' + SPEC_DIR + '/language/next', # inf loop
     '^' + SPEC_DIR + '/language/super',
     '^' + SPEC_DIR + '/core/binding',
     '^' + SPEC_DIR + '/core/io/open',
