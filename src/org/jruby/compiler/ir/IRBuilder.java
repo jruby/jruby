@@ -2413,9 +2413,16 @@ public class IRBuilder {
         Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
         // SSS FIXME: 1. Is the ordering correct? (poll before next)
         s.addInstr(new ThreadPollInstr());
-        // If a closure, the next is simply a return from the closure!
-        // If a regular loop, the next is simply a jump to the end of the iteration
-        s.addInstr((s.getCurrentLoop() != null) ?  new JumpInstr(s.getCurrentLoop().iterEndLabel) : new ClosureReturnInstr(rv));
+	    if (s.getCurrentLoop() != null) {
+            // If a regular loop, the next is simply a jump to the end of the iteration
+            s.addInstr(new JumpInstr(s.getCurrentLoop().iterEndLabel));
+        }
+        else {
+            // If a closure, the next is simply a return from the closure!
+            // But, if we have an ensure stmt, have to run that first!
+            if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
+            s.addInstr(new ClosureReturnInstr(rv));
+        }
         return rv;
     }
 
@@ -2895,8 +2902,7 @@ public class IRBuilder {
         Operand retVal = (returnNode.getValueNode() == null) ? Nil.NIL : build(returnNode.getValueNode(), m);
 
         // Before we return, have to go execute all the ensure blocks
-        if (!_ensureBlockStack.empty())
-            EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
+        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
 
         // If 'm' is a block scope, a return returns from the closest enclosing method.
         // The runtime takes care of lambdas
