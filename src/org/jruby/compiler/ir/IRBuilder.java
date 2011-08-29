@@ -2258,19 +2258,23 @@ public class IRBuilder {
         IRClosure closure = new IRClosure(s, false, iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
         s.addClosure(closure);
 
+		  // Create a new nested builder to ensure this gets its own IR builder state 
+		  // like the ensure block stack
+		  IRBuilder closureBuilder = new IRBuilder();
+
             // Receive self
         closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
 
             // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
-            buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, true, false);  // SSS: Changed this from 1 to 0
+            closureBuilder.buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, true, false);  // SSS: Changed this from 1 to 0
 
             // start label -- used by redo!
         closure.addInstr(new LABEL_Instr(closure.startLabel));
 
             // Build closure body and return the result of the closure
-        Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode(), closure);
+        Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : closureBuilder.build(iterNode.getBodyNode(), closure);
         if (closureRetVal != U_NIL)  // can be U_NIL if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
