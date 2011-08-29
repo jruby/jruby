@@ -2920,6 +2920,13 @@ public class RubyModule extends RubyObject {
             if (module.getBaseName() == null) {
                 module.setBaseName(name);
                 module.setParent(this);
+                // we need to update fullName cache for module, along with all its children
+                module.calculateName();
+                for(IRubyObject child : module.getConstantMap().values()) {
+                    if (child instanceof RubyModule) {
+                        ((RubyModule)child).calculateName();
+                    }
+                }
             }
         }
         return value;
