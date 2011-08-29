@@ -58,6 +58,6 @@ public class Splat extends Operand {
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return RuntimeHelpers.splatValue19((IRubyObject)_array.retrieve(interp, context, self));
+        return RuntimeHelpers.splatValue((IRubyObject)_array.retrieve(interp, context, self));
     }
 }
