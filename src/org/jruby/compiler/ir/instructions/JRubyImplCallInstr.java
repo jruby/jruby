@@ -4,6 +4,7 @@ import java.util.Map;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -233,14 +234,9 @@ public class JRubyImplCallInstr extends CallInstr {
             case BACKREF_IS_RUBY_MATCH_DATA:
                 // bRef = getBackref()
                 // flag = bRef instanceof RubyMatchData
-                try {
-                    // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
-                    IRubyObject bRef = RuntimeHelpers.getBackref(runtime, context);
-                    rVal = runtime.newBoolean(Class.forName("RubyMatchData").isInstance(bRef)); // SSS FIXME: Is this correct?
-                } catch (ClassNotFoundException e) {
-                    // Should never get here!
-                    throw new RuntimeException(e);
-                }
+                // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
+                IRubyObject bRef = RuntimeHelpers.getBackref(runtime, context);
+                rVal = runtime.newBoolean(RubyMatchData.class.isInstance(bRef));
                 break;
             case METHOD_PUBLIC_ACCESSIBLE:
             {
