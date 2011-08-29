@@ -1800,27 +1800,36 @@ public class IRBuilder {
     public Operand buildDot(final DotNode dotNode, IRScope s) {
         return copyAndReturnValue(s, new Range(build(dotNode.getBeginNode(), s), build(dotNode.getEndNode(), s), dotNode.isExclusive()));
     }
+    
+    private Operand dynamicPiece(Node pieceNode, IRScope s) {
+        Operand piece = build(pieceNode, s);
+        
+        return piece == null ? Nil.NIL : piece;
+    }
 
     public Operand buildDRegexp(DRegexpNode dregexpNode, IRScope s) {
         List<Operand> strPieces = new ArrayList<Operand>();
-        for (Node n : dregexpNode.childNodes())
-            strPieces.add(build(n, s));
+        for (Node n : dregexpNode.childNodes()) {
+            strPieces.add(dynamicPiece(n, s));
+        }
 
         return copyAndReturnValue(s, new Regexp(new CompoundString(strPieces), dregexpNode.getOptions()));
     }
 
     public Operand buildDStr(DStrNode dstrNode, IRScope s) {
         List<Operand> strPieces = new ArrayList<Operand>();
-        for (Node n : dstrNode.childNodes())
-            strPieces.add(build(n, s));
-
+        for (Node n : dstrNode.childNodes()) {
+            strPieces.add(dynamicPiece(n, s));
+        }
+        
         return copyAndReturnValue(s, new CompoundString(strPieces));
     }
 
     public Operand buildDSymbol(Node node, IRScope s) {
         List<Operand> strPieces = new ArrayList<Operand>();
-        for (Node n : node.childNodes())
-            strPieces.add(build(n, s));
+        for (Node n : node.childNodes()) {
+            strPieces.add(dynamicPiece(n, s));
+        }
 
         return copyAndReturnValue(s, new DynamicSymbol(new CompoundString(strPieces)));
     }
@@ -1831,8 +1840,9 @@ public class IRBuilder {
 
     public Operand buildDXStr(final DXStrNode dstrNode, IRScope m) {
         List<Operand> strPieces = new ArrayList<Operand>();
-        for (Node nextNode : dstrNode.childNodes())
-            strPieces.add(build(nextNode, m));
+        for (Node nextNode : dstrNode.childNodes()) {
+            strPieces.add(dynamicPiece(nextNode, m));
+        }
 
         return copyAndReturnValue(m, new BacktickString(strPieces));
     }
