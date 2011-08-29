@@ -245,7 +245,18 @@ public class CFG {
             return _instrs;
 
         List<Instr> instrs = new ArrayList<Instr>();
-        List<BasicBlock> bbs = linearize();
+        List<BasicBlock> bbs = null;
+        try {
+            bbs = linearize();
+        }
+        catch (RuntimeException e) {
+            System.out.println("============= ERROR ================");
+            System.out.println("Encountered exception: " + e + " while linearizing");
+            System.out.println("\nGraph:\n" + getGraph().toString());
+            System.out.println("\nInstructions:\n" + toStringInstrs());
+            System.out.println("====================================");
+            throw e;
+        }
 
         // Set up a bb array that maps labels to targets -- just to make sure old code continues to work! 
         setupFallThruMap();
