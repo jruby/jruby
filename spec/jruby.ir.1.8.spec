@@ -28,7 +28,6 @@ class MSpecScript
     '^' + SPEC_DIR + '/core/kernel/binding',
     '^' + SPEC_DIR + '/core/kernel/send',
     '^' + SPEC_DIR + '/core/proc/new',
-    '^' + SPEC_DIR + '/core/regexp/encoding',
     '^' + SPEC_DIR + '/core/thread/run',
     '^' + SPEC_DIR + '/core/thread/wakeup',
 
