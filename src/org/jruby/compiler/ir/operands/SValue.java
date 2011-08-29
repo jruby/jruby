@@ -20,18 +20,27 @@ import org.jruby.runtime.builtin.IRubyObject;
 // Further down the line, it could get converted to calls
 //
 public class SValue extends Operand {
-    Operand _array;
+    Operand array;
 
-    public SValue(Operand a) { _array = a; }
+    public SValue(Operand array) {
+        this.array = array;
+    }
 
-    public boolean isConstant() { return _array.isConstant(); }
+    @Override
+    public boolean isConstant() {
+        return array.isConstant();
+    }
 
-    public String toString() { return "SValue(" + _array + ")"; }
+    @Override
+    public String toString() {
+        return "SValue(" + array + ")";
+    }
 
+    @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
-        _array = _array.getSimplifiedOperand(valueMap);
-        if (_array instanceof Array) {
-            Array a = (Array)_array;
+        array = array.getSimplifiedOperand(valueMap);
+        if (array instanceof Array) {
+            Array a = (Array) array;
             return (a.elts.length == 1) ? a.elts[0] : a;
         }
         else {
@@ -39,32 +48,35 @@ public class SValue extends Operand {
         }
     }
 
-    public boolean isNonAtomicValue() { return true; }
+    @Override
+    public boolean isNonAtomicValue() {
+        return true;
+    }
 
     /** Append the list of variables used in this operand to the input list */
     @Override
     public void addUsedVariables(List<Variable> l) {
-        _array.addUsedVariables(l);
+        array.addUsedVariables(l);
     }
  
+    @Override
     public Operand cloneForInlining(InlinerInfo ii) { 
-        return isConstant() ? this : new SValue(_array.cloneForInlining(ii));
+        return isConstant() ? this : new SValue(array.cloneForInlining(ii));
     }
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Object val = _array.retrieve(interp, context, self);
+        Object val = array.retrieve(interp, context, self);
+        
         if (val instanceof RubyArray) {
-            int n = ((RubyArray)val).getLength();
-            if (n == 0)
-                return Nil.NIL.retrieve(interp, context, self); // SSS FIXME: interp.getRuntime().getNil();
-            else if (n == 1)
-                return ((RubyArray)val).entry(0);
-            else
-                return val;
+            int n = ((RubyArray) val).getLength();
+            
+            if (n == 0) return Nil.NIL.retrieve(interp, context, self); // SSS FIXME: interp.getRuntime().getNil();
+            if (n == 1) return ((RubyArray) val).entry(0);
+            
+            return val;
         }
-        else {
-            return Nil.NIL.retrieve(interp, context, self); // SSS FIXME: interp.getRuntime().getNil();
-        }
+
+        return Nil.NIL.retrieve(interp, context, self); // SSS FIXME: interp.getRuntime().getNil();
     }
 }
