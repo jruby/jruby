@@ -21,11 +21,6 @@ public class UnexecutableNil extends Nil {
     }
 
     @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { 
-        return U_NIL;
-    }
-
-    @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
