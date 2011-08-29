@@ -15,49 +15,58 @@ import org.jruby.runtime.builtin.IRubyObject;
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, it could get converted to calls that implement splat semantics
 public class Splat extends Operand {
-    Operand _array;
+    private Operand array;
 
-    public Splat(Operand a) { _array = a; }
+    public Splat(Operand array) {
+        this.array = array;
+    }
 
-    public boolean isConstant() { return false; /*_array.isConstant();*/ }
+    @Override
+    public boolean isConstant() {
+        return false; /*_array.isConstant();*/ 
+    }
 
-    public String toString() { return "*" + _array; }
+    @Override
+    public String toString() {
+        return "*" + array;
+    }
 
-    public boolean isNonAtomicValue() { return true; }
+    @Override
+    public boolean isNonAtomicValue() {
+        return true;
+    }
 
+    @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
-/*
- * SSS FIXME:  Cannot convert this to an Array operand!
- *
+        /*
+         * SSS FIXME:  Cannot convert this to an Array operand!
+         *
         _array = _array.getSimplifiedOperand(valueMap);
         if (_array instanceof Variable) {
-            _array = ((Variable)_array).getValue(valueMap);
+        _array = ((Variable)_array).getValue(valueMap);
         }
-*/
+         */
         return this;
     }
 
+    @Override
     public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
-        if (_array instanceof Array) 
-            return ((Array)_array).fetchCompileTimeArrayElement(argIndex, getSubArray);
-        else if (_array instanceof Range)
-            return ((Range)_array).fetchCompileTimeArrayElement(argIndex, getSubArray);
-        else
-            return null;
+        return array.fetchCompileTimeArrayElement(argIndex, getSubArray);
     }
 
     /** Append the list of variables used in this operand to the input list */
     @Override
     public void addUsedVariables(List<Variable> l) {
-        _array.addUsedVariables(l);
+        array.addUsedVariables(l);
     }
 
-    public Operand cloneForInlining(InlinerInfo ii) { 
-        return isConstant() ? this : new Splat(_array.cloneForInlining(ii));
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return isConstant() ? this : new Splat(array.cloneForInlining(ii));
     }
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return RuntimeHelpers.splatValue((IRubyObject)_array.retrieve(interp, context, self));
+        return RuntimeHelpers.splatValue((IRubyObject) array.retrieve(interp, context, self));
     }
 }

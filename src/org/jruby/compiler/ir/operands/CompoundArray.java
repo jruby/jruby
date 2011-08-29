@@ -74,12 +74,6 @@ public class CompoundArray extends Operand {
     }
 
     @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
-        // SSS FIXME: For constant arrays, we should never get here!
-        return null;
-    }
-
-    @Override
     public boolean isNonAtomicValue() { return true; }
 
     /** Append the list of variables used in this operand to the input list */

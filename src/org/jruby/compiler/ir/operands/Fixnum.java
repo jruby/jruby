@@ -24,10 +24,6 @@ public class Fixnum extends Constant {
     }
 
 // ---------- These methods below are used during compile-time optimizations ------- 
-    @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { 
-        return (argIndex == 0) ? this : Nil.NIL;
-    }
 
     @Override
     public IRClass getTargetClass() {

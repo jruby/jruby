@@ -18,9 +18,6 @@ public class Float extends Constant {
     }
 
     @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { return (argIndex == 0) ? this : Nil.NIL; }
-
-    @Override
     public IRClass getTargetClass() {
         return IRClass.getCoreClass("Float");
     }

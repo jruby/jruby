@@ -39,11 +39,6 @@ public class SValue extends Operand {
         }
     }
 
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
-        // SSS FIXME: This should never get called for constant svalues
-        return null;
-    }
-
     public boolean isNonAtomicValue() { return true; }
 
     /** Append the list of variables used in this operand to the input list */

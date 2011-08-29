@@ -17,11 +17,6 @@ public class Nil extends Constant {
     }
 
     @Override
-    public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) { 
-        return Nil.NIL;
-    }
-
-    @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
 /*
 		  if (cachedValue == null)
