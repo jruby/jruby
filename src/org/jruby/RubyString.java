@@ -6039,6 +6039,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "squeeze!", rest = true, compat = RUBY1_8)
     public IRubyObject squeeze_bang(ThreadContext context, IRubyObject[] args) {
+        if (args.length == 0) return squeeze_bang(context);
+        
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) {
             modifyCheck();
