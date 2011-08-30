@@ -126,9 +126,11 @@ public class Interpreter {
                     }
                 }
                 catch (RaiseException re) {
+                    if (isDebug()) LOG.debug("caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
                     if (lastInstr instanceof THROW_EXCEPTION_Instr) throw re; // pass it along if we just executed a throw!
 
                     ipc = cfg.getRescuerPC(lastInstr);
+                    if (isDebug()) LOG.debug("ipc for rescuer: " + ipc);
                     if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
                     interp.setException(re.getException());
