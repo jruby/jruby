@@ -2797,6 +2797,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
+        if (args.length == 0) return send(context, block);
+        
         String name = args[0].asJavaString();
         int newArgsLength = args.length - 1;
 
