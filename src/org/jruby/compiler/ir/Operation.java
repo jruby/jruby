@@ -88,7 +88,7 @@ public enum Operation {
     GET_CVAR(OpFlags.f_is_load),
     GET_ARRAY(OpFlags.f_is_load),
     BINDING_LOAD(OpFlags.f_is_load),
-    SEARCH_CONST(OpFlags.f_is_load), // SSS: side effect?
+    SEARCH_CONST(OpFlags.f_is_load | OpFlags.f_can_raise_exception),
 
     /** value stores **/
     PUT_CONST(OpFlags.f_is_store | OpFlags.f_has_side_effect),
